@@ -5,8 +5,11 @@ template: splash
 hero:
   tagline: Multi-user. Multi-host. Multi-network.
   image:
-    file: ../../assets/arch.webp
+    file: ../../assets/nix-logo.svg
   actions:
+    - text: Introduction
+      link: /doc/introduction
+      icon: right-arrow
     - text: Project sources
       link: https://github.com/gponcon/nixos-configuration
       icon: external
@@ -20,7 +23,7 @@ import { Card, CardGrid } from '@astrojs/starlight/components';
 <CardGrid stagger>
   <Card title="Documentation" icon="information">
     - [Introduction](/doc/introduction)
-    - [Getting started](/doc/getting-started)
+    - [User manual](/doc/user-manual)
     - [How-to ?](/doc/how-to)
     - [Specifications](/doc/specifications)
     - [Contribute](/doc/contribute)
@@ -33,6 +36,6 @@ import { Card, CardGrid } from '@astrojs/starlight/components';
   </Card>
   <Card title="Informations" icon="rocket">
     - [Changelog](/changelog)
-    - [About](/about)
+    - [Thanks!](/thanks)
   </Card>
 </CardGrid>

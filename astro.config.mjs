@@ -13,7 +13,7 @@ export default defineConfig({
 			[
 				rehypeExternalLinks,
 				{
-				  content: { type: 'text', value: ' 🡥' }
+				  content: { type: 'text', value: ' ↗' }
 				}
 			],
 		],
@@ -21,6 +21,10 @@ export default defineConfig({
 	integrations: [
 		starlight({
 			title: "Darkone NixOS Framework",
+			favicon: '/favicon.svg',
+			customCss: [
+				'./src/styles/custom.css',
+			],
 			locales: {
 				root: {
 						label: 'English',
@@ -31,8 +35,7 @@ export default defineConfig({
 				github: 'https://github.com/gponcon/nixos-configuration',
 			},
 			logo: {
-				light: './src/assets/arch.webp',
-				dark: './src/assets/arch.webp',
+				src: './src/assets/nix-logo.svg',
 			},
 			sidebar: [
 				{
@@ -44,7 +47,7 @@ export default defineConfig({
 					autogenerate: { directory: 'ref' },
 				},
 				{ label: 'Changelog', slug: 'changelog' },
-				{ label: 'About', slug: 'about' },
+				{ label: 'Thanks!', slug: 'thanks' },
 			],
 		}),
 	],

@@ -1,9 +1,9 @@
 ---
-title: How-to ?
+title: How-to?
 sidebar:
   order: 4
 ---
 
-:::note
-Work in progress
+:::note[FAQ]
+Coming soon to this page.
 :::

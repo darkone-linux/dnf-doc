@@ -1,7 +1,9 @@
 ---
 title: Themes
+sidebar:
+  order: 4
 ---
 
-:::note
-Work in progress
+:::tip[Work in progress]
+Themes are useful macro-modules for creating thematic hosts.
 :::
