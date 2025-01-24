@@ -1,0 +1,38 @@
+---
+title: Darkone NixOS Framework
+description: A multi-user, multi-host, multi-network configuration
+template: splash
+hero:
+  tagline: Multi-user. Multi-host. Multi-network.
+  image:
+    file: ../../assets/arch.webp
+  actions:
+    - text: Project sources
+      link: https://github.com/gponcon/nixos-configuration
+      icon: external
+      variant: minimal
+      attrs:
+        target: _blank
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+
+<CardGrid stagger>
+  <Card title="Documentation" icon="information">
+    - [Introduction](/doc/introduction)
+    - [Getting started](/doc/getting-started)
+    - [How-to ?](/doc/how-to)
+    - [Specifications](/doc/specifications)
+    - [Contribute](/doc/contribute)
+  </Card>
+  <Card title="References" icon="open-book">
+    - [Modules](/ref/modules)
+    - [Themes](/ref/themes)
+    - [Host profiles](/ref/host-profiles)
+    - [User profiles](/ref/user-profiles)
+  </Card>
+  <Card title="Informations" icon="rocket">
+    - [Changelog](/changelog)
+    - [About](/about)
+  </Card>
+</CardGrid>
