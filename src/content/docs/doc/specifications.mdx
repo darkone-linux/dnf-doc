@@ -6,7 +6,26 @@ sidebar:
 
 import { Steps } from '@astrojs/starlight/components';
 
-## Implemented
+## Goals
+
+This framework enables the quick and easy declaration of one or more computer networks, complete with ready-to-use configurations and profiles:
+
+- **User profiles** range from non-technical users (office tasks, multimedia) to advanced users (developers, administrators).
+- **Host profiles** cover standard use cases: workstations, development environments, administrative systems, or network nodes (e.g., gateways).
+
+:::note[Universal settings]
+Configurations are designed to be fully functional, clean, consistent, easy to use, and require no extensive customization.
+:::
+
+:::tip[Use cases]
+For example, this configuration can be used for:
+
+- **Your work**: A network with a gateway, servers, and workstations.
+- **Your family**: Gateway and host profiles tailored for parents and kids.
+- **Your projects**: Servers and workstations designed to meet your specific needs.
+:::
+
+## Implemented features
 
 This section includes everything that is currently implemented and functional.
 
@@ -40,7 +59,7 @@ A `just clean` result:
 -> Checking nix files with deadnix...
 ```
 
-## Work in progress
+## Work in progress features
 
 :::caution
 These examples are not yet fully functional and may differ in the future stable version of the project.
@@ -205,7 +224,7 @@ just apply gateway
 colmena apply --on gateway switch
 ```
 
-## Not implemented yet
+## In reflexion
 
 :::danger
 Not yet functional at this time.
@@ -266,7 +285,7 @@ Master with options:
 }
 ```
 
-## Introspection commands
+### Introspection commands
 
 ```shell
 # Host list with resume for each
@@ -281,4 +300,3 @@ just user
 # User details : content, feature list, host list...
 just user darkone
 ```
-
