@@ -53,11 +53,11 @@ export default defineConfig({
       sidebar: [
         {
           label: "Documentation",
-          autogenerate: { directory: "doc" },
+          items: [{ autogenerate: { directory: "doc" } }],
         },
         {
           label: "References",
-          autogenerate: { directory: "ref" },
+          items: [{ autogenerate: { directory: "ref" } }],
         },
         { label: "Changelog", slug: "changelog" },
         { label: "Thanks!", slug: "thanks" },
