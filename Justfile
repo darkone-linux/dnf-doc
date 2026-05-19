@@ -14,7 +14,8 @@ clean:
 	npm run clean
 
 # Build + deploy
-update: codegen build deploy
+update msg="": codegen build
+	just deploy "{{ msg }}"
 
 # Build the documentation
 build:
@@ -35,13 +36,24 @@ pull:
 	cd darkone-linux.github.io && git pull --rebase
 
 # Deploy: pull + add + commit + push + GA deploy
-deploy:
+deploy msg="":
 	#!/usr/bin/env bash
-	LAST_MESG=`git log -1 --pretty=%B | head -n 1`
+	MESG="{{ msg }}"
+	if [ -z "$MESG" ]; then
+	    if [ -d "../dnf/.git" ]; then
+	        MESG=$(git -C ../dnf log -1 --pretty=%B | head -n 1)
+	    else
+	        MESG=$(git log -1 --pretty=%B | head -n 1)
+	    fi
+	fi
+	if [ -z "$MESG" ]; then
+	    echo "Error: no commit message found. Use: just deploy \"your message\""
+	    exit 1
+	fi
 	cd darkone-linux.github.io && \
 	    git pull --rebase --autostash && \
 	    git add . && \
-	    git commit -m "$LAST_MESG" && \
+	    git commit -m "$MESG" && \
 	    git push -u origin main
 
 # Amend the current commit of built doc
