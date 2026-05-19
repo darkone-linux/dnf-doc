@@ -68,5 +68,5 @@ upgrade:
 # Generate documentation from code
 codegen:
 	@echo Generating documentation from source code...
-	cd ../src/generator && cargo run --release --quiet -- doc
+	cd ../src/generator && cargo run --release --quiet -- doc --workdir ../..
 	@echo Done.
