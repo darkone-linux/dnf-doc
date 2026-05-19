@@ -9,6 +9,10 @@ dev:
 	@echo Launching dev environment...
 	npm run dev
 
+# Clean markdown files (normalize whitespace, blank lines, tabs)
+clean:
+	npm run clean
+
 # Build + deploy
 update: codegen build deploy
 
@@ -69,4 +73,5 @@ upgrade:
 codegen:
 	@echo Generating documentation from source code...
 	cd ../src/generator && cargo run --release --quiet -- doc --workdir ../..
+	just clean
 	@echo Done.

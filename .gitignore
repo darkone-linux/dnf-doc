@@ -26,3 +26,6 @@ pnpm-debug.log*
 *.log
 *.tmp
 tmp/
+
+# Local files
+*.local.*
