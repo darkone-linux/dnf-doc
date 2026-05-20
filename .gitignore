@@ -1,3 +1,15 @@
+# Global Rules
+/.*
+!/.gitignore
+!/.ignore
+!/.specs
+!/.github
+/*.md
+!/README.*
+!/TODO.*
+!/CHANGELOG.*
+tmp/
+
 # build output
 dist/
 darkone-linux.github.io/
@@ -25,7 +37,3 @@ pnpm-debug.log*
 # Temp files
 *.log
 *.tmp
-tmp/
-
-# Local files
-*.local.*
