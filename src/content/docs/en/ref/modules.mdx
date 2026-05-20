@@ -532,7 +532,7 @@ a provisioned Loki datasource and a dedicated dashboard.
 Dual pattern aligned with monitoring.nix:
 - `enable`   : deploys the Loki server + Grafana datasource on the
   same host that runs the `monitoring` service (Grafana).
-- `isClient` : deploys Promtail on each host running Caddy. Caddy
+- `isClient` : deploys Alloy on each host running Caddy. Caddy
   logs are expected in JSON at `/var/log/caddy/access-*.log`
   (see `dnf/modules/system/services.nix`).
 
@@ -541,7 +541,7 @@ By default, `enable` follows `darkone.service.monitoring.enable` and
 once monitoring and Caddy are active.
 :::
 
-:::tip Debugging & manual cleanup
+:::tip[Debugging & manual cleanup]
 Most common symptoms after a Loki (de)activation or Caddy log format change:
 
 **1. "NO DATA" on the Caddy dashboard despite incoming requests.**
@@ -595,7 +595,7 @@ Most common symptoms after a Loki (de)activation or Caddy log format change:
 :::
 
 * **enable** `bool` Deploys the Loki server + Grafana datasource (colocated with Grafana).
-* **isClient** `bool` Deploys Promtail to collect local Caddy access logs.
+* **isClient** `bool` Deploys Alloy to collect local Caddy access logs.
 * **retentionTime** `str` Log retention duration in Loki (30 days by default).
 
 ```nix
@@ -880,7 +880,7 @@ darkone.service.restic = {
 
 ### &#x2728; darkone.service.searx
 
-A full-configured searx git forge.
+A full-configured hardened search engine.
 
 * **enable** `bool` Enable local search proxy
 
