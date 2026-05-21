@@ -2147,6 +2147,53 @@ darkone.home.advanced = {
 
 <hr/>
 
+### &#x1F3E0; darkone.home.ai
+
+AI coding tools and supporting utilities.
+
+:::note[Flags]
+- `darkone.home.ai.enable` master switch installs utility packages
+  (aichat, llm, fabric-ai, gh, lazygit, direnv, code-quality tools, etc.)
+  and enables the per-agent flag system below.
+- `darkone.home.ai.enable{Claude,OpenCode,Codex,Aider,Goose}` each
+  installs and configures a specific AI coding agent.
+- `darkone.home.ai.preferLocal` when combined with a local `darkone.service.ai`
+  ollama host, agents default to the local model instead of cloud APIs.
+:::
+
+:::tip[Per-host wiring]
+This module reads `osConfig.darkone.service.ai.enable` to detect a
+local ollama host.  On such hosts, `gollama`, the `ollama` CLI, and
+local-model defaults for Aider / OpenCode are activated automatically.
+
+`programs.gh` is enabled with the `github-copilot-cli` extension.
+OpenCode gets two MCP servers (filesystem, fetch) via `npx -y`.
+Claude Code enforces an allow/ask/deny permission matrix and an RTK
+governance hook on Bash calls.
+:::
+
+* **enable** `bool` Enable AI tools and supporting utilities
+* **enableClaude** `bool` Claude Code CLI
+* **enableOpenCode** `bool` OpenCode terminal AI agent
+* **enableCodex** `bool` OpenAI Codex CLI
+* **enableAider** `bool` Aider AI pair programming
+* **enableGoose** `bool` Goose AI coding agent (Block Inc.)
+* **preferLocal** `bool` Prefer local models than cloud ones
+
+```nix
+darkone.home.ai = {
+  enable = false;
+  enableClaude = false;
+  enableOpenCode = false;
+  enableCodex = false;
+  enableAider = false;
+  enableGoose = false;
+  preferLocal = false;
+};
+```
+
+<hr/>
+
 ### &#x1F3E0; darkone.home.audio
 
 Audio tools and effects.
