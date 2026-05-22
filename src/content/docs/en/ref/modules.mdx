@@ -124,6 +124,7 @@ yaml file so that the service is visible across the entire network!**
 * **enableTurn** `bool` Enable a coturn server (STUN/TURN) for VOIP
 * **enableElement** `bool` Enable Element-Web interface (matrix)
 * **enableAi** `bool` Enable AI environment (ollama, open-webui, llms...)
+* **enableHarmonia** `bool` Enable a local Harmonia Nix binary cache server
 
 ```nix
 darkone.host.minimal = {
@@ -148,6 +149,7 @@ darkone.host.minimal = {
   enableTurn = attrsets.hasAttrByPath [ "services" "turn" ] host;
   enableElement = attrsets.hasAttrByPath [ "services" "element" ] host;
   enableAi = attrsets.hasAttrByPath [ "services" "ai" ] host;
+  enableHarmonia = attrsets.hasAttrByPath [ "services" "harmonia" ] host;
 };
 ```
 
@@ -382,6 +384,43 @@ darkone.service.garage = {
   s3Region = s3Region;
   capacity = "500GB";
 };
+```
+
+<hr/>
+
+### &#x2728; darkone.service.harmonia
+
+Harmonia: local Nix binary cache server (serves this host's /nix/store).
+
+Exposes locally built / realised store paths over plain HTTP (port 5000),
+signed with the deployment-wide binary-cache key. Enable per host from
+`usr/config.yaml` (services.harmonia), like any other DNF service.
+
+:::note[How Harmonia Services Work with NCPS]
+Harmonia is a *source* of packages; `ncps` is the per-zone caching proxy that
+clients actually talk to. Each zone's `ncps` server automatically adds, as
+upstreams:
+
+- the harmonia instances of *its own zone* (highest priority), then
+- any harmonia flagged `global` (typically on the HCS),
+
+and never the harmonia of *other* (non-global) zones. Clients fetch only
+through `ncps`; harmonia's signature is passed through unchanged, so every
+host trusts the deployment-wide harmonia public key
+(`usr/secrets/harmonia.pub`). Transport is plain HTTP on the trusted LAN /
+VPN: integrity comes from the NAR signature, not from TLS.
+:::
+
+:::tip[Signing key provisioning]
+`just configure-admin-host` auto-generates the deployment-wide key pair when
+`usr/secrets/harmonia.pub` is missing: the public key is committed and the
+private key is injected into the sops secret `harmonia-secret-key`.
+:::
+
+* **enable** `bool` Enable a local Harmonia Nix binary cache server
+
+```nix
+darkone.service.harmonia.enable = false;
 ```
 
 <hr/>
