@@ -6,8 +6,9 @@ pkgs.mkShell {
   name = "dnf-doc";
 
   packages = with pkgs; [
+    
     # JS toolchain (Astro/Starlight) — npm est inclus dans nodejs
-    nodejs_22
+    nodejs_24
 
     # Task runner
     just
