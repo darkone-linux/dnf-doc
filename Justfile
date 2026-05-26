@@ -84,7 +84,7 @@ bump type="patch":
 	echo "Bumping $OLD → $NEW"
 	# Auto-generate changelog entry from git history
 	node scripts/update-changelog.mjs --old "$OLD" --new "$NEW"
-	git add package.json CHANGELOG.md
+	git add package.json package-lock.json CHANGELOG.md
 	git commit -m "Release v$NEW"
 	git tag "v$NEW"
 	echo "Done — run: git push && git push --tags"
