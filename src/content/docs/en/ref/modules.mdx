@@ -107,6 +107,7 @@ yaml file so that the service is visible across the entire network!**
 * **secure** `bool` Prefer more secure options (disable mutable users...)
 * **enableHomepage** `bool` Enable the auto-configured homepage service
 * **enableForgejo** `bool` Enable pre-configured forgejo git forge service
+* **enableGeneweb** `bool` Enable pre-configured GeneWeb genealogy service
 * **enableImmich** `bool` Enable pre-configured immich service
 * **enableNextcloud** `bool` Enable pre-configured nextcloud service
 * **enableMonitoring** `bool` Enable pre-configured monitoring service (prometheus, grafana)
@@ -132,6 +133,7 @@ darkone.host.minimal = {
   secure = false;
   enableHomepage = attrsets.hasAttrByPath [ "services" "homepage" ] host;
   enableForgejo = attrsets.hasAttrByPath [ "services" "forgejo" ] host;
+  enableGeneweb = attrsets.hasAttrByPath [ "services" "geneweb" ] host;
   enableImmich = attrsets.hasAttrByPath [ "services" "immich" ] host;
   enableNextcloud = attrsets.hasAttrByPath [ "services" "nextcloud" ] host;
   enableMonitoring = attrsets.hasAttrByPath [ "services" "monitoring" ] host;
@@ -384,6 +386,26 @@ darkone.service.garage = {
   s3Region = s3Region;
   capacity = "500GB";
 };
+```
+
+<hr/>
+
+### &#x2728; darkone.service.geneweb
+
+GeneWeb — wrapper DNF du module nixpkgs (en provenance de la PR #522751).
+
+:::tip
+Le module upstream `services.geneweb.*` est importé en amont par
+`lib/mk-configuration.nix` (tant que la PR n'est pas mergée). Le paquetage
+`pkgs.geneweb` provient de l'overlay `lib/overlays/geneweb.nix`.
+:::
+
+Aim: configurer, utiliser, maintenir.
+
+* **enable** `bool` Enable local GeneWeb genealogy service
+
+```nix
+darkone.service.geneweb.enable = false;
 ```
 
 <hr/>
@@ -1354,16 +1376,19 @@ darkone.system.srv-dirs = {
 
 ### &#x2699; darkone.system.testing
 
-Standalone test mode for the NixOS Test Driver (L2 simulations).
+Standalone test mode for the NixOS Test Driver.
 
-When enabled, disables workDir-dependent configuration (sops secrets,
-authorized keys) so individual modules can be exercised in isolation
-without a real consumer workspace or secret store.
+When enabled, neutralizes the irreducibly external/runtime bits so a node
+can be exercised in a VM: headscale/tailscale become no-ops and a fixed
+TLS cert can stub ACME. It also lets workDir-only config (nix.pub,
+harmonia.pub) be skipped by core/ncps. sops stays REAL (high fidelity).
 
 :::caution[Tests only]
-Only set `darkone.test.standalone = true` inside `dnf/tests/simulate/`.
-Never enable this in a production NixOS configuration.
+Enabled only via `tests/lib/test-tuning.nix`. This module never references
+any path under `tests/` — the cert path is passed as an option value.
 :::
+
+Aim: use, debug.
 
 <hr/>
 
@@ -2208,7 +2233,10 @@ local-model defaults for Aider / OpenCode are activated automatically.
 `programs.gh` is enabled with the `github-copilot-cli` extension.
 OpenCode gets two MCP servers (filesystem, fetch) via `npx -y`.
 Claude Code enforces an allow/ask/deny permission matrix and an RTK
-governance hook on Bash calls.
+governance hook on Bash calls. Its `settings.json` is NOT pinned as a
+read-only store symlink: the socle is merged into a WRITABLE
+`~/.claude/settings.json` on every switch, so plugins/add-ons
+(claude-mem, graphify, ...) can be installed and managed by hand on top.
 :::
 
 * **enable** `bool` Enable AI tools and supporting utilities
