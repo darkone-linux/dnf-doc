@@ -13,8 +13,8 @@ dev:
 clean:
 	npm run clean
 
-# Build + deploy
-update msg="": codegen build
+# Codegen + fix + build + deploy
+update msg="": codegen fix build
 	just deploy "{{ msg }}"
 
 # Build the documentation
@@ -115,3 +115,9 @@ codegen:
 	cd ../src/generator && cargo run --release --quiet -- doc --workdir ../..
 	just clean
 	@echo Done.
+
+# Fix / improve code
+fix:
+	@echo Fixing code...
+	node ./scripts/fix.mjs
+
