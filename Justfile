@@ -78,25 +78,12 @@ diff:
 bump type="patch":
 	#!/usr/bin/env bash
 	set -euo pipefail
-	REPO="https://github.com/darkone-linux/dnf-doc"
 	OLD=$(node -p "require('./package.json').version")
 	npm version {{type}} --no-git-tag-version --no-commit-hooks > /dev/null
 	NEW=$(node -p "require('./package.json').version")
-	DATE=$(date +%Y-%m-%d)
 	echo "Bumping $OLD → $NEW"
-	# Insert new version section after [Unreleased]
-	awk -v ver="$NEW" -v date="$DATE" \
-	    '/^## \[Unreleased\]/{print; print ""; print "## [" ver "] - " date; next}1' \
-	    CHANGELOG.md > CHANGELOG.tmp && mv CHANGELOG.tmp CHANGELOG.md
-	# Update [Unreleased] comparison link
-	sed -i "s|^\[Unreleased\]:.*|[Unreleased]: $REPO/compare/v$NEW...HEAD|" CHANGELOG.md
-	# Insert new version link before [OLD] link (or append both if first bump)
-	if grep -q "^\[$OLD\]:" CHANGELOG.md; then
-	    sed -i "/^\[$OLD\]:/i [$NEW]: $REPO/compare/v$OLD...v$NEW" CHANGELOG.md
-	else
-	    printf '\n[%s]: %s/compare/v%s...v%s\n[%s]: %s/releases/tag/v%s\n' \
-	        "$NEW" "$REPO" "$OLD" "$NEW" "$OLD" "$REPO" "$OLD" >> CHANGELOG.md
-	fi
+	# Auto-generate changelog entry from git history
+	node scripts/update-changelog.mjs --old "$OLD" --new "$NEW"
 	git add package.json CHANGELOG.md
 	git commit -m "Release v$NEW"
 	git tag "v$NEW"
