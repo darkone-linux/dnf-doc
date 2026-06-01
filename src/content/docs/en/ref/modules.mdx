@@ -37,17 +37,9 @@ gateway and all machines on the local network.
 :::
 
 * **enable** `bool` Enable gateway features for the current host (dhcp, dns, proxy, etc.)
-* **enableFail2ban** `bool` Enable fail2ban service
-* **enableAdguardhome** `bool` Enable pre-configured Aguard Home service
-* **enableIdm** `bool` Enable identity manager (kanidm)
 
 ```nix
-darkone.host.gateway = {
-  enable = false;
-  enableFail2ban = true;
-  enableAdguardhome = builtins.hasAttr "adguardhome" host.services;
-  enableIdm = builtins.hasAttr "idm" host.services;
-};
+darkone.host.gateway.enable = false;
 ```
 
 <hr/>
@@ -66,16 +58,12 @@ Zsh alias "h" for "headscale".
 :::
 
 * **enable** `bool` Enable headscale coordination server
-* **enableFail2ban** `bool` Enable fail2ban service
-* **enableClient** `bool` Enable tailscale client on HCS node (recommande to host services)
-* **enableIdm** `bool` Enable identity manager (kanidm)
+* **enableClient** `bool` Enable tailscale client on HCS node (recommended to host services)
 
 ```nix
 darkone.host.hcs = {
   enable = false;
-  enableFail2ban = true;
   enableClient = true;
-  enableIdm = builtins.hasAttr "idm" host.services;
 };
 ```
 
@@ -98,60 +86,19 @@ darkone.host.laptop.enable = false;
 Every host configuration is based on this minimal config.
 
 :::caution[Services declaration]
-A number of services (immich, nextcloud, forgejo, etc.) can be declared in the configuration `usr/config.yaml`
-of each host, regardless of its type (server, laptop, desktop, etc.). **It is advisable to declare them in the
-yaml file so that the service is visible across the entire network!**
+A number of services (immich, nextcloud, forgejo, etc.) can be declared in
+`usr/config.yaml` of each host, regardless of its type (server, laptop,
+desktop, etc.). **It is advisable to declare them in the yaml file so that
+the service is visible across the entire network!**
 :::
 
 * **enable** `bool` Minimal host configuration
 * **secure** `bool` Prefer more secure options (disable mutable users...)
-* **enableHomepage** `bool` Enable the auto-configured homepage service
-* **enableForgejo** `bool` Enable pre-configured forgejo git forge service
-* **enableGeneweb** `bool` Enable pre-configured GeneWeb genealogy service
-* **enableImmich** `bool` Enable pre-configured immich service
-* **enableNextcloud** `bool` Enable pre-configured nextcloud service
-* **enableMonitoring** `bool` Enable pre-configured monitoring service (prometheus, grafana)
-* **enableVaultwarden** `bool` Enable pre-configured Vaultwarden service
-* **enableNfsHomeShares** `bool` Enable a DNF nfs home shares
-* **enableJitsiMeet** `bool` Enable jitsi-meet service
-* **enableRestic** `bool` Enable Restic service
-* **enableJellyfin** `bool` Enable Jellyfin server
-* **enableOutline** `bool` Enable Outline WIKI service
-* **enableDocs** `bool` Enable LaSuite Docs service
-* **enableGarage** `bool` Enable Garage S3 service (backend for docs and other S3 consumers)
-* **enableMealie** `bool` Enable Mealie service
-* **enableSearx** `bool` Enable Searx service
-* **enableMatrix** `bool` Enable a matrix server
-* **enableTurn** `bool` Enable a coturn server (STUN/TURN) for VOIP
-* **enableElement** `bool` Enable Element-Web interface (matrix)
-* **enableAi** `bool` Enable AI environment (ollama, open-webui, llms...)
-* **enableHarmonia** `bool` Enable a local Harmonia Nix binary cache server
 
 ```nix
 darkone.host.minimal = {
   enable = false;
   secure = false;
-  enableHomepage = attrsets.hasAttrByPath [ "services" "homepage" ] host;
-  enableForgejo = attrsets.hasAttrByPath [ "services" "forgejo" ] host;
-  enableGeneweb = attrsets.hasAttrByPath [ "services" "geneweb" ] host;
-  enableImmich = attrsets.hasAttrByPath [ "services" "immich" ] host;
-  enableNextcloud = attrsets.hasAttrByPath [ "services" "nextcloud" ] host;
-  enableMonitoring = attrsets.hasAttrByPath [ "services" "monitoring" ] host;
-  enableVaultwarden = attrsets.hasAttrByPath [ "services" "vaultwarden" ] host;
-  enableNfsHomeShares = attrsets.hasAttrByPath [ "services" "nfs" ] host;
-  enableJitsiMeet = builtins.hasAttr "jitsi-meet" host.services;
-  enableRestic = builtins.hasAttr "restic" host.services;
-  enableJellyfin = builtins.hasAttr "jellyfin" host.services;
-  enableOutline = builtins.hasAttr "outline" host.services;
-  enableDocs = builtins.hasAttr "docs" host.services;
-  enableGarage = builtins.hasAttr "garage" host.services;
-  enableMealie = builtins.hasAttr "mealie" host.services;
-  enableSearx = builtins.hasAttr "searx" host.services;
-  enableMatrix = attrsets.hasAttrByPath [ "services" "matrix" ] host;
-  enableTurn = attrsets.hasAttrByPath [ "services" "turn" ] host;
-  enableElement = attrsets.hasAttrByPath [ "services" "element" ] host;
-  enableAi = attrsets.hasAttrByPath [ "services" "ai" ] host;
-  enableHarmonia = attrsets.hasAttrByPath [ "services" "harmonia" ] host;
 };
 ```
 
@@ -263,6 +210,7 @@ darkone.service.ai.enable = false;
 ### &#x2728; darkone.service.audio
 
 Audio services: alsa, pulse (not jack for the moment).
+Automatically adds users to the `audio` group when enabled.
 
 * **enable** `bool` Enable sound system
 
@@ -392,15 +340,25 @@ darkone.service.garage = {
 
 ### &#x2728; darkone.service.geneweb
 
-GeneWeb — wrapper DNF du module nixpkgs (en provenance de la PR #522751).
+GeneWeb — Powerful Genealogy Service.
 
-:::tip
-Le module upstream `services.geneweb.*` est importé en amont par
-`lib/mk-configuration.nix` (tant que la PR n'est pas mergée). Le paquetage
-`pkgs.geneweb` provient de l'overlay `lib/overlays/geneweb.nix`.
+:::note[Service currently being validated]
+DNF wrapper around the nixpkgs module (from [PR #522751](https://github.com/NixOS/nixpkgs/pull/522751)).
 :::
 
-Aim: configurer, utiliser, maintenir.
+:::tip[Database declaration]
+To declare a `base.gw` file (default dir is `/var/lib/geneweb`),
+add this in your server configuration:
+```nix
+services.geneweb.databases.base = {};
+```
+:::
+
+:::caution[Required sops secrets]
+When enabled, this module reads friend and wizard passwords from the sops
+secrets `geneweb-friend` and `geneweb-wizard`. Add the entries to
+`usr/secrets/` before rebuilding, otherwise sops-nix activation will fail.
+:::
 
 * **enable** `bool` Enable local GeneWeb genealogy service
 
@@ -1255,6 +1213,9 @@ This module is used to register and configure DNF modules:
     * **href** `str` Calculated URL of the service before the reverse proxy
     * **ip** `str` Calculated IP to contact the service
   * **displayOnHomepage** `bool` Display a link on homepage
+  * **reverseProxy** `bool` Reached through the zone gateway reverse proxy (DNS points to the gateway LAN IP)
+  * **uniquePerZone** `bool` At most one instance allowed per zone (generator validation)
+  * **externalAccess** `bool` www-zone service reachable from the LAN via a fixed host IP (e.g. headscale, turn)
   * **persist.dirs** `listOf str` Service persistant dirs
   * **persist.files** `listOf str` Service persistant files
   * **persist.dbDirs** `listOf str` Service persistant dirs with database(s)
@@ -1286,6 +1247,9 @@ darkone.system.services = {
   service.defaultParams.href = "";
   service.defaultParams.ip = "";
   service.displayOnHomepage = true;
+  service.reverseProxy = true;
+  service.uniquePerZone = false;
+  service.externalAccess = false;
   service.persist.dirs = [ ];
   service.persist.files = [ ];
   service.persist.dbDirs = [ ];
