@@ -172,6 +172,8 @@ darkone.profile.advanced.enable = false;
 
 <hr/>
 
+
+
 ## Service modules
 
 :::note
@@ -971,6 +973,8 @@ darkone.service.vaultwarden = {
 
 <hr/>
 
+
+
 ## System modules
 
 :::note
@@ -1354,7 +1358,21 @@ any path under `tests/` — the cert path is passed as an option value.
 
 Aim: use, debug.
 
+* **standalone** `bool` Standalone test mode — skip workDir-only config (nix.pub, harmonia.pub) and neutralize external services
+* **tlsCert** `nullOr path` Self-signed cert (PEM) provided by the test harness to stub ACME. Never a tests/ path baked into the framework.
+* **tlsKey** `nullOr path` Private key (PEM) paired with tlsCert.
+
+```nix
+darkone.system.testing = {
+  standalone = false;
+  tlsCert = null;
+  tlsKey = null;
+};
+```
+
 <hr/>
+
+
 
 ## Security modules
 
@@ -1935,6 +1953,8 @@ darkone.security.users.enable = false;
 
 <hr/>
 
+
+
 ## CLI applications
 
 :::note
@@ -2004,6 +2024,8 @@ darkone.console.zsh = {
 ```
 
 <hr/>
+
+
 
 ## GUI applications
 
@@ -2083,6 +2105,8 @@ darkone.graphic.virtualbox = {
 
 <hr/>
 
+
+
 ## Administration modules
 
 :::note
@@ -2104,6 +2128,8 @@ darkone.admin.nix = {
 ```
 
 <hr/>
+
+
 
 ## User mgm modules
 
@@ -2142,6 +2168,8 @@ darkone.user.root.enable = true;
 ```
 
 <hr/>
+
+
 
 ## Home Manager modules
 
@@ -2506,3 +2534,4 @@ darkone.home.video = {
 ```
 
 <hr/>
+
