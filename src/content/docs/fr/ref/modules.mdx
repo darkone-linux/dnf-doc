@@ -193,17 +193,17 @@ darkone.profile.advanced.enable = false;
 **Un module de service** fournit un service prêt à l'emploi (démon).
 :::
 
-{/* t:p 95b84297b5b2706cb95d0cb18ce9d53fa22e49b9486b40fac834f7a4b06bc492 */}
+{/* t:p be9b1bba1103a3096ebf2e4a471efdfdf0b5e90a367eda16c31efba253531ab3 */}
 ### &#x2728; darkone.service.adguardhome
 
-AdGuard Home entièrement configuré pour la passerelle / routeur local.
+AdGuard Home entièrement configuré pour passerelle / routeur local.
 
 :::note
 Cette configuration lit la conf `network` dans le fichier `config.yaml`.
-Elle utilise le [module DNF dnsmasq](/ref/modules/#-darkoneservicednsmasq) comme DNS en amont et DHCP.
+Elle utilise le [module DNF dnsmasq](/fr/ref/modules/#-darkoneservicednsmasq) comme DNS amont et DHCP.
 :::
 
-* **enable** `bool` Activer le service local adguardhome
+* **enable** `bool` Active le service adguardhome local
 
 ```nix
 darkone.service.adguardhome.enable = false;
