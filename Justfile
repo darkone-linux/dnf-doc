@@ -48,14 +48,15 @@ upgrade:
 
 # ── update ───────────────────────────────────────────────────────────────────
 
-# Codegen + translate + fix + build + deploy (skips build/deploy if no changes)
+# Codegen + translate + clean/fix + build + deploy (skips build/deploy if no changes)
 [group('update')]
 update msg="":
 	#!/usr/bin/env bash
 	set -euo pipefail
 	just codegen
+	just clean
 	just translate
-	just fix
+	just clean
 	if [ -n "$(git status --porcelain)" ]; then
 	    just build
 	    just deploy "{{ msg }}"
@@ -71,7 +72,7 @@ codegen:
 	just clean
 	@echo Done.
 
-# Clean markdown files (normalize whitespace, blank lines, tabs)
+# Clean markdown files (call fix: normalize whitespace, blank lines, tabs)
 [group('update')]
 clean:
 	npm run clean
