@@ -1,0 +1,30 @@
+---
+title: Administration modules
+sidebar:
+  order: 7
+---
+
+{/* t:main */}
+{/* t:h d00f95f6af59b3d28cb972789f57ec9d2e4a5f3b91c208b78e64d43c66e9b9d4 */}
+
+{/* t:p b3c4b76dca0677041d44585db5dcf6d87c641652e1016fe141261b544345ebb7 */}
+:::note
+**A administration module** deals with system-specific functionalities for administrators.
+:::
+
+{/* t:p b2edea9217c8dc801c7ddfcdeaecb4a01673475ed22712b3c1ff9e2a983c2ebc */}
+### &#x1F451; darkone.admin.nix
+
+NixOS configuration for the local LAN administrator computer.
+
+* **enable** `bool` Enable NIX configuration builder tools
+* **enableNh** `bool` Enable nix helper (nh) management tool
+
+```nix
+darkone.admin.nix = {
+  enable = false;
+  enableNh = false;
+};
+```
+
+<hr/>

@@ -1,0 +1,731 @@
+---
+title: Modules de service
+sidebar:
+  order: 2
+---
+
+{/* t:translated-from en */}
+{/* t:h 97294957b851009bdfb388bb0d8ee22300586775e51ec9f5e38e392620a7a603 */}
+
+{/* t:p c9dc7c67b432346e6c45feca05d7a97da075546ab2c6294bae041a226bf1af18 */}
+:::note
+**Un module de service** fournit un service prêt à l'emploi (démon).
+:::
+
+{/* t:p 4b1b15e5e8a3a50a859d52c80969eb0ca9ffc1b8cc3e7955f17dd76a9017d37b */}
+### &#x2728; darkone.service.adguardhome
+
+AdGuard Home entièrement configuré pour passerelle / routeur local.
+
+:::note
+Cette configuration lit la conf `network` dans le fichier `config.yaml`.
+Elle utilise le [module DNF dnsmasq](/fr/ref/modules/#-darkoneservicednsmasq) comme DNS amont et DHCP.
+:::
+
+* **enable** `bool` Active le service adguardhome local
+
+```nix
+darkone.service.adguardhome.enable = false;
+```
+
+{/* t:p 483babfa9b54654515a26351ba10ec6be43d3520f9f9f6222283061dcbe2e337 */}
+### &#x2728; darkone.service.ai
+
+Intelligence artificielle locale (open-webui + ollama + llms).
+
+* **enable** `bool` Activer le service d'IA local
+
+```nix
+darkone.service.ai.enable = false;
+```
+
+{/* t:p d908d382dc666837ab3522e1f5c26526ec89297d748b1d6007fa6130f0b6a6bd */}
+### &#x2728; darkone.service.audio
+
+Services audio : alsa, pulse (pas jack pour le moment).
+Ajoute automatiquement les utilisateurs au groupe `audio` quand il est activé.
+
+* **enable** `bool` Activer le système sonore
+
+```nix
+darkone.service.audio.enable = false;
+```
+
+{/* t:p 539c09634166201544ef42e6dc93e59159f1699e6c95adcadb19dd43be808c76 */}
+### &#x2728; darkone.service.dnsmasq
+
+dnsmasq pré-configuré pour la passerelle locale / routeur.
+
+:::note
+Cette configuration lit la conf `network` du fichier `config.yaml`.
+C'est la fonctionnalité essentielle de la passerelle locale.
+:::
+
+* **enable** `bool` Activer le service dnsmasq local
+
+```nix
+darkone.service.dnsmasq.enable = false;
+```
+
+{/* t:p d53f95bf92092f29d09d976e9bb49ad429ca0a0b0a6e975139e62e2e29b31d01 */}
+### &#x2728; darkone.service.docs
+
+Un module LaSuite Docs entièrement configuré.
+
+* **enable** `bool` Activer le service docs local
+* **s3Host** `str` Nom d'hôte du serveur S3
+* **s3Port** `port` Port du serveur S3
+* **s3Bucket** `str` Nom du bucket S3 pour le stockage des documents
+
+```nix
+darkone.service.docs = {
+  enable = false;
+  s3Host = "127.0.0.1";
+  s3Port = 3900;
+  s3Bucket = "docs";
+};
+```
+
+{/* t:p 05d7eefc2c605cfc85d7f1c1dc9cd2edd5304446a4cbc85fb88766e9d471f885 */}
+### &#x2728; darkone.service.element
+
+Client web Element pour le service matrix local.
+
+* **enable** `bool` Activer le service element local
+
+```nix
+darkone.service.element.enable = false;
+```
+
+{/* t:p 1e0b73f4a4edf446db269730ee6e883dc1a6ce2155af07b6a1a0fe4537811d52 */}
+### &#x2728; darkone.service.fail2ban
+
+Module fail2ban spécifique à DNF.
+
+* **enable** `bool` Activer fail2ban avec les spécificités DNF
+
+```nix
+darkone.service.fail2ban.enable = false;
+```
+
+{/* t:p 0554940103e41473bb1ffb6ff52aa6485e55b8a579e3129e05011d05d7a5c4fb */}
+### &#x2728; darkone.service.forgejo
+
+Une forge git forgejo entièrement configurée.
+
+* **enable** `bool` Activer le service forgejo local
+
+```nix
+darkone.service.forgejo.enable = false;
+```
+
+{/* t:p b77a42c08c4adf566b2d74dc9185dd20d0b4aa3067a595247f5dbe35775add9a */}
+### &#x2728; darkone.service.garage
+
+Un service Garage S3 local entièrement configuré.
+
+Fournit un serveur de stockage d'objets compatible S3 interne accessible uniquement sur 127.0.0.1:3900.
+
+:::note[Création manuelle des buckets]
+Les buckets ne sont PAS créés automatiquement par ce module.
+Chaque service consommateur provisionne son propre bucket et sa clé d'accès via une unité systemd oneshot dédiée ordonnée After= `garage-init.service`.
+Les identifiants par consommateur sont stockés dans sops sous les noms `garage-<consumer>-key-id` et `garage-<consumer>-key-secret`, importés dans Garage au premier démarrage.
+:::
+
+:::tip[Migration de cluster multi-nœud]
+Simple nœud, replication_factor = 1. Pour évoluer vers un cluster multi-nœud, augmentez `replication_factor`, exposez `rpc_public_addr` sur le maillage, et étendez `garage-init` pour piloter une disposition multi-nœud.
+:::
+
+:::caution[Initialisation de la disposition du cluster]
+S'il échoue, attendez que le service garage soit totalement opérationnel, puis redémarrez-le.
+:::
+
+* **enable** `bool` Activer le service Garage S3 local
+* **srvPort** `port` Port S3 API exposé sur l'IP interne
+* **s3Region** `str` Nom de la région S3 (doit correspondre à la config du consommateur)
+* **capacity** `str` Indice de capacité de stockage du nœud transmis à `garage layout assign`.
+Utilisé uniquement au premier démarrage pour l'initialisation de la disposition ; n'agit pas comme un quota strict sur le système de fichiers sous-jacent.
+Suffixes supportés : B, KB, MB, GB, TB, PB.
+
+```nix
+darkone.service.garage = {
+  enable = false;
+  srvPort = srvPort;
+  s3Region = s3Region;
+  capacity = "500GB";
+};
+```
+
+{/* t:p 7c6b8158f3d908dae85142b3a404b51278edf2b468a1b4dcb00205f091468ed9 */}
+### &#x2728; darkone.service.geneweb
+
+GeneWeb — Service de généalogie puissant.
+
+:::note[Service en cours de validation]
+Wrapper DNF autour du module nixpkgs (depuis [PR #522751](https://github.com/NixOS/nixpkgs/pull/522751)).
+:::
+
+:::tip[Déclaration de base de données]
+Pour déclarer un fichier `base.gw` (répertoire par défaut `/var/lib/geneweb`), ajoutez ceci dans votre configuration de serveur :
+```nix
+services.geneweb.databases.base = {};
+```
+:::
+
+:::caution[Secrets sops requis]
+Une fois activé, ce module lit les mots de passe friend et wizard à partir des secrets sops `geneweb-friend` et `geneweb-wizard`. Ajoutez les entrées à `usr/secrets/` avant de reconstruire, sinon l'activation sops-nix échouera.
+:::
+
+* **enable** `bool` Activer le service de généalogie GeneWeb local
+
+```nix
+darkone.service.geneweb.enable = false;
+```
+
+{/* t:p 164b57feff8feab9906b0937a57155cf2faedbbccc37cc59bda656457f020849 */}
+### &#x2728; darkone.service.harmonia
+
+Harmonia : serveur de cache binaire Nix local (sert /nix/store de cet hôte).
+
+Expose les chemins de stockage construits/réalisés localement via HTTP simple (port 5000), signés avec la clé de cache binaire du déploiement. Activez par hôte à partir de `usr/config.yaml` (services.harmonia), comme tout autre service DNF.
+
+:::note[Comment fonctionnent les services Harmonia avec NCPS]
+Harmonia est une *source* de paquets ; `ncps` est le proxy de mise en cache par zone auquel les clients parlent réellement. Le serveur `ncps` de chaque zone ajoute automatiquement, comme en amont :
+
+- les instances harmonia de *sa propre zone* (priorité la plus élevée), puis
+- tout harmonia marqué `global` (généralement sur le HCS),
+
+et jamais harmonia des zones *autres* (non-global). Les clients n'extraient que via `ncps` ; la signature harmonia est transmise sans modification, donc chaque hôte fait confiance à la clé publique harmonia du déploiement (`usr/secrets/harmonia.pub`). Le transport est un HTTP simple sur le LAN / VPN de confiance : l'intégrité provient de la signature NAR, non pas de TLS.
+:::
+
+:::tip[Provisionnement de la clé de signature]
+`just configure-admin-host` génère automatiquement la paire de clés du déploiement lorsque `usr/secrets/harmonia.pub` est manquante : la clé publique est validée et la clé privée est injectée dans le secret sops `harmonia-secret-key`.
+:::
+
+* **enable** `bool` Activer un serveur de cache binaire Nix Harmonia local
+
+```nix
+darkone.service.harmonia.enable = false;
+```
+
+{/* t:p 37a8e8aa3b107db09b4f268e4447d391037f8dd2cf6f51d416a1c6212a8cb1c6 */}
+### &#x2728; darkone.service.headscale
+
+Un service headscale entièrement configuré pour HCS.
+
+* **enable** `bool` Activer le service DNF headscale
+* **enableGRPC** `bool` Ouvrir le port TCP GRPC
+
+```nix
+darkone.service.headscale = {
+  enable = false;
+  enableGRPC = false;
+};
+```
+
+{/* t:p 523d33f51a43b72db9764f2a58fc7f51c81fadd1930300a951547a5d0a9041a2 */}
+### &#x2728; darkone.service.home-assistant
+
+Un Home Assistant avec certains plugins (en cours).
+
+* **enable** `bool` Activer home-assistant
+
+```nix
+darkone.service.home-assistant.enable = false;
+```
+
+{/* t:p a39f9f4a68a29954bed0ecaf3887b5498725ad311dde1daeae62c7586d7b93b9 */}
+### &#x2728; darkone.service.homepage
+
+Tableau de bord d'accueil dynamiquement configuré pour votre réseau local.
+
+:::note
+Pour chaque service DNF activé, une entrée est automatiquement ajoutée à la configuration de la page d'accueil.
+:::
+
+* **enable** `bool` Activer le tableau de bord d'accueil + httpd + hôte
+* **localServices** `listOf attrs` Services à ajouter dans la section Applications locales
+* **globalServices** `listOf attrs` Services communs et accessibles publiquement sur l'ensemble du réseau
+* **remoteServices** `listOf attrs` Services à ajouter dans la section Applications distantes
+* **bookmarks** `listOf attrs` Remplacer les signets par défaut (liens)
+* **widgets** `listOf attrs` Remplacer les widgets par défaut
+
+```nix
+darkone.service.homepage = {
+  enable = false;
+  localServices = [ ];
+  globalServices = [ ];
+  remoteServices = [ ];
+  bookmarks = [ ];
+  widgets = [ ];
+};
+```
+
+{/* t:p 89f6a8dbb80b7fb0d0f0205c9e2735c6c2956a799625399c079be9c8d3a36d72 */}
+### &#x2728; darkone.service.idm
+
+Service DNF Kanidm (gestionnaire d'identité).
+
+* **enable** `bool` Activer l'authentification unique locale avec Kanidm
+* **oauth2** `attrs` Modèles de client OAuth2/OIDC fournis par les modules de service.
+Kanidm provisionne un client par entrée correspondante dans `network.services`,
+avec `clientId = dnfLib.oauth2ClientName`.
+  * **enable** `bool` Indique s'il faut provisionner des clients OAuth2 pour ce modèle.
+  * **clientName** `nullOr str` Remplacer le nom du client kanidm. Par défaut : dnfLib.oauth2ClientName.
+  * **displayName** `str` Nom lisible montré sur l'écran de consentement kanidm.
+  * **imageFile** `path` Icône de l'application. Téléchargée de nouveau à chaque exécution de kanidm-provision.
+  * **redirectPaths** `listOf str` Chemins de redirection OAuth2 (un par URL de rappel acceptée).
+  * **landingPath** `str` Chemin du point d'entrée de connexion automatique sur le service.
+  * **enableLegacyCrypto** `bool` Autoriser les anciens algorithmes de signature JWT (par ex. RS256).
+  * **allowInsecureClientDisablePkce** `bool` Désactiver PKCE sur le client (uniquement pour les clients qui ne l'implémentent pas).
+  * **preferShortUsername** `nullOr bool` Utiliser le nom d'utilisateur court (sans domaine) dans la réclamation `preferred_username`.
+  * **extra** `attrs` Attributs supplémentaires fusionnés dans le client provisionné (claimMaps, etc.).
+
+```nix
+darkone.service.idm = {
+  enable = false;
+  oauth2.enable = true;
+  oauth2.clientName = null;
+  oauth2.displayName = null;
+  oauth2.imageFile = null;
+  oauth2.redirectPaths = [ ];
+  oauth2.landingPath = "/";
+  oauth2.enableLegacyCrypto = false;
+  oauth2.allowInsecureClientDisablePkce = false;
+  oauth2.preferShortUsername = null;
+  oauth2.extra = { };
+};
+```
+
+{/* t:p cd274ca0dd9a219fba59c4353516a1833000a2ba53c6b455481d31261bf00aa0 */}
+### &#x2728; darkone.service.immich
+
+Service Immich (gestion de photos) entièrement configuré.
+
+* **enable** `bool` Activer le service immich local
+* **enableMachineLearning** `bool` Activer les fonctionnalités d'apprentissage automatique (reconnaissance faciale, détection d'objets)
+* **enableRedis** `bool` Activer Redis pour la mise en cache (recommandé pour les performances)
+
+```nix
+darkone.service.immich = {
+  enable = false;
+  enableMachineLearning = false;
+  enableRedis = false;
+};
+```
+
+{/* t:p b18993dbc78f45d4065a8c5255f6fbbb0c40a6ee3ffb8820e27d4287abe377f4 */}
+### &#x2728; darkone.service.jellyfin
+
+Un serveur jellyfin entièrement configuré.
+
+* **enable** `bool` Activer le service jellyfin
+
+```nix
+darkone.service.jellyfin.enable = false;
+```
+
+{/* t:p a6fd0c8ed604bff0af81094fd0ac4343ab2f98f252ceecb4421df3d32b0c023c */}
+### &#x2728; darkone.service.jitsi-meet
+
+Un service jitsi-meet entièrement configuré.
+
+* **enable** `bool` Activer le service jitsi-meet local
+
+```nix
+darkone.service.jitsi-meet.enable = false;
+```
+
+{/* t:p 723081f6bc44c0dce2ab1228fc6a4c047dd9355484a6c8d4eb3888543dada8bb */}
+### &#x2728; darkone.service.loki
+
+Loki + Alloy, statistiques HTTP avec grafana.
+
+:::note
+Collecte centralisée des journaux d'accès Caddy, consommés par Grafana via une source de données Loki provisionnée et un tableau de bord dédié.
+
+Modèle double aligné avec monitoring.nix :
+- `enable`   : déploie le serveur Loki + la source de données Grafana sur le même hôte qui exécute le service `monitoring` (Grafana).
+- `isClient` : déploie Alloy sur chaque hôte exécutant Caddy. Les journaux Caddy sont attendus en JSON à `/var/log/caddy/access-*.log`
+  (voir `dnf/modules/system/services.nix`).
+
+Par défaut, `enable` suit `darkone.service.monitoring.enable` et `isClient` suit `services.caddy.enable` : la configuration est entièrement automatique une fois que la surveillance et Caddy sont actifs.
+:::
+
+:::tip[Débogage et nettoyage manuel]
+Symptômes les plus courants après une (dés)activation de Loki ou un changement de format de journal Caddy :
+
+**1. « AUCUNE DONNÉE » sur le tableau de bord Caddy malgré les demandes entrantes.**
+   Vérifiez la chaîne d'ingestion de bout en bout :
+   ```sh
+   # Sur l'hôte Caddy : Alloy est-il en cours d'exécution ? lit-il les fichiers ?
+   sudo systemctl status alloy --no-pager
+   sudo journalctl -u alloy -n 100 --no-pager | grep -iE 'error|permission'
+   ls -la /var/log/caddy/access-*.log   # must be caddy:caddy
+
+   # Sur l'hôte de surveillance : Loki reçoit-il quelque chose ?
+   # (remplacez <IP> par l'adresse IP interne de l'hôte de surveillance, Loki ne
+   # se lie pas à 127.0.0.1 — voir http_listen_address = bindAddr)
+   curl -s http://<IP>:3100/loki/api/v1/labels | jq
+   curl -sG http://<IP>:3100/loki/api/v1/query \
+        --data-urlencode 'query={job="caddy"}' | jq '.data.result | length'
+   ```
+
+**2. `alloy.service: mkdir data-alloy/remotecfg: permission denied`.**
+   Propriété orpheline de `/var/lib/alloy` héritée d'un ancien DynamicUser.
+   Le service `ExecStartPre` le corrige normalement, mais s'il est bloqué (par ex. unité en `start-limit-hit`) :
+   ```sh
+   sudo systemctl stop alloy
+   sudo chown -R caddy:caddy /var/lib/alloy
+   sudo systemctl reset-failed alloy
+   sudo systemctl start alloy
+   ```
+
+**3. Grafana refuse de démarrer : `Datasource provisioning error: data source not found`.** Conflit d'UID dans la base de données SQLite après un changement de provision
+   (généralement en passant d'un UID généré automatiquement à `uid = "loki"`).
+   L'option `deleteDatasources` gère ceci en théorie ; sinon, purge manuelle :
+   ```sh
+   sudo systemctl stop grafana
+   sudo sqlite3 /var/lib/grafana/grafana.db \
+        "DELETE FROM data_source WHERE name='Loki';"
+   sudo systemctl reset-failed grafana
+   sudo systemctl start grafana
+   ```
+
+**4. Fichiers journaux Caddy obsolètes** (ancien nommage avec `:` ou schéma, par ex. `access-http:__nextcloud.log`). Inoffensifs mais polluent la sortie de la queue d'Alloy.
+   Nettoyez après une migration :
+   ```sh
+   sudo rm /var/log/caddy/access-{http,https}:__*.log
+   sudo rm /var/log/caddy/access-:*.log     # variants `:80`, `:443`
+   sudo systemctl reload caddy              # optional
+   ```
+:::
+
+* **enable** `bool` Déploie le serveur Loki + la source de données Grafana (colocalisée avec Grafana).
+* **isClient** `bool` Déploie Alloy pour collecter les journaux d'accès Caddy locaux.
+* **retentionTime** `str` Durée de rétention des journaux dans Loki (30 jours par défaut).
+
+```nix
+darkone.service.loki = {
+  enable = config.darkone.service.monitoring.enable;
+  isClient = config.services.caddy.enable;
+  retentionTime = "720h";
+};
+```
+
+{/* t:p 6be9a7955bf1d425c133f7761e8ceec954f4d81770ed1194ff1e611294c72a68 */}
+### &#x2728; darkone.service.matrix
+
+Serveur DNF matrix (synapse).
+
+* **enable** `bool` Activer le service matrix (synapse)
+
+```nix
+darkone.service.matrix.enable = false;
+```
+
+{/* t:p 985f887f19e6cd4a0f22d72fcda7fc97b87012446cc1759bf5f3e3f44cd31108 */}
+### &#x2728; darkone.service.mealie
+
+Gestion de recettes Mealie
+
+* **enable** `bool` Activer le service mealie
+
+```nix
+darkone.service.mealie.enable = false;
+```
+
+{/* t:p 709212038849ee75946cfb518bc7d2455082e1db87fa24c65da4049f902e06d3 */}
+### &#x2728; darkone.service.minio
+
+Un service MinIO S3 local entièrement configuré. (wip)
+
+Fournit un backend de stockage d'objets compatible S3 interne accessible uniquement sur 127.0.0.1:9000. L'interface Web de la console s'exécute sur 127.0.0.1:9001 pour l'administration et le débogage.
+
+:::note
+Les buckets ne sont PAS créés automatiquement par ce module.
+Chaque service consommateur est responsable de la création de ses propres buckets via un hook postStart systemd en utilisant l'outil `mc` (MinIO Client).
+Les identifiants sont gérés via sops.
+:::
+
+* **enable** `bool` Activer le service MinIO S3 local
+
+```nix
+darkone.service.minio.enable = false;
+```
+
+{/* t:p 42bd6bbe1415be85b99e423e079321f213c016a694fa4c25f6a2f6c5240c5d2c */}
+### &#x2728; darkone.service.monitoring
+
+Module de supervision avec prometheus, grafana et node exporter.
+
+:::tip
+Ce module est préconfiguré avec une configuration qui vous permet de surveiller le système d'exploitation, l'activité réseau, les ressources et les performances.
+Pour chaque zone :
+
+- Tous les nœuds avec la balise « monitoring-node » contiennent prometheus + node exporter.
+- Le nœud avec le service « monitoring » contient grafana.
+- Un seul hôte de surveillance par zone est accepté.
+- Une balise « monitoring-node:[zone] » est attachée à un hôte de surveillance de la zone conçue.
+:::
+
+* **enable** `bool` Activer la surveillance avec prometheus, grafana et node exporter
+* **isNode** `bool` Est un nœud de surveillance
+* **retentionTime** `str` Durée de rétention des métriques Prometheus
+* **kioskTarget** `str` Cible (relative, pas de `/`) pour la redirection automatique vers Grafana à partir de la racine du domaine de surveillance. Remplacée par le module Loki lorsqu'il est actif pour pointer vers un tableau de bord d'accueil multi-sources.
+
+```nix
+darkone.service.monitoring = {
+  enable = false;
+  isNode = lib.hasAttrByPath [ "features" "monitoring-node" ] host;
+  retentionTime = "30d";
+  kioskTarget = "d/dnf-monitoring-home/home?kiosk";
+};
+```
+
+{/* t:p 8abafbbeea97844d60a649a51c5fe8f4eb1dd1721f19a8456bd4f5a8fdd47240 */}
+### &#x2728; darkone.service.ncps
+
+Proxy de cache Nix avec le module NCPS.
+
+Ce module est activé par le cœur. Le serveur et les clients sont automatiquement détectés.
+
+:::tip
+Pour vérifier si un hôte contient la passerelle locale dans les substituteurs :
+
+```sh
+nix --extra-experimental-features nix-command show-config | grep substituters
+telnet <your-gateway> 8501
+```
+:::
+
+* **enable** `bool` Activer le proxy de cache nix pour les packages
+* **dataPath** `str` Dossier de cache du proxy de cache nix
+* **extraOptions** `attrs` Options supplémentaires de services.ncps
+
+```nix
+darkone.service.ncps = {
+  enable = false;
+  dataPath = "/var/cache/ncps";
+  extraOptions = { };
+};
+```
+
+{/* t:p 04c63d6522b245488795514bff87f61c2e4859e865024a341114e997134944b7 */}
+### &#x2728; darkone.service.nextcloud
+
+Service Nextcloud entièrement configuré.
+
+:::caution[Secret sops requis]
+Lorsqu'il est activé, ce module lit le mot de passe administrateur Nextcloud à partir du secret sops `nextcloud-admin-password`. Ajoutez l'entrée à `usr/secrets/` avant de reconstruire, sinon l'activation sops-nix échouera.
+:::
+
+* **enable** `bool` Activer le service nextcloud local
+* **adminUser** `str` Nom d'utilisateur administrateur pour Nextcloud
+
+```nix
+darkone.service.nextcloud = {
+  enable = false;
+  adminUser = "admin";
+};
+```
+
+{/* t:p f5c1a3bbc132e8d12d2b7cb4528d0dc501a736ba23dcb03ae5beea479308efde */}
+### &#x2728; darkone.service.nfs
+
+Serveur NFS + client pour les partages résidentiels.
+
+:::note
+Ce module est activé si un serveur nfs est déclaré dans le réseau local. Il crée :
+
+- Un partage (srv-dirs.homes) sur le serveur.
+- Des répertoires de montage (/mnt/nfs/homes/[user]) sur les clients.
+
+Le script du gestionnaire de domicile nfs relie les répertoires xdg aux répertoires de montage.
+Dans le fichier config.yaml (hôtes) :
+
+- Un seul hôte dispose d'un service `service.nfs`.
+- Les clients ont besoin de `features = [ "nfs-client" ]`.
+:::
+
+* **enable** `bool` Activer le serveur NFS DNF (éviter d'activer manuellement)
+* **serverDomain** `str` FQDN du serveur NFS
+
+```nix
+darkone.service.nfs = {
+  enable = hasServer && (isServer || isClient);
+  serverDomain = "nfs";
+};
+```
+
+{/* t:p d3c0fa3b19d29d002cae847c48764064e5cbd739cba3d6171b8d22a9289a4f9b */}
+### &#x2728; darkone.service.outline
+
+Un wiki outline complètement configuré.
+
+* **enable** `bool` Activer le service outline local
+
+```nix
+darkone.service.outline.enable = false;
+```
+
+{/* t:p 2df49a083fb067c0293b5a2875974382bdf4ecbf582010a5ac7698d69f80e418 */}
+### &#x2728; darkone.service.postfix
+
+Relais SMTP Postfix.
+
+* **enable** `bool` Activer le relais SMTP Postfix
+
+```nix
+darkone.service.postfix.enable = false;
+```
+
+{/* t:p f15848be533c083d36d6280c1691a38b4b77488f5b1d384c6c193fd86efe1c11 */}
+### &#x2728; darkone.service.printing
+
+Imprimantes et scanners.
+
+* **enable** `bool` Paquets utiles par défaut
+* **loadAll** `bool` Imprimantes et scanners complets
+* **enableScanners** `bool` Activer les scanners
+* **enableHpPrinters** `bool` Imprimantes HP uniquement
+* **enableManualInstall** `bool` Installation manuelle des pilotes
+
+```nix
+darkone.service.printing = {
+  enable = false;
+  loadAll = false;
+  enableScanners = false;
+  enableHpPrinters = false;
+  enableManualInstall = false;
+};
+```
+
+{/* t:p 511d2fe425093b056ced01faf0b8a6868a912cf73b7da306c99656aeaa607fb5 */}
+### &#x2728; darkone.service.restic
+
+Module de sauvegarde Restic avec la configuration DNF.
+
+:::tip
+L'activation de « restic » dans les services d'hôte (config.yaml) lance le serveur REST.
+Mettez les paramètres de sauvegarde locaux dans la configuration nix (configuration de la machine par exemple).
+
+```nix
+# usr/machines/my-desktop/default.nix
+darkone.service.restic = {
+  enable = true;
+  enableSystemBackup = true;
+};
+:::
+
+Paramètres par défaut :
+
+```
+/srv/nfs/(homes|common) -> /mnt/backup/restic/[host]/srv/nfs
+/mnt/medias/(music|videos) -> /mnt/backup/restic/[host]/mnt/medias
+/ -> /mnt/backup/restic/[host]/system
+```
+
+* **enable** `bool` Activer le service de sauvegarde restic principal
+* **enableDryRun** `bool` Mode essai
+* **enableServer** `bool` Activer le serveur rest restic
+* **enableWaitRemoteFs** `bool` Déclencher le service restic uniquement si le service remote-fs est démarré
+* **enableSystemBackup** `bool` Activer la sauvegarde complète du système sauf /srv, /mnt et les fichiers cache
+* **enableExtraSystemBackup** `bool` Activer la sauvegarde du système sur un référentiel supplémentaire
+* **mainBackupZone** `str` Zone de sauvegarde principale (pour sélectionner le bon mot de passe)
+* **extraBackupZone** `str` Zone de sauvegarde supplémentaire (pour sélectionner le bon mot de passe)
+* **repositoryRoot** `str` Chemin racine de la cible de sauvegarde principale (par défaut local)
+* **extraRepositoryRoot** `str` Chemin racine de la cible de sauvegarde supplémentaire
+* **enableNfsBackup** `bool` Sauvegarde des répertoires /srv/nfs/&lt;xxx&gt;
+* **enableExtraNfsBackup** `bool` Activer la sauvegarde NFS sur un référentiel supplémentaire
+* **nfsPaths** `listOf str` Répertoires NFS (/srv/nfs/&lt;xxx&gt;) à inclure dans la configuration de sauvegarde
+* **enableMediasBackup** `bool` Sauvegarde des répertoires /srv/medias/&lt;xxx&gt;
+* **enableExtraMediasBackup** `bool` Activer la sauvegarde des médias sur un référentiel supplémentaire
+* **mediasPaths** `listOf str` Répertoires NFS (/srv/medias/&lt;xxx&gt;) à inclure dans la configuration de sauvegarde
+
+```nix
+darkone.service.restic = {
+  enable = false;
+  enableDryRun = false;
+  enableServer = false;
+  enableWaitRemoteFs = false;
+  enableSystemBackup = false;
+  enableExtraSystemBackup = false;
+  mainBackupZone = zone.name;
+  extraBackupZone = "";
+  repositoryRoot = "rest:restic.${zone.domain}:8888";
+  extraRepositoryRoot = "rest:restic.${network.zones.other-zone.domain}:8888";
+  enableNfsBackup = false;
+  enableExtraNfsBackup = false;
+  nfsPaths = [ ];
+  enableMediasBackup = false;
+  enableExtraMediasBackup = false;
+  mediasPaths = [ ];
+};
+```
+
+### &#x2728; darkone.service.searx
+
+Un moteur de recherche durci complètement configuré.
+
+* **enable** `bool` Activer le proxy de recherche local
+
+```nix
+darkone.service.searx.enable = false;
+```
+
+### &#x2728; darkone.service.tailscale
+
+Service client Tailscale pour HCS.
+
+:::note
+Un client tailscale pour connecter un hôte externe à HCS.
+Ne l'utilisez pas pour connecter une passerelle à un sous-réseau tailnet.
+:::
+
+* **enable** `bool` Activer le client tailscale pour se connecter à HCS
+* **isGateway** `bool` Ce nœud tailscale est une passerelle de sous-réseau
+* **isExitNode** `bool` Configurer ce client comme nœud de sortie
+
+```nix
+darkone.service.tailscale = {
+  enable = false;
+  isGateway = false;
+  isExitNode = false;
+};
+```
+
+### &#x2728; darkone.service.turn
+
+Serveur Coturn (matrix).
+
+Ajoutez des entrées DNS pour optimiser :
+
+```
+Type,Name,Priority,Pds,Port,Target
+SRV,_stun._udp,0,0,3478,turn.mydomain.tld
+SRV,_stun._tcp,0,0,3478,turn.mydomain.tld
+SRV,_turn._udp,0,0,3478,turn.mydomain.tld
+SRV,_turn._tcp,0,0,3478,turn.mydomain.tld
+SRV,_turns._tcp,0,0,5349,turn.mydomain.tld
+```
+
+* **enable** `bool` Activer le service turn local (vidéo)
+
+```nix
+darkone.service.turn.enable = false;
+```
+
+### &#x2728; darkone.service.vaultwarden
+
+Un serveur vaultwarden complètement configuré (en cours).
+
+* **enable** `bool` Activer le service Vaultwarden local
+* **enableSmtp** `bool` Activer SMTP pour envoyer des e-mails (recommandé)
+
+```nix
+darkone.service.vaultwarden = {
+  enable = false;
+  enableSmtp = true;
+};
+```

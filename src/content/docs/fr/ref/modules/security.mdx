@@ -1,0 +1,570 @@
+---
+title: Modules de sécurité
+sidebar:
+  order: 4
+---
+
+{/* t:translated-from en */}
+{/* t:h 54bf71e39f5a006bed64500a4118fb1a41018b3437fdfa2d4164d8c568f96e11 */}
+
+{/* t:p 8ecef4af0b6d24082a8fd5937e839950a22f3bf1ab86a9d9eaed07d97a5bf905 */}
+:::note
+**Un module de sécurité** renforce le système, ses programmes et ses fonctionnalités.
+:::
+
+{/* t:p f0c7676bfbaa4b8e540cd41d0a07740ef9d0446af580eb1d383781a98dcb0456 */}
+### &#x1F511; darkone.security.complement
+
+Mesures supplémentaires transversales — Annexe A (C1–C12). (en cours)
+
+Ces mesures n'ont pas de numéro ANSSI mais sont essentielles à l'esprit du guide.
+Couvre les correctifs linux-hardened (C1), LSM Lockdown (C2), USBGuard (C3),
+nftables deny-by-default (C4), SSH durci (C5), LUKS2 (C6), NTP/NTS (C7),
+DNS sécurisé (C8), vidages de mémoire désactivés (C9), anti-brute-force PAM (C10),
+bannières légales (C11) et restriction cron/at (C12).
+
+:::caution[Activation]
+L'option `enable` suit `darkone.system.security.enable` par défaut.
+Les règles (Rxx/Cxx) sont activées selon le niveau, la catégorie et les exclusions
+définis dans `darkone.system.security` (via `isActive`).
+:::
+
+:::note[Niveau LSM Lockdown (C2)]
+- `none`: aucun Lockdown.
+- `integrity`: interdit les modifications du noyau via l'espace utilisateur.
+- `confidentiality`: idem + interdit la lecture des secrets du noyau.
+:::
+
+:::caution[C2 — LSM Lockdown]
+`lockdown=confidentiality` interdit kexec, les écritures /dev/mem, MSR, l'hibernation.
+Casse `dmidecode` sur certaines zones, `flashrom`, `i2c-tools`.
+:::
+
+:::caution[C4 — Filtrage sortant]
+La politique deny-by-default sortante casse les outils qui atteignent les CDN (curl,
+téléchargements du noyau). Requis : un proxy HTTP(S) sortant contrôlé.
+:::
+
+:::caution[C5 — SSH durci]
+SSH tunnels, forwarding d'agent et X11 désactivés. Adaptez les workflows administrateur
+à ProxyJump (`ssh -J`). Ce module remplace `core.nix` pour SSH.
+:::
+
+* **enable** `bool` Activer les mesures supplémentaires ANSSI (C1–C12).
+* **lockdownLevel** `enum [ "none" "integrity" "confidentiality" ]` Niveau LSM Lockdown (C2)
+* **lsmStack** `listOf str` Ordre de pile LSM (C2, R11, R20). Modifie boot.kernelParams lsm=...
+* **ntpServers** `listOf str` Serveurs NTP/NTS (C7).
+* **useNts** `bool` Activer NTS (Network Time Security) pour l'authentification NTP (C7).
+* **sshBanner** `str` Bannière SSH affichée avant authentification (C11).
+* **cronAllowedUsers** `listOf str` Utilisateurs autorisés à programmer des tâches cron (C12).
+* **egressAllowlist** `listOf str` IP/CIDR autorisés en sortie pour le filtrage nftables sortant strict (C4).
+
+```nix
+darkone.security.complement = {
+  enable = false;
+  lockdownLevel = "integrity";
+  lsmStack = [ ];
+  ntpServers = [ ];
+  useNts = true;
+  sshBanner = ''
+        *** Access restricted to authorized personnel ***
+        All connections are logged and may be subject to prosecution.
+      '';
+  cronAllowedUsers = [ ];
+  egressAllowlist = [ ];
+};
+```
+
+{/* t:p 2a965182b32d7af5b9e9e7a367807e0338a4406d467e0d074aa92eb3397bc4df */}
+### &#x1F511; darkone.security.filesystem
+
+Partitionnement, arborescence de fichiers et permissions de fichiers (R28–R29, R50–R57). (en cours)
+
+Couvre les options de montage sécurisées (R28), la restriction de /boot (R29),
+les permissions des fichiers sensibles (R50), les mots de passe hors du magasin (R51),
+les sockets (R52), les fichiers orphelins (R53), le bit collant (R54),
+les répertoires temporaires par utilisateur (R55) et setuid (R56, R57).
+
+:::caution[Activation]
+L'option `enable` suit `darkone.system.security.enable` par défaut.
+Les règles (Rxx/Cxx) sont activées selon le niveau, la catégorie et les exclusions
+définis dans `darkone.system.security` (via `isActive`).
+:::
+
+:::caution[R28 — noexec /tmp]
+`noexec` sur /tmp casse de nombreux installateurs et compilateurs (pip, cargo, gcc).
+Contournement : `export TMPDIR=$XDG_RUNTIME_DIR` dans les profils shell.
+:::
+
+:::caution[R29 — /boot noauto]
+`noauto` sur /boot nécessite un remontage manuel à chaque mise à jour NixOS.
+Un wrapper `nixos-rebuild` doit assurer le montage/démontage automatique.
+:::
+
+* **enable** `bool` Activer le durcissement du système de fichiers ANSSI (R28–R29, R50–R57).
+* **allowedSetuid** `listOf str` Liste blanche des binaires setuid/setgid tolérés (R56, R57).
+
+```nix
+darkone.security.filesystem = {
+  enable = false;
+  allowedSetuid = [ ];
+};
+```
+
+{/* t:p c6ded5ab27c1e83903c5b94036a686004124ab6ff6dc269c0a0ceafe4bf226a1 */}
+### &#x1F511; darkone.security.integrity
+
+Intégrité du système de fichiers — HIDS (R76–R77). (en cours)
+
+Couvre le scellement et la vérification d'intégrité via AIDE (R76) et la protection
+de la base de données scellée avec signature GPG plus copie distante (R77).
+
+:::caution[Activation]
+L'option `enable` suit `darkone.system.security.enable` par défaut.
+Les règles (Rxx/Cxx) sont activées selon le niveau, la catégorie et les exclusions
+définis dans `darkone.system.security` (via `isActive`).
+:::
+
+:::caution[R76 — AIDE]
+Une analyse complète peut prendre 15–60 min selon la taille du FS et du CPU.
+Planifiez pendant les heures creuses. Les faux positifs fréquents sur /etc/resolv.conf,
+/var/lib, /var/cache — ajoutez-les aux exclusions.
+:::
+
+:::caution[R77 — Base de données signée]
+La base de données AIDE doit être re-signée à chaque mise à jour majeure NixOS
+(le magasin change). Planifiez une procédure de mise à jour de base.
+:::
+
+* **enable** `bool` Activer l'intégrité ANSSI HIDS — AIDE (R76–R77).
+* **aideRemoteCopy** `nullOr ( submodule { options = { host = lib.mkOption { type = str; description = "Remote host for the AIDE database copy."; }; sshKeyFile = lib.mkOption { type = path; description = "Path to the private SSH key for the remote copy."; }; }; } )` Copie distante de la base de données AIDE signée par GPG (R77). null = désactivé.
+  * **host** `str` Hôte distant pour la copie de la base de données AIDE.
+  * **sshKeyFile** `path` Chemin vers la clé SSH privée pour la copie distante.
+
+```nix
+darkone.security.integrity = {
+  enable = false;
+  aideRemoteCopy = null;
+  aideRemoteCopy.host = null;
+  aideRemoteCopy.sshKeyFile = null;
+};
+```
+
+{/* t:p 552ab268ec1eeafb70af047683ab0f8e3ec8ab59bd2637a283300b45831a7973 */}
+### &#x1F511; darkone.security.journaling
+
+Journalisation et auditd (R71–R73). (en cours)
+
+Couvre la journalisation persistante avec forwarding TLS (R71),
+journaux dédiés par service (R72) et auditd avec règles ANSSI (R73).
+
+:::caution[Activation]
+L'option `enable` suit `darkone.system.security.enable` par défaut.
+Les règles (Rxx/Cxx) sont activées selon le niveau, la catégorie et les exclusions
+définis dans `darkone.system.security` (via `isActive`).
+:::
+
+:::caution[R71 — Seal=yes]
+`Seal=yes` nécessite `journalctl --setup-keys` (clé d'audit hors bande).
+Sans cette clé, l'intégrité du journal ne peut pas être vérifiée.
+:::
+
+:::caution[R73 — auditd immuable]
+La configuration `audit.rules = [ "-e 2" ]` rend auditd immuable : tout
+changement de règle nécessite un redémarrage. Testez en staging avant le déploiement.
+:::
+
+* **enable** `bool` Activer la journalisation ANSSI et auditd (R71–R73).
+
+```nix
+darkone.security.journaling.enable = false;
+```
+
+{/* t:p 5187e3a3de0fd152d237ace56a493cf42ae7f3bf8cc21c52f7fb3c69956cc7a1 */}
+### &#x1F511; darkone.security.kernel-build
+
+Configuration du noyau statique — nécessite recompilation (R15–R27). (en cours)
+
+Ces règles nécessitent un noyau personnalisé via `boot.kernelPackages`.
+NixOS le permet via `structuredExtraConfig`. Toutes ces règles portent
+le tag `kernel-recompile` : elles sont ignorées si ce tag est dans `excludes`.
+
+:::caution[Activation]
+L'option `enable` suit `darkone.system.security.enable` par défaut.
+Les règles (Rxx/Cxx) sont activées selon le niveau, la catégorie et les exclusions
+définis dans `darkone.system.security` (via `isActive`).
+:::
+
+:::danger[Pas de cache binaire NixOS]
+L'activation de ces règles implique une recompilation locale du noyau
+(~30–60 min par mise à jour selon le CPU). Aucun cache binaire public ne couvre
+un noyau personnalisé. Réservez à la flotte avec les bons outils MCO.
+:::
+
+:::caution[Modules hors arborescence]
+R18 (modules signés) rend la signature de tout module externe obligatoire
+(NVIDIA, ZFS, VirtualBox, v4l2loopback…) via le pipeline Nix.
+:::
+
+* **enable** `bool` Activer le module de recompilation du noyau ANSSI (R15–R27).
+
+```nix
+darkone.security.kernel-build.enable = false;
+```
+
+{/* t:p 56c0860c610faff6fab74d8ba684b2307911d524dd061bac32113f560c4b13e1 */}
+### &#x1F511; darkone.security.kernel-params
+
+Configuration dynamique du noyau : paramètres d'amorçage et sysctls (R8–R14). (en cours)
+
+Règles applicables sans recompiler le noyau. Couvre les options mémoire (R8),
+les sysctls système (R9), la désactivation du chargement de modules (R10), Yama/ptrace (R11),
+les sysctls réseau IPv4 (R12), la désactivation d'IPv6 (R13),
+et les sysctls du système de fichiers (R14).
+
+:::caution[Activation]
+L'option `enable` suit `darkone.system.security.enable` par défaut.
+Les règles (Rxx/Cxx) sont activées selon le niveau, la catégorie et les exclusions
+définis dans `darkone.system.security` (via `isActive`).
+:::
+
+:::caution[R8 — SMT désactivé]
+`mds=full,nosmt` et `mitigations=auto,nosmt` désactivent l'hyperthreading,
+ce qui réduit le débit multi-thread d'environ 30 %. Évaluez sur les serveurs de calcul
+avant d'activer le niveau `intermediary`.
+:::
+
+:::caution[R9 — unprivileged_userns_clone=0]
+Casse Docker rootless, Podman rootless, bubblewrap non-suid et Flatpak.
+Utilisez l'exception R9 si ces outils sont requis.
+:::
+
+:::caution[R10 — Modules désactivés]
+Tout nouvel appareil nécessitant un module non pré-chargé nécessite un redémarrage.
+Mutuellement exclusif avec `nixos-rebuild switch` côté pilote.
+:::
+
+* **enable** `bool` Activer les paramètres du noyau dynamiques ANSSI (R8–R14).
+
+```nix
+darkone.security.kernel-params.enable = false;
+```
+
+{/* t:p cf19481d7313bb46e2ce877cec8691bcbfaebcaf1ee4bc0f98bd332f892ccf66 */}
+### &#x1F511; darkone.security.mac
+
+Contrôle d'accès obligatoire — MAC (R37, R45–R49). (en cours)
+
+R37 est une méta-règle : valide si au moins R45 (AppArmor) ou R46 (SELinux)
+est active. SELinux (R46–R49) n'est pas supporté sur NixOS et est exclu
+par défaut via `exceptions`. AppArmor (R45) est partiellement supporté.
+
+:::tip[Mise en sandbox]
+Lorsque MAC n'est pas disponible, NixOS s'appuie souvent sur les options systemd
+(systemd sandbox) pour isoler les services.
+:::
+
+:::note[NixOS et MAC]
+SELinux est structurellement non supporté sur NixOS (R46–R49 sont des exceptions par
+défaut). AppArmor est disponible mais avec peu de profils prêts à l'emploi.
+L'absence de profil pour un service exposé est une fausse sensation de sécurité.
+:::
+
+:::caution[Activation]
+L'option `enable` suit `darkone.system.security.enable` par défaut.
+Les règles (Rxx/Cxx) sont activées selon le niveau, la catégorie et les exclusions
+définis dans `darkone.system.security` (via `isActive`).
+:::
+
+:::caution[Tag no-mac]
+Utilisez le tag `no-mac` dans `excludes` pour désactiver R37 et R45 avec une
+justification explicite dans `exceptions.R37.rationale`.
+:::
+
+* **enable** `bool` Activer le module MAC ANSSI — AppArmor/SELinux (R37, R45–R49).
+
+```nix
+darkone.security.mac.enable = false;
+```
+
+{/* t:p 679591abada7a1ad59bb5336c3a5a78e9f75b99545f8dde667d0b634aa342462 */}
+### &#x1F511; darkone.security.mta
+
+Gestion locale du courrier (R74–R75). (en cours)
+
+Couvre l'MTA local durci à loopback-only (R74) et les alias mail
+acheminés vers l'adresse de l'administrateur (R75). Ces règles s'appliquent uniquement si
+un service MTA est actif (Postfix ou OpenSMTPD).
+
+:::caution[Activation]
+L'option `enable` suit `darkone.system.security.enable` par défaut.
+Les règles (Rxx/Cxx) sont activées selon le niveau, la catégorie et les exclusions
+définis dans `darkone.system.security` (via `isActive`).
+:::
+
+* **enable** `bool` Activer le durcissement MTA ANSSI (R74–R75).
+
+```nix
+darkone.security.mta.enable = false;
+```
+
+{/* t:p 23a4b22aa98bf0bf0d21a79e37228d7d795edc176c9e768c3c87518d4489fff8 */}
+### &#x1F511; darkone.security.network
+
+Services réseau — isolation et supervision (R78–R80). (en cours)
+
+Couvre l'isolation des services réseau (R78 : catégorie serveur),
+durcissement et monitoring des services exposés (R79 : fail2ban,
+en-têtes HTTP, TLS ANSSI) et réduction de la surface réseau (R80).
+
+:::caution[Activation]
+L'option `enable` suit `darkone.system.security.enable` par défaut.
+Les règles (Rxx/Cxx) sont activées selon le niveau, la catégorie et les exclusions
+définis dans `darkone.system.security` (via `isActive`).
+:::
+
+:::caution[R79 — CSP strict]
+`Content-Security-Policy: default-src 'self'` casse les outils sans nonces
+(tableaux de bord avec CDN, widgets tiers). HSTS preload est irréversible —
+définissez uniquement sur un domaine entièrement contrôlé.
+:::
+
+:::caution[R80 — Filtrage des écouteurs]
+Certains services (KDE Connect, mDNS) écoutent par défaut sur toutes les interfaces.
+Déclarez-les dans `network.publicListeners` ou reconfigurez-les.
+:::
+
+* **enable** `bool` Activer le durcissement réseau ANSSI (R78–R80).
+* **exposedServices** `listOf str` Services publics pour lesquels fail2ban et supervision seront activés (R79).
+* **publicListeners** `listOf str` Services autorisés à écouter sur 0.0.0.0 / :: (R80).
+* **httpsHeaders** `bool` Ajoute les en-têtes de sécurité HTTP ANSSI dans Nginx/Caddy (R79).
+* **tlsCiphers** `listOf str` Suite de chiffrement TLS ANSSI pour Nginx (R79).
+
+```nix
+darkone.security.network = {
+  enable = false;
+  exposedServices = [ ];
+  publicListeners = [ ];
+  httpsHeaders = true;
+  tlsCiphers = [ ];
+};
+```
+
+{/* t:p 59c02830c04ae62b78e7465b2918ebb2442a13fc10cf27cf7f74ff80f05ff7db */}
+### &#x1F511; darkone.security.nss
+
+NSS — Bases de données utilisateurs distantes (R69–R70). (en cours)
+
+Règles applicables uniquement si une NSS externe est active (SSSD, nslcd).
+Pas actuellement pertinent pour DNF ; voir ce qui peut être fait avec Kanidm + PAM.
+
+Couvre le durcissement des bases de données distantes (R69 : TLS obligatoire) et
+la séparation des comptes système et annuaire (R70).
+
+:::caution[Activation]
+L'option `enable` suit `darkone.system.security.enable` par défaut.
+Les règles (Rxx/Cxx) sont activées selon le niveau, la catégorie et les exclusions
+définis dans `darkone.system.security` (via `isActive`).
+:::
+
+* **enable** `bool` Activer le durcissement NSS ANSSI (R69–R70).
+
+```nix
+darkone.security.nss.enable = false;
+```
+
+{/* t:p 58daf1bcf47ce2d5b46862436355709dc97c42fbb2f8fbf8b38eb722189e1fa1 */}
+### &#x1F511; darkone.security.packages
+
+Gestion des paquets et mises à jour (R58–R61). (en cours)
+
+Couvre l'installation uniquement de ce qui est strictement nécessaire (R58), des référentiels de confiance (R59),
+des référentiels durcis (R60 : linux_hardened) et des mises à jour régulières (R61).
+
+:::caution[Activation]
+L'option `enable` suit `darkone.system.security.enable` par défaut.
+Les règles (Rxx/Cxx) sont activées selon le niveau, la catégorie et les exclusions
+définis dans `darkone.system.security` (via `isActive`).
+:::
+
+:::caution[R59 — allow-import-from-derivation=false]
+Casse certains flakes complexes (Haskell, Python lourd avec générateurs Nix).
+Documentez les exceptions dans nix.settings.
+:::
+
+:::caution[R60 — linux_hardened]
+Le noyau linux_hardened peut être en retard d'une version mineure par rapport à nixpkgs-unstable.
+Les modules tiers (NVIDIA, ZFS) ne sont pas garantis compatibles.
+:::
+
+* **enable** `bool` Activer la gestion des paquets ANSSI (R58–R61).
+* **trustedSubstituters** `listOf str` Liste blanche des caches binaires Nix autorisés (R59).
+* **trustedPublicKeys** `listOf str` Clés publiques pour les caches binaires autorisés (R59).
+
+```nix
+darkone.security.packages = {
+  enable = false;
+  trustedSubstituters = [ ];
+  trustedPublicKeys = [ ];
+};
+```
+
+{/* t:p c407396b10860c7cdbee2f0b33fc73932799455b0c88034a184fd1b3d0cfde5e */}
+### &#x1F511; darkone.security.pam
+
+PAM — Authentification et stockage des mots de passe (R67–R68). (en cours)
+
+Couvre l'authentification PAM distante sécurisée (R67 : SSSD, Kerberos, pam_faillock)
+et le stockage des mots de passe chiffrés (R68 : yescrypt).
+
+:::caution[Activation]
+L'option `enable` suit `darkone.system.security.enable` par défaut.
+Les règles (Rxx/Cxx) sont activées selon le niveau, la catégorie et les exclusions
+définis dans `darkone.system.security` (via `isActive`).
+:::
+
+:::note[Compléments]
+pam_faillock (anti brute-force) est configuré ici pour R67 et dans
+complement.nix (C10). La politique de complexité (R31) est dans users.nix.
+:::
+
+* **enable** `bool` Activer le module PAM ANSSI — authentification et mots de passe (R67–R68).
+
+```nix
+darkone.security.pam.enable = false;
+```
+
+{/* t:p 7677ff93b96e87ad5247af0fb82aecf0bfe5023ccad3b208be3787db14c0bfee */}
+### &#x1F511; darkone.security.preboot
+
+Configuration matérielle et démarrage sécurisé (R1–R7). (en cours)
+
+Couvre UEFI Secure Boot (R3), lanzaboote, mot de passe du chargeur d'amorçage (R5),
+UKIs signés (R6) et IOMMU (R7). R1 et R2 (matériel/firmware) sont
+hors de la portée de NixOS et produisent uniquement une note dans le rapport.
+
+:::caution[Activation]
+L'option `enable` suit `darkone.system.security.enable` par défaut.
+Les règles (Rxx/Cxx) sont activées selon le niveau, la catégorie et les exclusions
+définis dans `darkone.system.security` (via `isActive`).
+:::
+
+:::caution[R3/R4 — Secure Boot]
+L'intégration lanzaboote nécessite une inscription de clé physique initiale
+(`sbctl enroll-keys`). R4 (remplacement des clés Microsoft) porte un risque d'amorçage
+si la machine ne permet pas la restauration.
+:::
+
+:::caution[R7 — IOMMU]
+Peut causer des crashs avec certains GPU/Thunderbolt ; surcharge E/S ~5–15 %
+sur les tableaux NVMe à très haut débit.
+:::
+
+* **enable** `bool` Activer le démarrage sécurisé ANSSI — Secure Boot, IOMMU (R1–R7).
+
+```nix
+darkone.security.preboot.enable = false;
+```
+
+{/* t:p ce54cd48de98ec5dc22ff373035246c28bb79ec2dd9d0a12065aa0be732eed2f */}
+### &#x1F511; darkone.security.services
+
+Durcissement des services systemd (R62–R66). (en cours)
+
+Couvre la désactivation des services inutiles (R62), la réduction des fonctionnalités via
+les options de sécurité systemd (R63), la restriction des privilèges (R64),
+l'isolation (R65) et le durcissement des composants de conteneurisation (R66).
+
+:::caution[Activation]
+L'option `enable` suit `darkone.system.security.enable` par défaut.
+Les règles (Rxx/Cxx) sont activées selon le niveau, la catégorie et les exclusions
+définis dans `darkone.system.security` (via `isActive`).
+:::
+
+:::caution[R63 — MemoryDenyWriteExecute]
+Casse les runtimes JIT (Java, V8, .NET, LuaJIT, Wasm). Utilisez le
+tag `needs-jit` dans `excludes` ou excluez le service individuellement.
+:::
+
+:::caution[R66 — Docker userns-remap]
+Casse les bind-mounts hôte-conteneur (décalage UID). Migration des volumes existants
+requise avant activation.
+:::
+
+* **enable** `bool` Activer le durcissement ANSSI des services systemd (R62–R66).
+* **rootServicesAllowed** `listOf str` services systemd autorisés à s'exécuter en tant que root sans CapabilityBoundingSet (R64).
+
+```nix
+darkone.security.services = {
+  enable = false;
+  rootServicesAllowed = [ ];
+};
+```
+
+{/* t:p dc75c5d9d99ca996012e9ba428f13856e96a7462d8215997de5ba6b38348b9a7 */}
+### &#x1F511; darkone.security.sudo
+
+Durcissement de sudo (R38–R44). (en cours)
+
+Couvre le groupe sudo dédié (R38), les directives sudo durcies (R39),
+la restriction des cibles non-root (R40), la limitation NOEXEC (R41),
+l'interdiction des négations (R42), la spécification d'arguments explicite (R43),
+et l'utilisation de sudoedit (R44).
+
+:::caution[Activation]
+L'option `enable` suit `darkone.system.security.enable` par défaut.
+Les règles (Rxx/Cxx) sont activées selon le niveau, la catégorie et les exclusions
+définis dans `darkone.system.security` (via `isActive`).
+:::
+
+:::caution[R39 — requiretty]
+`requiretty` fait échouer `ssh user@host sudo cmd` sans TTY allouée.
+L'option SSH `-t` est requise : `ssh -t user@host sudo cmd`.
+:::
+
+:::caution[R39 — rootpw]
+`rootpw` force un mot de passe root partagé entre les administrateurs.
+Préférez `targetpw` ou `runaspw` selon la politique d'équipe.
+:::
+
+* **enable** `bool` Activer le durcissement sudo ANSSI (R38–R44).
+* **allowedRootRules** `listOf str` règles sudo autorisées à cibler root (R40). D'autres doivent cibler un compte de service.
+
+```nix
+darkone.security.sudo = {
+  enable = false;
+  allowedRootRules = [ ];
+};
+```
+
+{/* t:p e67787e87a68bd74ab38a9c9fc7e2e0231fca1d846b74290f7820cf1373977ed */}
+### &#x1F511; darkone.security.users
+
+Comptes utilisateurs et authentification (R30–R36). (en cours)
+
+Couvre les comptes inutilisés (R30), la politique de mots de passe (R31),
+le verrouillage d'inactivité (R32), la responsabilité des administrateurs (R33),
+les comptes de service (R34), les comptes de service uniques (R35),
+et umask (R36).
+
+:::caution[Activation]
+L'option `enable` suit `darkone.system.security.enable` par défaut.
+Les règles (Rxx/Cxx) sont activées selon le niveau, la catégorie et les
+exclusions définis dans `darkone.system.security` (via `isActive`).
+:::
+
+:::caution[R30 — mutableUsers=false]
+NixOS ne permet plus les `passwd`/`useradd` ad-hoc. Tout changement de compte
+nécessite un déploiement NixOS complet (`colmena apply`).
+:::
+
+:::caution[R36 — umask 0077]
+Casse la collaboration de groupe (`/srv/share`). Documentez que
+`chmod g+rwx <file>` est requis pour le partage de groupe.
+:::
+
+* **enable** `bool` Activer la gestion des comptes ANSSI (R30–R36).
+
+```nix
+darkone.security.users.enable = false;
+```

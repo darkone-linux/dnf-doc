@@ -54,7 +54,6 @@ update msg="":
 	#!/usr/bin/env bash
 	set -euo pipefail
 	just codegen
-	just clean
 	just translate
 	just clean
 	if [ -n "$(git status --porcelain)" ]; then

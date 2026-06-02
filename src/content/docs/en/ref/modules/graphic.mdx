@@ -1,0 +1,89 @@
+---
+title: GUI applications
+sidebar:
+  order: 6
+---
+
+{/* t:main */}
+{/* t:h f04311fe8b71e226b0190c8acebdc758eb2c76c626523d139eaa6a1b3d5a2d39 */}
+
+{/* t:p 74151db327bd5f916670c145ece57a306b07ffb721b5876b87e36ff6861228ef */}
+:::note
+**A GUI application module** installs graphical applications and their configuration optimized for DNF.
+:::
+
+{/* t:p 20f4185cfabd36595fdfb037bb750e3b98cbe241b2885ba206046e08547e796c */}
+### &#x1F5BC; darkone.graphic.gnome
+
+Pre-configured gnome environment with dependences.
+
+* **enable** `bool` Pre-configured gnome WM
+* **enableDashToDock** `bool` Dash to dock plugin
+* **enableLightDM** `bool` Enable LightDM instead of GDM
+* **enableCaffeine** `bool` Disable auto-suspend
+* **enableGsConnect** `bool` Communication with devices
+* **xkbVariant** `str` Keyboard variant. Layout is extracted from console keymap.
+
+```nix
+darkone.graphic.gnome = {
+  enable = false;
+  enableDashToDock = false;
+  enableLightDM = false;
+  enableCaffeine = false;
+  enableGsConnect = false;
+  xkbVariant = "oss";
+};
+```
+
+<hr/>
+
+{/* t:p 6e4cc84dcdeb4ebf552369f1565ee7cdcab57891db479be1a7a208fcb30ff40e */}
+### &#x1F5BC; darkone.graphic.supertuxkart
+
+SuperTuxKart with configurations to play in local network.
+
+:::tip
+To use in conjonction with homemanager games module!
+:::
+
+* **enable** `bool` SuperTuxKart + firewall config + tracks share
+* **isNfsServer** `bool` NFS server (share tracks), default is the main NFS server. (wip, enable on main server)
+
+```nix
+darkone.graphic.supertuxkart = {
+  enable = false;
+  isNfsServer = isMainNfsServer;
+};
+```
+
+<hr/>
+
+{/* t:p fffe1fdfa4aaec2bc441ba05d90b16e423cdca26c3c524b703bec621f05fbd95 */}
+### &#x1F5BC; darkone.graphic.virt-manager
+
+Virt manager + viewer with spice, win-virtio and ovmf.
+
+* **enable** `bool` Virt manager with dependencies
+
+```nix
+darkone.graphic.virt-manager.enable = false;
+```
+
+<hr/>
+
+{/* t:p e5959bcecb484115f992d621e374c33729e71afd9c4ffaa759a68bc199c06a0b */}
+### &#x1F5BC; darkone.graphic.virtualbox
+
+Virtualbox host installation.
+
+* **enable** `bool` Pre-configured virtualbox installation
+* **enableExtensionPack** `bool` Enable extension pack (causes recompilations)
+
+```nix
+darkone.graphic.virtualbox = {
+  enable = false;
+  enableExtensionPack = false;
+};
+```
+
+<hr/>

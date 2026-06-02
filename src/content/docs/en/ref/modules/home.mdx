@@ -1,0 +1,382 @@
+---
+title: Home Manager modules
+sidebar:
+  order: 9
+---
+
+{/* t:main */}
+{/* t:h 25f41476149eb2ceb1a2f5bf4ba7101038bc21a53b74dd04b43399deab3ee2c6 */}
+
+{/* t:p d778eab736fb017fb48b64e9241a81df0712eb65a7bb5160d5120fd8fbf82912 */}
+:::note
+**A home manager module** works with [home manager](https://github.com/nix-community/home-manager) profiles.
+:::
+
+{/* t:p 36b6c508392ab7b255a2b12448623593208e05129934d548b6efc61661c5df57 */}
+### &#x1F3E0; darkone.home.advanced
+
+Home profile for advanced users (computer scientists, developers, admins).
+
+* **enable** `bool` Enable advanced user features
+* **enableTools** `bool` Various tools for advanced users
+* **enablePhoneTools** `bool` Smartphone tools (scrcpy)
+* **enableAdmin** `bool` Enable administrator features (network, os tools)
+* **enableNixAdmin** `bool` Enable nix administration features
+* **enableDeveloper** `bool` Enable tools for developer
+* **enableEssentials** `bool` Frequently used tools
+
+```nix
+darkone.home.advanced = {
+  enable = false;
+  enableTools = false;
+  enablePhoneTools = false;
+  enableAdmin = false;
+  enableNixAdmin = false;
+  enableDeveloper = true;
+  enableEssentials = true;
+};
+```
+
+<hr/>
+
+{/* t:p a5e441f3c183fb2f15936a96c5e611e8f896620e006989a02ee60fa5470d9fc5 */}
+### &#x1F3E0; darkone.home.ai
+
+AI coding tools and supporting utilities.
+
+:::note[Flags]
+- `darkone.home.ai.enable` master switch installs utility packages
+  (aichat, llm, fabric-ai, gh, lazygit, direnv, code-quality tools, etc.)
+  and enables the per-agent flag system below.
+- `darkone.home.ai.enable{Claude,OpenCode,Codex,Aider,Goose}` each
+  installs and configures a specific AI coding agent.
+- `darkone.home.ai.preferLocal` when combined with a local `darkone.service.ai`
+  ollama host, agents default to the local model instead of cloud APIs.
+:::
+
+:::tip[Per-host wiring]
+This module reads `osConfig.darkone.service.ai.enable` to detect a
+local ollama host.  On such hosts, `gollama`, the `ollama` CLI, and
+local-model defaults for Aider / OpenCode are activated automatically.
+
+`programs.gh` is enabled with the `github-copilot-cli` extension.
+OpenCode gets two MCP servers (filesystem, fetch) via `npx -y`.
+Claude Code enforces an allow/ask/deny permission matrix and an RTK
+governance hook on Bash calls. Its `settings.json` is NOT pinned as a
+read-only store symlink: the socle is merged into a WRITABLE
+`~/.claude/settings.json` on every switch, so plugins/add-ons
+(claude-mem, graphify, ...) can be installed and managed by hand on top.
+:::
+
+* **enable** `bool` Enable AI tools and supporting utilities
+* **enableClaude** `bool` Claude Code CLI
+* **enableOpenCode** `bool` OpenCode terminal AI agent
+* **enableCodex** `bool` OpenAI Codex CLI
+* **enableAider** `bool` Aider AI pair programming
+* **enableGoose** `bool` Goose AI coding agent (Block Inc.)
+* **preferLocal** `bool` Prefer local models than cloud ones
+
+```nix
+darkone.home.ai = {
+  enable = false;
+  enableClaude = false;
+  enableOpenCode = false;
+  enableCodex = false;
+  enableAider = false;
+  enableGoose = false;
+  preferLocal = false;
+};
+```
+
+<hr/>
+
+{/* t:p 0fabfb5339e05d605bca4e56694acf6244ae0c63d5b9fa84a7005fab56fe6689 */}
+### &#x1F3E0; darkone.home.audio
+
+Audio tools and effects.
+
+Installs an audio player (`vlc`) and the MP3 encoder (`lame`)
+unconditionally, then layers editors and effects (`audacity`,
+`easyeffects` with the `easyeffects-fw16` preset) when `enableTools` is
+set. Real-time noise reduction (`noisetorch`) is intentionally disabled
+because it requires PulseAudio.
+
+* **enable** `bool` Audio tools
+* **enableTools** `bool` Audio tools / editors (audacity, easyeffect, noisetorch...)
+
+```nix
+darkone.home.audio = {
+  enable = false;
+  enableTools = false;
+};
+```
+
+<hr/>
+
+{/* t:p ccba3aeb30aded9435afa145d2d81ea366f47acc6973791166ad3a872f9485e0 */}
+### &#x1F3E0; darkone.home.education
+
+Several graphical education packages.
+
+* **enable** `bool` Education software collection
+* **enableBaby** `bool` Education software for babies (&lt;=6 yo)
+* **enableChild** `bool` Education software for children (6-12 yo)
+* **enableStudent** `bool` Education software for teenagers and adults (&gt;=12 yo)
+* **enableMath** `bool` Math tools and apps
+* **enableMusic** `bool` Music tools and apps
+* **enableScience** `bool` Scientific tools and apps
+* **enableDraw** `bool` Draw tools and apps
+* **enableLang** `bool` Lang tools and apps
+* **enableMisc** `bool` Misc tools and apps (general, training...)
+* **enableComputer** `bool` Computing tools and apps (klavaro, etc.)
+
+```nix
+darkone.home.education = {
+  enable = false;
+  enableBaby = false;
+  enableChild = false;
+  enableStudent = false;
+  enableMath = true;
+  enableMusic = true;
+  enableScience = true;
+  enableDraw = true;
+  enableLang = true;
+  enableMisc = true;
+  enableComputer = true;
+};
+```
+
+<hr/>
+
+{/* t:p 228c112b0740af9d49c325a767b74cd358568d9fc9fb26c4999b947a0930f50c */}
+### &#x1F3E0; darkone.home.games
+
+Several graphical game packages.
+
+* **enable** `bool` Enable games
+* **enableBaby** `bool` Games for babies (&lt;=6 yo)
+* **enableChild** `bool` Games for children (6-12 yo)
+* **enableTeenager** `bool` Games for teenagers and adults (&gt;=12 yo)
+* **enable3D** `bool` More 3D Games
+* **enableCli** `bool` Cli Games
+* **enableStk** `bool` SuperTuxKart (only)
+* **enableMore** `bool` More (secondary) games in each categories
+* **stkServer** `str` STK server domain name
+
+```nix
+darkone.home.games = {
+  enable = false;
+  enableBaby = false;
+  enableChild = false;
+  enableTeenager = false;
+  enable3D = false;
+  enableCli = false;
+  enableStk = false;
+  enableMore = false;
+  stkServer = osConfig.darkone.service.nfs.serverDomain;
+};
+```
+
+<hr/>
+
+{/* t:p 44aab82d8bb43fd64eb3b91ed5a7359d83d4e84b8ccb09a544716c43e07b0d21 */}
+### &#x1F3E0; darkone.home.gnome
+
+Gnome tweaks for home-manager.
+
+Hides the bare `xterm` launcher unconditionally, registers polished
+`.desktop` entries for `scrcpy` and `scrcpy-console` when the package
+is part of the user's `home.packages`, and (when `hideTechnicalIcons`
+is set) hides Settings, Extensions, Printers and File Roller icons for
+beginner / child profiles.
+
+:::caution[NFS bookmarks]
+Do not declare `gtk.gtk3.bookmarks` from this module — the NFS module
+(`service/nfs.nix`) owns this file and will overwrite it.
+:::
+
+* **enable** `bool` Enable gnome settings for home manager
+* **hideTechnicalIcons** `bool` Hide some icons for beginners / children / babies
+
+```nix
+darkone.home.gnome = {
+  enable = false;
+  hideTechnicalIcons = false;
+};
+```
+
+<hr/>
+
+{/* t:p 66e29bc700c56c059782e370db0f691a83609c85f44233ef1b041e62f5537ba4 */}
+### &#x1F3E0; darkone.home.imagery
+
+Image processing software.
+
+Always installs the lightweight viewer (`geeqie`) and editor (`gimp`),
+then layers tooling by audience: `enableBeginner` adds `pinta`,
+`enablePro` adds `inkscape`/`krita`/`yed`, `enable3D` (with
+`enablePro`) adds `blender`, `enableCAD` adds `freecad` (from stable
+nixpkgs to avoid Qt churn), and `enableCli` adds `imagemagick`/`jhead`.
+
+* **enable** `bool` Imagery creation
+* **enablePro** `bool` Additional image processing software for professionals
+* **enableBeginner** `bool` Additional image processing software for beginners
+* **enable3D** `bool` 3D softwares
+* **enableCAD** `bool` CAD softwares
+* **enableCli** `bool` CLI tools (imagemagick, jhead...)
+
+```nix
+darkone.home.imagery = {
+  enable = false;
+  enablePro = false;
+  enableBeginner = false;
+  enable3D = false;
+  enableCAD = false;
+  enableCli = false;
+};
+```
+
+<hr/>
+
+{/* t:p 6ead6a8f78c5432c5d37e53fc79876316270cdadcd91b4b5c6e702475e4d7b67 */}
+### &#x1F3E0; darkone.home.mime
+
+Mime types DNF module. (wip)
+
+:::note
+This module define default applications depending on user profile. For example, markdown editor for...
+- Beginner (default): apostrophe, gnome text editor...
+- Advanced: zed, vim, vscode...
+:::
+
+* **enable** `bool` Enable DNF default applications update
+
+```nix
+darkone.home.mime.enable = false;
+```
+
+<hr/>
+
+{/* t:p 4d5ba9efe2876512ee41d5b3d5f76ba1f24686bccc1d1c9cbf6878ec3736ca31 */}
+### &#x1F3E0; darkone.home.music
+
+Graphical music and sound creation apps.
+
+Categorised by audience: `enablePro` (ardour, reaper, renoise,
+rosegarden), `enableCreator` (decibels, hydrogen), `enableScore`
+(musescore, muse-sounds-manager), `enableFun` (mixxx, mousai),
+`enableCli` (mpg123, cmus, lilypond), `enableEasy` (gnome-music vs.
+audacious), `enableMpd` (MPD daemon, ncmpcpp, mpdris2), and
+`enableDev` (lilypond).
+
+:::note[NFS-aware music library]
+When the host is an NFS client and the network exposes an `nfs` service
+in the same zone, MPD reads its music directory from the NFS mount
+(`/mnt/nfs/homes/$USER/Music`). Otherwise it falls back to the local
+`srv-dirs.homes` value, then to `~/Music`.
+:::
+
+* **enable** `bool` Music creation home module
+* **enablePro** `bool` Hard tools for professionals (rose, ardour...)
+* **enableFun** `bool` Fun audio tools (mixxx...)
+* **enableCli** `bool` Command line audio tools (mpg123, cmus, moc...)
+* **enableDev** `bool` Audio software for developers (lilypond...)
+* **enableMpd** `bool` MPD daemon and players (mpd, ncmpcpp...)
+* **enableEasy** `bool` Easy tools instead of efficient (gnome-music vs audacious...)
+* **enableScore** `bool` Score softwares (musescore...)
+* **enableCreator** `bool` Creation tools for beginners (lmms, hydrogen...)
+
+```nix
+darkone.home.music = {
+  enable = false;
+  enablePro = false;
+  enableFun = false;
+  enableCli = false;
+  enableDev = false;
+  enableMpd = false;
+  enableEasy = false;
+  enableScore = false;
+  enableCreator = false;
+};
+```
+
+<hr/>
+
+{/* t:p f3717354241eaa1a6155fe2b44e8fc0f444e95c0a76dbd4536e9d61d5f5383ee */}
+### &#x1F3E0; darkone.home.office
+
+Common tools for office desktop.
+
+* **enable** `bool` Default useful packages
+* **enableMore** `bool` More alternative packages
+* **enableUnsafeFeatures** `bool` Features for advanced non-child users
+* **enableUBlock** `bool` Enable ublock plugin
+* **enableTools** `bool` Little (gnome) tools (iotas, dialect, etc.)
+* **enableProductivity** `bool` Productivity apps (obsidian, time management, projects, etc.)
+* **enableCommunication** `bool` Communication tools
+* **enableOffice** `bool` Office packages (libreoffice)
+* **enableFirefox** `bool` Enable firefox
+* **enableLibreWolf** `bool` Enable firefox
+* **enableChromium** `bool` Enable chromium
+* **enableBrave** `bool` Enable Brave Browser
+* **enableEmail** `bool` Email management packages (thunderbird)
+* **enableSecurity** `bool` Security tools (keepass)
+* **enableCalendarContacts** `bool` Gnome calendar, contacts and related apps
+* **enableEssentials** `bool` Essential tools
+* **huntspellLang** `str` [Huntspell Lang](https://mynixos.com/nixpkgs/packages/hunspellDicts)
+
+```nix
+darkone.home.office = {
+  enable = false;
+  enableMore = false;
+  enableUnsafeFeatures = false;
+  enableUBlock = false;
+  enableTools = false;
+  enableProductivity = false;
+  enableCommunication = false;
+  enableOffice = false;
+  enableFirefox = false;
+  enableLibreWolf = false;
+  enableChromium = false;
+  enableBrave = false;
+  enableEmail = false;
+  enableSecurity = false;
+  enableCalendarContacts = false;
+  enableEssentials = true;
+  huntspellLang = "en-us";
+};
+```
+
+<hr/>
+
+{/* t:p 547ee4daed2acde13003ad986f960568575e0bc22291ee241f854bd57a1cc21c */}
+### &#x1F3E0; darkone.home.video
+
+Video tools and applications.
+
+Always installs the GNOME viewer (`showtime`) and gates the rest by
+audience: `enableTools` (ffmpeg, mlt, vlc, video-trimmer, parabolic),
+`enableEditing` (kdenlive + shotcut from stable nixpkgs),
+`enableCreator` (OBS Studio with `obs-backgroundremoval`,
+`obs-vkcapture`, etc.), `enableUnfree` (davinci-resolve from stable),
+and `enableAlternative` (mpv).
+
+* **enable** `bool` Video creation and tools home module
+* **enableTools** `bool` Video tools for professionals
+* **enableEditing** `bool` Video editing tools (kdenlive...)
+* **enableCreator** `bool` Video creator tools (obs...)
+* **enableUnfree** `bool` Unfree video apps (davinci...)
+* **enableAlternative** `bool` Alternative video apps (mpv...)
+
+```nix
+darkone.home.video = {
+  enable = false;
+  enableTools = false;
+  enableEditing = false;
+  enableCreator = false;
+  enableUnfree = false;
+  enableAlternative = false;
+};
+```
+
+<hr/>

@@ -1,0 +1,413 @@
+---
+title: System modules
+sidebar:
+  order: 3
+---
+
+{/* t:main */}
+{/* t:h 0e3d782c6339752c22a228242396a2c37acd65163f54dfbf43db5b5e1a7dc7b4 */}
+
+{/* t:p 88d1128927fcc3ef4e286f382da402a39d358787d247d3ff837c5c0a103f4251 */}
+:::note
+**A system module** manages common, important, and general configurations.
+:::
+
+{/* t:p f771520fa07b96a3be18a816317b08b330bf3bfaab1db4f82dbdd481e4b73a5e */}
+### &#x2699; darkone.system.core
+
+The core DNF module.
+
+:::danger[Required module]
+This module is enabled by default (required by DNF configuration).
+It is required for the proper functioning of every NixOS computer on the local network.
+:::
+
+Sets up the systemd-boot loader, the LTS kernel, JetBrains Mono Nerd
+Font (with `kmscon` for the TTY), nightly Nix store optimisation and
+weekly garbage collection (30 d retention), the firewall, suspend
+policy (servers can fully disable it via `disableSuspend`), polkit
+rules letting `wheel` halt/reboot, and a shared `common-files`
+group/user for cross-service media folders.
+
+:::note[Mixin entry point]
+Activates the host's profile mixin (`darkone.host.${host.profile}.enable`)
+and propagates `enableSops` to the sops module.
+:::
+
+* **enable** `bool` Darkone framework core system (activated by default)
+* **enableSystemdBoot** `bool` Enable the default boot loader
+* **enableFstrim** `bool` SSD optimisation with fstrim
+* **enableFirewall** `bool` Enable firewall (default true)
+* **enableSops** `bool` Enable sops dnf module (default true)
+* **enableFlatpak** `bool` Enable flatpak DNF configuration (only for graphic environments)
+* **enableKmscon** `bool` Enable nerd font for TTY
+* **enableBoost** `bool` Enable overclocking, corectl
+* **enableAutoSuspend** `bool` Enable automatic suspend (for laptops, ignored if disableSuspend is true)
+* **disableSuspend** `bool` Full suspend disable (for servers)
+* **enableCommonFilesUser** `bool` Enable the common-files user used by several services
+
+```nix
+darkone.system.core = {
+  enable = true;
+  enableSystemdBoot = true;
+  enableFstrim = true;
+  enableFirewall = true;
+  enableSops = true;
+  enableFlatpak = true;
+  enableKmscon = true;
+  enableBoost = false;
+  enableAutoSuspend = false;
+  disableSuspend = false;
+  enableCommonFilesUser = false;
+};
+```
+
+<hr/>
+
+{/* t:p ea546a6597149c033a54fed65c7c5775f2f4deceac65379376b6d4b4b52b7602 */}
+### &#x2699; darkone.system.documentation
+
+Documentation (man) for developers and admins.
+
+* **enable** `bool` Enable useful technical documentation (man, nixos)
+
+```nix
+darkone.system.documentation.enable = false;
+```
+
+<hr/>
+
+{/* t:p 3adf0df2698845c1f9106cae5c85503a09f6fbc66033cd9efcf2d31af50b5b29 */}
+### &#x2699; darkone.system.hardware
+
+Hardware configuration improvements.
+
+* **enable** `bool` Enable hardware optimisations
+* **enableIntel** `bool` Enable intel microcode updates
+* **enableAmd** `bool` Enable amd microcode updates
+
+```nix
+darkone.system.hardware = {
+  enable = false;
+  enableIntel = false;
+  enableAmd = false;
+};
+```
+
+<hr/>
+
+{/* t:p 46487a2c2032983b63ec5f022790f16b962e01ef5f3ad172a6dfc5b6f7fbe5ea */}
+### &#x2699; darkone.system.i18n
+
+Location and lang configuration.
+
+:::note
+By default, the configuration of this module adapts to the global configuration usr/config.yaml.
+The locale must follow the canonical `xx_YY.UTF-8` shape (eg. `fr_FR.UTF-8`)
+so the language and country codes can be safely derived for the console
+keymap, XKB layout, and Nextcloud phone region defaults.
+:::
+
+* **enable** `bool` Enable i18n with network zone configuration by default
+* **locale** `strMatching localeRegex` Network locale, must match the `xx_YY.UTF-8` shape.
+* **timeZone** `str` Network time zone
+
+```nix
+darkone.system.i18n = {
+  enable = false;
+  locale = "fr_FR.UTF-8";
+  timeZone = "Europe/Paris";
+};
+```
+
+<hr/>
+
+{/* t:p 07c23b4ee523fbac089c11f282bffcaa8dcf98c88bf37c303ad9029e51e91ae5 */}
+### &#x2699; darkone.system.security
+
+ANSSI BP-028 v2.0 (GNU/Linux) system hardening. (wip)
+
+Recommended module, enabled in certain host profiles or manually
+depending on needs. Progressively applies
+ANSSI recommendations according to the chosen level and machine category.
+Each host profile defines its level and category:
+
+:::danger[Module under development]
+- Refine and test options, features, etc.
+- Create the "checkScript", a security config introspection tool.
+- Simple local config for hardware-specific and needs-specific settings.
+:::
+
+```nix
+darkone.system.security = {
+  level    = "intermediary"; # minimal | intermediary | reinforced | high
+  category = "server";       # base | client | server
+};
+```
+
+Rules incompatible with the environment are excluded by tag:
+
+```nix
+darkone.system.security.excludes = [ "needs-jit" "needs-hibernation" ];
+```
+
+A specific rule can be bypassed with a mandatory rationale:
+
+```nix
+darkone.system.security.exceptions = {
+  R9.rationale = "Docker rootless required during development.";
+};
+```
+
+:::note[ANSSI hardening level]
+- `minimal`      : common base, any system (default).
+- `intermediary` : recommended for almost all systems.
+- `reinforced`   : sensitive or multi-tenant systems.
+- `high`         : dedicated skills and budget; implies kernel
+                   recompilation (tag `kernel-recompile`) if not excluded.
+:::
+
+:::note[Machine category]
+- `base`   : universal rules, always applied (default).
+- `client` : workstation (GUI, USB, session, locking).
+- `server` : server (hardened network, centralized logging, exposed services).
+
+Independent of `host.profile` — to be explicitly defined in each host profile.
+:::
+
+:::note[Exclusion tags]
+- `kernel-recompile`             : ignores R15–R27, C1 (no custom kernel).
+- `disable-kernel-module-loading`: ignores R10 (may break devices).
+- `no-ipv6`                      : ignores R13, R22 (IPv6 disable).
+- `no-mac`                       : ignores R37, R45 (no active MAC).
+- `no-sealing`                   : ignores R76, R77 (no HIDS/AIDE).
+- `no-auditd`                    : ignores R73 (auditd not configurable).
+- `embedded`                     : relaxes /var, /home constraints, etc.
+- `needs-jit`                    : allows relaxed W^X (Java, .NET, V8, Wasm).
+- `needs-kexec`                  : keeps kexec for kdump.
+- `needs-binfmt`                 : keeps binfmt_misc (Java, qemu-static).
+- `needs-hibernation`            : keeps hibernation (laptops).
+- `needs-usb-hotplug`            : disables USBGuard / deny_new_usb.
+:::
+
+:::note[Per-rule exceptions]
+A rule with an exception is excluded from activation even if the level would cover it.
+Mandatory rationale in `rationale`.
+:::
+
+:::caution[Side effects]
+Some rules may break common usage: `noexec /tmp` (R28),
+SMT disabled (R8), unsigned modules (R18), rootless containers (R9),
+JIT (R63). Check `sideEffects` comments in each themed file before
+raising the level on a production system.
+:::
+
+* **enable** `bool` Enable the ANSSI BP-028 v2.0 hardening module.
+* **level** `enum [ "minimal" "intermediary" "reinforced" "high" ]` Targeted ANSSI hardening level.
+* **category** `enum [ "base" "client" "server" ]` Machine category that selects rule subsets.
+* **excludes** `listOf str` Tags that disable entire rule groups.
+* **exceptions** `attrs` Per-rule exceptions with mandatory rationale.
+* **adminMailbox** `str` Administrator email address (sudo R39, MTA aliases R75).
+* **useHardenedKernel** `bool` Use linuxPackages_hardened (R60, C1) instead of the default kernel.
+* **allowedActiveUsers** `listOf str` Exhaustive list of active user accounts (R30 validation).
+
+```nix
+darkone.system.security = {
+  enable = false;
+  level = "minimal";
+  category = "base";
+  excludes = [ ];
+  exceptions = { };
+  adminMailbox = "admin@exemple.fr";
+  useHardenedKernel = false;
+  allowedActiveUsers = [ ];
+};
+```
+
+<hr/>
+
+{/* t:p d6607e60aa6e34f9fb62b573eeadcbcdda75ecf2dd27ea788abc41480aba0436 */}
+### &#x2699; darkone.system.services
+
+DNF Service registration and configuration.
+
+:::caution[Special internal module]
+This module is used to register and configure DNF modules:
+- Coordination server client (headscale / tailscale)
+- Reverse proxies (caddy)
+- Homepage registrations
+- DNS entries
+- folders and files to backup
+:::
+
+* **enable** `bool` Enable DNF services manager to register and expose services
+* **service** `attrs` Global services configuration &lt;name&gt;
+  * **enable** `bool` Enable service proxy
+  * **defaultParams** `submodule` Theses options are calculated by dnfLib.srv.extractServiceParams
+    * **domain** `str` Domain name for the service
+    * **title** `str` Display name in homepage
+    * **description** `str` Service description for homepage
+    * **icon** `str` [Icon name for homepage](https://selfh.st/icons/)
+    * **global** `bool` Global service is accessible on Internet
+    * **noRobots** `bool` Prevent robots from scanning if global is true
+    * **fqdn** `str` Calculated FQDN or the service before the reverse proxy
+    * **href** `str` Calculated URL of the service before the reverse proxy
+    * **ip** `str` Calculated IP to contact the service
+  * **displayOnHomepage** `bool` Display a link on homepage
+  * **reverseProxy** `bool` Reached through the zone gateway reverse proxy (DNS points to the gateway LAN IP)
+  * **uniquePerZone** `bool` At most one instance allowed per zone (generator validation)
+  * **externalAccess** `bool` www-zone service reachable from the LAN via a fixed host IP (e.g. headscale, turn)
+  * **persist.dirs** `listOf str` Service persistant dirs
+  * **persist.files** `listOf str` Service persistant files
+  * **persist.dbDirs** `listOf str` Service persistant dirs with database(s)
+  * **persist.dbFiles** `listOf str` Service database file(s)
+  * **persist.varDirs** `listOf str` Variable secondary files (log, cache, etc.)
+  * **persist.mediaDirs** `listOf str` Service media dirs (pictures, videos, big files)
+  * **proxy.enable** `bool` Whether to create virtualHost configuration (false for services that manage their own)
+  * **proxy.isProtected** `bool` Oauth2 protected service
+  * **proxy.isInternal** `bool` Bind service on internal interface only (not internet accessible)
+  * **proxy.hasReverseProxy** `bool` This is a reverse proxy (or another virtualhost configuration via extraConfig)
+  * **proxy.defaultService** `bool` Is the default service
+  * **proxy.servicePort** `nullOr port` Service internal port
+  * **proxy.preExtraConfig** `lines` Extra caddy virtualHost configuration (prefix)
+  * **proxy.extraConfig** `lines` Extra caddy virtualHost configuration
+  * **proxy.extraGlobalConfig** `lines` Extra caddy configuration
+  * **proxy.scheme** `str` Internal service scheme (http / https)
+
+```nix
+darkone.system.services = {
+  enable = false;
+  service.enable = false;
+  service.defaultParams.domain = "";
+  service.defaultParams.title = "";
+  service.defaultParams.description = "";
+  service.defaultParams.icon = "";
+  service.defaultParams.global = false;
+  service.defaultParams.noRobots = true;
+  service.defaultParams.fqdn = "";
+  service.defaultParams.href = "";
+  service.defaultParams.ip = "";
+  service.displayOnHomepage = true;
+  service.reverseProxy = true;
+  service.uniquePerZone = false;
+  service.externalAccess = false;
+  service.persist.dirs = [ ];
+  service.persist.files = [ ];
+  service.persist.dbDirs = [ ];
+  service.persist.dbFiles = [ ];
+  service.persist.varDirs = [ ];
+  service.persist.mediaDirs = [ ];
+  service.proxy.enable = true;
+  service.proxy.isProtected = false;
+  service.proxy.isInternal = false;
+  service.proxy.hasReverseProxy = true;
+  service.proxy.defaultService = false;
+  service.proxy.servicePort = null;
+  service.proxy.preExtraConfig = "";
+  service.proxy.extraConfig = "";
+  service.proxy.extraGlobalConfig = "";
+  service.proxy.scheme = "https";
+};
+```
+
+<hr/>
+
+{/* t:p a9d97ecd52b40078237beb75df5e43b0d614201545254f6afe0b70d31463a052 */}
+### &#x2699; darkone.system.sops
+
+DNF sops, passwords and secrets management.
+
+:::danger[Critical module]
+This module is enabled by default in core module.
+It is recommended to keep it enabled and configure it (`just passwd*` commands).
+:::
+
+Wires sops-nix to `usr/secrets/secrets.yaml` and unlocks it with the
+host SSH key (`ssh_host_ed25519_key`) plus the dedicated infrastructure
+age key (`/etc/sops/age/infra.key`). Pre-declares a shared `sops` group,
+the `default-password` / `default-password-hash` secrets (group-readable
+by `sops`), and one `user/<login>/password-hash` secret per host user
+(with `neededForUsers = true` so the hash is available before the user
+accounts are created).
+
+* **enable** `bool` Enable sops automated configuration for DNF
+
+```nix
+darkone.system.sops.enable = false;
+```
+
+<hr/>
+
+{/* t:p b67e83ac82c077c96344539057ac4c5cb759ab44f974218097feee55c1e3b7b0 */}
+### &#x2699; darkone.system.srv-dirs
+
+Shared directories management service.
+
+:::caution[Auto-activation]
+This service is automatically enabled by services that use NFS or shared media storage.
+:::
+
+* **enable** `bool` Enable srv dirs, create the root dir (default /srv)
+* **enableNfs** `bool` Enable nfs service paths (nfs/common, nfs/homes)
+* **enableMedias** `bool` Enable media services paths (medias/[videos|music|incomming/...])
+* **root** `str` Root dir for persistant data (/srv)
+* **nfs** `str` NFS root directory (/srv/nfs)
+* **homes** `str` Directory for shared homes (/srv/nfs/homes)
+* **common** `str` Shared common directory (/srv/nfs/common linked to ~/Public)
+* **medias** `str` Medias root dir (/srv/medias)
+* **music** `str` Shared music files directory (/srv/medias/music)
+* **videos** `str` Shared video files directory (/srv/medias/videos)
+* **incoming** `str` Shared incoming directory (/srv/medias/incoming write access)
+* **incomingMusic** `str` Shared incoming directory (/srv/medias/incoming/music write access)
+* **incomingVideos** `str` Shared incoming directory (/srv/medias/incoming/videos write access)
+
+```nix
+darkone.system.srv-dirs = {
+  enable = cfg.enableNfs || cfg.enableMedias;
+  enableNfs = false;
+  enableMedias = false;
+  root = "/srv";
+  nfs = null;
+  homes = null;
+  common = null;
+  medias = null;
+  music = null;
+  videos = null;
+  incoming = null;
+  incomingMusic = null;
+  incomingVideos = null;
+};
+```
+
+<hr/>
+
+{/* t:p 86a74efb7e0942adabd4c55a882ebb222def566db01b4d571dc696f7bc096d0c */}
+### &#x2699; darkone.system.testing
+
+Standalone test mode for the NixOS Test Driver.
+
+When enabled, neutralizes the irreducibly external/runtime bits so a node
+can be exercised in a VM: headscale/tailscale become no-ops and a fixed
+TLS cert can stub ACME. It also lets workDir-only config (nix.pub,
+harmonia.pub) be skipped by core/ncps. sops stays REAL (high fidelity).
+
+:::caution[Tests only]
+Enabled only via `tests/lib/test-tuning.nix`. This module never references
+any path under `tests/` — the cert path is passed as an option value.
+:::
+
+Aim: use, debug.
+
+* **standalone** `bool` Standalone test mode — skip workDir-only config (nix.pub, harmonia.pub) and neutralize external services
+* **tlsCert** `nullOr path` Self-signed cert (PEM) provided by the test harness to stub ACME. Never a tests/ path baked into the framework.
+* **tlsKey** `nullOr path` Private key (PEM) paired with tlsCert.
+
+```nix
+darkone.system.testing = {
+  standalone = false;
+  tlsCert = null;
+  tlsKey = null;
+};
+```
+
+<hr/>

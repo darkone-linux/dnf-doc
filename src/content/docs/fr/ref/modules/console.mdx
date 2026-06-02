@@ -1,0 +1,74 @@
+---
+title: Applications CLI
+sidebar:
+  order: 5
+---
+
+{/* t:translated-from en */}
+{/* t:h 18a0b95a786a494af73d2f013bb27e71d8a22da6716a59f0750acd9c6998bc0a */}
+
+{/* t:p fb415e4efa0770c06768d9cc32c8d09956417641d4f7affeb781fe54d086259e */}
+:::note
+**Un module d'application CLI** installe des applications terminales et leur configuration optimisée pour DNF.
+:::
+
+{/* t:p 49026a535d6f86ea0bc898d44e64aa28a35ca726fbfa92ed91ed2eaccda9af1c */}
+### &#x1F4BB; darkone.console.git
+
+Un environnement git pré-configuré.
+
+:::tip[Raccourcis Git]
+- `git hdf` (history diff) : sélectionner un commit pour afficher le diff.
+- `git tree` : arborescence historique.
+- `git tre` : historique avec fichiers.
+- `git treee` : historique avec messages de commit.
+- `git hist` : alternative d'arborescence.
+:::
+
+* **enable** `bool` Environnement git pré-configuré
+
+```nix
+darkone.console.git.enable = false;
+```
+
+{/* t:p 14f17cbc2e47f05e45568d34a6827a2c15c6af668e9d319b443817e141eb2fb4 */}
+### &#x1F4BB; darkone.console.pandoc
+
+Pandoc avec texlive et utilitaires exiftool + polices gentium.
+
+* **enable** `bool` Environnement pandoc pré-configuré
+
+```nix
+darkone.console.pandoc.enable = false;
+```
+
+{/* t:p b317df1073e22e4fcba714d192e00fe7ec7ec0c14ce5c37f8c1d5cf334cac534 */}
+### &#x1F4BB; darkone.console.zsh
+
+Une installation zsh complète avec alias, bindkeys et prompt optimisé.
+
+:::tip[Quelques raccourcis]
+Général :
+- `l`, `la`, `ll` : ls avec options
+- `vz` : vim + fzf
+- `treef` : arborescence avec fichiers (eza)
+- `treed` : arborescence répertoires uniquement (eza)
+- `locate` : recherche localsearch (si localsearch est installé au lieu de locate)
+
+Pour le profil admin nix/dnf :
+- `nx` : cd /etc/nixos
+- `nf` : nixfmt
+- `nc` : deadnix
+- `dnf` : cd ~/dnf
+- `mrproper` : nix-collect-garbage(s) + switch-to-conf boot
+:::
+
+* **enable** `bool` Environnement ZSH
+* **enableForRoot** `bool` Configuration home manager ZSH pour root
+
+```nix
+darkone.console.zsh = {
+  enable = false;
+  enableForRoot = false;
+};
+```

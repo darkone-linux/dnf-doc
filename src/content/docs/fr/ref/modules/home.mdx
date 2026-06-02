@@ -1,0 +1,360 @@
+---
+title: Modules Home Manager
+sidebar:
+  order: 9
+---
+
+{/* t:translated-from en */}
+{/* t:h 25f41476149eb2ceb1a2f5bf4ba7101038bc21a53b74dd04b43399deab3ee2c6 */}
+
+{/* t:p d778eab736fb017fb48b64e9241a81df0712eb65a7bb5160d5120fd8fbf82912 */}
+:::note
+**Un module home manager** fonctionne avec les profils [home manager](https://github.com/nix-community/home-manager).
+:::
+
+{/* t:p 36b6c508392ab7b255a2b12448623593208e05129934d548b6efc61661c5df57 */}
+### &#x1F3E0; darkone.home.advanced
+
+Profil d'accueil pour les utilisateurs avancés (informaticiens, développeurs, administrateurs).
+
+* **enable** `bool` Activer les fonctionnalités des utilisateurs avancés
+* **enableTools** `bool` Divers outils pour les utilisateurs avancés
+* **enablePhoneTools** `bool` Outils smartphone (scrcpy)
+* **enableAdmin** `bool` Activer les fonctionnalités d'administrateur (réseau, outils os)
+* **enableNixAdmin** `bool` Activer les fonctionnalités d'administration nix
+* **enableDeveloper** `bool` Activer les outils pour développeur
+* **enableEssentials** `bool` Outils fréquemment utilisés
+
+```nix
+darkone.home.advanced = {
+  enable = false;
+  enableTools = false;
+  enablePhoneTools = false;
+  enableAdmin = false;
+  enableNixAdmin = false;
+  enableDeveloper = true;
+  enableEssentials = true;
+};
+```
+
+{/* t:p a5e441f3c183fb2f15936a96c5e611e8f896620e006989a02ee60fa5470d9fc5 */}
+### &#x1F3E0; darkone.home.ai
+
+Outils de codage IA et utilitaires de support.
+
+:::note[Drapeaux]
+- `darkone.home.ai.enable` commutateur principal installe les paquets utilitaires
+  (aichat, llm, fabric-ai, gh, lazygit, direnv, outils de qualité de code, etc.)
+  et active le système de drapeau par agent ci-dessous.
+- `darkone.home.ai.enable{Claude,OpenCode,Codex,Aider,Goose}` chacun
+  installe et configure un agent de codage IA spécifique.
+- `darkone.home.ai.preferLocal` lorsqu'il est combiné avec un hôte `darkone.service.ai`
+  ollama local, les agents utilisent par défaut le modèle local au lieu des APIs cloud.
+:::
+
+:::tip[Câblage par hôte]
+Ce module lit `osConfig.darkone.service.ai.enable` pour détecter un
+hôte ollama local. Sur ces hôtes, `gollama`, la CLI `ollama` et
+les valeurs par défaut du modèle local pour Aider / OpenCode sont activés automatiquement.
+
+`programs.gh` est activé avec l'extension `github-copilot-cli`.
+OpenCode obtient deux serveurs MCP (système de fichiers, fetch) via `npx -y`.
+Claude Code applique une matrice d'autorisations allow/ask/deny et un hook de gouvernance RTK
+sur les appels Bash. Son `settings.json` n'est PAS épinglé comme symlink du magasin
+en lecture seule : le socle est fusionné dans un `~/.claude/settings.json` WRITABLE
+à chaque commutation, afin que les plugins/modules additionnels
+(claude-mem, graphify, ...) puissent être installés et gérés à la main par-dessus.
+:::
+
+* **enable** `bool` Activer les outils IA et les utilitaires de support
+* **enableClaude** `bool` Claude Code CLI
+* **enableOpenCode** `bool` Agent IA terminal OpenCode
+* **enableCodex** `bool` CLI OpenAI Codex
+* **enableAider** `bool` Programmation en pair IA Aider
+* **enableGoose** `bool` Agent de codage IA Goose (Block Inc.)
+* **preferLocal** `bool` Préférer les modèles locaux aux modèles cloud
+
+```nix
+darkone.home.ai = {
+  enable = false;
+  enableClaude = false;
+  enableOpenCode = false;
+  enableCodex = false;
+  enableAider = false;
+  enableGoose = false;
+  preferLocal = false;
+};
+```
+
+{/* t:p 0fabfb5339e05d605bca4e56694acf6244ae0c63d5b9fa84a7005fab56fe6689 */}
+### &#x1F3E0; darkone.home.audio
+
+Outils et effets audio.
+
+Installe un lecteur audio (`vlc`) et l'encodeur MP3 (`lame`)
+sans condition, puis superpose les éditeurs et les effets (`audacity`,
+`easyeffects` avec le préset `easyeffects-fw16`) lorsque `enableTools` est
+défini. La réduction de bruit en temps réel (`noisetorch`) est intentionnellement désactivée
+car elle nécessite PulseAudio.
+
+* **enable** `bool` Outils audio
+* **enableTools** `bool` Outils audio / éditeurs (audacity, easyeffect, noisetorch...)
+
+```nix
+darkone.home.audio = {
+  enable = false;
+  enableTools = false;
+};
+```
+
+{/* t:p ccba3aeb30aded9435afa145d2d81ea366f47acc6973791166ad3a872f9485e0 */}
+### &#x1F3E0; darkone.home.education
+
+Plusieurs paquets d'éducation graphiques.
+
+* **enable** `bool` Collection de logiciels éducatifs
+* **enableBaby** `bool` Logiciels éducatifs pour bébés (&lt;=6 ans)
+* **enableChild** `bool` Logiciels éducatifs pour enfants (6-12 ans)
+* **enableStudent** `bool` Logiciels éducatifs pour adolescents et adultes (&gt;=12 ans)
+* **enableMath** `bool` Outils et applications mathématiques
+* **enableMusic** `bool` Outils et applications musicales
+* **enableScience** `bool` Outils et applications scientifiques
+* **enableDraw** `bool` Outils et applications de dessin
+* **enableLang** `bool` Outils et applications de langue
+* **enableMisc** `bool` Outils et applications diverses (général, formation...)
+* **enableComputer** `bool` Outils et applications informatiques (klavaro, etc.)
+
+```nix
+darkone.home.education = {
+  enable = false;
+  enableBaby = false;
+  enableChild = false;
+  enableStudent = false;
+  enableMath = true;
+  enableMusic = true;
+  enableScience = true;
+  enableDraw = true;
+  enableLang = true;
+  enableMisc = true;
+  enableComputer = true;
+};
+```
+
+{/* t:p 228c112b0740af9d49c325a767b74cd358568d9fc9fb26c4999b947a0930f50c */}
+### &#x1F3E0; darkone.home.games
+
+Plusieurs paquets de jeux graphiques.
+
+* **enable** `bool` Activer les jeux
+* **enableBaby** `bool` Jeux pour bébés (&lt;=6 ans)
+* **enableChild** `bool` Jeux pour enfants (6-12 ans)
+* **enableTeenager** `bool` Jeux pour adolescents et adultes (&gt;=12 ans)
+* **enable3D** `bool` Plus de jeux 3D
+* **enableCli** `bool` Jeux Cli
+* **enableStk** `bool` SuperTuxKart (uniquement)
+* **enableMore** `bool` Plus (secondaires) de jeux dans chaque catégorie
+* **stkServer** `str` Nom de domaine du serveur STK
+
+```nix
+darkone.home.games = {
+  enable = false;
+  enableBaby = false;
+  enableChild = false;
+  enableTeenager = false;
+  enable3D = false;
+  enableCli = false;
+  enableStk = false;
+  enableMore = false;
+  stkServer = osConfig.darkone.service.nfs.serverDomain;
+};
+```
+
+{/* t:p 44aab82d8bb43fd64eb3b91ed5a7359d83d4e84b8ccb09a544716c43e07b0d21 */}
+### &#x1F3E0; darkone.home.gnome
+
+Ajustements Gnome pour home-manager.
+
+Cache l'outil de lancement `xterm` nu sans condition, enregistre les entrées `.desktop`
+polies pour `scrcpy` et `scrcpy-console` lorsque le paquet
+fait partie des `home.packages` de l'utilisateur, et (lorsque `hideTechnicalIcons`
+est défini) cache les icônes Paramètres, Extensions, Imprimantes et Gestionnaire de fichiers pour
+les profils débutant / enfant.
+
+:::caution[Signets NFS]
+Ne déclarez pas `gtk.gtk3.bookmarks` à partir de ce module — le module NFS
+(`service/nfs.nix`) en est propriétaire et le remplacera.
+:::
+
+* **enable** `bool` Activer les paramètres gnome pour home manager
+* **hideTechnicalIcons** `bool` Masquer certaines icônes pour les débutants / enfants / bébés
+
+```nix
+darkone.home.gnome = {
+  enable = false;
+  hideTechnicalIcons = false;
+};
+```
+
+{/* t:p 66e29bc700c56c059782e370db0f691a83609c85f44233ef1b041e62f5537ba4 */}
+### &#x1F3E0; darkone.home.imagery
+
+Logiciels de traitement d'images.
+
+Installe toujours la visionneuse légère (`geeqie`) et l'éditeur (`gimp`),
+puis superpose les outils par audience : `enableBeginner` ajoute `pinta`,
+`enablePro` ajoute `inkscape`/`krita`/`yed`, `enable3D` (avec
+`enablePro`) ajoute `blender`, `enableCAD` ajoute `freecad` (de nixpkgs stable
+pour éviter l'agitation Qt), et `enableCli` ajoute `imagemagick`/`jhead`.
+
+* **enable** `bool` Création d'images
+* **enablePro** `bool` Logiciels de traitement d'images supplémentaires pour les professionnels
+* **enableBeginner** `bool` Logiciels de traitement d'images supplémentaires pour les débutants
+* **enable3D** `bool` Logiciels 3D
+* **enableCAD** `bool` Logiciels CAO
+* **enableCli** `bool` Outils CLI (imagemagick, jhead...)
+
+```nix
+darkone.home.imagery = {
+  enable = false;
+  enablePro = false;
+  enableBeginner = false;
+  enable3D = false;
+  enableCAD = false;
+  enableCli = false;
+};
+```
+
+{/* t:p 6ead6a8f78c5432c5d37e53fc79876316270cdadcd91b4b5c6e702475e4d7b67 */}
+### &#x1F3E0; darkone.home.mime
+
+Module types Mime DNF. (en cours)
+
+:::note
+Ce module définit les applications par défaut selon le profil utilisateur. Par exemple, éditeur de markdown pour...
+- Débutant (par défaut) : appostrophe, éditeur de texte gnome...
+- Avancé : zed, vim, vscode...
+:::
+
+* **enable** `bool` Activer la mise à jour des applications par défaut DNF
+
+```nix
+darkone.home.mime.enable = false;
+```
+
+{/* t:p 4d5ba9efe2876512ee41d5b3d5f76ba1f24686bccc1d1c9cbf6878ec3736ca31 */}
+### &#x1F3E0; darkone.home.music
+
+Applications graphiques de création musicale et sonore.
+
+Catégorisées par audience : `enablePro` (ardour, reaper, renoise,
+rosegarden), `enableCreator` (decibels, hydrogen), `enableScore`
+(musescore, muse-sounds-manager), `enableFun` (mixxx, mousai),
+`enableCli` (mpg123, cmus, lilypond), `enableEasy` (gnome-music vs.
+audacious), `enableMpd` (daemon MPD, ncmpcpp, mpdris2) et
+`enableDev` (lilypond).
+
+:::note[Bibliothèque musicale consciente NFS]
+Lorsque l'hôte est un client NFS et que le réseau expose un service `nfs`
+dans la même zone, MPD lit son répertoire musical à partir du montage NFS
+(`/mnt/nfs/homes/$USER/Music`). Sinon, il revient à la
+valeur `srv-dirs.homes`, puis à `~/Music`.
+:::
+
+* **enable** `bool` Module home de création musicale
+* **enablePro** `bool` Outils difficiles pour les professionnels (rose, ardour...)
+* **enableFun** `bool` Outils audio amusants (mixxx...)
+* **enableCli** `bool` Outils audio de ligne de commande (mpg123, cmus, moc...)
+* **enableDev** `bool` Logiciels audio pour les développeurs (lilypond...)
+* **enableMpd** `bool` Daemon et lecteurs MPD (mpd, ncmpcpp...)
+* **enableEasy** `bool` Outils faciles au lieu d'efficaces (gnome-music vs audacious...)
+* **enableScore** `bool` Logiciels de partition (musescore...)
+* **enableCreator** `bool` Outils de création pour les débutants (lmms, hydrogen...)
+
+```nix
+darkone.home.music = {
+  enable = false;
+  enablePro = false;
+  enableFun = false;
+  enableCli = false;
+  enableDev = false;
+  enableMpd = false;
+  enableEasy = false;
+  enableScore = false;
+  enableCreator = false;
+};
+```
+
+{/* t:p f3717354241eaa1a6155fe2b44e8fc0f444e95c0a76dbd4536e9d61d5f5383ee */}
+### &#x1F3E0; darkone.home.office
+
+Outils courants pour le bureau de bureau.
+
+* **enable** `bool` Paquets utiles par défaut
+* **enableMore** `bool` Plus de paquets alternatifs
+* **enableUnsafeFeatures** `bool` Fonctionnalités pour les utilisateurs avancés non-enfants
+* **enableUBlock** `bool` Activer le plugin ublock
+* **enableTools** `bool` Petits outils (gnome) (iotas, dialect, etc.)
+* **enableProductivity** `bool` Applications de productivité (obsidian, gestion du temps, projets, etc.)
+* **enableCommunication** `bool` Outils de communication
+* **enableOffice** `bool` Paquets Office (libreoffice)
+* **enableFirefox** `bool` Activer firefox
+* **enableLibreWolf** `bool` Activer firefox
+* **enableChromium** `bool` Activer chromium
+* **enableBrave** `bool` Activer le navigateur Brave
+* **enableEmail** `bool` Paquets de gestion des e-mails (thunderbird)
+* **enableSecurity** `bool` Outils de sécurité (keepass)
+* **enableCalendarContacts** `bool` Calendrier gnome, contacts et applications connexes
+* **enableEssentials** `bool` Outils essentiels
+* **huntspellLang** `str` [Huntspell Lang](https://mynixos.com/nixpkgs/packages/hunspellDicts)
+
+```nix
+darkone.home.office = {
+  enable = false;
+  enableMore = false;
+  enableUnsafeFeatures = false;
+  enableUBlock = false;
+  enableTools = false;
+  enableProductivity = false;
+  enableCommunication = false;
+  enableOffice = false;
+  enableFirefox = false;
+  enableLibreWolf = false;
+  enableChromium = false;
+  enableBrave = false;
+  enableEmail = false;
+  enableSecurity = false;
+  enableCalendarContacts = false;
+  enableEssentials = true;
+  huntspellLang = "en-us";
+};
+```
+
+{/* t:p 547ee4daed2acde13003ad986f960568575e0bc22291ee241f854bd57a1cc21c */}
+### &#x1F3E0; darkone.home.video
+
+Outils et applications vidéo.
+
+Installe toujours la visionneuse GNOME (`showtime`) et contrôle le reste par
+audience : `enableTools` (ffmpeg, mlt, vlc, video-trimmer, parabolic),
+`enableEditing` (kdenlive + shotcut de nixpkgs stable),
+`enableCreator` (OBS Studio avec `obs-backgroundremoval`,
+`obs-vkcapture`, etc.), `enableUnfree` (davinci-resolve de stable),
+et `enableAlternative` (mpv).
+
+* **enable** `bool` Module home de création et d'outils vidéo
+* **enableTools** `bool` Outils vidéo pour les professionnels
+* **enableEditing** `bool` Outils d'édition vidéo (kdenlive...)
+* **enableCreator** `bool` Outils de créateur vidéo (obs...)
+* **enableUnfree** `bool` Applications vidéo non libres (davinci...)
+* **enableAlternative** `bool` Applications vidéo alternatives (mpv...)
+
+```nix
+darkone.home.video = {
+  enable = false;
+  enableTools = false;
+  enableEditing = false;
+  enableCreator = false;
+  enableUnfree = false;
+  enableAlternative = false;
+};
+```

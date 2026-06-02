@@ -1,0 +1,80 @@
+---
+title: CLI applications
+sidebar:
+  order: 5
+---
+
+{/* t:main */}
+{/* t:h 18a0b95a786a494af73d2f013bb27e71d8a22da6716a59f0750acd9c6998bc0a */}
+
+{/* t:p fb415e4efa0770c06768d9cc32c8d09956417641d4f7affeb781fe54d086259e */}
+:::note
+**A CLI application module** installs terminal applications and their configuration optimized for DNF.
+:::
+
+{/* t:p 49026a535d6f86ea0bc898d44e64aa28a35ca726fbfa92ed91ed2eaccda9af1c */}
+### &#x1F4BB; darkone.console.git
+
+A pre-configured git environment.
+
+:::tip[Git shortcuts]
+- `git hdf` (history diff): select a commit to display diff.
+- `git tree`: history tree.
+- `git tre`: history with files.
+- `git treee`: history with commit messages.
+- `git hist`: tree alternative.
+:::
+
+* **enable** `bool` Pre-configured git environment
+
+```nix
+darkone.console.git.enable = false;
+```
+
+<hr/>
+
+{/* t:p 14f17cbc2e47f05e45568d34a6827a2c15c6af668e9d319b443817e141eb2fb4 */}
+### &#x1F4BB; darkone.console.pandoc
+
+Pandoc with texlive and exiftool utils + gentium fonts.
+
+* **enable** `bool` Pre-configured pandoc environment
+
+```nix
+darkone.console.pandoc.enable = false;
+```
+
+<hr/>
+
+{/* t:p b317df1073e22e4fcba714d192e00fe7ec7ec0c14ce5c37f8c1d5cf334cac534 */}
+### &#x1F4BB; darkone.console.zsh
+
+A full zsh installation with aliases, bindkeys and optimized prompt.
+
+:::tip[Some shortcuts]
+General:
+- `l`, `la`, `ll`: ls with options
+- `vz`: vim + fzf
+- `treef`: tree with files (eza)
+- `treed`: tree only dirs (eza)
+- `locate`: localsearch search (if localsearch is installed instead of locate)
+
+For nix/dnf admin profile:
+- `nx`: cd /etc/nixos
+- `nf`: nixfmt
+- `nc`: deadnix
+- `dnf`: cd ~/dnf
+- `mrproper`: nix-collect-garbage(s) + switch-to-conf boot
+:::
+
+* **enable** `bool` ZSH environment
+* **enableForRoot** `bool` Root home manager ZSH configuration
+
+```nix
+darkone.console.zsh = {
+  enable = false;
+  enableForRoot = false;
+};
+```
+
+<hr/>

@@ -1,0 +1,181 @@
+---
+title: Mixin modules
+sidebar:
+  order: 1
+---
+
+{/* t:main */}
+{/* t:h 222ace2694680b933b0459333944071d8b82e15ae1c39cb1f8997239cd3e0504 */}
+
+{/* t:p 8b1b37a58fa6d17a5c34c78cd824ac678a0b6a7d072d7f39be72dcc545a60196 */}
+:::note
+**A mixin module** defines a collection of standard modules with a consistent common configuration.
+:::
+
+{/* t:p f452ad958a6c4529c9874e2525fd01071a5d109ee726ac179c83e0fc5cfc4e5b */}
+### &#x1F4E6; darkone.host.desktop
+
+A full desktop configuration with gnome, multimedia and office tools.
+
+* **enable** `bool` Desktop optimized host configuration
+
+```nix
+darkone.host.desktop.enable = false;
+```
+
+<hr/>
+
+{/* t:p 6fce8f19f8ac11797904242e8e1a8edb6a71dd269cd38a72739792ed023e67b6 */}
+### &#x1F4E6; darkone.host.gateway
+
+The main gateway / router of a local network zone.
+
+:::tip[A ready-to-use gateway!]
+The gateway is configured in `usr/config.yaml` file.
+Additional enabled services (homepage, adguardhome, forgejo, ncps...)
+are automatically configured with consistent network plumbing on the
+gateway and all machines on the local network.
+:::
+
+* **enable** `bool` Enable gateway features for the current host (dhcp, dns, proxy, etc.)
+
+```nix
+darkone.host.gateway.enable = false;
+```
+
+<hr/>
+
+{/* t:p a25a6447424b89248f28dcf40734e88a9127f7c2bf9701f162dfce61c4f6bcf9 */}
+### &#x1F4E6; darkone.host.hcs
+
+The main headscale coordination server.
+
+:::tip[A ready-to-use headscale server!]
+The network is configured in `usr/config.yaml` file.
+Additional enabled services (authentication, etc.)
+are automatically configured with consistent network plumbing on your
+global network.
+
+Zsh alias "h" for "headscale".
+:::
+
+* **enable** `bool` Enable headscale coordination server
+* **enableClient** `bool` Enable tailscale client on HCS node (recommended to host services)
+
+```nix
+darkone.host.hcs = {
+  enable = false;
+  enableClient = true;
+};
+```
+
+<hr/>
+
+{/* t:p 0662b6df00a7e5b58de9f45a665ce2c822463ee58a4c415a7d07063cc713b0a3 */}
+### &#x1F4E6; darkone.host.laptop
+
+Desktop config + laptop specific tools & configuration.
+
+* **enable** `bool` Laptop optimized host configuration
+
+```nix
+darkone.host.laptop.enable = false;
+```
+
+<hr/>
+
+{/* t:p eb860dd93583cb48cb93a118b8d626134b9c3924be54e7f628c1bdba014c716c */}
+### &#x1F4E6; darkone.host.minimal
+
+Every host configuration is based on this minimal config.
+
+:::caution[Services declaration]
+A number of services (immich, nextcloud, forgejo, etc.) can be declared in
+`usr/config.yaml` of each host, regardless of its type (server, laptop,
+desktop, etc.). **It is advisable to declare them in the yaml file so that
+the service is visible across the entire network!**
+:::
+
+* **enable** `bool` Minimal host configuration
+* **secure** `bool` Prefer more secure options (disable mutable users...)
+
+```nix
+darkone.host.minimal = {
+  enable = false;
+  secure = false;
+};
+```
+
+<hr/>
+
+{/* t:p 8cf0a2317d88ffe0fea4875cf25bad41c2e6c4a6ddf979f9852c46ef6acc0e2b */}
+### &#x1F4E6; darkone.host.portable
+
+Portable configuration for a bootable USB drive containing a NixOS machine from the local network.
+
+* **enable** `bool` Portable host configuration for usb keys
+
+```nix
+darkone.host.portable.enable = false;
+```
+
+<hr/>
+
+{/* t:p 09af876c8b05e5a7fe98851371b2c08a64ec3f45eed5ff2346e056e683200650 */}
+### &#x1F4E6; darkone.host.server
+
+Improved configuration for servers (minimal, no sleep, watchdog...).
+
+:::caution[Emergency mode is disabled]
+We prefer the system to attempt to continue booting so
+that we can hopefully still access it remotely. (cf. srvos)
+:::
+
+* **enable** `bool` Server host minimal configuration
+* **enableWatchdog** `bool` Enable systemd watchdog
+
+```nix
+darkone.host.server = {
+  enable = false;
+  enableWatchdog = true;
+};
+```
+
+<hr/>
+
+{/* t:p b189fc09f35044bf9ca18ab46292465743027c95c7e4fb1740115fbac06e0eaf */}
+### &#x1F4E6; darkone.host.vm
+
+Virtual machines guest tools.
+
+* **enableVirtualbox** `bool` Virtualbox client
+* **enableQemu** `bool` Qemu/KVM client
+* **enableXen** `bool` Xen client
+
+```nix
+darkone.host.vm = {
+  enableVirtualbox = false;
+  enableQemu = false;
+  enableXen = false;
+};
+```
+
+<hr/>
+
+{/* t:p 0ad48d18e356b5e21b0900bc5028171147bf21c7a91de2eafa9ad7352a13bb3f */}
+### &#x1F4E6; darkone.profile.advanced
+
+Profile for advanced users (computer scientists, developers, admins).
+
+:::note[Host profile vs Home profile]
+This module enables features for all users of the system.
+Use HomeManager profiles to provide software tailored to each user (admin, advanced, student, child, teenager, etc.).
+:::
+
+* **enable** `bool` Advanced user (admin sys, developper)
+
+```nix
+darkone.profile.advanced.enable = false;
+```
+
+<hr/>

@@ -1,0 +1,397 @@
+---
+title: Modules système
+sidebar:
+  order: 3
+---
+
+{/* t:translated-from en */}
+{/* t:h 0e3d782c6339752c22a228242396a2c37acd65163f54dfbf43db5b5e1a7dc7b4 */}
+
+{/* t:p 88d1128927fcc3ef4e286f382da402a39d358787d247d3ff837c5c0a103f4251 */}
+:::note
+**Un module système** gère les configurations communes, importantes et générales.
+:::
+
+{/* t:p f771520fa07b96a3be18a816317b08b330bf3bfaab1db4f82dbdd481e4b73a5e */}
+### &#x2699; darkone.system.core
+
+Le module DNF principal.
+
+:::danger[Module obligatoire]
+Ce module est activé par défaut (requis par la configuration DNF).
+Il est requis pour le bon fonctionnement de chaque ordinateur NixOS sur le réseau local.
+:::
+
+Configure le chargeur systemd-boot, le noyau LTS, la police
+JetBrains Mono Nerd (avec `kmscon` pour le TTY), l'optimisation
+du magasin Nix chaque nuit et la collecte des ordures hebdomadaire
+(rétention de 30 j), le pare-feu, la politique de suspension (les serveurs
+peuvent la désactiver complètement via `disableSuspend`), les règles polkit
+permettant à `wheel` d'arrêter/redémarrer, et un groupe `common-files`
+partagé/l'utilisateur pour les dossiers médias inter-services.
+
+:::note[Point d'entrée Mixin]
+Active le mixin de profil de l'hôte (`darkone.host.${host.profile}.enable`)
+et propage `enableSops` au module sops.
+:::
+
+* **enable** `bool` Système principal du framework Darkone (activé par défaut)
+* **enableSystemdBoot** `bool` Activer le chargeur d'amorçage par défaut
+* **enableFstrim** `bool` Optimisation SSD avec fstrim
+* **enableFirewall** `bool` Activer le pare-feu (par défaut vrai)
+* **enableSops** `bool` Activer le module dnf sops (par défaut vrai)
+* **enableFlatpak** `bool` Activer la configuration DNF flatpak (uniquement pour les environnements graphiques)
+* **enableKmscon** `bool` Activer la police nerd pour TTY
+* **enableBoost** `bool` Activer l'overclocking, corectl
+* **enableAutoSuspend** `bool` Activer la suspension automatique (pour les ordinateurs portables, ignoré si disableSuspend est vrai)
+* **disableSuspend** `bool` Désactivation complète de la suspension (pour les serveurs)
+* **enableCommonFilesUser** `bool` Activer l'utilisateur common-files utilisé par plusieurs services
+
+```nix
+darkone.system.core = {
+  enable = true;
+  enableSystemdBoot = true;
+  enableFstrim = true;
+  enableFirewall = true;
+  enableSops = true;
+  enableFlatpak = true;
+  enableKmscon = true;
+  enableBoost = false;
+  enableAutoSuspend = false;
+  disableSuspend = false;
+  enableCommonFilesUser = false;
+};
+```
+
+{/* t:p ea546a6597149c033a54fed65c7c5775f2f4deceac65379376b6d4b4b52b7602 */}
+### &#x2699; darkone.system.documentation
+
+Documentation (man) pour les développeurs et les administrateurs.
+
+* **enable** `bool` Activer la documentation technique utile (man, nixos)
+
+```nix
+darkone.system.documentation.enable = false;
+```
+
+{/* t:p 3adf0df2698845c1f9106cae5c85503a09f6fbc66033cd9efcf2d31af50b5b29 */}
+### &#x2699; darkone.system.hardware
+
+Améliorations de la configuration matérielle.
+
+* **enable** `bool` Activer les optimisations matérielles
+* **enableIntel** `bool` Activer les mises à jour du microcode Intel
+* **enableAmd** `bool` Activer les mises à jour du microcode AMD
+
+```nix
+darkone.system.hardware = {
+  enable = false;
+  enableIntel = false;
+  enableAmd = false;
+};
+```
+
+{/* t:p 46487a2c2032983b63ec5f022790f16b962e01ef5f3ad172a6dfc5b6f7fbe5ea */}
+### &#x2699; darkone.system.i18n
+
+Configuration de la localisation et de la langue.
+
+:::note
+Par défaut, la configuration de ce module s'adapte à la configuration globale usr/config.yaml.
+La locale doit suivre la forme canonique `xx_YY.UTF-8` (par exemple `fr_FR.UTF-8`)
+afin que les codes de langue et de pays puissent être dérivés en toute sécurité pour la
+disposition des touches de la console, la disposition XKB et les valeurs par défaut
+de la région téléphonique Nextcloud.
+:::
+
+* **enable** `bool` Activer i18n avec la configuration de la zone de réseau par défaut
+* **locale** `strMatching localeRegex` Locale réseau, doit correspondre à la forme `xx_YY.UTF-8`.
+* **timeZone** `str` Fuseau horaire réseau
+
+```nix
+darkone.system.i18n = {
+  enable = false;
+  locale = "fr_FR.UTF-8";
+  timeZone = "Europe/Paris";
+};
+```
+
+{/* t:p 07c23b4ee523fbac089c11f282bffcaa8dcf98c88bf37c303ad9029e51e91ae5 */}
+### &#x2699; darkone.system.security
+
+Durcissement du système ANSSI BP-028 v2.0 (GNU/Linux). (en cours)
+
+Module recommandé, activé dans certains profils d'hôte ou manuellement
+selon les besoins. Applique progressivement
+les recommandations ANSSI selon le niveau et la catégorie de machine choisis.
+Chaque profil d'hôte définit son niveau et sa catégorie :
+
+:::danger[Module en développement]
+- Affinez et testez les options, les fonctionnalités, etc.
+- Créez le « checkScript », un outil d'introspection de configuration de sécurité.
+- Configuration locale simple pour les paramètres spécifiques au matériel et aux besoins.
+:::
+
+```nix
+darkone.system.security = {
+  level    = "intermediary"; # minimal | intermediary | reinforced | high
+  category = "server";       # base | client | server
+};
+```
+
+Les règles incompatibles avec l'environnement sont exclues par tag :
+
+```nix
+darkone.system.security.excludes = [ "needs-jit" "needs-hibernation" ];
+```
+
+Une règle spécifique peut être contournée avec une justification obligatoire :
+
+```nix
+darkone.system.security.exceptions = {
+  R9.rationale = "Docker rootless required during development.";
+};
+```
+
+:::note[Niveau de durcissement ANSSI]
+- `minimal`      : base commune, tout système (par défaut).
+- `intermediary` : recommandé pour presque tous les systèmes.
+- `reinforced`   : systèmes sensibles ou multi-locataires.
+- `high`         : compétences et budget dédiés ; implique la recompilation du noyau
+                   (tag `kernel-recompile`) si non exclu.
+:::
+
+:::note[Catégorie de machine]
+- `base`   : règles universelles, toujours appliquées (par défaut).
+- `client` : station de travail (GUI, USB, session, verrouillage).
+- `server` : serveur (réseau durci, journalisation centralisée, services exposés).
+
+Indépendant de `host.profile` — à définir explicitement dans chaque profil d'hôte.
+:::
+
+:::note[Tags d'exclusion]
+- `kernel-recompile`             : ignore R15–R27, C1 (pas de noyau personnalisé).
+- `disable-kernel-module-loading`: ignore R10 (peut casser les appareils).
+- `no-ipv6`                      : ignore R13, R22 (désactiver IPv6).
+- `no-mac`                       : ignore R37, R45 (pas de MAC actif).
+- `no-sealing`                   : ignore R76, R77 (pas de HIDS/AIDE).
+- `no-auditd`                    : ignore R73 (auditd non configurable).
+- `embedded`                     : assouplir les contraintes /var, /home, etc.
+- `needs-jit`                    : permet W^X détendu (Java, .NET, V8, Wasm).
+- `needs-kexec`                  : conserve kexec pour kdump.
+- `needs-binfmt`                 : conserve binfmt_misc (Java, qemu-static).
+- `needs-hibernation`            : conserve l'hibernation (ordinateurs portables).
+- `needs-usb-hotplug`            : désactive USBGuard / deny_new_usb.
+:::
+
+:::note[Exceptions par règle]
+Une règle avec une exception est exclue de l'activation même si le niveau la couvrirait.
+Justification obligatoire dans `rationale`.
+:::
+
+:::caution[Effets secondaires]
+Certaines règles peuvent casser l'utilisation courante : `noexec /tmp` (R28),
+SMT désactivé (R8), modules non signés (R18), conteneurs sans root (R9),
+JIT (R63). Consultez les commentaires `sideEffects` dans chaque fichier à thème avant
+d'augmenter le niveau sur un système de production.
+:::
+
+* **enable** `bool` Activer le module de durcissement ANSSI BP-028 v2.0.
+* **level** `enum [ "minimal" "intermediary" "reinforced" "high" ]` Niveau de durcissement ANSSI cible.
+* **category** `enum [ "base" "client" "server" ]` Catégorie de machine qui sélectionne les sous-ensembles de règles.
+* **excludes** `listOf str` Tags qui désactivent des groupes de règles entiers.
+* **exceptions** `attrs` Exceptions par règle avec justification obligatoire.
+* **adminMailbox** `str` Adresse e-mail de l'administrateur (sudo R39, alias MTA R75).
+* **useHardenedKernel** `bool` Utiliser linuxPackages_hardened (R60, C1) au lieu du noyau par défaut.
+* **allowedActiveUsers** `listOf str` Liste exhaustive des comptes utilisateurs actifs (validation R30).
+
+```nix
+darkone.system.security = {
+  enable = false;
+  level = "minimal";
+  category = "base";
+  excludes = [ ];
+  exceptions = { };
+  adminMailbox = "admin@exemple.fr";
+  useHardenedKernel = false;
+  allowedActiveUsers = [ ];
+};
+```
+
+{/* t:p d6607e60aa6e34f9fb62b573eeadcbcdda75ecf2dd27ea788abc41480aba0436 */}
+### &#x2699; darkone.system.services
+
+Enregistrement et configuration des services DNF.
+
+:::caution[Module interne spécial]
+Ce module est utilisé pour enregistrer et configurer les modules DNF :
+- Client de serveur de coordination (headscale / tailscale)
+- Proxies inverses (caddy)
+- Enregistrements sur la page d'accueil
+- Entrées DNS
+- dossiers et fichiers à sauvegarder
+:::
+
+* **enable** `bool` Activer le gestionnaire de services DNF pour enregistrer et exposer les services
+* **service** `attrs` Configuration des services globaux &lt;name&gt;
+  * **enable** `bool` Activer le proxy de service
+  * **defaultParams** `submodule` Ces options sont calculées par dnfLib.srv.extractServiceParams
+    * **domain** `str` Nom de domaine du service
+    * **title** `str` Nom d'affichage sur la page d'accueil
+    * **description** `str` Description du service pour la page d'accueil
+    * **icon** `str` [Nom de l'icône pour la page d'accueil](https://selfh.st/icons/)
+    * **global** `bool` Le service global est accessible sur Internet
+    * **noRobots** `bool` Empêcher les robots d'explorer si global est vrai
+    * **fqdn** `str` FQDN calculé du service avant le proxy inverse
+    * **href** `str` URL calculée du service avant le proxy inverse
+    * **ip** `str` IP calculée pour contacter le service
+  * **displayOnHomepage** `bool` Afficher un lien sur la page d'accueil
+  * **reverseProxy** `bool` Accessible via le proxy inverse de la passerelle de zone (DNS pointe vers l'IP LAN de la passerelle)
+  * **uniquePerZone** `bool` Au maximum une instance autorisée par zone (validation du générateur)
+  * **externalAccess** `bool` Service www-zone accessible depuis le LAN via une adresse IP d'hôte fixe (par exemple headscale, turn)
+  * **persist.dirs** `listOf str` Répertoires persistants du service
+  * **persist.files** `listOf str` Fichiers persistants du service
+  * **persist.dbDirs** `listOf str` Répertoires persistants avec base(s) de données
+  * **persist.dbFiles** `listOf str` Fichier(s) de base de données du service
+  * **persist.varDirs** `listOf str` Fichiers secondaires variables (journal, cache, etc.)
+  * **persist.mediaDirs** `listOf str` Répertoires médias du service (images, vidéos, gros fichiers)
+  * **proxy.enable** `bool` Créer une configuration virtualHost (faux pour les services qui gèrent les leurs)
+  * **proxy.isProtected** `bool` Service protégé par Oauth2
+  * **proxy.isInternal** `bool` Lier le service sur l'interface interne uniquement (non accessible Internet)
+  * **proxy.hasReverseProxy** `bool` Ceci est un proxy inverse (ou une autre configuration virtualhost via extraConfig)
+  * **proxy.defaultService** `bool` Est le service par défaut
+  * **proxy.servicePort** `nullOr port` Port interne du service
+  * **proxy.preExtraConfig** `lines` Configuration virtualHost caddy supplémentaire (préfixe)
+  * **proxy.extraConfig** `lines` Configuration virtualHost caddy supplémentaire
+  * **proxy.extraGlobalConfig** `lines` Configuration caddy supplémentaire
+  * **proxy.scheme** `str` Schéma du service interne (http / https)
+
+```nix
+darkone.system.services = {
+  enable = false;
+  service.enable = false;
+  service.defaultParams.domain = "";
+  service.defaultParams.title = "";
+  service.defaultParams.description = "";
+  service.defaultParams.icon = "";
+  service.defaultParams.global = false;
+  service.defaultParams.noRobots = true;
+  service.defaultParams.fqdn = "";
+  service.defaultParams.href = "";
+  service.defaultParams.ip = "";
+  service.displayOnHomepage = true;
+  service.reverseProxy = true;
+  service.uniquePerZone = false;
+  service.externalAccess = false;
+  service.persist.dirs = [ ];
+  service.persist.files = [ ];
+  service.persist.dbDirs = [ ];
+  service.persist.dbFiles = [ ];
+  service.persist.varDirs = [ ];
+  service.persist.mediaDirs = [ ];
+  service.proxy.enable = true;
+  service.proxy.isProtected = false;
+  service.proxy.isInternal = false;
+  service.proxy.hasReverseProxy = true;
+  service.proxy.defaultService = false;
+  service.proxy.servicePort = null;
+  service.proxy.preExtraConfig = "";
+  service.proxy.extraConfig = "";
+  service.proxy.extraGlobalConfig = "";
+  service.proxy.scheme = "https";
+};
+```
+
+{/* t:p a9d97ecd52b40078237beb75df5e43b0d614201545254f6afe0b70d31463a052 */}
+### &#x2699; darkone.system.sops
+
+Gestion des mots de passe et secrets DNF sops.
+
+:::danger[Module critique]
+Ce module est activé par défaut dans le module core.
+Il est recommandé de le conserver activé et de le configurer (commandes `just passwd*`).
+:::
+
+Connecte sops-nix à `usr/secrets/secrets.yaml` et le déverrouille avec la
+clé SSH de l'hôte (`ssh_host_ed25519_key`) plus la clé d'infrastructure dédiée
+age (`/etc/sops/age/infra.key`). Pré-déclare un groupe `sops` partagé,
+les secrets `default-password` / `default-password-hash` (lisible par le groupe
+`sops`), et un secret `user/<login>/password-hash` par utilisateur d'hôte
+(avec `neededForUsers = true` pour que le hash soit disponible avant la
+création des comptes utilisateur).
+
+* **enable** `bool` Activer la configuration automatique sops pour DNF
+
+```nix
+darkone.system.sops.enable = false;
+```
+
+{/* t:p b67e83ac82c077c96344539057ac4c5cb759ab44f974218097feee55c1e3b7b0 */}
+### &#x2699; darkone.system.srv-dirs
+
+Service de gestion des répertoires partagés.
+
+:::caution[Activation automatique]
+Ce service est automatiquement activé par les services qui utilisent NFS ou le stockage médias partagé.
+:::
+
+* **enable** `bool` Activer les répertoires srv, créer le répertoire racine (par défaut /srv)
+* **enableNfs** `bool` Activer les chemins de service nfs (nfs/common, nfs/homes)
+* **enableMedias** `bool` Activer les chemins des services médias (medias/[videos|music|incomming/...])
+* **root** `str` Répertoire racine pour les données persistantes (/srv)
+* **nfs** `str` Répertoire racine NFS (/srv/nfs)
+* **homes** `str` Répertoire pour les domiciles partagés (/srv/nfs/homes)
+* **common** `str` Répertoire commun partagé (/srv/nfs/common lié à ~/Public)
+* **medias** `str` Répertoire racine des médias (/srv/medias)
+* **music** `str` Répertoire partagé des fichiers musicaux (/srv/medias/music)
+* **videos** `str` Répertoire partagé des fichiers vidéo (/srv/medias/videos)
+* **incoming** `str` Répertoire partagé entrant (/srv/medias/incoming accès écriture)
+* **incomingMusic** `str` Répertoire partagé entrant (/srv/medias/incoming/music accès écriture)
+* **incomingVideos** `str` Répertoire partagé entrant (/srv/medias/incoming/videos accès écriture)
+
+```nix
+darkone.system.srv-dirs = {
+  enable = cfg.enableNfs || cfg.enableMedias;
+  enableNfs = false;
+  enableMedias = false;
+  root = "/srv";
+  nfs = null;
+  homes = null;
+  common = null;
+  medias = null;
+  music = null;
+  videos = null;
+  incoming = null;
+  incomingMusic = null;
+  incomingVideos = null;
+};
+```
+
+{/* t:p 86a74efb7e0942adabd4c55a882ebb222def566db01b4d571dc696f7bc096d0c */}
+### &#x2699; darkone.system.testing
+
+Mode de test autonome pour le pilote de test NixOS.
+
+Lorsqu'il est activé, neutralise les bits irréductiblement externes/runtime pour qu'un nœud
+puisse être exercé dans une VM : headscale/tailscale deviennent des no-ops et un certificat TLS
+fixe peut stubifier ACME. Il permet également à la configuration workDir-only (nix.pub,
+harmonia.pub) d'être ignorée par core/ncps. sops reste RÉEL (haute fidélité).
+
+:::caution[Tests uniquement]
+Activé uniquement via `tests/lib/test-tuning.nix`. Ce module ne référence jamais
+aucun chemin sous `tests/` — le chemin du certificat est transmis comme valeur d'option.
+:::
+
+Objectif : utiliser, déboguer.
+
+* **standalone** `bool` Mode de test autonome — ignorer la configuration workDir-only (nix.pub, harmonia.pub) et neutraliser les services externes
+* **tlsCert** `nullOr path` Certificat auto-signé (PEM) fourni par le harnais de test pour stubifier ACME. Jamais un chemin tests/ cuisiné dans le framework.
+* **tlsKey** `nullOr path` Clé privée (PEM) couplée à tlsCert.
+
+```nix
+darkone.system.testing = {
+  standalone = false;
+  tlsCert = null;
+  tlsKey = null;
+};
+```

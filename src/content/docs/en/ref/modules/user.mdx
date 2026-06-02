@@ -1,0 +1,47 @@
+---
+title: User mgm modules
+sidebar:
+  order: 8
+---
+
+{/* t:main */}
+{/* t:h c6c3c11b374d5485af8dcb337420155ba30b46a5667fd0cbbd0c654588970fc2 */}
+
+{/* t:p ffb41368c98ff188d54ef1ef20f74743f384d16654811e581a4accccb72eb2b8 */}
+:::note
+**A user module** manage user-related processing or special user settings.
+:::
+
+{/* t:p 40bf7a6befd9216cddbaadb09d04bc3999d516a2c5977d7028ffdc9f388c5ae6 */}
+### &#x1F464; darkone.user.build
+
+Build users NixOS (not home-manager) configuration.
+
+:::danger[Required module]
+This module is enabled by default (required by DNF configuration).
+:::
+
+* **enable** `bool` Users common builder (enabled by default)
+
+```nix
+darkone.user.build.enable = true;
+```
+
+<hr/>
+
+{/* t:p 62ee13c80b2c575ff0840e6a62a3972455ec323d32fc7402eee9aff1b010040c */}
+### &#x1F464; darkone.user.root
+
+Root user specific settings.
+
+:::danger[Required module]
+This module is enabled by default (required by DNF configuration).
+:::
+
+* **enable** `bool` Root user specific configuration
+
+```nix
+darkone.user.root.enable = true;
+```
+
+<hr/>

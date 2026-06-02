@@ -1,0 +1,43 @@
+---
+title: Modules de gestion d'utilisateurs
+sidebar:
+  order: 8
+---
+
+{/* t:translated-from en */}
+{/* t:h c6c3c11b374d5485af8dcb337420155ba30b46a5667fd0cbbd0c654588970fc2 */}
+
+{/* t:p ffb41368c98ff188d54ef1ef20f74743f384d16654811e581a4accccb72eb2b8 */}
+:::note
+**Un module d'utilisateur** gère le traitement des utilisateurs ou les paramètres utilisateur spéciaux.
+:::
+
+{/* t:p 40bf7a6befd9216cddbaadb09d04bc3999d516a2c5977d7028ffdc9f388c5ae6 */}
+### &#x1F464; darkone.user.build
+
+Générez la configuration NixOS des utilisateurs (pas home-manager).
+
+:::danger[Module obligatoire]
+Ce module est activé par défaut (requis par la configuration DNF).
+:::
+
+* **enable** `bool` Générateur commun d'utilisateurs (activé par défaut)
+
+```nix
+darkone.user.build.enable = true;
+```
+
+{/* t:p 62ee13c80b2c575ff0840e6a62a3972455ec323d32fc7402eee9aff1b010040c */}
+### &#x1F464; darkone.user.root
+
+Paramètres spécifiques de l'utilisateur root.
+
+:::danger[Module obligatoire]
+Ce module est activé par défaut (requis par la configuration DNF).
+:::
+
+* **enable** `bool` Configuration spécifique de l'utilisateur root
+
+```nix
+darkone.user.root.enable = true;
+```
