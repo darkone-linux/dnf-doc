@@ -26,6 +26,17 @@ function decideMain(present, langs, mainLang, logical) {
   // 2. An existing t:main tag.
   const taggedMains = present.filter((e) => e.doc.role === 'main').map((e) => e.lang);
   if (taggedMains.length) return taggedMains.includes(mainLang) ? mainLang : taggedMains.sort()[0];
+  // 2.5. No t:main left (eg. a codegen'd main lost its tags), but translations
+  // still point at their source via t:translated-from: respect that pointer so
+  // the source language is not flipped to mainLang. Consensus if several.
+  const pointers = present
+    .filter((e) => e.doc.role === 'translated' && e.doc.translatedFrom && has(e.doc.translatedFrom))
+    .map((e) => e.doc.translatedFrom);
+  if (pointers.length) {
+    const counts = {};
+    for (const p of pointers) counts[p] = (counts[p] || 0) + 1;
+    return Object.entries(counts).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))[0][0];
+  }
   // 3. Default main language, else first available.
   if (has(mainLang)) return mainLang;
   for (const l of langs) if (has(l)) return l;
