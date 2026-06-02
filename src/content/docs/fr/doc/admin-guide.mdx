@@ -5,10 +5,15 @@ sidebar:
 lang: fr
 ---
 
+{/* t:main */}
+{/* t:h f467724214dcd04f3ab9180bd997384471a99c7c4be2bd938921da1f667a0f29 */}
+
 import { Steps } from '@astrojs/starlight/components';
 
+{/* t:p 7a9a23d47f651282e60f47bfdd237cc88cbfe52834bac26a6284698368f52af5 */}
 Cette section est dédiée aux administrateurs.
 
+{/* t:p 78d9d6f65ea0e3c040cfe192517e7624da145862cf4e9b31dc4269bf375bc343 */}
 ## Préparation
 
 On va installer dans l'ordre :
@@ -23,6 +28,7 @@ L'ensemble de ces noeuds seront décrits dans une unique configuration NixOS sur
 on va pouvoir mettre à jour et faire évoluer tout le réseau et ses machines.
 :::
 
+{/* t:p be28595e029802bc7b68134123159f44f9c2c6dc37e2579e612912554a3ece84 */}
 ## Installation initiale
 
 :::caution[En cours d'optimisation]
@@ -30,10 +36,12 @@ Les étapes d'installation initiales sont en cours de simplification. En attenda
 version anglaise de ce site.
 :::
 
+{/* t:p 23e98cd5abce6af3f0ecb3f1e380650b139b1271c6426f152eee2eaee260159a */}
 ## Création d'une zone
 
 Une zone (sous-réseau) est composée au minimum d'une passerelle, derrière laquelle on peut mettre autant d'ordinateurs qu'on veut.
 
+{/* t:p 2d5fe271747ca4d19da42d729ad426be1ec30d7f23bada7539207d1f780fc77c */}
 ### La passerelle
 
 Un mini-ordinateur toujours allumé, avec au moins 2 interfaces réseau (une éthernet branchée à la box et les autres qui font partie du sous-réseau - ethernet et wifi).
@@ -46,6 +54,7 @@ Un modèle [protectli](https://eu.protectli.com/) ou équivalent est idéal. [Ce
 * En option : carte wifi
 :::
 
+{/* t:p 582eee3733c9a28f42addbf051d2765e63420f402cda521972397f2a1cc0946d */}
 #### Check-list client
 
 Si l'installation se fait à distance, voici les informations à transmettre :
@@ -63,10 +72,12 @@ Le système de la clé USB n'est accessible que via une clé d'authentification 
 Cette redirection n'est plus nécessaire une fois la passerelle installée, mais l'accès reste utile en cas de problème.
 :::
 
+{/* t:p e357795b01b7e28a7d09ad4535a879f4edcf3ab6356118ef0ca2620dc08e3cbf */}
 #### Check-list administrateur
 
 A venir...
 
+{/* t:p 8de156c7f26ce49ae3b49e67bf637d4836fcdbd4d3313004f5034177b3da5422 */}
 ### Autres ordinateurs
 
 * __N'importe quel ordinateur, smartphone, tablette__ branché au réseau de la passerelle fait automatiquement partie du réseau (VPN) et peut accéder aux services moyennant quelques configurations.
@@ -74,6 +85,7 @@ A venir...
 
 ---
 
+{/* t:p d017bc92cf57ca6edbc23069733600a58439c66bd73b25900ea9d9a9444928d0 */}
 ## Création d'un compte utilisateur
 
 :::tip
@@ -84,12 +96,14 @@ Chaque utilisateur aura :
 * Une adresse matrix locale, ex. @prenom:domaine.tld (messagerie instantanée et visio).
 :::
 
+{/* t:p 0c5db08f8ed148f230cd00b77ec7e0d78025aadbb3114dba036fd616d4dbd894 */}
 ### 3 éléments importants
 
 * Le mot de passe principal de [vaultwarden](https://vaultwarden.poncon.fr/), pour ouvrir son coffre.
 * La clé d'authentification [IDM](https://idm.poncon.fr/) pour accéder à tous les services.
 * Un mot de passe supplémentaire dans [IDM](https://idm.poncon.fr/) en cas de perte de la clé.
 
+{/* t:p a5effc44e3816f0b11cd42775735376b7aced8404b63d03ca8be23424782565f */}
 ### Étapes de création du compte
 
 :::note[Ce que devra faire le nouvel utilisateur]
@@ -166,6 +180,7 @@ Chaque utilisateur aura :
 
 </Steps>
 
+{/* t:p 72a9706f873f5a7a43eebe91e3efe4e522515ccb831bff9431055adb9561da07 */}
 ## Création d'un poste Linux
 
 La création d'un poste Linux est une opération rapide.
@@ -205,6 +220,7 @@ En quelques minutes, la commande `just full-install` va installer le système co
 Si l'opération échoue, il est possible de reprendre les étapes consultables dans le fichier `Justfile`.
 :::
 
+{/* t:p f5fdce6e6e3d386e9e29a6bc03cfcce1e142be6b8bb926cb87a6552a5113ef89 */}
 ## Se connecter depuis l'extérieur
 
 Pour accéder à tous les services (ainsi qu'aux partages) quand on est pas dans une zone, il faut un client VPN Tailscale.

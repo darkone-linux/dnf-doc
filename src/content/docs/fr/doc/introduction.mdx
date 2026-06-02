@@ -6,8 +6,12 @@ sidebar:
 lang: fr
 ---
 
+{/* t:main */}
+{/* t:h aef2ce9bf0b37262c245a0e0810ecb12691f65444b79e6200b3703eb4bc76618 */}
+
 import { FileTree } from '@astrojs/starlight/components';
 
+{/* t:p 16002e82006f771ebbbc300a3823e44ad5a853dde25d9b204d3c1f996b6a2598 */}
 :::tip[Non informaticien ?]
 Le [guide de l'utilisateur](/fr/doc/user-guide/) est pour vous !
 :::
@@ -24,6 +28,7 @@ Une **configuration NixOS** multi-utilisateur, multi-hôte et multi-service&nbsp
 Ce projet évolue en fonction de mes besoins. Si vous souhaitez être informé des prochaines versions stables, merci de me le faire savoir sur [GitHub](https://github.com/darkone-linux/darkone-nixos-framework) ou en vous abonnant à ma [chaîne YouTube](https://www.youtube.com/@DarkoneLinux) (FR). Merci !
 :::
 
+{/* t:p 44cff6adcae455e8014fc5e403f6ffea236c3aca7eac247af3886735b138357e */}
 ## Fonctionnalités principales
 
 | | Fonctionnalité | Description |
@@ -39,6 +44,7 @@ Ce projet évolue en fonction de mes besoins. Si vous souhaitez être informé d
 | 💾 | Sauvegardes 3-2-1 | Sauvegardes [Restic](https://restic.net/) robustes, simplifiées, distribuées |
 | 🏠 | Page d’accueil | Page d’accueil automatisée pour chaque zone |
 
+{/* t:p 108e6e1b68ba0ed57a856308a5edff76445a9f69c522de3f16b0f2dbc19206e7 */}
 ## Sous le capot
 
 | | Spécificité | Description |
@@ -50,6 +56,7 @@ Ce projet évolue en fonction de mes besoins. Si vous souhaitez être informé d
 | ✴️ | Proxy inverse | Services distribués à travers le réseau via proxies [Caddy](https://github.com/caddyserver/caddy) |
 | 🛜 | Réseau automatisé | Plomberie [dnsmasq](https://thekelleys.org.uk/dnsmasq/doc.html) zero-conf (DNS, DHCP, pare-feu…) |
 
+{/* t:p bf22570a5546901e95fb5462a953acd6904e932a0f22fd3738876b31520395bf */}
 ## Le réseau DNF
 
 Cette configuration gère tout le réseau et ses noeuds :
@@ -61,6 +68,7 @@ On peut résumer le fonctionnement du réseau ainsi :
 
 ![Réseau DNF](../../../../assets/reseau-darkone-2.png)
 
+{/* t:p 782daf0770cd7d10570145edd4b9655c6eb3fb4624bb7ca904a374b966e782d0 */}
 ## Organisation des fichiers
 
 A la racine :
@@ -71,6 +79,7 @@ A la racine :
 - `src` -> Fichiers source du générateur
 - `doc` -> Documentation du projet
 
+{/* t:p b5275262e9016af75316bad6ea1894e1446747bd80b9a1e745800ab7f2d15533 */}
 ### Structure
 
 <FileTree collapsed={true}>
@@ -110,6 +119,7 @@ A la racine :
 - doc/ Cette documentation
 </FileTree>
 
+{/* t:p 07605739d85a7a66b51f6a136a64132b6c2fb09f716243931ad1c0ae8afc1519 */}
 ### Couches d'abstraction
 
 Les niveaux inférieurs rendent service aux niveaux supérieurs.
@@ -123,6 +133,7 @@ Ces configurations sont organisées par catégories:
 - **[Profils utilisateur](/en/doc/specifications/#create-a-user-profile-example)** (en), configurations [Home Manager](https://github.com/nix-community/home-manager) standards.
 - **Outils pour maintenir une configuration qualitative.
 
+{/* t:p ae9f71b348d4cf9b9e48103d3cd4c5bb62c673dd8a44b5d9a647a04650e0a9fe */}
 ## Utilisation de l'IA
 
 :::tip[Introduction tardive de l'IA]

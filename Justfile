@@ -13,6 +13,20 @@ dev:
 clean:
 	npm run clean
 
+# Update translation tags (roles + main-file paragraph/header hashes)
+tags *args:
+	node scripts/update-tags.mjs {{ args }}
+
+# Incremental translation: update tags, then translate stale/missing paragraphs
+# via AI agents. Flags: --check (dry-run), --force, --only=<path>.
+translate *args:
+	node scripts/update-tags.mjs {{ args }}
+	node scripts/translate.mjs {{ args }}
+
+# Run the translation scripts unit tests
+test:
+	node --test 'scripts/**/*.test.mjs'
+
 # Codegen + fix + build + deploy
 update msg="": codegen fix build
 	just deploy "{{ msg }}"
