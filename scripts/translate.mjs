@@ -114,6 +114,9 @@ function planJobs() {
         const tPath = targetPath(docsDir, tgt, logical);
         const tDoc = existsSync(tPath) ? parseDoc(readFileSync(tPath, 'utf8')) : null;
         const rec = reconcile(doc, tDoc, config);
+        // --force re-translates everything (header + every paragraph), not just
+        // the conflict-guard override — useful to refresh anchors/wording.
+        if (FORCE) { rec.headerNeeds = true; for (const p of rec.paragraphs) p.needs = true; }
         const paraJobs = rec.paragraphs.filter((p) => p.needs);
         const allowOverwrite = FORCE || (config.regenerate || []).includes(logical);
         jobs.push({
