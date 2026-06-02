@@ -28,21 +28,21 @@ A **NixOS configuration** for multiple users, multiple hosts, and multiple servi
 This project evolves based on my needs. If you would like to be informed of upcoming stable versions, please let me know on [GitHub](https://github.com/darkone-linux/darkone-nixos-framework) or by subscribing to my [YouTube channel](https://www.youtube.com/@DarkoneLinux) (FR). Thank you!
 :::
 
-{/* t:p 44cff6adcae455e8014fc5e403f6ffea236c3aca7eac247af3886735b138357e */}
+{/* t:p 035b2918e78b7606b6f831a545118d2fde51fc056ac357e8c9df9b1b08750298 */}
 ## Main Features
 
 | | Feature | Description |
-|---|---------|-------------|
-| ⚙️ | Fully Automated | With [nixos-anywhere](https://github.com/nix-community/nixos-anywhere), [disko](https://github.com/nix-community/disko) and [colmena](https://github.com/zhaofengli/colmena) |
-| 👤 | User Profiles | [Profiles](https://github.com/darkone-linux/darkone-nixos-framework/tree/main/dnf/home/profiles) and [modules](/en/ref/modules/#home-manager-modules) [Home Manager](https://github.com/nix-community/home-manager) (admin, gamer…) |
-| 🖥️ | Host Profiles | [Host profiles](/en/ref/modules/#-darkonehostdesktop) (servers, network nodes, workstations…) |
-| 🌐 | Tailnet VPN | [Mesh VPN](https://en.wikipedia.org/wiki/Mesh_network) with [headscale](https://headscale.net/) + [tailscale](https://tailscale.com/) + [subnets](#a-configuration-for-a-complete-network) |
-| 🛡️ | Ad Blocker | Secure and ad-free internet with [AdguardHome](https://adguard.com/fr/adguard-home/overview.html) |
-| 🧩 | Unique Identities | SSO with [Kanidm](https://kanidm.com/) and [Vaultwarden](https://github.com/dani-garcia/vaultwarden) |
-| 🤗 | Smart Services | [Immich](https://immich.app/), [Nextcloud](https://nextcloud.com/), [Forgejo](https://forgejo.org/), [Matrix](https://matrix.com/), [Jellyfin](https://jellyfin.org/), [etc.](/en/ref/modules/#-darkoneserviceadguardhome) |
-| 💻 | Clean GNOME | NixOS hosts with [GNOME](https://www.gnome.org/) and pre-configured apps |
+|---|--------|-------------|
+| ⚙️ | Fully automated | With [nixos-anywhere](https://github.com/nix-community/nixos-anywhere), [disko](https://github.com/nix-community/disko) and [colmena](https://github.com/zhaofengli/colmena) |
+| 👤 | User profiles | [Profiles](https://github.com/darkone-linux/darkone-nixos-framework/tree/main/dnf/home/profiles) and [modules](/en/ref/modules/#home-manager-modules) [Home Manager](https://github.com/nix-community/home-manager) (admin, gamer…) |
+| 🖥️ | Host profiles | [Host profiles](/en/ref/modules/#-darkonehostdesktop) (servers, network nodes, workstations…) |
+| 🌐 | VPN Tailnet | [Mesh VPN](https://fr.wikipedia.org/wiki/R%C3%A9seau_maill%C3%A9) with [headscale](https://headscale.net/) + [tailscale](https://tailscale.com/) + [subnets](#the-dnf-network) |
+| 🛡️ | Ad Blocking | Secure and ad-free internet with [AdguardHome](https://adguard.com/fr/adguard-home/overview.html) |
+| 🧩 | Unique identities | SSO with [Kanidm](https://kanidm.com/) and [Vaultwarden](https://github.com/dani-garcia/vaultwarden) |
+| 🤗 | Smart services | [Immich](https://immich.app/), [Nextcloud](https://nextcloud.com/), [Forgejo](https://forgejo.org/), [Matrix](https://matrix.com/), [Jellyfin](https://jellyfin.org/), [etc.](/en/ref/modules/#-darkoneserviceadguardhome) |
+| 💻 | Streamlined GNOME | NixOS hosts with [GNOME](https://www.gnome.org/) and pre-configured apps |
 | 💾 | 3-2-1 Backups | Robust, simplified, distributed [Restic](https://restic.net/) backups |
-| 🏠 | Home Page | Automated home page for each zone |
+| 🏠 | Home page | Automated home page for each zone |
 
 {/* t:p 108e6e1b68ba0ed57a856308a5edff76445a9f69c522de3f16b0f2dbc19206e7 */}
 ## Under the Hood
@@ -119,19 +119,26 @@ At the root:
 - doc/ This documentation
 </FileTree>
 
-{/* t:p 07605739d85a7a66b51f6a136a64132b6c2fb09f716243931ad1c0ae8afc1519 */}
+{/* t:p 8ae49215fdb730562c9837aa85f9bbf372446bb67de09dad45449ba3304020f4 */}
 ### Abstraction Layers
 
-Lower levels serve upper levels.
+Lower levels serve the upper levels.
 
 ![DNF Project layers](../../../../assets/layers.webp)
 
 These configurations are organized by categories:
 
-- **[Standard modules](/en/ref/modules/#standard-modules)** simple and easy to use.
-- **[Mixin modules](/en/ref/modules/#mixin-modules)** that encompass multiple standard modules.
+- **[Mixin modules](/en/ref/modules/#mixin-modules)** that compose and configure hosts.
+- **[Service modules](/en/ref/modules/#service-modules)** for self-hosted services.
+- **[System modules](/en/ref/modules/#system-modules)** for basic system configuration.
+- **[Security modules](/en/ref/modules/#security-modules)** for system hardening.
+- **[CLI applications](/en/ref/modules/#cli-applications)** command-line tools.
+- **[GUI applications](/en/ref/modules/#gui-applications)** graphical applications.
+- **[Administration modules](/en/ref/modules/#administration-modules)** for fleet management.
+- **[User management modules](/en/ref/modules/#user-mgm-modules)** for accounts and access.
+- **[Home Manager modules](/en/ref/modules/#home-manager-modules)** for user profiles.
 - **[User profiles](/en/doc/specifications/#create-a-user-profile-example)** (en), standard [Home Manager](https://github.com/nix-community/home-manager) configurations.
-- **Tools for maintaining qualitative configuration.
+- **Tools** to maintain quality configuration.
 
 {/* t:p ae9f71b348d4cf9b9e48103d3cd4c5bb62c673dd8a44b5d9a647a04650e0a9fe */}
 ## AI Usage
