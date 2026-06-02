@@ -34,12 +34,12 @@ This project evolves based on my needs. If you would like to be informed of upco
 | | Feature | Description |
 |---|--------|-------------|
 | ⚙️ | Fully automated | With [nixos-anywhere](https://github.com/nix-community/nixos-anywhere), [disko](https://github.com/nix-community/disko) and [colmena](https://github.com/zhaofengli/colmena) |
-| 👤 | User profiles | [Profiles](https://github.com/darkone-linux/darkone-nixos-framework/tree/main/dnf/home/profiles) and [modules](/en/ref/modules/#home-manager-modules) [Home Manager](https://github.com/nix-community/home-manager) (admin, gamer…) |
-| 🖥️ | Host profiles | [Host profiles](/en/ref/modules/#-darkonehostdesktop) (servers, network nodes, workstations…) |
+| 👤 | User profiles | [Profiles](https://github.com/darkone-linux/darkone-nixos-framework/tree/main/dnf/home/profiles) and [modules](/en/ref/modules/home/) [Home Manager](https://github.com/nix-community/home-manager) (admin, gamer…) |
+| 🖥️ | Host profiles | [Host profiles](/en/ref/modules/mixin/#-darkonehostdesktop) (servers, network nodes, workstations…) |
 | 🌐 | VPN Tailnet | [Mesh VPN](https://fr.wikipedia.org/wiki/R%C3%A9seau_maill%C3%A9) with [headscale](https://headscale.net/) + [tailscale](https://tailscale.com/) + [subnets](#the-dnf-network) |
 | 🛡️ | Ad Blocking | Secure and ad-free internet with [AdguardHome](https://adguard.com/fr/adguard-home/overview.html) |
 | 🧩 | Unique identities | SSO with [Kanidm](https://kanidm.com/) and [Vaultwarden](https://github.com/dani-garcia/vaultwarden) |
-| 🤗 | Smart services | [Immich](https://immich.app/), [Nextcloud](https://nextcloud.com/), [Forgejo](https://forgejo.org/), [Matrix](https://matrix.com/), [Jellyfin](https://jellyfin.org/), [etc.](/en/ref/modules/#-darkoneserviceadguardhome) |
+| 🤗 | Smart services | [Immich](https://immich.app/), [Nextcloud](https://nextcloud.com/), [Forgejo](https://forgejo.org/), [Matrix](https://matrix.com/), [Jellyfin](https://jellyfin.org/), [etc.](/en/ref/modules/service/#-darkoneserviceadguardhome) |
 | 💻 | Streamlined GNOME | NixOS hosts with [GNOME](https://www.gnome.org/) and pre-configured apps |
 | 💾 | 3-2-1 Backups | Robust, simplified, distributed [Restic](https://restic.net/) backups |
 | 🏠 | Home page | Automated home page for each zone |
@@ -128,15 +128,15 @@ Lower levels serve the upper levels.
 
 These configurations are organized by categories:
 
-- **[Mixin modules](/en/ref/modules/#mixin-modules)** that compose and configure hosts.
-- **[Service modules](/en/ref/modules/#service-modules)** for self-hosted services.
-- **[System modules](/en/ref/modules/#system-modules)** for basic system configuration.
-- **[Security modules](/en/ref/modules/#security-modules)** for system hardening.
-- **[CLI applications](/en/ref/modules/#cli-applications)** command-line tools.
-- **[GUI applications](/en/ref/modules/#gui-applications)** graphical applications.
-- **[Administration modules](/en/ref/modules/#administration-modules)** for fleet management.
-- **[User management modules](/en/ref/modules/#user-mgm-modules)** for accounts and access.
-- **[Home Manager modules](/en/ref/modules/#home-manager-modules)** for user profiles.
+- **[Mixin modules](/en/ref/modules/mixin/)** that compose and configure hosts.
+- **[Service modules](/en/ref/modules/service/)** for self-hosted services.
+- **[System modules](/en/ref/modules/system/)** for basic system configuration.
+- **[Security modules](/en/ref/modules/security/)** for system hardening.
+- **[CLI applications](/en/ref/modules/console/)** command-line tools.
+- **[GUI applications](/en/ref/modules/graphic/)** graphical applications.
+- **[Administration modules](/en/ref/modules/admin/)** for fleet management.
+- **[User management modules](/en/ref/modules/user/)** for accounts and access.
+- **[Home Manager modules](/en/ref/modules/home/)** for user profiles.
 - **[User profiles](/en/doc/specifications/#create-a-user-profile-example)** (en), standard [Home Manager](https://github.com/nix-community/home-manager) configurations.
 - **Tools** to maintain quality configuration.
 

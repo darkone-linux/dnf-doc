@@ -56,8 +56,8 @@ update msg="":
 	just codegen
 	just translate
 	just clean
+	just build
 	if [ -n "$(git status --porcelain)" ]; then
-	    just build
 	    just deploy "{{ msg }}"
 	else
 	    echo "Nothing changed — skipping build and deploy."
