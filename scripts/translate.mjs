@@ -12,13 +12,14 @@
 // Use --check / -n for a dry run that lists work without calling any agent.
 
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
-import { dirname } from 'node:path';
+import { dirname, join } from 'node:path';
 import config, { LANG_NAMES } from './translate.config.mjs';
 import { resolveDocsDir } from './lib/paths.mjs';
 import { listLangs, buildFileMap, targetPath } from './lib/fsmap.mjs';
 import { parseDoc, serializeDoc, computeMainHashes } from './lib/mdx-doc.mjs';
 import { reconcile } from './lib/reconcile.mjs';
 import { runAgent, pMap, commandExists } from './lib/agent.mjs';
+import { headingSlugs, mapAnchor } from './lib/anchors.mjs';
 
 const argv = process.argv.slice(2);
 const DRY = argv.some((a) => ['--check', '-n', '--dry-run'].includes(a));
@@ -44,6 +45,44 @@ function rewriteLinks(text, src, tgt) {
 
 function swapLang(frontmatter, tgt) {
   return frontmatter.replace(/^lang:[ \t].*$/m, `lang: ${tgt}`);
+}
+
+// Heading slugs of a page on disk, cached by absolute path.
+const slugCache = new Map();
+function slugsForFile(absPath) {
+  if (slugCache.has(absPath)) return slugCache.get(absPath);
+  let slugs = [];
+  try { slugs = headingSlugs(parseDoc(readFileSync(absPath, 'utf8'))); } catch { /* missing → no slugs */ }
+  slugCache.set(absPath, slugs);
+  return slugs;
+}
+
+// Rewrite `#anchor` targets deterministically (the agent must NOT guess them).
+// Two cases handled; everything else (cross-language links, external URLs, an
+// unknown anchor) is left untouched for the link validator to flag.
+//   - same page  ](#a)            : map via the current file's src↔tgt headings
+//   - cross page  ](/<tgt>/p/#a)  : map via <mainLang>/p ↔ <tgt>/p headings
+function resolveAnchors(text, ctx) {
+  const { docsDir, mainLang, tgt, srcSlugs, tgtSlugs } = ctx;
+  return text.replace(/\]\((#[^)\s]+|\/[a-z]{2}\/[^)\s]*?#[^)\s]+)\)/g, (full, target) => {
+    if (target.startsWith('#')) {
+      if (srcSlugs.length !== tgtSlugs.length) return full; // partial file → don't risk a mismap
+      const mapped = mapAnchor(srcSlugs, tgtSlugs, target.slice(1));
+      return mapped ? `](#${mapped})` : full;
+    }
+    const m = target.match(/^\/([a-z]{2})\/(.*?)#(.+)$/);
+    if (!m) return full;
+    const [, lang, pathPart, anchor] = m;
+    if (lang !== tgt) return full; // intentional cross-language reference
+    const logical = pathPart.replace(/\/$/, '');
+    if (!logical) return full;
+    const mapped = mapAnchor(
+      slugsForFile(join(docsDir, mainLang, `${logical}.mdx`)),
+      slugsForFile(join(docsDir, tgt, `${logical}.mdx`)),
+      anchor,
+    );
+    return mapped ? `](/${tgt}/${pathPart}#${mapped})` : full;
+  });
 }
 
 function parseAgentOutput(text) {
@@ -133,6 +172,15 @@ function writeTranslated(job, got) {
     if (tr) paragraphs.push({ hash: p.hash, content: rewriteLinks(tr, mainLang, tgt) });
     // else: omit -> stays "missing", retried next run (self-healing).
   }
+
+  // Deterministic anchor resolution (after locale rewrite): src↔tgt headings are
+  // positionally aligned, so #anchors map exactly instead of being guessed.
+  const anchorCtx = {
+    docsDir, mainLang, tgt,
+    srcSlugs: headingSlugs(mainDoc),
+    tgtSlugs: headingSlugs({ paragraphs }),
+  };
+  for (const p of paragraphs) p.content = resolveAnchors(p.content, anchorCtx);
 
   const preamble = job.tDoc?.preamble || mainDoc.preamble;
   const doc = {

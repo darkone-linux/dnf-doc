@@ -70,12 +70,11 @@ Rules:
 - Translate prose, heading text, list items and admonition titles (:::note[...]).
 - DO NOT translate or alter: code blocks, inline code, file paths, shell commands,
   URLs, HTML/JSX/MDX tags and their attributes, import/export statements, YAML keys.
-- Preserve Markdown/MDX structure, heading levels (#), links and anchors (#...).
-- Internal links carry a locale prefix: replace a leading "/{{srcLang}}/" with
-  "/{{tgtLang}}/". Leave links pointing to any OTHER language untouched (that
-  content is intentionally available only in that language). For localized internal
-  links, update the anchor text to the official title of the corresponding target
-  page in {{tgtLang}}, not a literal translation of the source anchor text.
+- Preserve Markdown/MDX structure and heading levels (#).
+- Links and anchors are handled deterministically AFTER you, by tooling. So:
+  keep every link target and every "#anchor" EXACTLY as in the source (do NOT
+  translate, guess or rewrite anchors or locale prefixes). Only translate the
+  human-readable link TEXT (the part inside the square brackets).
 - In the HEADER (YAML frontmatter) translate human-readable VALUES only (title,
   description, tagline, button text...), keep every key and link, and set the
   value of "lang:" to "{{tgtLang}}".

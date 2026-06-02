@@ -23,9 +23,14 @@ translate *args:
 	node scripts/update-tags.mjs {{ args }}
 	node scripts/translate.mjs {{ args }}
 
-# Run the translation scripts unit tests
+# Run the translation scripts unit tests + internal link/anchor validation
 test:
 	node --test 'scripts/**/*.test.mjs'
+	just check-links
+
+# Validate internal #anchor links resolve to real headings (read-only)
+check-links:
+	node scripts/check-anchors.mjs
 
 # Codegen + fix + build + deploy
 update msg="": codegen fix build

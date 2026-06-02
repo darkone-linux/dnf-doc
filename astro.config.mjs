@@ -1,5 +1,6 @@
 import { defineConfig } from "astro/config";
 import starlight from "@astrojs/starlight";
+import starlightLinksValidator from "starlight-links-validator";
 import rehypeExternalLinks from "rehype-external-links";
 import { targetBlank } from "./src/plugins/targetBlank";
 
@@ -26,6 +27,14 @@ export default defineConfig({
   },
   integrations: [
     starlight({
+      // Fail the build on any dead internal link or #anchor. Cross-language
+      // links (an EN-only page referenced from FR) are intentional here, so
+      // inconsistent-locale links are allowed.
+      plugins: [
+        starlightLinksValidator({
+          errorOnInconsistentLocale: false,
+        }),
+      ],
       title: "Darkone NixOS Framework",
       favicon: "/favicon.svg",
       customCss: ["./src/styles/custom.css"],
