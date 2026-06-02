@@ -64,8 +64,17 @@ function main() {
       } else {
         // translated: ensure role tag, keep any existing hashes, add none.
         const already = e.doc.role === 'translated' && e.doc.translatedFrom === mainLang;
+        const wasMain = e.doc.role === 'main';
         e.doc.role = 'translated';
         e.doc.translatedFrom = mainLang;
+        // Direction flipped (main -> translated): the old self-hashes no longer
+        // reference the new main, so drop them. The file becomes untracked and
+        // is protected by translate.mjs's conflict guard instead of being
+        // overwritten from a possibly thinner main.
+        if (wasMain) {
+          e.doc.headerHash = null;
+          for (const p of e.doc.paragraphs) p.hash = null;
+        }
         translated++;
         if (writeIfChanged(e.path, e.text, e.doc)) {
           written++;

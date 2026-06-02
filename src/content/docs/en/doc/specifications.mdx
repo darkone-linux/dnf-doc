@@ -5,12 +5,10 @@ sidebar:
 lang: en
 ---
 
-{/* t:main */}
-{/* t:h e625ed52cc85b84bed31ab785d4eb0fdcde3e34cea72d78d5380267cbd95a287 */}
+{/* t:translated-from fr */}
 
 import { Steps } from '@astrojs/starlight/components';
 
-{/* t:p 9ef73223a4d8aa7648c76e5a9a17a2fb16646af264f28994fa2a699d91f074c4 */}
 ## Goals
 
 This nixos configuration enables a full local network with ready-to-use configurations and profiles:
@@ -30,12 +28,10 @@ For example, this configuration can be used for:
 - **Projects**: Servers and workstations designed to meet your specific needs.
 :::
 
-{/* t:p ce6bf141cd4345c8d5714e6c22a1dc8ba546cb6540f32d8242d5f092738b1e88 */}
 ## Implemented features
 
 This section includes everything that is currently implemented and functional.
 
-{/* t:p 4a8d95ff9a92ad453f513eec6ad684ff1981e6d6da6ac08805cec2fe169e2d66 */}
 ### The generator
 
 Its role is to generate a pure static configuration from a definition of machines (hosts), users, and groups from various sources (static declarations, LDAP, etc. configured in [`usr/config.yaml`](#the-configuration-file). The generated Nix configuration is integrated into the repository to be fixed and used by the flake.
@@ -72,7 +68,6 @@ A `just clean`:
 - `var/generated/network.nix` The network configuration
 :::
 
-{/* t:p 22662da7ca9622fe0d84d27cce9d4ab06d6c9fc616b181dec8822ca1573d99e8 */}
 ### The configuration file
 
 The `usr/config.yaml` file contains declarations of users, hosts and network config. [The generator](#the-generator) reads this file to create a static pure nix configuration.
@@ -103,7 +98,6 @@ Usage examples:
 - [`service/ncps.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/dnf/modules/nix/standard/service/ncps.nix) module uses `host` and `network` to declare server and clients.
 :::
 
-{/* t:p 664449c499dfa49d1bebd8746ab649d5ee229c57483cf5b141a04a5753a1898e */}
 ### Network declaration example
 
 Minimal network:
@@ -146,7 +140,6 @@ network:
     "192.168.0.1": ["box"]
 ```
 
-{/* t:p 19edd0db4d64e89f2e424d30c937218249451af90a14fd5d6711b428d779fbff */}
 #### Users' declaration example
 
 ```yaml
@@ -179,7 +172,6 @@ users:
     groups: [ "kids", "common" ]
 ```
 
-{/* t:p 101d7b81eb3d61d549633b33eb7366a8be92b51bbcb5fc03871ab3b214f2102e */}
 #### Hosts' declaration example
 
 ```yaml
@@ -271,7 +263,6 @@ hosts:
               ip: "192.168.1.21"
 ```
 
-{/* t:p 3ee286ca2867cb4005526ad18b5e6fc9e8215aa7ba09bf64d21538d5136fb868 */}
 ### Create a host profile (example)
 
 How to create your own host profile for your local network, based on "desktop" host profile from DNF.
@@ -350,7 +341,6 @@ just apply @user-darkone
 ```
 :::
 
-{/* t:p 7839cf7f4315eb528137323ad344e1938b05b6ab7c952dc0daf1dfe137c380bf */}
 ### Create a user profile (example)
 
 :::note
@@ -395,14 +385,12 @@ Each user have a **profile declaration** in the nix configuration and a **home p
 
 {/*
 
-{/* t:p 433eaa7e8a93d5151e9390cca2d8e8b42188d5d824e366bedede829eb4c0dbc6 */}
 ## Work in progress features
 
 :::caution
 These examples are not yet fully functional and may differ in the future stable version of the project.
 :::
 
-{/* t:p 874da00fcd4a0cebef6fa315908c747f7c2f1f28ce9709e610d93efae71459e1 */}
 ### A full-featured gateway (example)
 
 Minimal host profile declaration:
@@ -481,14 +469,12 @@ colmena apply --on gateway switch
 
 */}
 
-{/* t:p a312636e9e61c46e31526b4e0ec50b7e55e5d3ccb8524fd1ed26915b3948e513 */}
 ## Features in reflexion
 
 :::danger
 Not yet functional at this time.
 :::
 
-{/* t:p 889592d0417b57d816b6e7527b939772e7c409c81089d6a81c180ee88e92f12f */}
 ### K8S installation
 
 Master (minimal working configuration) :
@@ -544,7 +530,6 @@ Master with options:
 }
 ```
 
-{/* t:p 7d9ad1e681e168ecbc342dddc6e3edcffd4721f565920f87920834fbdae69c0d */}
 ### Introspection commands
 
 ```shell

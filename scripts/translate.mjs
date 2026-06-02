@@ -76,9 +76,10 @@ function planJobs() {
         const tDoc = existsSync(tPath) ? parseDoc(readFileSync(tPath, 'utf8')) : null;
         const rec = reconcile(doc, tDoc, config);
         const paraJobs = rec.paragraphs.filter((p) => p.needs);
+        const allowOverwrite = FORCE || (config.regenerate || []).includes(logical);
         jobs.push({
           logical, mainLang, tgt, tPath, mainDoc: doc, tDoc, rec, paraJobs,
-          headerNeeds: rec.headerNeeds, conflict: rec.conflict && !FORCE,
+          headerNeeds: rec.headerNeeds, conflict: rec.conflict && !allowOverwrite,
         });
       }
     }
@@ -86,15 +87,29 @@ function planJobs() {
   return { langs, jobs };
 }
 
-function buildPrompt(job) {
+function buildPrompt(job, paras, includeHeader) {
   let body = '';
-  if (job.headerNeeds) body += `<<<HEADER>>>\n${job.mainDoc.frontmatter}\n<<<EHEADER>>>\n\n`;
-  for (const p of job.paraJobs) body += `<<<T ${p.hash}>>>\n${p.src}\n<<<E ${p.hash}>>>\n\n`;
+  if (includeHeader) body += `<<<HEADER>>>\n${job.mainDoc.frontmatter}\n<<<EHEADER>>>\n\n`;
+  for (const p of paras) body += `<<<T ${p.hash}>>>\n${p.src}\n<<<E ${p.hash}>>>\n\n`;
   return render(config.prompts.translate, {
     srcLang: job.mainLang, tgtLang: job.tgt,
     srcName: langName(job.mainLang), tgtName: langName(job.tgt),
     body: body.trim(),
   });
+}
+
+function chunk(arr, size) {
+  const out = [];
+  for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
+  return out;
+}
+
+// Split a file's agent work into bounded tasks (a chunk of paragraphs + maybe
+// the header). Results from all tasks of a file are merged before writing.
+function buildTasks(job, maxParas) {
+  job.got = { header: null, paras: {} };
+  const groups = job.paraJobs.length ? chunk(job.paraJobs, maxParas) : [[]];
+  return groups.map((paras, i) => ({ job, paras, includeHeader: job.headerNeeds && i === 0 }));
 }
 
 // Assemble and write the translated file from reconciled paragraphs + agent
@@ -162,26 +177,43 @@ async function main() {
   if (DRY) { console.log(`[translate] dry-run: ${written} file(s) would change without agent.`); return; }
   if (!agentJobs.length) { console.log(`[translate] up to date. ${written} file(s) updated.`); return; }
 
-  const { tool, model, concurrency, timeoutMs } = config.agent;
+  const { tool, model, concurrency, timeoutMs, maxParasPerCall } = config.agent;
   if (!commandExists(tool)) {
     console.error(`[translate] agent tool "${tool}" not found on PATH. Set TRANSLATE_TOOL or install it.`);
     process.exit(1);
   }
   const { cmd, args } = config.command(tool, model);
 
-  await pMap(agentJobs, async (job) => {
-    const prompt = buildPrompt(job);
+  // Bounded tasks across all files, run with shared concurrency.
+  const tasks = agentJobs.flatMap((j) => buildTasks(j, maxParasPerCall));
+  console.log(`[translate] dispatching ${tasks.length} agent call(s) (max ${maxParasPerCall} para/call, concurrency ${concurrency})`);
+  await pMap(tasks, async (task) => {
+    const { job } = task;
+    const prompt = buildPrompt(job, task.paras, task.includeHeader);
     try {
       const out = await runAgent({ cmd, args, input: prompt, timeoutMs });
       const got = parseAgentOutput(out);
-      const missing = job.paraJobs.filter((p) => !got.paras[p.hash]).length;
-      if (writeTranslated(job, got)) written++;
-      const note = missing ? ` ⚠ ${missing} paragraph(s) not returned (will retry)` : '';
-      console.log(`  ✓ ${job.tgt}/${job.logical}${note}`);
+      if (got.header) job.got.header = got.header;
+      Object.assign(job.got.paras, got.paras);
+      const miss = task.paras.filter((p) => !got.paras[p.hash]).length;
+      if (miss && process.env.TRANSLATE_DEBUG) {
+        const tag = task.paras[0] ? task.paras[0].hash.slice(0, 8) : 'header';
+        const dbg = `/tmp/translate-debug-${job.tgt}-${job.logical.replace(/\//g, '_')}-${tag}.txt`;
+        writeFileSync(dbg, `PROMPT:\n${prompt}\n\n===OUTPUT (${out.length} chars)===\n${out}`);
+        console.error(`    debug dumped to ${dbg}`);
+      }
     } catch (e) {
-      console.error(`  ✖ ${job.tgt}/${job.logical}: ${e.message}`);
+      console.error(`  ✖ ${job.tgt}/${job.logical} chunk: ${e.message}`);
     }
   }, concurrency);
+
+  // Assemble + write each file once, after all its chunks have run.
+  for (const job of agentJobs) {
+    const missing = job.paraJobs.filter((p) => !job.got.paras[p.hash]).length;
+    if (writeTranslated(job, job.got)) written++;
+    const note = missing ? ` ⚠ ${missing}/${job.paraJobs.length} paragraph(s) not returned (will retry)` : '';
+    console.log(`  ✓ ${job.tgt}/${job.logical}${note}`);
+  }
 
   console.log(`[translate] done. ${written} file(s) updated.`);
 }

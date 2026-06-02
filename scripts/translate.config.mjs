@@ -12,8 +12,18 @@ export default {
   // Per-file main-language overrides, keyed by logical path (language stripped).
   // Highest priority when deciding which language is the source of truth.
   mainOverrides: {
-    'doc/specifications.mdx': 'en', // EN holds the real specs; FR is regenerated.
+    // EN holds the legacy specs and must stay the protected source: keep FR as
+    // the (stub) main so the rich EN file is never overwritten nor translated.
+    'doc/specifications.mdx': 'fr',
+    'index.mdx': 'fr',
   },
+
+  // Logical paths whose existing translation should be regenerated from the
+  // main even though it diverges (overrides the conflict guard for these only).
+  regenerate: [
+    'doc/how-to.mdx',
+    'doc/introduction.mdx',
+  ],
 
   // Logical paths (language-stripped) excluded from tagging/translation.
   // Example: skip the auto-generated module reference.
@@ -27,10 +37,14 @@ export default {
   adoptExisting: true,
 
   agent: {
-    tool: env.TRANSLATE_TOOL || 'claude', // 'claude' | 'opencode'
-    model: env.TRANSLATE_MODEL || 'claude-haiku-4-5',
-    concurrency: Number(env.TRANSLATE_CONCURRENCY || 4), // 1 agent per file
-    timeoutMs: Number(env.TRANSLATE_TIMEOUT || 180000),
+    tool: env.TRANSLATE_TOOL || 'opencode', // 'claude' | 'opencode'
+    model: env.TRANSLATE_MODEL || 'opencode/big-pickle', // 'claude-haiku-4-5',
+    concurrency: Number(env.TRANSLATE_CONCURRENCY || 4), // parallel agent calls
+    timeoutMs: Number(env.TRANSLATE_TIMEOUT || 300000), // large files need headroom
+    // Max paragraphs sent to a single agent call. A file with more is split into
+    // several calls (reliable parsing + avoids timeouts/output truncation), then
+    // reassembled into one translated file.
+    maxParasPerCall: Number(env.TRANSLATE_CHUNK || 12),
   },
 
   // Command builder: returns { cmd, args }; the prompt is piped on stdin.
@@ -59,7 +73,9 @@ Rules:
 - Preserve Markdown/MDX structure, heading levels (#), links and anchors (#...).
 - Internal links carry a locale prefix: replace a leading "/{{srcLang}}/" with
   "/{{tgtLang}}/". Leave links pointing to any OTHER language untouched (that
-  content is intentionally available only in that language).
+  content is intentionally available only in that language). For localized internal
+  links, update the anchor text to the official title of the corresponding target
+  page in {{tgtLang}}, not a literal translation of the source anchor text.
 - In the HEADER (YAML frontmatter) translate human-readable VALUES only (title,
   description, tagline, button text...), keep every key and link, and set the
   value of "lang:" to "{{tgtLang}}".
