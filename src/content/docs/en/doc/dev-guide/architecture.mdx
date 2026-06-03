@@ -1,0 +1,29 @@
+---
+title: Project architecture
+sidebar:
+  label: Architecture
+  order: 1
+lang: en
+---
+
+{/* t:translated-from fr */}
+
+The framework is organized in layers: each level serves the one above, from the
+base system up to host and user profiles.
+
+## File organization
+
+The full structure and abstraction layers are described in the
+[project introduction](/en/doc/introduction/#file-organization).
+
+- `dnf/` — the framework: modules, Home Manager configuration, libraries.
+- `usr/` — the local project (writable): configuration, secrets, machines.
+- `var/generated/` — generated files (never edit by hand).
+- `src/generator/` — generator sources (Rust).
+- `doc/` — this documentation.
+
+## Reference modules
+
+The ready-to-use modules are documented in the
+[module reference](/en/ref/modules/), sorted by category (system, service,
+security, console, graphic, admin, user, mixin, home).

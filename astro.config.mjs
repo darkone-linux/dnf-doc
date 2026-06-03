@@ -59,13 +59,83 @@ export default defineConfig({
       logo: {
         src: "./src/assets/nix-logo.svg",
       },
+      // Explicit sidebar: controls section order, keeps menu labels SHORT and
+      // localized, and avoids the raw folder-name groups that `autogenerate`
+      // over `doc/` would produce. Order: introduction → user → admin → dev →
+      // FAQ. Per-leaf short labels live in each page's `sidebar.label`.
       sidebar: [
         {
           label: "Documentation",
-          items: [{ autogenerate: { directory: "doc" } }],
+          translations: { fr: "Documentation" },
+          items: [
+            {
+              slug: "doc/introduction",
+              label: "Introduction",
+              translations: { fr: "Introduction" },
+            },
+            {
+              label: "User Guide",
+              translations: { fr: "Guide de l'utilisateur" },
+              collapsed: true,
+              // The "presentation" leaves (services, workstations, profiles,
+              // nodes) live under doc/user-guide/presentation/ and stay OFF the
+              // sidebar — reached from the overview cards. Only the overview and
+              // the day-to-day "manage my account" page are listed here.
+              items: [
+                {
+                  slug: "doc/user-guide",
+                  label: "Overview",
+                  translations: { fr: "Présentation" },
+                },
+                { slug: "doc/user-guide/account" },
+              ],
+            },
+            {
+              label: "Administrators",
+              translations: { fr: "Administrateurs" },
+              collapsed: true,
+              items: [
+                {
+                  slug: "doc/admin-guide",
+                  label: "Overview",
+                  translations: { fr: "Présentation" },
+                },
+                { autogenerate: { directory: "doc/admin-guide" } },
+              ],
+            },
+            {
+              label: "Developers",
+              translations: { fr: "Développeurs" },
+              collapsed: true,
+              items: [
+                {
+                  slug: "doc/dev-guide",
+                  label: "Overview",
+                  translations: { fr: "Présentation" },
+                },
+                { autogenerate: { directory: "doc/dev-guide" } },
+              ],
+            },
+            // FAQ: two coherent levels — overview + one landing page per
+            // persona. The individual how-to leaves stay off the sidebar
+            // (reachable from each persona page). Labels come from each page's
+            // localized `sidebar.label`.
+            {
+              label: "FAQ",
+              translations: { fr: "FAQ" },
+              collapsed: true,
+              items: [
+                { slug: "doc/how-to" },
+                { slug: "doc/how-to/user" },
+                { slug: "doc/how-to/admin" },
+                { slug: "doc/how-to/dev" },
+              ],
+            },
+          ],
         },
         {
           label: "References",
+          translations: { fr: "Références" },
           items: [{ autogenerate: { directory: "ref" } }],
         },
         { label: "Changelog", slug: "changelog" },

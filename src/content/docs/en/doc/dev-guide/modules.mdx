@@ -1,0 +1,37 @@
+---
+title: Modules
+sidebar:
+  label: Modules
+  order: 2
+lang: en
+---
+
+{/* t:translated-from fr */}
+
+import { Steps } from '@astrojs/starlight/components';
+
+The framework's features are provided as high-level **NixOS modules**, grouped by
+category under `dnf/modules/` and documented in the
+[module reference](/en/ref/modules/).
+
+## Categories
+
+- **standard** — system, console, graphic, service, admin, user.
+- **mixin** — macro-modules composing host profiles and user-profile add-ons.
+- **home** — [Home Manager](https://github.com/nix-community/home-manager) modules and profiles.
+
+## Creating a module
+
+<Steps>
+
+1. Pick the category (`dnf/modules/standard/<category>/` or `mixin`).
+2. Write the file header following the rules (see [code headers](/en/doc/how-to/)).
+3. Declare the module's `options` then its `config`.
+4. Regenerate (`just generate`) and test before committing.
+
+</Steps>
+
+:::note[Code reference]
+The options exposed by each module are generated automatically in the
+[reference](/en/ref/modules/) — do not edit it by hand.
+:::

@@ -1,0 +1,43 @@
+---
+title: Contributing to the documentation
+sidebar:
+  label: Documentation
+  order: 4
+lang: en
+---
+
+{/* t:translated-from fr */}
+
+This site is built with [Astro](https://astro.build/) and
+[Starlight](https://starlight.astro.build/). Pages live under
+`src/content/docs/<lang>/` (`fr`, `en`).
+
+## Where to write
+
+- `doc/<section>.mdx` — a section's **entry page**: introduction + links.
+- `doc/<section>/<leaf>.mdx` — detail **leaves**.
+- Short cross-cutting topics → `doc/how-to/{user,admin,dev}/`.
+
+Write in **French** (`fr/`); English is produced afterwards by `just translate`.
+Slugs and file names stay in English.
+
+## Essential rules
+
+- Max 7 headings per level, depth 3.
+- `<Steps>` for step sequences, `<Aside>` (with a title) for callouts.
+- `Card`/`CardGrid` are reserved for the user guide.
+- See the [help & how-to](/en/doc/how-to/) and the role *skills*.
+
+## Tools
+
+```sh
+just dev      # development server
+just tags     # refresh translation tags
+just build    # build the static site
+just test     # tests + internal link validation
+```
+
+:::caution[Do not touch]
+The `{/* t:* */}` markers and generated pages (`*/ref/modules.mdx`) are managed
+by scripts. See `AGENTS.md`.
+:::
