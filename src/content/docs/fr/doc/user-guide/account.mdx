@@ -1,0 +1,55 @@
+---
+title: Se connecter et gérer mon compte
+sidebar:
+  order: 4
+lang: fr
+---
+
+{/* t:main */}
+{/* t:h 896df79ae85590511fd901892deaba732301edbd7eb138dbb2f58bf1c8e5aed3 */}
+
+{/* t:p 8e6d424b6036912d3da747f17e856354fd6b4f7873977a519bff6c36d5c74256 */}
+## Se connecter et gérer mon compte
+
+J’ai besoin :
+
+* **D’un mot de passe principal** pour mon coffre-fort (vaultwarden).
+* **D’une identité unique** pour tous les services du cloud (kanidm / IDM).
+
+Mon administrateur doit effectuer une procédure pour que je puisse définir ces accès.
+
+* **Mot de passe principal** : un e-mail contenant un lien pour saisir le mot de passe.
+* **Identité** : un QR-Code ou un lien pour définir une clé et un mot de passe "2FA".
+
+:::tip[A savoir !]
+- 🔒 **Mon mot de passe principal** (Vaultwarden / Bitwarden)<br/>permet de me connecter à mon coffre-fort.
+- 🔑 **Ma clé d’authentification** (Clé IDM)<br/>permet de me connecter à toutes les applications du cloud.
+- 🔐 **Mon mot de passe “2 facteurs”** (Clé 2FA)<br/>permet de me connecter aussi, si j'ai un problème avec ma clé.
+:::
+
+Le **mot de passe principal** est primordial, c'est la seule chose qu'il faut **absolument retenir**.
+
+Mon identification suit le schéma suivant :
+
+![Workflow d'identification](../../../../../assets/identification.png)
+
+:::note[Qu'est-ce qu'une clé ?]
+Une clé numérique permet de s’identifier sans avoir à utiliser de mot de passe.
+Elle est située dans mon coffre fort.
+Quand une application en a besoin, Bitwarden s’ouvre automatiquement.
+C’est le moyen **LE PLUS SIMPLE ET SÉCURISÉ** pour m’authentifier.
+:::
+
+:::note[Un mot de passe “2 facteurs” ?]
+Une authentification 2 facteurs (2FA) utilise :
+- un mot de passe (quelque chose que je connais)
+- ET un autre “facteur” (quelque chose que je possède)
+
+Ce dernier peut être un code envoyé par mail / sms, un générateur de code à 6 chiffres, etc.
+De nos jours, énormément de mots de passe sont compromis, c’est pourquoi ce type d’authentification devient nécessaire.
+:::
+
+:::caution[Sécuriser mon coffre-fort]
+Pour faciliter l’accès au coffre (vaultwarden / bitwarden), un mot de passe principal “simple” est autorisé par défaut.
+Mais il est vivement recommandé de lui adjoindre un 2ème facteur pour sécuriser l’accès, surtout je met tous mes mots de passe dedans (banque, comptes sociaux, etc.).
+:::

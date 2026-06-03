@@ -1,0 +1,54 @@
+---
+title: Connecting and managing my account
+sidebar:
+  order: 4
+lang: en
+---
+
+{/* t:translated-from fr */}
+
+{/* t:p bb98a04d80136969c19a7f738e075a53959b62dcd82915a70cdfc519fa002106 */}
+## Connecting and Managing My Account
+
+I need:
+
+* **A main password** for my vault (vaultwarden).
+* **A unique identity** for all cloud services (kanidm / IDM).
+
+My administrator must perform a procedure so I can define these accesses.
+
+* **Main password**: an email containing a link to enter the password.
+* **Identity**: a QR-Code or a link to define a key and a "2FA" password.
+
+:::tip[To know!]
+- 🔒 **My main password** (Vaultwarden / Bitwarden)<br/>allows me to connect to my vault.
+- 🔑 **My authentication key** (IDM Key)<br/>allows me to connect to all cloud applications.
+- 🔐 **My "2 factors" password** (2FA Key)<br/>allows me to connect too, if I have a problem with my key.
+:::
+
+The **main password** is crucial, it's the only thing that needs to be **absolutely remembered**.
+
+My identification follows this schema:
+
+![Identification workflow](../../../../../assets/identification.png)
+
+:::note[What is a key?]
+A digital key allows identification without using a password.
+It is located in my vault.
+When an application needs it, Bitwarden opens automatically.
+This is the **SIMPLEST AND MOST SECURE** way to authenticate.
+:::
+
+:::note[A "2 factors" password?]
+2-factor authentication (2FA) uses:
+- a password (something I know)
+- AND another "factor" (something I possess)
+
+The latter can be a code sent by email/sms, a 6-digit code generator, etc.
+These days, a lot of passwords are compromised, which is why this type of authentication is becoming necessary.
+:::
+
+:::caution[Securing my vault]
+To facilitate access to the vault (vaultwarden / bitwarden), a "simple" main password is allowed by default.
+But it is highly recommended to add a 2nd factor to secure access, especially since I put all my passwords in it (bank, social accounts, etc.).
+:::

@@ -1,0 +1,33 @@
+---
+title: Règles de rédaction des en-têtes de code
+lang: fr
+---
+
+{/* t:main */}
+{/* t:h fabb48ce0004b53f4e336d03e0f2cd53e992f7c383509b3fca0a1cda500babcc */}
+
+{/* t:p 1a8e9785e70b315c428088180179b4f636037d48c43d8f2906866556b5514267 */}
+Chaque fichier de code porte un en-tête court qui explique son rôle. Il aide les
+humains comme les agents IA à se repérer sans lire tout le fichier.
+
+{/* t:p b98694a50f777e77ae81faa76cf01f788b1a54d7e6b45c69770da613f1d5ce0f */}
+## Règles
+
+- Une à trois lignes, en tête de fichier, avant le code.
+- Décrire **le rôle** du fichier, pas son implémentation ligne à ligne.
+- Signaler toute contrainte : fichier généré, à ne pas éditer, dépendances.
+- Style concis ; pas de redite du nom de fichier.
+
+{/* t:p 166897e958ddda22a5c31a8747a3b77f29f3a05ac64b5d34447c5538efcf2384 */}
+## Exemple
+
+```nix
+# Module de service : reverse-proxy Caddy pour les services de zone.
+# Options sous `darkone.service.caddy`. Voir dnf/AGENTS.md pour les conventions.
+{ config, lib, ... }:
+```
+
+:::note[Conventions Nix]
+Les conventions détaillées (style de commentaires, structure des modules) sont
+décrites dans `dnf/AGENTS.md`.
+:::

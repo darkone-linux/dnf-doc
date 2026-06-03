@@ -1,0 +1,141 @@
+---
+title: Les services en ligne
+sidebar:
+  order: 1
+lang: fr
+---
+
+{/* t:main */}
+{/* t:h bee4fad85043b8c6158cb47f9a8fa6b14c835afcbba9947676478ce907359f39 */}
+
+{/* t:p 856035b32520bee8079ec7d1a03fd6d30716387944917bf9249b66ced7b81121 */}
+### Les services
+
+Ces applications [open-source](https://fr.wikipedia.org/wiki/Open_source) fiables sont minutieusement sélectionnés pour leur utilité, maturité et facilité d’utilisation.
+
+:::tip[Accès unique (SSO)]
+Une seule connexion suffit pour chacun d’eux (pas besoin de rentrer 36 mots de passe).
+:::
+
+| **Service** | **Appli** | **Utilité** |
+|----|----|----|
+| 🔐 [Coffre-fort](#vaultwarden) | Vaultwarden | Mes mots de passe, clés et données critiques. |
+| 🖼️ [Photos & vidéos](#immich-photos) | Immich | Gestionnaire complet de photos et vidéos avec IA. |
+| ☁️ [Données](#nextcloud-fichiers--données) | Nextcloud | Un endroit sécurisé pour mes données. |
+| 💬 [Messages & visio](#matrix-messages--visio) | Matrix | Alternative à « WhatsApp » (messagerie et visio). |
+| 🎬&nbsp;[Films&nbsp;&&nbsp;Musiques](#jellyfin-films--musiques) | jellyfin | Une super médiathèque à la « Netflix ». |
+| 📝 [Notes](#outline-notes) | Outline | Prises de notes individuelles et collectives. |
+| 🍽️ [Cuisine](#mealie-recettes-de-cuisine) | Mealie | Application de recettes de cuisine. |
+| 🔎 [Recherche](#searxng-recherche) | Searxng | Recherche globale, sécurisée, sans publicité. |
+| 🤖 [IA Générative](#open-webui-ia) | Open WebUI | Intelligence artificielle locale et souveraine. |
+
+Services techniques :
+
+| **Service** | **Appli** | **Utilité** |
+|----|----|----|
+| 👨 [Identité](#kanidm-idm) | Kanidm | Mon identité (mot de passe unique - SSO). |
+| 🛑 [Anti-pub](#adguardhome-firewall-anti-pub) | AdguardHome | Pare-feu et filtre anti-malware qui accélère Internet. |
+| 🧑‍💻&nbsp;[Forge&nbsp;GIT](#forgejo-forge-git) | Forgejo | Dépôt et gestionnaire [GIT](https://git-scm.com/) pour informaticiens. |
+
+{/* t:p e4f50467add70ce456ce92223da06ccd291e20ecf5237b35b1944b745a90e6cc */}
+## Services en ligne
+
+Tous les services du cloud sont open-source et ont leur propre documentation en ligne. Mais voici quelques petites introductions utiles.
+
+{/* t:p 8137dede480934640ba2d4144eb967420d7f4a6a353d4d0d4eeb61f1808e751e */}
+### Vaultwarden
+
+Vaultwarden est mon coffre-fort. Il contient mes mots de passe, clés numériques, cartes de crédit et informations confidentielles.
+Ces informations sont stockées chiffrées et sauvegardées automatiquement. Par défaut, je suis le seul a y avoir accès.
+
+:::tip[Fonctionnalités utiles]
+- Partager des accès avec d'autres personnes grâce aux "collections".
+- Ranger mes mots de passe et clés dans des dossiers.
+- Envoyer des informations confidentielles grâce aux "sends".
+:::
+
+:::note[Bitwarden : l'application cliente]
+Bitwarden peut s'installer comme **plugin dans un navigateur** ou comme **application mobile**.
+Il simplifie ma vie grâce à la saisie automatique de mes identifiants et mots de passe et plein d'autres fonctionnalités.
+Bitwarden permet de faire tout ce que peut faire Vaultwarden (le serveur, qui détient les données).
+:::
+
+:::caution[Important : configuration de Bitwarden]
+Par défaut, Bitwarden est réglé sur "bitwarden.com".
+Il faut sélectionner "self-hosted" puis entrer l'URL de Vaultwarden pour pouvoir utiliser Bitwarden avec le cloud.
+
+⚠️ JE NE DOIS PAS SAISIR MON MOT DE PASSE PRINCIPAL AVANT D'AVOIR FAIT CELA.
+:::
+
+{/* t:p 6a8f8a6a7d51a59d5dbb2966b601319ada8405f9244d5da26a69ef85815859f6 */}
+### Kanidm (idm)
+
+Mon gestionnaire d'identité, qui permet de m'identifier facilement aux services du cloud.
+
+{/* t:p 9fa21076dfb91e6da412dddc0d0cb84ae44625ed616692994ed1a405b1d1ec2a */}
+### Immich (photos)
+
+Mon gestionnaire de photos et vidéos personnelles, avec des fonctions de recherche et reconnaissance faciale IA souveraines et efficaces.
+
+Pour synchroniser les photos de mon smartphone dans Immich :
+
+* Installer l'application immich sur le smartphone.
+* Paramétrer la synchronisation en donnant l'url de Immich.
+
+{/* t:p 4113a89dc9f60d7d5487156d7d449f4e834a0fc9036414cfe917d394cc77b15e */}
+### Nextcloud (fichiers & données)
+
+Un espace pour mes fichiers, contacts, calendriers et nombreuses autres données personnelles, que je peux synchroniser et partager.
+
+{/* t:p c1e26d1d20da677d09c4905de5a8a47682d2b1badb012219c9c92d45153eb0a6 */}
+### Matrix (messages & visio)
+
+Mon réseau-social. Toutes mes conversations sont chiffrées et restent chez moi. Je peux le lier à la fédérations (autres réseaux matrix) ou non.
+Je peux aussi synchroniser mes comptes WhatsApp, Messenger, Telegram, Signal, Discord...
+
+* Installer "Element" sur PC et Element Classic sous android / ios :
+  * Accéder au réseau matrix.domaine.tld (ne pas aller sur matrix.org !)
+  * Se connecter avec "IDM" (ne pas créer de compte !)
+  * Le compte matrix se crée au premier accès
+  * Inviter l'utilisateur sur les salons
+* Pour qu'on puisse appeler (comme avec whatsapp), il faut activer et autoriser les notifications.
+
+:::caution[Sélectionner le bon serveur matrix !]
+Cliquer sur "Self-Hosted" puis entrer le domaine matrix du cloud.
+:::
+
+{/* t:p dbf1e63288c24b8a00e51636499cfe1535bafc8a9b21c91241bee41d5a5110d9 */}
+### Jellyfin (films & musiques)
+
+Ma médiathèque personnelle pour mes films, ma musique, que je peux utiliser avec mon téléviseur.
+
+{/* t:p eff7a8a26976686b6d4798a5bb97db54df136decb3c0b71f67662cdf2412e2cf */}
+### Open WebUI (IA)
+
+Une IA générative locale et souveraine, basée sur Open WebUI et Ollama, avec des modèles locaux et un stockage local et sécurisé des historiques.
+
+{/* t:p 843047d0ba3d67bfa507656f469d018cef36b19447e52ce0601b4ef585fa881e */}
+### Outline (notes)
+
+Un espace pratique pour prendre des notes personnelles ou partagées, écrire des documentations, faire des check-lists.
+
+{/* t:p 7dbdaf3ae2c4fdcac46423b106d91dd64102492751bbe7d3facdcd5175c92232 */}
+### Mealie (recettes de cuisine)
+
+Une appli très pratique pour importer, saisir, affiner mes recettes de cuisine.
+
+{/* t:p f18fd31ffd25a96ecc99390854b700f2abc651ad944db4502bab107b0395201e */}
+### Searxng (recherche)
+
+Un multi-moteur de recherche qui croise les informations de nombreux autres moteurs et permet des recherches sécurisées.
+
+{/* t:p 495530f89eeab336d72548af821577ebaceda8be5de19301ea64a97e68a22804 */}
+### AdguardHome (firewall anti-pub)
+
+AdguardHome est hébergé sur les passerelles et retire les publicités et traceurs, tout isolant la zone avec un firewall. Grâce à lui, je navigue plus vite et mieux sur internet.
+
+{/* t:p 7a2a46ce3a7c98fc34aaed4baf82fedd65da33c6ad53a703f5de3f3e2fd9b5d6 */}
+### Forgejo (forge git)
+
+Forgejo est une forge git, un GitHub personnel et souverain. Il permet d'héberger des projets, gérer des issues, des pool request et bien plus encore.
+GIT est aussi un excellent moyen d'organiser, versionner et sauvegarder ses documents.

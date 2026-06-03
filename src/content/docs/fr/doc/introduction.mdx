@@ -79,7 +79,7 @@ A la racine :
 - `src` -> Fichiers source du générateur
 - `doc` -> Documentation du projet
 
-{/* t:p b5275262e9016af75316bad6ea1894e1446747bd80b9a1e745800ab7f2d15533 */}
+{/* t:p f0003ed9c3f67e23851f4c537d57037abc74d4476e3c1e22fffabe1b8f04d10a */}
 ### Structure
 
 <FileTree collapsed={true}>
@@ -102,7 +102,7 @@ A la racine :
     - profiles/ Profils : admin, student, advanced...
     - nixos/ Configurations NixOS (hors HM) additionnelles
 - **usr/** Configuration spécifique de mon réseau
-  - config.yaml [Ma config principale](/en/doc/specifications/#the-configuration-file) (en)
+  - config.yaml [Ma config principale](/fr/doc/dev-guide/generator/)
   - modules/ Mes modules NixOS, identique à `dnf/modules`
   - home/ Mes modules HM, identique à `dnf/home`
   - secrets/ Mes mots de passe
@@ -111,7 +111,7 @@ A la racine :
   - users/ Confs spécifique HM par utilisateur
 - var/ Fichiers générés
   - log/ Fichiers de log
-  - generated/ [Fichiers générés](/en/doc/specifications/#the-generator) (en)
+  - generated/ [Fichiers générés](/fr/doc/dev-guide/generator/)
     - hosts.nix
     - users.nix
     - network.nix
@@ -119,7 +119,7 @@ A la racine :
 - doc/ Cette documentation
 </FileTree>
 
-{/* t:p d4c6a54e0eb3fb84e823d3463e6506ac4c134fa9dc56f62e2e2221ce9e2ae308 */}
+{/* t:p 4e5c0407b5a8d99e136a2ecee58cfecfa5a1cac16b3224079b802deb3acbab5d */}
 ### Couches d'abstraction
 
 Les niveaux inférieurs rendent service aux niveaux supérieurs.
@@ -137,7 +137,7 @@ Ces configurations sont organisées par catégories:
 - **[Modules d'administration](/fr/ref/modules/admin/)** pour la gestion du parc.
 - **[Modules de gestion d'utilisateurs](/fr/ref/modules/user/)** pour les comptes et accès.
 - **[Modules Home Manager](/fr/ref/modules/home/)** pour les profils utilisateur.
-- **[Profils utilisateur](/en/doc/specifications/#create-a-user-profile-example)** (en), configurations [Home Manager](https://github.com/nix-community/home-manager) standards.
+- **[Profils utilisateur](/fr/doc/dev-guide/modules/)**, configurations [Home Manager](https://github.com/nix-community/home-manager) standards.
 - **Outils** pour maintenir une configuration qualitative.
 
 {/* t:p ae9f71b348d4cf9b9e48103d3cd4c5bb62c673dd8a44b5d9a647a04650e0a9fe */}

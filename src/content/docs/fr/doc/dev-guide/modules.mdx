@@ -1,0 +1,40 @@
+---
+title: Les modules
+sidebar:
+  order: 2
+lang: fr
+---
+
+{/* t:main */}
+{/* t:h e1f9d8417e7d9fdffc726d4dd73d237a63b63bd18453de47f3f2ebdfcf2561e7 */}
+
+import { Steps } from '@astrojs/starlight/components';
+
+{/* t:p a66d5b46797644697bb8da72442b12785dc45f0dcfafa5a5a338689c577d61c3 */}
+Les fonctionnalités du framework sont fournies sous forme de **modules NixOS**
+haut-niveau, regroupés par catégorie sous `dnf/modules/` et documentés dans la
+[référence des modules](/fr/ref/modules/).
+
+{/* t:p 4afbc8e90fd606653e6f6b858d4b3bba199ee939ec52c31a0d6558dbaaa83d8a */}
+## Catégories
+
+- **standard** — système, console, graphic, service, admin, user.
+- **mixin** — macro-modules composant des profils d'hôtes et compléments de profils utilisateurs.
+- **home** — modules et profils [Home Manager](https://github.com/nix-community/home-manager).
+
+{/* t:p b1cc27e04872cce84b5e136c9e31285bc57906a32f8179ff7dd78aaa8b2e877f */}
+## Créer un module
+
+<Steps>
+
+1. Choisir la catégorie (`dnf/modules/standard/<catégorie>/` ou `mixin`).
+2. Écrire l'en-tête du fichier selon les règles (voir [headers de code](/fr/doc/how-to/dev/code-headers/)).
+3. Déclarer les `options` puis la `config` du module.
+4. Régénérer (`just generate`) et tester avant de commiter.
+
+</Steps>
+
+:::note[Référence du code]
+Le détail des options exposées par chaque module est généré automatiquement
+dans la [référence](/fr/ref/modules/) — ne pas l'éditer à la main.
+:::

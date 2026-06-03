@@ -102,7 +102,7 @@ At the root:
     - profiles/ Profiles: admin, student, advanced...
     - nixos/ Additional NixOS configurations (outside HM)
 - **usr/** Specific configuration for my network
-  - config.yaml [My main configuration](/en/doc/specifications/#the-configuration-file) (en)
+  - config.yaml [My main configuration](/fr/doc/dev-guide/generator/)
   - modules/ My NixOS modules, identical to `dnf/modules`
   - home/ My HM modules, identical to `dnf/home`
   - secrets/ My passwords
@@ -111,7 +111,7 @@ At the root:
   - users/ Specific HM configurations per user
 - var/ Generated files
   - log/ Log files
-  - generated/ [Generated files](/en/doc/specifications/#the-generator) (en)
+  - generated/ [Generated files](/fr/doc/dev-guide/generator/)
     - hosts.nix
     - users.nix
     - network.nix
@@ -137,7 +137,7 @@ These configurations are organized by category:
 - **[Administration modules](/en/ref/modules/admin/)** for fleet management.
 - **[User management modules](/en/ref/modules/user/)** for accounts and access.
 - **[Home Manager modules](/en/ref/modules/home/)** for user profiles.
-- **[User profiles](/en/doc/specifications/#create-a-user-profile-example)** (en), standard [Home Manager](https://github.com/nix-community/home-manager) configurations.
+- **[User profiles](/fr/doc/dev-guide/modules/)**, standard [Home Manager](https://github.com/nix-community/home-manager) configurations.
 - **Tools** to maintain high-quality configuration.
 
 {/* t:p ae9f71b348d4cf9b9e48103d3cd4c5bb62c673dd8a44b5d9a647a04650e0a9fe */}

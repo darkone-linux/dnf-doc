@@ -1,0 +1,31 @@
+---
+title: Le générateur
+sidebar:
+  order: 3
+lang: fr
+---
+
+{/* t:main */}
+{/* t:h f55bd9a159e569764b38fb4f3d3175571c3a4f1bfcb80409074eb2aa45fef084 */}
+
+{/* t:p 7d9539d0c24cb53dec81f93d55016d34021d00f19b1ef24061165234e7163113 */}
+Le générateur (`src/generator/`, écrit en Rust) transforme la configuration
+déclarative `usr/config.yaml` en code Nix consommé par le framework.
+
+{/* t:p e8841fd748d6efd1efe9327dc6d509ba93820434aeba5f97f973fe8e93c4cd40 */}
+## Du YAML au Nix
+
+- **Entrée** : `usr/config.yaml` — hôtes, utilisateurs, réseau, services.
+- **Sortie** : `var/generated/` — `hosts.nix`, `users.nix`, `network.nix`.
+
+Ces fichiers sont **générés** : on ne les édite jamais à la main. Pour les
+régénérer après une modification de la configuration :
+
+```sh
+just generate
+```
+
+:::caution[Fichiers générés]
+`var/generated/` et les pages `*/ref/modules.mdx` sont produits par des outils.
+Modifier le générateur ou la source, jamais la sortie.
+:::

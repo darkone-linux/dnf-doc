@@ -1,0 +1,140 @@
+---
+title: Online services
+sidebar:
+  order: 1
+lang: en
+---
+
+{/* t:translated-from fr */}
+
+{/* t:p 856035b32520bee8079ec7d1a03fd6d30716387944917bf9249b66ced7b81121 */}
+### The Services
+
+These reliable [open-source](https://en.wikipedia.org/wiki/Open_source) applications are meticulously selected for their usefulness, maturity and ease of use.
+
+:::tip[Single Sign-On (SSO)]
+A single login is sufficient for each of them (no need to enter 36 passwords).
+:::
+
+| **Service** | **App** | **Usefulness** |
+|----|----|----|
+| 🔐 [Vault](#vaultwarden) | Vaultwarden | My passwords, keys and critical data. |
+| 🖼️ [Photos & videos](#immich-photos) | Immich | Complete photo and video manager with AI. |
+| ☁️ [Data](#nextcloud-files--data) | Nextcloud | A secure place for my data. |
+| 💬 [Messages & visio](#matrix-messages--visio) | Matrix | Alternative to "WhatsApp" (messaging and visio). |
+| 🎬&nbsp;[Films&nbsp;&&nbsp;Musics](#jellyfin-films--musics) | Jellyfin | A great "Netflix"-like media library. |
+| 📝 [Notes](#outline-notes) | Outline | Individual and collective note-taking. |
+| 🍽️ [Cooking](#mealie-cooking-recipes) | Mealie | Cooking recipe application. |
+| 🔎 [Search](#searxng-search) | Searxng | Global, secure, ad-free search. |
+| 🤖 [Generative AI](#open-webui-ai) | Open WebUI | Local and sovereign artificial intelligence. |
+
+Technical services:
+
+| **Service** | **App** | **Usefulness** |
+|----|----|----|
+| 👨 [Identity](#kanidm-idm) | Kanidm | My identity (single password - SSO). |
+| 🛑 [Ad-blocker](#adguardhome-firewall-anti-ads) | AdguardHome | Firewall and anti-malware filter that speeds up Internet. |
+| 🧑‍💻&nbsp;[GIT&nbsp;Forge](#forgejo-git-forge) | Forgejo | [GIT](https://git-scm.com/) repository and manager for developers. |
+
+{/* t:p e4f50467add70ce456ce92223da06ccd291e20ecf5237b35b1944b745a90e6cc */}
+## Online Services
+
+All cloud services are open-source and have their own online documentation. But here are some useful introductions.
+
+{/* t:p 8137dede480934640ba2d4144eb967420d7f4a6a353d4d0d4eeb61f1808e751e */}
+### Vaultwarden
+
+Vaultwarden is my vault. It contains my passwords, digital keys, credit cards and confidential information.
+This information is stored encrypted and backed up automatically. By default, I am the only one who has access.
+
+:::tip[Useful features]
+- Share access with others thanks to "collections".
+- Store my passwords and keys in folders.
+- Send confidential information thanks to "sends".
+:::
+
+:::note[Bitwarden: the client application]
+Bitwarden can be installed as a **plugin in a browser** or as a **mobile application**.
+It simplifies my life thanks to automatic entry of my credentials and passwords and many other features.
+Bitwarden can do everything Vaultwarden can (the server, which holds the data).
+:::
+
+:::caution[Important: Bitwarden configuration]
+By default, Bitwarden is set to "bitwarden.com".
+You must select "self-hosted" then enter the Vaultwarden URL to be able to use Bitwarden with the cloud.
+
+⚠️ I MUST NOT ENTER MY MAIN PASSWORD BEFORE DOING THIS.
+:::
+
+{/* t:p 6a8f8a6a7d51a59d5dbb2966b601319ada8405f9244d5da26a69ef85815859f6 */}
+### Kanidm (idm)
+
+My identity manager, which allows me to easily identify myself to cloud services.
+
+{/* t:p 9fa21076dfb91e6da412dddc0d0cb84ae44625ed616692994ed1a405b1d1ec2a */}
+### Immich (photos)
+
+My personal photo and video manager, with sovereign and effective AI search and facial recognition functions.
+
+To sync photos from my smartphone to Immich:
+
+* Install the immich application on the smartphone.
+* Configure sync by giving the Immich URL.
+
+{/* t:p 4113a89dc9f60d7d5487156d7d449f4e834a0fc9036414cfe917d394cc77b15e */}
+### Nextcloud (files & data)
+
+A space for my files, contacts, calendars and many other personal data, that I can sync and share.
+
+{/* t:p c1e26d1d20da677d09c4905de5a8a47682d2b1badb012219c9c92d45153eb0a6 */}
+### Matrix (messages & visio)
+
+My social network. All my conversations are encrypted and stay at home. I can link it to the federation (other matrix networks) or not.
+I can also sync my WhatsApp, Messenger, Telegram, Signal, Discord accounts...
+
+* Install "Element" on PC and Element Classic on android / ios:
+  * Access the network matrix.domaine.tld (don't go to matrix.org!)
+  * Connect with "IDM" (don't create an account!)
+  * The matrix account is created on first access
+  * Invite the user to channels
+* For us to be able to call (like with whatsapp), notifications must be enabled and authorized.
+
+:::caution[Select the right matrix server!]
+Click on "Self-Hosted" then enter the cloud's matrix domain.
+:::
+
+{/* t:p dbf1e63288c24b8a00e51636499cfe1535bafc8a9b21c91241bee41d5a5110d9 */}
+### Jellyfin (films & musics)
+
+My personal media library for my films, my music, that I can use with my television.
+
+{/* t:p eff7a8a26976686b6d4798a5bb97db54df136decb3c0b71f67662cdf2412e2cf */}
+### Open WebUI (AI)
+
+A local and sovereign generative AI, based on Open WebUI and Ollama, with local models and secure local storage of histories.
+
+{/* t:p 843047d0ba3d67bfa507656f469d018cef36b19447e52ce0601b4ef585fa881e */}
+### Outline (notes)
+
+A convenient space for personal or shared notes, writing documentations, doing check-lists.
+
+{/* t:p 7dbdaf3ae2c4fdcac46423b106d91dd64102492751bbe7d3facdcd5175c92232 */}
+### Mealie (cooking recipes)
+
+A very convenient app to import, enter, refine my cooking recipes.
+
+{/* t:p f18fd31ffd25a96ecc99390854b700f2abc651ad944db4502bab107b0395201e */}
+### Searxng (search)
+
+A multi-search engine that crosses information from many other engines and allows secure searches.
+
+{/* t:p 495530f89eeab336d72548af821577ebaceda8be5de19301ea64a97e68a22804 */}
+### AdguardHome (firewall anti-ads)
+
+AdguardHome is hosted on gateways and removes ads and trackers, while isolating the zone with a firewall. Thanks to it, I browse faster and better on the internet.
+
+{/* t:p 7a2a46ce3a7c98fc34aaed4baf82fedd65da33c6ad53a703f5de3f3e2fd9b5d6 */}
+### Forgejo (git forge)
+
+Forgejo is a git forge, a personal and sovereign GitHub. It allows hosting projects, managing issues, pull requests and much more.
+GIT is also an excellent way to organize, version and backup your documents.

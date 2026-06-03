@@ -1,0 +1,47 @@
+---
+title: Contribuer à la documentation
+sidebar:
+  order: 4
+lang: fr
+---
+
+{/* t:main */}
+{/* t:h f270d7901107515d5104dfce27de154ec92a127b3bb80f577e1b42f337eac292 */}
+
+{/* t:p 74a257b30cb1d4b3c2a8d9b3499ead893ba02e9202469abcd92c73473ea98567 */}
+Ce site est construit avec [Astro](https://astro.build/) et
+[Starlight](https://starlight.astro.build/). Les pages vivent sous
+`src/content/docs/<lang>/` (`fr`, `en`).
+
+{/* t:p b6b25c9513c814e98e8cd6533b6b4567aa55453b5dca27fea3db3a576222c69b */}
+## Où écrire
+
+- `doc/<section>.mdx` — **page d'entrée** d'une section : introduction + liens.
+- `doc/<section>/<feuille>.mdx` — **feuilles** de détail.
+- Sujets transverses courts → `doc/how-to/{user,admin,dev}/`.
+
+On rédige en **français** (`fr/`) ; l'anglais est produit ensuite par
+`just translate`. Les slugs et noms de fichiers restent en anglais.
+
+{/* t:p 3915d68f1dd58c8282e14b03d322aa0d7be01327678d865e1cae3a8a1b438514 */}
+## Règles essentielles
+
+- Max 7 titres par niveau, profondeur 3.
+- `<Steps>` pour les suites d'étapes, `<Aside>` (avec titre) pour les remarques.
+- Les `Card`/`CardGrid` sont réservées au guide utilisateur.
+- Voir l'[aide & how-to dev](/fr/doc/how-to/) et les *skills* de rôle.
+
+{/* t:p 2a85f99d0f3e9e1a5c3d8b717f1371cf4216366032c0a11bcee7997eaad7076a */}
+## Outils
+
+```sh
+just dev      # serveur de développement
+just tags     # rafraîchit les tags de traduction
+just build    # construit le site statique
+just test     # tests + validation des liens internes
+```
+
+:::caution[Ne pas toucher]
+Les marqueurs `{/* t:* */}` et les pages générées (`*/ref/modules.mdx`) sont
+gérés par les scripts. Voir `AGENTS.md`.
+:::
