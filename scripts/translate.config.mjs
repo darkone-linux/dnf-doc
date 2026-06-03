@@ -45,6 +45,10 @@ export default {
   agent: {
     tool: env.TRANSLATE_TOOL || 'opencode', // 'claude' | 'opencode'
     model: env.TRANSLATE_MODEL || 'opencode/big-pickle', // 'claude-haiku-4-5',
+    // Model for D2-diagram paragraphs (translated with the dedicated `translateD2`
+    // prompt). Defaults to the prose `model`; override with TRANSLATE_D2_MODEL to
+    // hand diagrams to a stronger model.
+    d2Model: env.TRANSLATE_D2_MODEL || env.TRANSLATE_MODEL || 'opencode/big-pickle',
     concurrency: Number(env.TRANSLATE_CONCURRENCY || 4), // parallel agent calls
     timeoutMs: Number(env.TRANSLATE_TIMEOUT || 300000), // large files need headroom
     // Max paragraphs sent to a single agent call. A file with more is split into
@@ -76,14 +80,6 @@ Rules:
 - Translate prose, heading text, list items and admonition titles (:::note[...]).
 - DO NOT translate or alter: code blocks, inline code, file paths, shell commands,
   URLs, HTML/JSX/MDX tags and their attributes, import/export statements, YAML keys.
-- EXCEPTION — D2 diagram blocks (fenced \`\`\`d2 … \`\`\`): translate ONLY the
-  human-readable LABELS, i.e. the text AFTER a colon in a node or connection
-  definition (e.g. \`user: Utilisateur\` → translate "Utilisateur"; \`a -> b: Déchiffrement\`
-  → translate "Déchiffrement"), and any quoted label text. Keep EVERYTHING else
-  byte-for-byte: node identifiers (left of the colon), arrows (\`->\`, \`--\`),
-  braces, indentation, numbers, and all keywords/values such as \`shape\`, \`person\`,
-  \`cylinder\`, \`oval\`, \`diamond\`, \`direction\`, \`down\`, \`right\`, \`style\`,
-  \`style.fill\`, \`transparent\`, \`style.stroke-dash\`, \`icon\`, \`near\`.
 - Preserve Markdown/MDX structure and heading levels (#).
 - Links and anchors are handled deterministically AFTER you, by tooling. So:
   keep every link target and every "#anchor" EXACTLY as in the source (do NOT
@@ -92,6 +88,58 @@ Rules:
 - In the HEADER (YAML frontmatter) translate human-readable VALUES only (title,
   description, tagline, button text...), keep every key and link, and set the
   value of "lang:" to "{{tgtLang}}".
+
+Sections:
+{{body}}`,
+
+    // Dedicated prompt for sections that CONTAIN a D2 diagram. These sections also
+    // hold surrounding prose, so the prose rules apply too — plus strict guardrails
+    // for the fenced ```d2 block (only labels are translated, syntax is untouched).
+    //
+    // TODO: every diagram currently repeats `style.fill: transparent` as boilerplate
+    // (transparent background in light & dark). When astro-d2 lets us inject a common
+    // D2 header/vars from astro.config.mjs, drop that line from the diagrams (and from
+    // this prompt's guardrails). Otherwise, propose a PR upstream to add such a hook.
+    translateD2: `You are a professional technical-documentation translator for an Astro/Starlight site.
+Translate from {{srcName}} ({{srcLang}}) to {{tgtName}} ({{tgtLang}}).
+
+Each section to translate is wrapped between markers:
+<<<T id>>>
+...source...
+<<<E id>>>
+An optional header section is wrapped between <<<HEADER>>> and <<<EHEADER>>>.
+
+Rules:
+- Output ONLY the same markers with the translated content in between, repeating
+  each id EXACTLY. No explanations, no notes, no surrounding triple-backtick fences.
+- Translate prose, heading text, list items and admonition titles (:::note[...]).
+- DO NOT translate or alter (outside D2 blocks): inline code, file paths, shell
+  commands, URLs, HTML/JSX/MDX tags and attributes, import/export statements, YAML keys.
+- Preserve Markdown/MDX structure and heading levels (#).
+- Links and anchors are handled deterministically AFTER you, by tooling: keep every
+  link target and every "#anchor" EXACTLY as in the source; only translate the
+  human-readable link TEXT (inside the square brackets).
+- In the HEADER (YAML frontmatter) translate human-readable VALUES only, keep every
+  key and link, and set "lang:" to "{{tgtLang}}".
+
+D2 DIAGRAM BLOCKS — fenced \`\`\`d2 … \`\`\` (THE CRITICAL PART):
+- Keep the opening \`\`\`d2 and closing \`\`\` fences, every line break, and the
+  exact INDENTATION of every line.
+- Translate ONLY human-readable LABELS:
+  * the text AFTER the first colon in a declaration: \`user: Utilisateur\` → only
+    "Utilisateur" is translated; \`user\` (the id) stays.
+  * the label on a connection: \`a -> b: Déchiffrement\` → only "Déchiffrement".
+  * any quoted string used as a label: \`"Mot de passe"\`.
+- NEVER translate, rename, reorder or remove ANYTHING else. Keep byte-for-byte:
+  * node/edge identifiers (everything LEFT of a colon, and bare ids),
+  * arrows and operators: \`->\`, \`<-\`, \`<->\`, \`--\`, \`.\`, \`:\`, \`{\`, \`}\`,
+  * keywords and their values: \`shape\`, \`person\`, \`cylinder\`, \`oval\`, \`diamond\`,
+    \`rectangle\`, \`image\`, \`direction\`, \`up\`, \`down\`, \`left\`, \`right\`,
+    \`style\`, \`style.fill\`, \`style.stroke-dash\`, \`transparent\`, \`icon\`, \`near\`,
+    \`grid-rows\`, \`width\`, \`height\`, and any \`key.subkey\` path,
+  * numbers, hex colors, URLs, file paths and icon references.
+- If a line has no colon and no quoted label (e.g. \`user -> master\`, \`shape: person\`,
+  \`style.fill: transparent\`), copy it VERBATIM. When unsure, DO NOT translate.
 
 Sections:
 {{body}}`,

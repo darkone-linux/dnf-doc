@@ -133,14 +133,21 @@ function planJobs() {
   return { langs, jobs };
 }
 
-function buildPrompt(job, paras, includeHeader) {
+// A paragraph that embeds a fenced ```d2 block is routed to the dedicated D2
+// prompt/model (it still carries its surrounding prose — see buildTasks).
+function isD2Para(p) {
+  return /```d2/.test(p.src);
+}
+
+function buildPrompt(job, paras, includeHeader, kind) {
   let body = '';
   // Never ask an agent to translate an empty header.
   if (includeHeader && job.mainDoc.frontmatter && job.mainDoc.frontmatter.trim()) {
     body += `<<<HEADER>>>\n${job.mainDoc.frontmatter}\n<<<EHEADER>>>\n\n`;
   }
   for (const p of paras) body += `<<<T ${p.hash}>>>\n${p.src}\n<<<E ${p.hash}>>>\n\n`;
-  return render(config.prompts.translate, {
+  const tpl = kind === 'd2' ? config.prompts.translateD2 : config.prompts.translate;
+  return render(tpl, {
     srcLang: job.mainLang, tgtLang: job.tgt,
     srcName: langName(job.mainLang), tgtName: langName(job.tgt),
     body: body.trim(),
@@ -154,11 +161,20 @@ function chunk(arr, size) {
 }
 
 // Split a file's agent work into bounded tasks (a chunk of paragraphs + maybe
-// the header). Results from all tasks of a file are merged before writing.
+// the header). Prose and D2-bearing paragraphs are partitioned so each goes to
+// its own prompt/model (`kind`). The header rides on the first task, whatever
+// its kind. Results from all tasks of a file are merged before writing.
 function buildTasks(job, maxParas) {
   job.got = { header: null, paras: {} };
-  const groups = job.paraJobs.length ? chunk(job.paraJobs, maxParas) : [[]];
-  return groups.map((paras, i) => ({ job, paras, includeHeader: job.headerNeeds && i === 0 }));
+  const d2Paras = job.paraJobs.filter(isD2Para);
+  const proseParas = job.paraJobs.filter((p) => !isD2Para(p));
+  const tasks = [];
+  for (const paras of chunk(proseParas, maxParas)) tasks.push({ job, paras, kind: 'prose', includeHeader: false });
+  for (const paras of chunk(d2Paras, maxParas)) tasks.push({ job, paras, kind: 'd2', includeHeader: false });
+  // Header-only change (no paragraphs) still needs a task to carry it.
+  if (!tasks.length && job.headerNeeds) tasks.push({ job, paras: [], kind: 'prose', includeHeader: false });
+  if (job.headerNeeds && tasks[0]) tasks[0].includeHeader = true;
+  return tasks;
 }
 
 // Assemble and write the translated file from reconciled paragraphs + agent
@@ -236,19 +252,23 @@ async function main() {
   if (DRY) { console.log(`[translate] dry-run: ${written} file(s) would change without agent.`); return; }
   if (!agentJobs.length) { console.log(`[translate] up to date. ${written} file(s) updated.`); return; }
 
-  const { tool, model, concurrency, timeoutMs, maxParasPerCall } = config.agent;
+  const { tool, model, d2Model, concurrency, timeoutMs, maxParasPerCall } = config.agent;
   if (!commandExists(tool)) {
     console.error(`[translate] agent tool "${tool}" not found on PATH. Set TRANSLATE_TOOL or install it.`);
     process.exit(1);
   }
-  const { cmd, args } = config.command(tool, model);
+  // Prose and D2 tasks may use different models (d2Model defaults to model).
+  const proseCmd = config.command(tool, model);
+  const d2Cmd = config.command(tool, d2Model);
 
   // Bounded tasks across all files, run with shared concurrency.
   const tasks = agentJobs.flatMap((j) => buildTasks(j, maxParasPerCall));
-  console.log(`[translate] dispatching ${tasks.length} agent call(s) (max ${maxParasPerCall} para/call, concurrency ${concurrency})`);
+  const d2Tasks = tasks.filter((t) => t.kind === 'd2').length;
+  console.log(`[translate] dispatching ${tasks.length} agent call(s) (${d2Tasks} D2, ${tasks.length - d2Tasks} prose; max ${maxParasPerCall} para/call, concurrency ${concurrency})`);
   await pMap(tasks, async (task) => {
     const { job } = task;
-    const prompt = buildPrompt(job, task.paras, task.includeHeader);
+    const { cmd, args } = task.kind === 'd2' ? d2Cmd : proseCmd;
+    const prompt = buildPrompt(job, task.paras, task.includeHeader, task.kind);
     try {
       const out = await runAgent({ cmd, args, input: prompt, timeoutMs });
       const got = parseAgentOutput(out);
