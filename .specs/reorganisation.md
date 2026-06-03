@@ -2,110 +2,215 @@
 
 ## Objectif
 
-- Avoir des sections claires et séparées pour chaque type d'usager (utilisateurs - non-technicien, administrateur - technicien, développeur / agent de développement).
-- Une organisation hierarchique claire :
-  - Les pages d'entrée sont une introduction suivi de paragraphes de liens (sauf pour la section "guide de l'utilisateur" qui doit maintenir une présentation convaincante de l'outil, ainsi que "introduction.mdx").
-  - Puis on va de l'information de la plus générique (pages principales) aux informations les plus spécifiques (feuilles).
-- Règles pour une écriture guidée de la documentation par des agents IA, qui se chargeront de comprendre comment fonctionne un sujet ou de quoi se compose tel ou tel élément, afin de proposer une documentation claire.
-- Des règles de rédaction permettant d'aller droit au but et de répondre au besoins : 
-  - Guide Utilisateur : donner envie d'utiliser, le moins de bla bla possible, rédaction positive et style travaillé.
-  - Guide Administrateur : toutes les informations dont il a besoin pour effectuer des tâches, comprendre ce qu'il fait et réparer en cas de problème.
-  - Guide du développeur : organisation hierarchique permettant de comprendre l'architecture applicative (ou se trouve quoi), jusqu'au détail, (ex: comment créer un module). Explications étape par étape. 
-- Mise à jour automatique par les agents : quand une tâche de développement est terminée, permettre à l'agent de trouver tout de suite où il doit modifier / créer du contenu pour étoffer la documentation. 
-- FAQ transversale : la page d'accueil de la FAQ contient des liens vers des petites pages "how-to", qui expliquent des sujets transverses importants. (ex. pour les développeurs: règles de rédaction des headers de page de code).
+Réorganiser la documentation DNF (`dnf-doc`, Astro + Starlight) pour qu'elle soit :
 
-## 1. Points de départ
+- **Segmentée par persona** (voir §0) : chaque type d'usager trouve sa section.
+- **Hiérarchique et lisible** : du générique (pages d'entrée) au spécifique (feuilles).
+- **Rédigeable par des agents IA** : règles claires sur _où_ mettre quoi et _comment_ écrire.
+- **Maintenable automatiquement** : à la fin d'une tâche de dev, un agent doit trouver
+  immédiatement où créer/étoffer le contenu.
 
-Note importante: déplacer les fichiers et leur contenu de manière à maintenir au maximum la correspondance des tags de traduction. Sur cette étape on ne corrige pas le contenu existant, on le déplace et on l'étoffe.
+Principes d'organisation :
 
-Note importante 2: on déplace le contenu des deux langues en même temps, sauf contre-indication.
+- Les **pages d'entrée** = une introduction + des paragraphes de liens, sauf
+  `introduction.mdx` et le guide utilisateur, qui gardent une présentation convaincante.
+- Ordre des grandes sections : **introduction → user-guide → admin-guide → dev-guide**.
+- **FAQ / how-to transversale** : une page d'accueil `how-to.mdx` avec des titres
+  thématiques pointant vers de petites pages rangées par persona dans
+  `how-to/user/`, `how-to/admin/`, `how-to/dev/` (sujets transverses courts).
+  Ex. dev : « règles de rédaction des headers de code ».
 
-A partir de l'existant :
+---
 
-- doc/admin-guide.mdx
-  - Déplacer le contenu dans doc/admin-guide/first-network-installation.mdx
-  - Créer une intro puis un paragraphe "# Installations initiales"
-- doc/introduction.mdx -> on laisse comme c'est.
-- doc/specifications.mdx -> supprimer.
-- doc/user-guide.mdx -> réorganiser comme suit :
-  - doc/user-guide.mdx -> laisser l'introduction
-- doc/how-to.mdx -> a étoffer, page d'accueil avec titres thématiques et liens vers des pages "how-to" situées dans doc/how-to/xxx.mdx. On distinguera les how-to pour utilisateurs, administrateurs, développeurs. Petits sujets transverses.
-- doc/dev-guide.mdx -> "Guide du développeur", section à créer, informations hierarchisées. A destination des agents IA et des développeurs : règles de développement, architecture de projet, grands sujets techniques. 
-- ordre des grandes sections : introduction, user-guide, admin-guide, dev-guide. 
+## 0. Conventions & périmètre
 
-## 2. Réflexion de fond
+**Chemins.** Toute notation `doc/xxx.mdx` dans ce document désigne le fichier réel
+`src/content/docs/<lang>/doc/xxx.mdx` (avec `<lang>` ∈ `fr`, `en`). La sidebar est
+générée par `autogenerate` sur les dossiers `doc/` et `ref/` (`astro.config.mjs:62-73`).
 
-- Etudier le projet /etc/nixos, en particulier le README, la structure, les fonctionnalités - dans sa globalité (pas d'étude détaillée !). 
-  - Pour chaque grandes sections, déterminer les sujets importants. 
-  - Les organiser selon les sections : hierarchie, ordre des sujets.
-  - Sujets transverses à mettre dans "how-to".
-  - Générer un titre et une phrase d'introduction pour chacun d'eux, en français.
+**Convention page / section.** `doc/<section>.mdx` = page d'entrée d'une section ;
+`doc/<section>/<feuille>.mdx` = pages de détail (feuilles). Créer un dossier crée une
+sous-section dans la sidebar.
 
-## 3. Règles d'écriture, outils et skills pour agents de rédaction
+**Nommage des fichiers / slugs : en anglais.** Comme l'existant (`admin-guide`,
+`user-guide`, `first-network-installation`). URLs stables et identiques fr/en, liens
+internes simples. Seuls les **titres** et le **contenu** sont en français côté `fr/`.
 
-Définir des règles d'écriture permettant : 
+**Ordre de la sidebar.** L'autogenerate ne respecte pas l'ordre voulu par défaut. Pour
+imposer `introduction → user → admin → dev`, utiliser le frontmatter
+`sidebar.order: <n>` sur chaque page d'entrée (et sur les feuilles si besoin).
 
-- Des pages de documentation aérées, claires, belles. 
-- Règles de forme :
-  - Limite du nombre de titres par page (7 par niveau) et de profondeur (3 max), scinder s'il le faut.
-  - Préférer des informations visuelles :
-    - Mon contenu peut-il être organisé par étapes ? -> créer des Steps
-    - Mon contenu peut-il etre expliqué avec un diagramme -> créer un diagramme (cf. skill)
-    - Mon contenu est-il une remarque informative, tip, caution, danger ? -> créer un callout
-  - Ne pas mettre que des infos visuelles, aérer avec des titres et paragraphes courts.
-  - Callouts :
-    - Toujours leur mettre un titre explicite.
-    - Les utiliser à bon escient, ne pas en abuser.
-  - Cards : uniquement pour la partie "guide utilisateur", préférer des liens simples sinon. 
-  - Admin / Dev : contenu simple, précis et concis.
-  - Proposer d'autres règles de forme pour une belle documentation.
+**Langues — règle unique.**
+- **Déplacement de l'existant** (§2) : on déplace le contenu des **deux langues** en même
+  temps, pour préserver la correspondance des tags de traduction.
+- **Créer du neuf** (§4) : on ne crée qu'en **français** (`fr/doc`) ; l'anglais est
+  produit ensuite par `just translate` (ne pas l'utiliser ici).
 
-Outils et skills :
+**Tags de traduction — ne pas toucher à la main.** Les marqueurs `{/* t:* */}` sont
+gérés par les scripts. Lors d'un déplacement : déplacer le fichier **tel quel** (avec ses
+tags), ne jamais recopier/réécrire le contenu manuellement, puis lancer `just tags` pour
+rafraîchir l'état. Idem `*/ref/modules.mdx` est généré (`just codegen`) — ne pas l'éditer.
 
-- Skill de création de diagrammes :
-  - Déterminer un outil (openflowkit ? mcp-mermaid ?)
-  - Doit avoir une charge graphique commune.
-  - Doit être lisible par n'importe quel agent (diagram as code).
-  - Doit être beau quand il est généré sous forme d'image.
-  - Créer un skill permettant aux agents de créer leur diagramme en le décrivant.
-- Autres skills ?
-  - Croiser ces informations :
-    - Règles d'écriture
-    - Contenus à générer
-    - Possibilités avec Starlight et Astro
-  - Déterminer
-    - Quels skills seraient pertinents
-    - Ce qu'il faut plutôt mettre dans les règles
+**Hors-scope.** Ne pas modifier : `ref/` (généré), `changelog`, `thanks`. On ne réécrit
+**pas** le fond du contenu existant pendant le déplacement (§2) — on déplace et on étoffe
+la structure seulement.
 
-Créer des règles pour les agents dans AGENTS.md (à la racine du projet)
+**Personas.**
+- **Utilisateur** (non-technicien) : veut utiliser les sevices - outils - postes linux, sans jargon.
+- **Administrateur** (technicien) : installe, exécute des tâches, comprend, répare.
+- **Développeur / agent IA** : comprend l'architecture, contribue, crée ou modifie des fonctionnalités.
 
-- Règles courtes, style télégraphique
-- Uniquement les règles globales, à observer quelque soit la tâche à exécuter
-- Pas plus de 200 lignes, dans l'idéal 100 à 150
-- Contenu :
-  - Règles d'organisation des données, comment déterminer où mettre quoi
-  - Règles de forme importantes
-  - Skills et outils à disposition
+---
+
+## 1. Réflexion de fond (à faire AVANT de déplacer)
+
+Décider la cible avant de bouger les fichiers.
+
+- Étudier le projet `/etc/nixos` **dans sa globalité** (README, structure, fonctionnalités) —
+  **pas** d'étude détaillée.
+- Pour chaque grande section, déterminer les **sujets importants**.
+- Les organiser : hiérarchie + ordre des sujets ; sujets transverses → `how-to`.
+- Pour chacun : générer un **titre** et une **phrase d'introduction**, en français.
+- Produire en sortie la **liste des feuilles** par section (notamment le découpage de
+  `user-guide` — voir §2), qui alimentera le mapping et la génération (§4).
+
+Notes :
+
+- La structure et le contenu devra être éditable / gérée par des agents IA ou humains.
+- Les futurs agents IA pour la doc auront les rôles suivants, il peut être utile de séparer les instructions en fonction de leur rôle (§3) : 
+  - Rédacteur -> étudie le sujet, rédige.
+  - Améliorateur -> améliore la forme, propose d'autres manières d'expliquer.
+  - Correcteur -> orthographe, grammaire, lisibilité.
+  - Réorganisateur -> étudie la cohérence du plan, détecte des doublons, sujets à déplacer, propose des améliorations.
+
+---
+
+## 2. Points de départ — mapping de l'existant
+
+On déplace et on étoffe la structure, **sans corriger le fond**, dans **les deux langues**
+(voir règle §0). Après les déplacements : `just tags` -> vérifier que les hashs restent les mêmes.
+
+| Existant | Action | Cible |
+| --- | --- | --- |
+| `doc/admin-guide.mdx` | Déplacer le contenu + créer une intro et un titre `# Installations initiales` | `doc/admin-guide.mdx` (intro + liens) ; contenu → `doc/admin-guide/first-network-installation.mdx` |
+| `doc/user-guide.mdx` | Garder l'**intro** ; éclater le reste en feuilles | `doc/user-guide.mdx` (intro convaincante) ; reste → `doc/user-guide/<sujet>.mdx` (sujets définis en §1) |
+| `doc/how-to.mdx` | Étoffer : page d'accueil avec titres thématiques + liens, distinguant les personas | `doc/how-to.mdx` + sous-dossiers `doc/how-to/{user,admin,dev}/<sujet>.mdx` |
+| `doc/introduction.mdx` | Inchangé | `doc/introduction.mdx` |
+| `doc/dev-guide.mdx` | **Créer** la section « Guide du développeur » : règles de dev, architecture projet, grands sujets techniques, étape par étape ; destinée aux agents IA et aux devs | `doc/dev-guide.mdx` + `doc/dev-guide/<sujet>.mdx` |
+| `doc/specifications.mdx` | **Supprimer les deux langues** (fr placeholder + en obsolète). D'abord vérifier les liens entrants (`just check-links`, recherche dans `src/`) et les rediriger/retirer, **puis** supprimer | — (supprimé fr + en) |
+
+Appliquer `sidebar.order` sur les pages d'entrée pour fixer l'ordre §0.
+
+---
+
+## 3. Règles d'écriture, composants et skills
+
+### Règles de rédaction par persona
+
+- **Guide utilisateur** : donner envie, le moins de bla-bla possible, ton positif, style
+  travaillé.
+- **Guide administrateur** : toutes les infos pour installer, maintenir, agir, comprendre et **réparer**.
+  Contenu simple, précis, concis.
+- **Guide développeur** : hiérarchie permettant de comprendre l'architecture (où se trouve
+  quoi) jusqu'au détail (ex. créer un module). Explications étape par étape. Concis.
+
+### Règles de forme
+
+- Max **7 titres par niveau**, profondeur **3 max** ; au-delà, scinder en feuilles.
+- Privilégier les **informations visuelles**, sans en abuser ; aérer avec titres et
+  paragraphes courts. Pour chaque contenu, se demander :
+  - Est-ce une suite d'étapes ? → `<Steps>`.
+  - Est-ce explicable par un schéma ? → diagramme (voir skill).
+  - Est-ce une remarque / tip / caution / danger ? → callout `<Aside>`.
+- **Callouts (`<Aside>`)** : toujours un titre explicite ; usage parcimonieux.
+- **Cards (`<Card>` / `<CardGrid>` / `<LinkCard>`)** : réservées au **guide utilisateur** ;
+  ailleurs, préférer des liens simples.
+
+### Composants Starlight de référence (MDX)
+
+Import : `import { Steps, Card, CardGrid, LinkCard, Aside, Tabs, TabItem } from '@astrojs/starlight/components';`
+
+```mdx
+<Steps>
+1. Première étape.
+2. Deuxième étape.
+</Steps>
+
+<Aside type="tip" title="Titre explicite">Conseil court.</Aside>
+<!-- type ∈ note | tip | caution | danger -->
+
+<CardGrid>
+  <LinkCard title="Installer DNF" href="/fr/doc/user-guide/" />
+</CardGrid>
+
+<Tabs>
+  <TabItem label="NixOS">…</TabItem>
+  <TabItem label="Flake">…</TabItem>
+</Tabs>
+```
+
+### Skill diagrammes
+
+- **Outil recommandé : Mermaid** (diagram-as-code, lisible par tout agent, rendu image
+  propre). _Non encore installé_ → à ajouter (plugin Starlight / `rehype-mermaid`), avec
+  une charte graphique commune.
+- Créer un **skill** permettant à un agent de décrire son diagramme et de l'obtenir au bon
+  format.
+
+### Un skill par rôle d'agent
+
+Les 4 rôles de §1 deviennent **4 skills distincts** ; les règles communes restent dans
+`AGENTS.md` (chaque skill s'y réfère, sans dupliquer).
+
+- **Rédacteur** : étudie le sujet, choisit la section/feuille cible, rédige selon §3.
+- **Améliorateur** : améliore la forme, propose d'autres manières d'expliquer (visuels,
+  Steps, diagrammes).
+- **Correcteur** : orthographe, grammaire, lisibilité.
+- **Réorganisateur** : cohérence du plan, doublons, sujets à déplacer, améliorations de
+  structure.
+
+### Autres skills ?
+
+Croiser (règles d'écriture × contenus à générer × possibilités Starlight/Astro) pour
+décider ce qui mérite un **skill** supplémentaire vs ce qui doit rester une **règle** dans
+`AGENTS.md`.
+
+### Règles agents dans `AGENTS.md` (racine du projet)
+
+- Style **télégraphique**, **100–150 lignes** (200 max).
+- Uniquement les **règles globales** valables quelle que soit la tâche/le rôle.
+- Contenu : où mettre quoi (organisation des données), règles de forme clés, skills (dont
+  les 4 skills de rôle) et outils à disposition.
+
+---
 
 ## 4. Génération de la structure
 
-Important : on ne fait que la partie française (fr/doc), car la partie anglaise sera automatiquement traduite par les agents de traduction.
+**Français uniquement** (`fr/doc`) ; l'anglais sera produit par `just translate` plus tard.
 
-- Générer les pages principales, leur contenu et liens vers les pages secondaires.
-- Générer les pages secondaires, avec une petite introduction (pas de détail).
-- Repecter les règles d'écriture définies précédemment.
+- Générer les pages d'entrée : contenu + liens vers les feuilles.
+- Générer les feuilles avec une **petite introduction** (pas de détail).
+- Respecter les règles d'écriture du §3.
+
+---
 
 ## 5. Essais
 
-Commencer à créer du contenu et à le visualiser. Regarder ce qui va, ce qui ne va pas. 
+- Lancer `just dev` (site sur `http://localhost:4321/`, infos sur les pages en sortie).
+- Se mettre dans la peau d'un **agent rédacteur** : créer une page sur un sujet réel.
+- Observer, critiquer, améliorer :
+  - Génération réussie ? Règles respectées ? Skills fonctionnels ?
+- Créer d'autres pages au besoin pour couvrir l'ensemble des règles.
 
-- Lancer un `just dev` qui lance le site sur `http://localhost:4321/` et donne des informations sur les pages crées en sortie standard.
-- Se mettre à la place d'un agent rédaction, créer une page sur un sujet.
-- Observer le résultat. 
-- Le critiquer, améliorer :
-  - Généré avec succès ?
-  - Respecte-t-il les règles ?
-  - Est-ce que les skills fonctionnent ?
-- Créer d'autres pages s'il le faut, pour tester l'ensemble des règles.
+---
 
+## 6. Definition of Done
 
+- `just build` **vert** (aucune erreur).
+- `just check-links` et `just test` **OK** (liens internes / ancres valides).
+- `just tags` à jour (état de traduction cohérent, aucun tag édité à la main).
+- Les **4 sections** présentes et **ordonnées** (introduction → user → admin → dev).
+- Chaque fichier de §2 a bien atteint sa **cible unique** ; `specifications.mdx` supprimé
+  (fr + en) sans lien cassé.
+- Slugs en anglais ; how-to rangé en sous-dossiers `user/admin/dev` ; 4 skills de rôle
+  prévus.
