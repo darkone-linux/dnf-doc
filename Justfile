@@ -118,11 +118,7 @@ deploy msg="":
 	#!/usr/bin/env bash
 	MESG="{{ msg }}"
 	if [ -z "$MESG" ]; then
-	    if [ -d "../dnf/.git" ]; then
-	        MESG=$(git -C ../dnf log -1 --pretty=%B | head -n 1)
-	    else
-	        MESG=$(git log -1 --pretty=%B | head -n 1)
-	    fi
+		MESG=$(git log -1 --pretty=%B | head -n 1)
 	fi
 	if [ -z "$MESG" ]; then
 	    echo "Error: no commit message found. Use: just deploy \"your message\""
