@@ -1,5 +1,5 @@
 ---
-title: Project Overview
+title: The Project
 description: A multi-user, multi-host, ready-to-use NixOS configuration
 sidebar:
   order: 1
@@ -9,7 +9,7 @@ lang: en
 import { FileTree } from '@astrojs/starlight/components';
 
 {/* t:translated-from fr */}
-{/* t:h aef2ce9bf0b37262c245a0e0810ecb12691f65444b79e6200b3703eb4bc76618 */}
+{/* t:h 256d0e1581e9be54a3303e3462f688a5be2304ffb4ba92476eedbfa46b883a56 */}
 
 {/* t:p 16002e82006f771ebbbc300a3823e44ad5a853dde25d9b204d3c1f996b6a2598 */}
 :::tip[Not a programmer?]
@@ -79,7 +79,7 @@ At the root:
 - `src` -> Generator source files
 - `doc` -> Project documentation
 
-{/* t:p b5275262e9016af75316bad6ea1894e1446747bd80b9a1e745800ab7f2d15533 */}
+{/* t:p f0003ed9c3f67e23851f4c537d57037abc74d4476e3c1e22fffabe1b8f04d10a */}
 ### Structure
 
 <FileTree collapsed={true}>
@@ -89,29 +89,29 @@ At the root:
   - modules/ [Framework modules](/en/ref/modules/)
     - standard Standard modules
       - system/ System & Hardware
-      - console/ CLI Application
+      - console/ CLI Applications
       - graphic/ X Applications
-      - service/ Network Services
+      - service/ Network services
       - admin/ Administration
-      - user/ User configurations (outside HM)
+      - user/ User configurations (without HM)
     - mixin Macro-modules "Mixins"
       - host/ Host profiles (desktop, server...)
-      - profile/ Complements to user profiles
-  - home Home Manager configuration (HM)
+      - profile/ User profile add-ons
+  - home Home Manager (HM) configuration
     - modules/ Nix modules (features, programs)
     - profiles/ Profiles: admin, student, advanced...
-    - nixos/ Additional NixOS configurations (outside HM)
-- **usr/** Specific configuration for my network
-  - config.yaml [My main configuration](/fr/doc/dev-guide/generator/)
-  - modules/ My NixOS modules, identical to `dnf/modules`
-  - home/ My HM modules, identical to `dnf/home`
+    - nixos/ Additional NixOS (non-HM) configurations
+- **usr/** My network-specific configuration
+  - config.yaml [My main config](/en/doc/dev-guide/generator/)
+  - modules/ My NixOS modules, same as `dnf/modules`
+  - home/ My HM modules, same as `dnf/home`
   - secrets/ My passwords
     - secret.yaml Passwords and SOPS keys
-  - machines/ Specific configurations per host (hardware, etc.)
-  - users/ Specific HM configurations per user
+  - machines/ Host-specific configs (hardware, etc.)
+  - users/ Per-user HM configs
 - var/ Generated files
   - log/ Log files
-  - generated/ [Generated files](/fr/doc/dev-guide/generator/)
+  - generated/ [Generated files](/en/doc/dev-guide/generator/)
     - hosts.nix
     - users.nix
     - network.nix
@@ -119,26 +119,26 @@ At the root:
 - doc/ This documentation
 </FileTree>
 
-{/* t:p d4c6a54e0eb3fb84e823d3463e6506ac4c134fa9dc56f62e2e2221ce9e2ae308 */}
+{/* t:p 4e5c0407b5a8d99e136a2ecee58cfecfa5a1cac16b3224079b802deb3acbab5d */}
 ### Abstraction layers
 
-Lower levels serve the upper levels.
+Lower levels serve the higher levels.
 
 ![DNF Project layers](../../../../assets/layers.webp)
 
 These configurations are organized by category:
 
-- **[Mixin modules](/en/ref/modules/mixin/)** which compose and configure hosts.
+- **[Mixin modules](/en/ref/modules/mixin/)** that compose and configure hosts.
 - **[Service modules](/en/ref/modules/service/)** for self-hosted services.
 - **[System modules](/en/ref/modules/system/)** for base system configuration.
 - **[Security modules](/en/ref/modules/security/)** for system hardening.
-- **[CLI Applications](/en/ref/modules/console/)** command-line tools.
-- **[GUI Applications](/en/ref/modules/graphic/)** graphical applications.
+- **[CLI applications](/en/ref/modules/console/)** command-line tools.
+- **[GUI applications](/en/ref/modules/graphic/)** graphical applications.
 - **[Administration modules](/en/ref/modules/admin/)** for fleet management.
 - **[User management modules](/en/ref/modules/user/)** for accounts and access.
 - **[Home Manager modules](/en/ref/modules/home/)** for user profiles.
-- **[User profiles](/fr/doc/dev-guide/modules/)**, standard [Home Manager](https://github.com/nix-community/home-manager) configurations.
-- **Tools** to maintain high-quality configuration.
+- **[User profiles](/en/doc/dev-guide/modules/)**, standard [Home Manager](https://github.com/nix-community/home-manager) configurations.
+- **Tools** to maintain a quality configuration.
 
 {/* t:p ae9f71b348d4cf9b9e48103d3cd4c5bb62c673dd8a44b5d9a647a04650e0a9fe */}
 ## AI Usage

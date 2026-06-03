@@ -1,55 +1,55 @@
 ---
-title: Connecting and managing my account
+title: Manage my account
 sidebar:
-  label: My account
-  order: 4
+  order: 1
 lang: en
 ---
 
 {/* t:translated-from fr */}
+{/* t:h 68ac02ed99ad7269a84085fea4322c783f2fd888c1227512a5a0e3d5bfb086c7 */}
 
-{/* t:p bb98a04d80136969c19a7f738e075a53959b62dcd82915a70cdfc519fa002106 */}
-## Connecting and Managing My Account
+{/* t:p 3e66ab8f7030259bfea8da21525c0722efbfe9b587b22cac4942a08598f8217c */}
+## Signing in
 
 I need:
 
-* **A main password** for my vault (vaultwarden).
-* **A unique identity** for all cloud services (kanidm / IDM).
+* **A master password** for my vault (Vaultwarden).
+* **A unique identity** for all cloud services (Kanidm / IDM).
 
-My administrator must perform a procedure so I can define these accesses.
+My administrator must perform a procedure so I can set up these credentials.
 
-* **Main password**: an email containing a link to enter the password.
-* **Identity**: a QR-Code or a link to define a key and a "2FA" password.
+* **Master password**: an email containing a link to enter the password.
+* **Identity**: a QR code or a link to set a key and a "2FA" password.
 
-:::tip[To know!]
-- 🔒 **My main password** (Vaultwarden / Bitwarden)<br/>allows me to connect to my vault.
+:::tip[Good to know!]
+- 🔒 **My master password** (Vaultwarden / Bitwarden)<br/>allows me to connect to my vault.
 - 🔑 **My authentication key** (IDM Key)<br/>allows me to connect to all cloud applications.
-- 🔐 **My "2 factors" password** (2FA Key)<br/>allows me to connect too, if I have a problem with my key.
+- 🔐 **My "2-factor" password** (2FA Key)<br/>also allows me to connect, if I have an issue with my key.
 :::
 
-The **main password** is crucial, it's the only thing that needs to be **absolutely remembered**.
+The **master password** is essential, it's the only thing you **absolutely must remember**.
 
-My identification follows this schema:
+My identification follows this workflow:
 
 ![Identification workflow](../../../../../assets/identification.png)
 
 :::note[What is a key?]
-A digital key allows identification without using a password.
-It is located in my vault.
+A digital key allows you to authenticate without using a password.
+It is stored in my vault.
 When an application needs it, Bitwarden opens automatically.
-This is the **SIMPLEST AND MOST SECURE** way to authenticate.
+It is the **SIMPLEST AND MOST SECURE** way to authenticate myself.
 :::
 
-:::note[A "2 factors" password?]
-2-factor authentication (2FA) uses:
+:::note[A "2-factor" password?]
+Two-factor authentication (2FA) uses:
 - a password (something I know)
-- AND another "factor" (something I possess)
+- AND another "factor" (something I have)
 
-The latter can be a code sent by email/sms, a 6-digit code generator, etc.
-These days, a lot of passwords are compromised, which is why this type of authentication is becoming necessary.
+The latter can be a code sent by email / SMS, a 6-digit code generator, etc.
+Nowadays, a huge number of passwords are compromised, which is why this type of authentication is becoming necessary.
 :::
 
 :::caution[Securing my vault]
-To facilitate access to the vault (vaultwarden / bitwarden), a "simple" main password is allowed by default.
-But it is highly recommended to add a 2nd factor to secure access, especially since I put all my passwords in it (bank, social accounts, etc.).
+To facilitate access to the vault (Vaultwarden / Bitwarden), a "simple" master password is allowed by default.
+But it is strongly recommended to add a second factor to secure access, especially since I store all my passwords in it (bank, social accounts, etc.).
 :::
