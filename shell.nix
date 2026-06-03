@@ -20,6 +20,9 @@ pkgs.mkShell {
     # Codegen (src/generator Rust crate)
     cargo
     rustc
+
+    # Diagrams (astro-d2 calls the d2 binary at build/dev time)
+    d2
   ];
 
   shellHook = ''

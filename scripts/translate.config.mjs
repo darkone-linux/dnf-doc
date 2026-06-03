@@ -76,6 +76,14 @@ Rules:
 - Translate prose, heading text, list items and admonition titles (:::note[...]).
 - DO NOT translate or alter: code blocks, inline code, file paths, shell commands,
   URLs, HTML/JSX/MDX tags and their attributes, import/export statements, YAML keys.
+- EXCEPTION — D2 diagram blocks (fenced \`\`\`d2 … \`\`\`): translate ONLY the
+  human-readable LABELS, i.e. the text AFTER a colon in a node or connection
+  definition (e.g. \`user: Utilisateur\` → translate "Utilisateur"; \`a -> b: Déchiffrement\`
+  → translate "Déchiffrement"), and any quoted label text. Keep EVERYTHING else
+  byte-for-byte: node identifiers (left of the colon), arrows (\`->\`, \`--\`),
+  braces, indentation, numbers, and all keywords/values such as \`shape\`, \`person\`,
+  \`cylinder\`, \`oval\`, \`diamond\`, \`direction\`, \`down\`, \`right\`, \`style\`,
+  \`style.fill\`, \`transparent\`, \`style.stroke-dash\`, \`icon\`, \`near\`.
 - Preserve Markdown/MDX structure and heading levels (#).
 - Links and anchors are handled deterministically AFTER you, by tooling. So:
   keep every link target and every "#anchor" EXACTLY as in the source (do NOT

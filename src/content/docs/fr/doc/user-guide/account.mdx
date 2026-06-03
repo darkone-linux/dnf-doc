@@ -8,7 +8,7 @@ lang: fr
 {/* t:main */}
 {/* t:h 68ac02ed99ad7269a84085fea4322c783f2fd888c1227512a5a0e3d5bfb086c7 */}
 
-{/* t:p 3e66ab8f7030259bfea8da21525c0722efbfe9b587b22cac4942a08598f8217c */}
+{/* t:p 5f8a26bb3ddaa92da3b74e7fceaca93977707f0d1bb4a65e20f78949e29e553a */}
 ## S'identifier
 
 J’ai besoin :
@@ -31,7 +31,28 @@ Le **mot de passe principal** est primordial, c'est la seule chose qu'il faut **
 
 Mon identification suit le schéma suivant :
 
-![Workflow d'identification](../../../../../assets/identification.png)
+```d2
+style.fill: transparent
+direction: down
+
+user: Utilisateur {
+  shape: person
+}
+
+master: Mot de passe maître
+vault: Coffre-fort Bitwarden {
+  shape: cylinder
+}
+
+apps: Applications Cloud
+
+user -> master
+master -> vault: Déchiffrement
+vault -> apps: Identifiants
+user -> apps: Code 2FA (secours) {
+  style.stroke-dash: 4
+}
+```
 
 :::note[Qu'est-ce qu'une clé ?]
 Une clé numérique permet de s’identifier sans avoir à utiliser de mot de passe.

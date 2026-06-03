@@ -2,6 +2,7 @@ import { defineConfig } from "astro/config";
 import starlight from "@astrojs/starlight";
 import starlightLinksValidator from "starlight-links-validator";
 import rehypeExternalLinks from "rehype-external-links";
+import astroD2 from "astro-d2";
 import { targetBlank } from "./src/plugins/targetBlank";
 
 // https://astro.build/config
@@ -26,6 +27,21 @@ export default defineConfig({
     "/": "/fr/",
   },
   integrations: [
+    // Diagrams: render ```d2 blocks to standalone SVG files (served from /d2/)
+    // referenced via <img>, at build time. We use D2's NATIVE themes (light "0",
+    // dark "200") so the semantic shapes (person, cylinder, …) keep their
+    // distinct, legible look, with the hand-drawn `sketch` style as the house
+    // aesthetic. <img> mode also carries each diagram's native width/height, so
+    // SVGs render at their real size (no full-width stretch) with labels at
+    // ~body text size. Dark mode follows the OS color-scheme (D2 embeds a
+    // prefers-color-scheme media query). Requires `d2` on PATH (shell.nix).
+    astroD2({
+      inline: false,
+      layout: "elk",
+      sketch: true,
+      pad: 20,
+      theme: { default: "0", dark: "200" },
+    }),
     starlight({
       // Fail the build on any dead internal link or #anchor. Cross-language
       // links (an EN-only page referenced from FR) are intentional here, so

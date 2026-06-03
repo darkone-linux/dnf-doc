@@ -14,6 +14,9 @@ tmp/
 dist/
 darkone-linux.github.io/
 
+# generated D2 diagrams (astro-d2)
+public/d2/
+
 # generated types
 .astro/
 

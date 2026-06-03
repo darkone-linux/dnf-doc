@@ -11,3 +11,16 @@
     --sl-color-blue: #7ebae4;
     --sl-color-blue-low: #2b3e66;
 }
+
+/* ── D2 diagrams (astro-d2, <img> mode) ──────────────────────────────────────
+   astro-d2 emits each diagram as a standalone SVG served from /d2/ and embedded
+   via <img>, carrying its native width/height. Rendering uses D2's own themes
+   (light "0" / dark "200", sketch — see astro.config.mjs), so styling here is
+   layout-only: center the figure and keep it responsive without upscaling past
+   its natural size (labels then sit at ~body text size). */
+.sl-markdown-content img[src*="/d2/"] {
+    display: block;
+    margin: 1.5rem auto;
+    max-width: 100%;
+    height: auto;
+}
