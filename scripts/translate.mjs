@@ -131,7 +131,10 @@ function planJobs() {
 
 function buildPrompt(job, paras, includeHeader) {
   let body = '';
-  if (includeHeader) body += `<<<HEADER>>>\n${job.mainDoc.frontmatter}\n<<<EHEADER>>>\n\n`;
+  // Never ask an agent to translate an empty header.
+  if (includeHeader && job.mainDoc.frontmatter && job.mainDoc.frontmatter.trim()) {
+    body += `<<<HEADER>>>\n${job.mainDoc.frontmatter}\n<<<EHEADER>>>\n\n`;
+  }
   for (const p of paras) body += `<<<T ${p.hash}>>>\n${p.src}\n<<<E ${p.hash}>>>\n\n`;
   return render(config.prompts.translate, {
     srcLang: job.mainLang, tgtLang: job.tgt,
@@ -165,7 +168,8 @@ function writeTranslated(job, got) {
     if (got && got.header) frontmatter = swapLang(rewriteLinks(got.header, mainLang, tgt), tgt);
     else { frontmatter = swapLang(mainDoc.frontmatter, tgt); headerHash = null; } // retry next run
   } else {
-    frontmatter = job.tDoc.frontmatter; // unchanged
+    // Unchanged header, or an empty one on a brand-new file (tDoc may be null).
+    frontmatter = job.tDoc ? job.tDoc.frontmatter : swapLang(mainDoc.frontmatter, tgt);
   }
 
   const paragraphs = [];

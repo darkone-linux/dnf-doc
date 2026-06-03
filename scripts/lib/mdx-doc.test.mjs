@@ -53,8 +53,8 @@ test('serialize -> parse round-trips a tagged main', () => {
   const doc = computeMainHashes(parseDoc(MAIN_UNTAGGED));
   doc.role = 'main';
   const text = serializeDoc(doc);
-  // Tags present and ordered: t:main, t:h before the import.
-  assert.match(text, /\{\/\* t:main \*\/\}\n\{\/\* t:h [0-9a-f]{64} \*\/\}\n\nimport \{ Steps \}/);
+  // Imports float above the tags; then t:main, t:h.
+  assert.match(text, /import \{ Steps \}[^\n]*\n\n\{\/\* t:main \*\/\}\n\{\/\* t:h [0-9a-f]{64} \*\/\}/);
   const re = parseDoc(text);
   assert.equal(re.role, 'main');
   assert.equal(re.headerHash, doc.headerHash);
@@ -90,6 +90,36 @@ Texte.
   assert.equal(doc.preamble, "import { Steps } from '@astrojs/starlight/components';");
   assert.deepEqual(paragraphHashes(doc), ['1111', '2222']);
   assert.equal(doc.paragraphs[0].content, 'Cette section est dédiée aux administrateurs.');
+});
+
+test('no t:h tag for empty frontmatter', () => {
+  const doc = computeMainHashes(parseDoc(`---
+---
+
+Du texte.
+`));
+  doc.role = 'main';
+  assert.equal(doc.headerHash, null);
+  assert.doesNotMatch(serializeDoc(doc), /t:h/);
+});
+
+test('no t:p tag is emitted for empty paragraphs', () => {
+  // A doc that begins with a heading must not get a leading empty t:p, and an
+  // explicitly empty paragraph block is never serialized with a tag.
+  const doc = computeMainHashes(parseDoc(`---
+lang: fr
+---
+
+# Titre
+
+Texte.
+`));
+  doc.role = 'main';
+  doc.paragraphs.push({ hash: 'dead', content: '   \n\n' }); // empty block w/ a hash
+  const text = serializeDoc(doc);
+  assert.doesNotMatch(text, /\{\/\* t:p dead \*\/\}/);
+  // The only t:p present belongs to the real heading block.
+  assert.equal((text.match(/t:p /g) || []).length, 1);
 });
 
 test('headings inside code fences are not split points', () => {

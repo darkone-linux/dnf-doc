@@ -49,7 +49,9 @@ export function reconcile(mainDoc, transDoc, opts = {}) {
     return { hash: mp.hash, content: '', src: mp.content, needs: true };
   });
 
-  const headerNeeds = newFile || transDoc.headerHash !== mainDoc.headerHash;
+  // Only translate the header when the main actually has frontmatter content
+  // (mainDoc.headerHash is null for an empty header → never send it to an agent).
+  const headerNeeds = Boolean(mainDoc.headerHash) && (newFile || transDoc.headerHash !== mainDoc.headerHash);
   // An untracked file that still holds content but could not be adopted means a
   // pre-existing manual translation whose structure diverged from the main.
   const conflict = Boolean(untracked && transDoc.paragraphs.length > 0);

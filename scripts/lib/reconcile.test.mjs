@@ -55,6 +55,13 @@ test('changed paragraph re-queued, stale dropped, order follows main', () => {
   assert.equal(r.paragraphs[0].src, 'A2');
 });
 
+test('empty header (null hash) never needs translation', () => {
+  const noHeader = { headerHash: null, paragraphs: [{ hash: 'a', content: 'A' }] };
+  assert.equal(reconcile(noHeader, null, {}).headerNeeds, false); // new file, but empty header
+  const trans = { headerHash: null, paragraphs: [{ hash: 'a', content: 'tA' }] };
+  assert.equal(reconcile(noHeader, trans, {}).headerNeeds, false);
+});
+
 test('header change is detected', () => {
   const trans = { headerHash: 'OLD', paragraphs: [{ hash: 'a', content: 'tA' }, { hash: 'b', content: 'tB' }] };
   const r = reconcile(main, trans, { adoptExisting: true });

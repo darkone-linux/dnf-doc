@@ -2,11 +2,14 @@
 //
 // A document is split into:
 //   - frontmatter : the YAML between the leading `---` fences
+//   - preamble    : the import/export block (never hashed). On serialization it
+//                   is emitted right after the frontmatter, ABOVE the role tags,
+//                   so editors keep their imports at the top of the file.
 //   - role tags   : {/* t:main */} or {/* t:translated-from <lang> */}
 //   - header hash : {/* t:h <hex> */}  (blake3 of the MAIN frontmatter)
-//   - preamble    : the import/export block right after the header (never hashed)
 //   - paragraphs  : blocks split on ATX headings (^#{1,6} ), each optionally
-//                   preceded by {/* t:p <hex> */}
+//                   preceded by {/* t:p <hex> */}. Empty/whitespace-only blocks
+//                   never carry a t:p tag (none is generated for them).
 //
 // Paragraph and header hashes are STABLE ids: identical in a main file and in
 // all of its translations, so a content change flips the hash and marks the
@@ -105,15 +108,18 @@ export function serializeDoc(doc) {
   let out = '';
   if (doc.hasFrontmatter) out += '---\n' + doc.frontmatter.replace(/\s+$/, '') + '\n---\n\n';
 
+  // Imports/exports float to the top, above the tracking tags.
+  if (doc.preamble) out += doc.preamble + '\n\n';
+
   const tags = [];
   if (doc.role === 'main') tags.push('{/* t:main */}');
   else if (doc.role === 'translated') tags.push(`{/* t:translated-from ${doc.translatedFrom} */}`);
   if (doc.headerHash) tags.push(`{/* t:h ${doc.headerHash} */}`);
   if (tags.length) out += tags.join('\n') + '\n\n';
 
-  if (doc.preamble) out += doc.preamble + '\n\n';
-
   for (const p of doc.paragraphs) {
+    // No t:p tag (nor block) for empty/whitespace-only content.
+    if (!p.content || !p.content.trim()) continue;
     if (p.hash) out += `{/* t:p ${p.hash} */}\n`;
     out += p.content + '\n\n';
   }
@@ -123,7 +129,10 @@ export function serializeDoc(doc) {
 // Compute (or refresh) the header + paragraph hashes from the document content.
 // Used for MAIN files only. Mutates and returns the doc.
 export function computeMainHashes(doc) {
-  doc.headerHash = hashContent(doc.frontmatter);
+  // No t:h for empty/whitespace-only frontmatter (nothing to track or translate).
+  doc.headerHash = doc.frontmatter && doc.frontmatter.trim() ? hashContent(doc.frontmatter) : null;
+  // Drop empty/whitespace-only blocks so no t:p hash is ever computed for them.
+  doc.paragraphs = doc.paragraphs.filter((p) => normalizeForHash(p.content) !== '');
   for (const p of doc.paragraphs) p.hash = hashContent(p.content);
   return doc;
 }
