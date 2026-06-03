@@ -97,7 +97,11 @@ function parseAgentOutput(text) {
 
 // Build the list of per-file translation jobs (no agent calls here).
 function planJobs() {
-  const langs = listLangs(docsDir);
+  // Target languages = configured set ∪ discovered directories. The configured
+  // set lets a t:main file be propagated to a language that has no files yet
+  // (e.g. a freshly declared locale), instead of only the existing dirs.
+  const discovered = listLangs(docsDir);
+  const langs = Array.from(new Set([...(config.languages || []), ...discovered])).sort();
   const fileMap = buildFileMap(docsDir, langs, config.exclude);
   const jobs = [];
 

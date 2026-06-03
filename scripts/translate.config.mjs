@@ -9,6 +9,12 @@ export default {
   // Default source language when a pair of untagged files is discovered.
   mainLang: env.TRANSLATE_MAINLANG || 'fr',
 
+  // Languages the site targets (keep in sync with astro.config.mjs `locales`).
+  // Every t:main file is propagated to ALL of these: a missing translation is
+  // created from the main, even if that language has no directory/file yet.
+  // Env override: TRANSLATE_LANGS="fr,en,es".
+  languages: env.TRANSLATE_LANGS ? env.TRANSLATE_LANGS.split(',').map((s) => s.trim()).filter(Boolean) : ['fr', 'en'],
+
   // Per-file main-language overrides, keyed by logical path (language stripped).
   // Highest priority when deciding which language is the source of truth.
   mainOverrides: {
