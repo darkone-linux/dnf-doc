@@ -23,7 +23,7 @@ export default defineConfig({
     ],
   },
   redirects: {
-    "/": "/en/",
+    "/": "/fr/",
   },
   integrations: [
     starlight({
@@ -38,7 +38,7 @@ export default defineConfig({
       title: "Darkone NixOS Framework",
       favicon: "/favicon.svg",
       customCss: ["./src/styles/custom.css"],
-      defaultLocale: "en",
+      defaultLocale: "fr",
       locales: {
         en: {
           label: "English",
@@ -66,12 +66,10 @@ export default defineConfig({
       sidebar: [
         {
           label: "Documentation",
-          translations: { fr: "Documentation" },
           items: [
             {
               slug: "doc/introduction",
               label: "Introduction",
-              translations: { fr: "Introduction" },
             },
             {
               label: "User Guide",
@@ -136,7 +134,12 @@ export default defineConfig({
         {
           label: "References",
           translations: { fr: "Références" },
-          items: [{ autogenerate: { directory: "ref" } }],
+          items: [
+            {
+              label: "Modules",
+              items: [{ autogenerate: { directory: "ref/modules" } }],
+            },
+          ],
         },
         { label: "Changelog", slug: "changelog" },
         { label: "Thanks!", slug: "thanks" },
