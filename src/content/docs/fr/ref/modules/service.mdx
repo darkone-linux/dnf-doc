@@ -156,31 +156,46 @@ darkone.service.garage = {
 };
 ```
 
-{/* t:p 7c6b8158f3d908dae85142b3a404b51278edf2b468a1b4dcb00205f091468ed9 */}
+{/* t:p a27ed7ea0a78feae324db216076fedd195e45040ec431444c9ae870ddd3a527f */}
 ### &#x2728; darkone.service.geneweb
 
 GeneWeb — Service de généalogie puissant.
 
 :::note[Service en cours de validation]
-Wrapper DNF autour du module nixpkgs (depuis [PR #522751](https://github.com/NixOS/nixpkgs/pull/522751)).
+Wrapper DNF autour du module nixpkgs (issu de [PR #522751](https://github.com/NixOS/nixpkgs/pull/522751)).
 :::
 
 :::tip[Déclaration de base de données]
-Pour déclarer un fichier `base.gw` (répertoire par défaut `/var/lib/geneweb`), ajoutez ceci dans votre configuration de serveur :
+Pour déclarer un fichier `base.gw` (répertoire par défaut : `/var/lib/geneweb`),
+ajoutez ceci dans votre configuration serveur :
 ```nix
 services.geneweb.databases.base = {};
 ```
 :::
 
-:::caution[Secrets sops requis]
-Une fois activé, ce module lit les mots de passe friend et wizard à partir des secrets sops `geneweb-friend` et `geneweb-wizard`. Ajoutez les entrées à `usr/secrets/` avant de reconstruire, sinon l'activation sops-nix échouera.
+:::caution[Secrets SOPS]
+L'option `enablePasswords` lit les mots de passe friend et wizard depuis les
+secrets sops `geneweb-friend` et `geneweb-wizard`. Si activée, ajoutez les
+entrées dans `usr/secrets/` avant de rebuild, sinon l'activation sops-nix
+échouera.
+
+**Note importante :** Les mots de passe Sops doivent être envoyés en texte clair
+au démon Geneweb. Pour plus de sécurité, il est préférable de définir ces mots
+de passe dans le fichier de configuration de la base de données (your-base.gwf)
+plutôt que d'utiliser `enablePasswords`.
 :::
 
 * **enable** `bool` Activer le service de généalogie GeneWeb local
+* **enablePasswords** `bool` Activer les mots de passe sops (non recommandé)
 
 ```nix
-darkone.service.geneweb.enable = false;
+darkone.service.geneweb = {
+  enable = false;
+  enablePasswords = false;
+};
 ```
+
+<hr/>
 
 {/* t:p 164b57feff8feab9906b0937a57155cf2faedbbccc37cc59bda656457f020849 */}
 ### &#x2728; darkone.service.harmonia
