@@ -23,7 +23,7 @@ haut-niveau, regroupés par catégorie sous `dnf/modules/` et documentés dans l
 - **mixin** — macro-modules composant des profils d'hôtes et compléments de profils utilisateurs.
 - **home** — modules et profils [Home Manager](https://github.com/nix-community/home-manager).
 
-{/* t:p b1cc27e04872cce84b5e136c9e31285bc57906a32f8179ff7dd78aaa8b2e877f */}
+{/* t:p ef19b14d86449094e5e7ff00f32350596401d02a3210c01123b614dbc279ce88 */}
 ## Créer un module
 
 <Steps>
@@ -34,6 +34,10 @@ haut-niveau, regroupés par catégorie sous `dnf/modules/` et documentés dans l
 4. Régénérer (`just generate`) et tester avant de commiter.
 
 </Steps>
+
+Pour un service auto-hébergé (web UI, API, stockage…), suivre le guide dédié
+[Créer un module de service](/fr/doc/dev-guide/create-service-module/) : reverse
+proxy, persistance, pare-feu, SSO Kanidm et activation par hôte.
 
 :::note[Référence du code]
 Le détail des options exposées par chaque module est généré automatiquement
