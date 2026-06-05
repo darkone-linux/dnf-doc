@@ -8,7 +8,7 @@ lang: fr
 {/* t:main */}
 {/* t:h 68ac02ed99ad7269a84085fea4322c783f2fd888c1227512a5a0e3d5bfb086c7 */}
 
-{/* t:p 5f8a26bb3ddaa92da3b74e7fceaca93977707f0d1bb4a65e20f78949e29e553a */}
+{/* t:p f02ad94b8cefa3c09b201471dde8fd37704c876950f94d1abc4a27d5c9af8ac5 */}
 ## S'identifier
 
 J’ai besoin :
@@ -39,17 +39,42 @@ user: Utilisateur {
   shape: person
 }
 
-master: Mot de passe maître
-vault: Coffre-fort Bitwarden {
+master: Mot de passe\nmaître {
+  shape: hexagon
+}
+2fac: 2FA\n(coffre) {
+  shape: hexagon
+}
+vault: Coffre-fort\nBitwarden {
   shape: cylinder
 }
+idp: Identifiant\n+\nMot de passe {
+  shape: hexagon
+}
+2fa: 2FA {
+  shape: hexagon
+}
 
-apps: Applications Cloud
+apps: Toutes Applications\n(Internes et Externes)
 
 user -> master
-master -> vault: Déchiffrement
-vault -> apps: Identifiants
-user -> apps: Code 2FA (secours) {
+master -> vault
+vault -> idp
+idp -> apps
+
+user -> 2fac {
+  style.stroke-dash: 4
+}
+2fac -> vault {
+  style.stroke-dash: 4
+}
+vault -> 2fa {
+  style.stroke-dash: 4
+}
+2fa -> apps {
+  style.stroke-dash: 4
+}
+user -> 2fa {
   style.stroke-dash: 4
 }
 ```

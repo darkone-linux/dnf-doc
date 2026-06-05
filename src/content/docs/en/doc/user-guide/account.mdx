@@ -8,26 +8,26 @@ lang: en
 {/* t:translated-from fr */}
 {/* t:h 68ac02ed99ad7269a84085fea4322c783f2fd888c1227512a5a0e3d5bfb086c7 */}
 
-{/* t:p 5f8a26bb3ddaa92da3b74e7fceaca93977707f0d1bb4a65e20f78949e29e553a */}
-## Sign in
+{/* t:p f02ad94b8cefa3c09b201471dde8fd37704c876950f94d1abc4a27d5c9af8ac5 */}
+## Signing in
 
 I need:
 
-* **A master password** for my vault (vaultwarden).
-* **A unique identity** for all cloud services (kanidm / IDM).
+* **A master password** for my vault (Vaultwarden).
+* **A unique identity** for all cloud services (Kanidm / IDM).
 
-My administrator must follow a procedure so I can set these up.
+My administrator must perform a procedure so I can set up these access methods.
 
-* **Master password**: an email with a link to enter the password.
-* **Identity**: a QR code or a link to set a key and a "2FA" password.
+* **Master password**: an email containing a link to set the password.
+* **Identity**: a QR Code or a link to set a key and a "2FA" password.
 
 :::tip[Good to know!]
-- 🔒 **My master password** (Vaultwarden / Bitwarden)<br/>lets me log into my vault.
-- 🔑 **My authentication key** (IDM Key)<br/>lets me log into all cloud applications.
-- 🔐 **My "2-factor" password** (2FA Key)<br/>also lets me log in if I have a problem with my key.
+- 🔒 **My master password** (Vaultwarden / Bitwarden)<br/>allows me to log in to my vault.
+- 🔑 **My authentication key** (IDM Key)<br/>allows me to log in to all cloud applications.
+- 🔐 **My "2-factor" password** (2FA Key)<br/>also allows me to log in, if I have an issue with my key.
 :::
 
-The **master password** is essential, it's the only thing I **absolutely must remember**.
+The **master password** is essential, it's the only thing you **absolutely** need to remember.
 
 My identification follows this diagram:
 
@@ -39,38 +39,63 @@ user: User {
   shape: person
 }
 
-master: Master password
-vault: Bitwarden vault {
+master: Master\npassword {
+  shape: hexagon
+}
+2fac: 2FA\n(vault) {
+  shape: hexagon
+}
+vault: Vault\nBitwarden {
   shape: cylinder
 }
+idp: Username\n+\nPassword {
+  shape: hexagon
+}
+2fa: 2FA {
+  shape: hexagon
+}
 
-apps: Cloud Applications
+apps: All Applications\n(Internal and External)
 
 user -> master
-master -> vault: Decryption
-vault -> apps: Credentials
-user -> apps: 2FA code (backup) {
+master -> vault
+vault -> idp
+idp -> apps
+
+user -> 2fac {
+  style.stroke-dash: 4
+}
+2fac -> vault {
+  style.stroke-dash: 4
+}
+vault -> 2fa {
+  style.stroke-dash: 4
+}
+2fa -> apps {
+  style.stroke-dash: 4
+}
+user -> 2fa {
   style.stroke-dash: 4
 }
 ```
 
 :::note[What is a key?]
-A digital key lets me identify myself without using a password.
+A digital key allows you to identify yourself without using a password.
 It is stored in my vault.
 When an application needs it, Bitwarden opens automatically.
 It is the **SIMPLEST AND MOST SECURE** way to authenticate.
 :::
 
 :::note[A "2-factor" password?]
-A 2-factor authentication (2FA) uses:
+2-factor authentication (2FA) uses:
 - a password (something I know)
 - AND another "factor" (something I have)
 
-This can be a code sent by email/SMS, a 6-digit code generator, etc.
+This can be a code sent by email / SMS, a 6-digit code generator, etc.
 Nowadays, many passwords are compromised, which is why this type of authentication is becoming necessary.
 :::
 
 :::caution[Securing my vault]
-To make accessing the vault (vaultwarden / bitwarden) easier, a "simple" master password is allowed by default.
-But it is strongly recommended to add a second factor to secure access, especially since I store all my passwords in it (bank, social accounts, etc.).
+To make accessing the vault (Vaultwarden / Bitwarden) easier, a "simple" master password is allowed by default.
+But it is highly recommended to add a 2nd factor to secure access, especially since I store all my passwords in it (bank, social accounts, etc.).
 :::
