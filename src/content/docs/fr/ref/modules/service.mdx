@@ -585,6 +585,37 @@ Un wiki outline complètement configuré.
 darkone.service.outline.enable = false;
 ```
 
+{/* t:p 0b092d2ccbf5c114dbcb874e9770292b28bd008f771a371b106fb3f612d3dc42 */}
+### &#x2728; darkone.service.oxicloud
+
+OxiCloud — Cloud souverain rapide (stockage de fichiers, WebDAV, CalDAV et CardDAV).
+
+:::note[Service en cours de validation]
+Wrapper DNF autour du module nixpkgs (issu du [PR #516113](https://github.com/NixOS/nixpkgs/pull/516113)).
+Le paquet `oxicloud` est déjà livré dans nixpkgs ; seul le module est sourcé
+depuis le fork (cf. l'entrée `nixpkgs-oxicloud` de `flake.nix`).
+:::
+
+:::tip[SSO]
+Quand un service `idm` (Kanidm) existe sur le réseau (zone ou global), l'OIDC est
+câblé automatiquement : un client OAuth2 est enregistré et OxiCloud est pointé vers
+les endpoints Kanidm. Sans `idm`, le comportement amont est laissé inchangé
+(connexion par mot de passe local uniquement).
+:::
+
+:::tip[Stockage]
+Le stockage de fichiers, WebDAV, CalDAV et CardDAV sont servis sur le même port HTTP,
+derrière le reverse proxy Caddy. La base de données PostgreSQL est créée localement.
+:::
+
+* **enable** `bool` Activer le service OxiCloud local
+
+```nix
+darkone.service.oxicloud.enable = false;
+```
+
+<hr/>
+
 {/* t:p 2df49a083fb067c0293b5a2875974382bdf4ecbf582010a5ac7698d69f80e418 */}
 ### &#x2728; darkone.service.postfix
 

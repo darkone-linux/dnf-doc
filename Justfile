@@ -48,7 +48,7 @@ upgrade:
 
 # ── update ───────────────────────────────────────────────────────────────────
 
-# Codegen + translate + clean/fix + build + deploy (skips build/deploy if no changes)
+# Codegen + tags/translate + clean/fix + build + deploy (skips build/deploy if no changes)
 [group('update')]
 update msg="":
 	#!/usr/bin/env bash

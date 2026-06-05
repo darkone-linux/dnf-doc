@@ -23,19 +23,23 @@ category under `dnf/modules/` and documented in the
 - **mixin** — macro-modules composing host profiles and user-profile add-ons.
 - **home** — [Home Manager](https://github.com/nix-community/home-manager) modules and profiles.
 
-{/* t:p b1cc27e04872cce84b5e136c9e31285bc57906a32f8179ff7dd78aaa8b2e877f */}
-## Creating a module
+{/* t:p ef19b14d86449094e5e7ff00f32350596401d02a3210c01123b614dbc279ce88 */}
+## Create a module
 
 <Steps>
 
-1. Pick the category (`dnf/modules/standard/<category>/` or `mixin`).
-2. Write the file header following the rules (see [code headers](/en/doc/how-to/)).
-3. Declare the module's `options` then its `config`.
+1. Choose the category (`dnf/modules/standard/<category>/` or `mixin`).
+2. Write the file header according to the rules (see [code headers](/en/doc/how-to/dev/code-headers/)).
+3. Declare `options` then the module `config`.
 4. Regenerate (`just generate`) and test before committing.
 
 </Steps>
 
+For a self-hosted service (web UI, API, storage…), follow the dedicated guide
+[Create a service module](/en/doc/dev-guide/create-service-module/): reverse
+proxy, persistence, firewall, Kanidm SSO, and per-host activation.
+
 :::note[Code reference]
-The options exposed by each module are generated automatically in the
-[reference](/en/ref/modules/) — do not edit it by hand.
+The details of options exposed by each module are automatically generated
+in the [reference](/en/ref/modules/) — do not edit them manually.
 :::

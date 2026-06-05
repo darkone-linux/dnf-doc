@@ -1,0 +1,390 @@
+---
+title: Creating a "service" type module
+sidebar:
+  label: Services
+  order: 2.5
+lang: en
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+{/* t:translated-from fr */}
+{/* t:h 0969d11dc450cffcc65ad681249ef027be7f9cccb52293f0b3abbe118357456c */}
+
+{/* t:p add66eb5a85b0e26f13ac2a04806e7548ad8854de6cf611c3f7bfb37bbd84723 */}
+A DNF **"service" module** wires a self-hosted piece of software (web UI, API,
+storage…) into the framework: reverse proxy, homepage, persistence, firewall,
+SSO and per-host activation. This page describes how to create and maintain such
+a module, from header to commit, using the `oxicloud` module as a running
+example.
+
+<Aside type="note" title="Prerequisites">
+First read the service module standard (`dnf/modules/service/AGENTS.md`) and the
+[code headers](/en/doc/how-to/dev/code-headers/). Option details are generated in
+the [reference](/en/ref/modules/service/).
+</Aside>
+
+{/* t:p 76486290b1c9c3abae090963f47c1e53893ce7e224088dc8301735d395d8e227 */}
+## Module anatomy
+
+A module lives in `dnf/modules/service/<name>.nix`. It is **auto-imported**
+via the generated `default.nix` (run `just generate` after creation).
+
+{/* t:p 128f3700ab5e5748fab81512fcf718fdd55def120f90435d0eea1a0936a00716 */}
+### Header
+
+Mandatory top comment: 1 descriptive line, then paragraphs and Starlight
+admonitions (`note`, `tip`, `caution`, `danger`) oriented towards usage /
+maintenance.
+
+```nix
+# OxiCloud — Fast Sovereign Cloud (file storage, WebDAV, CalDAV & CardDAV).
+#
+# :::note[Service currently being validated]
+# DNF wrapper around the nixpkgs module (from PR #516113).
+# :::
+```
+
+{/* t:p 4ea9c63b98475b9a48e345ab4f8add826cc152848fc8767eb3d4682b845c40d5 */}
+### Options
+
+Imposed schema: `darkone.service.<name>.<option>`. Start with only the `enable`
+option; only add options for matters not resolved by the framework.
+
+```nix
+options = {
+  darkone.service.oxicloud.enable = lib.mkEnableOption "Enable local OxiCloud service";
+};
+```
+
+<Aside type="caution" title="Not an option: service parameters">
+`domain`, `global`, `title`… are **not** module options: they are parameters
+declared in `etc/config.yaml`, resolved by the framework via
+`dnfLib.extractServiceParams`. See [Per-host activation](#registration-and-activation).
+</Aside>
+
+{/* t:p 6573503e8ccc156046a70f3252ab2d0428be75a3dad221a7d58fbad5ee01707c */}
+### `config` structure
+
+Always `lib.mkMerge` of two blocks:
+
+<Steps>
+
+1. **Unconditional block** — registration with the service and template system
+   (proxy, persist, OAuth2…). Always evaluated, even if the service is disabled.
+2. **`lib.mkIf cfg.enable` block** — the actual NixOS configuration (upstream
+   service, firewall, secrets…).
+
+</Steps>
+
+```nix
+config = lib.mkMerge [
+  {
+    darkone.system.services.service.oxicloud = { /* registration */ };
+    darkone.service.idm.oauth2.oxicloud = { /* template OAuth2 */ };
+  }
+  (lib.mkIf cfg.enable {
+    darkone.system.services = dnfLib.enableBlock "oxicloud";
+    services.oxicloud = { /* … */ };
+  })
+];
+```
+
+Two-block structure:
+
+```d2
+style.fill: transparent
+direction: down
+
+module: "Module <name>.nix" {
+  header: Header
+  options: Options
+  config: "config =\nlib.mkMerge"
+}
+
+incond: "Unconditional block always evaluated" {
+  proxy: Reverse proxy
+  persist: Persistence
+  oauth2: OAuth2
+}
+
+cond: "mkIf cfg.enable block (enabled)" {
+  service: NixOS service
+  firewall: Firewall
+  secrets: Secrets
+}
+
+config -> incond
+config -> cond
+```
+
+{/* t:p 133cf82fdb88c3d46926d0224aab3d788fb27d4027aa492bccc1644533671fd5 */}
+## Injected arguments and consumer boundary
+
+Beyond `lib`, `config`, `pkgs`, each service module receives these `specialArgs`:
+
+- `host` — current host (`hostname`, `zone`, `ip`, `vpnIp`, `services`, `profile`…).
+- `hosts` — all hosts across the deployment (all zones).
+- `zone` — current host's zone (`name`, `domain`, `gateway`, `lang`…).
+- `network` — global config (`domain`, `coordination`, `services`, `zones`).
+- `dnfLib` — framework helpers (**never** import `dnf/lib/` manually).
+- `workDir` — consumer workspace root.
+- `users` — all users.
+
+<Aside type="danger" title="Framework ↔ consumer boundary">
+A framework module reaches consumer files (`usr/secrets/…`, `usr/www/…`) **only**
+via `workDir + "/usr/…"`, never by relative path (`./../../usr/…`). The
+framework flake root is not the consumer workspace.
+</Aside>
+
+{/* t:p 87e14a0e85d4a423956560abb4ef0c2d28af6a1abfae3394ebc0080188da6477 */}
+## Registration and activation
+
+{/* t:p de3a0aa9eba9f647235738aed9df627b97a6a6ee3e7e144afe12d9a627a67f66 */}
+### Service exposition
+
+The **unconditional** block declares `darkone.system.services.service.<name>`,
+read by `modules/system/services.nix` to generate reverse proxy, homepage,
+persistence and backup.
+
+```nix
+darkone.system.services.service.oxicloud = {
+  inherit defaultParams;                 # title / description / icon homepage
+  persist = {
+    dirs = [ oxCfg.dataDir ];            # service data
+    dbDirs = [ config.services.postgresql.dataDir ];
+  };
+  proxy.servicePort = srvPort;           # Caddy proxies to this port
+};
+```
+
+- `proxy.servicePort` — internal HTTP port; the Caddy reverse proxy connects
+  to it on `params.ip`. Without reverse proxy: `proxy.servicePort = null` +
+  `proxy.enable = false`.
+- `persist.{dirs,dbDirs,varDirs,mediaDirs,…}` — persisted / backed up paths.
+- `defaultParams` — default metadata (`title`, `description`, `icon`),
+  overridable from `config.yaml`. The `icon` uses a
+  [selfh.st](https://selfh.st/icons/) slug (prefixed `sh-` by the framework).
+
+```nix
+defaultParams = {
+  title = "OxiCloud";
+  description = "Fast Sovereign Cloud";
+  icon = "oxicloud";
+};
+```
+
+Protocols served on the same HTTP port (WebDAV, CalDAV, CardDAV for OxiCloud)
+naturally go through the single Caddy vhost: nothing special to configure.
+
+{/* t:p cd313ef0963d46ef380d1264d9eb2dab1cf284725bc16fb926ae6b07ff102aed */}
+### Per-host activation
+
+A service is activated on a host when it appears under `services:` in
+`etc/config.yaml`, or via a trigger in `dnf/config/modules.nix`:
+
+```nix
+oxicloud = {
+  # reverseProxy = true by default (web service with UI/API).
+  activation.profiles.minimal.triggers.keys.oxicloud = [ "enable" ];
+};
+```
+
+Available flags:
+
+| Flag | Default | Role |
+|---|---|---|
+| `reverseProxy` | `true` | Exposes the service via Caddy |
+| `uniquePerZone` | `false` | Single instance per zone |
+| `externalAccess` | `false` | Access from outside |
+
+On the `config.yaml` side, the following
+example installs a full OxiCloud on `https://cloud.mydomain.tld`:
+
+```yaml
+hosts:
+  - hostname: "my-server"
+    services:
+      oxicloud:
+        domain: "cloud"
+        global: true
+```
+
+The framework resolves `domain`/`global` into `params` (`fqdn`, `href`, `ip`…)
+via `dnfLib.extractServiceParams host network "oxicloud" defaultParams`.
+
+{/* t:p ae9debfa23c989de21ed264ff9032d332e282b341c74b9b7e3ca24a9def26c41 */}
+## Network, database and secrets
+
+{/* t:p ce5f822760b5b07f5a3ea4233f2d59de88b4f575227356dfa7569b909f348bd0 */}
+### Internal firewall
+
+Web service behind Caddy → no external opening. Open the port on internal
+interfaces only with `dnfLib.mkInternalFirewall`:
+
+```nix
+networking.firewall = dnfLib.mkInternalFirewall host zone [ srvPort ];
+```
+
+<Aside type="caution" title="TLS outside HCS">
+Outside HCS, a `DynamicUser` service cannot read synced Caddy certificates. For
+a web service, rely on the automatic reverse proxy (`proxy.servicePort`) + HTTP
+in the clear on the trusted LAN/VPN; do not manage ACME manually.
+</Aside>
+
+{/* t:p a1ae86ae2dc293a9864a5933ab1e6dc10528bc2bd564a0ea7ff245a8dfaf4d9e */}
+### Local PostgreSQL
+
+Many upstream modules expose a flag for local database creation. For OxiCloud,
+the option is sufficient (peer auth via socket):
+
+```nix
+services.oxicloud.createLocalDatabase = true;   # creates DB + role "oxicloud"
+services.postgresqlBackup.enable = true;        # backup
+```
+
+Persist the PostgreSQL `dataDir` via `persist.dbDirs` (see above). Without an
+upstream option, create DB and role manually (see `matrix.nix`).
+
+{/* t:p cb89811f7cef71425cb6cd6a8f7773224e409bff33101b4987d132cc7b31a541 */}
+### Sops secrets
+
+- Declare `sops.secrets.<name> = { mode = "0400"; owner = "<svc-user>"; }`
+  (default file `usr/secrets/secrets.yaml`).
+- A `DynamicUser = true` service cannot **own** a sops secret. If it loads the
+  key via `LoadCredential` (read as root), a root `0400` secret suffices;
+  otherwise, fall back to a static group + `SupplementaryGroups`.
+
+<Aside type="tip" title="External binaries in systemd units">
+**Every external binary** in a systemd unit (`script`, `ExecStart=`, `preStart`…)
+must be written as a full store path: `${pkgs.<pkg>}/bin/<cmd>` (systemd's PATH
+is empty). Shell *builtins* (`echo`, `[`, `for`…) are exempt.
+</Aside>
+
+{/* t:p 9afb04e9132fbf776a5f1e722d5be56218220680ceb86fd64913d903f985826c */}
+## OIDC Authentication with Kanidm
+
+SSO wiring is **automatic and conditional** on the presence of an `idm`
+(Kanidm) service on the network (zone or global). Three ingredients:
+
+<Steps>
+
+1. **OAuth2 Template** (unconditional block): `darkone.service.idm.oauth2.<name>`.
+   Kanidm provisions it as an OAuth2 client when `idm` is enabled.
+2. **OIDC Context**: `dnfLib.mkOidcContext` → `clientId`, `secret`, `idmUrl`.
+   `idmUrl == null` when no `idm` exists: all wiring is then cut off.
+3. **Endpoints**: `dnfLib.mkKanidmEndpoints idmUrl clientId` → `issuerUrl`,
+   `authUrl`, `tokenUrl`, `userinfoUrl`…
+
+</Steps>
+
+```nix
+params = dnfLib.extractServiceParams host network "oxicloud" defaultParams;
+inherit (dnfLib.mkOidcContext {
+  name = "oxicloud";
+  inherit params network hosts;
+}) clientId secret idmUrl;
+oidc = dnfLib.mkKanidmEndpoints idmUrl clientId;
+hasIdm = idmUrl != null;
+```
+
+The template declares **redirect paths** (prefixed by the service's public URL
+framework) and a landing page:
+
+```nix
+darkone.service.idm.oauth2.oxicloud = {
+  displayName = "OxiCloud";
+  imageFile = ./../../assets/app-icons/oxicloud.svg;
+  redirectPaths = [ "/api/auth/oidc/callback" ];
+  landingPath = "/";
+};
+```
+
+The OAuth2 secret is generated on the Kanidm side (`oidc-secret-<clientId>`). To
+provide it to the service without storing it in the Nix store, **re-encrypt** it
+for the service user (sops `key` field) then inject it via an environment file
+(`sops.templates`, `KEY=value` format):
+
+```nix
+sops.secrets."${secret}-service" = lib.mkIf hasIdm {
+  mode = "0400";
+  owner = "oxicloud";
+  key = secret;                          # master secret alias
+};
+
+sops.templates."oxicloud-oidc-env" = lib.mkIf hasIdm {
+  content = "OXICLOUD_OIDC_CLIENT_SECRET=${config.sops.placeholder."${secret}-service"}";
+  mode = "0400";
+  owner = "oxicloud";
+  restartUnits = [ "oxicloud.service" ];
+};
+
+services.oxicloud = {
+  settings.oidc = lib.mkIf hasIdm {
+    enable = true;
+    issuerUrl = oidc.issuerUrl;
+    inherit clientId;
+    redirectUri = "${params.href}/api/auth/oidc/callback";
+    frontendUrl = params.href;
+  };
+  environmentFiles = lib.mkIf hasIdm [ config.sops.templates."oxicloud-oidc-env".path ];
+};
+```
+
+<Aside type="tip" title="Conditionality">
+The OAuth2 template remains declared unconditionally (harmless without `idm`).
+Only the service-side wiring (`settings.oidc`, secret, env) is guarded by
+`lib.mkIf hasIdm`, leaving upstream behavior intact in the absence of Kanidm.
+Reference patterns: `outline.nix`, `immich.nix`, `forgejo.nix`.
+</Aside>
+
+{/* t:p b5659495936e23c188bec7aaca73626e6ae2a31c9b906e74d2e2d0a816745dd6 */}
+## Source an upstream module
+
+When only the NixOS **module** is missing (package already in nixpkgs), source
+it from a fork carrying the PR without rebuilding it.
+
+<Steps>
+
+1. Add a dedicated input in `dnf/flake.nix` pointing to the fork branch,
+   **without** `inputs.nixpkgs.follows` (we want the fork tree as-is):
+
+   ```nix
+   nixpkgs-oxicloud.url = "github:flashonfire/nixpkgs/oxicloud-service";
+   ```
+
+2. Inject the module path into the `modules` list of `mkNode`
+   (`dnf/lib/mk-configuration.nix`) — parsed unconditionally, no effect as long
+   as `services.<name>.enable = false`:
+
+   ```nix
+   "${nixpkgs-oxicloud}/nixos/modules/services/web-apps/oxicloud.nix"
+   ```
+
+</Steps>
+
+<Aside type="caution" title="Package overlay: only if necessary">
+Distinguish two cases. **OxiCloud**: the package is already in nixpkgs → no
+overlay, `pkgs.oxicloud` comes from the main tree. **GeneWeb**: the package was
+missing (OCaml deps) → an overlay (`lib/overlays/geneweb.nix`) injects
+`pkgs.geneweb` from the fork.
+</Aside>
+
+<Aside type="tip" title="Cleanup after merge">
+**Cleanup** once the PR is merged into `nixos-unstable`: remove the input,
+remove the module path (and the overlay if any). The wrapper
+`modules/service/<name>.nix` stays unchanged.
+</Aside>
+
+{/* t:p a9f5c5cc341efe809e43bc2f6cee5ac4a493519dbfe8902c85104a03726d32f1 */}
+## Finalize and commit
+
+<Steps>
+
+1. `just generate` — regenerate `default.nix` (auto-import the new module).
+2. `just clean` — fix + check + generate + format (mandatory before commit).
+3. Evaluate / build a host to validate, then commit.
+
+</Steps>
+
+Commit message: one line, 80 characters max, English, `<type>(<subject>): <message>` format — e.g. `module(oxicloud): full DNF service with OIDC`.

@@ -64,7 +64,7 @@ paramètres déclarés dans `etc/config.yaml`, résolus par le framework via
 `dnfLib.extractServiceParams`. Voir [Activation par hôte](#enregistrement-et-activation).
 </Aside>
 
-{/* t:p c93f9f7fdd739719980efe388f0bbc7d1af8613db71b119f98aa8022bd0c134e */}
+{/* t:p 6573503e8ccc156046a70f3252ab2d0428be75a3dad221a7d58fbad5ee01707c */}
 ### Structure de `config`
 
 Toujours `lib.mkMerge` de deux blocs :
@@ -89,6 +89,34 @@ config = lib.mkMerge [
     services.oxicloud = { /* … */ };
   })
 ];
+```
+
+Structure à deux blocs :
+
+```d2
+style.fill: transparent
+direction: down
+
+module: "Module <nom>.nix" {
+  header: En-tête
+  options: Options
+  config: "config =\nlib.mkMerge"
+}
+
+incond: "Bloc inconditionnel toujours évalué" {
+  proxy: Reverse proxy
+  persist: Persistance
+  oauth2: OAuth2
+}
+
+cond: "Bloc mkIf cfg.enable (activé)" {
+  service: Service NixOS
+  firewall: Pare-feu
+  secrets: Secrets
+}
+
+config -> incond
+config -> cond
 ```
 
 {/* t:p 133cf82fdb88c3d46926d0224aab3d788fb27d4027aa492bccc1644533671fd5 */}
@@ -151,7 +179,7 @@ Les protocoles servis sur le même port HTTP (WebDAV, CalDAV, CardDAV pour
 OxiCloud) passent naturellement par l'unique vhost Caddy : rien de spécial à
 configurer.
 
-{/* t:p 53263eceb34f433d84039366f4d75ae2103f7a8dd1d8eb493e32a2f9f319b396 */}
+{/* t:p cd313ef0963d46ef380d1264d9eb2dab1cf284725bc16fb926ae6b07ff102aed */}
 ### Activation par hôte
 
 Un service s'active sur un hôte quand il figure sous `services:` dans
@@ -164,8 +192,15 @@ oxicloud = {
 };
 ```
 
-Drapeaux disponibles : `reverseProxy` (défaut `true`), `uniquePerZone` (défaut
-`false`), `externalAccess` (défaut `false`). Côté `config.yaml`, l'exemple
+Drapeaux disponibles :
+
+| Drapeau | Défaut | Rôle |
+|---|---|---|
+| `reverseProxy` | `true` | Expose le service via Caddy |
+| `uniquePerZone` | `false` | Un seul exemplaire par zone |
+| `externalAccess` | `false` | Accès depuis l'extérieur |
+
+Côté `config.yaml`, l'exemple
 suivant installe un OxiCloud complet sur `https://cloud.mondomaine.tld` :
 
 ```yaml
@@ -214,17 +249,20 @@ services.postgresqlBackup.enable = true;        # sauvegarde
 Persister le `dataDir` PostgreSQL via `persist.dbDirs` (voir plus haut). À
 défaut d'option upstream, créer base et rôle à la main (cf. `matrix.nix`).
 
-{/* t:p b93238b0e459fddeb12e66e4fd238952fb64f114f51faf479f76c12091a923b8 */}
-### Secrets sops & systemd
+{/* t:p cb89811f7cef71425cb6cd6a8f7773224e409bff33101b4987d132cc7b31a541 */}
+### Secrets sops
 
 - Déclarer `sops.secrets.<nom> = { mode = "0400"; owner = "<svc-user>"; }`
   (fichier par défaut `usr/secrets/secrets.yaml`).
 - Un service `DynamicUser = true` ne peut pas **posséder** un secret sops. S'il
   charge la clé via `LoadCredential` (lu en root), un secret root `0400` suffit ;
   sinon, passer par un groupe statique + `SupplementaryGroups`.
-- **Tout binaire externe** d'une unité systemd (`script`, `ExecStart=`, `preStart`…)
-  s'écrit en chemin complet du store : `${pkgs.<pkg>}/bin/<cmd>` (le PATH systemd
-  est vide). Les *builtins* shell (`echo`, `[`, `for`…) sont exemptés.
+
+<Aside type="tip" title="Binaires externes dans les unités systemd">
+**Tout binaire externe** d'une unité systemd (`script`, `ExecStart=`, `preStart`…)
+s'écrit en chemin complet du store : `${pkgs.<pkg>}/bin/<cmd>` (le PATH systemd
+est vide). Les *builtins* shell (`echo`, `[`, `for`…) sont exemptés.
+</Aside>
 
 {/* t:p 9afb04e9132fbf776a5f1e722d5be56218220680ceb86fd64913d903f985826c */}
 ## Authentification OIDC avec Kanidm
