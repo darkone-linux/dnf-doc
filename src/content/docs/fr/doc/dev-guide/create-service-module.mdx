@@ -1,7 +1,7 @@
 ---
-title: Créer un module de service
+title: Créer un module de type "service"
 sidebar:
-  label: Module de service
+  label: Services
   order: 2.5
 lang: fr
 ---
@@ -9,10 +9,10 @@ lang: fr
 import { Steps, Aside } from '@astrojs/starlight/components';
 
 {/* t:main */}
-{/* t:h 5ce6e4c950e9dff425817fd05db4ad5823985a9d801826d21b57af70fbc81d22 */}
+{/* t:h 0969d11dc450cffcc65ad681249ef027be7f9cccb52293f0b3abbe118357456c */}
 
-{/* t:p 3b1583885dab323df4646d4f4a6426a53b328e758354c603501accf084d5265b */}
-Un **module de service** DNF câble un logiciel auto-hébergé (web UI, API,
+{/* t:p add66eb5a85b0e26f13ac2a04806e7548ad8854de6cf611c3f7bfb37bbd84723 */}
+Un **module "service"** DNF câble un logiciel auto-hébergé (web UI, API,
 stockage…) dans le framework : reverse proxy, page d'accueil, persistance,
 pare-feu, SSO et activation par hôte. Cette page décrit la création et la
 maintenance d'un tel module, de l'en-tête au commit, avec le module
@@ -30,11 +30,12 @@ options est généré dans la [référence](/fr/ref/modules/service/).
 Un module vit dans `dnf/modules/service/<nom>.nix`. Il est **auto-importé** via
 le `default.nix` généré (lancer `just generate` après création).
 
-{/* t:p a8845a1c2509ae83b4ff4b1c2a665c745058b89516408e2dc44de7f8beaef724 */}
+{/* t:p 128f3700ab5e5748fab81512fcf718fdd55def120f90435d0eea1a0936a00716 */}
 ### En-tête
 
-Commentaire de tête obligatoire : 1re ligne descriptive, puis admonitions
-Starlight (`note`, `tip`, `caution`, `danger`) orientées usage / maintenance.
+Commentaire de tête obligatoire : 1re ligne descriptive, puis paragraphes et
+admonitions Starlight (`note`, `tip`, `caution`, `danger`) orientées usage /
+maintenance.
 
 ```nix
 # OxiCloud — Fast Sovereign Cloud (file storage, WebDAV, CalDAV & CardDAV).
@@ -302,7 +303,7 @@ Seul le câblage côté service (`settings.oidc`, secret, env) est gardé par
 Kanidm. Modèles à étudier : `outline.nix`, `immich.nix`, `forgejo.nix`.
 </Aside>
 
-{/* t:p 6704d023776db0ab66242bdfaebbbaf45044ecf01d7589c2242298611ee7ba30 */}
+{/* t:p b5659495936e23c188bec7aaca73626e6ae2a31c9b906e74d2e2d0a816745dd6 */}
 ## Sourcer un module upstream
 
 Quand seul le **module** NixOS manque (paquet déjà dans nixpkgs), on le source
@@ -334,9 +335,11 @@ manquait (deps OCaml) → un overlay (`lib/overlays/geneweb.nix`) injecte
 `pkgs.geneweb` depuis le fork.
 </Aside>
 
+<Aside type="tip" title="Nettoyage après merge">
 **Cleanup** une fois la PR mergée dans `nixos-unstable` : supprimer l'input,
 retirer le path du module (et l'overlay éventuel). Le wrapper
 `modules/service/<nom>.nix` reste inchangé.
+</Aside>
 
 {/* t:p a9f5c5cc341efe809e43bc2f6cee5ac4a493519dbfe8902c85104a03726d32f1 */}
 ## Finaliser et committer
