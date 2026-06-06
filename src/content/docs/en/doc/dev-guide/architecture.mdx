@@ -13,15 +13,15 @@ lang: en
 The framework is organized in layers: each level serves the one above, from the
 base system up to host and user profiles.
 
-{/* t:p bd15f46636484eae1eb3fc5a2562232e3e80232863c94a3dca08fc6080c5c97a */}
-## File organization
+{/* t:p 38646055c558081a2daddea9df3ad6533a79a8b96e4a91c19e18df854c29086c */}
+## File Organization
 
 The full structure and abstraction layers are described in the
-[project introduction](/en/doc/introduction/#file-organization).
+[project overview](/en/doc/#organisation-des-fichiers).
 
 - `dnf/` — the framework: modules, Home Manager configuration, libraries.
-- `usr/` — the local project (writable): configuration, secrets, machines.
-- `var/generated/` — generated files (never edit by hand).
+- `usr/` — the local project (editable): configuration, secrets, machines.
+- `var/generated/` — generated files (do not edit manually).
 - `src/generator/` — generator sources (Rust).
 - `doc/` — this documentation.
 

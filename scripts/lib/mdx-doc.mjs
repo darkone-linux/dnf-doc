@@ -97,8 +97,12 @@ export function parseDoc(text) {
   const paragraphs = [];
   for (const block of splitByHeadings(rest)) paragraphs.push({ hash: null, content: block });
   for (const u of explicit) {
-    const content = normalizeForHash(u.lines.join('\n'));
-    if (content) paragraphs.push({ hash: u.hash, content });
+    // A tagged block may have grown extra headings (content added after it
+    // without its own t:p tag). Re-split so each heading becomes its own
+    // paragraph: the first sub-block keeps the existing hash, the rest are
+    // untagged and will be hashed/tagged by computeMainHashes.
+    const sub = splitByHeadings(u.lines);
+    sub.forEach((content, i) => paragraphs.push({ hash: i === 0 ? u.hash : null, content }));
   }
 
   return { hasFrontmatter, frontmatter, role, translatedFrom, headerHash, preamble, paragraphs };

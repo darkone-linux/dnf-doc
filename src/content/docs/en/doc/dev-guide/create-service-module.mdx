@@ -214,39 +214,40 @@ hosts:
 The framework resolves `domain`/`global` into `params` (`fqdn`, `href`, `ip`…)
 via `dnfLib.extractServiceParams host network "oxicloud" defaultParams`.
 
-{/* t:p 7c4588c008894dcbd6410aa8c42888e31d589ca81662f1e21fa50615f51339d8 */}
+{/* t:p ae9debfa23c989de21ed264ff9032d332e282b341c74b9b7e3ca24a9def26c41 */}
 ## Network, database and secrets
 
+{/* t:p fd9c25ec6dae8567787752d619578e4fb4ef0f400a1cb2601158f3c7b322dd86 */}
 ### Internal ports
 
 Any internal port that a module **binds**, **opens** in the firewall or **proxies**
 must come from the central registry `dnf/config/network.nix`, read via
-`dnfConfig.network.ports.<key>` — never a hard-coded literal in the module.
-This is the single source of truth: the same number is never written twice and
+`dnfConfig.network.ports.<key>` — never a hardcoded literal in the module.
+It is the single source of truth: the same number is never written twice and
 two services cannot silently conflict.
 
 <Steps>
 
 1. **Name the key** `<service>[Usage]` — the `ports.` prefix already says "port",
-   so the key specifies *what it is for* (`kanidmReplication`, `garageRpc`). A
-   bare `<service>` denotes the main port. Keep `network.nix` sorted by value.
-2. **Add the value** in `ports.<key>` when DNF binds the port itself, then read
-   it in the module:
+   so the key specifies *what it is used for* (`kanidmReplication`, `garageRpc`). A
+   `<service>` alone designates the main port. Keep `network.nix` sorted by value.
+2. **Add the value** in `ports.<key>` when DNF binds the port itself, then
+   read it in the module:
 
    ```nix
    srvPort = dnfConfig.network.ports.oxicloud;
    ```
 
-3. **Port inherited from upstream** (`config.services.<x>.port`, not bound by
-   DNF): instead register it in `ports.reserved` (anti-conflict denylist); the
-   module continues to read `config.services.<x>.port`.
+3. **Port inherited from upstream** (`config.services.<x>.port`, not bound by DNF):
+   instead register it in `ports.reserved` (anti-conflict denylist); the module
+   continues to read `config.services.<x>.port`.
 
 </Steps>
 
 <Aside type="note" title="Uniqueness tested">
 `dnf/tests/unit/config/network_test.nix` verifies global uniqueness across all
-`ports.*` values and the `ports.reserved` list. Any conflict fails the unit test
-suite.
+`ports.*` values and the `ports.reserved` list. Any conflict causes the unit
+test suite to fail.
 </Aside>
 
 {/* t:p ce5f822760b5b07f5a3ea4233f2d59de88b4f575227356dfa7569b909f348bd0 */}
