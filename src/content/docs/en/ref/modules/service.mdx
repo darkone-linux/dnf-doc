@@ -76,7 +76,7 @@ darkone.service.dnsmasq.enable = false;
 
 <hr/>
 
-{/* t:p d53f95bf92092f29d09d976e9bb49ad429ca0a0b0a6e975139e62e2e29b31d01 */}
+{/* t:p 7dbbd8f16305d1f9b5d6cbda211462abdd8c31c8a314808b7a4d7537b413b3ce */}
 ### &#x2728; darkone.service.docs
 
 A full-configured LaSuite Docs module.
@@ -90,7 +90,7 @@ A full-configured LaSuite Docs module.
 darkone.service.docs = {
   enable = false;
   s3Host = "127.0.0.1";
-  s3Port = 3900;
+  s3Port = dnfConfig.network.ports.garage;
   s3Bucket = "docs";
 };
 ```
@@ -736,7 +736,7 @@ darkone.service.printing = {
 
 <hr/>
 
-{/* t:p 511d2fe425093b056ced01faf0b8a6868a912cf73b7da306c99656aeaa607fb5 */}
+{/* t:p 17abbc3ff9e07de1cba39178193feb6a09e29da31648bab4a8ee4484644d763a */}
 ### &#x2728; darkone.service.restic
 
 Restic backup module with DNF configuration.
@@ -788,8 +788,8 @@ darkone.service.restic = {
   enableExtraSystemBackup = false;
   mainBackupZone = zone.name;
   extraBackupZone = "";
-  repositoryRoot = "rest:restic.${zone.domain}:8888";
-  extraRepositoryRoot = "rest:restic.${network.zones.other-zone.domain}:8888";
+  repositoryRoot = "rest:restic.${zone.domain}:${toString srvPort}";
+  extraRepositoryRoot = "rest:restic.${network.zones.other-zone.domain}:${toString srvPort}";
   enableNfsBackup = false;
   enableExtraNfsBackup = false;
   nfsPaths = [ ];

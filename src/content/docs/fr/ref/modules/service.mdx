@@ -68,24 +68,26 @@ C'est la fonctionnalité essentielle de la passerelle locale.
 darkone.service.dnsmasq.enable = false;
 ```
 
-{/* t:p d53f95bf92092f29d09d976e9bb49ad429ca0a0b0a6e975139e62e2e29b31d01 */}
+{/* t:p 7dbbd8f16305d1f9b5d6cbda211462abdd8c31c8a314808b7a4d7537b413b3ce */}
 ### &#x2728; darkone.service.docs
 
 Un module LaSuite Docs entièrement configuré.
 
-* **enable** `bool` Activer le service docs local
-* **s3Host** `str` Nom d'hôte du serveur S3
-* **s3Port** `port` Port du serveur S3
+* **enable** `bool` Activer le service de documentation local
+* **s3Host** `str` Nom d'hôte du backend S3
+* **s3Port** `port` Port du backend S3
 * **s3Bucket** `str` Nom du bucket S3 pour le stockage des documents
 
 ```nix
 darkone.service.docs = {
   enable = false;
   s3Host = "127.0.0.1";
-  s3Port = 3900;
+  s3Port = dnfConfig.network.ports.garage;
   s3Bucket = "docs";
 };
 ```
+
+<hr/>
 
 {/* t:p 05d7eefc2c605cfc85d7f1c1dc9cd2edd5304446a4cbc85fb88766e9d471f885 */}
 ### &#x2728; darkone.service.element
@@ -648,14 +650,14 @@ darkone.service.printing = {
 };
 ```
 
-{/* t:p 511d2fe425093b056ced01faf0b8a6868a912cf73b7da306c99656aeaa607fb5 */}
+{/* t:p 17abbc3ff9e07de1cba39178193feb6a09e29da31648bab4a8ee4484644d763a */}
 ### &#x2728; darkone.service.restic
 
-Module de sauvegarde Restic avec la configuration DNF.
+Module de sauvegarde Restic avec configuration DNF.
 
 :::tip
-L'activation de « restic » dans les services d'hôte (config.yaml) lance le serveur REST.
-Mettez les paramètres de sauvegarde locaux dans la configuration nix (configuration de la machine par exemple).
+Activer « restic » dans les services de l'hôte (config.yaml) lance le serveur REST.
+Placez les paramètres de sauvegarde locale dans la configuration nix (machine conf par exemple).
 
 ```nix
 # usr/machines/my-desktop/default.nix
@@ -663,7 +665,7 @@ darkone.service.restic = {
   enable = true;
   enableSystemBackup = true;
 };
-:::
+```
 
 Paramètres par défaut :
 
@@ -674,20 +676,20 @@ Paramètres par défaut :
 ```
 
 * **enable** `bool` Activer le service de sauvegarde restic principal
-* **enableDryRun** `bool` Mode essai
-* **enableServer** `bool` Activer le serveur rest restic
+* **enableDryRun** `bool` Mode Dry Run
+* **enableServer** `bool` Activer le serveur REST restic
 * **enableWaitRemoteFs** `bool` Déclencher le service restic uniquement si le service remote-fs est démarré
-* **enableSystemBackup** `bool` Activer la sauvegarde complète du système sauf /srv, /mnt et les fichiers cache
-* **enableExtraSystemBackup** `bool` Activer la sauvegarde du système sur un référentiel supplémentaire
-* **mainBackupZone** `str` Zone de sauvegarde principale (pour sélectionner le bon mot de passe)
-* **extraBackupZone** `str` Zone de sauvegarde supplémentaire (pour sélectionner le bon mot de passe)
-* **repositoryRoot** `str` Chemin racine de la cible de sauvegarde principale (par défaut local)
+* **enableSystemBackup** `bool` Activer la sauvegarde système complète sauf /srv, /mnt et les fichiers cache
+* **enableExtraSystemBackup** `bool` Activer la sauvegarde système sur un dépôt supplémentaire
+* **mainBackupZone** `str` Zone de la sauvegarde principale (pour sélectionner le bon mot de passe)
+* **extraBackupZone** `str` Zone de la sauvegarde supplémentaire (pour sélectionner le bon mot de passe)
+* **repositoryRoot** `str` Chemin racine de la cible de sauvegarde principale (local par défaut)
 * **extraRepositoryRoot** `str` Chemin racine de la cible de sauvegarde supplémentaire
-* **enableNfsBackup** `bool` Sauvegarde des répertoires /srv/nfs/&lt;xxx&gt;
-* **enableExtraNfsBackup** `bool` Activer la sauvegarde NFS sur un référentiel supplémentaire
+* **enableNfsBackup** `bool` Sauvegarder les répertoires /srv/nfs/&lt;xxx&gt;
+* **enableExtraNfsBackup** `bool` Activer la sauvegarde NFS sur un dépôt supplémentaire
 * **nfsPaths** `listOf str` Répertoires NFS (/srv/nfs/&lt;xxx&gt;) à inclure dans la configuration de sauvegarde
-* **enableMediasBackup** `bool` Sauvegarde des répertoires /srv/medias/&lt;xxx&gt;
-* **enableExtraMediasBackup** `bool` Activer la sauvegarde des médias sur un référentiel supplémentaire
+* **enableMediasBackup** `bool` Sauvegarder les répertoires /srv/medias/&lt;xxx&gt;
+* **enableExtraMediasBackup** `bool` Activer la sauvegarde des médias sur un dépôt supplémentaire
 * **mediasPaths** `listOf str` Répertoires NFS (/srv/medias/&lt;xxx&gt;) à inclure dans la configuration de sauvegarde
 
 ```nix
@@ -700,8 +702,8 @@ darkone.service.restic = {
   enableExtraSystemBackup = false;
   mainBackupZone = zone.name;
   extraBackupZone = "";
-  repositoryRoot = "rest:restic.${zone.domain}:8888";
-  extraRepositoryRoot = "rest:restic.${network.zones.other-zone.domain}:8888";
+  repositoryRoot = "rest:restic.${zone.domain}:${toString srvPort}";
+  extraRepositoryRoot = "rest:restic.${network.zones.other-zone.domain}:${toString srvPort}";
   enableNfsBackup = false;
   enableExtraNfsBackup = false;
   nfsPaths = [ ];
@@ -711,9 +713,11 @@ darkone.service.restic = {
 };
 ```
 
+<hr/>
+
 ### &#x2728; darkone.service.searx
 
-Un moteur de recherche durci complètement configuré.
+Un moteur de recherche renforcé entièrement configuré.
 
 * **enable** `bool` Activer le proxy de recherche local
 
@@ -721,16 +725,18 @@ Un moteur de recherche durci complètement configuré.
 darkone.service.searx.enable = false;
 ```
 
+<hr/>
+
 ### &#x2728; darkone.service.tailscale
 
 Service client Tailscale pour HCS.
 
 :::note
 Un client tailscale pour connecter un hôte externe à HCS.
-Ne l'utilisez pas pour connecter une passerelle à un sous-réseau tailnet.
+Ne pas l'utiliser pour connecter une passerelle vers un sous-réseau tailnet.
 :::
 
-* **enable** `bool` Activer le client tailscale pour se connecter à HCS
+* **enable** `bool` Activer le client tailscale pour connecter HCS
 * **isGateway** `bool` Ce nœud tailscale est une passerelle de sous-réseau
 * **isExitNode** `bool` Configurer ce client comme nœud de sortie
 
@@ -742,11 +748,13 @@ darkone.service.tailscale = {
 };
 ```
 
+<hr/>
+
 ### &#x2728; darkone.service.turn
 
 Serveur Coturn (matrix).
 
-Ajoutez des entrées DNS pour optimiser :
+Ajouter des entrées DNS pour optimiser :
 
 ```
 Type,Name,Priority,Pds,Port,Target
@@ -757,15 +765,17 @@ SRV,_turn._tcp,0,0,3478,turn.mydomain.tld
 SRV,_turns._tcp,0,0,5349,turn.mydomain.tld
 ```
 
-* **enable** `bool` Activer le service turn local (vidéo)
+* **enable** `bool` Activer le service turn local (visio)
 
 ```nix
 darkone.service.turn.enable = false;
 ```
 
+<hr/>
+
 ### &#x2728; darkone.service.vaultwarden
 
-Un serveur vaultwarden complètement configuré (en cours).
+Un serveur vaultwarden entièrement configuré (wip).
 
 * **enable** `bool` Activer le service Vaultwarden local
 * **enableSmtp** `bool` Activer SMTP pour envoyer des e-mails (recommandé)
@@ -776,3 +786,5 @@ darkone.service.vaultwarden = {
   enableSmtp = true;
 };
 ```
+
+<hr/>

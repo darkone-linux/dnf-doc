@@ -119,7 +119,7 @@ config -> incond
 config -> cond
 ```
 
-{/* t:p 133cf82fdb88c3d46926d0224aab3d788fb27d4027aa492bccc1644533671fd5 */}
+{/* t:p d0211590f7603320e015ec5f283a7cf43897061ad1f2098cd98486d8b0cc1fc9 */}
 ## Arguments injectés et frontière consumer
 
 Outre `lib`, `config`, `pkgs`, chaque module de service reçoit des `specialArgs` :
@@ -129,6 +129,7 @@ Outre `lib`, `config`, `pkgs`, chaque module de service reçoit des `specialArgs
 - `zone` — zone de l'hôte courant (`name`, `domain`, `gateway`, `lang`…).
 - `network` — config globale (`domain`, `coordination`, `services`, `zones`).
 - `dnfLib` — helpers du framework (ne **jamais** importer `dnf/lib/` à la main).
+- `dnfConfig` — registres de config du framework (`dnfConfig.network.ports.<clé>` : registre des ports).
 - `workDir` — racine du workspace consumer.
 - `users` — tous les utilisateurs.
 
@@ -215,8 +216,40 @@ hosts:
 Le framework résout `domain`/`global` en `params` (`fqdn`, `href`, `ip`…) via
 `dnfLib.extractServiceParams host network "oxicloud" defaultParams`.
 
-{/* t:p ae9debfa23c989de21ed264ff9032d332e282b341c74b9b7e3ca24a9def26c41 */}
+{/* t:p 7c4588c008894dcbd6410aa8c42888e31d589ca81662f1e21fa50615f51339d8 */}
 ## Réseau, base de données et secrets
+
+### Ports internes
+
+Tout port interne qu'un module **lie**, **ouvre** au pare-feu ou **proxifie**
+doit provenir du registre central `dnf/config/network.nix`, lu via
+`dnfConfig.network.ports.<clé>` — jamais un littéral codé en dur dans le module.
+C'est la source unique : un même numéro n'est jamais écrit deux fois et deux
+services ne peuvent pas entrer silencieusement en conflit.
+
+<Steps>
+
+1. **Nommer la clé** `<service>[Usage]` — le préfixe `ports.` dit déjà « port »,
+   la clé précise donc *à quoi il sert* (`kanidmReplication`, `garageRpc`). Un
+   `<service>` seul désigne le port principal. Garder `network.nix` trié par valeur.
+2. **Ajouter la valeur** dans `ports.<clé>` quand DNF lie lui-même le port, puis
+   la lire dans le module :
+
+   ```nix
+   srvPort = dnfConfig.network.ports.oxicloud;
+   ```
+
+3. **Port hérité d'un upstream** (`config.services.<x>.port`, non lié par DNF) :
+   l'inscrire plutôt dans `ports.reserved` (denylist anti-conflit) ; le module
+   continue de lire `config.services.<x>.port`.
+
+</Steps>
+
+<Aside type="note" title="Unicité testée">
+`dnf/tests/unit/config/network_test.nix` vérifie l'unicité globale entre toutes
+les valeurs `ports.*` et la liste `ports.reserved`. Tout conflit fait échouer la
+suite de tests unitaires.
+</Aside>
 
 {/* t:p ce5f822760b5b07f5a3ea4233f2d59de88b4f575227356dfa7569b909f348bd0 */}
 ### Pare-feu interne
