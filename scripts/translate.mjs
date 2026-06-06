@@ -57,13 +57,22 @@ function slugsForFile(absPath) {
   return slugs;
 }
 
+// Resolve a logical link path to its source file, mirroring how Astro/Starlight
+// serves a directory URL: `/lang/doc/` → `lang/doc.mdx` OR `lang/doc/index.mdx`.
+// Prefer the direct file, fall back to the directory's index.mdx.
+function fileForLogical(lang, logical) {
+  const direct = join(docsDir, lang, `${logical}.mdx`);
+  if (existsSync(direct)) return direct;
+  return join(docsDir, lang, logical, 'index.mdx');
+}
+
 // Rewrite `#anchor` targets deterministically (the agent must NOT guess them).
 // Two cases handled; everything else (cross-language links, external URLs, an
 // unknown anchor) is left untouched for the link validator to flag.
 //   - same page  ](#a)            : map via the current file's src↔tgt headings
 //   - cross page  ](/<tgt>/p/#a)  : map via <mainLang>/p ↔ <tgt>/p headings
 function resolveAnchors(text, ctx) {
-  const { docsDir, mainLang, tgt, srcSlugs, tgtSlugs } = ctx;
+  const { mainLang, tgt, srcSlugs, tgtSlugs } = ctx;
   return text.replace(/\]\((#[^)\s]+|\/[a-z]{2}\/[^)\s]*?#[^)\s]+)\)/g, (full, target) => {
     if (target.startsWith('#')) {
       if (srcSlugs.length !== tgtSlugs.length) return full; // partial file → don't risk a mismap
@@ -77,8 +86,8 @@ function resolveAnchors(text, ctx) {
     const logical = pathPart.replace(/\/$/, '');
     if (!logical) return full;
     const mapped = mapAnchor(
-      slugsForFile(join(docsDir, mainLang, `${logical}.mdx`)),
-      slugsForFile(join(docsDir, tgt, `${logical}.mdx`)),
+      slugsForFile(fileForLogical(mainLang, logical)),
+      slugsForFile(fileForLogical(tgt, logical)),
       anchor,
     );
     return mapped ? `](/${tgt}/${pathPart}#${mapped})` : full;
@@ -203,7 +212,7 @@ function writeTranslated(job, got) {
   // Deterministic anchor resolution (after locale rewrite): src↔tgt headings are
   // positionally aligned, so #anchors map exactly instead of being guessed.
   const anchorCtx = {
-    docsDir, mainLang, tgt,
+    mainLang, tgt,
     srcSlugs: headingSlugs(mainDoc),
     tgtSlugs: headingSlugs({ paragraphs }),
   };
