@@ -1,0 +1,226 @@
+---
+title: Sauvegardes du réseau (restic)
+sidebar:
+  label: Sauvegardes réseau
+lang: fr
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+{/* t:main */}
+{/* t:h 4b5836353781c630686c6d905421e20978ce1834f158b99b2a0c4bb08aff6e99 */}
+
+{/* t:p 98c49ac0e638dfdfcd102d917f5b0e94af7ddeb270bed1895c27b805b560d64b */}
+Le module `darkone.service.restic` sauvegarde les hôtes du parc avec
+[restic](https://restic.net/) : chaque hôte (client) pousse ses données vers un
+dépôt, local ou distant via un serveur REST de zone.
+
+{/* t:p a7cd15d9ac7449aefb979fb664cf3a60c0ab193427c50b16c9eab26062cdac7e */}
+## Principes
+
+Deux rôles, un seul module :
+
+- **Serveur REST** : un hôte qui déclare le service `restic` dans `config.yaml`.
+  Il stocke les dépôts de tous les hôtes et écoute sur le réseau interne.
+- **Client** : tout hôte avec `enable = true` qui déclare des `targets`
+  (destinations de sauvegarde).
+
+```d2
+style.fill: transparent
+direction: down
+
+client: Hôte client {
+  shape: person
+}
+
+passphrase: Passphrase de dépôt\nrestic-password-<zone> {
+  shape: hexagon
+}
+cred: Credential REST\nrestic/<hôte>/rest-password {
+  shape: hexagon
+}
+
+local: Disque local\n/mnt/backup {
+  shape: cylinder
+}
+server: Serveur REST de zone\n/mnt/backup {
+  shape: cylinder
+}
+
+client -> local: cible locale
+client -> server: cible rest:// (authentifiée)
+
+passphrase -> client: chiffre le contenu {
+  style.stroke-dash: 4
+}
+cred -> server: contrôle l'accès {
+  style.stroke-dash: 4
+}
+```
+
+<Aside type="caution" title="Deux mots de passe à ne pas confondre">
+- **Passphrase de dépôt** `restic-password-<zone>` : chiffre le *contenu* du
+  dépôt. Sans elle, aucune restauration n'est possible.
+- **Credential REST** `restic/<hôte>/rest-password` : *authentifie* l'hôte
+  auprès du serveur REST. Un par hôte.
+
+Les deux sont générés par `just passwd-restic` (voir plus bas).
+</Aside>
+
+Disposition d'un dépôt, par catégorie :
+
+```
+<racine>/<hôte>/system      # catégorie "system" (/ moins les exclusions)
+<racine>/<hôte>/srv/nfs     # catégorie "nfs"    (/srv/nfs/<...>)
+<racine>/<hôte>/srv/medias  # catégorie "medias" (/srv/medias/<...>)
+```
+
+{/* t:p 0219c306cc42de8e15d2f7cc29f8a344e055cbeead29e06dd6f3112b522737c6 */}
+## Monter un serveur de sauvegarde
+
+<Steps>
+
+1. Dans `etc/config.yaml`, ajouter le service `restic` à l'hôte serveur :
+
+   ```yaml
+   services:
+     restic:
+   ```
+
+2. Brancher le disque de sauvegarde et le monter sur `/mnt/backup` dans la
+   configuration de l'hôte (`usr/machines/<hôte>/`), avec l'option `nofail` :
+
+   ```nix
+   fileSystems."/mnt/backup" = {
+     device = "/dev/disk/by-uuid/<uuid>";
+     fsType = "ext4";
+     options = [ "nofail" ];
+   };
+
+   # Le serveur REST ne démarre qu'une fois le disque monté.
+   systemd.services.restic-rest-server = {
+     requires = [ "mnt-backup.mount" ];
+     after = [ "mnt-backup.mount" ];
+   };
+   ```
+
+3. Le dépôt est stocké sous `serverDataDir` (défaut `/mnt/backup/restic`).
+   Le pare-feu ouvre le port REST sur l'interface interne automatiquement.
+
+</Steps>
+
+<Aside type="note" title="Serveur = client aussi">
+Un serveur peut sauvegarder ses propres données en pointant un `target` vers son
+disque local (`root = "/mnt/backup/restic"`).
+</Aside>
+
+{/* t:p 5e208b3904d6d4ea5c18413393ab10115f1480d3984300c83cd451d85bd9ee50 */}
+## Ajouter un client
+
+Déclarer une ou plusieurs `targets` dans la configuration de l'hôte :
+
+```nix
+darkone.service.restic = {
+  enable = true;
+  targets = [
+    {
+      # Dépôt distant via le serveur REST de la zone.
+      root = "rest:http://restic.zone.domain.tld:8888";
+      zone = "ag";
+      categories = [ "system" "nfs" ];
+    }
+  ];
+};
+```
+
+Champs d'un `target` :
+
+| Champ        | Rôle                                                       |
+| ------------ | ---------------------------------------------------------- |
+| `name`       | Identifiant (défaut `main`), suffixe des jobs/units.       |
+| `root`       | Chemin local ou URL `rest://`.                             |
+| `zone`       | Zone qui choisit la passphrase `restic-password-<zone>`.   |
+| `categories` | Données sauvegardées : `system`, `nfs`, `medias`.          |
+
+<Aside type="tip" title="Plusieurs destinations">
+Ajouter un second `target` (autre `name`, autre `root`/`zone`) pour répliquer la
+sauvegarde, par exemple vers le serveur REST d'une autre zone.
+</Aside>
+
+{/* t:p 07b3756b3e91ff4af0eb383c2f87bc3583a0d53c715a675723f8f4b4332bdfa8 */}
+## Générer les mots de passe
+
+Une recette idempotente crée les secrets manquants (jamais d'écrasement) :
+
+```bash
+just passwd-restic
+```
+
+Elle génère, dans `usr/secrets/secrets.yaml` :
+
+- une passphrase `restic-password-<zone>` par zone ;
+- un credential `restic/<hôte>/rest-password` par hôte du parc.
+
+<Aside type="note" title="Nouvel hôte">
+Relancer `just passwd-restic` après l'ajout d'un hôte, puis redéployer les
+serveurs pour qu'ils prennent en compte son nouveau compte REST.
+</Aside>
+
+{/* t:p 0929771a39575ba21b7d91b134cd73dffbe2883de7707c8ff2df61cadfed5737 */}
+## Durcir l'isolation des dépôts
+
+Par défaut, le serveur accepte que tout hôte authentifié accède à n'importe quel
+dépôt. L'option `enableServerPrivateRepos` impose que chaque hôte n'accède qu'à
+son propre dépôt (préfixe = nom d'hôte). À activer **en deux temps** pour éviter
+toute coupure :
+
+<Steps>
+
+1. Déployer **tout le parc** avec les credentials par hôte (clients + serveurs),
+   `enableServerPrivateRepos = false`. Vérifier que les sauvegardes passent.
+2. Passer `enableServerPrivateRepos = true` et redéployer **les serveurs**.
+
+</Steps>
+
+{/* t:p 6c166f139c6c03b674c7e5fc3fd05a9c90a69980ba9a786ce5eba5eabbbe305f */}
+## Restaurer
+
+Sur l'hôte concerné, les secrets sont déjà en place. Lister puis restaurer :
+
+```bash
+# Variables d'accès REST (générées par sops) et passphrase de dépôt.
+set -a; . /run/secrets/rendered/restic-rest-env; set +a
+export RESTIC_PASSWORD_FILE=/run/secrets/restic-password-ag
+export RESTIC_REPOSITORY=rest:http://restic.zone.domain.tld:8888/$(hostname)/system
+
+restic snapshots
+restic restore latest --target /restore
+```
+
+<Aside type="caution" title="Adapter zone et catégorie">
+Remplacer `zone` par la zone du dépôt et `system` par la catégorie
+(`srv/nfs`, `srv/medias`) à restaurer.
+</Aside>
+
+{/* t:p 089078420b953615d3c5b721dcc1be2aa503b50380c7eafa691f51570f895234 */}
+## Vérifier
+
+<Steps>
+
+1. Sur un serveur, un compte par hôte du parc dans le fichier htpasswd :
+
+   ```bash
+   sudo cut -d: -f1 /run/restic-rest/htpasswd
+   ```
+
+2. Sur un client, lancer une sauvegarde à la demande :
+
+   ```bash
+   systemctl start restic-backups-system-main.service
+   journalctl -u restic-backups-system-main.service -e
+   ```
+
+3. Isolation (si `enableServerPrivateRepos = true`) : l'accès au dépôt d'un
+   autre hôte doit être **refusé** (erreur 401/403).
+
+</Steps>
