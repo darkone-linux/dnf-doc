@@ -6,5 +6,73 @@ sidebar:
 lang: fr
 ---
 
-À rédiger : Kanidm comme fournisseur d'identité, clients OIDC, provisionnement,
-réplication multi-zone (HCS fournisseur, passerelles consommatrices).
+[Kanidm](https://kanidm.com/) est le fournisseur d'identité du réseau : une
+**identité unique** ouvre tous les services (SSO). Le service `idm` tourne sur
+le HCS (et, en option, en réplica dans chaque zone).
+
+## Identités et groupes
+
+Comptes et groupes sont provisionnés dans Kanidm depuis `etc/config.yaml` :
+
+```yaml
+# etc/config.yaml
+users:
+  alice:
+    profile: "nix-admin"
+    groups: ["idm-admins", "idm-devs", "global"]
+```
+
+- Les **groupes** pilotent les accès aux services.
+- Deux groupes spéciaux : `idm-admins` (administration), `idm-devs` (développement).
+
+## Connecter un service (OIDC)
+
+Les services compatibles OIDC sont reliés au SSO **automatiquement** : Kanidm
+provisionne un client OAuth2 par service, et son secret est géré par
+[sops](/fr/doc/admin-guide/operate/secrets/). Rien à configurer à la main.
+
+:::tip[Exemples]
+Outline, Mealie, Vaultwarden, Grafana, Immich, Forgejo, Jellyfin, Open WebUI…
+:::
+
+## Réplication multi-zone
+
+:::danger[Pas encore fonctionnel]
+La réplication multi-zone est **en cours de développement** et n'est pas
+opérationnelle. Pour l'instant, déclarer `idm` **sur le HCS uniquement**.
+:::
+
+Le mode est déduit de l'endroit où `idm` est déclaré :
+
+1. `idm` sur le **HCS seul** → instance unique, pas de réplication.
+2. `idm` sur une **passerelle sans HCS** → instance autonome dans la zone.
+3. `idm` sur le **HCS et des passerelles** → réplication : le HCS fournit, chaque passerelle est un réplica en lecture seule.
+
+```d2
+style.fill: transparent
+direction: down
+
+hcs: HCS — fournisseur\nWriteReplica { shape: cylinder }
+gwa: Zone A — réplica\nlecture seule { shape: cylinder }
+gwb: Zone B — réplica\nlecture seule { shape: cylinder }
+
+hcs -> gwa
+hcs -> gwb
+```
+
+:::caution[Amorçage en deux temps (scénario 3)]
+1. `just apply` — chaque nœud génère son certificat de réplication.
+2. `just idm-sync-certs` puis `just apply` — les passerelles passent en lecture seule (pull depuis le HCS).
+:::
+
+## Administration
+
+L'administration se fait en ligne de commande sur le HCS :
+
+```sh
+just enter hcs
+kanidm person credential create-reset-token <login> --name idm_admin
+```
+
+Voir [Créer un compte utilisateur](/fr/doc/admin-guide/install/hcs/#créer-un-compte-utilisateur)
+et [Réinitialiser un mot de passe](/fr/doc/how-to/admin/reset-user-password/).
