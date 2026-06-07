@@ -43,3 +43,101 @@ proxy, persistance, pare-feu, SSO Kanidm et activation par hôte.
 Le détail des options exposées par chaque module est généré automatiquement
 dans la [référence](/fr/ref/modules/) — ne pas l'éditer à la main.
 :::
+
+## Anatomie d'un module
+
+Un module DNF suit le patron NixOS classique : un en-tête, un bloc `options` et
+un bloc `config` activé par `enable`.
+
+```nix
+# dnf/modules/standard/service/hello.nix
+{ lib, config, ... }:
+let
+  cfg = config.darkone.service.hello;
+in
+{
+  options.darkone.service.hello = {
+    enable = lib.mkEnableOption "Enable the hello service";
+    port = lib.mkOption {
+      type = lib.types.port;
+      default = 8080;
+      description = "Listening port.";
+    };
+  };
+
+  config = lib.mkIf cfg.enable {
+    # ... configuration réelle, activée seulement si enable = true
+  };
+}
+```
+
+## Convention de nommage
+
+Toutes les options du framework vivent sous l'espace de noms `darkone` :
+
+```
+darkone.<catégorie>.<nom>.<option>
+```
+
+- `darkone.service.immich.enable` — un service.
+- `darkone.system.security.level` — un réglage système.
+- `darkone.host.desktop.enable` — un profil d'hôte (mixin).
+
+:::tip[Toujours un `enable`]
+Chaque module expose un `enable` (souvent `mkEnableOption`) et garde sa `config`
+sous `lib.mkIf cfg.enable` : un module inactif n'a **aucun** effet.
+:::
+
+## Les helpers (`dnfLib`)
+
+`dnfLib` (défini dans `dnf/lib/`) fournit les fonctions transverses, injectées
+dans chaque module. Les plus utiles :
+
+| Helper | Rôle |
+|---|---|
+| `extractServiceParams` / `buildServiceParams` | Lire les paramètres d'un service (domaine, titre, icône…). |
+| `mkOidcContext` / `mkKanidmEndpoints` | Brancher un service au SSO Kanidm (OIDC). |
+| `mkInternalFirewall` | Ouvrir des ports sur l'interface interne uniquement. |
+| `findHost` / `findService` / `isGateway` / `isHcs` | Interroger la topologie réseau. |
+| `mkHomepageSection` | Déclarer l'entrée du portail. |
+| `mkIsActive` | Activer une règle de sécurité selon niveau/catégorie. |
+
+:::note[Avant d'écrire un helper]
+Vérifier `dnf/lib/default.nix` : la fonction existe peut-être déjà. Réutiliser
+plutôt que dupliquer.
+:::
+
+## Le registre des services
+
+Un service déclare sa **topologie** dans `dnf/config/modules.nix` (et non dans
+son `.nix`) : reverse proxy, unicité par zone, accès externe, activation
+automatique par profil d'hôte.
+
+```nix
+# dnf/config/modules.nix
+adguardhome = {
+  uniquePerZone = true;
+  activation.profiles.gateway.triggers.keys.adguardhome = [ "enable" ];
+};
+```
+
+| Drapeau | Défaut | Effet |
+|---|---|---|
+| `reverseProxy` | `true` | Le service est exposé via Caddy. |
+| `uniquePerZone` | `false` | Un seul exemplaire admis par zone. |
+| `externalAccess` | `false` | Joignable hors zone (via le HCS). |
+| `activation.profiles.<profil>` | — | Activé d'office sur les hôtes d'un profil. |
+
+## Le `default.nix` généré
+
+Chaque dossier de modules possède un `default.nix` qui **importe** ses fichiers.
+Il est **généré** par `just generate` (liste des imports) — ne pas l'éditer.
+
+```sh
+just generate    # régénère les default.nix + var/generated/
+```
+
+:::caution[Nouveau fichier = régénérer]
+Un module ajouté n'est pris en compte qu'après `just generate` (ou `just clean`),
+qui l'inscrit dans le `default.nix` du dossier.
+:::

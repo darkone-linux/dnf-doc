@@ -30,3 +30,67 @@ just generate
 `var/generated/` et les pages `*/ref/modules.mdx` sont produits par des outils.
 Modifier le générateur ou la source, jamais la sortie.
 :::
+
+## Le flux
+
+Une seule source de vérité (`etc/config.yaml`) est transformée en code Nix
+**déterministe**, consommé par le framework via `flake.nix`.
+
+```d2
+style.fill: transparent
+direction: right
+
+cfg: etc/config.yaml {
+  shape: page
+}
+gen: générateur\nsrc/generator (Rust) {
+  shape: hexagon
+}
+out: var/generated/\nhosts · users · network · disko {
+  shape: cylinder
+}
+flake: flake.nix\n(framework → NixOS) {
+  shape: rectangle
+}
+
+cfg -> gen -> out -> flake
+```
+
+## Les commandes
+
+Le générateur expose une commande par cible. `just generate` les enchaîne
+toutes ; on peut aussi en invoquer une seule.
+
+| Commande | Sortie | Contenu |
+|---|---|---|
+| `hosts` | `var/generated/hosts.nix` | Hôtes : profils, services, tags colmena. |
+| `users` | `var/generated/users.nix` | Utilisateurs : profils, groupes. |
+| `network` | `var/generated/network.nix` | Topologie : zones, DNS, VPN. |
+| `disko` | `usr/machines/<hôte>/disko.nix` | Partitionnement par hôte. |
+| `doc` | `*/ref/modules.mdx` | Référence des modules (documentation). |
+
+```sh
+just generate          # tout régénérer (via le Justfile)
+just codegen           # régénérer uniquement la référence des modules (doc)
+```
+
+:::note[Lecture des modules]
+Le générateur lit aussi `dnf/config/modules.nix` (topologie des services) et,
+pour la commande `doc`, **analyse les sources Nix** (parser `rnix`) pour en
+extraire les options et les en-têtes. Documenter une option = la décrire dans le
+module, puis `just codegen`.
+:::
+
+## Contexte d'exécution
+
+Le générateur tourne de deux façons, choisies automatiquement :
+
+- **Co-développement** (sources + `cargo` présents) → `cargo run` : boucle de
+  compilation rapide pendant qu'on modifie le générateur.
+- **Release** (pas de checkout local) → binaire `dnf-generator` fourni par le
+  *devShell* du framework (`nix develop github:darkone-linux/...`).
+
+:::tip[Sortie déterministe]
+Les fichiers sont formatés avec `nixfmt -sv` : un diff entre deux exécutions ne
+reflète **que** de vrais changements de configuration.
+:::

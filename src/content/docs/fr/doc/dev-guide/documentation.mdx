@@ -46,3 +46,52 @@ just test     # tests + validation des liens internes
 Les marqueurs `{/* t:* */}` et les pages générées (`*/ref/modules.mdx`) sont
 gérés par les scripts. Voir `AGENTS.md`.
 :::
+
+## Langues et traduction
+
+On écrit **uniquement en français** (`fr/`) ; l'anglais (`en/`) est **produit**
+par `just translate`. Ne jamais éditer `en/` à la main.
+
+| Action | À faire |
+|---|---|
+| **Créer** une page | En `fr/` seulement ; ne pas lancer `just translate`. |
+| **Déplacer** une page | Bouger les **deux** langues ensemble (fichiers, verbatim), puis `just tags`. |
+| **Traduire** | En fin de chantier : `just tags` puis `just translate`. |
+
+Les marqueurs de traduction sont gérés par les scripts — **jamais à la main** :
+
+| Marqueur | Rôle |
+|---|---|
+| `{/* t:main */}` | Fichier source de vérité d'une page. |
+| `{/* t:translated-from <lang> */}` | Fichier traduit (ne pas modifier). |
+| `{/* t:h <hash> */}` | Hash du frontmatter. |
+| `{/* t:p <hash> */}` | Hash d'un paragraphe (avant chaque bloc). |
+
+:::caution[Fichier traduit = lecture seule]
+Un fichier portant `t:translated-from` ne se modifie **jamais** : il est
+réécrit par `just translate`. On édite la source `fr/` (`t:main`).
+:::
+
+## Liens et ancres
+
+- Liens internes en `/fr/...` ; validés au build par `starlight-links-validator`.
+- Une **ancre** = slug *github-slugger* du texte du titre cible
+  (`## Mon Titre` → `#mon-titre`).
+- Vérifier : `just build` (échoue sur un lien mort) ou `just check-links`.
+
+## Faire de belles pages
+
+La recette validée (items courts, callouts colorés, `<Steps>`, tableaux,
+schémas D2, exemples génériques) est détaillée dans `AGENTS.md` → *Faire de
+« belles » pages*. À respecter selon le persona&nbsp;:
+
+| Persona | Ton |
+|---|---|
+| **Utilisateur** | Donner envie, sans jargon ; `Card`/`LinkCard` autorisées. |
+| **Administrateur** | Précis, opérationnel ; tableaux et callouts. |
+| **Développeur / IA** | Hiérarchie (où → détail), étape par étape, concis. |
+
+:::danger[Données publiques]
+Cette documentation est **publique** : jamais de données du réseau privé (`../`).
+Utiliser des exemples génériques (`domain.tld`, IP de documentation).
+:::
