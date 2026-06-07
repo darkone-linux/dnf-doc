@@ -32,7 +32,7 @@ avoir en tête avant d'administrer le parc :
 | **Flake** | Unité de projet Nix avec entrées **épinglées** (`flake.lock`) : versions figées et reproductibles. |
 | **Génération** | Un état complet du système, horodaté. Chaque déploiement en crée une nouvelle. |
 | **Rollback** | Revenir à une génération précédente (au boot ou à chaud) : un déploiement raté n'est jamais définitif. |
-| **Home Manager** | Gère de façon déclarative l'environnement d'un utilisateur (applis, bureau, dotfiles). |
+| **[Home Manager](https://github.com/nix-community/home-manager)** | Gère de façon déclarative l'environnement d'un utilisateur (applis, bureau, dotfiles). |
 
 <Aside type="tip" title="Pour aller plus loin">
 DNF ajoute une couche au-dessus de NixOS : vous écrivez surtout du YAML
@@ -80,6 +80,22 @@ Tout part d'un seul fichier déclaratif, transformé en configuration NixOS :
 | `usr/` | Le **projet local** (en écriture) : surcharges de modules et de profils, machines, secrets. |
 | `var/generated/` | Le code Nix **généré** depuis `etc/config.yaml` (ne jamais éditer à la main). |
 | `doc/` | Cette documentation. |
+
+```d2
+style.fill: transparent
+direction: down
+
+config: "etc/config.yaml" { shape: document }
+generated: "var/generated/" { shape: cylinder }
+dnf: "dnf/"
+usr: "usr/"
+system: "NixOS déployé" { shape: oval }
+
+config -> generated: just generate
+dnf -> system
+usr -> system
+generated -> system: nixos-rebuild
+```
 
 <Aside type="tip" title="Du YAML au système">
 `etc/config.yaml` → `just generate` → `var/generated/*.nix` → framework.

@@ -1,11 +1,18 @@
 ---
-// Liste automatiquement les pages situées dans le dossier de la page courante
+// Liste automatiquement les pages situées dans un dossier donné
 // (feuilles directes, hors page d'accueil). Trié par sidebar.order puis titre.
-// Utilisé sur les pages « Sommaire » des sections how-to.
+// Sans prop `dir` : liste le dossier de la page courante (sommaires how-to).
+// Avec prop `dir` : liste le sous-dossier relatif indiqué.
 import { getCollection } from "astro:content";
 
+interface Props {
+  dir?: string;
+}
+const { dir: subdir } = Astro.props;
+
 const route = Astro.locals.starlightRoute;
-const dir = route.entry.id.replace(/\/index$/, "");
+const pageDir = route.entry.id.replace(/\/index$/, "");
+const dir = subdir ? pageDir + "/" + subdir : pageDir;
 
 const pages = (await getCollection("docs"))
   .filter((e) => {
