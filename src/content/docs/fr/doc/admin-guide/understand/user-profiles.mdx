@@ -1,0 +1,76 @@
+---
+title: Les profils d'utilisateurs
+sidebar:
+  label: Profils d'utilisateurs
+  order: 4
+lang: fr
+---
+
+Un **profil d'utilisateur** définit l'environnement [Home Manager](https://github.com/nix-community/home-manager)
+d'un compte : applications, bureau, réglages. On le choisit avec `profile:` dans
+`etc/config.yaml`. Comme les hôtes, les profils s'héritent.
+
+## L'héritage
+
+```d2
+style.fill: transparent
+direction: down
+
+minimal: minimal
+normal: normal
+advanced: advanced
+admin: admin
+nixadmin: nix-admin
+student: student
+teenager: teenager
+gamer: gamer
+child: child
+baby: baby
+
+minimal -> normal
+minimal -> teenager
+minimal -> gamer
+minimal -> child
+minimal -> baby
+normal -> advanced
+advanced -> admin
+advanced -> student
+admin -> nixadmin
+```
+
+## Les profils
+
+| Profil | Pour qui | Hérite de |
+|---|---|---|
+| `minimal` | Base de tout profil | — |
+| `normal` | Utilisateur standard (bureau) | `minimal` |
+| `advanced` | Développeurs, informaticiens | `normal` |
+| `admin` | Administrateur réseau | `advanced` |
+| `nix-admin` | Administrateur du parc (outils Nix) | `admin` |
+| `student` | Étudiant | `advanced` |
+| `teenager` | Adolescent | `minimal` |
+| `gamer` | Joueur | `minimal` |
+| `child` | Enfant (icônes techniques masquées) | `minimal` |
+| `baby` | Très jeune enfant | `minimal` |
+
+:::tip[Côté utilisateur]
+Une présentation orientée usage figure dans le
+[guide de l'utilisateur](/fr/doc/user-guide/understand/profiles/).
+:::
+
+## Affecter un profil
+
+```yaml
+# etc/config.yaml
+users:
+  alice:
+    uid: 1000
+    name: "Alice"
+    profile: "nix-admin"
+    groups: ["global"]
+```
+
+:::note[Personnaliser]
+On crée ou surcharge un profil dans `usr/home/profiles/<nom>/`. Les briques
+réutilisables sont les [modules Home Manager](/fr/ref/modules/home/).
+:::
