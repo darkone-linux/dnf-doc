@@ -1,23 +1,66 @@
 ---
 title: Connect a device to the network
+sidebar:
+  label: Connect a device
 lang: en
 ---
 
+import { Steps } from '@astrojs/starlight/components';
+
 {/* t:translated-from fr */}
-{/* t:h bf005a1c3574ff0967b2efe1e291b193839c53a440ff9df4d5edf92ad82d3070 */}
+{/* t:h 9ac6247f28b54a586512b846a8cd2c764c09f84024145ff057bc8e22381161af */}
 
-{/* t:p 404d28d4d581748a451263519eca5f0edeb95f8be28ccb61970e0d6630965643 */}
-To access the cloud services from a smartphone, a tablet or a personal computer.
+{/* t:p b5371ca66e75826bd93647aa69689bb422ef0df269500785ff4071d74af78c69 */}
+Access your photos, files and services from a smartphone, tablet or personal
+computer. At home, it's automatic; elsewhere, a secure little app bridges the
+gap.
 
-{/* t:p 2805be6f5ff0b6f74afd274b04edf05db90faca764d480f3336cdf381075469e */}
-## Within a zone
+{/* t:p 59b3e1130b289a1414c557e33b2652e64bd4b5a39c345bc036b00ef6f255fb92 */}
+## Inside a zone
 
-A device connected to a gateway's network automatically becomes part of the
-network and accesses services after a few settings.
+At home (or anywhere with a gateway), there's virtually nothing to do:
 
-{/* t:p e12f67912b2fedc41cc79e8819a45f24f12b2b42bfba25977ac390ea88a74412 */}
+<Steps>
+
+1. **Connect the device** to the WiFi or the zone's internal network.
+2. **You're done.** Addressing, Internet access (filtered, ad-free) and services
+   are configured automatically.
+3. **Open the zone's homepage** in your browser: all services are listed there.
+
+</Steps>
+
+{/* t:p 240e99f33bc41575acd8c0b880918ff04b938ee7a5da4d1e4c8d746ce3015c48 */}
+## A single identity
+
+A **single username** unlocks all services (SSO). Log in once and find your
+access everywhere.
+
+- **Forgot your password?** Ask your administrator to reset it.
+- **Mobile apps** (photos, files, email): enter the service address provided by
+  the administrator, then your usual username.
+
+{/* t:p 228f62ceff266e848a64515b44ac89ffa016a3681e15fec48c5e966e2d02aad9 */}
 ## From outside
 
-Outside a zone, you need the Tailscale VPN client, approved by the
-administrator (see the
-[admin guide](/en/doc/admin-guide/install/hcs/#connect-from-outside)).
+Outside a zone, a secure application (Tailscale VPN client) connects your
+device to the network, as if you were at home.
+
+:::note[Often unnecessary]
+Most services published online are already accessible **without a VPN**,
+directly from your browser. This step is only needed for services internal to
+a zone.
+:::
+
+<Steps>
+
+1. **Install Tailscale** on the device (iOS, Android, Windows, macOS, Linux).
+2. **Log in** to the server provided by your administrator.
+3. **Wait for approval** from the administrator: your device then joins the
+   network and its services.
+
+</Steps>
+
+:::tip[Admin side]
+Approving a remote device is described in the
+[administrator's guide](/en/doc/admin-guide/install/hcs/#connect-from-outside).
+:::

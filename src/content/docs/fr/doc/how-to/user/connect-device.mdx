@@ -5,22 +5,64 @@ sidebar:
 lang: fr
 ---
 
+import { Steps } from '@astrojs/starlight/components';
+
 {/* t:main */}
-{/* t:h bf005a1c3574ff0967b2efe1e291b193839c53a440ff9df4d5edf92ad82d3070 */}
+{/* t:h 9ac6247f28b54a586512b846a8cd2c764c09f84024145ff057bc8e22381161af */}
 
-{/* t:p 404d28d4d581748a451263519eca5f0edeb95f8be28ccb61970e0d6630965643 */}
-Pour accéder aux services du cloud depuis un smartphone, une tablette ou un
-ordinateur personnel.
+{/* t:p b5371ca66e75826bd93647aa69689bb422ef0df269500785ff4071d74af78c69 */}
+Accède à tes photos, tes fichiers et tes services depuis un smartphone, une
+tablette ou un ordinateur personnel. À la maison, c'est automatique ; ailleurs,
+une petite application sécurisée fait le pont.
 
-{/* t:p 2805be6f5ff0b6f74afd274b04edf05db90faca764d480f3336cdf381075469e */}
+{/* t:p 59b3e1130b289a1414c557e33b2652e64bd4b5a39c345bc036b00ef6f255fb92 */}
 ## Dans une zone
 
-Un appareil branché au réseau d'une passerelle fait automatiquement partie du
-réseau et accède aux services après quelques réglages.
+Chez toi (ou sur un lieu équipé d'une passerelle), il n'y a quasiment rien à
+faire&nbsp;:
 
-{/* t:p e12f67912b2fedc41cc79e8819a45f24f12b2b42bfba25977ac390ea88a74412 */}
+<Steps>
+
+1. **Connecte l'appareil** au WiFi ou au réseau interne de la zone.
+2. **C'est prêt.** Adresse, accès Internet (filtré, sans publicité) et services
+   se règlent tout seuls.
+3. **Ouvre la page d'accueil** de la zone dans ton navigateur : tous les services
+   y sont listés.
+
+</Steps>
+
+{/* t:p 240e99f33bc41575acd8c0b880918ff04b938ee7a5da4d1e4c8d746ce3015c48 */}
+## Une seule identité
+
+Un **même identifiant** ouvre tous les services (SSO). Tu te connectes une fois et
+tu retrouves partout tes accès.
+
+- **Mot de passe oublié ?** Demande à ton administrateur de le réinitialiser.
+- **Applications mobiles** (photos, fichiers, messagerie) : renseigne l'adresse
+  du service donnée par l'administrateur, puis ton identifiant habituel.
+
+{/* t:p 228f62ceff266e848a64515b44ac89ffa016a3681e15fec48c5e966e2d02aad9 */}
 ## Depuis l'extérieur
 
-En dehors d'une zone, il faut le client VPN Tailscale, validé par
-l'administrateur (voir le
-[guide de l'administrateur](/fr/doc/admin-guide/install/hcs/#se-connecter-depuis-lextérieur)).
+En dehors d'une zone, une application sécurisée (client VPN Tailscale) relie ton
+appareil au réseau, comme si tu étais à la maison.
+
+:::note[Souvent inutile]
+La plupart des services publiés en ligne sont déjà accessibles **sans VPN**,
+directement depuis ton navigateur. Cette étape n'est nécessaire que pour les
+services internes à une zone.
+:::
+
+<Steps>
+
+1. **Installe Tailscale** sur l'appareil (iOS, Android, Windows, macOS, Linux).
+2. **Connecte-toi** au serveur indiqué par ton administrateur.
+3. **Attends la validation** de l'administrateur : ton appareil rejoint alors le
+   réseau et ses services.
+
+</Steps>
+
+:::tip[Côté administrateur]
+La validation d'un appareil distant est décrite dans le
+[guide de l'administrateur](/fr/doc/admin-guide/install/hcs/#se-connecter-depuis-lextérieur).
+:::

@@ -98,8 +98,8 @@ export default defineConfig({
                   ],
                 },
                 {
-                  label: "Usage",
-                  translations: { fr: "Utilisation" },
+                  label: "Use",
+                  translations: { fr: "Utiliser" },
                   items: [
                     { autogenerate: { directory: "doc/user-guide/usage" } },
                   ],
