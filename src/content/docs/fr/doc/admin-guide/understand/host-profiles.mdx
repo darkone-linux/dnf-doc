@@ -6,5 +6,64 @@ sidebar:
 lang: fr
 ---
 
-À rédiger : profils `minimal`, `server`, `desktop`, `laptop`, `portable`,
-`gateway`, `hcs`, `vm` — ce que chacun active et quand l'utiliser.
+Un **profil d'hôte** est un gabarit qui définit le rôle d'une machine. On le
+choisit avec `profile:` dans `etc/config.yaml`. Les profils s'héritent : chacun
+part d'un autre et ajoute ses spécificités.
+
+## L'héritage
+
+```d2
+style.fill: transparent
+direction: down
+
+minimal: minimal
+
+server: server
+desktop: desktop
+portable: portable
+
+gateway: gateway
+hcs: hcs
+vm: vm
+laptop: laptop
+
+minimal -> server
+minimal -> desktop
+minimal -> portable
+server -> gateway
+server -> hcs
+server -> vm
+desktop -> laptop
+```
+
+## Les profils
+
+| Profil | Pour quoi | Hérite de | Apporte |
+|---|---|---|---|
+| `minimal` | Base de tout hôte | — | Matériel, pare-feu, i18n, zsh, sudo |
+| `server` | Serveur sans écran | `minimal` | Pas de veille, watchdog, boot limité |
+| `desktop` | Poste de travail | `minimal` | GNOME, multimédia, bureautique |
+| `laptop` | Ordinateur portable | `desktop` | Batterie/veille, capteurs, thermald |
+| `portable` | Clé USB bootable | `minimal` | Pilotes matériels étendus |
+| `gateway` | Passerelle de zone | `server` | Routeur, pare-feu, DNS/DHCP, VPN |
+| `hcs` | Coordination du VPN | `server` | Headscale + services partagés |
+| `vm` | Machine virtuelle | `server` | Outils invité (VirtualBox/QEMU/Xen) |
+
+## Choisir un profil
+
+```yaml
+# etc/config.yaml
+hosts:
+  - hostname: "poste"
+    profile: "desktop"
+```
+
+:::tip[Les services sont indépendants du profil]
+Un service (Immich, Nextcloud, Forgejo…) se déclare par hôte **quel que soit**
+son profil. Voir [Services](/fr/doc/admin-guide/operate/services/).
+:::
+
+:::note[Référence complète]
+Les options de chaque profil sont dans la
+[référence des modules](/fr/ref/modules/mixin/).
+:::
