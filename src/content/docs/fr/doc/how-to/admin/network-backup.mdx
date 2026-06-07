@@ -114,7 +114,7 @@ Un serveur peut sauvegarder ses propres données en pointant un `target` vers so
 disque local (`root = "/mnt/backup/restic"`).
 </Aside>
 
-{/* t:p 5e208b3904d6d4ea5c18413393ab10115f1480d3984300c83cd451d85bd9ee50 */}
+{/* t:p 9539ab1ebf11ddd0e6f8bc2cced794dc206949e6251fa1fd1166711a0eb1d856 */}
 ## Ajouter un client
 
 Déclarer une ou plusieurs `targets` dans la configuration de l'hôte :
@@ -125,8 +125,8 @@ darkone.service.restic = {
   targets = [
     {
       # Dépôt distant via le serveur REST de la zone.
-      root = "rest:http://restic.zone.domain.tld:8888";
-      zone = "ag";
+      root = "rest:http://restic.home.example.net:8888";
+      zone = "home";
       categories = [ "system" "nfs" ];
     }
   ];
@@ -166,43 +166,75 @@ Relancer `just passwd-restic` après l'ajout d'un hôte, puis redéployer les
 serveurs pour qu'ils prennent en compte son nouveau compte REST.
 </Aside>
 
-{/* t:p 0929771a39575ba21b7d91b134cd73dffbe2883de7707c8ff2df61cadfed5737 */}
-## Durcir l'isolation des dépôts
+{/* t:p 03248733c6d5a38887435200822d53ab85858732bdd6f436fdea4d4ffe23e560 */}
+## Lancer une sauvegarde manuellement
 
-Par défaut, le serveur accepte que tout hôte authentifié accède à n'importe quel
-dépôt. L'option `enableServerPrivateRepos` impose que chaque hôte n'accède qu'à
-son propre dépôt (préfixe = nom d'hôte). À activer **en deux temps** pour éviter
-toute coupure :
+Le module crée un service systemd par couple cible × catégorie, nommé
+`restic-backups-<catégorie>-<nom>` (le `<nom>` vient du champ `name` du target,
+`main` par défaut). Exemples : `restic-backups-system-main`,
+`restic-backups-nfs-main`.
 
 <Steps>
 
-1. Déployer **tout le parc** avec les credentials par hôte (clients + serveurs),
-   `enableServerPrivateRepos = false`. Vérifier que les sauvegardes passent.
-2. Passer `enableServerPrivateRepos = true` et redéployer **les serveurs**.
+1. Lister les services de sauvegarde présents sur l'hôte :
+
+   ```bash
+   systemctl list-units 'restic-backups-*'
+   ```
+
+2. Déclencher une sauvegarde immédiate, sans attendre le timer :
+
+   ```bash
+   sudo systemctl start restic-backups-system-main.service
+   ```
+
+3. Suivre son déroulement en direct :
+
+   ```bash
+   journalctl -fu restic-backups-system-main.service
+   ```
 
 </Steps>
 
-{/* t:p 6c166f139c6c03b674c7e5fc3fd05a9c90a69980ba9a786ce5eba5eabbbe305f */}
+<Aside type="tip" title="Simuler sans rien écrire">
+Poser `darkone.service.restic.enableDryRun = true` ajoute `--dry-run` à tous les
+jobs : la sauvegarde est jouée à blanc, aucun snapshot n'est créé.
+</Aside>
+
+{/* t:p 6407a8b110e4099a2fecf9ca4f692ba0438adee580da07f4c667ac7d202532da */}
+## Isolation des dépôts
+
+Le serveur REST tourne en dépôts privés (`privateRepos = true`) : chaque hôte
+n'accède qu'au dépôt dont le chemin commence par son propre nom d'hôte. Le
+module aligne automatiquement le compte REST (`<hôte>`) sur le préfixe du dépôt
+(`<racine>/<hôte>/...`), donc l'isolation est permanente — aucun réglage à
+activer. Une tentative d'accès au dépôt d'un autre hôte renvoie une erreur
+**403**.
+
+{/* t:p 885e44f9c93c436d450614e3a0be3a3dc2ea157e4511ba324e10f111f8aa5783 */}
 ## Restaurer
 
 Sur l'hôte concerné, les secrets sont déjà en place. Lister puis restaurer :
 
 ```bash
+# Adapter la zone du dépôt (et la catégorie : system, srv/nfs, srv/medias).
+ZONE=home
+
 # Variables d'accès REST (générées par sops) et passphrase de dépôt.
 set -a; . /run/secrets/rendered/restic-rest-env; set +a
-export RESTIC_PASSWORD_FILE=/run/secrets/restic-password-ag
-export RESTIC_REPOSITORY=rest:http://restic.zone.domain.tld:8888/$(hostname)/system
+export RESTIC_PASSWORD_FILE=/run/secrets/restic-password-$ZONE
+export RESTIC_REPOSITORY=rest:http://restic.$ZONE.example.net:8888/$(hostname)/system
 
 restic snapshots
 restic restore latest --target /restore
 ```
 
 <Aside type="caution" title="Adapter zone et catégorie">
-Remplacer `zone` par la zone du dépôt et `system` par la catégorie
-(`srv/nfs`, `srv/medias`) à restaurer.
+Renseigner `ZONE` avec la zone du dépôt et remplacer `system` dans
+`RESTIC_REPOSITORY` par la catégorie (`srv/nfs`, `srv/medias`) à restaurer.
 </Aside>
 
-{/* t:p 089078420b953615d3c5b721dcc1be2aa503b50380c7eafa691f51570f895234 */}
+{/* t:p 412d08e5c0d4500d6ea1d3593ed0c459f638c9a4d548b64010b885c7b8f2f83b */}
 ## Vérifier
 
 <Steps>
@@ -213,14 +245,10 @@ Remplacer `zone` par la zone du dépôt et `system` par la catégorie
    sudo cut -d: -f1 /run/restic-rest/htpasswd
    ```
 
-2. Sur un client, lancer une sauvegarde à la demande :
+2. Sur un client, lancer une sauvegarde manuelle (voir plus haut) et vérifier
+   qu'elle se termine sans erreur.
 
-   ```bash
-   systemctl start restic-backups-system-main.service
-   journalctl -u restic-backups-system-main.service -e
-   ```
-
-3. Isolation (si `enableServerPrivateRepos = true`) : l'accès au dépôt d'un
-   autre hôte doit être **refusé** (erreur 401/403).
+3. Isolation : depuis un client, l'accès au dépôt d'un autre hôte doit être
+   **refusé** (erreur 401/403).
 
 </Steps>

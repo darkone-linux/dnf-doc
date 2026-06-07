@@ -650,54 +650,56 @@ darkone.service.printing = {
 };
 ```
 
-{/* t:p aca0a89d1fa3f2a8734a83a2c3acac4785300c77ec380b3c17fca365ec85f09d */}
+{/* t:p 4f6dec6f606592f53369c9292cdf27c970c32ecd32fbacc634e7005148c08b0a */}
 ### &#x2728; darkone.service.restic
 
 Module de sauvegarde Restic : serveur REST + cibles de sauvegarde par hôte.
 
-:::tip[Deux rôles, un module]
-- Serveur : un hôte avec `restic` dans son config.yaml services exécute le serveur REST (`enableServer`) et stocke le dépôt de chaque hôte.
-- Client : tout hôte avec `enable = true` déclare des `targets` de sauvegarde (chemin local ou `rest:http://restic.<zone>:<port>`).
+:::tip[Deux rôles, un seul module]
+- Serveur : un hôte avec `restic` dans ses services de config.yaml exécute le
+  serveur REST (`enableServer`) et stocke les dépôts de chaque hôte.
+- Client : tout hôte avec `enable = true` déclare des `targets`
+  (chemin local ou `rest:http://restic.<zone>:<port>`).
 :::
 
 :::note[Deux mots de passe, ne pas confondre]
 - Phrase de passe du dépôt : `restic-password-<zone>`, chiffre le contenu du dépôt.
-- Identifiant REST : `restic/<hostname>/rest-password` par hôte, authentifie l'hôte auprès du serveur REST. Généré par `just passwd-restic`.
+- Identifiant REST : par hôte `restic/<hostname>/rest-password`, authentifie
+  l'hôte auprès du serveur REST. Généré par `just passwd-restic`.
 :::
 
-Exemple (machine config) :
+Exemple (configuration machine) :
 
 ```nix
 darkone.service.restic = {
   enable = true;
   targets = [
-    { name = "main"; root = "rest:http://restic.ag.poncon.fr:8888";
+    { name = "main"; root = "rest:http://restic.my-zone.my-domain.tld:8888";
       zone = "ag"; categories = [ "system" "nfs" ]; }
   ];
 };
 ```
 
-Structure du dépôt par cible :
+Arborescence du dépôt par cible :
 
 ```
-<root>/<hostname>/system     <- catégorie « system » (/ moins les exclusions)
+<root>/<hostname>/system     <- catégorie « system » (/) moins les exclusions
 <root>/<hostname>/srv/nfs    <- catégorie « nfs »    (/srv/nfs/<...>)
 <root>/<hostname>/srv/medias <- catégorie « medias » (/srv/medias/<...>)
 ```
 
-* **enable** `bool` Activer le client de sauvegarde restic
-* **enableDryRun** `bool` Mode simulation
+* **enable** `bool` Active le client de sauvegarde restic
+* **enableDryRun** `bool` Mode essai (dry run)
 * **enableWaitRemoteFs** `bool` Exécuter les sauvegardes seulement après remote-fs.target
-* **enableServer** `bool` Activer le serveur REST restic
-* **enableServerPrivateRepos** `bool` Appliquer l'isolation du dépôt par hôte (restic --private-repos). N'activer qu'une fois que chaque client déploie avec son identifiant REST par hôte.
+* **enableServer** `bool` Active le serveur REST restic
 * **serverDataDir** `str` Racine de stockage locale du serveur REST (dépôts de tous les hôtes)
-* **targets** `listOf ( submodule { options = { name = lib.mkOption { type = str; default = "main"; description = "Target id, used in backup/unit names (<category>-<name>)"; }; root = lib.mkOption { type = str; default = "/mnt/backup/restic"; example = "rest:http://restic.${zone.domain}:${toString srvPort}"; description = "Repository root: local path or REST URL"; }; zone = lib.mkOption { type = str; default = zone.name; description = "Zone selecting the repo passphrase (restic-password-<zone>)"; }; categories = lib.mkOption { type = listOf ( enum [ "system" "nfs" "medias" ] ); default = [ "system" ]; description = "What to back up to this target"; }; }; } )` Destinations de sauvegarde pour cet hôte (chemin local ou URL REST)
-  * **name** `str` Identifiant de cible, utilisé dans les noms des sauvegardes/unités (&lt;catégorie&gt;-&lt;nom&gt;)
+* **targets** `listOf ( submodule { options = { name = lib.mkOption { type = str; default = "main"; description = "Identifiant de cible, utilisé dans les noms d'unités de sauvegarde (<catégorie>-<nom>)"; }; root = lib.mkOption { type = str; default = "/mnt/backup/restic"; example = "rest:http://restic.${zone.domain}:${toString srvPort}"; description = "Racine du dépôt : chemin local ou URL REST"; }; zone = lib.mkOption { type = str; default = zone.name; description = "Zone sélectionnant la phrase de passe du dépôt (restic-password-<zone>)"; }; categories = lib.mkOption { type = listOf ( enum [ "system" "nfs" "medias" ] ); default = [ "system" ]; description = "Éléments à sauvegarder sur cette cible"; }; }; } )` Destinations de sauvegarde pour cet hôte (chemin local ou URL REST)
+  * **name** `str` Identifiant de cible, utilisé dans les noms d'unités de sauvegarde (&lt;catégorie&gt;-&lt;nom&gt;)
   * **root** `str` Racine du dépôt : chemin local ou URL REST
   * **zone** `str` Zone sélectionnant la phrase de passe du dépôt (restic-password-&lt;zone&gt;)
-  * **categories** `listOf ( enum [ "system" "nfs" "medias" ] )` Quoi sauvegarder vers cette cible
+  * **categories** `listOf ( enum [ "system" "nfs" "medias" ] )` Éléments à sauvegarder sur cette cible
 * **nfsPaths** `listOf str` Répertoires NFS (/srv/nfs/&lt;xxx&gt;) inclus dans la catégorie « nfs »
-* **mediasPaths** `listOf str` Répertoires médias (/srv/medias/&lt;xxx&gt;) inclus dans la catégorie « medias »
+* **mediasPaths** `listOf str` Répertoires medias (/srv/medias/&lt;xxx&gt;) inclus dans la catégorie « medias »
 
 ```nix
 darkone.service.restic = {
@@ -705,7 +707,6 @@ darkone.service.restic = {
   enableDryRun = false;
   enableWaitRemoteFs = false;
   enableServer = false;
-  enableServerPrivateRepos = false;
   serverDataDir = "/mnt/backup/restic";
   targets = [ ];
   targets.name = "main";
