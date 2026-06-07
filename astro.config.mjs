@@ -111,7 +111,35 @@ export default defineConfig({
               translations: { fr: "Administrateurs" },
               collapsed: true,
               items: [
-                { autogenerate: { directory: "doc/admin-guide" } },
+                { slug: "doc/admin-guide" },
+                {
+                  label: "Understand",
+                  translations: { fr: "Comprendre" },
+                  items: [
+                    { autogenerate: { directory: "doc/admin-guide/understand" } },
+                  ],
+                },
+                {
+                  label: "Install",
+                  translations: { fr: "Installer" },
+                  items: [
+                    { autogenerate: { directory: "doc/admin-guide/install" } },
+                  ],
+                },
+                {
+                  label: "Operate",
+                  translations: { fr: "Exploiter" },
+                  items: [
+                    { autogenerate: { directory: "doc/admin-guide/operate" } },
+                  ],
+                },
+                {
+                  label: "Maintain",
+                  translations: { fr: "Maintenir" },
+                  items: [
+                    { autogenerate: { directory: "doc/admin-guide/maintain" } },
+                  ],
+                },
               ],
             },
             {
