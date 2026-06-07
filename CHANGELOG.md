@@ -5,6 +5,64 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-06-07
+
+### Added
+- Improv(how-to): new orga + additions.
+- Doc(dev): create a module.
+- Reorganize: new hierarchy and rules.
+
+### Fixed
+- Fix(home): faq links.
+- Doc(admin-guide): page VPN (workflow Headscale/Tailscale) + fix secrets.yaml.
+- Fix(translate): anchor translation.
+- Doc(refact): minor translate fix.
+- Fix: translates.
+- Fix: imports before translate tags.
+- Fix(thanks): fr / en.
+- Fix(links): corrections.
+
+### Changed
+- Doc(workstations): updates.
+- Update(config): config.yaml doc + fixes.
+- Improv(admin-guide): index avec sections auto (PageList dir=) + PageList amélioré.
+- Doc(config): init.
+- Doc(how-to): 3 sous-sections par persona + Sommaire auto (PageList) + suppr. page d'entrée.
+- Translate: admin/dev pages -> en.
+- Doc(dev): étoffe architecture/modules/generator/documentation + index en premier.
+- Doc(admin): ajustements secrets/deploy/users + concepts Nix/NixOS.
+- Doc(admin-guide): page SSO (Kanidm, OIDC, réplication WIP).
+- Doc(admin-guide): page Services (activation + catalogue + portail).
+- Doc(admin-guide): page Profils d'utilisateurs (héritage + tableau).
+- Doc(admin-guide): page Profils d'hôtes (héritage + tableau).
+- Doc(admin-guide): section Installer (poste/passerelle/HCS) + déplacements host-profiles & users.
+- Doc(admin-guide): page Réseau (schémas + résolution DNS).
+- Doc(admin-guide): page Concepts + corrige le chemin etc/config.yaml.
+- Refact(admin-guide): sous-sections (comprendre/installer/exploiter/maintenir) + squelette des pages.
+- Update(backup): fixes + manual save.
+- Refact(all): files reorganisation.
+- Refact(restic): hardened and simpler module + doc.
+- Doc(service): internal ports rules.
+- Doc(diagram): passwords / 2fa.
+- Doc(dev): service init.
+- Refact(services): serveral improvements.
+- Feat(doc): short (title) for categories.
+- Module(geneweb): enablePasswords option.
+- Diagrams: d2 translate prompt & skill improved.
+- Diagrams: d2 diagrams integration.
+- Home: modules hierarchy.
+- Translate: auto-file generation if not exists.
+- Fixes: generator index title, default fr.
+- Reorganize: refactorings.
+- Spec: reorganise - revision.
+- Spec: reorganise - first proposition.
+- Deploy: modules ref separation.
+- Doc(ref): reorganization + translate.
+- Doc(ref): localize internal links in modules reference.
+
+### Security
+- Doc(admin): rédige operate (secrets/deploy/users) + maintain (security/monitoring/backup/troubleshooting).
+
 ## [0.1.0] - 2026-06-02
 
 ### Added
@@ -49,7 +107,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Initial Astro/Starlight documentation site for Darkone NixOS Framework.
 - Upgrade to Astro 6.
 
-[Unreleased]: https://github.com/darkone-linux/dnf-doc/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/darkone-linux/dnf-doc/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/darkone-linux/dnf-doc/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/darkone-linux/dnf-doc/compare/v0.0.2...v0.1.0
 [0.0.2]: https://github.com/darkone-linux/dnf-doc/compare/v0.0.1...v0.0.2
 [0.0.1]: https://github.com/darkone-linux/dnf-doc/releases/tag/v0.0.1
