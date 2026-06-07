@@ -9,23 +9,68 @@ lang: en
 {/* t:translated-from fr */}
 {/* t:h 3ef404bc04cadfe1023888ecd29d32e789c027ba4bc8148b367a07f53be4e36c */}
 
-{/* t:p 82d316eca628908490866da91a59276db7d04e2e9706ccc573671141a15d21fc */}
-### Linux Machines (NixOS)
+{/* t:p 2c55534a7c5ffddd9ba1c2e7c6845463ae38b198e491900cd7254463f70af6e9 */}
+The cloud Linux system installs on any PC connected to the network.
 
-The cloud's Linux system installs on any PC computer connected to the network.
+:::note[Linux, is it complicated?]
+Contrary to popular belief, **Linux and its applications have become very easy to use.**
+And our pre-installed system is even easier to get started with!
 
-:::caution[Is Linux complicated?]
-Contrary to what people think, **Linux and its applications have become very simple to use.**
-And our pre-installed system is even easier to use!
+**Why Linux / NixOS?**
+
+- **Linux** is free, secure, and aligned with the idea of a sovereign and secure digital space.
+- **NixOS** is an innovative Linux: declarative, reproducible, and very stable.
+- Open and maintained code ensures the lowest risk of "backdoors" in the world.
 :::
 
-:::tip[A time saver at every level]
-* 100% pre-installed -> programs, user accounts and configurations, everything is there.
-* 100% self-managed -> no need to administer the system, everything is automatic.
-* Ideal and performant with old PCs we no longer use.
+:::tip[Time savings at every level]
+- 100% pre-installed → programs, user accounts and configurations, everything is there.
+- 100% IT-managed → no need to administer the system, everything is automatic.
+- Ideal and performant with old PCs you no longer use.
 :::
 
-:::note[Why Linux / NixOS?]
-- **Linux** is a free system, therefore safe, in line with the idea of a sovereign and secure digital space. Linux code transparency guarantees the absence of "backdoors" and potentially unwanted programs.
-- **NixOS** is an innovative Linux system that allows reproducibility, meticulous configurations and great stability.
+{/* t:p 34d2c702e9579acd1a87899d7f8b887fdc7671a59eb6313cb1a36d5bbfb6db1d */}
+## Workstation profiles
+
+Each machine is configured according to a **profile** (role) that includes:
+
+- **Features** enabled automatically.
+- **Pre-made configurations**.
+
+| | Profile | Role |
+|---|---|---|
+| ⚙️ | `minimal` | A system with the bare minimum. |
+| 🖥️ | `desktop` | A desktop with office, multimedia, and productivity software. |
+| 💻 | `laptop` | An office workstation optimized for laptops. |
+| 🔌 | `portable` | My system on a bootable USB drive. |
+| 🗄️ | `server` | A stripped-down, secure server without a screen. |
+| 🌐 | `gateway` | A zone gateway, my internet "box" that filters ads. |
+| ☁️ | `hcs` | A VPN coordination server, for the administrator. |
+| 📦 | `vm` | A virtual machine. |
+
+Technical details&nbsp;: [Host profiles](/en/doc/admin-guide/understand/host-profiles/).
+
+:::tip[My profile is customizable!]
+- I can choose it at installation and later **change it at any time**.
+- I can add **personal programs and configurations** to it.
+:::
+
+{/* t:p 2a86dec846161925697a252a0f39de7c028f405cca9247d1bbc3696071a18209 */}
+## Zero maintenance
+
+Under DNF, the system manages itself&nbsp;:
+
+- **Updates**: applied automatically, without intervention.
+- **Security**: Linux is secure by design — no antivirus needed.
+- **Drivers**: everything is pre-configured. Printers, screens, peripherals: it just works.
+- **Failure or problem**: the administrator restores your workstation in minutes, identical to before.
+
+:::tip[I want to reinstall]
+Changed computer, theft, or serious technical issue? Everything can be reinstalled&nbsp;:
+
+- My software
+- My configurations
+- My data
+
+⚠️ Provided that my configuration is declared and my data is backed up.
 :::

@@ -9,23 +9,68 @@ lang: fr
 {/* t:main */}
 {/* t:h 3ef404bc04cadfe1023888ecd29d32e789c027ba4bc8148b367a07f53be4e36c */}
 
-{/* t:p 82d316eca628908490866da91a59276db7d04e2e9706ccc573671141a15d21fc */}
-### Les postes Linux (NixOS)
+{/* t:p 2c55534a7c5ffddd9ba1c2e7c6845463ae38b198e491900cd7254463f70af6e9 */}
+Le système Linux du cloud s'installe sur n'importe quel ordinateur PC relié au réseau.
 
-Le système Linux du cloud s’installe sur n’importe quel ordinateur PC relié au réseau.
-
-:::caution[Linux, c'est compliqué ?]
+:::note[Linux, c'est compliqué ?]
 Contrairement à ce qu'on croit, **Linux et ses applications sont devenus très simples d'utilisation.**
 Et notre système pré-installé est encore plus facile à prendre en main&nbsp;!
+
+**Pourquoi Linux / NixOS ?**
+
+- **Linux** est libre, sûr, en raccord avec l'idée d'un espace numérique souverain et sécurisé.
+- **NixOS** est un Linux innovant : déclaratif, reproductibile et très stable.
+- Un code ouvert et maintenu garantit le risque de "backdoors" le plus faible au monde.
 :::
 
 :::tip[Un gain de temps à tous les niveaux]
-* 100% pré-installé -> programmes, comptes utilisateur et configurations, tout y est.
-* 100% info-gérés → pas besoin d’administrer le système, tout est automatique.
-* Idéal et performant avec les vieux PC qu’on utilise plus.
+- 100% pré-installé -> programmes, comptes utilisateur et configurations, tout y est.
+- 100% info-gérés → pas besoin d'administrer le système, tout est automatique.
+- Idéal et performant avec les vieux PC qu'on utilise plus.
 :::
 
-:::note[Pourquoi Linux / NixOS ?]
-- **Linux** est un système libre, donc sûr, en raccord avec l'idée d'un espace numérique souverain et sécurisé. La transparence du code de Linux garantit l'absence de "backdoors" et programmes potentiellement indésirables.
-- **NixOS** est un système Linux innovant qui permet la reproductibilité, des configurations minutieuses et une très grande stabilité.
+{/* t:p 34d2c702e9579acd1a87899d7f8b887fdc7671a59eb6313cb1a36d5bbfb6db1d */}
+## Les profils de postes
+
+Chaque machine est configurée selon un **profil** (rôle) comportant :
+
+- Des **fonctionnalités** activées automatiquement.
+- Des **configurations** toutes faites.
+
+| | Profil | Rôle |
+|---|---|---|
+| ⚙️ | `minimal` | Un système avec le strict minimum. |
+| 🖥️ | `desktop` | Un poste fixe avec des logiciels bureautique, multimédia, productivité. |
+| 💻 | `laptop` | Un poste bureautique optimisé pour ordinateur portable. |
+| 🔌 | `portable` | Mon système sur une clé USB amorçable. |
+| 🗄️ | `server` | Un serveur élagué et sécurisé, sans écran. |
+| 🌐 | `gateway` | Une passerelle de zone, ma "box" internet qui filtre les pubs. |
+| ☁️ | `hcs` | Un serveur de coordination du VPN, pour l'administrateur. |
+| 📦 | `vm` | Une machine virtuelle. |
+
+Détails techniques&nbsp;: [Profils d'hôtes](/fr/doc/admin-guide/understand/host-profiles/).
+
+:::tip[Mon profil est adaptable !]
+- Je peux le choisir à l'installation et plus tard, **le changer à tout moment**.
+- Je peux y ajouter des **programmes et configurations personnelles**.
+:::
+
+{/* t:p 2a86dec846161925697a252a0f39de7c028f405cca9247d1bbc3696071a18209 */}
+## Zéro maintenance
+
+Sous DNF, le système s'administre "tout seul"&nbsp;:
+
+- **Mises à jour** : appliquées automatiquement, sans intervention.
+- **Sécurité** : Linux est sûr par conception — pas besoin d'antivirus.
+- **Pilotes** : tout est pré-configuré. Imprimantes, écrans, périphériques&nbsp;: ça marche.
+- **Panne ou problème** : l'administrateur restaure votre poste en quelques minutes, à l'identique.
+
+:::tip[Je veux réinstaller]
+Changement d'ordinateur, vol ou problème technique grave ? On peut tout réinstaller&nbsp;:
+
+- Mes logiciels
+- Mes configurations
+- Mes données
+
+⚠️ A condition que ma configuration soit déclarée et que mes données soient sauvegardées.
 :::
