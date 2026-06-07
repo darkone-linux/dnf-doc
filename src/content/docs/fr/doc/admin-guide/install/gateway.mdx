@@ -1,0 +1,96 @@
+---
+title: Passerelle (créer une zone)
+sidebar:
+  label: Passerelle
+  order: 2
+lang: fr
+---
+
+import { Steps } from '@astrojs/starlight/components';
+
+Une [zone](/fr/doc/admin-guide/understand/concepts/) est un sous-réseau : une
+**passerelle**, derrière laquelle on branche autant de machines qu'on veut.
+
+## Le matériel
+
+Un mini-ordinateur toujours allumé, avec **au moins deux interfaces réseau** :
+une vers la box (WAN), les autres vers le réseau local (LAN, ethernet ou wifi).
+
+:::note[Quel matériel ?]
+Un boîtier [Protectli](https://eu.protectli.com/) ou équivalent est idéal :
+
+- Disque NVMe ≥ 256 Go
+- BIOS coreboot de préférence
+- Carte wifi en option
+:::
+
+## Déclarer la zone
+
+La zone et sa passerelle se décrivent dans `etc/config.yaml` :
+
+```yaml
+# etc/config.yaml
+zones:
+  maison:
+    description: "Réseau de la maison"
+    ipPrefix: "10.0"             # zone en 10.0.0.0/16
+    gateway:
+      wan:
+        interface: "enp1s0"      # vers la box
+      lan:
+        interfaces: ["enp2s0"]   # vers le réseau local
+
+hosts:
+  - hostname: "gw"
+    name: "Passerelle"
+    zone: "maison:1.1"           # IP fixe 10.0.1.1
+    profile: "gateway"
+    services:
+      adguardhome:               # DNS + anti-pub
+      homepage:                  # portail des services
+    disko:
+      profile: "server-1-disk"
+      devices:
+        main: "/dev/sda"
+```
+
+:::tip[Services automatiques]
+Le profil `gateway` câble le routeur, le pare-feu, le DNS/DHCP (`dnsmasq`) et le
+client VPN. Les services déclarés (homepage, adguardhome…) sont configurés tout
+seuls. Voir [Réseau](/fr/doc/admin-guide/understand/network/).
+:::
+
+## Installer la passerelle
+
+L'installation se fait souvent **à distance** : une personne sur place prépare la
+machine, l'administrateur installe par SSH.
+
+<Steps>
+
+1. **Préparer la passerelle** (sur place)
+
+   1. Brancher la passerelle à la box.
+   2. Démarrer sur la clé USB (image `just build-iso`).
+   3. Noter l'adresse IP de la passerelle.
+   4. Rediriger le port 22 de la box vers la passerelle.
+
+   :::note[Pourquoi rediriger le port 22 ?]
+   Il permet l'accès SSH le temps de l'installation. La clé USB n'accepte que les
+   clés d'authentification (pas de mot de passe). La redirection peut être retirée
+   ensuite.
+   :::
+
+2. **Installer** (administrateur)
+
+   ```sh
+   just install gw nix <ip>     # nixos-anywhere + disko
+   just configure gw            # matériel + clé d'infra
+   just apply-verbose gw        # premier déploiement
+   ```
+
+</Steps>
+
+## Brancher d'autres machines
+
+- **Postes Linux** — même procédure que le premier poste, voir [Installation initiale](/fr/doc/admin-guide/install/first-network-installation/).
+- **Smartphones, tablettes, PC tiers** — se connectent automatiquement au réseau de la passerelle.

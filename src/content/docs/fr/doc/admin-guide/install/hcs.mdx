@@ -1,0 +1,142 @@
+---
+title: Serveur de coordination (HCS)
+sidebar:
+  label: HCS
+  order: 3
+lang: fr
+---
+
+import { Steps } from '@astrojs/starlight/components';
+
+Le serveur de coordination (HCS) relie les zones par un
+[VPN maillé](/fr/doc/admin-guide/understand/network/) et héberge les services
+partagés. C'est un petit serveur **public** (un VPS suffit).
+
+## Déclarer le HCS
+
+On active la coordination et on déclare l'hôte `profile: hcs` :
+
+```yaml
+# etc/config.yaml
+network:
+  coordination:
+    enable: true
+    hostname: "hcs"
+    domain: "headscale"          # → headscale.domain.tld
+
+hosts:
+  - hostname: "hcs"
+    name: "Serveur de coordination"
+    profile: "hcs"
+    ipv4:
+      external: "203.0.113.10"   # IP publique du VPS
+      internal: "100.64.0.2"     # IP dans le tailnet
+    services:
+      headscale:                 # coordination du VPN
+      idm:                       # identités (Kanidm)
+      vaultwarden:               # coffre-fort
+```
+
+L'installation suit la même procédure qu'une
+[passerelle](/fr/doc/admin-guide/install/gateway/#installer-la-passerelle)
+(`just install` / `configure` / `apply`).
+
+## Services globaux
+
+Un service marqué `global: true` est exposé sur le HCS avec un **DNS public**
+(`<nom>.domain.tld`) : il est joignable depuis n'importe où, Internet compris.
+
+```yaml
+    services:
+      forgejo:
+        domain: "git"
+        global: true             # → https://git.domain.tld
+```
+
+## Créer un compte utilisateur
+
+:::tip[Chaque utilisateur aura…]
+- Un identifiant et un **mot de passe principal** (coffre-fort).
+- Une **clé d'authentification** pour tous les services (SSO).
+- Un **mot de passe de récupération** en cas de perte de la clé.
+:::
+
+<Steps>
+
+1. **Créer le compte système**
+
+   Ajouter l'utilisateur dans `etc/config.yaml`, puis générer, commiter et
+   appliquer :
+
+   ```yaml
+   # etc/config.yaml
+   users:
+     bob:
+       uid: 1001
+       name: "Bob"
+       profile: "normal"
+       groups: ["global"]
+   ```
+
+   :::caution[Compte POSIX (facultatif)]
+   Cette déclaration crée un compte sur les postes Linux désignés. On peut aussi
+   créer des utilisateurs uniquement dans Vaultwarden et Kanidm.
+   :::
+
+2. **Compte Vaultwarden**
+
+   1. Administrateur : envoyer une invitation.
+   2. Utilisateur : reçoit un e-mail pour définir son mot de passe principal.
+   3. Administrateur : confirmer l'utilisateur.
+
+3. **Compte Kanidm** (sur le HCS)
+
+   ```sh
+   just enter hcs
+   kanidm person credential create-reset-token <login> --name idm_admin
+   ```
+
+   Transmettre le lien ou le QR-code à l'utilisateur, qui crée sa clé et son mot
+   de passe de récupération.
+
+4. **Bitwarden**
+
+   Installer Bitwarden sur navigateurs et smartphones simplifie l'accès.
+
+   :::caution[Bien choisir « self-hosted »]
+   Saisir l'URL de Vaultwarden **avant** le mot de passe principal, sinon il part
+   chez bitwarden.com !
+   :::
+
+5. **Accès aux services**
+
+   Le SSO ouvre tous les services avec une seule authentification. Les droits
+   sont définis par les groupes Kanidm.
+
+</Steps>
+
+## Se connecter depuis l'extérieur
+
+Hors d'une zone, l'accès aux services passe par un client VPN Tailscale, validé
+par l'administrateur.
+
+<Steps>
+
+1. **Côté utilisateur**
+
+   - Installer le client Tailscale.
+   - Demander à rejoindre le réseau `headscale.domain.tld`.
+
+2. **Côté administrateur**
+
+   ```sh
+   just enter hcs
+
+   # Clé temporaire réutilisable (plusieurs clients)
+   sudo headscale preauthkeys create --reusable --expiration 1h --user 1
+
+   # Ou valider un client déjà connecté
+   sudo headscale nodes register --key <clé> --user nix
+   ```
+
+</Steps>
