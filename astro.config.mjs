@@ -154,11 +154,27 @@ export default defineConfig({
               label: "FAQ",
               collapsed: true,
               items: [
-                { autogenerate: { directory: "doc/how-to" } },
-                //{ slug: "doc/how-to" },
-                //{ slug: "doc/how-to/user" },
-                //{ slug: "doc/how-to/admin" },
-                //{ slug: "doc/how-to/dev" },
+                {
+                  label: "Users",
+                  translations: { fr: "Utilisateurs" },
+                  items: [
+                    { autogenerate: { directory: "doc/how-to/user" } },
+                  ],
+                },
+                {
+                  label: "Administrators",
+                  translations: { fr: "Administrateurs" },
+                  items: [
+                    { autogenerate: { directory: "doc/how-to/admin" } },
+                  ],
+                },
+                {
+                  label: "Developers",
+                  translations: { fr: "Développeurs" },
+                  items: [
+                    { autogenerate: { directory: "doc/how-to/dev" } },
+                  ],
+                },
               ],
             },
           ],

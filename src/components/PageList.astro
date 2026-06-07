@@ -1,0 +1,31 @@
+---
+// Liste automatiquement les pages situées dans le dossier de la page courante
+// (feuilles directes, hors page d'accueil). Trié par sidebar.order puis titre.
+// Utilisé sur les pages « Sommaire » des sections how-to.
+import { getCollection } from "astro:content";
+
+const route = Astro.locals.starlightRoute;
+const dir = route.entry.id.replace(/\/index$/, "");
+
+const pages = (await getCollection("docs"))
+  .filter((e) => {
+    if (!e.id.startsWith(dir + "/")) return false;
+    const rel = e.id.slice(dir.length + 1);
+    return rel.length > 0 && !rel.includes("/") && rel !== "index";
+  })
+  .sort((a, b) => {
+    const oa = a.data.sidebar?.order ?? Number.MAX_SAFE_INTEGER;
+    const ob = b.data.sidebar?.order ?? Number.MAX_SAFE_INTEGER;
+    return oa - ob || a.data.title.localeCompare(b.data.title);
+  });
+---
+
+<ul>
+  {
+    pages.map((p) => (
+      <li>
+        <a href={`/${p.id}/`}>{p.data.title}</a>
+      </li>
+    ))
+  }
+</ul>
