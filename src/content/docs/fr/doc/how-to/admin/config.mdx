@@ -7,8 +7,12 @@ lang: fr
 
 import { Steps } from '@astrojs/starlight/components';
 
-`config.yaml` est une configuration simple, haut niveau. Elle est la 
-**source de vérité** du réseau. Le [générateur](/fr/doc/dev-guide/generator/) 
+{/* t:main */}
+{/* t:h c690a687601030c0ac07c896fe0992e04c491e8af0d684b35aa6b2b3a31a181c */}
+
+{/* t:p 9532c8b5586c541b61c71afc873fde4e139694d591a66f07452806688e641279 */}
+`config.yaml` est une configuration simple, haut niveau. Elle est la
+**source de vérité** du réseau. Le [générateur](/fr/doc/dev-guide/generator/)
 la lit et produit `var/generated/*.nix`, consommés par le framework.
 
 :::tip[Valider les modifications]
@@ -29,6 +33,7 @@ Les clés sont en `camelCase` (elles deviennent des attributs Nix). Les exemples
 ci-dessous sont **génériques** (`domain.tld`, préfixes `10.0`/`10.1`).
 :::
 
+{/* t:p b75efabfddc516ddb4f482c956a30a3bcc51a228f776f9d9d317b6b958604848 */}
 ## Section "network"
 
 Cette section optionnelle définit les paramètres globaux de notre réseau.
@@ -47,15 +52,14 @@ network:
 ```
 
 :::caution[Choisir un domaine]
-Il est fortement conseillé d'utiliser un **domaine réel** pour `network.domain`. Cela 
-facilite les accès depuis d'extérieur des services, ainsi que la mise en place du 
+Il est fortement conseillé d'utiliser un **domaine réel** pour `network.domain`. Cela
+facilite les accès depuis d'extérieur des services, ainsi que la mise en place du
 réseau VPN.
 
-D'autre part, ces fonctionnalités ont besoin de TLS pour fonctionner. 
+D'autre part, ces fonctionnalités ont besoin de TLS pour fonctionner.
 La gestion des certificats TLS du réseau est automatique (acme, transfert vers les
 zones) mais nécessite l'utilisation d'un domaine réel et une configuration DNS appropriée.
 :::
-
 
 | Clé | Rôle |
 |---|---|
@@ -68,10 +72,11 @@ zones) mais nécessite l'utilisation d'un domaine réel et une configuration DNS
 
 :::tip[Réseau sans VPN]
 `coordination.enable: false` reste valide&nbsp;: on peut définir une ou plusieurs zones et
-déployer localement. Avec plusieurs zones, un VPN facilite cependant l'administration des 
+déployer localement. Avec plusieurs zones, un VPN facilite cependant l'administration des
 noeuds distants grâce à des accès directs sécurisés.
 :::
 
+{/* t:p f25aebabc7ca78b86dc1b4e576d2d56e378c21055132186894358de3beecaccd */}
 ## Section "zones"
 
 Une **zone** est un sous-réseau (LAN maison, réseau invité, site distant…).
@@ -113,6 +118,7 @@ Le projet réserve les octets ainsi (préfixe `10.0`)&nbsp;:
 - `10.0.11-99.x` hôtes en plage.
 :::
 
+{/* t:p 0f49f42cf7c0764aa411b0b315edfddd8408273654c08f913ff29b85541765e2 */}
 ### La passerelle (gateway)
 
 | Clé | Rôle |
@@ -127,6 +133,7 @@ L'hôte dont l'IP se termine par `.1.1` est **automatiquement** la passerelle de
 sa zone. Voir [Passerelle](/fr/doc/admin-guide/install/gateway/).
 :::
 
+{/* t:p 4845bed7a3f9bf9cb748e88a0d1d22b71fd0581e81ce7d6af8e981037930e27d */}
 ### Appareils non-NixOS (extraHosts)
 
 Téléphones, imprimantes, objets connectés : résolus par nom et fixés en DHCP.
@@ -150,6 +157,7 @@ zones:
         mac: "aa:bb:cc:dd:ee:02"
 ```
 
+{/* t:p 138ff041bee506c5468ac84f7e9874ea81b2486299b2e851b9b15546d51f7009 */}
 ## Section "users"
 
 Comptes communs à toutes les zones. Chaque compte reçoit un profil
@@ -190,11 +198,13 @@ Un hôte autorise un utilisateur s'il le liste dans `users`, **ou** si l'un de s
 `groups` correspond. Voir [Utilisateurs](/fr/doc/admin-guide/operate/users/).
 :::
 
+{/* t:p fe4f7890aa5b9f5eb3a504344e1cc652925df10b80ae07f838f2ea44fa03a280 */}
 ## Section "hosts"
 
 `hosts` est une **liste** d'entrées (`- hostname: …`). Une machine peut être
 déclarée de **trois façons** selon le besoin.
 
+{/* t:p 2a3dfff8113aa1e7973a942cf46dd6c7dec8f8a74ac33525810f983d50074ba0 */}
 ### Type statique : un hôte par entrée
 
 Une entrée = une machine. La forme la plus simple et la plus courante.
@@ -223,11 +233,12 @@ hosts:
       restic:
 ```
 
+{/* t:p e1897504993f1c062e17f894395d19d6550a86f2106b26a3d7eacf3ed06ddf74 */}
 ### Type collection : machines similaires
 
 Une **config commune** + une sous-map `hosts:` : chaque membre (clé) hérite des
 clés du groupe (`profile`, `groups`, `features`, `tags`, `disko`) et précise son
-nom, sa zone, son adresse MAC. Le `%s` du `hostname`/`name` du groupe est remplacé 
+nom, sa zone, son adresse MAC. Le `%s` du `hostname`/`name` du groupe est remplacé
 par la clé du membre (et par son `name`).
 
 ```yaml
@@ -254,11 +265,12 @@ Les clés du **groupe** (`profile`, `groups`, `features`, `tags`, `disko`)
 s'imposent à chaque membre ; le membre fournit le reste (`name`, `zone`, `mac`…).
 :::
 
+{/* t:p 25652e105b90578e1ac2958d0db1c8a249f0f9d653c0d65e3cb68b23da2c1621 */}
 ### Type plage : machines identiques
 
 Génère **N hôtes identiques** numérotés. `range: [début, fin]` (bornes
-incluses). Les jetons de gabarit (similaire aux 
-[substitutions printf](https://cplusplus.com/reference/cstdio/printf/)) sont 
+incluses). Les jetons de gabarit (similaire aux
+[substitutions printf](https://cplusplus.com/reference/cstdio/printf/)) sont
 remplacés par l'**indice**&nbsp;:
 
 | Jeton | Effet | Exemple (i=3) |
@@ -289,6 +301,7 @@ Sous une plage, `hosts.<i>` ajoute des clés **propres** à l'hôte d'indice `i`
 (seules les clés nouvelles sont fusionnées).
 :::
 
+{/* t:p 2f088c78ad470f2e2bb7c3e2e81058a8b0929240c27f1bc9a42ed2890f3789e6 */}
 ### Liste des clés
 
 | Clé | Type | Rôle |
@@ -310,6 +323,7 @@ Sous une plage, `hosts.<i>` ajoute des clés **propres** à l'hôte d'indice `i`
 | `range` | liste | `[début, fin]` pour une plage. |
 | `hosts` | map | Membres (collection) ou surcharges par indice (plage). |
 
+{/* t:p 436527307e778d36427035653d50fdacc54c75aa7a7a423fba0abd9e78727bed */}
 ### Attribuer une zone
 
 La clé **`zone`** fixe l'appartenance réseau et l'adresse IP&nbsp;:
@@ -333,10 +347,11 @@ Un hôte **externe** (le HCS) n'a pas de zone mais un bloc `ipv4`&nbsp;:
 ```
 
 :::caution[Attribution de zone et emplacement physique]
-Fixez les zones de manière cohérente, il faut que la machine appartienne au réseau 
+Fixez les zones de manière cohérente, il faut que la machine appartienne au réseau
 physique (réseau local) de la zone déclarée.
 :::
 
+{/* t:p 21e31cba3b23bd022f123d21c3673c5a5cf1b0943dbc40aeadd6705fe4fcb4ec */}
 ### Attribuer des fonctionnalités
 
 La clé **`features`** active des comportements ou fonctionnalités spécifiques.
@@ -344,7 +359,7 @@ Un suffixe `:<zone>` cible une zone précise (sinon la zone de l'hôte est utili
 Exemples :
 
 ```yaml
-# Machine sous supervision (monitoring-node) 
+# Machine sous supervision (monitoring-node)
 # et client NFS (il faut un serveur dans la zone)
 features: ["monitoring-node", "nfs-client"]
 
@@ -358,23 +373,24 @@ Fonctionnalités disponibles :
 - `nfs-client` : l'hôte monte les partages du serveur `nfs` de la zone (un serveur doit y exister).
 
 :::note[Liste évolutive]
-Une fonctionnalité est un simple drapeau lu par un module. 
+Une fonctionnalité est un simple drapeau lu par un module.
 Le suffixe `:<zone>` permet de viser une zone autre que celle de l'hôte.
 :::
 
+{/* t:p 3c837568b5b0702ea8a08d2e344eba7f20b0cf68e1cdf4a7bee8dfd5b3746d16 */}
 ### Déclarer des services
 
-La clé `services` contient une collection de services à installer automatiquement sur 
+La clé `services` contient une collection de services à installer automatiquement sur
 l'hôte. Les valeurs sont optionnelles, elles permettent une personnalisation du service.
 
 :::note[Type de service et de noeud]
-La plupart des services peuvent être installés sur n'importe quel noeud, mais il peut 
+La plupart des services peuvent être installés sur n'importe quel noeud, mais il peut
 y avoir des contraintes pour certains d'entre eux&nbsp;:
 
 - Un seul service par zone (ex: adguardhome, ncps)
 - Service spécial hors zone (ex: headscale, turn)
 
-Des garde-fous peuvent vous empêcher d'installer n'importe quel 
+Des garde-fous peuvent vous empêcher d'installer n'importe quel
 service n'importe où.
 :::
 
@@ -406,9 +422,10 @@ en `<domain>.domain.tld`. Catalogue et détails&nbsp;:
 [Services](/fr/doc/admin-guide/operate/services/).
 :::
 
+{/* t:p 630c45d92d950d02bbd13c584a3cc9787a3dcb1d421e902078d0b2aed6e2e974 */}
 ### Déclarer le partitionnement
 
-La clé `disko` décrit le **partitionnement** pour l'installation automatique. 
+La clé `disko` décrit le **partitionnement** pour l'installation automatique.
 
 - `profile` désigne un fichier `(usr|dnf)/hosts/disko/<profile>.nix`.
 - `devices` associe les disques nommés du profil à des périphériques réels.
@@ -423,18 +440,19 @@ La clé `disko` décrit le **partitionnement** pour l'installation automatique.
 
 :::caution[Utile pour l'installation seulement]
 `disko` n'est consulté **qu'à l'installation** (`just install` formate les
-disques). Une fois la machine installée, on peut commenter le bloc `disko` par 
+disques). Une fois la machine installée, on peut commenter le bloc `disko` par
 sécurité. Un déclenchement accidentel de l'installation pourrait ordonner de
 reformatter le disque.
 :::
 
 :::tip[Réinstaller une machine]
-Le gros avantage d'une configuration déclarative est de pouvoir **réinstaller un 
+Le gros avantage d'une configuration déclarative est de pouvoir **réinstaller un
 noeud avec tous ses programmes et sa configuration**, soit pour changer de matériel,
-soit suite à un problème grave. Une bonne déclaration associée à une sauvegarde 
+soit suite à un problème grave. Une bonne déclaration associée à une sauvegarde
 complète des données permet une réinstallation complète.
 :::
 
+{/* t:p c972ae3a9b2c2401117fc3aecda32a253d1ad24a97c0b12e98ff4490e9348459 */}
 ## Liens utiles
 
 Pour le parcours complet d'installation d'une machine, voir

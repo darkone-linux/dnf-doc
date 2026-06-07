@@ -1,0 +1,436 @@
+---
+title: The config.yaml file
+sidebar:
+  label: The config.yaml file
+lang: en
+---
+
+import { Steps } from '@astrojs/starlight/components';
+
+{/* t:translated-from fr */}
+{/* t:h c690a687601030c0ac07c896fe0992e04c491e8af0d684b35aa6b2b3a31a181c */}
+
+{/* t:p 9532c8b5586c541b61c71afc873fde4e139694d591a66f07452806688e641279 */}
+`config.yaml` is a simple, high-level configuration. It is the **source of truth** for the network. The [generator](/en/doc/dev-guide/generator/) reads it and produces `var/generated/*.nix`, consumed by the framework.
+
+:::tip[Validate changes]
+After every change, run `just generate` (or `just clean`), then `just apply`.
+:::
+
+The file has **four sections**&nbsp;:
+
+| Section | Role |
+|---|---|
+| `network` | Global parameters: domain, locale, VPN coordination. |
+| `zones` | Subnets: IP prefix, gateway, non-NixOS devices. |
+| `users` | Accounts, common to all zones. |
+| `hosts` | Machines to deploy. |
+
+:::note[Convention]
+Keys use `camelCase` (they become Nix attributes). The examples below are **generic** (`domain.tld`, `10.0`/`10.1` prefixes).
+:::
+
+{/* t:p b75efabfddc516ddb4f482c956a30a3bcc51a228f776f9d9d317b6b958604848 */}
+## "network" section
+
+This optional section defines the global parameters of our network.
+
+```yaml
+# etc/config.yaml
+network:
+  domain: "domain.tld"          # root DNS domain (services, VPN, certificates)
+  default:
+    locale: "fr_FR.UTF-8"       # default locale for every host
+    timezone: "Europe/Paris"    # default timezone
+  coordination:
+    enable: true                # enables VPN mesh (Headscale)
+    hostname: "hcs"             # short name of the coordination host
+    domain: "headscale"         # subdomain → headscale.domain.tld
+```
+
+:::caution[Choose a domain]
+It is strongly recommended to use a **real domain** for `network.domain`. This facilitates external access to services, as well as setting up the VPN network.
+
+Furthermore, these features need TLS to operate.
+The network's TLS certificate management is automatic (acme, transfer to zones) but requires using a real domain and appropriate DNS configuration.
+:::
+
+| Key | Role |
+|---|---|
+| `domain` | Root DNS domain (services, Headscale, certificates). |
+| `default.locale` | Default values, possibly overridden by zone. |
+| `default.timezone` | Default values, possibly overridden by zone. |
+| `coordination.enable` | Enables VPN coordination. `false` → local zones only. |
+| `coordination.hostname` | Headscale host and subdomain. |
+| `coordination.domain` | Headscale host and subdomain. |
+
+:::tip[Network without VPN]
+`coordination.enable: false` is still valid&nbsp;: you can define one or more zones and deploy locally. With multiple zones, a VPN nevertheless facilitates administration of remote nodes thanks to direct secured access.
+:::
+
+{/* t:p f25aebabc7ca78b86dc1b4e576d2d56e378c21055132186894358de3beecaccd */}
+## "zones" section
+
+A **zone** is a subnet (home LAN, guest network, remote site…).
+Each zone has an IP `/16` prefix, a gateway and, optionally, non-NixOS devices.
+
+```yaml
+# etc/config.yaml
+zones:
+  main:
+    description: "Main network"
+    locale: "fr_FR.UTF-8"        # optional (default: network.default.locale)
+    timezone: "Europe/Paris"     # optional
+    ipPrefix: "10.0"             # the zone uses 10.0.0.0/16
+    gateway:
+      wan:
+        interface: "enp1s0"      # interface to Internet (required)
+      lan:
+        interfaces: ["enp2s0"]   # internal interface(s) (required)
+      vpn:
+        ipv4: "10.0.0.1"         # gateway VPN IP (after registration)
+```
+
+| Key | Role |
+|---|---|
+| `description` | Zone label. |
+| `locale` / `timezone` | Local overrides (otherwise `network.default`). |
+| `ipPrefix` | First two octets of an RFC1918 `/16` (e.g. `10.0`). |
+| `gateway` | Gateway configuration (see below). |
+| `extraHosts` | Non-NixOS devices resolved by name (see below). |
+
+:::tip[Addressing convention]
+The project reserves octets as follows (prefix `10.0`)&nbsp;:
+
+- `10.0.1.x` servers and network nodes (`.1.1` = gateway),
+- `10.0.2.x` NixOS workstations,
+- `10.0.3.x` DHCP range,
+- `10.0.4-5.x` non-NixOS devices,
+- `10.0.11-99.x` hosts in range.
+:::
+
+{/* t:p 0f49f42cf7c0764aa411b0b315edfddd8408273654c08f913ff29b85541765e2 */}
+### The gateway
+
+| Key | Role |
+|---|---|
+| `wan.interface` | Network interface to Internet (required). |
+| `lan.interfaces` | List of internal interfaces (required), integrated into the `lan0` bridge. |
+| `lan.dhcp-range` | DHCP range (optional; default `<prefix>.3.200,<prefix>.3.249,24h`). |
+| `vpn.ipv4` | Gateway VPN IP, to fill in after Headscale registration. |
+
+:::note[Auto-detection]
+The host whose IP ends in `.1.1` is **automatically** the gateway of its zone. See [Gateway](/en/doc/admin-guide/install/gateway/).
+:::
+
+{/* t:p 4845bed7a3f9bf9cb748e88a0d1d22b71fd0581e81ce7d6af8e981037930e27d */}
+### Non-NixOS devices (extraHosts)
+
+Phones, printers, IoT devices: resolved by name and fixed on DHCP.
+The `common` key is **merged into each zone** (devices present everywhere).
+
+```yaml
+# etc/config.yaml
+zones:
+  main:
+    # ...
+    extraHosts:
+      printer:
+        ip: "4.1"                # suffix → 10.0.4.1
+        name: "Living room printer"
+        mac: "aa:bb:cc:dd:ee:01"
+  common:
+    extraHosts:                  # added to ALL zones
+      phone-alice:
+        ip: "5.1"
+        name: "Alice's phone"
+        mac: "aa:bb:cc:dd:ee:02"
+```
+
+{/* t:p 138ff041bee506c5468ac84f7e9874ea81b2486299b2e851b9b15546d51f7009 */}
+## "users" section
+
+Accounts common to all zones. Each account receives a [Home Manager](/en/doc/admin-guide/understand/user-profiles/) profile and groups.
+
+```yaml
+# etc/config.yaml
+users:
+  alice:
+    uid: 1000
+    name: "Alice Martin"
+    email: "alice@domain.tld"
+    profile: "nix-admin"
+    groups: ["zone-main", "global", "idm-admins"]
+  bob:
+    uid: 1001
+    name: "Bob Durand"
+    profile: "normal"
+    groups: ["zone-main"]
+```
+
+| Key | Type | Role |
+|---|---|---|
+| *(key)* | — | Account identifier (login) (`[a-z]…`). |
+| `uid` | integer | Stable numeric identifier (**required**). |
+| `name` | text | Display name (**required**). |
+| `email` | text | Address (also used for SSO identity), defaults to `<login>@<domain.tld>`. |
+| `profile` | text | User profile (default `minimal`). |
+| `groups` | list | Installs the user on hosts having the same group. |
+
+:::note[`nix` user]
+The maintenance account `nix` (profile `nix-admin`) is automatically added to every host. Do not declare it.
+:::
+
+:::tip[Groups = access]
+A host authorizes a user if it lists them in `users`, **or** if one of their `groups` matches. See [Users](/en/doc/admin-guide/operate/users/).
+:::
+
+{/* t:p fe4f7890aa5b9f5eb3a504344e1cc652925df10b80ae07f838f2ea44fa03a280 */}
+## "hosts" section
+
+`hosts` is a **list** of entries (`- hostname: …`). A machine can be declared in **three ways** depending on the need.
+
+{/* t:p 2a3dfff8113aa1e7973a942cf46dd6c7dec8f8a74ac33525810f983d50074ba0 */}
+### Static type: one host per entry
+
+One entry = one machine. The simplest and most common form.
+
+```yaml
+# etc/config.yaml
+hosts:
+
+  - hostname: "gw"
+    name: "Main gateway"
+    zone: "main:1.1"             # fixed IP 10.0.1.1 → gateway
+    profile: "gateway"
+    tags: ["main"]
+    features: ["monitoring-node"]
+    services:
+      adguardhome:
+      homepage:
+
+  - hostname: "server"
+    name: "Home server"
+    zone: "main:1.2"             # fixed IP 10.0.1.2
+    profile: "server"
+    users: ["alice"]
+    services:
+      nextcloud:
+      restic:
+```
+
+{/* t:p e1897504993f1c062e17f894395d19d6550a86f2106b26a3d7eacf3ed06ddf74 */}
+### Collection type: similar machines
+
+A **common config** + a sub-map `hosts:`: each member (key) inherits the group's keys (`profile`, `groups`, `features`, `tags`, `disko`) and specifies its own name, zone, MAC address. The `%s` in the group's `hostname`/`name` is replaced by the member's key (and by its `name`).
+
+```yaml
+# etc/config.yaml
+hosts:
+
+  - hostname: "%s-laptop"        # %s → member key
+    name: "Portable de %s"       # %s → member's name
+    profile: "laptop"
+    groups: ["zone-main"]
+    hosts:
+      alice:                     # → hostname "alice-laptop"
+        name: "Alice"
+        zone: "main:2.4"
+        mac: "aa:bb:cc:dd:ee:10"
+      bob:                       # → hostname "bob-laptop"
+        name: "Bob"
+        zone: "main:2.5"
+        mac: "aa:bb:cc:dd:ee:11"
+```
+
+:::note[What wins?]
+The **group** keys (`profile`, `groups`, `features`, `tags`, `disko`) override each member; the member provides the rest (`name`, `zone`, `mac`…).
+:::
+
+{/* t:p 25652e105b90578e1ac2958d0db1c8a249f0f9d653c0d65e3cb68b23da2c1621 */}
+### Range type: identical machines
+
+Generates **N identical hosts** numbered sequentially. `range: [start, end]` (inclusive bounds). Template tokens (similar to [printf substitutions](https://cplusplus.com/reference/cstdio/printf/)) are replaced by the **index**&nbsp;:
+
+| Token | Effect | Example (i=3) |
+|---|---|---|
+| `%d` or `%s` | The index | `vm-%d` → `vm-3` |
+| `%'02s` | Padded index (char + width) | `vm-%'02s` → `vm-03` |
+
+```yaml
+# etc/config.yaml
+hosts:
+
+  - hostname: "desktop-%'02s"    # desktop-01 … desktop-04
+    name: "Guest workstation n°%'02s"
+    zone: "main:11.%d"           # 10.0.11.1 … 10.0.11.4
+    profile: "desktop"
+    range: [1, 4]
+    groups: ["zone-main"]
+    features: ["nfs-client"]
+    mac:                         # MAC by index
+      1: "aa:bb:cc:dd:ee:21"
+      2: "aa:bb:cc:dd:ee:22"
+      3: "aa:bb:cc:dd:ee:23"
+      4: "aa:bb:cc:dd:ee:24"
+```
+
+:::tip[Per-index overrides]
+Under a range, `hosts.<i>` adds keys **specific** to the host at index `i` (only new keys are merged).
+:::
+
+{/* t:p 2f088c78ad470f2e2bb7c3e2e81058a8b0929240c27f1bc9a42ed2890f3789e6 */}
+### Key list
+
+| Key | Type | Role |
+|---|---|---|
+| `hostname` | text | DNS identifier (**required**); templates `%s`/`%d`/`%'02s`. |
+| `name` | text | Readable name (**required**). |
+| `profile` | text | [Host profile](/en/doc/admin-guide/understand/host-profiles/) (`gateway`, `server`, `desktop`, `laptop`, `hcs`…). |
+| `zone` | text | Zone and IP (see below). |
+| `ipv4` | map | External host: `external` (public IP) + `internal` (VPN IP). |
+| `users` | list | Logins authorized to open a session. |
+| `groups` | list | Host groups (add corresponding members). |
+| `tags` | list | Colmena tags (`just apply @tag`). |
+| `features` | list | Non-service flags (see below). |
+| `services` | map | Enabled services (see below). |
+| `mac` | text/map | Internal interface MAC (static), map by index (range). |
+| `aliases` | list | Additional DNS names. |
+| `arch` | text | Architecture (default `x86_64-linux`). |
+| `disko` | map | Disk scheme (see below). |
+| `range` | list | `[start, end]` for a range. |
+| `hosts` | map | Members (collection) or per-index overrides (range). |
+
+{/* t:p 436527307e778d36427035653d50fdacc54c75aa7a7a423fba0abd9e78727bed */}
+### Assigning a zone
+
+The **`zone`** key sets the network membership and the IP address&nbsp;:
+
+| Form | Effect |
+|---|---|
+| `zone: "main:1.2"` | **Fixed** IP `<ipPrefix>.1.2` (e.g. `10.1.1.2` in zone `main` in `10.1`). |
+| `zone: "main:11.%d"` | Fixed IP with range index (e.g. `10.1.11.1`, `10.1.11.2`...). |
+| `zone: "main"` | **Dynamic** address (DHCP) in the zone. |
+
+An **external** host (the HCS) has no zone but an `ipv4` block&nbsp;:
+
+```yaml
+# etc/config.yaml
+  - hostname: "hcs"
+    name: "Coordination"
+    profile: "hcs"
+    ipv4:
+      external: "203.0.113.26"   # public IP (external zone)
+      internal: "10.0.0.2"       # IP in the VPN
+```
+
+:::caution[Zone assignment and physical location]
+Set zones consistently; the machine must belong to the physical network (local network) of the declared zone.
+:::
+
+{/* t:p 21e31cba3b23bd022f123d21c3673c5a5cf1b0943dbc40aeadd6705fe4fcb4ec */}
+### Assigning features
+
+The **`features`** key enables specific behaviors or features.
+A `:<zone>` suffix targets a specific zone (otherwise the host's zone is used).
+Examples:
+
+```yaml
+# Machine under supervision (monitoring-node)
+# and NFS client (a server must exist in the zone)
+features: ["monitoring-node", "nfs-client"]
+
+# Machine supervised by the "main" zone
+features: ["monitoring-node:main"]
+```
+
+Available features:
+
+- `monitoring-node` : the host exposes its metrics (node-exporter) to the zone's [monitoring](/en/doc/admin-guide/maintain/monitoring/).
+- `nfs-client` : the host mounts shares from the zone's `nfs` server (a server must exist in the zone).
+
+:::note[Evolving list]
+A feature is a simple flag read by a module.
+The `:<zone>` suffix targets a zone other than the host's.
+:::
+
+{/* t:p 3c837568b5b0702ea8a08d2e344eba7f20b0cf68e1cdf4a7bee8dfd5b3746d16 */}
+### Declaring services
+
+The `services` key contains a collection of services to be automatically installed on
+the host. Values are optional and allow service customization.
+
+:::note[Service type and node type]
+Most services can be installed on any node, but some may have
+constraints&nbsp;:
+
+- Only one service per zone (e.g. adguardhome, ncps)
+- Special out-of-zone service (e.g. headscale, turn)
+
+Safeguards may prevent you from installing any
+service anywhere.
+:::
+
+```yaml
+# etc/config.yaml
+    services:
+      immich:
+        title: "Photos"
+        description: "My photos & videos"
+        domain: "photos"          # sub-domain
+        global: true              # → https://photos.domain.tld (public)
+      nextcloud:
+        domain: "cloud"           # → cloud.<zone>.domain.tld (non global)
+      restic:                     # default values
+```
+
+| Field | Role |
+|---|---|
+| *(key)* | Service to enable (e.g. `immich`). |
+| `title` | Name displayed on the portal. |
+| `description` | Subtitle on the portal. |
+| `domain` | Sub-domain (default: service name). |
+| `global` | Exposes publicly via the HCS: `<domain>.domain.tld`, **without the zone**. |
+| `icon` | Portal icon. |
+
+:::tip[Full service name]
+By default a service is at `<domain>.<zone>.domain.tld` ; with `global: true`,
+at `<domain>.domain.tld`. Catalog and details&nbsp;:
+[Services](/en/doc/admin-guide/operate/services/).
+:::
+
+{/* t:p 630c45d92d950d02bbd13c584a3cc9787a3dcb1d421e902078d0b2aed6e2e974 */}
+### Declaring partitioning
+
+The `disko` key describes **partitioning** for automatic installation.
+
+- `profile` designates a `(usr|dnf)/hosts/disko/<profile>.nix` file.
+- `devices` maps the profile's named disks to actual devices.
+
+```yaml
+# etc/config.yaml
+    disko:
+      profile: "btrfs-1-disk"
+      devices:
+        main: "/dev/nvme0n1"
+```
+
+:::caution[Installation only]
+`disko` is only read **during installation** (`just install` formats the
+disks). Once the machine is installed, you can comment out the `disko` block
+for safety. An accidental trigger of the installation could order a disk
+reformat.
+:::
+
+:::tip[Reinstalling a machine]
+The major advantage of a declarative configuration is being able to **reinstall a
+node with all its programs and configuration**, either to change hardware
+or after a serious issue. A good declaration combined with a complete
+data backup allows a full reinstallation.
+:::
+
+{/* t:p c972ae3a9b2c2401117fc3aecda32a253d1ad24a97c0b12e98ff4490e9348459 */}
+## Useful links
+
+For the full machine installation walkthrough, see
+[Initial installation](/en/doc/admin-guide/install/first-network-installation/).
