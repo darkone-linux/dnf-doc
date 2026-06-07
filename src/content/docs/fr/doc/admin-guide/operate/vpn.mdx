@@ -6,5 +6,88 @@ sidebar:
 lang: fr
 ---
 
-À rédiger : serveur de coordination Headscale, clients Tailscale, subnet routers,
-exit nodes, accès depuis l'extérieur.
+import { Steps } from '@astrojs/starlight/components';
+
+Le VPN maille toutes les zones et les machines distantes :
+[Headscale](https://headscale.net/) coordonne (sur le HCS),
+[Tailscale](https://tailscale.com/) est le client sur chaque nœud. Vue
+d'ensemble dans [Réseau](/fr/doc/admin-guide/understand/network/#réseau-étendu-vpn).
+
+## Activer le VPN
+
+Activer la coordination et déclarer le HCS (`profile: hcs`) suffit :
+
+```yaml
+# etc/config.yaml
+network:
+  coordination:
+    enable: true
+    hostname: "hcs"
+    domain: "headscale"
+```
+
+Les rôles se déduisent du profil de chaque hôte :
+
+- **HCS** — coordination du maillage (Headscale).
+- **Passerelle** — *subnet router* + *exit node* : publie le sous-réseau de sa zone.
+- **Autres nœuds** — clients Tailscale.
+
+## Enregistrer une passerelle
+
+<Steps>
+
+1. **Sur le HCS — créer l'utilisateur d'attache et une clé**
+
+   ```sh
+   just enter hcs
+   sudo headscale users create nix --display-name "Nix Admin" --email "nix@domain.tld"
+   sudo headscale preauthkeys create --reusable --expiration "1d" --user 1
+   ```
+
+   :::caution[Non modifiable]
+   L'e-mail et le nom affiché d'un utilisateur ne sont **pas** modifiables après création.
+   :::
+
+2. **Renseigner la clé dans les secrets**
+
+   ```sh
+   just sops      # édite usr/secrets/secrets.yaml → clé tailscale/authKey
+   ```
+
+   La passerelle s'enregistre ensuite automatiquement (au prochain `just apply`).
+
+3. **Sur la passerelle — annoncer le sous-réseau**
+
+   ```sh
+   sudo tailscale set --advertise-routes 10.0.0.0/16 --advertise-exit-node \
+     --accept-routes --accept-dns=false --ssh --snat-subnet-routes=false
+   ```
+
+   :::caution[Manuel pour l'instant]
+   Ces options ne sont pas encore posées au démarrage : il faut les appliquer une
+   fois avec `tailscale set`.
+   :::
+
+4. **Sur le HCS — approuver les routes**
+
+   ```sh
+   sudo headscale nodes list                       # repérer l'ID de la passerelle
+   sudo headscale nodes approve-routes --identifier <id> --routes 10.0.0.0/16
+   ```
+
+</Steps>
+
+## Administration
+
+La commande `headscale` (alias `h` = `sudo headscale`) sur le HCS :
+
+```sh
+sudo headscale users list      # utilisateurs
+sudo headscale nodes list      # clients connectés
+sudo headscale nodes routes    # routes annoncées / approuvées
+```
+
+## Accès depuis l'extérieur
+
+Pour rejoindre le réseau hors d'une zone, voir
+[Se connecter depuis l'extérieur](/fr/doc/admin-guide/install/hcs/#se-connecter-depuis-lextérieur).
