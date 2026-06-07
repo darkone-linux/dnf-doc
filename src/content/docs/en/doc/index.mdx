@@ -11,7 +11,7 @@ import { FileTree } from '@astrojs/starlight/components';
 {/* t:translated-from fr */}
 {/* t:h 256d0e1581e9be54a3303e3462f688a5be2304ffb4ba92476eedbfa46b883a56 */}
 
-{/* t:p d0ef6eb39a15bf8291d3be7078841ae315587c3be95dc4d0d474a7ba995e8a2a */}
+{/* t:p 64095898c5a6fb29d767187c8ba2974448c1d0827cf4bae0097bd361a75130ff */}
 :::tip[Not a techie?]
 The [user guide](/en/doc/user-guide/) is for you!
 :::
@@ -20,12 +20,12 @@ A multi-user, multi-host, multi-service **NixOS configuration**&nbsp;:
 
 - 🔥 [Declarative, reproducible, immutable](https://nixos.org/).
 - 🚀 [Ready-to-use modules](/en/ref/modules/).
-- ❄️ [Simple configuration](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/usr/config.yaml).
+- ❄️ [Simple configuration](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/etc/config.yaml).
 - 🧩 [Consistent organization](/en/doc/#structure).
 - 🌎 A [complete network](#the-dnf-network).
 
 :::note
-This project evolves according to my needs. If you would like to be informed about upcoming stable releases, please let me know on [GitHub](https://github.com/darkone-linux/darkone-nixos-framework) or by subscribing to my [YouTube channel](https://www.youtube.com/@DarkoneLinux) (FR). Thanks!
+This project evolves according to my needs. If you would like to be informed of future stable releases, please let me know on [GitHub](https://github.com/darkone-linux/darkone-nixos-framework) or by subscribing to my [YouTube channel](https://www.youtube.com/@DarkoneLinux) (FR). Thank you!
 :::
 
 {/* t:p a768280d885205fabc0fd104b07e904a63f6da487662a66f99763e9b2cfb2779 */}
@@ -79,7 +79,7 @@ At the root:
 - `src` -> Generator source files
 - `doc` -> Project documentation
 
-{/* t:p f0003ed9c3f67e23851f4c537d57037abc74d4476e3c1e22fffabe1b8f04d10a */}
+{/* t:p 478b2dc26ad03ec8a41f8d1fb288b9d8e582228d1f0f7f075051ca77061df633 */}
 ### Structure
 
 <FileTree collapsed={true}>
@@ -93,22 +93,23 @@ At the root:
       - graphic/ X Applications
       - service/ Network services
       - admin/ Administration
-      - user/ User configurations (without HM)
+      - user/ User configurations (non-HM)
     - mixin Macro-modules "Mixins"
       - host/ Host profiles (desktop, server...)
       - profile/ User profile add-ons
   - home Home Manager (HM) configuration
     - modules/ Nix modules (features, programs)
     - profiles/ Profiles: admin, student, advanced...
-    - nixos/ Additional NixOS (non-HM) configurations
-- **usr/** My network-specific configuration
+    - nixos/ Additional NixOS configurations (non-HM)
+- **etc/** Declarative network configuration
   - config.yaml [My main config](/en/doc/dev-guide/generator/)
+- **usr/** My personal network configuration
   - modules/ My NixOS modules, same as `dnf/modules`
   - home/ My HM modules, same as `dnf/home`
   - secrets/ My passwords
-    - secret.yaml Passwords and SOPS keys
+    - secrets.yaml SOPS passwords and keys
   - machines/ Host-specific configs (hardware, etc.)
-  - users/ Per-user HM configs
+  - users/ User-specific HM configs
 - var/ Generated files
   - log/ Log files
   - generated/ [Generated files](/en/doc/dev-guide/generator/)

@@ -1,0 +1,144 @@
+---
+title: Users and identities
+sidebar:
+  label: Users
+  order: 6
+lang: en
+---
+
+import { Steps } from '@astrojs/starlight/components';
+
+{/* t:translated-from fr */}
+{/* t:h a16a904ba4cebc0eb0b300d71e8fdf2acdb7a6b7b8b5ee282b9fb96b6d721679 */}
+
+{/* t:p 157d6f51401dba7bfc1ed0a9f5373fe7cb35a2d96dd0f1d7fb880712f0d8f4d6 */}
+Users are declared **once** in `etc/config.yaml`, then **attached** to the hosts where they need to log in. The same account can exist on multiple machines.
+
+{/* t:p 64b47647090661b6f6ba9f495acb4f4cea77956223225b2dd95abffa63798261 */}
+## Declaring a user
+
+```yaml
+# etc/config.yaml
+users:
+  alice:
+    uid: 1000
+    name: "Alice Martin"
+    email: "alice@domain.tld"
+    profile: "advanced"
+    groups: ["global", "idm-devs"]
+```
+
+| Field | Role |
+|---|---|
+| *(key)* | Account login (e.g. `alice`) |
+| `uid` | Stable numeric identifier |
+| `name` | Display name |
+| `email` | Address (also used for SSO identity) |
+| `profile` | [User profile](/en/doc/admin-guide/understand/user-profiles/) (environment) |
+| `groups` | Groups (network and service access) |
+
+{/* t:p 18c2a01b04dbf04056a6a32f6895a758f608a036bb5739f831b9705a96bb39f3 */}
+## Attaching to a host
+
+Under a host, `users` lists the **existing logins** allowed to connect to it:
+
+```yaml
+# etc/config.yaml
+hosts:
+  poste-alice:
+    profile: "desktop"
+    users: ["alice"]
+```
+
+{/* t:p 3308c83275bc786cef6dcb5dd1be3ae4403c5dccfad48f43be896eda081cd47f */}
+## Deploying changes
+
+Any modification to `etc/config.yaml` follows the **same cycle**: describe,
+regenerate, commit to git, then deploy.
+
+<Steps>
+
+1. **Describe the change**
+
+   Create or modify the user and their workstations in `etc/config.yaml`.
+
+2. **Regenerate and clean code**
+
+   ```sh
+   just clean       # generate + fix + format
+   ```
+
+3. **Commit to git**
+
+   ```sh
+   just commit "user(new): alice"
+   ```
+
+4. **Deploy**
+
+   ```sh
+   just apply poste-alice     # creates the account on the host
+   ```
+
+</Steps>
+
+:::caution[Always commit before deploying]
+`just generate` rewrites `var/generated/`. Without `clean` + `commit`, the
+deployment starts from an inconsistent or unversioned state.
+:::
+
+{/* t:p 44c9fe85ad0404bc38da7b7b064804c2190e9dc5711d10b961879586a3152dbe */}
+## Setting the password
+
+<Steps>
+
+1. **Set the hash**
+
+   ```sh
+   just passwd alice
+   ```
+
+2. **Commit to git**
+
+   ```sh
+   just commit "user(passwd): alice"
+   ```
+
+3. **Deploy**
+
+   ```sh
+   just apply @user-alice
+   ```
+
+</Steps>
+
+:::tip[Default password]
+On creation, an account uses the fleet's default password
+(`just passwd-default`). See [Secrets](/en/doc/admin-guide/operate/secrets/).
+:::
+
+{/* t:p 3da66ab20a71d06366f967c011a7dace6d7caa26e6632758009b1adb57cd3c09 */}
+## Identities and SSO
+
+Beyond the system account, the user has a **single identity** (Kanidm) that
+provides access to network services.
+
+- `groups` control service access.
+- `idm-admins` / `idm-devs` are the administration and development groups.
+- For details: [SSO and identities](/en/doc/admin-guide/operate/sso/).
+
+:::note[Creating an account end-to-end]
+The full workflow (account + identity + initial password) is described in
+[Creating a user account](/en/doc/admin-guide/install/hcs/#create-a-user-account).
+To reset: [Resetting a password](/en/doc/how-to/admin/reset-user-password/).
+:::
+
+{/* t:p 8793ca3ee9a2d3dd3c168eecceebdeec7fba229d41aedd5b9b1699ff2bb11d79 */}
+## Disabling an account
+
+- **On a host** — remove the login from the host's `users` list.
+- **Everywhere** — remove the entry under `users:`.
+- **Service access** — removing the user from `groups` cuts SSO access.
+
+In any case, then apply the cycle `just clean` → `just commit` →
+`just apply` on the affected hosts.

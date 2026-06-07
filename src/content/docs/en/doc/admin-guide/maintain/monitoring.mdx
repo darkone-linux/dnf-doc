@@ -1,0 +1,80 @@
+---
+title: Monitoring
+sidebar:
+  label: Monitoring
+  order: 2
+lang: en
+---
+
+{/* t:translated-from fr */}
+{/* t:h 1d7b47ffeb3eaab2fbd28adf91df3d06fb158519525dc56659747bcc26664142 */}
+
+{/* t:p 243be582a2a59869e322fe5233f66497f6ae637d8a922f8904f096f5860b8a57 */}
+Monitoring relies on [Prometheus](https://prometheus.io/) (metrics),
+[Grafana](https://grafana.com/) (dashboards) and [Loki](https://grafana.com/oss/loki/)
+(logs). It is **organized by zone**: one host collects, the others
+expose their metrics.
+
+{/* t:p 13274561d23f39ee3cb4ef5ebbbdaae406291da24a7be699f62c07952f8afded */}
+## Roles
+
+```d2
+style.fill: transparent
+direction: down
+
+grafana: Monitoring host\nGrafana + Prometheus + Loki { shape: cylinder }
+n1: Node\nnode-exporter { shape: rectangle }
+n2: Node\nnode-exporter { shape: rectangle }
+caddy: Caddy host\nAlloy (logs) { shape: rectangle }
+
+n1 -> grafana
+n2 -> grafana
+caddy -> grafana
+```
+
+| Role | Who | What |
+|---|---|---|
+| Collector | Host with the `monitoring` service | Grafana + Prometheus + Loki |
+| Supervised node | Hosts tagged `monitoring-node` | `node-exporter` (system metrics) |
+| Log source | Hosts behind Caddy | Alloy pushes access logs |
+
+:::note[One collector per zone]
+Only one `monitoring` host is allowed per zone. It supervises nodes whose
+`monitoring-node` tag points to **its** zone.
+:::
+
+{/* t:p 49426eae6938a14b0b4389bb30bc04163416c9d561b0e30dda8bdb71a2261de0 */}
+## Enabling
+
+Monitoring is a [service](/en/doc/admin-guide/operate/services/). On the
+collector:
+
+```yaml
+# etc/config.yaml
+    services:
+      monitoring:
+        domain: "stats"        # → stats.<zone>.domain.tld
+```
+
+- Nodes to monitor receive the `monitoring-node` tag of their zone.
+- `loki` follows `monitoring`: Caddy logs are collected **automatically**
+  as soon as Caddy and monitoring are active.
+
+:::tip[Access]
+Grafana is protected by [SSO Kanidm](/en/doc/admin-guide/operate/sso/). The
+domain root redirects to a home dashboard.
+:::
+
+{/* t:p 2f8498b41bf36486a0b35ac5f8278971cfa67be5c277ada63123fcdfd0545841 */}
+## Useful settings
+
+| Option | Effect | Default |
+|---|---|---|
+| `retentionTime` | Prometheus metrics retention | `30d` |
+| `isNode` | Makes the host a monitored node | follows tag |
+| `kioskTarget` | Dashboard displayed at root | node-exporter |
+
+:::note[Reference]
+Detailed options: [monitoring module](/en/ref/modules/service/) and the `loki`
+module for log collection.
+:::

@@ -1,0 +1,76 @@
+---
+title: Host profiles
+sidebar:
+  label: Host profiles
+  order: 3
+lang: en
+---
+
+{/* t:translated-from fr */}
+{/* t:h 1db72918429c0be6e0717f3fdae139fa1db6695a377f0cfe800c74c4b4a25e18 */}
+
+{/* t:p 141d8a49f39165ddf1eef2d120a2a3115f5930021ba22317ed799bdb04ffdb81 */}
+A **host profile** is a template that defines the role of a machine. It is
+chosen with `profile:` in `etc/config.yaml`. Profiles are inherited: each
+starts from another and adds its specifics.
+
+{/* t:p a3a2c805ce00c4f3bb8c1d8d0697ee3eb01508e32651337d6e8d01bfab6f56d9 */}
+## Inheritance
+
+```d2
+style.fill: transparent
+direction: down
+
+minimal: minimal
+
+server: server
+desktop: desktop
+portable: portable
+
+gateway: gateway
+hcs: hcs
+vm: vm
+laptop: laptop
+
+minimal -> server
+minimal -> desktop
+minimal -> portable
+server -> gateway
+server -> hcs
+server -> vm
+desktop -> laptop
+```
+
+{/* t:p eb86c4ed035144c80b627ce6b36899930ab4c14ab1c134f275465c39d75f8b04 */}
+## Profiles
+
+| Profile | Purpose | Inherits from | Provides |
+|---|---|---|---|
+| `minimal` | Base for every host | — | Hardware, firewall, i18n, zsh, sudo |
+| `server` | Headless server | `minimal` | No sleep, watchdog, limited boot |
+| `desktop` | Workstation | `minimal` | GNOME, multimedia, office |
+| `laptop` | Laptop computer | `desktop` | Battery/sleep, sensors, thermald |
+| `portable` | Bootable USB key | `minimal` | Extended hardware drivers |
+| `gateway` | Zone gateway | `server` | Router, firewall, DNS/DHCP, VPN |
+| `hcs` | VPN coordination | `server` | Headscale + shared services |
+| `vm` | Virtual machine | `server` | Guest tools (VirtualBox/QEMU/Xen) |
+
+{/* t:p 75269fb3fafa1ca4b385b89e5db4e05f3a4afd043866ccba4d93cb00a7f8e537 */}
+## Choosing a profile
+
+```yaml
+# etc/config.yaml
+hosts:
+  - hostname: "poste"
+    profile: "desktop"
+```
+
+:::tip[Services are independent of the profile]
+A service (Immich, Nextcloud, Forgejo…) is declared per host **regardless** of
+its profile. See [Services](/en/doc/admin-guide/operate/services/).
+:::
+
+:::note[Full reference]
+The options for each profile are in the
+[module reference](/en/ref/modules/mixin/).
+:::

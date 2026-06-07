@@ -6,6 +6,10 @@ sidebar:
 lang: fr
 ---
 
+{/* t:main */}
+{/* t:h 90bed1dbb460174673d09d5a53fca89bf3510d9738c0ebd7355c58aec8b6c9a2 */}
+
+{/* t:p 383c33987c3ef13705a2d58d96ff1b596c9efac28513b00362a69ed842b3784c */}
 Le module `darkone.system.security` applique progressivement les recommandations
 de durcissement [ANSSI BP-028](https://cyber.gouv.fr/publications/recommandations-de-securite-relatives-un-systeme-gnulinux)
 (GNU/Linux). Chaque hôte choisit un **niveau** et une **catégorie** ; les règles
@@ -16,6 +20,7 @@ Le durcissement ANSSI est **en cours de stabilisation**. Montez le niveau
 **progressivement** et testez chaque hôte avant la production.
 :::
 
+{/* t:p a086756d1e56e2d100e8acba92f9009be188dc1493c45e20ba4baf51f4a47f3d */}
 ## Niveau et catégorie
 
 ```nix
@@ -45,6 +50,7 @@ sévérité **et** que la catégorie correspond **et** qu'aucun tag d'exclusion 
 exception ne la vise.
 :::
 
+{/* t:p 52013b643a27b4e847977d6a759af6831122b4ca4ea81ec05d978217a1813bf5 */}
 ## Exclure un groupe de règles
 
 Certaines règles cassent un usage légitime. On désactive un **groupe** par tag :
@@ -62,6 +68,7 @@ darkone.system.security.excludes = [ "needs-hibernation" "needs-jit" ];
 | `needs-jit` | Autorise le JIT (Java, .NET, V8, Wasm) |
 | `needs-usb-hotplug` | Désactive USBGuard |
 
+{/* t:p a1dac3f94cb3f13167a63dea41d74e17746213335a61d5f169d27b144fe7893f */}
 ## Déroger à une règle précise
 
 Une règle unique se contourne avec une **justification obligatoire** :
@@ -78,6 +85,7 @@ Certaines règles gênent l'usage courant : `noexec /tmp` (R28), SMT désactivé
 avant de monter le niveau en production.
 :::
 
+{/* t:p 4b6cf5967804f52c2c7079e98fa287bd8d11012e765f90ed1c6bc3f96c3f3a45 */}
 ## MAC, pare-feu, fail2ban
 
 - **MAC / AppArmor** (R37, R45) — confinement applicatif ; SELinux est

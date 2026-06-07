@@ -1,0 +1,83 @@
+---
+title: User Profiles
+sidebar:
+  label: User Profiles
+  order: 4
+lang: en
+---
+
+{/* t:translated-from fr */}
+{/* t:h 7a669dd2bc1b1e4ce3d39840716aad221372eaa799c7dfc06ae6e844a631286e */}
+
+{/* t:p 4f2fbb0d6953859f115566091021378007463fd49f7acb33ed23ef58601ba398 */}
+A **user profile** defines the [Home Manager](https://github.com/nix-community/home-manager)
+environment of an account: applications, desktop, settings. It is chosen via `profile:` in
+`etc/config.yaml`. Like hosts, profiles can inherit from one another.
+
+{/* t:p db84ff8778f40e2ffa93a7284af12c9d36028897b38c3d926d16f3319a64f265 */}
+## Inheritance
+
+```d2
+style.fill: transparent
+direction: down
+
+minimal: minimal
+normal: normal
+advanced: advanced
+admin: admin
+nixadmin: nix-admin
+student: student
+teenager: teenager
+gamer: gamer
+child: child
+baby: baby
+
+minimal -> normal
+minimal -> teenager
+minimal -> gamer
+minimal -> child
+minimal -> baby
+normal -> advanced
+advanced -> admin
+advanced -> student
+admin -> nixadmin
+```
+
+{/* t:p 1775a5a9949ff3bdb61a715b561ac779911ab4f5421e538f586fed855b233153 */}
+## Profiles
+
+| Profile | For whom | Inherits from |
+|---|---|---|
+| `minimal` | Base of every profile | — |
+| `normal` | Standard user (desktop) | `minimal` |
+| `advanced` | Developers, IT professionals | `normal` |
+| `admin` | Network administrator | `advanced` |
+| `nix-admin` | Fleet administrator (Nix tools) | `admin` |
+| `student` | Student | `advanced` |
+| `teenager` | Teenager | `minimal` |
+| `gamer` | Gamer | `minimal` |
+| `child` | Child (technical icons hidden) | `minimal` |
+| `baby` | Very young child | `minimal` |
+
+:::tip[User-side]
+An usage-oriented overview can be found in the
+[user guide](/en/doc/user-guide/understand/profiles/).
+:::
+
+{/* t:p a457e1b1c9e9a250f11800283e6121e4738416e7bd4434b723a7be4fb49a4a57 */}
+## Assigning a profile
+
+```yaml
+# etc/config.yaml
+users:
+  alice:
+    uid: 1000
+    name: "Alice"
+    profile: "nix-admin"
+    groups: ["global"]
+```
+
+:::note[Customizing]
+A profile can be created or overridden in `usr/home/profiles/<name>/`. Reusable
+building blocks are the [Home Manager modules](/en/ref/modules/home/).
+:::

@@ -8,11 +8,16 @@ lang: fr
 
 import { Steps } from '@astrojs/starlight/components';
 
+{/* t:main */}
+{/* t:h 049935b87b05d181b65551e7bea751dfc1e19eb9d762cd0616a80db58286ebbf */}
+
+{/* t:p f544ee875991247b16430886663e6e6fc83aa81b3a4d7a12730007b0633b711f */}
 Le VPN maille toutes les zones et les machines distantes :
 [Headscale](https://headscale.net/) coordonne (sur le HCS),
 [Tailscale](https://tailscale.com/) est le client sur chaque nœud. Vue
 d'ensemble dans [Réseau](/fr/doc/admin-guide/understand/network/#réseau-étendu-vpn).
 
+{/* t:p 4e470105851ca9e86e7e1a82f40bf3876f23040a15818f50186d6aecbc18fced */}
 ## Activer le VPN
 
 Activer la coordination et déclarer le HCS (`profile: hcs`) suffit :
@@ -32,6 +37,7 @@ Les rôles se déduisent du profil de chaque hôte :
 - **Passerelle** — *subnet router* + *exit node* : publie le sous-réseau de sa zone.
 - **Autres nœuds** — clients Tailscale.
 
+{/* t:p 71d76255b05357f48c5e17e2d7765cd525a3e9ad5ac9742e5e57a95e0be61e17 */}
 ## Enregistrer une passerelle
 
 <Steps>
@@ -77,6 +83,7 @@ Les rôles se déduisent du profil de chaque hôte :
 
 </Steps>
 
+{/* t:p 2cd327a28bf884d3a8858f334f58663a1d6f2961389ee3e95f716a349026ab0b */}
 ## Administration
 
 La commande `headscale` (alias `h` = `sudo headscale`) sur le HCS :
@@ -87,6 +94,7 @@ sudo headscale nodes list      # clients connectés
 sudo headscale nodes routes    # routes annoncées / approuvées
 ```
 
+{/* t:p e0299c915299f5fddae3bae5314b854f0cea6de180f96b58b418f6a7892780d8 */}
 ## Accès depuis l'extérieur
 
 Pour rejoindre le réseau hors d'une zone, voir

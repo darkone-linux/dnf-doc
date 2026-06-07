@@ -1,0 +1,101 @@
+---
+title: VPN (Headscale / Tailscale)
+sidebar:
+  label: VPN
+  order: 3
+lang: en
+---
+
+import { Steps } from '@astrojs/starlight/components';
+
+{/* t:translated-from fr */}
+{/* t:h 049935b87b05d181b65551e7bea751dfc1e19eb9d762cd0616a80db58286ebbf */}
+
+{/* t:p f544ee875991247b16430886663e6e6fc83aa81b3a4d7a12730007b0633b711f */}
+The VPN connects all zones and remote machines:
+[Headscale](https://headscale.net/) is the coordinator (on the HCS),
+[Tailscale](https://tailscale.com/) is the client on each node. Overview in
+[Network](/en/doc/admin-guide/understand/network/#extended-network-vpn).
+
+{/* t:p 4e470105851ca9e86e7e1a82f40bf3876f23040a15818f50186d6aecbc18fced */}
+## Enable the VPN
+
+Enabling coordination and declaring the HCS (`profile: hcs`) is enough:
+
+```yaml
+# etc/config.yaml
+network:
+  coordination:
+    enable: true
+    hostname: "hcs"
+    domain: "headscale"
+```
+
+Roles are derived from each host's profile:
+
+- **HCS** — mesh coordination (Headscale).
+- **Gateway** — *subnet router* + *exit node*: publishes its zone's subnet.
+- **Other nodes** — Tailscale clients.
+
+{/* t:p 71d76255b05357f48c5e17e2d7765cd525a3e9ad5ac9742e5e57a95e0be61e17 */}
+## Register a gateway
+
+<Steps>
+
+1. **On the HCS — create the user and a key**
+
+   ```sh
+   just enter hcs
+   sudo headscale users create nix --display-name "Nix Admin" --email "nix@domain.tld"
+   sudo headscale preauthkeys create --reusable --expiration "1d" --user 1
+   ```
+
+   :::caution[Non-editable]
+   A user's email and display name are **not** editable after creation.
+   :::
+
+2. **Fill the key in secrets**
+
+   ```sh
+   just sops      # edit usr/secrets/secrets.yaml → tailscale/authKey
+   ```
+
+   The gateway then registers automatically (on next `just apply`).
+
+3. **On the gateway — advertise the subnet**
+
+   ```sh
+   sudo tailscale set --advertise-routes 10.0.0.0/16 --advertise-exit-node \
+     --accept-routes --accept-dns=false --ssh --snat-subnet-routes=false
+   ```
+
+   :::caution[Manual for now]
+   These options are not yet set at startup: you must apply them once
+   with `tailscale set`.
+   :::
+
+4. **On the HCS — approve the routes**
+
+   ```sh
+   sudo headscale nodes list                       # find the gateway ID
+   sudo headscale nodes approve-routes --identifier <id> --routes 10.0.0.0/16
+   ```
+
+</Steps>
+
+{/* t:p 2cd327a28bf884d3a8858f334f58663a1d6f2961389ee3e95f716a349026ab0b */}
+## Administration
+
+The `headscale` command (alias `h` = `sudo headscale`) on the HCS:
+
+```sh
+sudo headscale users list      # users
+sudo headscale nodes list      # connected clients
+sudo headscale nodes routes    # advertised / approved routes
+```
+
+{/* t:p e0299c915299f5fddae3bae5314b854f0cea6de180f96b58b418f6a7892780d8 */}
+## Access from outside
+
+To join the network from outside a zone, see
+[Connecting from outside](/en/doc/admin-guide/install/hcs/#connect-from-outside).

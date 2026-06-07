@@ -32,6 +32,7 @@ Les modules prêts à l'emploi sont documentés dans la
 [référence des modules](/fr/ref/modules/), classés par catégorie (système,
 service, sécurité, console, graphic, admin, user, mixin, home).
 
+{/* t:p 312ca21b35c6ece6e70ed0ac4063d494391dda685aa334933b9d19b597dda00a */}
 ## Les couches d'abstraction
 
 Chaque niveau s'appuie sur le précédent : le système de base sert les modules,
@@ -48,6 +49,7 @@ qui composent les profils, qui définissent les hôtes et les utilisateurs.
 | **Librairie** | `dnf/lib/` | Helpers partagés (`dnfLib`) : réseau, OIDC, pare-feu, sécurité… |
 | **Génération** | `src/generator/` | Transforme `etc/config.yaml` → `var/generated/`. |
 
+{/* t:p 472d57dc0d807d5acb57d0d9631fc00f1d36262b93f2a8519dd5513e77add8db */}
 ## Framework vs projet local
 
 Le framework (`dnf/`) est **réutilisable et peu modifié** ; le projet (`usr/`)
@@ -63,6 +65,7 @@ On modifie `dnf/` pour faire évoluer **le framework** (utile à tous), `usr/` p
 adapter **un réseau précis**. Ne jamais éditer `var/generated/`.
 :::
 
+{/* t:p c314d006e46e028eb49f62ccd76d0a7b101136458329a816a554828f52e7fb57 */}
 ## Arguments injectés dans les modules
 
 Les modules DNF reçoivent, en plus des arguments NixOS standards, des arguments

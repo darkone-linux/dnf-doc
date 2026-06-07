@@ -6,11 +6,16 @@ sidebar:
 lang: fr
 ---
 
+{/* t:main */}
+{/* t:h 1752befff80bf186c62e407017cdbf370cf48db81f22dba10979da9bced39fb2 */}
+
+{/* t:p 3ec9c99d488db09a686e88782298453b7935c75b1afba238c792c0ce277bb049 */}
 Les sauvegardes reposent sur [restic](https://restic.net/) : chaque hôte
 **pousse** ses données vers un dépôt chiffré, local ou distant via un serveur
 REST de zone. L'objectif est une stratégie **3-2-1** (plusieurs copies, plusieurs
 supports, un site distant).
 
+{/* t:p 60dc1832f21e2477c514f34bd29ffb2ab547b0006887f74cb5e17c4c56bf9f1b */}
 ## Deux rôles, un module
 
 ```d2
@@ -30,6 +35,7 @@ c2 -> srv
 | Serveur REST | Hôte avec le service `restic` | Stocke les dépôts de la zone |
 | Client | Hôte avec `enable = true` | Pousse ses `targets` (sauvegardes) |
 
+{/* t:p f641464c0b5a23eef37f17c493c463e28feb2e0f8fef3c81b894c0d0b1ff6acb */}
 ## Catégories sauvegardées
 
 Une cible sauvegarde une ou plusieurs **catégories** dans des sous-dépôts :
@@ -48,6 +54,7 @@ Les deux sont générés par `just passwd-restic`. Voir
 [Secrets](/fr/doc/admin-guide/operate/secrets/).
 :::
 
+{/* t:p b6081ca8907d5e393370a8fc09a69f4768019c46ba3062ea5d5f2a6ff16614d4 */}
 ## Mise en œuvre
 
 La configuration opérationnelle complète (serveur REST, cibles, politique de

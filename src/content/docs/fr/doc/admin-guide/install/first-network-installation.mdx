@@ -9,11 +9,13 @@ lang: fr
 import { Steps } from '@astrojs/starlight/components';
 
 {/* t:main */}
-{/* t:h c39ad9f3beb8d8cb444bb1b3edd2b9d2415955401836aac26fc4ca2d3585091d */}
+{/* t:h 8f6a2272ca5d20e2314d84f56794eeeced55aa658cc8756a183c88b92a902547 */}
 
+{/* t:p 854614f5bd70050fb11d763f899cbe620d3f8e0711d328b29cd8da8110a14663 */}
 On met en place un réseau DNF **par étapes**, et on peut s'arrêter à chacune :
 un poste suffit pour démarrer.
 
+{/* t:p 2fef0bf9cc57f479ab6a7b2c9cf2df2a6a9ecacdce7545f753653c2ca9399df9 */}
 ## Le parcours
 
 1. **Un poste** — la machine de l'administrateur (cette page).
@@ -25,6 +27,7 @@ Tous les nœuds sont décrits dans **une** configuration NixOS, sur la machine d
 l'administrateur. De là, on déploie et fait évoluer tout le réseau.
 :::
 
+{/* t:p 92f5012a44a098f78b58e73a0dddfef784abe42f886e20516f54e56c046c46a1 */}
 ## Créer le projet
 
 Le projet part du template `dnf-boilerplate` : une structure prête et un
@@ -62,6 +65,7 @@ Le projet part du template `dnf-boilerplate` : une structure prête et un
 
 </Steps>
 
+{/* t:p d0331301fb65c96b3d36e9943cda23fd2783181bd3ca8bd2482eb962e87d9cb1 */}
 ## Décrire la configuration
 
 Tout se déclare dans `etc/config.yaml` (réseau, zones, utilisateurs, hôtes).
@@ -99,6 +103,7 @@ just check-flake   # nix flake check
 On édite `etc/config.yaml`, puis on régénère.
 :::
 
+{/* t:p 983c8000652e98c82729d3bbeed6110557bece8b6e50c3f26a0043b7adcb0ee3 */}
 ## Installer le premier poste
 
 L'installation grave une image, démarre la machine dessus, puis applique le

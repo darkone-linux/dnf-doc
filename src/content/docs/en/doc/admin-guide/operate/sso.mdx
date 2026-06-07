@@ -1,0 +1,82 @@
+---
+title: SSO and Identities (Kanidm)
+sidebar:
+  label: SSO (Kanidm)
+  order: 2
+lang: en
+---
+
+{/* t:translated-from fr */}
+{/* t:h 62cb531d6b0df6f948c43272fe531bd1056b2fcee8e6f4e1b4f8b24409eaf5eb */}
+
+{/* t:p 56532ba4f85497e9ffd4c2d50ba95e4b826cda7abc089a573170d50ea8874c2f */}
+[Kanidm](https://kanidm.com/) is the network's identity provider: a **single identity** unlocks all services (SSO). The `idm` service runs on the HCS (and, optionally, as a replica in each zone).
+
+{/* t:p c3f1ee94735a2710129012e89644385de01f1bbe56d240cb932d0d5cd784889f */}
+## Identities and groups
+
+Accounts and groups are provisioned in Kanidm from `etc/config.yaml`:
+
+```yaml
+# etc/config.yaml
+users:
+  alice:
+    profile: "nix-admin"
+    groups: ["idm-admins", "idm-devs", "global"]
+```
+
+- **Groups** control access to services.
+- Two special groups: `idm-admins` (administration), `idm-devs` (development).
+
+{/* t:p ac1fc81e7b77d2baf389c63217472b84acd3acbd151f093ba937b3d251d6b666 */}
+## Connect a service (OIDC)
+
+OIDC-compatible services are linked to SSO **automatically**: Kanidm provisions an OAuth2 client per service, and its secret is managed by [sops](/en/doc/admin-guide/operate/secrets/). Nothing to configure manually.
+
+:::tip[Examples]
+Outline, Mealie, Vaultwarden, Grafana, Immich, Forgejo, Jellyfin, Open WebUI…
+:::
+
+{/* t:p b1d628c6ebd9bd33b085868abcce9b72c5f9e08792ac1cb8f8bb340e4524e1e8 */}
+## Multi-zone replication
+
+:::danger[Not yet functional]
+Multi-zone replication is **under development** and is not operational.
+For now, declare `idm` **on the HCS only**.
+:::
+
+The mode depends on where `idm` is declared:
+
+1. `idm` on the **HCS only** → single instance, no replication.
+2. `idm` on a **gateway without HCS** → standalone instance in the zone.
+3. `idm` on the **HCS and gateways** → replication: the HCS provides, each gateway is a read-only replica.
+
+```d2
+style.fill: transparent
+direction: down
+
+hcs: HCS — provider\nWriteReplica { shape: cylinder }
+gwa: Zone A — replica\nread-only { shape: cylinder }
+gwb: Zone B — replica\nread-only { shape: cylinder }
+
+hcs -> gwa
+hcs -> gwb
+```
+
+:::caution[Two-phase bootstrap (scenario 3)]
+1. `just apply` — each node generates its replication certificate.
+2. `just idm-sync-certs` then `just apply` — gateways switch to read-only (pull from HCS).
+:::
+
+{/* t:p 694e5fdf9be2e87257305796f83a3e911d7fccb0826cdae46c46e13aa9866a7f */}
+## Administration
+
+Administration is done via the command line on the HCS:
+
+```sh
+just enter hcs
+kanidm person credential create-reset-token <login> --name idm_admin
+```
+
+See [Create a user account](/en/doc/admin-guide/install/hcs/#create-a-user-account)
+and [Reset a password](/en/doc/how-to/admin/reset-user-password/).

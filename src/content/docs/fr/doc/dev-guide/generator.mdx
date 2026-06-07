@@ -9,11 +9,11 @@ lang: fr
 {/* t:main */}
 {/* t:h 85d6cb28b4e7f0ff3c72c64dd22ceb429704c8fa8e0e44105c999922d6f5874f */}
 
-{/* t:p 7d9539d0c24cb53dec81f93d55016d34021d00f19b1ef24061165234e7163113 */}
+{/* t:p 94d829ff24cedcf09041c4d543ca4fd668e8e6fa192d34865597bf181094e2a4 */}
 Le générateur (`src/generator/`, écrit en Rust) transforme la configuration
 déclarative `etc/config.yaml` en code Nix consommé par le framework.
 
-{/* t:p d42ebc6e7b397c8a6db92651c65e80dd755d12933c9122593326a68e983f1122 */}
+{/* t:p e4fc35d2af493818f7abda13c2eab50557279d67efeb60681004dbded55be715 */}
 ## De YAML à Nix
 
 - **Entrée** : `etc/config.yaml` — hôtes, utilisateurs, réseau, services.
@@ -31,6 +31,7 @@ just generate
 Modifier le générateur ou la source, jamais la sortie.
 :::
 
+{/* t:p 8a788d9c13fa80bf66065a7860ec613d202cf00481581e7190e8d7961e4f1d62 */}
 ## Le flux
 
 Une seule source de vérité (`etc/config.yaml`) est transformée en code Nix
@@ -56,6 +57,7 @@ flake: flake.nix\n(framework → NixOS) {
 cfg -> gen -> out -> flake
 ```
 
+{/* t:p 759164f6d87f99e3ffa488d3384038643b82c280708dccebd943d150011a8c47 */}
 ## Les commandes
 
 Le générateur expose une commande par cible. `just generate` les enchaîne
@@ -81,6 +83,7 @@ extraire les options et les en-têtes. Documenter une option = la décrire dans 
 module, puis `just codegen`.
 :::
 
+{/* t:p 35896f9a3ec5e74a79bfaa399fa667a0c6b84f8cbf230b270288a8fdc362474f */}
 ## Contexte d'exécution
 
 Le générateur tourne de deux façons, choisies automatiquement :

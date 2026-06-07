@@ -1,0 +1,145 @@
+---
+title: Network architecture
+sidebar:
+  label: Network
+  order: 2
+lang: en
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+{/* t:translated-from fr */}
+{/* t:h af9112cbab4da6124b896a25e08c8b3be088f1540d0b872279c4cf4978716eda */}
+
+{/* t:p 284a13a1cf6bfc02358db56e3f376d5b18271feefc4309f82424ca120454c926 */}
+The DNF network operates at two scales: an isolated local **zone**, then
+multiple zones connected by a mesh **VPN**. The vocabulary is defined in
+[Concepts](/en/doc/admin-guide/understand/concepts/).
+
+{/* t:p dc9534f835e0e09db41110a71aa8e46e59668b5a9a710b8379ec1c2ae465ed93 */}
+## Simple network (one zone)
+
+A zone is a gateway and its machines.
+
+```d2
+style.fill: transparent
+direction: down
+
+net: Internet { shape: cloud }
+
+gw: Gateway {
+  fw: NAT + Firewall
+  dns: dnsmasq\nDNS + DHCP
+  fw -> dns
+}
+
+lan: Local zone {
+  pc: Workstations
+  srv: Server { shape: cylinder }
+}
+
+net -> gw.fw: WAN
+gw.dns -> lan.pc: LAN
+gw.dns -> lan.srv: LAN
+```
+
+- The gateway shares Internet (NAT) and protects the zone (firewall).
+- `dnsmasq` distributes addresses (DHCP) and resolves local names
+  (`<host>.<zone>`).
+- On the Internet side (WAN), everything is closed. On the local side (LAN), only
+  SSH, DNS, DHCP and the home page are open.
+
+{/* t:p 90f3855e5e9d884ab3846df4a8b745ffda8ad3b3f9e054d9967a77cda60596ae */}
+## Ad blocking (AdGuardHome)
+
+Optional service, enabled on the gateway. It inserts itself in front of `dnsmasq`.
+
+```d2
+style.fill: transparent
+direction: down
+
+pc: Workstation
+
+agh: AdGuardHome\nport 53, filtering { shape: hexagon }
+
+dns: dnsmasq\nlocal names { shape: cylinder }
+up: External DNS\nencrypted { shape: cloud }
+
+pc -> agh: DNS query
+agh -> dns: Local names
+agh -> up: Rest, filtered
+```
+
+- AdGuardHome becomes the DNS resolver for workstations (port 53).
+- It blocks ads and trackers, and encrypts queries to the outside.
+- `dnsmasq` moves to an internal port and keeps local names and DHCP.
+
+{/* t:p 630729a6b54f1047751a03be0c5c3bf403a3e475c1a3c1b0c7e673dc3108e9df */}
+## Extended network (VPN)
+
+Multiple zones are connected by a mesh VPN, coordinated by the coordination server
+(HCS).
+
+```d2
+style.fill: transparent
+direction: down
+
+hcs: Coordination\nHeadscale (HCS) { shape: cylinder }
+
+zoneA: Zone A {
+  gwa: Gateway
+  la: Workstations
+  gwa -> la
+}
+zoneB: Zone B {
+  gwb: Gateway
+  lb: Workstations
+  gwb -> lb
+}
+ext: Remote machine
+
+hcs -> zoneA.gwa: VPN
+hcs -> zoneB.gwb: VPN
+hcs -> ext: VPN
+zoneA.gwa <-> zoneB.gwb: Mesh
+```
+
+- The HCS (Headscale) is public and orchestrates the mesh.
+- Each gateway is a *subnet router*: it publishes its zone's subnet into the
+  VPN.
+- Zones can see each other; remote machines (smartphone, PC) join the network
+  via Tailscale.
+- A forwarder resolver on the HCS routes each zone to its own DNS.
+
+<Aside type="note" title="Optional VPN">
+The mesh is only enabled if `network.coordination.enable` is true in
+`etc/config.yaml`. Without it, zones remain local and independent.
+</Aside>
+
+{/* t:p dc98e399aab6187fe85228f5c26073a369879ba8ce96f4d545fcb551bcc081cf */}
+## Names and DNS resolution
+
+Three families of names coexist on the network. All are generated from
+`etc/config.yaml`.
+
+| Name | Form | Scope | Example |
+|---|---|---|---|
+| **Simple name** | `<host>` | Entire internal network | `serveur` |
+| **Zone FQDN** | `<name>.<zone>.<domain>` | Entire internal network | `cloud.maison.domain.tld` |
+| **Global service** | `<name>.<domain>` | Internet included | `git.domain.tld` |
+
+- **Simple names** — these are the **machines** (declared hosts). Resolved
+  everywhere on the network, to the machine's real address, regardless of its zone.
+- **Zone FQDNs** — these are a **zone's services**. They point to that zone's
+  gateway, which serves them through its reverse proxy.
+- **Global services** — services marked `global` in `etc/config.yaml`.
+  Exposed on the HCS with **public DNS**: reachable from anywhere.
+
+Who resolves what:
+
+- `dnsmasq`, on **each gateway**, knows all internal names (machines
+  and services from **all** zones): it resolves simple names and FQDNs.
+- The current zone is resolved locally; other zones and the global domain
+  are routed to the correct gateway, or to the HCS pivot resolver.
+- Public names (Internet) go to upstream encrypted DNS servers, filtered by
+  AdGuardHome if enabled.

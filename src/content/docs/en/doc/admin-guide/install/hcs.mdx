@@ -1,0 +1,149 @@
+---
+title: Coordination server (HCS)
+sidebar:
+  label: HCS
+  order: 3
+lang: en
+---
+
+import { Steps } from '@astrojs/starlight/components';
+
+{/* t:translated-from fr */}
+{/* t:h 869be5562f059f7b804b83e9468623e227612840b861dbd9089713501a5fa852 */}
+
+{/* t:p 60199b0faa0ab2ee868a6a0ef445dfefd78b67f68df1a4e49570fb3d80ee90f7 */}
+The coordination server (HCS) connects zones via a
+[mesh VPN](/en/doc/admin-guide/understand/network/) and hosts shared services.
+It is a small **public** server (a VPS is sufficient).
+
+{/* t:p aa32894c75012b350d20cf27a719a20038290fa0424e58a518267d61ca100931 */}
+## Declare the HCS
+
+Enable coordination and declare the host `profile: hcs`:
+
+```yaml
+# etc/config.yaml
+network:
+  coordination:
+    enable: true
+    hostname: "hcs"
+    domain: "headscale"          # → headscale.domain.tld
+
+hosts:
+  - hostname: "hcs"
+    name: "Coordination server"
+    profile: "hcs"
+    ipv4:
+      external: "203.0.113.10"   # Public IP of the VPS
+      internal: "100.64.0.2"     # IP in the tailnet
+    services:
+      headscale:                 # VPN coordination
+      idm:                       # identities (Kanidm)
+      vaultwarden:               # vault
+```
+
+Installation follows the same procedure as a
+[gateway](/en/doc/admin-guide/install/gateway/#install-the-gateway)
+(`just install` / `configure` / `apply`).
+
+{/* t:p ba8dffdcffe41df2842792581fe17f6c11c7a22177403eac4c9ee620f404192c */}
+## Global services
+
+A service marked `global: true` is exposed on the HCS with a **public DNS**
+(`<name>.domain.tld`): it is reachable from anywhere, including the Internet.
+
+```yaml
+    services:
+      forgejo:
+        domain: "git"
+        global: true             # → https://git.domain.tld
+```
+
+{/* t:p 90cf0562ec5446e2b9f2028ae84af170cd7b94ac58a78b324a8e30f6e9c00a75 */}
+## Create a user account
+
+:::tip[Each user will have…]
+- An identifier and a **master password** (vault).
+- An **authentication key** for all services (SSO).
+- A **recovery password** in case the key is lost.
+:::
+
+<Steps>
+
+1. **Create the system account**
+
+   Add the user in `etc/config.yaml`, then generate, commit, and apply:
+
+   ```yaml
+   # etc/config.yaml
+   users:
+     bob:
+       uid: 1001
+       name: "Bob"
+       profile: "normal"
+       groups: ["global"]
+   ```
+
+   :::caution[POSIX account (optional)]
+   This declaration creates an account on designated Linux machines. Users can
+   also be created only in Vaultwarden and Kanidm.
+   :::
+
+2. **Vaultwarden account**
+
+   1. Admin: send an invitation.
+   2. User: receives an email to set their master password.
+   3. Admin: confirm the user.
+
+3. **Kanidm account** (on the HCS)
+
+   ```sh
+   just enter hcs
+   kanidm person credential create-reset-token <login> --name idm_admin
+   ```
+
+   Forward the link or QR code to the user, who creates their key and recovery
+   password.
+
+4. **Bitwarden**
+
+   Installing Bitwarden on browsers and smartphones simplifies access.
+
+   :::caution[Be sure to choose "self-hosted"]
+   Enter the Vaultwarden URL **before** the master password, otherwise it goes
+   to bitwarden.com!
+   :::
+
+5. **Service access**
+
+   SSO opens all services with a single authentication. Rights are defined by
+   Kanidm groups.
+
+</Steps>
+
+{/* t:p 3dba964e730b8d6f6b18cb771130ce717d52014a10b998b05a1a8ee608a4361b */}
+## Connect from outside
+
+Outside a zone, access to services goes through a Tailscale VPN client, validated
+by the administrator.
+
+<Steps>
+
+1. **User side**
+
+   - Install the Tailscale client.
+   - Request to join the network `headscale.domain.tld`.
+
+2. **Admin side**
+
+   ```sh
+   just enter hcs
+
+   # Reusable temporary key (multiple clients)
+   sudo headscale preauthkeys create --reusable --expiration 1h --user 1
+
+   # Or validate an already connected client
+   sudo headscale nodes register --key <key> --user nix
+   ```
+
+</Steps>

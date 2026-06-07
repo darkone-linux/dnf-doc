@@ -31,3 +31,57 @@ The full structure and abstraction layers are described in the
 The ready-to-use modules are documented in the
 [module reference](/en/ref/modules/), sorted by category (system, service,
 security, console, graphic, admin, user, mixin, home).
+
+{/* t:p 312ca21b35c6ece6e70ed0ac4063d494391dda685aa334933b9d19b597dda00a */}
+## Abstraction layers
+
+Each level builds on the previous one: the base system serves the modules, which compose the profiles, which define hosts and users.
+
+- **[Full file structure](/en/doc/#structure)** — detailed directory tree.
+- **[Layers diagram](/en/doc/#abstraction-layers)** — from system to profiles.
+
+| Layer | Where | Role |
+|---|---|---|
+| **Modules** | `dnf/modules/standard/` | Unit bricks (one service, one system setting). |
+| **Mixins** | `dnf/modules/mixin/` | Macro-modules: host profiles, profile add-ons. |
+| **Home** | `dnf/home/` | [Home Manager](https://github.com/nix-community/home-manager) modules and profiles (users). |
+| **Library** | `dnf/lib/` | Shared helpers (`dnfLib`): network, OIDC, firewall, security… |
+| **Generation** | `src/generator/` | Transforms `etc/config.yaml` → `var/generated/`. |
+
+{/* t:p 472d57dc0d807d5acb57d0d9631fc00f1d36262b93f2a8519dd5513e77add8db */}
+## Framework vs local project
+
+The framework (`dnf/`) is **reusable and rarely changed**; the project (`usr/`)
+**overrides** it without touching it.
+
+- `usr/modules/` mirrors `dnf/modules/`: a file at the same path **overrides** or **complements** the framework module.
+- `usr/home/` mirrors `dnf/home/` for user profiles and modules.
+- `usr/machines/<host>/` holds hardware (`hardware-configuration.nix`, `disko.nix`) and specific settings.
+- `usr/secrets/` contains encrypted secrets ([sops](/en/doc/admin-guide/operate/secrets/)).
+
+:::tip[Golden rule]
+Edit `dnf/` to evolve **the framework** (useful to everyone), `usr/` to adapt
+**a specific network**. Never edit `var/generated/`.
+:::
+
+{/* t:p c314d006e46e028eb49f62ccd76d0a7b101136458329a816a554828f52e7fb57 */}
+## Arguments injected into modules
+
+DNF modules receive, in addition to standard NixOS arguments, specific arguments
+via `specialArgs` (the generator and `flake.nix` provide them):
+
+| Argument | Content |
+|---|---|
+| `config`, `lib`, `pkgs` | Standard NixOS arguments. |
+| `dnfLib` | Shared DNF helpers (see [Modules](/en/doc/dev-guide/modules/)). |
+| `dnfConfig` | Global configuration (network ports, default values). |
+| `host` | The current host: `hostname`, `users`, `services`, `features`, `profile`. |
+| `hosts` | The list of **all** hosts on the network. |
+| `network` | Network topology: zones, domain, services. |
+| `zone` | The current host's zone. |
+| `workDir` | Project root (absolute paths). |
+
+:::note[Accuracy]
+The exact list of arguments for a module is visible at the top of its file (the
+`{ lib, config, dnfLib, host, ... }` block). When in doubt, check the source.
+:::

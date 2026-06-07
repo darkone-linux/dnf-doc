@@ -1,0 +1,90 @@
+---
+title: Deployment and updates
+sidebar:
+  label: Deployment
+  order: 5
+lang: en
+---
+
+{/* t:translated-from fr */}
+{/* t:h 105938957d65ed55bf9c9bc5d4fc332fc008efc27c2d25e2226abd40d5c9e76d */}
+
+{/* t:p 9f291caceb9d77d4bf13f3e426e0ab76f8911f0774057e98a07403fb378e29b4 */}
+The fleet is deployed with [colmena](https://github.com/zhaofengli/colmena): a single command builds and applies the configuration on one or more hosts, remotely, from the admin workstation.
+
+{/* t:p d4a06fc139c0d5029ddc5205311c422d5da5a5e1fe1b2e6d014d42aae5b8629c */}
+## Apply a configuration
+
+```sh
+just apply <target> [action]    # alias : a
+```
+
+- **target** = hostname, pattern (`'*'`), list (`a,b`) or colmena tag (`@server`).
+- **action** = `switch` (default), `boot`, `test` or `build`.
+
+| Command | Purpose |
+|---|---|
+| `just apply <target>` | Build + activate on the target(s) |
+| `just apply-local` | Apply on the current machine (alias `al`) |
+| `just apply-verbose <target>` | Same as `apply` in trace mode (alias `av`) |
+
+:::tip[Build on target]
+`apply` builds **on the target host** (`--build-on-target`): the admin workstation doesn't need the power or architecture of the deployed machines.
+:::
+
+{/* t:p 811d77666e3af7f7df258aaa798c867fbf3315b7431960b130501f647715c764 */}
+## Deploy safely
+
+**Build confidence through action**: each step is less risky than the next.
+
+```sh
+just apply <host> build      # downloads + compiles: 100% safe, nothing is activated
+just apply <host> test       # activates without switching: no generation, no boot
+just apply <host>            # switch: activates and creates a new generation
+```
+
+**Progress from core to edge**: deploy nodes in this order, to never cut off
+access to a node by the one preceding it.
+
+```d2
+style.fill: transparent
+direction: right
+
+hcs: HCS
+gwl: Local gateway
+hl: Local hosts
+gwd: Remote gateways
+hd: Remote hosts
+
+hcs -> gwl -> hl -> gwd -> hd
+```
+
+:::caution[Why this order]
+A remote host's connectivity depends on its gateway, which depends on the VPN
+coordinated by the HCS. Deploying a link before its support can make subsequent
+hosts unreachable.
+:::
+
+{/* t:p e346822eb441ce59f0a14fc1e09b22c4fa9be7535a1315e6fc8a787e847c700a */}
+## Update
+
+The system is pinned by flakes. Updating = refresh the inputs, then redeploy.
+
+```sh
+just update-flake     # updates dnf/ + root, commits the locks
+just apply '*'        # deploys the update
+```
+
+:::caution[Always test first]
+Before a large deployment, validate locally: `just check-flake` (or
+`just check-all`), then `just apply <pilot-host>` on **one** test host.
+:::
+
+{/* t:p b8557b4360409f3ae5684e453aeffa4202263f19f0d01eb4b4c9a70308c57c2c */}
+## Binary cache
+
+The `harmonia` service acts as a **signed binary cache** for the fleet, and `ncps` relays it. Hosts thus retrieve already-built derivations instead of recompiling, which significantly speeds up deployments.
+
+:::note[Activation]
+`harmonia` and `ncps` are [services](/en/doc/admin-guide/operate/services/) to enable on a network host. The signing key is managed by [sops](/en/doc/admin-guide/operate/secrets/) (`just configure-admin-host`).
+:::

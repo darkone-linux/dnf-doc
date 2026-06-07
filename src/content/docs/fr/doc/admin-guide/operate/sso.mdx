@@ -6,10 +6,15 @@ sidebar:
 lang: fr
 ---
 
+{/* t:main */}
+{/* t:h 62cb531d6b0df6f948c43272fe531bd1056b2fcee8e6f4e1b4f8b24409eaf5eb */}
+
+{/* t:p 56532ba4f85497e9ffd4c2d50ba95e4b826cda7abc089a573170d50ea8874c2f */}
 [Kanidm](https://kanidm.com/) est le fournisseur d'identité du réseau : une
 **identité unique** ouvre tous les services (SSO). Le service `idm` tourne sur
 le HCS (et, en option, en réplica dans chaque zone).
 
+{/* t:p c3f1ee94735a2710129012e89644385de01f1bbe56d240cb932d0d5cd784889f */}
 ## Identités et groupes
 
 Comptes et groupes sont provisionnés dans Kanidm depuis `etc/config.yaml` :
@@ -25,6 +30,7 @@ users:
 - Les **groupes** pilotent les accès aux services.
 - Deux groupes spéciaux : `idm-admins` (administration), `idm-devs` (développement).
 
+{/* t:p ac1fc81e7b77d2baf389c63217472b84acd3acbd151f093ba937b3d251d6b666 */}
 ## Connecter un service (OIDC)
 
 Les services compatibles OIDC sont reliés au SSO **automatiquement** : Kanidm
@@ -35,6 +41,7 @@ provisionne un client OAuth2 par service, et son secret est géré par
 Outline, Mealie, Vaultwarden, Grafana, Immich, Forgejo, Jellyfin, Open WebUI…
 :::
 
+{/* t:p b1d628c6ebd9bd33b085868abcce9b72c5f9e08792ac1cb8f8bb340e4524e1e8 */}
 ## Réplication multi-zone
 
 :::danger[Pas encore fonctionnel]
@@ -65,6 +72,7 @@ hcs -> gwb
 2. `just idm-sync-certs` puis `just apply` — les passerelles passent en lecture seule (pull depuis le HCS).
 :::
 
+{/* t:p 694e5fdf9be2e87257305796f83a3e911d7fccb0826cdae46c46e13aa9866a7f */}
 ## Administration
 
 L'administration se fait en ligne de commande sur le HCS :

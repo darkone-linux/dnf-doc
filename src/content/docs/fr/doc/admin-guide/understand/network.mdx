@@ -8,10 +8,15 @@ lang: fr
 
 import { Aside } from '@astrojs/starlight/components';
 
+{/* t:main */}
+{/* t:h af9112cbab4da6124b896a25e08c8b3be088f1540d0b872279c4cf4978716eda */}
+
+{/* t:p 284a13a1cf6bfc02358db56e3f376d5b18271feefc4309f82424ca120454c926 */}
 Le réseau DNF se comprend à deux échelles : une **zone** locale isolée, puis
 plusieurs zones reliées par un **VPN** maillé. Le vocabulaire est défini dans
 [Concepts](/fr/doc/admin-guide/understand/concepts/).
 
+{/* t:p dc9534f835e0e09db41110a71aa8e46e59668b5a9a710b8379ec1c2ae465ed93 */}
 ## Réseau simple (une zone)
 
 Une zone, c'est une passerelle et ses machines.
@@ -44,6 +49,7 @@ gw.dns -> lan.srv: LAN
 - Côté Internet (WAN), tout est fermé. Côté local (LAN), seuls SSH, DNS, DHCP et
   la page d'accueil sont ouverts.
 
+{/* t:p 90f3855e5e9d884ab3846df4a8b745ffda8ad3b3f9e054d9967a77cda60596ae */}
 ## Filtrage des publicités (AdGuardHome)
 
 Service optionnel, activé sur la passerelle. Il s'intercale devant `dnsmasq`.
@@ -68,6 +74,7 @@ agh -> up: Reste, filtré
 - Il bloque publicités et traceurs, et chiffre les requêtes vers l'extérieur.
 - `dnsmasq` recule sur un port interne et garde les noms locaux et le DHCP.
 
+{/* t:p 630729a6b54f1047751a03be0c5c3bf403a3e475c1a3c1b0c7e673dc3108e9df */}
 ## Réseau étendu (VPN)
 
 Plusieurs zones sont reliées par un VPN maillé, coordonné par le serveur de
@@ -109,6 +116,7 @@ Le maillage n'est activé que si `network.coordination.enable` est vrai dans
 `etc/config.yaml`. Sans lui, les zones restent locales et indépendantes.
 </Aside>
 
+{/* t:p dc98e399aab6187fe85228f5c26073a369879ba8ce96f4d545fcb551bcc081cf */}
 ## Noms et résolution DNS
 
 Trois familles de noms cohabitent sur le réseau. Toutes sont générées depuis

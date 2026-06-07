@@ -1,0 +1,87 @@
+---
+title: Concepts and vocabulary
+sidebar:
+  label: Concepts
+  order: 1
+lang: en
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+{/* t:translated-from fr */}
+{/* t:h d6c2e5105a09356b59742dd1ea6a3e82df6e2c944609a5eab353481995e59853 */}
+
+{/* t:p 057d86e17d7df2de6a2fdd2ab6136b1f5e580039cbbefe5e7313ca8f20fdc879 */}
+Basic vocabulary for administering a DNF network. The following pages refer to it without redefining it.
+
+{/* t:p f858788584e34be965a520d24bdee26aaf8c716e2f20ca2e8173723a338a97b1 */}
+## Nix and NixOS
+
+DNF is built entirely on [Nix / NixOS](https://nixos.org/). A few concepts to
+keep in mind before administering the fleet:
+
+| Term | Description |
+|---|---|
+| **Nix** | **Declarative** package manager: you describe the desired state, Nix builds it identically. |
+| **NixOS** | The Linux distribution built on Nix: **the entire system** (packages, services, network) is described in code. |
+| **Declarative** | You declare *what* (the result), not *how* (the commands): the same code gives the same system. |
+| **Reproducible** | Same inputs → same system, on any machine, at any time. |
+| **Derivation** | The "recipe" for building an element (package, config), evaluated by Nix. |
+| **Store** (`/nix/store`) | **Immutable** repository of built elements, identified by a hash. Nothing gets overwritten. |
+| **Flake** | Nix project unit with **pinned** inputs (`flake.lock`): fixed and reproducible versions. |
+| **Generation** | A complete system state, timestamped. Each deployment creates a new one. |
+| **Rollback** | Revert to a previous generation (at boot or hot): a failed deployment is never final. |
+| **Home Manager** | Declaratively manages a user's environment (apps, desktop, dotfiles). |
+
+<Aside type="tip" title="Go further">
+DNF adds a layer on top of NixOS: you mostly write YAML
+(`etc/config.yaml`), not Nix. Fine-grained knowledge of Nix is only useful for
+[contributing to the framework](/en/doc/dev-guide/).
+</Aside>
+
+{/* t:p 1e8cb42cb6c964ad661c3b9b34ff33385a42b2be72b56c5ec672678b0ebd30c0 */}
+## The network
+
+| Term | Description |
+|---|---|
+| **Zone** | Autonomous subnet (home LAN, guest network, remote site…). `/16` IP prefix, one gateway, its hosts. |
+| **Node** | Any machine on the network: workstation, server, gateway, coordination server. |
+| **Gateway** | Border node of a zone: router, firewall, DNS/DHCP, VPN client. One per zone, fixed IP `<prefix>.1.1`. |
+| **Coordination server** (*HCS*) | Public node that orchestrates the mesh VPN (Headscale) and hosts shared services between zones. |
+| **VPN** (*tailnet*) | The mesh that connects all zones and remote machines, via Headscale + Tailscale. |
+
+<Aside type="note" title="Overview">
+The network diagram is in the [project presentation](/en/doc/#the-dnf-network);
+its detailed operation is described in [Network](/en/doc/admin-guide/understand/network/).
+</Aside>
+
+{/* t:p e4c42b40d4e024f51b8be9b403599da634caa57fba859fab5525c15448e908d1 */}
+## Hosts, profiles and services
+
+| Term | Description |
+|---|---|
+| **Host** | Managed NixOS node, declared in `etc/config.yaml`. |
+| **Host profile** | Template that defines a host's role (`gateway`, `server`, `desktop`, `laptop`, `portable`, `hcs`, `vm`…). See [Host profiles](/en/doc/admin-guide/understand/host-profiles/). |
+| **User profile** | [Home Manager](https://github.com/nix-community/home-manager) environment for an account (`nix-admin`, `normal`, `student`, `child`…). |
+| **Groups** | Connect users and hosts: they determine who can connect where. |
+| **Services** | Self-hosted bricks activated per host (Nextcloud, Immich, Forgejo…). See [Services](/en/doc/admin-guide/operate/services/). |
+| **Features** | Non-service options activated per host (`monitoring-node`, `nfs-client`…). |
+
+{/* t:p fc917bb69bac558c6c0a504648a8674076c23a0b736e3fce9351f5bb129bbf2d */}
+## Framework, project and configuration
+
+Everything starts from a single declarative file, transformed into NixOS configuration:
+
+| Location | Role |
+|---|---|
+| `etc/config.yaml` | The **source of truth**: network, zones, users, hosts, services. |
+| `dnf/` | The **framework**: modules, profiles, libraries. Reusable, rarely modified. |
+| `usr/` | The **local project** (for writing): module and profile overrides, machines, secrets. |
+| `var/generated/` | Nix code **generated** from `etc/config.yaml` (never edit by hand). |
+| `doc/` | This documentation. |
+
+<Aside type="tip" title="From YAML to system">
+`etc/config.yaml` → `just generate` → `var/generated/*.nix` → framework.
+Details in [The generator](/en/doc/dev-guide/generator/); complete file tree
+in [File organization](/en/doc/#file-organization).
+</Aside>

@@ -9,24 +9,90 @@ lang: en
 {/* t:translated-from fr */}
 {/* t:h 85d6cb28b4e7f0ff3c72c64dd22ceb429704c8fa8e0e44105c999922d6f5874f */}
 
-{/* t:p 7d9539d0c24cb53dec81f93d55016d34021d00f19b1ef24061165234e7163113 */}
-The generator (`src/generator/`, written in Rust) turns the declarative
-`usr/config.yaml` configuration into the Nix code consumed by the framework.
+{/* t:p 94d829ff24cedcf09041c4d543ca4fd668e8e6fa192d34865597bf181094e2a4 */}
+The generator (`src/generator/`, written in Rust) transforms the declarative
+configuration `etc/config.yaml` into Nix code consumed by the framework.
 
-{/* t:p d42ebc6e7b397c8a6db92651c65e80dd755d12933c9122593326a68e983f1122 */}
+{/* t:p e4fc35d2af493818f7abda13c2eab50557279d67efeb60681004dbded55be715 */}
 ## From YAML to Nix
 
-- **Input**: `usr/config.yaml` — hosts, users, network, services.
+- **Input**: `etc/config.yaml` — hosts, users, network, services.
 - **Output**: `var/generated/` — `hosts.nix`, `users.nix`, `network.nix`.
 
-These files are **generated**: never edit them by hand. To regenerate them after
-a configuration change:
+These files are **generated**: never edit them by hand. To
+regenerate them after a configuration change:
 
 ```sh
 just generate
 ```
 
 :::caution[Generated files]
-`var/generated/` and the `*/ref/modules.mdx` pages are produced by tools. Change
-the generator or the source, never the output.
+`var/generated/` and `*/ref/modules.mdx` pages are produced by tools.
+Modify the generator or the source, never the output.
+:::
+
+{/* t:p 8a788d9c13fa80bf66065a7860ec613d202cf00481581e7190e8d7961e4f1d62 */}
+## The flow
+
+A single source of truth (`etc/config.yaml`) is transformed into **deterministic** Nix code, consumed by the framework via `flake.nix`.
+
+```d2
+style.fill: transparent
+direction: right
+
+cfg: etc/config.yaml {
+  shape: page
+}
+gen: generator\nsrc/generator (Rust) {
+  shape: hexagon
+}
+out: var/generated/\nhosts · users · network · disko {
+  shape: cylinder
+}
+flake: flake.nix\n(framework → NixOS) {
+  shape: rectangle
+}
+
+cfg -> gen -> out -> flake
+```
+
+{/* t:p 759164f6d87f99e3ffa488d3384038643b82c280708dccebd943d150011a8c47 */}
+## Commands
+
+The generator exposes one command per target. `just generate` chains all
+of them; you can also invoke a single one.
+
+| Command | Output | Content |
+|---|---|---|
+| `hosts` | `var/generated/hosts.nix` | Hosts: profiles, services, colmena tags. |
+| `users` | `var/generated/users.nix` | Users: profiles, groups. |
+| `network` | `var/generated/network.nix` | Topology: zones, DNS, VPN. |
+| `disko` | `usr/machines/<host>/disko.nix` | Partitioning per host. |
+| `doc` | `*/ref/modules.mdx` | Module reference (documentation). |
+
+```sh
+just generate          # regenerate everything (via the Justfile)
+just codegen           # regenerate only the module reference (doc)
+```
+
+:::note[Module reading]
+The generator also reads `dnf/config/modules.nix` (service topology) and,
+for the `doc` command, **parses Nix sources** (`rnix` parser) to
+extract options and headers. To document an option: describe it in the
+module, then `just codegen`.
+:::
+
+{/* t:p 35896f9a3ec5e74a79bfaa399fa667a0c6b84f8cbf230b270288a8fdc362474f */}
+## Execution context
+
+The generator runs in two modes, chosen automatically:
+
+- **Co-development** (sources + `cargo` present) → `cargo run`: fast
+  compilation loop while modifying the generator.
+- **Release** (no local checkout) → `dnf-generator` binary provided by the
+  framework's *devShell* (`nix develop github:darkone-linux/...`).
+
+:::tip[Deterministic output]
+Files are formatted with `nixfmt -sv`: a diff between two runs
+reflects **only** real configuration changes.
 :::

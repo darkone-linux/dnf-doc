@@ -6,10 +6,15 @@ sidebar:
 lang: fr
 ---
 
+{/* t:main */}
+{/* t:h 1db72918429c0be6e0717f3fdae139fa1db6695a377f0cfe800c74c4b4a25e18 */}
+
+{/* t:p 141d8a49f39165ddf1eef2d120a2a3115f5930021ba22317ed799bdb04ffdb81 */}
 Un **profil d'hôte** est un gabarit qui définit le rôle d'une machine. On le
 choisit avec `profile:` dans `etc/config.yaml`. Les profils s'héritent : chacun
 part d'un autre et ajoute ses spécificités.
 
+{/* t:p a3a2c805ce00c4f3bb8c1d8d0697ee3eb01508e32651337d6e8d01bfab6f56d9 */}
 ## L'héritage
 
 ```d2
@@ -36,6 +41,7 @@ server -> vm
 desktop -> laptop
 ```
 
+{/* t:p eb86c4ed035144c80b627ce6b36899930ab4c14ab1c134f275465c39d75f8b04 */}
 ## Les profils
 
 | Profil | Pour quoi | Hérite de | Apporte |
@@ -49,6 +55,7 @@ desktop -> laptop
 | `hcs` | Coordination du VPN | `server` | Headscale + services partagés |
 | `vm` | Machine virtuelle | `server` | Outils invité (VirtualBox/QEMU/Xen) |
 
+{/* t:p 75269fb3fafa1ca4b385b89e5db4e05f3a4afd043866ccba4d93cb00a7f8e537 */}
 ## Choisir un profil
 
 ```yaml

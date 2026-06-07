@@ -8,9 +8,14 @@ lang: fr
 
 import { Steps } from '@astrojs/starlight/components';
 
+{/* t:main */}
+{/* t:h 63dc98bb88f80c6700c7ae40b7ff01920e5c368e3932adf25a4b1f4a7ded30e3 */}
+
+{/* t:p c5eaf8b034237c763df0de11402c3e425415d18d3917d23530ffd6631f988bc1 */}
 Le quotidien de l'administrateur : garder le parc propre, intervenir sur un
 hôte, revenir en arrière après une mauvaise configuration, lire les journaux.
 
+{/* t:p 85d11ed72c5f6181bd6ebead1e454848cf342d8d6ccb0a61969eb2c4d8e6ed25 */}
 ## Agir sur un hôte
 
 Toutes ces commandes ciblent un hôte (ou un motif / une liste) via colmena :
@@ -27,6 +32,7 @@ Toutes ces commandes ciblent un hôte (ou un motif / une liste) via colmena :
 La cible accepte un motif ou une liste : `just gc '*'`, `just reboot a,b`.
 :::
 
+{/* t:p 9311ecb49367629602cb7ce9e0e1a524a3a017ce0ca2833150e901d097229ad0 */}
 ## Nettoyer et formater le code
 
 Avant de committer ou déployer, normaliser le dépôt :
@@ -38,6 +44,7 @@ just clean      # fix + check + generate + format
 - `just check-all` — tests unitaires + vérification des flakes (avant un déploiement).
 - `just gc <host>` — récupère l'espace disque (ancien générations supprimées).
 
+{/* t:p 3f92e7be8139143e277bcd06f13c2239ef630a2d0fd61c666d3a6a388c9ea2f0 */}
 ## Revenir en arrière
 
 Chaque déploiement crée une **génération** NixOS. En cas de problème :
@@ -66,6 +73,7 @@ Chaque déploiement crée une **génération** NixOS. En cas de problème :
 démarrage. Vérifiez que l'hôte est stable avant de nettoyer.
 :::
 
+{/* t:p 2ec69970651a4f30e7dc069ea1e8fb75d5c15e1387cd42bf9e09db8c9b69d896 */}
 ## Lire les journaux
 
 ```sh

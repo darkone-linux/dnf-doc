@@ -1,0 +1,103 @@
+---
+title: Gateway (create a zone)
+sidebar:
+  label: Gateway
+  order: 2
+lang: en
+---
+
+import { Steps } from '@astrojs/starlight/components';
+
+{/* t:translated-from fr */}
+{/* t:h a1aebc28e21b4daf8782b17e2f24776aa4ac070cc759308d19fd9bdd60a943eb */}
+
+{/* t:p a4d082a94b615e63981f34cfe23e5ae722228a9305e3088db8cf03b2c9e6d0e3 */}
+A [zone](/en/doc/admin-guide/understand/concepts/) is a subnet: a **gateway**,
+behind which you can connect as many machines as you want.
+
+{/* t:p 6370c7ece3b3bf3a89dc0c9c44abd473024e88941c266982d71a98a1acc817c3 */}
+## Hardware
+
+A mini-computer always on, with **at least two network interfaces**: one to the
+ISP box (WAN), the others to the local network (LAN, ethernet or wifi).
+
+:::note[Which hardware?]
+A [Protectli](https://eu.protectli.com/) device or equivalent is ideal:
+
+- NVMe disk ≥ 256 GB
+- coreboot BIOS preferred
+- Optional wifi card
+:::
+
+{/* t:p 9eda89ad99379781ff4716c738bbf109865427c99803a763adb69870d7766795 */}
+## Declare the zone
+
+The zone and its gateway are described in `etc/config.yaml`:
+
+```yaml
+# etc/config.yaml
+zones:
+  maison:
+    description: "Home network"
+    ipPrefix: "10.0"             # zone in 10.0.0.0/16
+    gateway:
+      wan:
+        interface: "enp1s0"      # to the ISP box
+      lan:
+        interfaces: ["enp2s0"]   # to the local network
+
+hosts:
+  - hostname: "gw"
+    name: "Gateway"
+    zone: "maison:1.1"           # fixed IP 10.0.1.1
+    profile: "gateway"
+    services:
+      adguardhome:               # DNS + ad blocking
+      homepage:                  # service portal
+    disko:
+      profile: "server-1-disk"
+      devices:
+        main: "/dev/sda"
+```
+
+:::tip[Automatic services]
+The `gateway` profile wires the router, firewall, DNS/DHCP (`dnsmasq`) and the
+VPN client. Declared services (homepage, adguardhome…) are configured
+automatically. See [Network](/en/doc/admin-guide/understand/network/).
+:::
+
+{/* t:p c5ce7b18406eacfc6a39db8c2c6698ef3fc4b2c0fbe4c93962958de0e52c4afd */}
+## Install the gateway
+
+Installation is often done **remotely**: someone on-site prepares the machine,
+the administrator installs over SSH.
+
+<Steps>
+
+1. **Prepare the gateway** (on-site)
+
+   1. Connect the gateway to the ISP box.
+   2. Boot from the USB drive (`just build-iso` image).
+   3. Note the gateway's IP address.
+   4. Forward port 22 from the ISP box to the gateway.
+
+   :::note[Why forward port 22?]
+   It allows SSH access during installation. The USB drive only accepts
+   authentication keys (no password). The forwarding can be removed afterwards.
+   :::
+
+2. **Install** (administrator)
+
+   ```sh
+   just install gw nix <ip>     # nixos-anywhere + disko
+   just configure gw            # hardware + infrastructure key
+   just apply-verbose gw        # first deployment
+   ```
+
+</Steps>
+
+{/* t:p a1e7d984c42574b0dd4391fddc0098246096a0b119fcab64aa9a1c6929574931 */}
+## Connect other machines
+
+- **Linux workstations** — same procedure as the first workstation, see [Initial installation](/en/doc/admin-guide/install/first-network-installation/).
+- **Smartphones, tablets, third-party PCs** — connect automatically to the gateway's network.

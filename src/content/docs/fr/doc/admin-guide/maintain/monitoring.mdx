@@ -6,11 +6,16 @@ sidebar:
 lang: fr
 ---
 
+{/* t:main */}
+{/* t:h 1d7b47ffeb3eaab2fbd28adf91df3d06fb158519525dc56659747bcc26664142 */}
+
+{/* t:p 243be582a2a59869e322fe5233f66497f6ae637d8a922f8904f096f5860b8a57 */}
 La supervision repose sur [Prometheus](https://prometheus.io/) (métriques),
 [Grafana](https://grafana.com/) (tableaux de bord) et [Loki](https://grafana.com/oss/loki/)
 (journaux). Elle est **organisée par zone** : un hôte collecte, les autres
 exposent leurs métriques.
 
+{/* t:p 13274561d23f39ee3cb4ef5ebbbdaae406291da24a7be699f62c07952f8afded */}
 ## Les rôles
 
 ```d2
@@ -38,6 +43,7 @@ Un seul hôte `monitoring` est admis par zone. Il supervise les nœuds dont le t
 `monitoring-node` désigne **sa** zone.
 :::
 
+{/* t:p 49426eae6938a14b0b4389bb30bc04163416c9d561b0e30dda8bdb71a2261de0 */}
 ## Activer
 
 La supervision est un [service](/fr/doc/admin-guide/operate/services/). Sur le
@@ -59,6 +65,7 @@ Grafana est protégé par le [SSO Kanidm](/fr/doc/admin-guide/operate/sso/). La
 racine du domaine redirige vers un tableau de bord d'accueil.
 :::
 
+{/* t:p 2f8498b41bf36486a0b35ac5f8278971cfa67be5c277ada63123fcdfd0545841 */}
 ## Réglages utiles
 
 | Option | Effet | Défaut |

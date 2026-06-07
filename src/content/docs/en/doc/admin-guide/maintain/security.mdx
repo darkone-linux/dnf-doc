@@ -1,0 +1,89 @@
+---
+title: Security and Hardening
+sidebar:
+  label: Security
+  order: 1
+lang: en
+---
+
+{/* t:translated-from fr */}
+{/* t:h 90bed1dbb460174673d09d5a53fca89bf3510d9738c0ebd7355c58aec8b6c9a2 */}
+
+{/* t:p 383c33987c3ef13705a2d58d96ff1b596c9efac28513b00362a69ed842b3784c */}
+The `darkone.system.security` module progressively applies the [ANSSI BP-028](https://cyber.gouv.fr/publications/recommandations-de-securite-relatives-un-systeme-gnulinux) (GNU/Linux) hardening recommendations. Each host chooses a **level** and a **category**; the appropriate rules activate automatically.
+
+:::danger[Module under development]
+ANSSI hardening is **being stabilized**. Increase the level **progressively** and test each host before production.
+:::
+
+{/* t:p a086756d1e56e2d100e8acba92f9009be188dc1493c45e20ba4baf51f4a47f3d */}
+## Level and category
+
+```nix
+darkone.system.security = {
+  enable   = true;
+  level    = "intermediary";   # minimal | intermediary | reinforced | high
+  category = "server";         # base | client | server
+};
+```
+
+| Level | Purpose |
+|---|---|
+| `minimal` | Common base, any system (default) |
+| `intermediary` | Recommended for almost all systems |
+| `reinforced` | Sensitive or multi-user systems |
+| `high` | Dedicated skills and budget (kernel recompilation) |
+
+| Category | Purpose |
+|---|---|
+| `base` | Universal rules, always applied (default) |
+| `client` | Workstation (desktop, USB, session, locking) |
+| `server` | Server (hardened network, logging, exposed services) |
+
+:::note[Activation per rule]
+A rule activates if the module is enabled **and** the level covers its severity **and** the category matches **and** no exclusion tag or exception targets it.
+:::
+
+{/* t:p 52013b643a27b4e847977d6a759af6831122b4ca4ea81ec05d978217a1813bf5 */}
+## Excluding a group of rules
+
+Some rules break legitimate use cases. Disable a **group** by tag:
+
+```nix
+darkone.system.security.excludes = [ "needs-hibernation" "needs-jit" ];
+```
+
+| Tag | Disables |
+|---|---|
+| `kernel-recompile` | Custom kernel rules (R15–R27) |
+| `no-ipv6` | IPv6 disabling (R13, R22) |
+| `no-mac` | MAC / AppArmor (R37, R45) |
+| `needs-hibernation` | Preserves hibernation (laptops) |
+| `needs-jit` | Allows JIT (Java, .NET, V8, Wasm) |
+| `needs-usb-hotplug` | Disables USBGuard |
+
+{/* t:p a1dac3f94cb3f13167a63dea41d74e17746213335a61d5f169d27b144fe7893f */}
+## Overriding a specific rule
+
+A single rule can be bypassed with a **mandatory rationale**:
+
+```nix
+darkone.system.security.exceptions = {
+  R9.rationale = "Rootless containers required during development.";
+};
+```
+
+:::caution[Side effects]
+Some rules hinder everyday use: `noexec /tmp` (R28), SMT disabled (R8), unsigned modules (R18). Check the module's `sideEffects` comments before raising the level in production.
+:::
+
+{/* t:p 4b6cf5967804f52c2c7079e98fa287bd8d11012e765f90ed1c6bc3f96c3f3a45 */}
+## MAC, firewall, fail2ban
+
+- **MAC / AppArmor** (R37, R45) — application confinement; SELinux is structurally unsupported on NixOS (exceptions R46–R49 by default).
+- **Firewall & network** — hardened by the `server` category (`network` module).
+- **fail2ban** — bans IPs after repeated attempts; service to enable in the [catalog](/en/doc/admin-guide/operate/services/).
+
+:::note[Rule reference]
+The complete mapping of rules (R0–R62…) is available in the framework's security modules and the [module reference](/en/ref/modules/security/).
+:::

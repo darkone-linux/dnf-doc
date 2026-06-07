@@ -8,10 +8,15 @@ lang: fr
 
 import { Steps } from '@astrojs/starlight/components';
 
+{/* t:main */}
+{/* t:h a16a904ba4cebc0eb0b300d71e8fdf2acdb7a6b7b8b5ee282b9fb96b6d721679 */}
+
+{/* t:p 157d6f51401dba7bfc1ed0a9f5373fe7cb35a2d96dd0f1d7fb880712f0d8f4d6 */}
 Les utilisateurs sont déclarés **une fois** dans `etc/config.yaml`, puis
 **rattachés** aux hôtes où ils doivent ouvrir une session. Le même compte peut
 exister sur plusieurs machines.
 
+{/* t:p 64b47647090661b6f6ba9f495acb4f4cea77956223225b2dd95abffa63798261 */}
 ## Déclarer un utilisateur
 
 ```yaml
@@ -34,6 +39,7 @@ users:
 | `profile` | [Profil utilisateur](/fr/doc/admin-guide/understand/user-profiles/) (environnement) |
 | `groups` | Groupes (accès réseau et services) |
 
+{/* t:p 18c2a01b04dbf04056a6a32f6895a758f608a036bb5739f831b9705a96bb39f3 */}
 ## Rattacher à un hôte
 
 Sous un hôte, `users` liste les **logins existants** autorisés à s'y connecter :
@@ -46,6 +52,7 @@ hosts:
     users: ["alice"]
 ```
 
+{/* t:p 3308c83275bc786cef6dcb5dd1be3ae4403c5dccfad48f43be896eda081cd47f */}
 ## Déployer les modifications
 
 Toute modification de `etc/config.yaml` suit le **même cycle** : décrire,
@@ -82,6 +89,7 @@ régénérer, valider dans git, puis déployer.
 déploiement part d'un état incohérent ou non versionné.
 :::
 
+{/* t:p 44c9fe85ad0404bc38da7b7b064804c2190e9dc5711d10b961879586a3152dbe */}
 ## Définir le mot de passe
 
 <Steps>
@@ -111,6 +119,7 @@ déploiement part d'un état incohérent ou non versionné.
 (`just passwd-default`). Voir [Secrets](/fr/doc/admin-guide/operate/secrets/).
 :::
 
+{/* t:p 3da66ab20a71d06366f967c011a7dace6d7caa26e6632758009b1adb57cd3c09 */}
 ## Identités et SSO
 
 Au-delà du compte système, l'utilisateur dispose d'une **identité unique**
@@ -126,6 +135,7 @@ Le parcours complet (compte + identité + premier mot de passe) est décrit dans
 Pour réinitialiser : [Réinitialiser un mot de passe](/fr/doc/how-to/admin/reset-user-password/).
 :::
 
+{/* t:p 8793ca3ee9a2d3dd3c168eecceebdeec7fba229d41aedd5b9b1699ff2bb11d79 */}
 ## Désactiver un compte
 
 - **Sur un hôte** — retirer le login de la liste `users` de l'hôte.

@@ -1,0 +1,89 @@
+---
+title: Maintenance and Troubleshooting
+sidebar:
+  label: Troubleshooting
+  order: 4
+lang: en
+---
+
+import { Steps } from '@astrojs/starlight/components';
+
+{/* t:translated-from fr */}
+{/* t:h 63dc98bb88f80c6700c7ae40b7ff01920e5c368e3932adf25a4b1f4a7ded30e3 */}
+
+{/* t:p c5eaf8b034237c763df0de11402c3e425415d18d3917d23530ffd6631f988bc1 */}
+The administrator's daily routine: keeping the fleet clean, intervening on a host, rolling back after a bad configuration, reading logs.
+
+{/* t:p 85d11ed72c5f6181bd6ebead1e454848cf342d8d6ccb0a61969eb2c4d8e6ed25 */}
+## Acting on a host
+
+All these commands target a host (or a pattern / list) via colmena:
+
+| Command | Effect |
+|---|---|
+| `just enter <host>` | Open an SSH shell (alias `e`) |
+| `just reboot <host>` | Reboot |
+| `just halt <host>` | Shutdown |
+| `just gc <host>` | Purge generations + clean the store |
+| `just fix-boot <host>` | Reinstall the boot loader |
+
+:::tip[Multiple hosts at once]
+The target accepts a pattern or list: `just gc '*'`, `just reboot a,b`.
+:::
+
+{/* t:p 9311ecb49367629602cb7ce9e0e1a524a3a017ce0ca2833150e901d097229ad0 */}
+## Clean and format the code
+
+Before committing or deploying, normalize the repo:
+
+```sh
+just clean      # fix + check + generate + format
+```
+
+- `just check-all` — unit tests + flake verification (before a deployment).
+- `just gc <host>` — frees disk space (old generations deleted).
+
+{/* t:p 3f92e7be8139143e277bcd06f13c2239ef630a2d0fd61c666d3a6a388c9ea2f0 */}
+## Rollback
+
+Each deployment creates a NixOS **generation**. In case of problem:
+
+<Steps>
+
+1. **At boot** — choose a previous generation from the boot menu.
+
+2. **Hot rollback** — revert to the previous generation then make it active:
+
+   ```sh
+   just enter <host>
+   sudo nixos-rebuild switch --rollback
+   ```
+
+3. **From the code** — `git revert` the bad configuration, then redeploy:
+
+   ```sh
+   just apply <host>
+   ```
+
+</Steps>
+
+:::caution[GC caution]
+`just gc` deletes old generations: you can no longer roll back to them at
+boot. Make sure the host is stable before cleaning.
+:::
+
+{/* t:p 2ec69970651a4f30e7dc069ea1e8fb75d5c15e1387cd42bf9e09db8c9b69d896 */}
+## Reading logs
+
+```sh
+just enter <host>
+journalctl -u <service> -n 100 --no-pager     # logs d'un service
+journalctl -p err -b                          # erreurs depuis le démarrage
+systemctl status <service>                    # état d'une unité
+```
+
+:::tip[Guided diagnostics]
+For centralized monitoring (metrics + Caddy logs), see
+[Monitoring](/en/doc/admin-guide/maintain/monitoring/). For identity
+replication health: `just idm-fix-replica <hcs> <gateways>`.
+:::

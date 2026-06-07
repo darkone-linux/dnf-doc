@@ -6,10 +6,15 @@ sidebar:
 lang: fr
 ---
 
+{/* t:main */}
+{/* t:h 105938957d65ed55bf9c9bc5d4fc332fc008efc27c2d25e2226abd40d5c9e76d */}
+
+{/* t:p 9f291caceb9d77d4bf13f3e426e0ab76f8911f0774057e98a07403fb378e29b4 */}
 Le parc se déploie avec [colmena](https://github.com/zhaofengli/colmena) : une
 commande construit et applique la configuration sur un ou plusieurs hôtes, à
 distance, depuis le poste admin.
 
+{/* t:p d4a06fc139c0d5029ddc5205311c422d5da5a5e1fe1b2e6d014d42aae5b8629c */}
 ## Appliquer une configuration
 
 ```sh
@@ -30,6 +35,7 @@ just apply <cible> [action]    # alias : a
 pas besoin de la puissance ni de l'architecture des machines déployées.
 :::
 
+{/* t:p 811d77666e3af7f7df258aaa798c867fbf3315b7431960b130501f647715c764 */}
 ## Déployer en sécurité
 
 **Monter en confiance par l'action** : chaque étape est moins risquée que la
@@ -63,6 +69,7 @@ coordonné par le HCS. Déployer un maillon avant son support peut rendre les
 suivants injoignables.
 :::
 
+{/* t:p e346822eb441ce59f0a14fc1e09b22c4fa9be7535a1315e6fc8a787e847c700a */}
 ## Mettre à jour
 
 Le système est figé par les *flakes*. Mettre à jour = rafraîchir les entrées,
@@ -78,6 +85,7 @@ Avant un déploiement large, validez localement : `just check-flake` (ou
 `just check-all`), puis `just apply <hôte-pilote>` sur **un** hôte témoin.
 :::
 
+{/* t:p b8557b4360409f3ae5684e453aeffa4202263f19f0d01eb4b4c9a70308c57c2c */}
 ## Cache binaire
 
 Le service `harmonia` sert de **cache binaire** signé au parc, et `ncps` le

@@ -1,5 +1,5 @@
 ---
-title: Initial setup
+title: Initial installation
 sidebar:
   label: Installation
   order: 1
@@ -9,233 +9,124 @@ lang: en
 import { Steps } from '@astrojs/starlight/components';
 
 {/* t:translated-from fr */}
-{/* t:h c39ad9f3beb8d8cb444bb1b3edd2b9d2415955401836aac26fc4ca2d3585091d */}
+{/* t:h 8f6a2272ca5d20e2314d84f56794eeeced55aa658cc8756a183c88b92a902547 */}
 
-{/* t:p 78d9d6f65ea0e3c040cfe192517e7624da145862cf4e9b31dc4269bf375bc343 */}
-## Preparation
+{/* t:p 854614f5bd70050fb11d763f899cbe620d3f8e0711d328b29cd8da8110a14663 */}
+A DNF network is set up **step by step**, and you can stop at any stage: a single workstation is enough to get started.
 
-We will install in order:
+{/* t:p 2fef0bf9cc57f479ab6a7b2c9cf2df2a6a9ecacdce7545f753653c2ca9399df9 */}
+## The process
 
-1. a machine (the administrator's),
-2. a gateway and other machines in the same zone,
-3. the tailnet network (coordination server),
-4. other zones linked to our configuration.
+1. **One workstation** — the administrator's machine (this page).
+2. **A gateway** — create a [zone](/en/doc/admin-guide/install/gateway/) and connect other workstations to it.
+3. **Coordination** — connect zones via [VPN](/en/doc/admin-guide/install/hcs/) (tailnet).
 
-:::note[Unique Configuration]
-All these nodes will be described in a single NixOS configuration on the administrator's machine, from which
-we can update and evolve the entire network and its machines.
+:::note[Single configuration]
+All nodes are described in **one** NixOS configuration, on the administrator's machine. From there, the entire network is deployed and evolved.
 :::
 
-{/* t:p 8dcd9f96fe1b5f6242b1cdb240b4af7a70b296cedabaee2c4a632b61194d04b2 */}
-## Initial Installation
+{/* t:p 92f5012a44a098f78b58e73a0dddfef784abe42f886e20516f54e56c046c46a1 */}
+## Create the project
 
-:::caution[Under optimization]
-The initial installation steps are being streamlined. In the meantime, the manual method is available on the English version of this site.
-:::
-
-{/* t:p 23e98cd5abce6af3f0ecb3f1e380650b139b1271c6426f152eee2eaee260159a */}
-## Creating a Zone
-
-A zone (subnet) consists of at least a gateway, behind which you can have as many computers as you want.
-
-{/* t:p 2d5fe271747ca4d19da42d729ad426be1ec30d7f23bada7539207d1f780fc77c */}
-### The Gateway
-
-A mini-computer that is always on, with at least 2 network interfaces (one ethernet connected to the ISP box and others that are part of the subnet - ethernet and wifi).
-
-:::note[What hardware for my gateway?]
-A [protectli](https://eu.protectli.com/) model or equivalent is ideal. [This one](https://eu.protectli.com/product/v1210/) is sufficient with:
-
-* NVME disk >= 256G
-* Coreboot bios preferably
-* Optional: wifi card
-:::
-
-{/* t:p 582eee3733c9a28f42addbf051d2765e63420f402cda521972397f2a1cc0946d */}
-#### Client Checklist
-
-If the installation is done remotely, here is the information to provide:
-
-1. Connect the gateway to the ISP box.
-2. Put the ISO (provided by the administrator) [on a USB key](https://rufus.ie/en/) and connect it.
-3. Note the gateway IP address (visible via the ISO or in the box).
-4. In the ISP box interface, redirect port 22 to the gateway.
-5. The administrator can now access the gateway and install it.
-6. Finalize the installation: other devices, wifi, computers, local services.
-
-:::note[Technical Note]
-Port 22 redirection allows SSH access to the gateway from the internet, essential for its installation.
-The USB key system is only accessible via an SSH authentication key, it is impossible to access it with a password.
-This redirection is no longer necessary once the gateway is installed, but access remains useful in case of problems.
-:::
-
-{/* t:p e357795b01b7e28a7d09ad4535a879f4edcf3ab6356118ef0ca2620dc08e3cbf */}
-#### Administrator Checklist
-
-Coming soon...
-
-{/* t:p 8de156c7f26ce49ae3b49e67bf637d4836fcdbd4d3313004f5034177b3da5422 */}
-### Other Computers
-
-* __Any computer, smartphone, tablet__ connected to the gateway network automatically becomes part of the network (VPN) and can access services with some configurations.
-* __Available PCs?__ Pre-configured Linux systems provide many programs and all software and services pre-configured for network users.
-
----
-
-{/* t:p d017bc92cf57ca6edbc23069733600a58439c66bd73b25900ea9d9a9444928d0 */}
-## Creating a User Account
-
-:::tip
-Each user will have:
-
-* An identifier (lowercase first name without accents if possible) and a main password.
-* An address at poncon.fr, e.g. prenom@domain.tld (mailbox or redirection to another email).
-* A local matrix address, e.g. @prenom:domain.tld (instant messaging and visio).
-:::
-
-{/* t:p 0c5db08f8ed148f230cd00b77ec7e0d78025aadbb3114dba036fd616d4dbd894 */}
-### 3 Important Elements
-
-* The main password for [vaultwarden](https://vaultwarden.poncon.fr/), to open their vault.
-* The [IDM](https://idm.poncon.fr/) authentication key to access all services.
-* An additional password in [IDM](https://idm.poncon.fr/) in case of key loss.
-
-{/* t:p a5effc44e3816f0b11cd42775735376b7aced8404b63d03ca8be23424782565f */}
-### Account Creation Steps
-
-:::note[What the new user will need to do]
-* Choose a main password via the vaultwarden invitation (by e-mail).
-* Create an "authentication key" and a recovery password (IDM).
-* Install Bitwarden on their devices and configure it.
-* Applications: install and configure as needed.
-:::
+The project starts from the `dnf-boilerplate` template: a ready-made structure and a commented `etc/config.yaml` to fill in.
 
 <Steps>
 
-1. **Create the system account**
+1. **Create the repository**
 
-    :::caution[POSIX account (optional)]
-    This step creates a POSIX account that will be available on Linux machines (servers, workstations, etc.) designated by the configuration.
-    It is possible to create non-POSIX users (non-declarative) directly in Vaultwarden and Kanidm.
-    :::
+   From the [dnf-boilerplate](https://github.com/darkone-linux/dnf-boilerplate) template ("Use this template" button), or by cloning.
 
-    A user must have:
+2. **Bootstrap the framework**
 
-    - an identifier (lowercase first name)
-    - an email address (at domain.tld preferably)
+   ```sh
+   nix run github:darkone-linux/darkone-nixos-framework#init
+   nix develop github:darkone-linux/darkone-nixos-framework
+   ```
 
-    Add the user to the configuration file:
+   :::note[What does `#init` do?]
+   It creates the `.dnf/` symlink to the framework recipes. Then `just --list` shows all available commands.
+   :::
 
-    ```yaml
-    # usr/config.yaml
-    users:
-      charlie:
-        uid: 1003
-        name: "Charlie"
-        profile: "teenager"
-        groups: ["kids-ag", "global"]
-    ```
-    Then generate, commit and apply the configuration.
+3. **Initialize secrets**
 
-2. **Vaultwarden account**
+   ```sh
+   just configure-admin-host
+   ```
 
-    In the Vaultwarden administration interface, the previous user must be present (otherwise create it).
-
-    1. Administrator: send an invitation.
-    2. User: receives an email to enter their main password.
-    3. Administrator: confirm the user in the interface.<br />&nbsp;
-
-3. **On HCS (coordination server)**
-
-    Enable the Kanidm account:
-
-    ```bash
-    # Kanidm Onboarding -> transmit the link or qr-code
-    kanidm person credential create-reset-token <login> --name idm_admin
-    ```
-
-    Then follow the steps for creating keys and passwords.
-
-4. **Bitwarden**
-
-    Installing and configuring Bitwarden on browsers and smartphones will allow the new user to simplify access to their account and services.
-
-    :::caution[Select "self-hosted"]
-    And enter the vaultwarden URL before entering the main password, otherwise you will send it to bitwarden.com!
-    :::
-
-    :::tip[Recommended settings]
-    - Auto-fill → corresponding detection → "host"
-    - Auto-fill → enable auto-fill
-    - Set Bitwarden as the default password manager.
-    :::
-
-5. **Access to Services**
-
-    SSO allows access to services with a single authentication.
-    Access rules are defined by Kanidm claims.
+   :::tip[Idempotent]
+   Creates age keys, the `.sops.yaml` file and a default password. Never recreates what already exists.
+   :::
 
 </Steps>
 
-{/* t:p 72a9706f873f5a7a43eebe91e3efe4e522515ccb831bff9431055adb9561da07 */}
-## Creating a Linux Machine
+{/* t:p d0331301fb65c96b3d36e9943cda23fd2783181bd3ca8bd2482eb962e87d9cb1 */}
+## Describe the configuration
 
-Creating a Linux machine is a quick operation.
-
-**Prerequisites**:
-
-* The cloud ISO image to generate with `just iso`.
-* A machine declared in the configuration. Example:
+Everything is declared in `etc/config.yaml` (network, zones, users, hosts). For a first workstation, one user and one host are enough:
 
 ```yaml
-# usr/config.yaml
+# etc/config.yaml
+users:
+  alice:
+    uid: 1000
+    name: "Alice"
+    profile: "nix-admin"
+    groups: ["global"]
+
 hosts:
-- hostname: "bob-laptop"
-  name: "Bob's Dell Laptop"
-  zone: "main:2.2"
-  profile: "laptop"
-  groups: ["zone-main", "guests"]
-  features: ["nfs-client"]
-  mac: "f0:1f:af:13:62:23,bc:78:56:25:b8:57"
+  - hostname: "poste"
+    name: "Poste de l'administrateur"
+    profile: "desktop"
+    users: ["alice"]
+    disko:
+      profile: "btrfs-1-disk"
+      devices:
+        main: "/dev/nvme0n1"
 ```
 
-**Procedure**:
-
-* Burn the cloud ISO image to a USB key.
-* Connect the computer to the network and boot from the key.
-* Apply the system then restart without the key.
-
-**System Application**:
+Then regenerate and verify:
 
 ```sh
-# Replace with the machine IP
-just full-install bob-laptop nix 10.1.2.34
+just generate      # produces var/generated/*.nix from etc/config.yaml
+just check-flake   # nix flake check
 ```
 
-:::tip[Full Installation]
-In a few minutes, the `just full-install` command will install the complete system with programs, configurations and users.
-If the operation fails, it is possible to resume the steps viewable in the `Justfile` file.
+:::caution[Generated files]
+`var/generated/` is produced by the tool: it should never be edited manually. Edit `etc/config.yaml`, then regenerate.
 :::
 
-{/* t:p f5fdce6e6e3d386e9e29a6bc03cfcce1e142be6b8bb926cb87a6552a5113ef89 */}
-## Connecting from Outside
+{/* t:p 983c8000652e98c82729d3bbeed6110557bece8b6e50c3f26a0043b7adcb0ee3 */}
+## Install the first workstation
 
-To access all services (as well as shares) when not in a zone, a Tailscale VPN client is required.
-The administrator's intervention is required for this configuration.
+The installation burns an image, boots the machine from it, then applies the complete system.
 
-* Install the tailscale client (application).
-* Request to join the `headscale.domaine.tld` network.
-* The administrator must then validate this access:
+<Steps>
 
-```sh
-# Connect to the HCS
-just enter hcs
+1. **Generate the image**
 
-# Method 1: create a temporary authentication key on user 1 (nix)
-#             then connect the client with this key. This method allows
-#             accepting several clients at once (reusable).
-sudo headscale preauthkeys create --reusable --expiration 1h --user 1
+   ```sh
+   just build-iso
+   ```
 
-# Method 2: connect the client then activate its key.
-sudo headscale nodes register --key xxx --user nix
-```
+2. **Boot the machine**
+
+   Burn the image to a USB drive, connect the computer to the network, boot from the drive, then note its IP address.
+
+3. **Apply the system**
+
+   ```sh
+   # just full-install <host> <user> <ip>
+   just full-install poste nix 10.0.0.50
+   ```
+
+   :::tip[In just minutes]
+   `full-install` installs the system, programs, configurations and users. If it fails, the detailed steps are in the `Justfile`.
+   :::
+
+4. **Reboot** without the drive.
+
+</Steps>
+
+:::note[You can stop here]
+A standalone workstation is already fully usable. The [gateway](/en/doc/admin-guide/install/gateway/) is only needed to create a zone (shared local network).
+:::

@@ -44,6 +44,7 @@ Le détail des options exposées par chaque module est généré automatiquement
 dans la [référence](/fr/ref/modules/) — ne pas l'éditer à la main.
 :::
 
+{/* t:p c124e11f3c67b7a874bd8014cf2b604bbbe8435780a93f841d8e43ea86f7e531 */}
 ## Anatomie d'un module
 
 Un module DNF suit le patron NixOS classique : un en-tête, un bloc `options` et
@@ -71,6 +72,7 @@ in
 }
 ```
 
+{/* t:p f8edfd1c2d94f4bab4b3c0b0897576d42b025421b94901b0574ee2b2df5238a2 */}
 ## Convention de nommage
 
 Toutes les options du framework vivent sous l'espace de noms `darkone` :
@@ -88,6 +90,7 @@ Chaque module expose un `enable` (souvent `mkEnableOption`) et garde sa `config`
 sous `lib.mkIf cfg.enable` : un module inactif n'a **aucun** effet.
 :::
 
+{/* t:p 18259557b7d04c0a1e3634f3eb9022d948ff77eb5e4511188e38322a51f5933c */}
 ## Les helpers (`dnfLib`)
 
 `dnfLib` (défini dans `dnf/lib/`) fournit les fonctions transverses, injectées
@@ -107,6 +110,7 @@ Vérifier `dnf/lib/default.nix` : la fonction existe peut-être déjà. Réutili
 plutôt que dupliquer.
 :::
 
+{/* t:p 037dbfea145cda939761a1024c4ee112cc5935a92a73572ae571b15bf4162786 */}
 ## Le registre des services
 
 Un service déclare sa **topologie** dans `dnf/config/modules.nix` (et non dans
@@ -128,6 +132,7 @@ adguardhome = {
 | `externalAccess` | `false` | Joignable hors zone (via le HCS). |
 | `activation.profiles.<profil>` | — | Activé d'office sur les hôtes d'un profil. |
 
+{/* t:p 9a6be91b8e2904daaf3ad92036dcab555d01745e973058e8f3c6188a3b2286a5 */}
 ## Le `default.nix` généré
 
 Chaque dossier de modules possède un `default.nix` qui **importe** ses fichiers.

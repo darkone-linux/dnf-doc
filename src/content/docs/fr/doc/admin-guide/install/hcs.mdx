@@ -8,10 +8,15 @@ lang: fr
 
 import { Steps } from '@astrojs/starlight/components';
 
+{/* t:main */}
+{/* t:h 869be5562f059f7b804b83e9468623e227612840b861dbd9089713501a5fa852 */}
+
+{/* t:p 60199b0faa0ab2ee868a6a0ef445dfefd78b67f68df1a4e49570fb3d80ee90f7 */}
 Le serveur de coordination (HCS) relie les zones par un
 [VPN maillé](/fr/doc/admin-guide/understand/network/) et héberge les services
 partagés. C'est un petit serveur **public** (un VPS suffit).
 
+{/* t:p aa32894c75012b350d20cf27a719a20038290fa0424e58a518267d61ca100931 */}
 ## Déclarer le HCS
 
 On active la coordination et on déclare l'hôte `profile: hcs` :
@@ -41,6 +46,7 @@ L'installation suit la même procédure qu'une
 [passerelle](/fr/doc/admin-guide/install/gateway/#installer-la-passerelle)
 (`just install` / `configure` / `apply`).
 
+{/* t:p ba8dffdcffe41df2842792581fe17f6c11c7a22177403eac4c9ee620f404192c */}
 ## Services globaux
 
 Un service marqué `global: true` est exposé sur le HCS avec un **DNS public**
@@ -53,6 +59,7 @@ Un service marqué `global: true` est exposé sur le HCS avec un **DNS public**
         global: true             # → https://git.domain.tld
 ```
 
+{/* t:p 90cf0562ec5446e2b9f2028ae84af170cd7b94ac58a78b324a8e30f6e9c00a75 */}
 ## Créer un compte utilisateur
 
 :::tip[Chaque utilisateur aura…]
@@ -115,6 +122,7 @@ Un service marqué `global: true` est exposé sur le HCS avec un **DNS public**
 
 </Steps>
 
+{/* t:p 3dba964e730b8d6f6b18cb771130ce717d52014a10b998b05a1a8ee608a4361b */}
 ## Se connecter depuis l'extérieur
 
 Hors d'une zone, l'accès aux services passe par un client VPN Tailscale, validé

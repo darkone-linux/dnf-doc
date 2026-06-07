@@ -1,0 +1,75 @@
+---
+title: The service catalog
+sidebar:
+  label: Services
+  order: 1
+lang: en
+---
+
+{/* t:translated-from fr */}
+{/* t:h 486d849ea3fad72033043f922fa22b9d58540522e9687786a106498839d77a20 */}
+
+{/* t:p 3478de3979d02acf830977b4aca60df993f23c57fa8843237fc3c6c232a6516f */}
+Services are the self-hosted building blocks of the network. They are enabled **per
+host**, in `etc/config.yaml`. The host profile does not matter.
+
+{/* t:p 9825597dfbc253718df3f1d33525c6b0cd6102e2e2d6881b87fffefc17add70b */}
+## Enabling a service
+
+Under a host's `services` key, each entry enables a service. The (optional)
+value customizes it:
+
+```yaml
+# etc/config.yaml
+    services:
+      immich:
+        title: "Photos"
+        description: "My photos & videos"
+        domain: "photos"          # service subdomain
+        global: true              # → https://photos.domain.tld (public, no zone)
+      nextcloud:
+        domain: "cloud"           # → cloud.<zone>.domain.tld (not global)
+      restic:                     # default values
+```
+
+| Field | Role |
+|---|---|
+| *(key)* | The service to enable (e.g. `immich`) |
+| `title` | Name displayed on the portal |
+| `description` | Subtitle on the portal |
+| `domain` | Subdomain (default: service name). FQDN: `<domain>.<zone>.domain.tld` |
+| `global` | Exposes publicly via HCS: `<domain>.domain.tld`, **without the zone** ([public DNS](/en/doc/admin-guide/install/hcs/#global-services)) |
+| `icon` | Portal icon |
+
+:::tip[Visible across the whole network]
+Declaring a service in `etc/config.yaml` makes it visible and resolvable from
+all zones. See [Names and DNS resolution](/en/doc/admin-guide/understand/network/#names-and-dns-resolution).
+:::
+
+{/* t:p e3f296cf2c9354cd33ce95ef36a36e08419f5ac4aa6064e004c6db8d41c1317a */}
+## The catalog
+
+| Category | Services |
+|---|---|
+| Authentication | `idm` (Kanidm), `vaultwarden` |
+| Files & cloud | `nextcloud`, `oxicloud`, `immich`, `garage`, `minio`, `nfs` |
+| Communication | `matrix`, `element`, `jitsi-meet`, `turn` |
+| Media & leisure | `jellyfin`, `mealie`, `geneweb` |
+| Productivity | `outline`, `docs`, `searx` |
+| AI | `ai` (Open WebUI + Ollama) |
+| Network | `dnsmasq`, `adguardhome`, `headscale`, `tailscale`, `homepage` |
+| Development | `forgejo`, `harmonia`, `ncps` |
+| Monitoring & backup | `monitoring`, `loki`, `restic` |
+| System | `fail2ban`, `postfix`, `printing`, `audio`, `home-assistant` |
+
+:::note[Full reference]
+Detailed options for each service in the
+[module reference](/en/ref/modules/service/).
+:::
+
+{/* t:p ade9329a9007ab88dfa2d1b5ade3eaefbb72ee2d5da34148b4603fd50c760cd0 */}
+## Portal and access
+
+- **Portal** — the `homepage` service provides a service home page, per zone.
+- **Single sign-on** — most services go through [Kanidm SSO](/en/doc/admin-guide/operate/sso/).
+- **Local or global** — a service stays within its zone, unless `global: true` exposes it publicly.
