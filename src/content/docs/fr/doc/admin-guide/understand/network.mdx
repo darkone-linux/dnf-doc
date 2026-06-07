@@ -6,5 +6,132 @@ sidebar:
 lang: fr
 ---
 
-À rédiger : zones et sous-réseaux, maillage VPN, DNS (dnsmasq + AdGuardHome),
-routes, pare-feu. Réseau simple (passerelle + postes) puis réseau étendu (VPN).
+import { Aside } from '@astrojs/starlight/components';
+
+Le réseau DNF se comprend à deux échelles : une **zone** locale isolée, puis
+plusieurs zones reliées par un **VPN** maillé. Le vocabulaire est défini dans
+[Concepts](/fr/doc/admin-guide/understand/concepts/).
+
+## Réseau simple (une zone)
+
+Une zone, c'est une passerelle et ses machines.
+
+```d2
+style.fill: transparent
+direction: down
+
+net: Internet { shape: cloud }
+
+gw: Passerelle {
+  fw: NAT + Pare-feu
+  dns: dnsmasq\nDNS + DHCP
+  fw -> dns
+}
+
+lan: Zone locale {
+  pc: Postes
+  srv: Serveur { shape: cylinder }
+}
+
+net -> gw.fw: WAN
+gw.dns -> lan.pc: LAN
+gw.dns -> lan.srv: LAN
+```
+
+- La passerelle partage Internet (NAT) et protège la zone (pare-feu).
+- `dnsmasq` distribue les adresses (DHCP) et résout les noms locaux
+  (`<hôte>.<zone>`).
+- Côté Internet (WAN), tout est fermé. Côté local (LAN), seuls SSH, DNS, DHCP et
+  la page d'accueil sont ouverts.
+
+## Filtrage des publicités (AdGuardHome)
+
+Service optionnel, activé sur la passerelle. Il s'intercale devant `dnsmasq`.
+
+```d2
+style.fill: transparent
+direction: down
+
+pc: Poste
+
+agh: AdGuardHome\nport 53, filtrage { shape: hexagon }
+
+dns: dnsmasq\nnoms locaux { shape: cylinder }
+up: DNS externe\nchiffré { shape: cloud }
+
+pc -> agh: Requête DNS
+agh -> dns: Noms locaux
+agh -> up: Reste, filtré
+```
+
+- AdGuardHome devient le résolveur DNS des postes (port 53).
+- Il bloque publicités et traceurs, et chiffre les requêtes vers l'extérieur.
+- `dnsmasq` recule sur un port interne et garde les noms locaux et le DHCP.
+
+## Réseau étendu (VPN)
+
+Plusieurs zones sont reliées par un VPN maillé, coordonné par le serveur de
+coordination (HCS).
+
+```d2
+style.fill: transparent
+direction: down
+
+hcs: Coordination\nHeadscale (HCS) { shape: cylinder }
+
+zoneA: Zone A {
+  gwa: Passerelle
+  la: Postes
+  gwa -> la
+}
+zoneB: Zone B {
+  gwb: Passerelle
+  lb: Postes
+  gwb -> lb
+}
+ext: Machine distante
+
+hcs -> zoneA.gwa: VPN
+hcs -> zoneB.gwb: VPN
+hcs -> ext: VPN
+zoneA.gwa <-> zoneB.gwb: Maillage
+```
+
+- Le HCS (Headscale) est public et orchestre le maillage.
+- Chaque passerelle est *subnet router* : elle publie le
+  sous-réseau de sa zone dans le VPN.
+- Les zones se voient entre elles ; les machines distantes (smartphone, PC)
+  rejoignent le réseau via Tailscale.
+- Un résolveur pivot sur le HCS aiguille chaque zone vers son propre DNS.
+
+<Aside type="note" title="VPN optionnel">
+Le maillage n'est activé que si `network.coordination.enable` est vrai dans
+`etc/config.yaml`. Sans lui, les zones restent locales et indépendantes.
+</Aside>
+
+## Noms et résolution DNS
+
+Trois familles de noms cohabitent sur le réseau. Toutes sont générées depuis
+`etc/config.yaml`.
+
+| Nom | Forme | Portée | Exemple |
+|---|---|---|---|
+| **Nom simple** | `<hôte>` | Tout le réseau interne | `serveur` |
+| **FQDN de zone** | `<nom>.<zone>.<domaine>` | Tout le réseau interne | `cloud.maison.domain.tld` |
+| **Service global** | `<nom>.<domaine>` | Internet inclus | `git.domain.tld` |
+
+- **Noms simples** — ce sont les **machines** (hôtes déclarés). Résolus partout
+  sur le réseau, vers l'adresse réelle de la machine, quelle que soit sa zone.
+- **FQDN de zone** — ce sont les **services d'une zone**. Ils pointent vers la
+  passerelle de cette zone, qui les sert via son proxy inverse.
+- **Services globaux** — les services marqués `global` dans `etc/config.yaml`.
+  Exposés sur le HCS avec un **DNS public** : joignables depuis n'importe où.
+
+Qui résout quoi :
+
+- `dnsmasq`, sur **chaque passerelle**, connaît tous les noms internes (machines
+  et services de **toutes** les zones) : il résout les noms simples et les FQDN.
+- La zone courante est résolue localement ; les autres zones et le domaine global
+  sont aiguillés vers la bonne passerelle, ou vers le résolveur pivot du HCS.
+- Les noms publics (Internet) partent vers les DNS chiffrés en amont, filtrés par
+  AdGuardHome s'il est activé.
