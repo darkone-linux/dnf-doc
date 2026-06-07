@@ -6,6 +6,51 @@ sidebar:
 lang: fr
 ---
 
-À rédiger : zone, nœud, profil, passerelle (gateway), serveur de coordination
-(HCS), distinction framework (`dnf/`) / projet local (`usr/`), rôle de
-`config.yaml`.
+import { Aside } from '@astrojs/starlight/components';
+
+Le vocabulaire de base pour administrer un réseau DNF. Les pages suivantes y
+font référence sans le redéfinir.
+
+## Le réseau
+
+| Terme | Description |
+|---|---|
+| **Zone** | Sous-réseau autonome (LAN de la maison, réseau invité, site distant…). Préfixe IP en `/16`, une passerelle, ses hôtes. |
+| **Nœud** | Toute machine du réseau : poste, serveur, passerelle, coordination. |
+| **Passerelle** (*gateway*) | Nœud frontière d'une zone : routeur, pare-feu, DNS/DHCP, client VPN. Une par zone, IP fixe `<préfixe>.1.1`. |
+| **Serveur de coordination** (*HCS*) | Nœud public qui orchestre le VPN maillé (Headscale) et héberge les services partagés entre zones. |
+| **VPN** (*tailnet*) | La maille qui relie toutes les zones et les machines distantes, via Headscale + Tailscale. |
+
+<Aside type="note" title="Vue d'ensemble">
+Le schéma du réseau figure dans la [présentation du projet](/fr/doc/#le-réseau-dnf) ;
+son fonctionnement détaillé est décrit dans [Réseau](/fr/doc/admin-guide/understand/network/).
+</Aside>
+
+## Hôtes, profils et services
+
+| Terme | Description |
+|---|---|
+| **Hôte** | Nœud NixOS géré, déclaré dans `etc/config.yaml`. |
+| **Profil d'hôte** | Gabarit qui définit le rôle d'un hôte (`gateway`, `server`, `desktop`, `laptop`, `portable`, `hcs`, `vm`…). Voir [Profils d'hôtes](/fr/doc/admin-guide/install/host-profiles/). |
+| **Profil d'utilisateur** | Environnement [Home Manager](https://github.com/nix-community/home-manager) d'un compte (`nix-admin`, `normal`, `student`, `child`…). |
+| **Groupes** | Relient utilisateurs et hôtes : ils déterminent qui peut se connecter où. |
+| **Services** | Briques auto-hébergées activées par hôte (Nextcloud, Immich, Forgejo…). Voir [Services](/fr/doc/admin-guide/operate/services/). |
+| **Features** | Options non-service activées par hôte (`monitoring-node`, `nfs-client`…). |
+
+## Framework, projet et configuration
+
+Tout part d'un seul fichier déclaratif, transformé en configuration NixOS :
+
+| Emplacement | Rôle |
+|---|---|
+| `etc/config.yaml` | La **source de vérité** : réseau, zones, utilisateurs, hôtes, services. |
+| `dnf/` | Le **framework** : modules, profils, librairies. Réutilisable, peu modifié. |
+| `usr/` | Le **projet local** (en écriture) : surcharges de modules et de profils, machines, secrets. |
+| `var/generated/` | Le code Nix **généré** depuis `etc/config.yaml` (ne jamais éditer à la main). |
+| `doc/` | Cette documentation. |
+
+<Aside type="tip" title="Du YAML au système">
+`etc/config.yaml` → `just generate` → `var/generated/*.nix` → framework.
+Détail dans [Le générateur](/fr/doc/dev-guide/generator/) ; arborescence
+complète dans l'[organisation des fichiers](/fr/doc/#organisation-des-fichiers).
+</Aside>

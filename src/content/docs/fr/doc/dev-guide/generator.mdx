@@ -11,12 +11,12 @@ lang: fr
 
 {/* t:p 7d9539d0c24cb53dec81f93d55016d34021d00f19b1ef24061165234e7163113 */}
 Le générateur (`src/generator/`, écrit en Rust) transforme la configuration
-déclarative `usr/config.yaml` en code Nix consommé par le framework.
+déclarative `etc/config.yaml` en code Nix consommé par le framework.
 
 {/* t:p d42ebc6e7b397c8a6db92651c65e80dd755d12933c9122593326a68e983f1122 */}
 ## De YAML à Nix
 
-- **Entrée** : `usr/config.yaml` — hôtes, utilisateurs, réseau, services.
+- **Entrée** : `etc/config.yaml` — hôtes, utilisateurs, réseau, services.
 - **Sortie** : `var/generated/` — `hosts.nix`, `users.nix`, `network.nix`.
 
 Ces fichiers sont **générés** : on ne les édite jamais à la main. Pour les

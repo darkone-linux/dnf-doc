@@ -20,7 +20,7 @@ Une **configuration NixOS** multi-utilisateur, multi-hôte et multi-service&nbsp
 
 - 🔥 [Déclaratif, reproductible, immuable](https://nixos.org/).
 - 🚀 [Modules](/fr/ref/modules/) prêts à l’emploi.
-- ❄️ [Configuration](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/usr/config.yaml) simple.
+- ❄️ [Configuration](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/etc/config.yaml) simple.
 - 🧩 [Organisation](/fr/doc/#structure) cohérente.
 - 🌎 Un [réseau complet](#le-réseau-dnf).
 
@@ -101,8 +101,9 @@ A la racine :
     - modules/ Modules nix (fonctionnalités, programmes)
     - profiles/ Profils : admin, student, advanced...
     - nixos/ Configurations NixOS (hors HM) additionnelles
-- **usr/** Configuration spécifique de mon réseau
+- **etc/** Configuration déclarative du réseau
   - config.yaml [Ma config principale](/fr/doc/dev-guide/generator/)
+- **usr/** Configuration spécifique de mon réseau
   - modules/ Mes modules NixOS, identique à `dnf/modules`
   - home/ Mes modules HM, identique à `dnf/home`
   - secrets/ Mes mots de passe
