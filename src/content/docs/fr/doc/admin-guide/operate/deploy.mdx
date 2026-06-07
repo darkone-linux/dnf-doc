@@ -6,5 +6,57 @@ sidebar:
 lang: fr
 ---
 
-À rédiger : déploiement multi-hôtes avec colmena (`just apply` / `apply-local`),
-mise à jour des flakes (`just update-flake`), cache binaire Harmonia.
+Le parc se déploie avec [colmena](https://github.com/zhaofengli/colmena) : une
+commande construit et applique la configuration sur un ou plusieurs hôtes, à
+distance, depuis le poste admin.
+
+## Appliquer une configuration
+
+```sh
+just apply <cible> [action]    # alias : a
+```
+
+- **cible** = nom d'hôte, motif (`'*'`), liste (`a,b`) ou tag colmena (`@server`).
+- **action** = `switch` (défaut), `boot`, `test` ou `build`.
+
+| Commande | Pour quoi |
+|---|---|
+| `just apply <cible>` | Construire + activer sur la (les) cible(s) |
+| `just apply-local` | Appliquer sur la machine courante (alias `al`) |
+| `just apply-verbose <cible>` | Idem `apply` en mode trace (alias `av`) |
+
+:::tip[Construire sur la cible]
+`apply` construit **sur l'hôte cible** (`--build-on-target`) : le poste admin n'a
+pas besoin de la puissance ni de l'architecture des machines déployées.
+:::
+
+:::note[Exemples de cibles]
+`just apply hote1` · `just apply hote1,hote2` · `just apply '*'` (tout le parc).
+:::
+
+## Mettre à jour
+
+Le système est figé par les *flakes*. Mettre à jour = rafraîchir les entrées,
+puis redéployer.
+
+```sh
+just update-flake     # met à jour dnf/ + racine, commit les locks
+just apply '*'        # déploie la mise à jour
+```
+
+:::caution[Toujours tester avant]
+Avant un déploiement large, validez localement : `just check-flake` (ou
+`just check-all`), puis `just apply <hôte-pilote>` sur **un** hôte témoin.
+:::
+
+## Cache binaire
+
+Le service `harmonia` sert de **cache binaire** signé au parc, et `ncps` le
+relaie. Les hôtes récupèrent ainsi les dérivations déjà construites au lieu de
+recompiler, ce qui accélère nettement les déploiements.
+
+:::note[Activation]
+`harmonia` et `ncps` sont des [services](/fr/doc/admin-guide/operate/services/) à
+activer sur un hôte du réseau. La clé de signature est gérée par
+[sops](/fr/doc/admin-guide/operate/secrets/) (`just configure-admin-host`).
+:::

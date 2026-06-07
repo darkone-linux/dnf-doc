@@ -6,5 +6,90 @@ sidebar:
 lang: fr
 ---
 
-À rédiger : créer / désactiver un compte, profils utilisateurs, gestion des mots
-de passe (sops ↔ Kanidm ↔ Vaultwarden).
+import { Steps } from '@astrojs/starlight/components';
+
+Les utilisateurs sont déclarés **une fois** dans `etc/config.yaml`, puis
+**rattachés** aux hôtes où ils doivent ouvrir une session. Le même compte peut
+exister sur plusieurs machines.
+
+## Déclarer un utilisateur
+
+```yaml
+# etc/config.yaml
+users:
+  alice:
+    uid: 1000
+    name: "Alice Martin"
+    email: "alice@domain.tld"
+    profile: "advanced"
+    groups: ["global", "idm-devs"]
+```
+
+| Champ | Rôle |
+|---|---|
+| *(clé)* | Login du compte (ex. `alice`) |
+| `uid` | Identifiant numérique stable |
+| `name` | Nom affiché |
+| `email` | Adresse (sert aussi à l'identité SSO) |
+| `profile` | [Profil utilisateur](/fr/doc/admin-guide/understand/user-profiles/) (environnement) |
+| `groups` | Groupes (accès réseau et services) |
+
+## Rattacher à un hôte
+
+Sous un hôte, `users` liste les **logins existants** autorisés à s'y connecter :
+
+```yaml
+# etc/config.yaml
+hosts:
+  poste-alice:
+    profile: "desktop"
+    users: ["alice"]
+```
+
+```sh
+just apply poste-alice     # crée le compte sur l'hôte
+```
+
+## Définir le mot de passe
+
+<Steps>
+
+1. **Définir l'empreinte**
+
+   ```sh
+   just passwd alice
+   ```
+
+2. **Déployer**
+
+   ```sh
+   just apply @user-alice
+   ```
+
+</Steps>
+
+:::tip[Mot de passe par défaut]
+À la création, un compte utilise le mot de passe par défaut du parc
+(`just passwd-default`). Voir [Secrets](/fr/doc/admin-guide/operate/secrets/).
+:::
+
+## Identités et SSO
+
+Au-delà du compte système, l'utilisateur dispose d'une **identité unique**
+(Kanidm) qui ouvre les services du réseau.
+
+- Les `groups` pilotent l'accès aux services.
+- `idm-admins` / `idm-devs` sont les groupes d'administration et de développement.
+- Le détail : [SSO et identités](/fr/doc/admin-guide/operate/sso/).
+
+:::note[Créer un compte de bout en bout]
+Le parcours complet (compte + identité + premier mot de passe) est décrit dans
+[Créer un compte utilisateur](/fr/doc/admin-guide/install/hcs/#créer-un-compte-utilisateur).
+Pour réinitialiser : [Réinitialiser un mot de passe](/fr/doc/how-to/admin/reset-user-password/).
+:::
+
+## Désactiver un compte
+
+- **Sur un hôte** — retirer le login de la liste `users` de l'hôte, puis `just apply`.
+- **Partout** — retirer l'entrée sous `users:`, puis redéployer les hôtes concernés.
+- **Accès services** — retirer l'utilisateur des `groups` coupe l'accès SSO.

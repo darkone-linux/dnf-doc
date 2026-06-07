@@ -6,5 +6,56 @@ sidebar:
 lang: fr
 ---
 
-À rédiger : vue d'ensemble de la stratégie 3-2-1 (restic). Le détail
-opérationnel reste dans [how-to/admin](/fr/doc/how-to/admin/network-backup/).
+Les sauvegardes reposent sur [restic](https://restic.net/) : chaque hôte
+**pousse** ses données vers un dépôt chiffré, local ou distant via un serveur
+REST de zone. L'objectif est une stratégie **3-2-1** (plusieurs copies, plusieurs
+supports, un site distant).
+
+## Deux rôles, un module
+
+```d2
+style.fill: transparent
+direction: down
+
+c1: Hôte client\nrestic backup { shape: person }
+c2: Hôte client\nrestic backup { shape: person }
+srv: Serveur REST\ndépôts de zone { shape: cylinder }
+
+c1 -> srv
+c2 -> srv
+```
+
+| Rôle | Qui | Quoi |
+|---|---|---|
+| Serveur REST | Hôte avec le service `restic` | Stocke les dépôts de la zone |
+| Client | Hôte avec `enable = true` | Pousse ses `targets` (sauvegardes) |
+
+## Catégories sauvegardées
+
+Une cible sauvegarde une ou plusieurs **catégories** dans des sous-dépôts :
+
+| Catégorie | Contenu |
+|---|---|
+| `system` | Racine `/`, hors données volatiles et `/nix`, `/srv`… |
+| `nfs` | Partages `/srv/nfs/...` |
+| `medias` | Médias `/srv/medias/...` |
+
+:::note[Deux secrets, à ne pas confondre]
+- **Passphrase de dépôt** (`restic-password-<zone>`) — chiffre le contenu.
+- **Credential REST** (`restic/<hôte>/rest-password`) — authentifie l'hôte.
+
+Les deux sont générés par `just passwd-restic`. Voir
+[Secrets](/fr/doc/admin-guide/operate/secrets/).
+:::
+
+## Mise en œuvre
+
+La configuration opérationnelle complète (serveur REST, cibles, politique de
+rétention, restauration) est détaillée dans le guide pratique :
+
+- [Sauvegardes du réseau (restic)](/fr/doc/how-to/admin/network-backup/)
+
+:::tip[Politique de rétention]
+Par défaut : 24 dernières + 24 horaires + 7 quotidiennes + 8 hebdomadaires + 24
+mensuelles. Intégrité vérifiée à chaque sauvegarde.
+:::

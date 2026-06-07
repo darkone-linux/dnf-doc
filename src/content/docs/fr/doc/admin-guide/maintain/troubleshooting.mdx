@@ -6,5 +6,77 @@ sidebar:
 lang: fr
 ---
 
-À rédiger : nettoyage / GC (`just clean`), générations et rollback, diagnostic
-d'un hôte, accès aux logs.
+import { Steps } from '@astrojs/starlight/components';
+
+Le quotidien de l'administrateur : garder le parc propre, intervenir sur un
+hôte, revenir en arrière après une mauvaise configuration, lire les journaux.
+
+## Agir sur un hôte
+
+Toutes ces commandes ciblent un hôte (ou un motif / une liste) via colmena :
+
+| Commande | Effet |
+|---|---|
+| `just enter <host>` | Ouvrir un shell SSH (alias `e`) |
+| `just reboot <host>` | Redémarrer |
+| `just halt <host>` | Éteindre |
+| `just gc <host>` | Purger les générations + nettoyer le store |
+| `just fix-boot <host>` | Réinstaller le chargeur d'amorçage |
+
+:::tip[Plusieurs hôtes à la fois]
+La cible accepte un motif ou une liste : `just gc '*'`, `just reboot a,b`.
+:::
+
+## Nettoyer et formater le code
+
+Avant de committer ou déployer, normaliser le dépôt :
+
+```sh
+just clean      # fix + check + generate + format
+```
+
+- `just check-all` — tests unitaires + vérification des flakes (avant un déploiement).
+- `just gc <host>` — récupère l'espace disque (ancien générations supprimées).
+
+## Revenir en arrière
+
+Chaque déploiement crée une **génération** NixOS. En cas de problème :
+
+<Steps>
+
+1. **Au démarrage** — choisir une génération précédente dans le menu de boot.
+
+2. **À chaud** — revenir à la génération précédente puis la rendre active :
+
+   ```sh
+   just enter <host>
+   sudo nixos-rebuild switch --rollback
+   ```
+
+3. **Par le code** — `git revert` la mauvaise configuration, puis redéployer :
+
+   ```sh
+   just apply <host>
+   ```
+
+</Steps>
+
+:::caution[Attention au GC]
+`just gc` supprime les anciennes générations : on ne peut plus y revenir au
+démarrage. Vérifiez que l'hôte est stable avant de nettoyer.
+:::
+
+## Lire les journaux
+
+```sh
+just enter <host>
+journalctl -u <service> -n 100 --no-pager     # logs d'un service
+journalctl -p err -b                          # erreurs depuis le démarrage
+systemctl status <service>                    # état d'une unité
+```
+
+:::tip[Diagnostic guidé]
+Pour la supervision centralisée (métriques + journaux Caddy), voir
+[Supervision](/fr/doc/admin-guide/maintain/monitoring/). Pour la santé de la
+réplication d'identités : `just idm-fix-replica <hcs> <gateways>`.
+:::

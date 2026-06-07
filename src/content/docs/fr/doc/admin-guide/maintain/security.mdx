@@ -6,5 +6,87 @@ sidebar:
 lang: fr
 ---
 
-À rédiger : cadre de règles ANSSI (R1–R49), niveaux et exceptions, AppArmor,
-fail2ban.
+Le module `darkone.system.security` applique progressivement les recommandations
+de durcissement [ANSSI BP-028](https://cyber.gouv.fr/publications/recommandations-de-securite-relatives-un-systeme-gnulinux)
+(GNU/Linux). Chaque hôte choisit un **niveau** et une **catégorie** ; les règles
+adaptées s'activent automatiquement.
+
+:::danger[Module en développement]
+Le durcissement ANSSI est **en cours de stabilisation**. Montez le niveau
+**progressivement** et testez chaque hôte avant la production.
+:::
+
+## Niveau et catégorie
+
+```nix
+darkone.system.security = {
+  enable   = true;
+  level    = "intermediary";   # minimal | intermediary | reinforced | high
+  category = "server";         # base | client | server
+};
+```
+
+| Niveau | Pour quoi |
+|---|---|
+| `minimal` | Socle commun, tout système (défaut) |
+| `intermediary` | Recommandé pour la quasi-totalité des systèmes |
+| `reinforced` | Systèmes sensibles ou multi-utilisateurs |
+| `high` | Compétences et budget dédiés (recompilation noyau) |
+
+| Catégorie | Pour quoi |
+|---|---|
+| `base` | Règles universelles, toujours appliquées (défaut) |
+| `client` | Poste de travail (bureau, USB, session, verrouillage) |
+| `server` | Serveur (réseau durci, journalisation, services exposés) |
+
+:::note[Activation par règle]
+Une règle s'active si le module est activé **et** que le niveau couvre sa
+sévérité **et** que la catégorie correspond **et** qu'aucun tag d'exclusion ni
+exception ne la vise.
+:::
+
+## Exclure un groupe de règles
+
+Certaines règles cassent un usage légitime. On désactive un **groupe** par tag :
+
+```nix
+darkone.system.security.excludes = [ "needs-hibernation" "needs-jit" ];
+```
+
+| Tag | Désactive |
+|---|---|
+| `kernel-recompile` | Règles noyau custom (R15–R27) |
+| `no-ipv6` | Désactivation IPv6 (R13, R22) |
+| `no-mac` | MAC / AppArmor (R37, R45) |
+| `needs-hibernation` | Conserve l'hibernation (portables) |
+| `needs-jit` | Autorise le JIT (Java, .NET, V8, Wasm) |
+| `needs-usb-hotplug` | Désactive USBGuard |
+
+## Déroger à une règle précise
+
+Une règle unique se contourne avec une **justification obligatoire** :
+
+```nix
+darkone.system.security.exceptions = {
+  R9.rationale = "Conteneurs rootless requis en développement.";
+};
+```
+
+:::caution[Effets de bord]
+Certaines règles gênent l'usage courant : `noexec /tmp` (R28), SMT désactivé
+(R8), modules non signés (R18). Vérifiez les commentaires `sideEffects` du module
+avant de monter le niveau en production.
+:::
+
+## MAC, pare-feu, fail2ban
+
+- **MAC / AppArmor** (R37, R45) — confinement applicatif ; SELinux est
+  structurellement non supporté sur NixOS (exceptions R46–R49 par défaut).
+- **Pare-feu & réseau** — durcis par la catégorie `server` (module `network`).
+- **fail2ban** — bannit les IP après tentatives répétées ; service à activer
+  dans le [catalogue](/fr/doc/admin-guide/operate/services/).
+
+:::note[Référence des règles]
+La cartographie complète des règles (R0–R62…) figure dans les modules de
+sécurité du framework et la [référence des modules](/fr/ref/modules/security/).
+:::

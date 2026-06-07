@@ -6,4 +6,68 @@ sidebar:
 lang: fr
 ---
 
-À rédiger : Prometheus / Grafana / Loki, supervision par zone, exporters.
+La supervision repose sur [Prometheus](https://prometheus.io/) (métriques),
+[Grafana](https://grafana.com/) (tableaux de bord) et [Loki](https://grafana.com/oss/loki/)
+(journaux). Elle est **organisée par zone** : un hôte collecte, les autres
+exposent leurs métriques.
+
+## Les rôles
+
+```d2
+style.fill: transparent
+direction: down
+
+grafana: Hôte monitoring\nGrafana + Prometheus + Loki { shape: cylinder }
+n1: Nœud\nnode-exporter { shape: rectangle }
+n2: Nœud\nnode-exporter { shape: rectangle }
+caddy: Hôte Caddy\nAlloy (logs) { shape: rectangle }
+
+n1 -> grafana
+n2 -> grafana
+caddy -> grafana
+```
+
+| Rôle | Qui | Quoi |
+|---|---|---|
+| Collecteur | Hôte avec le service `monitoring` | Grafana + Prometheus + Loki |
+| Nœud supervisé | Hôtes tagués `monitoring-node` | `node-exporter` (métriques système) |
+| Source de logs | Hôtes sous Caddy | Alloy pousse les journaux d'accès |
+
+:::note[Un collecteur par zone]
+Un seul hôte `monitoring` est admis par zone. Il supervise les nœuds dont le tag
+`monitoring-node` désigne **sa** zone.
+:::
+
+## Activer
+
+La supervision est un [service](/fr/doc/admin-guide/operate/services/). Sur le
+collecteur :
+
+```yaml
+# etc/config.yaml
+    services:
+      monitoring:
+        domain: "stats"        # → stats.<zone>.domain.tld
+```
+
+- Les nœuds à superviser reçoivent le tag `monitoring-node` de leur zone.
+- `loki` suit `monitoring` : les logs Caddy sont collectés **automatiquement**
+  dès que Caddy et monitoring sont actifs.
+
+:::tip[Accès]
+Grafana est protégé par le [SSO Kanidm](/fr/doc/admin-guide/operate/sso/). La
+racine du domaine redirige vers un tableau de bord d'accueil.
+:::
+
+## Réglages utiles
+
+| Option | Effet | Défaut |
+|---|---|---|
+| `retentionTime` | Rétention des métriques Prometheus | `30d` |
+| `isNode` | Fait de l'hôte un nœud supervisé | suit le tag |
+| `kioskTarget` | Tableau de bord affiché à la racine | node-exporter |
+
+:::note[Référence]
+Options détaillées : [module monitoring](/fr/ref/modules/service/) et le module
+`loki` pour la collecte de journaux.
+:::
