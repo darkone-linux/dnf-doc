@@ -6,5 +6,63 @@ sidebar:
 lang: fr
 ---
 
-À rédiger : activer un service, registre des services, activation par hôte / zone
-(`config.yaml`). Vue d'ensemble des 35+ services, renvoi vers `ref/modules`.
+Les services sont les briques auto-hébergées du réseau. On les active **par
+hôte**, dans `etc/config.yaml`. Le profil de l'hôte n'a pas d'importance.
+
+## Activer un service
+
+Sous la clé `services` d'un hôte, chaque entrée active un service. La valeur
+(facultative) le personnalise :
+
+```yaml
+# etc/config.yaml
+    services:
+      immich:
+        title: "Photos"
+        description: "Mes photos & vidéos"
+        domain: "photos"          # sous-domaine du service
+        global: true              # → https://photos.domain.tld (public, sans zone)
+      nextcloud:
+        domain: "cloud"           # → cloud.<zone>.domain.tld (non global)
+      restic:                     # valeurs par défaut
+```
+
+| Champ | Rôle |
+|---|---|
+| *(clé)* | Le service à activer (ex. `immich`) |
+| `title` | Nom affiché sur le portail |
+| `description` | Sous-titre sur le portail |
+| `domain` | Sous-domaine (défaut : nom du service). FQDN : `<domain>.<zone>.domain.tld` |
+| `global` | Expose publiquement via le HCS : `<domain>.domain.tld`, **sans la zone** ([DNS public](/fr/doc/admin-guide/install/hcs/#services-globaux)) |
+| `icon` | Icône du portail |
+
+:::tip[Visible sur tout le réseau]
+Déclarer un service dans `etc/config.yaml` le rend visible et résolvable depuis
+toutes les zones. Voir [Noms et résolution DNS](/fr/doc/admin-guide/understand/network/#noms-et-résolution-dns).
+:::
+
+## Le catalogue
+
+| Catégorie | Services |
+|---|---|
+| Authentification | `idm` (Kanidm), `vaultwarden` |
+| Fichiers & cloud | `nextcloud`, `oxicloud`, `immich`, `garage`, `minio`, `nfs` |
+| Communication | `matrix`, `element`, `jitsi-meet`, `turn` |
+| Médias & loisirs | `jellyfin`, `mealie`, `geneweb` |
+| Productivité | `outline`, `docs`, `searx` |
+| IA | `ai` (Open WebUI + Ollama) |
+| Réseau | `dnsmasq`, `adguardhome`, `headscale`, `tailscale`, `homepage` |
+| Développement | `forgejo`, `harmonia`, `ncps` |
+| Supervision & sauvegarde | `monitoring`, `loki`, `restic` |
+| Système | `fail2ban`, `postfix`, `printing`, `audio`, `home-assistant` |
+
+:::note[Référence complète]
+Options détaillées de chaque service dans la
+[référence des modules](/fr/ref/modules/service/).
+:::
+
+## Portail et accès
+
+- **Portail** — le service `homepage` dresse une page d'accueil des services, par zone.
+- **Authentification unique** — la plupart des services passent par le [SSO Kanidm](/fr/doc/admin-guide/operate/sso/).
+- **Local ou global** — un service reste dans sa zone, sauf `global: true` qui l'expose publiquement.
