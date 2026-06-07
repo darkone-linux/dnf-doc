@@ -30,8 +30,37 @@ just apply <cible> [action]    # alias : a
 pas besoin de la puissance ni de l'architecture des machines déployées.
 :::
 
-:::note[Exemples de cibles]
-`just apply hote1` · `just apply hote1,hote2` · `just apply '*'` (tout le parc).
+## Déployer en sécurité
+
+**Monter en confiance par l'action** : chaque étape est moins risquée que la
+suivante.
+
+```sh
+just apply <hôte> build      # télécharge + compile : 100 % sûr, rien n'est activé
+just apply <hôte> test       # active sans switcher : ni génération, ni boot
+just apply <hôte>            # switch : active et crée une nouvelle génération
+```
+
+**Progresser du cœur vers la périphérie** : déployez les nœuds dans cet ordre,
+pour ne jamais vous couper l'accès à un nœud par celui qui le précède.
+
+```d2
+style.fill: transparent
+direction: right
+
+hcs: HCS
+gwl: Passerelle locale
+hl: Hôtes locaux
+gwd: Passerelles distantes
+hd: Hôtes distants
+
+hcs -> gwl -> hl -> gwd -> hd
+```
+
+:::caution[Pourquoi cet ordre]
+La connectivité d'un hôte distant dépend de sa passerelle, qui dépend du VPN
+coordonné par le HCS. Déployer un maillon avant son support peut rendre les
+suivants injoignables.
 :::
 
 ## Mettre à jour

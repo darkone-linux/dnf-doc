@@ -11,6 +11,30 @@ import { Aside } from '@astrojs/starlight/components';
 Le vocabulaire de base pour administrer un réseau DNF. Les pages suivantes y
 font référence sans le redéfinir.
 
+## Nix et NixOS
+
+DNF repose entièrement sur [Nix / NixOS](https://nixos.org/). Quelques notions à
+avoir en tête avant d'administrer le parc :
+
+| Terme | Description |
+|---|---|
+| **Nix** | Gestionnaire de paquets **déclaratif** : on décrit l'état voulu, Nix le construit à l'identique. |
+| **NixOS** | La distribution Linux bâtie sur Nix : **tout le système** (paquets, services, réseau) est décrit en code. |
+| **Déclaratif** | On déclare *quoi* (le résultat), pas *comment* (les commandes) : le même code donne le même système. |
+| **Reproductible** | Mêmes entrées → même système, sur n'importe quelle machine, à n'importe quel moment. |
+| **Dérivation** | La « recette » de construction d'un élément (paquet, config), évaluée par Nix. |
+| **Store** (`/nix/store`) | Dépôt **immuable** des éléments construits, identifiés par un hash. Rien ne s'écrase. |
+| **Flake** | Unité de projet Nix avec entrées **épinglées** (`flake.lock`) : versions figées et reproductibles. |
+| **Génération** | Un état complet du système, horodaté. Chaque déploiement en crée une nouvelle. |
+| **Rollback** | Revenir à une génération précédente (au boot ou à chaud) : un déploiement raté n'est jamais définitif. |
+| **Home Manager** | Gère de façon déclarative l'environnement d'un utilisateur (applis, bureau, dotfiles). |
+
+<Aside type="tip" title="Pour aller plus loin">
+DNF ajoute une couche au-dessus de NixOS : vous écrivez surtout du YAML
+(`etc/config.yaml`), pas du Nix. La connaissance fine de Nix n'est utile que pour
+[contribuer au framework](/fr/doc/dev-guide/).
+</Aside>
+
 ## Le réseau
 
 | Terme | Description |

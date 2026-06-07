@@ -46,9 +46,41 @@ hosts:
     users: ["alice"]
 ```
 
-```sh
-just apply poste-alice     # crée le compte sur l'hôte
-```
+## Déployer les modifications
+
+Toute modification de `etc/config.yaml` suit le **même cycle** : décrire,
+régénérer, valider dans git, puis déployer.
+
+<Steps>
+
+1. **Décrire le changement**
+
+   Créer ou modifier l'utilisateur et ses postes dans `etc/config.yaml`.
+
+2. **Régénérer et nettoyer le code**
+
+   ```sh
+   just clean       # generate + fix + format
+   ```
+
+3. **Valider dans git**
+
+   ```sh
+   just commit "user(new): alice"
+   ```
+
+4. **Déployer**
+
+   ```sh
+   just apply poste-alice     # crée le compte sur l'hôte
+   ```
+
+</Steps>
+
+:::caution[Toujours committer avant de déployer]
+`just generate` réécrit `var/generated/`. Sans `clean` + `commit`, le
+déploiement part d'un état incohérent ou non versionné.
+:::
 
 ## Définir le mot de passe
 
@@ -60,7 +92,13 @@ just apply poste-alice     # crée le compte sur l'hôte
    just passwd alice
    ```
 
-2. **Déployer**
+2. **Valider dans git**
+
+   ```sh
+   just commit "user(passwd): alice"
+   ```
+
+3. **Déployer**
 
    ```sh
    just apply @user-alice
@@ -90,6 +128,9 @@ Pour réinitialiser : [Réinitialiser un mot de passe](/fr/doc/how-to/admin/rese
 
 ## Désactiver un compte
 
-- **Sur un hôte** — retirer le login de la liste `users` de l'hôte, puis `just apply`.
-- **Partout** — retirer l'entrée sous `users:`, puis redéployer les hôtes concernés.
+- **Sur un hôte** — retirer le login de la liste `users` de l'hôte.
+- **Partout** — retirer l'entrée sous `users:`.
 - **Accès services** — retirer l'utilisateur des `groups` coupe l'accès SSO.
+
+Dans tous les cas, appliquer ensuite le cycle `just clean` → `just commit` →
+`just apply` sur les hôtes concernés.
