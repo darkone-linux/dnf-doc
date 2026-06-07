@@ -9,8 +9,16 @@ lang: en
 {/* t:translated-from fr */}
 {/* t:h 62cb531d6b0df6f948c43272fe531bd1056b2fcee8e6f4e1b4f8b24409eaf5eb */}
 
-{/* t:p 56532ba4f85497e9ffd4c2d50ba95e4b826cda7abc089a573170d50ea8874c2f */}
-[Kanidm](https://kanidm.com/) is the network's identity provider: a **single identity** unlocks all services (SSO). The `idm` service runs on the HCS (and, optionally, as a replica in each zone).
+{/* t:p 1947e9b785d3587ff9594517ac977ebba27628e04749283826a37b1e3ea6ed1e */}
+[Kanidm](https://kanidm.com/) is the network's identity provider: a
+**single identity** unlocks all services (SSO). The `idm` service runs on
+the HCS (and, optionally, as a replica in each zone).
+
+:::tip[Understanding how it works]
+The details of the mechanisms (native OIDC, authenticating reverse proxy,
+connection flow) are explained in
+[Authentication and identities](/en/doc/admin-guide/understand/auth-idm/).
+:::
 
 {/* t:p c3f1ee94735a2710129012e89644385de01f1bbe56d240cb932d0d5cd784889f */}
 ## Identities and groups
@@ -35,6 +43,30 @@ OIDC-compatible services are linked to SSO **automatically**: Kanidm provisions 
 
 :::tip[Examples]
 Outline, Mealie, Vaultwarden, Grafana, Immich, Forgejo, Jellyfin, Open WebUI…
+:::
+
+{/* t:p 64a6a287516b8f5184000146d34d675d99736d3800ab68bd21885d1f4658ec2e */}
+## Protect a service without OIDC
+
+A service without its own authentication (homepage, static site) can be
+protected by placing a **Kanidm login page in front of it** (oauth2-proxy +
+Caddy). For the homepage, two settings on the gateway host
+(`usr/machines/<gateway>/`):
+
+```nix
+darkone.service.homepage.protect = true;             # requires a Kanidm session
+darkone.service.homepage.protectExternalOnly = true; # internal free, external authenticated
+```
+
+| Option | Default | Effect |
+|---|---|---|
+| `protect` | `true` | Homepage restricted to Kanidm users (`users` group) |
+| `protectExternalOnly` | `false` | LAN/VPN without login, login required from outside |
+
+:::note[Prerequisites]
+The `idm` service must be running (HCS) and the `homepage` service must be present in the
+zone: it acts as the **anchor** for the connection flow. The details are explained in
+[Authentication and identities](/en/doc/admin-guide/understand/auth-idm/).
 :::
 
 {/* t:p b1d628c6ebd9bd33b085868abcce9b72c5f9e08792ac1cb8f8bb340e4524e1e8 */}

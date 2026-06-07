@@ -289,7 +289,7 @@ darkone.service.home-assistant.enable = false;
 
 <hr/>
 
-{/* t:p a39f9f4a68a29954bed0ecaf3887b5498725ad311dde1daeae62c7586d7b93b9 */}
+{/* t:p 9df8f6930414bf65be33266bd7f70ba22dcec5cc9eeb6d7f27c9f554649bae9a */}
 ### &#x2728; darkone.service.homepage
 
 Dynamically configured homepage dashboard for your local network.
@@ -299,6 +299,8 @@ For each DNF service enabled, an entry is automatically added to the homepage co
 :::
 
 * **enable** `bool` Enable homepage dashboard + httpd + host
+* **protect** `bool` Restrict homepage to authenticated Kanidm users (oauth2-proxy forward auth)
+* **protectExternalOnly** `bool` When protected, let internal LAN/tailnet clients in without login; only challenge external clients
 * **localServices** `listOf attrs` Services to add in Local Applications section
 * **globalServices** `listOf attrs` Full network common &amp; public-accessible services
 * **remoteServices** `listOf attrs` Services to add in Remote Applications section
@@ -308,6 +310,8 @@ For each DNF service enabled, an entry is automatically added to the homepage co
 ```nix
 darkone.service.homepage = {
   enable = false;
+  protect = true;
+  protectExternalOnly = false;
   localServices = [ ];
   globalServices = [ ];
   remoteServices = [ ];

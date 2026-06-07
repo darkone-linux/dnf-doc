@@ -219,53 +219,55 @@ darkone.system.security = {
 };
 ```
 
-{/* t:p d6607e60aa6e34f9fb62b573eeadcbcdda75ecf2dd27ea788abc41480aba0436 */}
+{/* t:p d227acf5a744b623c95b251ea6d4dbe833c48fb19db44080b6dc0f6c72129e50 */}
 ### &#x2699; darkone.system.services
 
 Enregistrement et configuration des services DNF.
 
 :::caution[Module interne spécial]
-Ce module est utilisé pour enregistrer et configurer les modules DNF :
-- Client de serveur de coordination (headscale / tailscale)
+Ce module est utilisé pour enregistrer et configurer les modules DNF&nbsp;:
+- Client du serveur de coordination (headscale / tailscale)
 - Proxies inverses (caddy)
 - Enregistrements sur la page d'accueil
 - Entrées DNS
-- dossiers et fichiers à sauvegarder
+- Dossiers et fichiers à sauvegarder
 :::
 
 * **enable** `bool` Activer le gestionnaire de services DNF pour enregistrer et exposer les services
-* **service** `attrs` Configuration des services globaux &lt;name&gt;
-  * **enable** `bool` Activer le proxy de service
+* **service** `attrs` Configuration globale des services &lt;name&gt;
+  * **enable** `bool` Activer le proxy du service
   * **defaultParams** `submodule` Ces options sont calculées par dnfLib.srv.extractServiceParams
-    * **domain** `str` Nom de domaine du service
-    * **title** `str` Nom d'affichage sur la page d'accueil
+    * **domain** `str` Nom de domaine pour le service
+    * **title** `str` Nom affiché dans la page d'accueil
     * **description** `str` Description du service pour la page d'accueil
     * **icon** `str` [Nom de l'icône pour la page d'accueil](https://selfh.st/icons/)
     * **global** `bool` Le service global est accessible sur Internet
-    * **noRobots** `bool` Empêcher les robots d'explorer si global est vrai
+    * **noRobots** `bool` Empêcher les robots de scanner si global est vrai
     * **fqdn** `str` FQDN calculé du service avant le proxy inverse
     * **href** `str` URL calculée du service avant le proxy inverse
     * **ip** `str` IP calculée pour contacter le service
   * **displayOnHomepage** `bool` Afficher un lien sur la page d'accueil
-  * **reverseProxy** `bool` Accessible via le proxy inverse de la passerelle de zone (DNS pointe vers l'IP LAN de la passerelle)
-  * **uniquePerZone** `bool` Au maximum une instance autorisée par zone (validation du générateur)
-  * **externalAccess** `bool` Service www-zone accessible depuis le LAN via une adresse IP d'hôte fixe (par exemple headscale, turn)
+  * **reverseProxy** `bool` Accessible via le proxy inverse de la passerelle de zone (le DNS pointe vers l'IP LAN de la passerelle)
+  * **uniquePerZone** `bool` Au plus une instance autorisée par zone (validation du générateur)
+  * **externalAccess** `bool` Service de zone www accessible depuis le LAN via une IP d'hôte fixe (ex. headscale, turn)
   * **persist.dirs** `listOf str` Répertoires persistants du service
   * **persist.files** `listOf str` Fichiers persistants du service
-  * **persist.dbDirs** `listOf str` Répertoires persistants avec base(s) de données
+  * **persist.dbDirs** `listOf str` Répertoires persistants du service avec base(s) de données
   * **persist.dbFiles** `listOf str` Fichier(s) de base de données du service
-  * **persist.varDirs** `listOf str` Fichiers secondaires variables (journal, cache, etc.)
-  * **persist.mediaDirs** `listOf str` Répertoires médias du service (images, vidéos, gros fichiers)
-  * **proxy.enable** `bool` Créer une configuration virtualHost (faux pour les services qui gèrent les leurs)
+  * **persist.varDirs** `listOf str` Fichiers secondaires variables (log, cache, etc.)
+  * **persist.mediaDirs** `listOf str` Répertoires média du service (images, vidéos, gros fichiers)
+  * **proxy.enable** `bool` Créer ou non la configuration virtualHost (false pour les services qui gèrent la leur)
   * **proxy.isProtected** `bool` Service protégé par Oauth2
-  * **proxy.isInternal** `bool` Lier le service sur l'interface interne uniquement (non accessible Internet)
-  * **proxy.hasReverseProxy** `bool` Ceci est un proxy inverse (ou une autre configuration virtualhost via extraConfig)
+  * **proxy.allowedGroups** `listOf str` Groupes Kanidm autorisés sur ce service protégé (vide = tout utilisateur authentifié)
+  * **proxy.protectExternalOnly** `bool` N'exiger l'auth que pour les clients externes&nbsp;; les appelants LAN/tailnet internes contournent la connexion
+  * **proxy.isInternal** `bool` Lier le service sur l'interface interne uniquement (pas accessible depuis Internet)
+  * **proxy.hasReverseProxy** `bool` Ceci est un proxy inverse (ou une autre configuration virtualHost via extraConfig)
   * **proxy.defaultService** `bool` Est le service par défaut
   * **proxy.servicePort** `nullOr port` Port interne du service
-  * **proxy.preExtraConfig** `lines` Configuration virtualHost caddy supplémentaire (préfixe)
-  * **proxy.extraConfig** `lines` Configuration virtualHost caddy supplémentaire
-  * **proxy.extraGlobalConfig** `lines` Configuration caddy supplémentaire
-  * **proxy.scheme** `str` Schéma du service interne (http / https)
+  * **proxy.preExtraConfig** `lines` Configuration virtualHost Caddy supplémentaire (préfixe)
+  * **proxy.extraConfig** `lines` Configuration virtualHost Caddy supplémentaire
+  * **proxy.extraGlobalConfig** `lines` Configuration Caddy supplémentaire
+  * **proxy.scheme** `str` Schéma interne du service (http / https)
 
 ```nix
 darkone.system.services = {
@@ -292,6 +294,8 @@ darkone.system.services = {
   service.persist.mediaDirs = [ ];
   service.proxy.enable = true;
   service.proxy.isProtected = false;
+  service.proxy.allowedGroups = [ ];
+  service.proxy.protectExternalOnly = false;
   service.proxy.isInternal = false;
   service.proxy.hasReverseProxy = true;
   service.proxy.defaultService = false;
@@ -302,6 +306,8 @@ darkone.system.services = {
   service.proxy.scheme = "https";
 };
 ```
+
+<hr/>
 
 {/* t:p a9d97ecd52b40078237beb75df5e43b0d614201545254f6afe0b70d31463a052 */}
 ### &#x2699; darkone.system.sops

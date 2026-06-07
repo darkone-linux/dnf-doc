@@ -9,10 +9,16 @@ lang: fr
 {/* t:main */}
 {/* t:h 62cb531d6b0df6f948c43272fe531bd1056b2fcee8e6f4e1b4f8b24409eaf5eb */}
 
-{/* t:p 56532ba4f85497e9ffd4c2d50ba95e4b826cda7abc089a573170d50ea8874c2f */}
+{/* t:p 1947e9b785d3587ff9594517ac977ebba27628e04749283826a37b1e3ea6ed1e */}
 [Kanidm](https://kanidm.com/) est le fournisseur d'identité du réseau : une
 **identité unique** ouvre tous les services (SSO). Le service `idm` tourne sur
 le HCS (et, en option, en réplica dans chaque zone).
+
+:::tip[Comprendre le fonctionnement]
+Le détail des mécanismes (OIDC natif, reverse proxy authentifiant, flux de
+connexion) est expliqué dans
+[Authentification et identités](/fr/doc/admin-guide/understand/auth-idm/).
+:::
 
 {/* t:p c3f1ee94735a2710129012e89644385de01f1bbe56d240cb932d0d5cd784889f */}
 ## Identités et groupes
@@ -39,6 +45,30 @@ provisionne un client OAuth2 par service, et son secret est géré par
 
 :::tip[Exemples]
 Outline, Mealie, Vaultwarden, Grafana, Immich, Forgejo, Jellyfin, Open WebUI…
+:::
+
+{/* t:p 64a6a287516b8f5184000146d34d675d99736d3800ab68bd21885d1f4658ec2e */}
+## Protéger un service sans OIDC
+
+Un service sans authentification propre (page d'accueil, site statique) se
+protège en plaçant une **mire de connexion Kanidm devant lui** (oauth2-proxy +
+Caddy). Pour la page d'accueil, deux réglages sur l'hôte passerelle
+(`usr/machines/<passerelle>/`) :
+
+```nix
+darkone.service.homepage.protect = true;             # exige une session Kanidm
+darkone.service.homepage.protectExternalOnly = true; # interne libre, externe authentifié
+```
+
+| Option | Défaut | Effet |
+|---|---|---|
+| `protect` | `true` | Page d'accueil réservée aux utilisateurs Kanidm (groupe `users`) |
+| `protectExternalOnly` | `false` | LAN/VPN sans connexion, login requis depuis l'extérieur |
+
+:::note[Pré-requis]
+Le service `idm` doit tourner (HCS) et le service `homepage` être présent dans la
+zone : il sert d'**ancre** au flux de connexion. Le fonctionnement est détaillé
+dans [Authentification et identités](/fr/doc/admin-guide/understand/auth-idm/).
 :::
 
 {/* t:p b1d628c6ebd9bd33b085868abcce9b72c5f9e08792ac1cb8f8bb340e4524e1e8 */}

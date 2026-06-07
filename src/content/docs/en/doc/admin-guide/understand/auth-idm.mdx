@@ -1,0 +1,161 @@
+---
+title: Authentication and identities
+sidebar:
+  label: Auth & identities
+  order: 5
+lang: en
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+{/* t:translated-from fr */}
+{/* t:h 0610f372d71b8fe7f1b53613f28171479a57dfb4bcf0fbb5a07865b3202b9273 */}
+
+{/* t:p 6c9f3abc275ac648da9c43ba13979e9ed40fcb3d00b5b4cd321c737886a50a6d */}
+The network is built on **one identity per person**, managed by
+[Kanidm](https://kanidm.com/). This page explains **how** a service verifies
+who you are, following two integration paths, and what happens between the
+browser, the gateway, and Kanidm.
+
+{/* t:p ac02630fafb97f55315e3563601a7bf290151dc2bd9a54a08e492f8391666cc4 */}
+## Two ways to authenticate
+
+Everything starts from Kanidm, the network's **identity provider** (IdP). A service
+connects to it in two ways, depending on whether it speaks OIDC or not.
+
+| Path | Which services | Mechanism |
+|---|---|---|
+| **Native OIDC** | Service that speaks OIDC (Forgejo, Immich, Grafana…) | The service communicates directly with Kanidm |
+| **Authenticating reverse proxy** | Service without auth (homepage, static site, bare UI) | `oauth2-proxy` + Caddy protect the service upstream |
+
+```d2
+style.fill: transparent
+direction: down
+
+user: User / Browser
+
+kanidm: "Kanidm\nidentity provider" { shape: cylinder }
+
+natif: "Path 1: Native OIDC" {
+  svc: "OIDC-compatible service\n(Forgejo, Immich, Grafana…)"
+}
+
+proxy: "Path 2: authenticating reverse proxy" {
+  caddy: Caddy
+  o2p: oauth2-proxy
+  svc: "Service without OIDC\n(homepage, static site…)"
+}
+
+user -> natif.svc
+user -> proxy.caddy
+natif.svc -> kanidm
+proxy.caddy -> proxy.o2p
+proxy.o2p -> kanidm
+proxy.caddy -> proxy.svc
+```
+
+{/* t:p 8f55b56e2f6c992dbce905ab8ed7461a2cd6b5636ec943617cca7fdb55d89ecb */}
+## Identities and groups
+
+Accounts and groups are **provisioned** in Kanidm from `etc/config.yaml`: one
+account per person, groups that control access. The `users` group contains
+**all** accounts; `idm-admins` and `idm-devs` are the special administration
+and development groups.
+
+<Aside type="note" title="Account details">
+Account management (creation, passwords, groups) is described in
+[SSO and identities](/en/doc/admin-guide/operate/sso/).
+</Aside>
+
+{/* t:p e402a023b7bf4327e66d416a550091e7eb1aca381e04181de7b4809fc3576cc5 */}
+## Path 1: Native OIDC
+
+When a service supports OIDC, DNF integrates it **automatically**: Kanidm
+provisions one OAuth2 client per service, the secret is managed by
+[sops](/en/doc/admin-guide/operate/secrets/), and the service redirects itself
+to Kanidm for login. Nothing to configure manually.
+
+This is the preferred path: the service knows the person's identity and groups,
+and can apply its own roles (admin, reader…).
+
+{/* t:p 0ca64381f156e0bd20181777d918ec10e744e7c2b6e09c5fe25731c5609a445b */}
+## Path 2: authenticating reverse proxy
+
+A service **without** authentication (the homepage, a static site…) cannot
+verify an identity. DNF then places a **Kanidm login screen in front of it**,
+at the gateway's reverse proxy level. Three components work together:
+
+- **Caddy** : the gateway's reverse proxy. Before serving content, it delegates
+  verification (`forward auth`) to oauth2-proxy.
+- **oauth2-proxy** : one daemon per gateway (listens locally), Kanidm's OAuth2
+  client. It holds the session and drives the login flow.
+- **Kanidm** : issues the login screen and identity token.
+
+```d2
+style.fill: transparent
+shape: sequence_diagram
+
+nav: Browser
+caddy: Caddy (gateway)
+proxy: oauth2-proxy
+idm: Kanidm
+
+nav -> caddy: GET page.maison.domain.tld
+caddy -> proxy: forward auth /oauth2/auth
+proxy -> caddy: 401 (no session)
+caddy -> nav: redirect /oauth2/start
+nav -> proxy: /oauth2/start
+proxy -> idm: OIDC redirect (PKCE)
+nav -> idm: login
+idm -> proxy: /oauth2/callback (code)
+proxy -> nav: sets cookie + redirect
+nav -> caddy: GET (with cookie)
+caddy -> proxy: forward auth /oauth2/auth
+proxy -> caddy: 202 + groups
+caddy -> nav: service content
+```
+
+{/* t:p ac72c2b76dc8d2852c83b0af21c9fc360fad0f1bfe267e897d64c5eff0322d7c */}
+### Group-based authorization
+
+Once the person is logged in, access is filtered by **Kanidm group**. Caddy
+passes the list of allowed groups to oauth2-proxy; without membership, the
+response is **403** even if authenticated.
+
+<Aside type="caution" title="Groups are SPNs">
+Kanidm returns groups as **SPNs** (`name@domain.tld`), not the short
+name. DNF appends this suffix automatically: declaring `users` on the service
+side is enough, the framework compares against `users@domain.tld`.
+</Aside>
+
+{/* t:p 78bca5f0279601f202ae5ffdfe94940267268200494765e423d168aa9d4a85fc */}
+### Session and SSO
+
+After login, oauth2-proxy sets a **session cookie** valid across the entire zone
+domain (`.maison.domain.tld`). All protected services in the zone share the
+same session: you log in **once**. The flow endpoints (`/oauth2/*`) are hosted
+on the **home page** FQDN of the zone, which serves as the common anchor.
+
+{/* t:p ac6fc1631b029f0ede249fc7790cd49f5e3f6fe56d008b048fcffe2fe585ade8 */}
+### Internal vs external access
+
+Protection can be limited to external access: **internal** clients (private LAN
+and tailnet VPN) reach the service **without login**, while access **from the
+outside** goes through the Kanidm login page. Useful for a portal open at home
+but protected on the Internet.
+
+{/* t:p 0817b35898933197994b0cb9bf95d4a9723c229833ea49d7701f58844b22d1fa */}
+## Secrets and certificates
+
+- The oauth2-proxy client secret is shared with Kanidm via
+  [sops](/en/doc/admin-guide/operate/secrets/) (a session secret is added as well).
+- The flow introduces **no new hostname** : it reuses the homepage FQDN, already
+  covered by a TLS certificate of the network.
+
+<Aside type="tip" title="Configuring protection">
+The administrator setup (enabling, choosing groups, internal/external mode) is
+described in
+[SSO and identities](/en/doc/admin-guide/operate/sso/#protect-a-service-without-oidc).
+The code wiring is in
+[Creating a service module](/en/doc/dev-guide/create-service-module/#protecting-a-service-without-oidc).
+</Aside>

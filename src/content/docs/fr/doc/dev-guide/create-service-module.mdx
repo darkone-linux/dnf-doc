@@ -375,6 +375,46 @@ Seul le câblage côté service (`settings.oidc`, secret, env) est gardé par
 Kanidm. Modèles à étudier : `outline.nix`, `immich.nix`, `forgejo.nix`.
 </Aside>
 
+{/* t:p 77599c9cf85807b21e9e9dd62d38131e764dad3858a080c3953dc6f690fc29fb */}
+## Protéger un service sans OIDC
+
+Quand le service **ne sait pas** parler OIDC (page d'accueil, site statique, UI
+sans auth), DNF protège son vhost en amont via **oauth2-proxy** + **Caddy forward
+auth**, adossé à Kanidm. Une seule instance oauth2-proxy par passerelle, partagée
+par tous les services protégés de la zone. Tout est déclaratif sur
+l'enregistrement du service (bloc inconditionnel), via trois options `proxy` :
+
+```nix
+darkone.system.services.service.oxicloud = {
+  inherit defaultParams;
+  proxy.servicePort = srvPort;
+  proxy.isProtected = true;            # place le vhost derrière oauth2-proxy
+  proxy.allowedGroups = [ "users" ];   # groupes autorisés (SPN ajouté par le framework)
+  proxy.protectExternalOnly = true;    # interne sans login, externe authentifié
+};
+```
+
+| Option | Défaut | Rôle |
+|---|---|---|
+| `proxy.isProtected` | `false` | Met le vhost derrière oauth2-proxy (forward auth) |
+| `proxy.allowedGroups` | `[ ]` | Groupes Kanidm autorisés (vide : tout utilisateur authentifié) |
+| `proxy.protectExternalOnly` | `false` | Bypass auth pour le LAN/tailnet, login requis depuis l'extérieur |
+
+<Aside type="note" title="Ancre et pré-requis">
+Le flux de connexion (`/oauth2/*`) est hébergé sur le FQDN de la page d'accueil de
+la zone : le service `homepage` doit donc être présent dès qu'un service est
+protégé (une assertion le vérifie). Les groupes sont comparés en **SPN**
+(`nom@<domaine>`) : le framework ajoute le suffixe, déclarer le nom court suffit.
+</Aside>
+
+<Aside type="tip" title="OIDC natif ou forward auth ?">
+Si le service **sait** parler OIDC, préférer le câblage natif (section
+précédente) : il transmet l'identité et les rôles au service. Le forward auth ne
+fait que **garder la porte** devant un service qui ignore qui se connecte. Vue
+d'ensemble côté admin :
+[Authentification et identités](/fr/doc/admin-guide/understand/auth-idm/).
+</Aside>
+
 {/* t:p b5659495936e23c188bec7aaca73626e6ae2a31c9b906e74d2e2d0a816745dd6 */}
 ## Sourcer un module upstream
 

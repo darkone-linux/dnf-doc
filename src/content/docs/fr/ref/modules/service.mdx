@@ -252,25 +252,29 @@ Un Home Assistant avec certains plugins (en cours).
 darkone.service.home-assistant.enable = false;
 ```
 
-{/* t:p a39f9f4a68a29954bed0ecaf3887b5498725ad311dde1daeae62c7586d7b93b9 */}
+{/* t:p 9df8f6930414bf65be33266bd7f70ba22dcec5cc9eeb6d7f27c9f554649bae9a */}
 ### &#x2728; darkone.service.homepage
 
-Tableau de bord d'accueil dynamiquement configuré pour votre réseau local.
+Tableau de bord de page d'accueil configuré dynamiquement pour votre réseau local.
 
 :::note
 Pour chaque service DNF activé, une entrée est automatiquement ajoutée à la configuration de la page d'accueil.
 :::
 
-* **enable** `bool` Activer le tableau de bord d'accueil + httpd + hôte
+* **enable** `bool` Active le tableau de bord de la page d'accueil + httpd + hôte
+* **protect** `bool` Restreint la page d'accueil aux utilisateurs Kanidm authentifiés (oauth2-proxy forward auth)
+* **protectExternalOnly** `bool` Quand elle est protégée, laisse les clients LAN/tailnet internes entrer sans connexion ; authentifie seulement les clients externes
 * **localServices** `listOf attrs` Services à ajouter dans la section Applications locales
-* **globalServices** `listOf attrs` Services communs et accessibles publiquement sur l'ensemble du réseau
+* **globalServices** `listOf attrs` Services communs du réseau &amp; accessibles publiquement
 * **remoteServices** `listOf attrs` Services à ajouter dans la section Applications distantes
-* **bookmarks** `listOf attrs` Remplacer les signets par défaut (liens)
-* **widgets** `listOf attrs` Remplacer les widgets par défaut
+* **bookmarks** `listOf attrs` Remplace les marque-pages par défaut (liens)
+* **widgets** `listOf attrs` Remplace les widgets par défaut
 
 ```nix
 darkone.service.homepage = {
   enable = false;
+  protect = true;
+  protectExternalOnly = false;
   localServices = [ ];
   globalServices = [ ];
   remoteServices = [ ];
@@ -278,6 +282,8 @@ darkone.service.homepage = {
   widgets = [ ];
 };
 ```
+
+<hr/>
 
 {/* t:p 89f6a8dbb80b7fb0d0f0205c9e2735c6c2956a799625399c079be9c8d3a36d72 */}
 ### &#x2728; darkone.service.idm
