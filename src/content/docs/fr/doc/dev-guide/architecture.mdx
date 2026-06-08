@@ -86,3 +86,22 @@ spécifiques via `specialArgs` (le générateur et `flake.nix` les alimentent) :
 La liste exacte des arguments d'un module se lit en tête de son fichier (le bloc
 `{ lib, config, dnfLib, host, ... }`). En cas de doute, vérifier la source.
 :::
+
+{/* t:p b3fb71681be75c1a0868f3f43eb52b487dc4be9333ac85f7c21e42744204fa70 */}
+## Surcharges générées (overlays)
+
+Certaines valeurs n'ont rien à faire dans `etc/config.yaml` (manuel) : trop
+techniques, ou **provisionnées par un outil**. Le motif : un script écrit un
+fichier `var/generated/<x>.nix` que l'assembleur `dnf/lib/mk-configuration.nix`
+**fusionne** dans un argument injecté.
+
+Exemple : `just configure-alert-bot` écrit `var/generated/matrix.nix` (identité du
+bot d'alerte + ID des salons), fusionné dans `network.matrix.*` par
+`recursiveUpdate` (le fichier généré l'emporte). Les modules lisent `network.matrix`
+sans savoir d'où il vient.
+
+:::tip[Quand l'utiliser]
+Pour une donnée **dérivée ou provisionnée**, jamais éditée à la main, hors du
+`config.yaml`. L'overlay est **optionnel** : absent, l'argument garde sa valeur
+de base.
+:::

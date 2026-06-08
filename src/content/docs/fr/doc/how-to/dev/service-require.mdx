@@ -1,0 +1,38 @@
+---
+title: Déclarer une dépendance entre services (require)
+sidebar:
+  label: Dépendance de service
+  order: 3
+lang: fr
+---
+
+{/* t:main */}
+{/* t:h 911c103f085a002d19b1c017e7072088b64dda21e6e1508f44cd47dc3afeedb1 */}
+
+{/* t:p 6ffa8f9cb5fa423928d6e4b9cf785b9d81e262c16920920bd9ad8854b38b8871 */}
+Un service peut **exiger** qu'un autre soit activé sur le **même hôte**. La
+dépendance se déclare dans le registre `dnf/config/modules.nix`, pas dans le
+module.
+
+```nix
+# dnf/config/modules.nix
+monitoring = {
+  require = [ "prometheus" ];
+};
+```
+
+Le générateur valide la règle : activer `monitoring` sur un hôte qui n'a pas
+`prometheus` **fait échouer la génération** (message explicite). C'est un garde-fou
+de cohérence, pas une activation automatique : l'administrateur doit déclarer les
+**deux** services.
+
+:::note[Pourquoi pas une activation auto ?]
+Déclarer les deux services rend l'intention explicite **et** permet au générateur
+de produire le DNS et le reverse proxy de la dépendance. Une activation implicite
+côté Nix laisserait ces artefacts manquants.
+:::
+
+:::tip[Plusieurs dépendances]
+`require` est une liste : `require = [ "prometheus" "postfix" ];`. Chaque entrée
+doit être un service déclaré dans le registre.
+:::
