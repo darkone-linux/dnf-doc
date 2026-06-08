@@ -81,6 +81,23 @@ Rules:
 - DO NOT translate or alter: code blocks, inline code, file paths, shell commands,
   URLs, HTML/JSX/MDX tags and their attributes, import/export statements, YAML keys.
 - Preserve Markdown/MDX structure and heading levels (#).
+- CRITICAL — preserve ALL Markdown/Astro/MDX SYNTAX byte-for-byte; translate only
+  the human-readable text it wraps. This MUST stay intact, an error here breaks the
+  build:
+  * Callout/admonition fences: \`:::note\`, \`:::tip\`, \`:::caution\`, \`:::danger\`
+    and their closing \`:::\` — keep the type, the colons and the closing fence
+    EXACTLY. In \`:::tip[Titre]\` translate only "Titre", never the \`:::tip\`,
+    the brackets or the \`:::\`.
+  * Astro/MDX components: \`<Steps>\`, \`<Aside ...>\`, \`<Card ...>\`, \`<CardGrid>\`,
+    \`<LinkCard ...>\`, \`<Tabs>\`, \`<TabItem ...>\` and every closing tag — keep tag
+    names, attributes and the \`<\` \`>\` \`/\` characters EXACTLY; translate only the
+    visible text between tags and the human-readable attribute VALUES (e.g.
+    \`title="..."\`).
+  * Markdown emphasis/markers: bold (\`**\`), italic (\`*\`), inline-code backticks,
+    blockquote \`>\`, list bullets (\`-\`, \`*\`, \`1.\`), table pipes \`|\` and
+    separators — keep every marker, leading/trailing whitespace and indentation
+    unchanged.
+  * When unsure whether something is syntax or text, DO NOT touch it.
 - Links and anchors are handled deterministically AFTER you, by tooling. So:
   keep every link target and every "#anchor" EXACTLY as in the source (do NOT
   translate, guess or rewrite anchors or locale prefixes). Only translate the
@@ -116,6 +133,23 @@ Rules:
 - DO NOT translate or alter (outside D2 blocks): inline code, file paths, shell
   commands, URLs, HTML/JSX/MDX tags and attributes, import/export statements, YAML keys.
 - Preserve Markdown/MDX structure and heading levels (#).
+- CRITICAL — preserve ALL Markdown/Astro/MDX SYNTAX byte-for-byte; translate only
+  the human-readable text it wraps. This MUST stay intact, an error here breaks the
+  build:
+  * Callout/admonition fences: \`:::note\`, \`:::tip\`, \`:::caution\`, \`:::danger\`
+    and their closing \`:::\` — keep the type, the colons and the closing fence
+    EXACTLY. In \`:::tip[Titre]\` translate only "Titre", never the \`:::tip\`,
+    the brackets or the \`:::\`.
+  * Astro/MDX components: \`<Steps>\`, \`<Aside ...>\`, \`<Card ...>\`, \`<CardGrid>\`,
+    \`<LinkCard ...>\`, \`<Tabs>\`, \`<TabItem ...>\` and every closing tag — keep tag
+    names, attributes and the \`<\` \`>\` \`/\` characters EXACTLY; translate only the
+    visible text between tags and the human-readable attribute VALUES (e.g.
+    \`title="..."\`).
+  * Markdown emphasis/markers: bold (\`**\`), italic (\`*\`), inline-code backticks,
+    blockquote \`>\`, list bullets (\`-\`, \`*\`, \`1.\`), table pipes \`|\` and
+    separators — keep every marker, leading/trailing whitespace and indentation
+    unchanged.
+  * When unsure whether something is syntax or text, DO NOT touch it.
 - Links and anchors are handled deterministically AFTER you, by tooling: keep every
   link target and every "#anchor" EXACTLY as in the source; only translate the
   human-readable link TEXT (inside the square brackets).
