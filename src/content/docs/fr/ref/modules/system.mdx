@@ -374,26 +374,20 @@ darkone.system.srv-dirs = {
 };
 ```
 
-{/* t:p 86a74efb7e0942adabd4c55a882ebb222def566db01b4d571dc696f7bc096d0c */}
+{/* t:p 3c2dd1fad679d4a06a9d6a08622e6f2579ae6041bc24520a208c2b2e22f0fbcc */}
 ### &#x2699; darkone.system.testing
 
-Mode de test autonome pour le pilote de test NixOS.
+Mode de test autonome pour le NixOS Test Driver.
 
-Lorsqu'il est activé, neutralise les bits irréductiblement externes/runtime pour qu'un nœud
-puisse être exercé dans une VM : headscale/tailscale deviennent des no-ops et un certificat TLS
-fixe peut stubifier ACME. Il permet également à la configuration workDir-only (nix.pub,
-harmonia.pub) d'être ignorée par core/ncps. sops reste RÉEL (haute fidélité).
+Quand activé, neutralise les parties incompressiblement externes/d'exécution pour qu'un nœud puisse être testé dans une VM&nbsp;: headscale/tailscale deviennent des no-op et un certificat TLS fixe peut stuber ACME. Il permet aussi à core/ncps d'ignorer la config propre à workDir (nix.pub, harmonia.pub). sops reste REAL (grande fidélité).
 
-:::caution[Tests uniquement]
-Activé uniquement via `tests/lib/test-tuning.nix`. Ce module ne référence jamais
-aucun chemin sous `tests/` — le chemin du certificat est transmis comme valeur d'option.
+:::caution[Test uniquement]
+Activé uniquement via `tests/lib/test-tuning.nix`. Ce module ne référence jamais de chemin sous `tests/` — le chemin du certificat est passé comme valeur d'option.
 :::
 
-Objectif : utiliser, déboguer.
-
-* **standalone** `bool` Mode de test autonome — ignorer la configuration workDir-only (nix.pub, harmonia.pub) et neutraliser les services externes
-* **tlsCert** `nullOr path` Certificat auto-signé (PEM) fourni par le harnais de test pour stubifier ACME. Jamais un chemin tests/ cuisiné dans le framework.
-* **tlsKey** `nullOr path` Clé privée (PEM) couplée à tlsCert.
+* **standalone** `bool` Mode test autonome — ignore la config propre à workDir (nix.pub, harmonia.pub) et neutralise les services externes
+* **tlsCert** `nullOr path` Certificat auto-signé (PEM) fourni par le harnais de test pour stuber ACME. Jamais un chemin tests/ intégré au framework.
+* **tlsKey** `nullOr path` Clé privée (PEM) associée à tlsCert.
 
 ```nix
 darkone.system.testing = {
@@ -402,3 +396,5 @@ darkone.system.testing = {
   tlsKey = null;
 };
 ```
+
+<hr/>

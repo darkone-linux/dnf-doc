@@ -658,41 +658,39 @@ darkone.service.printing = {
 };
 ```
 
-{/* t:p 3fa8b3c185199ec6a6383bc2099bd48b0ef6ba5f71a86fd627a8d2d9130f032c */}
+{/* t:p c644346db8ff29f516607774dcf35bfefb6a26c7dac14272d0daa5cb914fcf4b */}
 ### &#x2728; darkone.service.prometheus
 
-Serveur de supervision Prometheus avec escalade Alertmanager déclarative.
+Serveur de monitoring Prometheus avec escalade Alertmanager déclarative.
 
-:::tip
-Service autonome de métriques + alerting, indépendant de Grafana :
+:::tip[Prometheus & Grafana]
+Service de métriques + alerting autonome, indépendant de Grafana&nbsp;:
 
-- Scrute chaque nœud de zone portant la fonctionnalité `monitoring-node:<zone>`.
-- Alertmanager achemine par sévérité : warning → Matrix #warnings,
-  critique → Matrix #incidents + courriel (relais Postfix local).
-- blackbox_exporter sonde la joignabilité de la passerelle / tailnet / DNS.
-- Les classes de nœuds (critique/non-critique/désactivé) proviennent des fonctionnalités
-  `alert-*` ou du profil hôte (voir `dnf/lib/alerts.nix`).
+- Scrape chaque nœud de zone portant la feature `monitoring-node:<zone>`.
+- Alertmanager achemine par sévérité&nbsp;: warning → Matrix #warnings,
+  critical → Matrix #incidents + mail (relais Postfix local).
+- blackbox_exporter sonde la reachabilité gateway / tailnet / DNS.
+- Les classes de nœuds (critique/non-critique/disabled) proviennent des
+  features `alert-*` ou du profil hôte (voir `dnf/lib/alerts.nix`).
 
 `monitoring` (Grafana) nécessite un `prometheus` sur le même hôte
-(imposé par `require` du générateur). L'interface web est exposée sur
+(imposé par le `require` du générateur). L'interface web est exposée à
 `https://prometheus.<zone>.<domain>` derrière oauth2-proxy (groupe `admins`),
-qui corrige également les liens d'alerte pointant vers Prometheus.
-::~
-
-But : utiliser, maintenir, configurer, déboguer.
+qui corrige aussi les liens d'alerte pointant vers Prometheus.
+:::
 
 * **enable** `bool` Activer le serveur de métriques + alerting Prometheus
 * **retentionTime** `str` Durée de rétention des métriques Prometheus
-* **alerting.enable** `bool` Activer Alertmanager (activé par défaut une fois les salles d'alerte Matrix approvisionnées)
-* **alerting.matrix.enable** `bool` Envoyer les alertes dans les salons Matrix via le bot matrix-alertmanager
-* **alerting.matrix.userId** `str` Identifiant Matrix du bot d'alerte (par défaut depuis network.matrix.bot)
-* **alerting.matrix.warningsRoom** `str` Identifiant du salon Matrix pour les avertissements (par défaut depuis network.matrix.warningsRoom)
-* **alerting.matrix.incidentsRoom** `str` Identifiant du salon Matrix pour les incidents (par défaut depuis network.matrix.incidentsRoom)
+* **alerting.enable** `bool` Activer Alertmanager (activé par défaut une fois les salons d'alerte Matrix provisionnés)
+* **alerting.matrix.enable** `bool` Envoyer les alertes dans des salons Matrix via le bot matrix-alertmanager
+* **alerting.matrix.userId** `str` Identifiant Matrix du bot d'alertes (défaut depuis network.matrix.bot)
+* **alerting.matrix.warningsRoom** `str` Identifiant du salon Matrix pour les avertissements (défaut depuis network.matrix.warningsRoom)
+* **alerting.matrix.incidentsRoom** `str` Identifiant du salon Matrix pour les incidents (défaut depuis network.matrix.incidentsRoom)
 * **alerting.email.enable** `bool` Envoyer aussi les alertes critiques par courriel (via le relais Postfix local)
 * **alerting.email.to** `str` Destinataire des courriels d'alerte critique
-* **alerting.network.enable** `bool` Sonder la joignabilité réseau (passerelle/tailnet/DNS) avec blackbox_exporter
-* **alerting.silenceOnRebuild** `bool` Transmettre le indicateur dnf-maintenance (collecteur textfile) pour que les reconstructions inhibent les alertes d'un nœud
-* **alerting.thresholds** `attrs` Surcharger les seuils d'alerte de ressources (voir valeurs par défaut dans dnf/lib/alerts.nix)
+* **alerting.network.enable** `bool` Sonder la reachabilité réseau (gateway/tailnet/DNS) avec blackbox_exporter
+* **alerting.silenceOnRebuild** `bool` Envoyer le flag dnf-maintenance (collecteur textfile) pour que les rebuilds inhibent les alertes d'un nœud
+* **alerting.thresholds** `attrs` Surcharger les seuils d'alerte ressource (voir défauts dans dnf/lib/alerts.nix)
 
 ```nix
 darkone.service.prometheus = {

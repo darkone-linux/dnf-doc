@@ -737,12 +737,12 @@ darkone.service.printing = {
 
 <hr/>
 
-{/* t:p 3fa8b3c185199ec6a6383bc2099bd48b0ef6ba5f71a86fd627a8d2d9130f032c */}
+{/* t:p c644346db8ff29f516607774dcf35bfefb6a26c7dac14272d0daa5cb914fcf4b */}
 ### &#x2728; darkone.service.prometheus
 
 Prometheus monitoring server with declarative Alertmanager escalation.
 
-:::tip
+:::tip[Prometheus & Grafana]
 Standalone metrics + alerting service, independent from Grafana:
 
 - Scrapes every zone node carrying the `monitoring-node:<zone>` feature.
@@ -757,8 +757,6 @@ Standalone metrics + alerting service, independent from Grafana:
 `https://prometheus.<zone>.<domain>` behind oauth2-proxy (group `admins`),
 which also fixes the alert links pointing back to Prometheus.
 :::
-
-Aim: use, maintain, configure, debug.
 
 * **enable** `bool` Enable the Prometheus metrics + alerting server
 * **retentionTime** `str` Prometheus metrics retention duration

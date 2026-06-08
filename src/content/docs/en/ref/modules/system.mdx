@@ -386,7 +386,7 @@ darkone.system.srv-dirs = {
 
 <hr/>
 
-{/* t:p 86a74efb7e0942adabd4c55a882ebb222def566db01b4d571dc696f7bc096d0c */}
+{/* t:p 3c2dd1fad679d4a06a9d6a08622e6f2579ae6041bc24520a208c2b2e22f0fbcc */}
 ### &#x2699; darkone.system.testing
 
 Standalone test mode for the NixOS Test Driver.
@@ -400,8 +400,6 @@ harmonia.pub) be skipped by core/ncps. sops stays REAL (high fidelity).
 Enabled only via `tests/lib/test-tuning.nix`. This module never references
 any path under `tests/` — the cert path is passed as an option value.
 :::
-
-Aim: use, debug.
 
 * **standalone** `bool` Standalone test mode — skip workDir-only config (nix.pub, harmonia.pub) and neutralize external services
 * **tlsCert** `nullOr path` Self-signed cert (PEM) provided by the test harness to stub ACME. Never a tests/ path baked into the framework.
