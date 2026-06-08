@@ -110,11 +110,11 @@ Check `dnf/lib/default.nix`: the function might already exist. Reuse
 rather than duplicate.
 :::
 
-{/* t:p 037dbfea145cda939761a1024c4ee112cc5935a92a73572ae571b15bf4162786 */}
-## Service registry
+{/* t:p 652286e5410d3708380f4718fa238625b50bc1740140a164b607deb7605d01ec */}
+## The service registry
 
-A service declares its **topology** in `dnf/config/modules.nix` (not in
-its `.nix`): reverse proxy, uniqueness per zone, external access, automatic
+A service declares its **topology** in `dnf/config/modules.nix` (not in its
+`.nix`): reverse proxy, uniqueness per zone, external access, automatic
 activation by host profile.
 
 ```nix
@@ -129,7 +129,8 @@ adguardhome = {
 |---|---|---|
 | `reverseProxy` | `true` | The service is exposed via Caddy. |
 | `uniquePerZone` | `false` | Only one instance allowed per zone. |
-| `externalAccess` | `false` | Reachable outside the zone (via HCS). |
+| `externalAccess` | `false` | Reachable outside the zone (via the HCS). |
+| `require` | `[ ]` | Services to enable on the **same host** (otherwise generation error). |
 | `activation.profiles.<profile>` | — | Enabled by default on hosts of a profile. |
 
 {/* t:p 9a6be91b8e2904daaf3ad92036dcab555d01745e973058e8f3c6188a3b2286a5 */}

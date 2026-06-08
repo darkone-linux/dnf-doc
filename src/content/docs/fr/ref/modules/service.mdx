@@ -478,34 +478,36 @@ Les identifiants sont gérés via sops.
 darkone.service.minio.enable = false;
 ```
 
-{/* t:p 42bd6bbe1415be85b99e423e079321f213c016a694fa4c25f6a2f6c5240c5d2c */}
+{/* t:p 4ac5d8872d4080b34eb239433d32bc7ca7571c437eae230ab702d347b6959411 */}
 ### &#x2728; darkone.service.monitoring
 
-Module de supervision avec prometheus, grafana et node exporter.
+Module de supervision : tableaux de bord Grafana + exportateur par nœud.
 
 :::tip
-Ce module est préconfiguré avec une configuration qui vous permet de surveiller le système d'exploitation, l'activité réseau, les ressources et les performances.
-Pour chaque zone :
+Grafana visualise les métriques collectées par le service `prometheus` (qu'il
+nécessite sur le même hôte, imposé par le générateur). Pour chaque zone :
 
-- Tous les nœuds avec la balise « monitoring-node » contiennent prometheus + node exporter.
-- Le nœud avec le service « monitoring » contient grafana.
-- Un seul hôte de surveillance par zone est accepté.
-- Une balise « monitoring-node:[zone] » est attachée à un hôte de surveillance de la zone conçue.
+- Tous les nœuds avec la balise « monitoring-node » exécutent l'exportateur de nœud.
+- Le nœud avec le service « monitoring » exécute Grafana (et nécessite `prometheus`).
+- Un seul hôte de supervision par zone est accepté.
+- Une balise « monitoring-node:[zone] » attache un nœud au Prometheus de cette zone.
 :::
 
-* **enable** `bool` Activer la surveillance avec prometheus, grafana et node exporter
-* **isNode** `bool` Est un nœud de surveillance
-* **retentionTime** `str` Durée de rétention des métriques Prometheus
-* **kioskTarget** `str` Cible (relative, pas de `/`) pour la redirection automatique vers Grafana à partir de la racine du domaine de surveillance. Remplacée par le module Loki lorsqu'il est actif pour pointer vers un tableau de bord d'accueil multi-sources.
+* **enable** `bool` Activer la supervision avec Prometheus, Grafana et l'exportateur de nœud
+* **isNode** `bool` Est un nœud de supervision
+* **kioskTarget** `str` Cible (relative, sans `/`) pour la redirection automatique vers Grafana
+depuis la racine du domaine de supervision. Surchargé par le module Loki
+lorsqu'il est actif pour pointer vers un tableau de bord d'accueil multi-sources.
 
 ```nix
 darkone.service.monitoring = {
   enable = false;
   isNode = lib.hasAttrByPath [ "features" "monitoring-node" ] host;
-  retentionTime = "30d";
   kioskTarget = "d/dnf-monitoring-home/home?kiosk";
 };
 ```
+
+<hr/>
 
 {/* t:p 8abafbbeea97844d60a649a51c5fe8f4eb1dd1721f19a8456bd4f5a8fdd47240 */}
 ### &#x2728; darkone.service.ncps
@@ -655,6 +657,61 @@ darkone.service.printing = {
   enableManualInstall = false;
 };
 ```
+
+{/* t:p 3fa8b3c185199ec6a6383bc2099bd48b0ef6ba5f71a86fd627a8d2d9130f032c */}
+### &#x2728; darkone.service.prometheus
+
+Serveur de supervision Prometheus avec escalade Alertmanager déclarative.
+
+:::tip
+Service autonome de métriques + alerting, indépendant de Grafana :
+
+- Scrute chaque nœud de zone portant la fonctionnalité `monitoring-node:<zone>`.
+- Alertmanager achemine par sévérité : warning → Matrix #warnings,
+  critique → Matrix #incidents + courriel (relais Postfix local).
+- blackbox_exporter sonde la joignabilité de la passerelle / tailnet / DNS.
+- Les classes de nœuds (critique/non-critique/désactivé) proviennent des fonctionnalités
+  `alert-*` ou du profil hôte (voir `dnf/lib/alerts.nix`).
+
+`monitoring` (Grafana) nécessite un `prometheus` sur le même hôte
+(imposé par `require` du générateur). L'interface web est exposée sur
+`https://prometheus.<zone>.<domain>` derrière oauth2-proxy (groupe `admins`),
+qui corrige également les liens d'alerte pointant vers Prometheus.
+::~
+
+But : utiliser, maintenir, configurer, déboguer.
+
+* **enable** `bool` Activer le serveur de métriques + alerting Prometheus
+* **retentionTime** `str` Durée de rétention des métriques Prometheus
+* **alerting.enable** `bool` Activer Alertmanager (activé par défaut une fois les salles d'alerte Matrix approvisionnées)
+* **alerting.matrix.enable** `bool` Envoyer les alertes dans les salons Matrix via le bot matrix-alertmanager
+* **alerting.matrix.userId** `str` Identifiant Matrix du bot d'alerte (par défaut depuis network.matrix.bot)
+* **alerting.matrix.warningsRoom** `str` Identifiant du salon Matrix pour les avertissements (par défaut depuis network.matrix.warningsRoom)
+* **alerting.matrix.incidentsRoom** `str` Identifiant du salon Matrix pour les incidents (par défaut depuis network.matrix.incidentsRoom)
+* **alerting.email.enable** `bool` Envoyer aussi les alertes critiques par courriel (via le relais Postfix local)
+* **alerting.email.to** `str` Destinataire des courriels d'alerte critique
+* **alerting.network.enable** `bool` Sonder la joignabilité réseau (passerelle/tailnet/DNS) avec blackbox_exporter
+* **alerting.silenceOnRebuild** `bool` Transmettre le indicateur dnf-maintenance (collecteur textfile) pour que les reconstructions inhibent les alertes d'un nœud
+* **alerting.thresholds** `attrs` Surcharger les seuils d'alerte de ressources (voir valeurs par défaut dans dnf/lib/alerts.nix)
+
+```nix
+darkone.service.prometheus = {
+  enable = false;
+  retentionTime = "30d";
+  alerting.enable = roomsReady;
+  alerting.matrix.enable = true;
+  alerting.matrix.userId = "@alertbot:poncon.fr";
+  alerting.matrix.warningsRoom = "!warnings:poncon.fr";
+  alerting.matrix.incidentsRoom = "!incidents:poncon.fr";
+  alerting.email.enable = true;
+  alerting.email.to = "admin@${network.domain}";
+  alerting.network.enable = true;
+  alerting.silenceOnRebuild = true;
+  alerting.thresholds = { };
+};
+```
+
+<hr/>
 
 {/* t:p 4f6dec6f606592f53369c9292cdf27c970c32ecd32fbacc634e7005148c08b0a */}
 ### &#x2728; darkone.service.restic

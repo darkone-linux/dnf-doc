@@ -1,0 +1,142 @@
+---
+title: Alerts
+sidebar:
+  label: Alerts
+  order: 7
+lang: en
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+{/* t:translated-from fr */}
+{/* t:h 33a4dbce6b5a8c428d2de1b14ae12122f09c357599cec0818b38483ddfab74f2 */}
+
+{/* t:p 807df96d1d62c39d4009d801e73dafd5bc4229f67a06c8c6167f24582a9e23c9 */}
+The alerting system delivers Prometheus alerts to Matrix rooms (and via email
+for incidents). A **one-time provisioning** of the bot is enough: everything
+is declarative afterwards. The overall architecture is described in
+[Monitoring & Alerting](/en/doc/admin-guide/understand/monitoring-alerts/).
+
+{/* t:p 17774a4b6a135ddcabf9e2ba216479fa68228d3ee6f8c5c31ae4fd265847fa4b */}
+## Prerequisites
+
+| Prerequisite | Why |
+|---|---|
+| `prometheus` + `monitoring` on the collector | hosts Alertmanager and the rules |
+| Reachable `matrix` service | hosts the bot and the rooms |
+| Registration secret in sops (`matrix-rss-password`) | creates the bot account |
+| Admin sops key present | writes the bot secrets |
+
+{/* t:p 45a993de5fcf9eb47deed87429a7aa1b5821c3676a08c626a5908feff4e1f33d */}
+## Installing the bot
+
+A single **idempotent** command (safe to re-run): it creates the bot account,
+the rooms, and writes the identity into `var/generated/matrix.nix`.
+
+<Steps>
+
+1. Declare the human administrator (local part) in the configuration:
+
+   ```yaml
+   # etc/config.yaml
+   network:
+     matrix:
+       admin: "alice"
+   ```
+
+2. Run provisioning:
+
+   ```sh
+   just configure-alert-bot
+   ```
+
+   The command, using the admin sops key:
+   - creates the `@alertbot:domain.tld` account (nonce HMAC flow on the shared secret) ;
+   - creates or resolves the `#alert-warnings` and `#alert-incidents` rooms, invites the bot and **invites the admin** ;
+   - writes `bot` + room IDs into `var/generated/matrix.nix` ;
+   - stores password, access token and webhook secret in sops.
+
+   <Aside type="note" title="Non-public admin API">
+   If `/_synapse/admin` is not exposed, the script **automatically** opens an
+   SSH tunnel to the Matrix host (using the `nix` deployment user).
+   </Aside>
+
+   <Aside type="caution" title="Caddy anti-bot filter">
+   The Matrix vhost rejects (403) a `curl`-like `User-Agent`. The script sends
+   a neutral agent instead: do not reproduce API calls with raw `curl`.
+   </Aside>
+
+3. Deploy the collector:
+
+   ```sh
+   just generate
+   just apply <collector>
+   ```
+
+   Alerting **activates automatically** as soon as the rooms exist
+   (`var/generated/matrix.nix` populated). To force-disable it:
+   `darkone.service.prometheus.alerting.enable = false;`.
+
+</Steps>
+
+<Aside type="tip" title="Changing the bot name">
+The bot is named `alertbot` by default. For a different name:
+`ALERT_BOT=supervision just configure-alert-bot`.
+</Aside>
+
+{/* t:p e20171ec034e4c5e42faf58d0c085308595bc26c481edd344dede00fc34a0509 */}
+## Created secrets
+
+Provisioning stores three secrets in `usr/secrets/secrets.yaml`:
+
+| Sops key | Role |
+|---|---|
+| `alertmanager-matrix-password` | bot account password (reconnection) |
+| `alertmanager-matrix-token` | bot access token (message sending) |
+| `alertmanager-webhook-secret` | authenticates Alertmanager to the Matrix bridge |
+
+{/* t:p 78a3f2c93abffead121c030309e43e93d86ebde1cacada071c8d13b551a1b788 */}
+## Testing an alert
+
+<Steps>
+
+1. On a supervised node, stop a monitored service:
+
+   ```sh
+   sudo systemctl stop <unit>
+   ```
+
+2. Within a minute, a `ServiceDown` (or `SystemdUnitFailed`) message appears
+   in `#alert-warnings` — `#alert-incidents` **and an email** if the node is
+   critical. The alert link points to `https://prometheus.<zone>.domain.tld`.
+
+3. Restart the service: the alert resolves (resolution notification).
+
+   ```sh
+   sudo systemctl start <unit>
+   ```
+
+</Steps>
+
+{/* t:p da761eff3d5f196b572f331092e3bbea15275fdc6d1f5b28ed695013f7c64af2 */}
+## Silencing during a rebuild
+
+The deployment flow sets a maintenance flag to avoid triggering false alerts
+during a `nixos-rebuild`. Manually:
+
+```sh
+dnf-maintenance on    # inhibits node alerts
+dnf-maintenance off   # re-enables them
+```
+
+{/* t:p 8051eff71befb2af62a438ff4d88cbefe0d796fc0d44b6a8dc75fd301d012bbc */}
+## Troubleshooting
+
+| Symptom | Likely cause | Fix |
+|---|---|---|
+| No messages in a room | bot not in the room or expired token | re-run `just configure-alert-bot` |
+| Room creation 403 | Caddy anti-bot filter | already handled (neutral agent) ; do not use raw `curl` |
+| `admin API not public` | `/_synapse/admin` closed | let the automatic SSH tunnel work (Matrix host must be reachable) |
+| Unresolved alert link | missing DNS or certificate for the prometheus vhost | deploy the gateway / HCS for the new subdomain |
+| `matrix.nix` ignored at deploy | file not readable by `nix` | the script does a `chmod 644` ; check `var/generated/` permissions |
+| No incident email | local Postfix relay inactive | alerting enables it by default ; check `darkone.service.prometheus.alerting.email` |

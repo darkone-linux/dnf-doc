@@ -543,25 +543,23 @@ darkone.service.minio.enable = false;
 
 <hr/>
 
-{/* t:p 42bd6bbe1415be85b99e423e079321f213c016a694fa4c25f6a2f6c5240c5d2c */}
+{/* t:p 4ac5d8872d4080b34eb239433d32bc7ca7571c437eae230ab702d347b6959411 */}
 ### &#x2728; darkone.service.monitoring
 
-Supervision module with prometheus, grafana and node exporter.
+Supervision module: Grafana dashboards + per-node exporter.
 
 :::tip
-This module is preconfigured with a configuration that allows you
-to monitor the operating system, network activity, resources, and performance.
-For each zone:
+Grafana visualises the metrics collected by the `prometheus` service (which it
+requires on the same host, enforced by the generator). For each zone:
 
-- All nodes with tag "monitoring-node" contains prometheus + node exporter.
-- The node with service "monitoring" contains grafana.
+- All nodes with tag "monitoring-node" run the node exporter.
+- The node with service "monitoring" runs Grafana (and requires `prometheus`).
 - Only one monitoring host per zone is accepted.
-- A tag "monitoring-node:[zone]" is attached to a monitoring host of the designed zone.
+- A tag "monitoring-node:[zone]" attaches a node to that zone's Prometheus.
 :::
 
 * **enable** `bool` Enable monitoring with prometheus, grafana and node exporter
 * **isNode** `bool` Is a monitoring node
-* **retentionTime** `str` Prometheus metrics retention duration
 * **kioskTarget** `str` Target (relative, no `/`) for the automatic redirect to Grafana
 from the monitoring domain root. Overridden by the Loki module
 when active to point to a multi-source home dashboard.
@@ -570,7 +568,6 @@ when active to point to a multi-source home dashboard.
 darkone.service.monitoring = {
   enable = false;
   isNode = lib.hasAttrByPath [ "features" "monitoring-node" ] host;
-  retentionTime = "30d";
   kioskTarget = "d/dnf-monitoring-home/home?kiosk";
 };
 ```
@@ -735,6 +732,61 @@ darkone.service.printing = {
   enableScanners = false;
   enableHpPrinters = false;
   enableManualInstall = false;
+};
+```
+
+<hr/>
+
+{/* t:p 3fa8b3c185199ec6a6383bc2099bd48b0ef6ba5f71a86fd627a8d2d9130f032c */}
+### &#x2728; darkone.service.prometheus
+
+Prometheus monitoring server with declarative Alertmanager escalation.
+
+:::tip
+Standalone metrics + alerting service, independent from Grafana:
+
+- Scrapes every zone node carrying the `monitoring-node:<zone>` feature.
+- Alertmanager routes by severity: warning -> Matrix #warnings,
+  critical -> Matrix #incidents + mail (local Postfix relay).
+- blackbox_exporter probes gateway / tailnet / DNS reachability.
+- Node classes (critical/non-critical/disabled) come from the `alert-*`
+  features or the host profile (see `dnf/lib/alerts.nix`).
+
+`monitoring` (Grafana) requires a `prometheus` on the same host
+(enforced by the generator `require`). The web UI is exposed at
+`https://prometheus.<zone>.<domain>` behind oauth2-proxy (group `admins`),
+which also fixes the alert links pointing back to Prometheus.
+:::
+
+Aim: use, maintain, configure, debug.
+
+* **enable** `bool` Enable the Prometheus metrics + alerting server
+* **retentionTime** `str` Prometheus metrics retention duration
+* **alerting.enable** `bool` Enable Alertmanager (defaults on once the Matrix alert rooms are provisioned)
+* **alerting.matrix.enable** `bool` Deliver alerts to Matrix rooms via the matrix-alertmanager bot
+* **alerting.matrix.userId** `str` Matrix user ID of the alert bot (defaults from network.matrix.bot)
+* **alerting.matrix.warningsRoom** `str` Matrix room ID for warnings (defaults from network.matrix.warningsRoom)
+* **alerting.matrix.incidentsRoom** `str` Matrix room ID for incidents (defaults from network.matrix.incidentsRoom)
+* **alerting.email.enable** `bool` Also send critical alerts by mail (through the local Postfix relay)
+* **alerting.email.to** `str` Recipient of critical alert mails
+* **alerting.network.enable** `bool` Probe network reachability (gateway/tailnet/DNS) with blackbox_exporter
+* **alerting.silenceOnRebuild** `bool` Ship the dnf-maintenance flag (textfile collector) so rebuilds inhibit a node's alerts
+* **alerting.thresholds** `attrs` Override resource alert thresholds (see dnf/lib/alerts.nix defaults)
+
+```nix
+darkone.service.prometheus = {
+  enable = false;
+  retentionTime = "30d";
+  alerting.enable = roomsReady;
+  alerting.matrix.enable = true;
+  alerting.matrix.userId = "@alertbot:poncon.fr";
+  alerting.matrix.warningsRoom = "!warnings:poncon.fr";
+  alerting.matrix.incidentsRoom = "!incidents:poncon.fr";
+  alerting.email.enable = true;
+  alerting.email.to = "admin@${network.domain}";
+  alerting.network.enable = true;
+  alerting.silenceOnRebuild = true;
+  alerting.thresholds = { };
 };
 ```
 

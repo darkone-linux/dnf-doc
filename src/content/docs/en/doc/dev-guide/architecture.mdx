@@ -85,3 +85,14 @@ via `specialArgs` (the generator and `flake.nix` provide them):
 The exact list of arguments for a module is visible at the top of its file (the
 `{ lib, config, dnfLib, host, ... }` block). When in doubt, check the source.
 :::
+
+{/* t:p b3fb71681be75c1a0868f3f43eb52b487dc4be9333ac85f7c21e42744204fa70 */}
+## Generated overlays
+
+Some values don't belong in `etc/config.yaml` (manual): too technical, or **provisioned by a tool**. The pattern: a script writes a `var/generated/<x>.nix` file that the assembler `dnf/lib/mk-configuration.nix` **merges** into an injected argument.
+
+Example: `just configure-alert-bot` writes `var/generated/matrix.nix` (alert bot identity + room IDs), merged into `network.matrix.*` via `recursiveUpdate` (the generated file wins). Modules read `network.matrix` without knowing where it comes from.
+
+:::tip[When to use]
+For **derived or provisioned** data, never edited by hand, outside of `config.yaml`. The overlay is **optional**: if absent, the argument keeps its base value.
+:::

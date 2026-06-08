@@ -178,10 +178,10 @@ defaultParams = {
 Protocols served on the same HTTP port (WebDAV, CalDAV, CardDAV for OxiCloud)
 naturally go through the single Caddy vhost: nothing special to configure.
 
-{/* t:p cd313ef0963d46ef380d1264d9eb2dab1cf284725bc16fb926ae6b07ff102aed */}
+{/* t:p 2186d270149eb19c38f2ac759ee2e9644da881b654242eb4c01f9397f34be196 */}
 ### Per-host activation
 
-A service is activated on a host when it appears under `services:` in
+A service activates on a host when it appears under `services:` in
 `etc/config.yaml`, or via a trigger in `dnf/config/modules.nix`:
 
 ```nix
@@ -197,10 +197,11 @@ Available flags:
 |---|---|---|
 | `reverseProxy` | `true` | Exposes the service via Caddy |
 | `uniquePerZone` | `false` | Single instance per zone |
-| `externalAccess` | `false` | Access from outside |
+| `externalAccess` | `false` | External access |
+| `require` | `[ ]` | Dependencies to activate on the same host (error otherwise) |
 
 On the `config.yaml` side, the following
-example installs a full OxiCloud on `https://cloud.mydomain.tld`:
+example installs a full OxiCloud on `https://cloud.mondomaine.tld`:
 
 ```yaml
 hosts:
@@ -211,8 +212,8 @@ hosts:
         global: true
 ```
 
-The framework resolves `domain`/`global` into `params` (`fqdn`, `href`, `ip`…)
-via `dnfLib.extractServiceParams host network "oxicloud" defaultParams`.
+The framework resolves `domain`/`global` into `params` (`fqdn`, `href`, `ip`…) via
+`dnfLib.extractServiceParams host network "oxicloud" defaultParams`.
 
 {/* t:p ae9debfa23c989de21ed264ff9032d332e282b341c74b9b7e3ca24a9def26c41 */}
 ## Network, database and secrets

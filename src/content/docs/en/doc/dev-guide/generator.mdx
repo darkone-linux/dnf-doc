@@ -56,11 +56,11 @@ flake: flake.nix\n(framework → NixOS) {
 cfg -> gen -> out -> flake
 ```
 
-{/* t:p 759164f6d87f99e3ffa488d3384038643b82c280708dccebd943d150011a8c47 */}
+{/* t:p 790256df9bd8ae6c494acdf0a562d5aa854c4f1cb0a536cecdf35ae91084edf7 */}
 ## Commands
 
-The generator exposes one command per target. `just generate` chains all
-of them; you can also invoke a single one.
+The generator exposes one command per target. `just generate` chains them all
+together; you can also invoke a single one.
 
 | Command | Output | Content |
 |---|---|---|
@@ -71,15 +71,17 @@ of them; you can also invoke a single one.
 | `doc` | `*/ref/modules.mdx` | Module reference (documentation). |
 
 ```sh
-just generate          # regenerate everything (via the Justfile)
+just generate          # regenerate everything (via Justfile)
 just codegen           # regenerate only the module reference (doc)
 ```
 
-:::note[Module reading]
-The generator also reads `dnf/config/modules.nix` (service topology) and,
-for the `doc` command, **parses Nix sources** (`rnix` parser) to
-extract options and headers. To document an option: describe it in the
-module, then `just codegen`.
+:::note[Reading modules]
+The generator also reads `dnf/config/modules.nix` (service topology): it applies
+flags (reverse proxy, uniqueness…) on it and **validates `require`
+dependencies** — a required service must be enabled on the same host, otherwise
+generation fails. For the `doc` command, it **parses Nix sources** (`rnix`
+parser) to extract options and headers. To document an option = describe it in
+the module, then `just codegen`.
 :::
 
 {/* t:p 35896f9a3ec5e74a79bfaa399fa667a0c6b84f8cbf230b270288a8fdc362474f */}

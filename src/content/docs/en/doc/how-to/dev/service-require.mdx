@@ -1,0 +1,38 @@
+---
+title: Declaring a dependency between services (require)
+sidebar:
+  label: Service dependency
+  order: 3
+lang: en
+---
+
+{/* t:translated-from fr */}
+{/* t:h 911c103f085a002d19b1c017e7072088b64dda21e6e1508f44cd47dc3afeedb1 */}
+
+{/* t:p 6ffa8f9cb5fa423928d6e4b9cf785b9d81e262c16920920bd9ad8854b38b8871 */}
+A service can **require** another to be enabled on the **same host**. The
+dependency is declared in the `dnf/config/modules.nix` registry, not in the
+module itself.
+
+```nix
+# dnf/config/modules.nix
+monitoring = {
+  require = [ "prometheus" ];
+};
+```
+
+The generator validates the rule: enabling `monitoring` on a host that does not have
+`prometheus` **causes the generation to fail** (with an explicit message). This is a
+consistency safeguard, not an automatic activation: the administrator must declare
+**both** services.
+
+:::note[Why not automatic activation?]
+Declaring both services makes the intent explicit **and** allows the generator
+to produce the DNS and reverse proxy entries for the dependency. Implicit activation
+on the Nix side would leave these artifacts missing.
+:::
+
+:::tip[Multiple dependencies]
+`require` is a list: `require = [ "prometheus" "postfix" ];`. Each entry
+must be a service declared in the registry.
+:::
