@@ -180,7 +180,7 @@ Les protocoles servis sur le même port HTTP (WebDAV, CalDAV, CardDAV pour
 OxiCloud) passent naturellement par l'unique vhost Caddy : rien de spécial à
 configurer.
 
-{/* t:p cd313ef0963d46ef380d1264d9eb2dab1cf284725bc16fb926ae6b07ff102aed */}
+{/* t:p 2186d270149eb19c38f2ac759ee2e9644da881b654242eb4c01f9397f34be196 */}
 ### Activation par hôte
 
 Un service s'active sur un hôte quand il figure sous `services:` dans
@@ -200,6 +200,7 @@ Drapeaux disponibles :
 | `reverseProxy` | `true` | Expose le service via Caddy |
 | `uniquePerZone` | `false` | Un seul exemplaire par zone |
 | `externalAccess` | `false` | Accès depuis l'extérieur |
+| `require` | `[ ]` | Dépendances à activer sur le même hôte (erreur sinon) |
 
 Côté `config.yaml`, l'exemple
 suivant installe un OxiCloud complet sur `https://cloud.mondomaine.tld` :

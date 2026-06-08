@@ -57,7 +57,7 @@ flake: flake.nix\n(framework → NixOS) {
 cfg -> gen -> out -> flake
 ```
 
-{/* t:p 759164f6d87f99e3ffa488d3384038643b82c280708dccebd943d150011a8c47 */}
+{/* t:p 790256df9bd8ae6c494acdf0a562d5aa854c4f1cb0a536cecdf35ae91084edf7 */}
 ## Les commandes
 
 Le générateur expose une commande par cible. `just generate` les enchaîne
@@ -77,10 +77,12 @@ just codegen           # régénérer uniquement la référence des modules (doc
 ```
 
 :::note[Lecture des modules]
-Le générateur lit aussi `dnf/config/modules.nix` (topologie des services) et,
-pour la commande `doc`, **analyse les sources Nix** (parser `rnix`) pour en
-extraire les options et les en-têtes. Documenter une option = la décrire dans le
-module, puis `just codegen`.
+Le générateur lit aussi `dnf/config/modules.nix` (topologie des services) : il y
+applique les drapeaux (reverse proxy, unicité…) et **valide les dépendances
+`require`** — un service exigé doit être activé sur le même hôte, sinon la
+génération échoue. Pour la commande `doc`, il **analyse les sources Nix** (parser
+`rnix`) pour en extraire les options et les en-têtes. Documenter une option = la
+décrire dans le module, puis `just codegen`.
 :::
 
 {/* t:p 35896f9a3ec5e74a79bfaa399fa667a0c6b84f8cbf230b270288a8fdc362474f */}

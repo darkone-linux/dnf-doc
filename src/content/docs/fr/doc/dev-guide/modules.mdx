@@ -110,7 +110,7 @@ Vérifier `dnf/lib/default.nix` : la fonction existe peut-être déjà. Réutili
 plutôt que dupliquer.
 :::
 
-{/* t:p 037dbfea145cda939761a1024c4ee112cc5935a92a73572ae571b15bf4162786 */}
+{/* t:p 652286e5410d3708380f4718fa238625b50bc1740140a164b607deb7605d01ec */}
 ## Le registre des services
 
 Un service déclare sa **topologie** dans `dnf/config/modules.nix` (et non dans
@@ -130,6 +130,7 @@ adguardhome = {
 | `reverseProxy` | `true` | Le service est exposé via Caddy. |
 | `uniquePerZone` | `false` | Un seul exemplaire admis par zone. |
 | `externalAccess` | `false` | Joignable hors zone (via le HCS). |
+| `require` | `[ ]` | Services à activer sur le **même hôte** (sinon erreur de génération). |
 | `activation.profiles.<profil>` | — | Activé d'office sur les hôtes d'un profil. |
 
 {/* t:p 9a6be91b8e2904daaf3ad92036dcab555d01745e973058e8f3c6188a3b2286a5 */}

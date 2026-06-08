@@ -1,0 +1,127 @@
+---
+title: Monitoring & Alertes
+sidebar:
+  label: Monitoring & alertes
+  order: 6
+lang: fr
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+{/* t:main */}
+{/* t:h ba8a2ad42d31979f89826e1fd13f71df181d21be1d6c6f0551c18b5b84ae2bd2 */}
+
+{/* t:p 04d3ec341b36794819437a6a06a84dbcf1e1a0463ed1b1cb30f71cb0884ddcea */}
+La supervision collecte des **métriques** ([Prometheus](https://prometheus.io/))
+et les affiche ([Grafana](https://grafana.com/)). Par-dessus, une couche
+d'**alertes** entièrement déclarative prévient l'administrateur dès qu'un nœud,
+un service, une ressource ou le réseau dérape. Activée, elle s'adapte seule à ce
+qui est déployé.
+
+{/* t:p 4fcdb11a54283225d2eb9c72a5a5aa314ad116b73a88e11234c1ec0538dca9f6 */}
+## Deux services, un hôte
+
+Le collecteur d'une zone porte **deux** services distincts, sur le même hôte :
+
+| Service | Rôle | Accès |
+|---|---|---|
+| `prometheus` | Métriques, règles d'alerte, sondes réseau, Alertmanager | `https://prometheus.<zone>.domain.tld` (protégé SSO) |
+| `monitoring` | Tableaux de bord Grafana | `https://stats.<zone>.domain.tld` (protégé SSO) |
+
+`monitoring` **requiert** `prometheus` sur le même hôte : le générateur refuse
+une configuration où Grafana n'a pas de source de données. On peut activer
+`prometheus` **seul** (métriques + alertes sans Grafana).
+
+<Aside type="note" title="Un collecteur par zone">
+Un seul hôte porte `prometheus`/`monitoring` par zone. Il supervise les nœuds
+dont le tag `monitoring-node` désigne **sa** zone.
+</Aside>
+
+{/* t:p a868a1c44b12e42b2b7877dc06b04841d899b369c6f90319c848d2ea33854689 */}
+## Le flux d'alerte
+
+Prometheus évalue des règles **générées à partir de la topologie** ; quand l'une
+se déclenche, Alertmanager route la notification selon sa **sévérité**.
+
+```d2
+style.fill: transparent
+direction: right
+
+nodes: "Nœuds\nnode-exporter" { shape: rectangle }
+prom: "Prometheus\nrègles + sondes" { shape: hexagon }
+am: Alertmanager { shape: diamond }
+warn: "Matrix #warnings" { shape: rectangle }
+inc: "Matrix #incidents" { shape: rectangle }
+mail: "E-mail" { shape: rectangle }
+
+nodes -> prom
+prom -> am
+am -> warn
+am -> inc
+am -> mail
+```
+
+Alertmanager **déduplique**, **regroupe** (par alerte et instance) et **inhibe**
+les alertes redondantes : un `critical` éteint le `warning` du même incident.
+
+{/* t:p 5dc4cfaa330b2c80a473b77f938563dee528b9bcb45fe106255bf005957ca0a3 */}
+## Sévérité et escalade
+
+L'escalade est portée par la sévérité, pas par le temps :
+
+| Sévérité | Destination |
+|---|---|
+| `warning` | Salon Matrix `#alert-warnings` |
+| `critical` | Salon Matrix `#alert-incidents` **+ e-mail** |
+
+Le mail part par le relais Postfix local de l'hôte ; le pont Matrix est un bot
+dédié (`@alertbot:domain.tld`) qui poste dans les deux salons.
+
+{/* t:p 52f3b8dd2ac449fafbc0700e3507cfc17e459fffc2d02e4c06d5f84e5cdb4272 */}
+## Classes de nœuds
+
+La sévérité d'une panne dépend de l'**importance** du nœud. Un serveur critique
+qui tombe est un incident ; un poste de travail éteint, une simple info.
+
+| Classe | Qui | Effet |
+|---|---|---|
+| critique | profils `gateway`, `hcs`, `server` | pannes en `critical` |
+| non critique | postes, portables | pannes en `warning` |
+| désactivée | — | aucune alerte sur ce nœud |
+
+La classe par défaut suit le profil de l'hôte ; on la force avec une **feature** :
+
+- `alert-critical` : relève le nœud au niveau critique.
+- `alert-non-critical` : le rabaisse.
+- `alert-disabled` : le sort des alertes.
+
+Comme `monitoring-node:<zone>`, ces features acceptent une zone propriétaire :
+`alert-critical:main` fait surveiller un nœud externe (typiquement le HCS) par la
+zone `main`.
+
+{/* t:p f26bd560527aba812f399d7abaa1dbf9cfcb7bd1b18fd0c7a9268d516b2c3446 */}
+## Ce qui est surveillé
+
+Les règles sont dérivées de ce que chaque nœud déclare ; rien à lister à la main.
+
+| Famille | Déclencheur |
+|---|---|
+| Nœud injoignable | `node-exporter` muet (`NodeDown`) |
+| Service actif mais en panne | unité systemd attendue non `active` (`ServiceDown`) |
+| Unité en échec | une unité systemd `failed` (`SystemdUnitFailed`) |
+| Ressources | disque, RAM, charge, inodes, OOM (seuils surchargeables) |
+| Réseau | passerelle, tailnet (headscale) ou DNS injoignable (sondes blackbox) |
+
+{/* t:p d4e3ff350edb205693bfda166ccbb65803e3c6365b08e39ffdf1110cb2ecd97d */}
+## Silence pendant les rebuilds
+
+Un `nixos-rebuild` peut faire clignoter des alertes (services qui redémarrent).
+Le nœud en cours de déploiement dépose un drapeau de maintenance que Prometheus
+voit ; Alertmanager **inhibe alors toutes les alertes de ce nœud** le temps de
+l'opération. Le drapeau se pose et se lève avec `dnf-maintenance on|off`, que le
+flux de déploiement enroule automatiquement autour du rebuild.
+
+<Aside type="tip" title="Installer les alertes">
+La mise en place du bot Matrix et des salons est décrite dans
+[Alertes](/fr/doc/admin-guide/operate/alerts/) (guide d'exploitation).
+</Aside>

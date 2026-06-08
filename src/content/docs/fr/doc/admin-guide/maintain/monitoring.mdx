@@ -15,7 +15,7 @@ La supervision repose sur [Prometheus](https://prometheus.io/) (métriques),
 (journaux). Elle est **organisée par zone** : un hôte collecte, les autres
 exposent leurs métriques.
 
-{/* t:p 13274561d23f39ee3cb4ef5ebbbdaae406291da24a7be699f62c07952f8afded */}
+{/* t:p e758d17315b4c6280b72f038b192f1afbc448f15a250caedcca6cdeb1273a26e */}
 ## Les rôles
 
 ```d2
@@ -34,16 +34,21 @@ caddy -> grafana
 
 | Rôle | Qui | Quoi |
 |---|---|---|
-| Collecteur | Hôte avec le service `monitoring` | Grafana + Prometheus + Loki |
+| Collecteur | Hôte avec `prometheus` (+ `monitoring`, + `loki`) | Métriques & alertes, tableaux de bord, journaux |
 | Nœud supervisé | Hôtes tagués `monitoring-node` | `node-exporter` (métriques système) |
 | Source de logs | Hôtes sous Caddy | Alloy pousse les journaux d'accès |
 
+`prometheus` (métriques + alertes) et `monitoring` (Grafana) sont **deux services
+distincts** sur le même hôte ; Grafana requiert Prometheus. Le détail du
+fonctionnement est dans
+[Monitoring & Alertes](/fr/doc/admin-guide/understand/monitoring-alerts/).
+
 :::note[Un collecteur par zone]
-Un seul hôte `monitoring` est admis par zone. Il supervise les nœuds dont le tag
+Un seul collecteur est admis par zone. Il supervise les nœuds dont le tag
 `monitoring-node` désigne **sa** zone.
 :::
 
-{/* t:p 49426eae6938a14b0b4389bb30bc04163416c9d561b0e30dda8bdb71a2261de0 */}
+{/* t:p 2acba11e8ca993346960755e6245f6d2fa3a7f0d2858114385911d66c3392603 */}
 ## Activer
 
 La supervision est un [service](/fr/doc/admin-guide/operate/services/). Sur le
@@ -52,6 +57,7 @@ collecteur :
 ```yaml
 # etc/config.yaml
     services:
+      prometheus:              # métriques + alertes (requis par monitoring)
       monitoring:
         domain: "stats"        # → stats.<zone>.domain.tld
 ```
@@ -61,18 +67,24 @@ collecteur :
   dès que Caddy et monitoring sont actifs.
 
 :::tip[Accès]
-Grafana est protégé par le [SSO Kanidm](/fr/doc/admin-guide/operate/sso/). La
-racine du domaine redirige vers un tableau de bord d'accueil.
+Grafana et Prometheus sont protégés par le
+[SSO Kanidm](/fr/doc/admin-guide/operate/sso/). La racine du domaine Grafana
+redirige vers un tableau de bord d'accueil.
 :::
 
-{/* t:p 2f8498b41bf36486a0b35ac5f8278971cfa67be5c277ada63123fcdfd0545841 */}
+:::note[Activer les alertes]
+Les notifications Matrix/e-mail demandent un provisionnement unique du bot :
+voir [Alertes](/fr/doc/admin-guide/operate/alerts/).
+:::
+
+{/* t:p bd6577572f898873d35a0eefca5a2effb6c12d950d3b47202191e9ca6d5fbf22 */}
 ## Réglages utiles
 
 | Option | Effet | Défaut |
 |---|---|---|
-| `retentionTime` | Rétention des métriques Prometheus | `30d` |
-| `isNode` | Fait de l'hôte un nœud supervisé | suit le tag |
-| `kioskTarget` | Tableau de bord affiché à la racine | node-exporter |
+| `prometheus.retentionTime` | Rétention des métriques Prometheus | `30d` |
+| `monitoring.isNode` | Fait de l'hôte un nœud supervisé | suit le tag |
+| `monitoring.kioskTarget` | Tableau de bord affiché à la racine | node-exporter |
 
 :::note[Référence]
 Options détaillées : [module monitoring](/fr/ref/modules/service/) et le module
