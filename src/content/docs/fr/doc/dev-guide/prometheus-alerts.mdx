@@ -1,0 +1,85 @@
+---
+title: Les alertes Prometheus
+sidebar:
+  label: Alertes Prometheus
+  order: 5
+lang: fr
+---
+
+{/* t:main */}
+{/* t:h 02478102e8b0de9d619cdaa5ec51891c04b18851632de1e0309e138db2c4b243 */}
+
+{/* t:p 9dec07a2d83662f2ee6a730c7e6db499d839906542e2b5eb8b9648c54901a899 */}
+Carte de maintenance du code d'alerte : où se trouve quoi, et comment l'étendre
+sans rien casser. Le fonctionnement côté administrateur est décrit dans
+[Monitoring & Alertes](/fr/doc/admin-guide/understand/monitoring-alerts/).
+
+{/* t:p 9bcae6b491f58013270b8a61730e99b3ef9c1a5888461f94e10fb09d5a505cea */}
+## Logique pure vs câblage
+
+Le code est scindé en deux, pour garder la génération des règles **testable** :
+
+- `dnf/lib/alerts.nix` : fonctions **pures** qui produisent les règles Prometheus
+  à partir de la topologie. Testées dans `dnf/tests/unit/lib/alerts_test.nix`.
+- `dnf/modules/service/prometheus.nix` : **câblage** impur (Alertmanager, routage
+  par sévérité, sops, bot Matrix, vhost, sondes blackbox).
+
+Toute logique non triviale va dans `alerts.nix` ; le module se contente de la
+brancher.
+
+{/* t:p 03d816808d6ca32418b39cf39298cca92f6e060efadcf2c4b616a1d9156e0642 */}
+## Les helpers (`alerts.nix`)
+
+Exposés via `dnfLib` (voir `dnf/lib/default.nix`) :
+
+| Helper | Rôle |
+|---|---|
+| `serviceUnits` | Service DNF → unité systemd (ex. `idm` → `kanidmd.service`) |
+| `nodeClass` | Classe d'un nœud (critique / non-critique / désactivé) : features `alert-*` puis profil |
+| `severityForClass` | Classe → sévérité (`critical` ou `warning`) |
+| `hostExpectedUnits` | Unités attendues d'un hôte (d'après ses services activés) |
+| `mkNodeRuleGroups` | `NodeDown`, `ServiceDown`, `SystemdUnitFailed` |
+| `mkResourceRuleGroups` | Disque, RAM, charge, inodes, OOM (seuils `defaultThresholds`) |
+| `mkNetworkRuleGroups` | Sondes blackbox (passerelle, tailnet, DNS) |
+| `mkMaintenanceRuleGroups` | Drapeau de maintenance (silence pendant rebuild) |
+| `mergeRuleGroups` | Fusionne des fragments en **un seul** document |
+| `mkAlertRuleGroups` | Raccourci : nœuds + ressources |
+
+{/* t:p c5d86961939c4492ce81c4a9d92772bf2385dfb6d920af9820758e2928e60fc4 */}
+## Le piège : un seul document de règles
+
+:::caution[À ne jamais oublier]
+NixOS **concatène** toutes les entrées de `services.prometheus.rules` (une liste
+de chaînes) dans **un seul fichier**. Plusieurs documents `groups:` sans
+séparateur `---` → **seul le premier est lu**. Empiler une deuxième entrée casse
+**silencieusement** les groupes suivants.
+:::
+
+On fusionne donc **tout** via `mergeRuleGroups`, puis on n'émet **qu'une** entrée :
+
+```nix
+# dnf/modules/service/prometheus.nix
+services.prometheus.rules = [
+  (builtins.toJSON (dnfLib.mergeRuleGroups (
+    [ (dnfLib.mkAlertRuleGroups { inherit nodes; /* … */ }) ]
+    ++ lib.optional alerting.silenceOnRebuild (dnfLib.mkMaintenanceRuleGroups { /* … */ })
+    ++ lib.optional alerting.network.enable (dnfLib.mkNetworkRuleGroups { /* … */ })
+  )))
+];
+```
+
+{/* t:p 30c03461a85dc9959e5e3879fe31dd8e64d114868a3990ed1eff28ac3627a289 */}
+## Où ajouter quoi
+
+| Je veux… | Je touche… |
+|---|---|
+| surveiller un nouveau service | `serviceUnits` dans `alerts.nix` |
+| une nouvelle famille de règles | un `mkXRuleGroups` + l'ajouter au `mergeRuleGroups` du module |
+| changer un seuil par défaut | `defaultThresholds` dans `alerts.nix` |
+| changer la classe d'un nœud | feature `alert-*[:zone]` (aucun code) |
+| une nouvelle destination | le bloc `alertmanager` de `prometheus.nix` (receiver + route) |
+
+:::tip[Convention DNF]
+Un helper de `lib/` = un test. Toute fonction ajoutée à `alerts.nix` se double
+d'un cas dans `dnf/tests/unit/lib/alerts_test.nix` (`nix-unit`).
+:::
