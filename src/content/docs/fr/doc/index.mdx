@@ -44,7 +44,7 @@ Ce projet évolue en fonction de mes besoins. Si vous souhaitez être informé d
 | 💾 | Sauvegardes 3-2-1 | Sauvegardes [Restic](https://restic.net/) robustes, simplifiées, distribuées |
 | 🏠 | Page d’accueil | Page d’accueil automatisée pour chaque zone |
 
-{/* t:p 4a766d400aefe5acafec439d17e5a3f1e7541130d63672b9f3a27f6bea5bd544 */}
+{/* t:p 7995df4fdd25d19668e06df4daec2526afaa58c8a725c60557167b29cf170045 */}
 ## Sous le capot
 
 | | Spécificité | Description |
@@ -55,6 +55,7 @@ Ce projet évolue en fonction de mes besoins. Si vous souhaitez être informé d
 | 📐 | Architecture | [Cohérente, extensible, scalable, personnalisable](/fr/doc/#structure) |
 | ✴️ | Proxy inverse | Services distribués à travers le réseau via proxies [Caddy](https://github.com/caddyserver/caddy) |
 | 🛜 | Réseau automatisé | Plomberie [dnsmasq](https://thekelleys.org.uk/dnsmasq/doc.html) zero-conf (DNS, DHCP, pare-feu…) |
+| ✅ | Monitoring & Alertes | Supervision avec [Prometheus](https://prometheus.io/), [Grafana](https://grafana.com) et [Alertmanager](https://prometheus.io/docs/alerting/latest/alertmanager/) |
 
 {/* t:p bf22570a5546901e95fb5462a953acd6904e932a0f22fd3738876b31520395bf */}
 ## Le réseau DNF
@@ -140,6 +141,35 @@ Ces configurations sont organisées par catégories:
 - **[Modules Home Manager](/fr/ref/modules/home/)** pour les profils utilisateur.
 - **[Profils utilisateur](/fr/doc/dev-guide/modules/)**, configurations [Home Manager](https://github.com/nix-community/home-manager) standards.
 - **Outils** pour maintenir une configuration qualitative.
+
+{/* t:p 41dd8d07220a4ca866da0a0aa9fa75dcc0f39f017e784bc4e2276fba6aed46fe */}
+## État des services SSO (OIDC / Oauth2)
+
+- **Oauth2** = permet une connexion oauth2 / oidc
+- **Natif** = pas besoin de plugin ou autre, on peut paramétrer directement
+- **PKCE** = prend en charge PKCE
+- **Décl.** (déclaratif) = tous les paramètres peuvent être déclarés dans la configuration
+- **OK** = implémentation fonctionnelle
+
+| Application | Oauth2 | Natif | PKCE | Décl. | OK | Commentaires |
+| -------------- | ------ | ----- | ---- | ---------- | --- | ----------------------------------- |
+| [Outline](https://www.getoutline.com) | ✅ | ✅ | ✅ | ✅ | ✅ | Fonctionne parfaitement |
+| [Mealie](https://mealie.io) | ✅ | ✅ | ✅ | ✅ | ✅ | Fonctionne parfaitement |
+| [Vaultwarden](https://github.com/dani-garcia/vaultwarden) | ✅ | ✅ | ✅ | ✅ | ✅ | Fonctionne parfaitement |
+| [Matrix Synapse](https://matrix.org) | ✅ | ✅ | ✅ | ✅ | ✅ | RAS (+Element +Coturn) |
+| [Open WebUI](https://openwebui.com) | ✅ | ✅ | ✅ | ✅ | ✅ | RAS (+Ollama) |
+| [Grafana](https://grafana.com) | ✅ | ✅ |  ✅ |  ✅ |  ✅ | RAS |
+| [LaSuite Docs](https://lasuite.numerique.gouv.fr) | ✅ | ✅ | ⚠️ | ✅ | ✅ | Bien sauf PKCE |
+| [Immich](https://immich.app) | ✅ | ✅ | ✅ | ⚠️ | ✅ | Configuration manuelle |
+| [Forgejo](https://forgejo.org) | ✅ | ✅ | ✅ | ❌ | ✅ | Configuration manuelle |
+| [Nextcloud](https://nextcloud.com) | ✅ | ❌ | ❌ | ❌ | ✅ | Plugin + conf. manuelle |
+| [Oauth2 Proxy](https://oauth2-proxy.github.io/oauth2-proxy/) | ✅ | ✅ | ✅ | ✅ | ✅ | Lié à Caddy et Kanidm |
+| [Homepage](https://gethomepage.dev/) | 🔁 | 🔁 | 🔁 | 🔁 | ✅ | Via OAuth2 Proxy |
+| [Prometheus](https://prometheus.io/) | 🔁 | 🔁 | 🔁 | 🔁 | ✅ | Via OAuth2 Proxy |
+| [Jellyfin](https://jellyfin.org) | ℹ️ | ℹ️ | ℹ️ | ℹ️ | ℹ️ | Accès communs |
+| [AdGuard Home](https://adguard.com/en/adguard-home/overview.html) | ℹ️ | ℹ️ | ℹ️ | ℹ️ | ℹ️ | Accès communs |
+| [Geneweb](https://geneweb.tuxfamily.org/wiki/GeneWeb/fr) | ℹ️ | ℹ️ | ℹ️ | ℹ️ | ℹ️ | Accès communs |
+| [~~Mattermost~~](https://mattermost.com) | ❌ | ❌ | ❌ | ❌ | ❌ | Plus de OAuth2 (TEAM) |
 
 {/* t:p dc0d22252ecc370000e27b4f58252cfb6f5e5a74181ed35ceca85e57f6d236b5 */}
 ## Utilisation de l'IA

@@ -1,0 +1,122 @@
+---
+title: Matrix et les ponts de messagerie
+sidebar:
+  label: Matrix
+  order: 9
+lang: fr
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+Activer le serveur Matrix (Synapse), son client web Element et les ponts
+mautrix (WhatsApp, Telegram, Messenger, Discord). Pour l'architecture, voir
+[Matrix dans DNF](/fr/doc/admin-guide/understand/matrix/).
+
+## Activer Matrix
+
+<Steps>
+
+1. Déclarer les services sur l'hôte cible dans `etc/config.yaml`&nbsp;:
+
+   ```yaml
+   # etc/config.yaml
+       services:
+         matrix:
+           title: "Matrix"
+           description: "Messagerie instantanée"
+         element:        # client web
+         turn:           # relais audio/vidéo (recommandé)
+   ```
+
+2. Déclarer l'administrateur Matrix (clé globale, hors hôtes)&nbsp;:
+
+   ```yaml
+   # etc/config.yaml
+   matrix:
+     admin: "alice"    # local part du compte administrateur
+   ```
+
+   Ce compte administre les ponts et reçoit les
+   [alertes de supervision](/fr/doc/admin-guide/operate/alerts/).
+
+3. Créer les [secrets](/fr/doc/admin-guide/operate/secrets/) requis
+   (voir tableau ci-dessous), puis déployer.
+
+</Steps>
+
+L'authentification passe par le [SSO Kanidm](/fr/doc/admin-guide/operate/sso/)
+(OIDC)&nbsp;: tout utilisateur déclaré se connecte avec son compte réseau,
+aucune création de compte Matrix n'est nécessaire.
+
+### Secrets requis
+
+À renseigner dans `usr/secrets/secrets.yaml`&nbsp;:
+
+| Clé sops | Rôle | Génération |
+|---|---|---|
+| `matrix-rss-password` | Registration shared secret Synapse | `openssl rand -hex 32` |
+| `oidc-secret-matrix` | Secret du client OIDC Kanidm | cf. [SSO](/fr/doc/admin-guide/operate/sso/) |
+| `turn-secret` | Secret partagé coturn (si `turn` activé) | `openssl rand -hex 32` |
+| `mautrix-doublepuppet-as-token` | Token appservice *double puppeting* (commun aux ponts) | `openssl rand -hex 32` |
+| `mautrix-doublepuppet-hs-token` | Idem, requis par Synapse, jamais utilisé | `openssl rand -hex 32` |
+
+## Gérer les ponts
+
+Les ponts WhatsApp, Telegram et Messenger sont **activés par défaut** avec
+Matrix&nbsp;; Discord est **désactivé par défaut**. Réglage par hôte dans la
+configuration nix de la machine&nbsp;:
+
+```nix
+# usr/machines/<host>/default.nix
+darkone.service.matrix.bridges = {
+  discord.enable = true;     # opt-in
+  messenger.enable = false;  # désactiver un pont par défaut
+};
+```
+
+Chaque pont a ses secrets propres&nbsp;:
+
+| Pont | Clés sops | Remarque |
+|---|---|---|
+| WhatsApp | `mautrix-whatsapp-encryption-pickle-key` | `openssl rand -hex 32` |
+| Messenger | `mautrix-meta-as-token` | `openssl rand -hex 32` |
+| Telegram | `mautrix-telegram-api-id`, `mautrix-telegram-api-hash`, `mautrix-telegram-as-token`, `mautrix-telegram-hs-token` | API id/hash à créer sur [my.telegram.org](https://my.telegram.org) |
+| Discord | aucune | tokens auto-générés au premier démarrage |
+
+### Permissions
+
+Rien à gérer&nbsp;: tout compte local (`@*:domain.tld`) peut utiliser chaque
+pont avec **son propre compte** distant, sans interférence entre
+utilisateurs. Le compte `matrix.admin` dispose des commandes
+d'administration des bots (`help` en conversation directe avec le bot pour
+la liste).
+
+### Double puppeting
+
+Les ponts partagent un appservice `doublepuppet` (token
+`mautrix-doublepuppet-as-token`)&nbsp;: les messages envoyés depuis le
+téléphone apparaissent dans Matrix comme venant du **vrai compte** de
+l'utilisateur. C'est automatique pour tous les comptes locaux, aucune action
+par utilisateur.
+
+## Exploitation
+
+| Action | Commande |
+|---|---|
+| État des services | `systemctl status matrix-synapse mautrix-whatsapp mautrix-telegram mautrix-meta-messenger` |
+| Journaux d'un pont | `journalctl -u mautrix-whatsapp -f` |
+| Journaux Synapse | `journalctl -u matrix-synapse -f` |
+
+<Aside type="note" title="Statuts WhatsApp désactivés">
+Le pont WhatsApp ne relaie pas les « statuts » (stories) : l'option
+`network.enable_status_broadcast` est forcée à `false`, sans quoi chaque
+utilisateur serait réinvité en boucle dans un salon « WhatsApp Status
+Broadcast ».
+</Aside>
+
+<Aside type="caution" title="Réinitialiser un pont">
+Les données d'un pont (sessions, correspondance des salons) vivent dans
+`/var/lib/mautrix-*`. Supprimer ce répertoire déconnecte **tous** les
+utilisateurs du pont et casse la correspondance des salons existants :
+à ne faire qu'en dernier recours, service arrêté.
+</Aside>

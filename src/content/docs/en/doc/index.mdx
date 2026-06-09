@@ -44,17 +44,18 @@ This project evolves according to my needs. If you would like to be informed of 
 | 💾 | 3-2-1 Backups | Robust, streamlined, distributed [Restic](https://restic.net/) backups |
 | 🏠 | Home page | Automated home page for each zone |
 
-{/* t:p 4a766d400aefe5acafec439d17e5a3f1e7541130d63672b9f3a27f6bea5bd544 */}
-## Under the hood
+{/* t:p 7995df4fdd25d19668e06df4daec2526afaa58c8a725c60557167b29cf170045 */}
+## Under the Hood
 
-| | Feature | Description |
+| | Specificity | Description |
 |---|---------------|-------------|
-| ❄️ | Declarative,&nbsp;immutable | Reproducible thanks to [Nix / NixOS](https://nixos.org/) and its ecosystem |
-| 🔑 | Enhanced security | Simple and reliable security strategy, based on [sops-nix](https://github.com/Mic92/sops-nix) |
-| 📦 | Complete modules | High-level [NixOS modules](/en/ref/modules/) that are easy to configure |
+| ❄️ | Declarative,&nbsp;immutable | And reproducible thanks to [Nix / NixOS](https://nixos.org/) and its ecosystem |
+| 🔑 | Enhanced security | Simple and reliable security strategy based on [sops-nix](https://github.com/Mic92/sops-nix) |
+| 📦 | Complete modules | [High-level NixOS modules](/en/ref/modules/) easy to configure |
 | 📐 | Architecture | [Consistent, extensible, scalable, customizable](/en/doc/#structure) |
 | ✴️ | Reverse proxy | Services distributed across the network via [Caddy](https://github.com/caddyserver/caddy) proxies |
-| 🛜 | Automated network | Zero-conf [dnsmasq](https://thekelleys.org.uk/dnsmasq/doc.html) plumbing (DNS, DHCP, firewall…) |
+| 🛜 | Automated network | [dnsmasq](https://thekelleys.org.uk/dnsmasq/doc.html) zero-conf plumbing (DNS, DHCP, firewall…) |
+| ✅ | Monitoring & Alerts | Supervision with [Prometheus](https://prometheus.io/), [Grafana](https://grafana.com) and [Alertmanager](https://prometheus.io/docs/alerting/latest/alertmanager/) |
 
 {/* t:p bf22570a5546901e95fb5462a953acd6904e932a0f22fd3738876b31520395bf */}
 ## The DNF Network
@@ -140,6 +141,35 @@ These configurations are organized by category:
 - **[Home Manager modules](/en/ref/modules/home/)** for user profiles.
 - **[User profiles](/en/doc/dev-guide/modules/)**, standard [Home Manager](https://github.com/nix-community/home-manager) configurations.
 - **Tools** to maintain a quality configuration.
+
+{/* t:p 41dd8d07220a4ca866da0a0aa9fa75dcc0f39f017e784bc4e2276fba6aed46fe */}
+## SSO Services Status (OIDC / Oauth2)
+
+- **Oauth2** = supports oauth2 / oidc login
+- **Native** = no plugin or extra needed, can be configured directly
+- **PKCE** = supports PKCE
+- **Decl.** (declarative) = all parameters can be declared in the configuration
+- **OK** = functional implementation
+
+| Application | Oauth2 | Native | PKCE | Decl. | OK | Comments |
+| -------------- | ------ | ----- | ---- | ---------- | --- | ----------------------------------- |
+| [Outline](https://www.getoutline.com) | ✅ | ✅ | ✅ | ✅ | ✅ | Works perfectly |
+| [Mealie](https://mealie.io) | ✅ | ✅ | ✅ | ✅ | ✅ | Works perfectly |
+| [Vaultwarden](https://github.com/dani-garcia/vaultwarden) | ✅ | ✅ | ✅ | ✅ | ✅ | Works perfectly |
+| [Matrix Synapse](https://matrix.org) | ✅ | ✅ | ✅ | ✅ | ✅ | All good (+Element +Coturn) |
+| [Open WebUI](https://openwebui.com) | ✅ | ✅ | ✅ | ✅ | ✅ | All good (+Ollama) |
+| [Grafana](https://grafana.com) | ✅ | ✅ |  ✅ |  ✅ |  ✅ | All good |
+| [LaSuite Docs](https://lasuite.numerique.gouv.fr) | ✅ | ✅ | ⚠️ | ✅ | ✅ | Good except PKCE |
+| [Immich](https://immich.app) | ✅ | ✅ | ✅ | ⚠️ | ✅ | Manual configuration |
+| [Forgejo](https://forgejo.org) | ✅ | ✅ | ✅ | ❌ | ✅ | Manual configuration |
+| [Nextcloud](https://nextcloud.com) | ✅ | ❌ | ❌ | ❌ | ✅ | Plugin + manual config |
+| [Oauth2 Proxy](https://oauth2-proxy.github.io/oauth2-proxy/) | ✅ | ✅ | ✅ | ✅ | ✅ | Linked to Caddy and Kanidm |
+| [Homepage](https://gethomepage.dev/) | 🔁 | 🔁 | 🔁 | 🔁 | ✅ | Via OAuth2 Proxy |
+| [Prometheus](https://prometheus.io/) | 🔁 | 🔁 | 🔁 | 🔁 | ✅ | Via OAuth2 Proxy |
+| [Jellyfin](https://jellyfin.org) | ℹ️ | ℹ️ | ℹ️ | ℹ️ | ℹ️ | Shared access |
+| [AdGuard Home](https://adguard.com/en/adguard-home/overview.html) | ℹ️ | ℹ️ | ℹ️ | ℹ️ | ℹ️ | Shared access |
+| [Geneweb](https://geneweb.tuxfamily.org/wiki/GeneWeb/fr) | ℹ️ | ℹ️ | ℹ️ | ℹ️ | ℹ️ | Shared access |
+| [~~Mattermost~~](https://mattermost.com) | ❌ | ❌ | ❌ | ❌ | ❌ | No more OAuth2 (TEAM) |
 
 {/* t:p dc0d22252ecc370000e27b4f58252cfb6f5e5a74181ed35ceca85e57f6d236b5 */}
 ## AI Usage

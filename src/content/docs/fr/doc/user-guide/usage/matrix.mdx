@@ -1,0 +1,151 @@
+---
+title: Messagerie instantanée Matrix
+sidebar:
+  label: Messagerie Matrix
+  order: 3
+lang: fr
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+Le réseau héberge sa propre messagerie instantanée, basée sur
+[Matrix](https://matrix.org). Discussions, partage de photos et de fichiers,
+appels audio et vidéo&nbsp;: tout reste **chez nous**, sur notre serveur.
+
+## Matrix, c'est quoi ?
+
+Matrix est un système de messagerie comparable à WhatsApp ou Telegram, avec
+trois différences qui changent tout&nbsp;:
+
+- **Privé** : les messages sont stockés sur le serveur de la maison, pas chez
+  un géant du web.
+- **Chiffré** : les conversations sont chiffrées de bout en bout par défaut.
+- **Ouvert** : on choisit son application (« client ») parmi plusieurs,
+  sur ordinateur comme sur téléphone.
+
+Les conversations s'organisent en **salons**&nbsp;: un salon par sujet, par
+famille, par projet... et des messages directs entre deux personnes.
+
+## Me connecter
+
+Mon identifiant Matrix est construit sur mon compte habituel&nbsp;:
+`@prenom:domain.tld`. Pas de nouveau mot de passe à retenir, la connexion
+passe par l'identification unique du réseau (la même que pour les autres
+services, voir [Gérer mon compte](/fr/doc/user-guide/usage/account/)).
+
+<Steps>
+
+1. **Sur ordinateur** : j'ouvre `https://element.domain.tld` dans mon
+   navigateur, je clique sur **Se connecter**, et je m'identifie avec mon
+   compte du réseau.
+
+2. **Sur téléphone** : j'installe l'application **Element** (Android ou
+   iPhone). Au démarrage, je choisis « Autre serveur » et j'indique
+   `matrix.domain.tld`, puis je m'identifie de la même façon.
+
+3. À la première connexion, Element me propose de **vérifier ma session** et
+   de sauvegarder mes clés de chiffrement. Je suis les instructions&nbsp;:
+   c'est ce qui me permettra de relire mes anciens messages sur un nouvel
+   appareil.
+
+</Steps>
+
+<Aside type="tip" title="Le nom de domaine de la maison">
+Dans toute cette page, `domain.tld` désigne le nom de domaine du réseau.
+En cas de doute, demander à l'administrateur.
+</Aside>
+
+## Les ponts vers WhatsApp, Telegram et les autres
+
+Un **pont** (« bridge ») relie Matrix à une messagerie extérieure. Une fois
+mon pont activé, mes conversations WhatsApp, Telegram ou Messenger
+apparaissent dans Element comme des salons ordinaires&nbsp;: je lis et je
+réponds depuis Element, mes correspondants ne voient aucune différence.
+
+```d2
+style.fill: transparent
+direction: right
+
+contact: Mon contact\nWhatsApp {
+  shape: person
+}
+wa: WhatsApp
+bridge: Pont\n(serveur maison) {
+  shape: hexagon
+}
+element: Element\n(Matrix) {
+  shape: rectangle
+}
+me: Moi {
+  shape: person
+}
+
+contact -> wa <-> bridge <-> element -> me
+```
+
+Chaque pont est piloté par un **robot** (« bot »)&nbsp;: un contact spécial à
+qui j'envoie des commandes. Le principe est le même pour tous&nbsp;:
+
+<Steps>
+
+1. Dans Element, je démarre une **conversation directe** avec le bot du pont
+   (par exemple `@whatsappbot:domain.tld`).
+
+2. Je lui envoie `login` et je suis ses instructions (scanner un QR-code,
+   donner mon numéro...).
+
+3. C'est tout&nbsp;: mes conversations arrivent au fur et à mesure. Chacun
+   connecte **son propre compte**, sans interférence avec les autres
+   utilisateurs du réseau.
+
+</Steps>
+
+<Aside type="note" title="Et la confidentialité ?">
+Le pont déchiffre les messages pour les faire passer d'un monde à l'autre :
+c'est inévitable, mais tout se passe sur **notre serveur**, pas dans un
+cloud inconnu. En cas de doute sur une commande, envoyer `help` au bot.
+</Aside>
+
+### WhatsApp
+
+Bot&nbsp;: `@whatsappbot:domain.tld`. Envoyer `login`, choisir la méthode
+**QR-code**, puis sur le téléphone&nbsp;: WhatsApp → Réglages → **Appareils
+connectés** → Connecter un appareil, et scanner le code affiché dans Element.
+Le téléphone doit rester allumé et connecté de temps en temps, comme pour
+WhatsApp Web.
+
+### Telegram
+
+Bot&nbsp;: `@telegrambot:domain.tld`. Envoyer `login`, puis mon **numéro de
+téléphone** au format international (`+33612345678`). Telegram m'envoie un
+code de vérification, que je transmets au bot. Si mon compte a un mot de
+passe « deux étapes », le bot me le demandera aussi.
+
+### Messenger (Facebook)
+
+Bot&nbsp;: `@messengerbot:domain.tld`. Envoyer `login` et suivre les
+instructions&nbsp;: la connexion se fait en récupérant les **cookies** d'une
+session ouverte sur `messenger.com` depuis un navigateur d'ordinateur. C'est
+l'étape la plus technique des trois&nbsp;; ne pas hésiter à demander un coup
+de main à l'administrateur.
+
+### Discord
+
+Bot&nbsp;: `@discordbot:domain.tld`. Envoyer `login-qr` et scanner le
+QR-code avec l'application **Discord** du téléphone (Réglages → Scanner le
+QR code).
+
+<Aside type="caution" title="Pont optionnel">
+Le pont Discord n'est pas activé par défaut. S'il ne répond pas, demander à
+l'administrateur de l'activer.
+</Aside>
+
+### Commandes utiles
+
+À envoyer au bot d'un pont, dans sa conversation directe&nbsp;:
+
+| Commande | Effet |
+|---|---|
+| `help` | Liste des commandes disponibles |
+| `login` | Connecter mon compte |
+| `logout` | Déconnecter mon compte du pont |
