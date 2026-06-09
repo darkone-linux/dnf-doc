@@ -1,0 +1,724 @@
+---
+title: Commandes Just
+sidebar:
+  label: Commandes Just
+  order: 8
+lang: fr
+---
+
+{/* t:main */}
+{/* t:h a9d3e91f20671c82bf0ff9e6d7dfa9d0723b67b045c6b42ef19e1e1b10276bdb */}
+
+{/* t:p 5b214ef36e772402e2ed34cd0d68a3faf6b8f8fe0996d758fb030c13ecc7a8b1 */}
+Les commandes ci-dessous sont toutes exécutées avec [`just`](https://just.systems/man/).
+
+```sh title=Utilisation
+just <commande> <arguments>
+```
+
+Chaque commande est préfixée d'une icône indiquant son contexte d'utilisation :
+
+- 💠 **Commun** : disponible dans le projet comme dans le framework.
+- 🔆 **Framework** : spécifique au framework DNF amont (`dnf/`).
+- ✳️ **Projet** : spécifique au projet consommateur (mon réseau).
+
+:::caution[Élévation des privilèges]
+L'essentiel des commandes s'exécute avec l'utilisateur qui administre le projet, mais
+certaines d'entre elles élèvent les privilèges sur l'utilisateur `nix` (`sudo -u nix ...`).
+:::
+
+:::tip[Commandes clés]
+Les commandes marquées d'une ⭐ sont les plus utiles au quotidien.
+:::
+
+---
+
+{/* t:p bed3d60ace971836243ebfc33a8a6daf1ebc6daa845112b4968e239ecaf51b14 */}
+## Commandes GIT
+
+Ces commandes travaillent sur **tous les dépôts** du projet (par défaut
+`src/*/`, `dnf`, `doc`, et la racine). L'alias court est `g`.
+
+{/* t:p a1e6bad8fb415d7340e9d07849875119abef92d8dc270e84321e520836107748 */}
+### ✳️ `git <cmd> [projet]`
+
+Exécute n'importe quelle commande git sur un ou tous les projets.
+
+:::tip[Projets itérés]
+Listés par `just git-show-repos` (par défaut tous).
+:::
+
+```sh
+just git "log --oneline -5"       # derniers commits de tous projets
+just git "status" dnf             # git status sur dnf/ seulement
+just git "remote -v"              # remotes de tous les projets
+```
+
+{/* t:p 48edf57ea025e134f58bc136457844f56ed64d9df6c39185730c9bd89dd2a4c8 */}
+### ✳️ `commit <message> [projet]` ⭐
+
+`add -A` + `commit -m` sur un ou tous les projets. Si le message est
+identique au dernier commit, la recette **amende** au lieu de créer un nouveau
+commit.
+
+```sh
+just commit "fix(net): update dns config"
+just commit "fix(net): update dns config" dnf    # dnf/ seulement
+```
+
+{/* t:p 90027dc80a9496cb27b392290b13a3820287445362d9d2e490deb6beaac7c348 */}
+### ✳️ `amend [projet]` ⭐
+
+Ajoute les modifications en cours au dernier commit (`--no-edit`, `--allow-empty`).
+
+```sh
+just amend
+```
+
+{/* t:p c2295ee11880ad5dce401a9e8e73818b6818dd1b30e65a839fb9e45faa4aaef5 */}
+### ✳️ `status [projet]` ⭐
+
+Affiche le statut git d'un ou tous les projets.
+
+```sh
+just status
+```
+
+{/* t:p 2f64b99062c2be5085d0c81ddd33871c01712acc289fa4f8ac6e8efb26895c16 */}
+### ✳️ `diff [projet]`
+
+Affiche le diff git d'un ou tous les projets.
+
+```sh
+just diff
+```
+
+{/* t:p 893bc27510a19149eecc64210dc46a7d9eb69b65cbcc41ea47ef025ac179f12a */}
+### ✳️ `push [projet]` ⭐
+
+Vérifie la présence d'une branche amont et de commits en avance avant de pousser.
+
+```sh
+just push
+```
+
+{/* t:p 2e12bba7d9d24596607a3dd84c5755e1a95607de07a675ce7ceafaf5ea46fe08 */}
+### ✳️ `pull [projet]`
+
+Tire les dernières modifications d'un ou tous les projets.
+
+```sh
+just pull
+```
+
+{/* t:p 8e3113c76b1a16f1e01464a2ef4665ffe3841d64801638b478914ce17cb1c7fa */}
+### ✳️ `git-last-log`
+
+Affiche le dernier message de commit de tous les projets, formaté et aligné.
+
+```sh
+just git-last-log
+```
+
+{/* t:p 82732d2fd84239b4f018d4bfbeec4f61c3d8ddbffa123a5026e6f47b251104f3 */}
+### ✳️ `git-show-repos`
+
+Affiche la liste des dépôts sur lesquels les commandes git itèrent.
+
+```sh
+just git-show-repos
+```
+
+{/* t:p 9533e3d66660d0732a6dec00a57b8bbbed251f3566bf5269d1f433ae17f5554e */}
+### ✳️ `update-flake`
+
+Met à jour les entrées flake de `dnf/` puis de la racine. Si le dernier commit
+de `dnf/` est déjà un `update(flake):`, il l'amende.
+
+:::caution[Ne pas faire en production]
+`nix flake update` monte toutes les entrées à leur dernière version : à
+n'utiliser que pour une mise à jour régulière et testée.
+:::
+
+```sh
+just update-flake
+```
+
+{/* t:p d9a3d2b8f7d76bab8b26a3a01b5ff12c131b35343920df057d94b8e965d5b26d */}
+### ✳️ `update-dnf`
+
+Synchronise `flake.lock` avec le HEAD local de `dnf/` (co-développement).
+
+:::note[Aucun checkout dnf/]
+Si `dnf/.git` n'existe pas (mode release), la commande ne fait rien.
+:::
+
+```sh
+just update-dnf
+```
+
+---
+
+{/* t:p 89aab6be4a5b048fbcd22e06a1074f98014bd824b0f36032067a905ac59e923d */}
+## Commandes de développement
+
+Ces commandes aident à maintenir le code, générer les fichiers déclaratifs et
+travailler sur le générateur Rust.
+
+{/* t:p eb4a577e49e9efa153acd9d8fd2b10c3417afab6dcccd1cefc2f6547932ca292 */}
+### 💠 `develop` / `d`
+
+Lance `nix develop -c zsh` pour obtenir un shell avec les outils du projet.
+
+```sh
+just develop
+```
+
+{/* t:p 2e20ef33ae5bba911f0cde8b4b705dce91521ba44885599275227e595a08cc96 */}
+### 💠 `clean` / `c` ⭐
+
+Exécute la chaîne complète : `fix` → `check` → `generate` → `format` → `_fix_fs_permissions`.
+
+:::tip[Avant de commiter]
+`just clean` est le point d'entrée recommandé avant chaque commit.
+:::
+
+```sh
+just clean
+```
+
+{/* t:p dfdc484b84123bc270fd987661f5c1100a7f5fcc35cec587446d688b7bb07748 */}
+### 💠 `format`
+
+Lance `treefmt` sur tous les fichiers avec la config partagée du framework.
+
+```sh
+just format
+```
+
+{/* t:p f4065382c83f3b8eaf494edcb93b5e251dba0ddce8e39408bd04e2cc474ea881 */}
+### 💠 `fix`
+
+Corrige automatiquement les problèmes détectés par `statix`.
+
+```sh
+just fix
+```
+
+{/* t:p b1aed15cb0ab39568c6aff3519f2c09be0194b43e190d556b838d1127e22f46c */}
+### 💠 `generate`
+
+Régénère les `default.nix` des dossiers de modules ainsi que les fichiers
+`var/generated/*.nix` depuis `etc/config.yaml`.
+
+:::note[Deux modes]
+- **Co-développement** : utilise le générateur Rust (`cargo run`).
+- **Release** : utilise le binaire `dnf-generator` fourni par la devShell.
+:::
+
+```sh
+just generate
+```
+
+{/* t:p f2340907a4c604a8d08839d7fd5133a60b7792a0bf9332af196c40ab3e85d195 */}
+### ✳️ `gen-build`
+
+Construit le binaire du générateur (`src/generator/`).
+
+```sh
+just gen-build
+```
+
+{/* t:p fb9becbae80d28a7e5087b1bc541797fa0a8f23076b4ead52ca14d7b78ad6ea3 */}
+### ✳️ `gen-test`
+
+Lance les tests unitaires du générateur.
+
+```sh
+just gen-test
+```
+
+{/* t:p 6f332ccb43d9f828b056f062f280fcd19424d1dd8bbb62d3e46e37b8770a9d03 */}
+### ✳️ `cat <hôte>` ⭐
+
+Enchaîne `clean` → `amend` → `apply-local` (ou `apply-verbose <hôte>`).
+
+```sh
+just cat                   # applique en local
+just cat myserver          # applique sur myserver
+```
+
+---
+
+{/* t:p 4f5c8fe006c9be2a7e7e18c1222f200f4a155fc60e99c28bcfe50e0d985fc9a8 */}
+## Commandes de vérification
+
+Lancez ces vérifications avant de déployer pour détecter les régressions.
+
+{/* t:p 44ad9749345cb2b267bacbeb948219bbc53427c92f35f072fce9b0ac55ba7247 */}
+### 💠 `check`
+
+Lance `deadnix` récursivement sur tous les fichiers `*.nix`.
+
+```sh
+just check
+```
+
+{/* t:p 8765e84d8470eefdde61d35231c6101d2ac895357e6d7f132a040b0916b61ae1 */}
+### 💠 `check-flake`
+
+Lance `nix flake check` en filtrant les avertissements connus des *outputs*
+non standards de DNF (`colmena`, `colmenaHive`, `homeManagerModules`, `libTests`).
+
+```sh
+just check-flake
+```
+
+{/* t:p e73a370772e52045ec6c3d6deb1b61babc2f3fb07d9eb7d24d88f5bec27df168 */}
+### 💠 `check-statix`
+
+Analyse statique du code Nix avec `statix`.
+
+```sh
+just check-statix
+```
+
+{/* t:p 84063acad7325e9d7a4b9e760377f8355ad2a71decece6f2c14d468943e543b6 */}
+### ✳️ `check-all`
+
+Enchaîne les tests unitaires DNF, la vérification du flake DNF et la
+vérification du flake réseau.
+
+:::tip[Avant de déployer]
+Exécutez `just check-all` pour attraper les régressions tôt.
+:::
+
+```sh
+just check-all
+```
+
+{/* t:p e6443a68fe3002c7c1c038568a4da8960b3463f3ce3b072d89e28389a97b4730 */}
+### 🔆 `unit-tests` ⭐
+
+Lance `nix-unit` sur `.#libTests`.
+
+```sh
+just unit-tests
+```
+
+{/* t:p 27b3a8a83f90c87e37c7eb5b9610186962c99771d32d255d5267f8cfabb16706 */}
+### 🔆 `simulate [scénario]`
+
+Lance les scénarios de test NixOS (NixOS Test Driver).
+
+| Argument | Effet |
+|---|---|
+| _(vide)_ | Liste les scénarios disponibles |
+| `all` | Exécute tous les scénarios (`nix flake check`) |
+| `full` | Régénère les fixtures puis exécute tout |
+| `<nom>` | Exécute un scénario nommé |
+
+```sh
+just simulate                      # lister
+just simulate all                  # tout exécuter
+just simulate modules-node-console-git
+```
+
+{/* t:p 7733d55bf2c5a53d8c17501b3f631a7d5bd30cf1a0f9c0c20cc2c3d09f33c492 */}
+### 🔆 `simulate-debug <scénario>`
+
+Lance le *driver interactif* d'un scénario (REPL Python).
+
+:::tip[Débug]
+Utile pour `node1.shell_interact()`, `node1.succeed(...)` en direct.
+:::
+
+```sh
+just simulate-debug modules-node-console-git
+```
+
+{/* t:p 8d3a08f1770261b1418d6ee89a53d400cdea6f9584b2cf2c5ffcd84c200bd033 */}
+### 🔆 `fixtures <action>`
+
+Gère les fixtures de test : génération, vérification d'absence de dérive,
+régénération des clés et secrets jetables.
+
+| Action | Effet |
+|---|---|
+| `generate` | Régénère `var/generated/` pour tous les espaces de test |
+| `check` | Vérifie l'absence de dérive sans modifier l'arbre |
+| `gen-secrets` | Régénère les clés et secrets de test (jetables) |
+
+```sh
+just fixtures check
+```
+
+---
+
+{/* t:p aa402f63f45abe997c58df7d007f8872ce6d86f95b905352df5845ebd0b73da6 */}
+## Commandes d'installation
+
+L'installation d'un nouvel hôte suit un enchaînement précis.
+
+{/* t:p d14baec5b0376679bae1d0a0a003046361405791774a8844fdc1752ef074921c */}
+### ✳️ `install <hôte> [user] [ip]`
+
+Formate les disques via **disko** et installe NixOS via **nixos-anywhere**.
+
+:::danger[Destructeur]
+Toutes les données sur l'hôte cible sont effacées. Une confirmation est
+demandée avant d'exécuter.
+:::
+
+:::note[Configuration requise]
+L'hôte doit avoir une configuration disko dans `etc/config.yaml` et un
+dossier `usr/machines/<hôte>/default.nix`.
+:::
+
+```sh
+just install myserver
+just install myserver nixos 10.0.0.5     # IP personnalisée
+just install myserver do=test             # VM test uniquement
+```
+
+{/* t:p ac3b2fd2d96f8a080081e401177db29d977c3da3fc6a0fcfd8cfd58df4d1ad33 */}
+### ✳️ `full-install <hôte> [user] [ip]` ⭐
+
+Chaîne complète : `install` + attente reboot + `configure` + `apply` + `gc` + reboot.
+
+```sh
+just full-install myserver
+```
+
+{/* t:p c35851dd84a1ba4918b713d16e21603553a1b6ba8b087a32612bc98d8c64de97 */}
+### ✳️ `install-key <hôte>`
+
+Formate un périphérique USB avec disko et installe NixOS dessus.
+
+```sh
+just install-key myusbhost
+```
+
+{/* t:p 5e1c2c42a2e22be19db0111bbc224163f55c65fcbf098ae941d22d1bef570fe4 */}
+### ✳️ `configure <hôte>`
+
+Enchaîne `copy-id` → `copy-hw` → `push-key`.
+
+```sh
+just configure myserver
+```
+
+{/* t:p f7c9dbdab785c9be75eb576043c6d53f4b6eaa98758a3932b2150f46bdd6d350 */}
+### ✳️ `copy-id <hôte>`
+
+Copie la clé publique de l'utilisateur `nix` vers l'hôte cible.
+
+:::tip[Idempotent]
+Ne fait rien si la clé est déjà présente.
+:::
+
+```sh
+just copy-id myserver
+```
+
+{/* t:p b2fbc800fe07314f2fcfebb0e022519bd8c4e2e9066df1e527873554d0f53b5c */}
+### ✳️ `copy-hw <hôte>`
+
+Exécute `nixos-generate-config --show-hardware-config` à distance et sauvegarde
+le résultat dans `usr/machines/<hôte>/hardware-configuration.nix`.
+
+```sh
+just copy-hw myserver
+```
+
+{/* t:p bb952125c6373caa2bd08e413b62d65d906bb079653af1e5a91e8a718b2ec038 */}
+### ✳️ `push-key <hôte>`
+
+Transfère la clé age `/etc/sops/age/infra.key` vers l'hôte cible.
+
+```sh
+just push-key myserver
+```
+
+{/* t:p 1d7625ca4b5468c8c5ff9610a5f8b1838f3633c930ef8f3ac52bb58c17360814 */}
+### ✳️ `configure-admin-host` ⭐
+
+Configure la machine d'administration : clés SSH, clés age SOPS,
+`.sops.yaml`, secrets par défaut, clé de signature Harmonia.
+
+:::tip[Idempotent]
+Peut être relancé sans risque : chaque étape vérifie si elle est déjà faite.
+:::
+
+```sh
+just configure-admin-host
+```
+
+{/* t:p a7c90013eb9cb0b128c79f31b7886313080da03c7d8b1c36d586ae96bc9894c8 */}
+### 💠 `build-iso [arch]`
+
+Construit l'image ISO du framework pour l'architecture donnée.
+
+```sh
+just build-iso                        # x86_64-linux (défaut)
+just build-iso "aarch64-linux"
+```
+
+---
+
+{/* t:p 4ef28b0e628a528eb64610d0b820a3282a349b1b41f540749fb17a0f2634a9db */}
+## Commandes de déploiement
+
+L'outil de déploiement est [colmena](https://github.com/zhaofengli/colmena).
+Toutes les commandes d'application rafraîchissent d'abord le verrou DNF via
+`update-dnf`.
+
+{/* t:p 68a3a1962d58418a2c6ca2087c01b8a6f09b61aede53766186715eebd7c0eff9 */}
+### ✳️ `apply <cible> [action]` / `a` ⭐
+
+Déploie la configuration sur une ou plusieurs cibles.
+
+| Paramètre | Description |
+|---|---|
+| `cible` | Nom d'hôte, motif (`'*'`), liste (`a,b`), tag colmena (`@server`) |
+| `action` | `switch` (défaut), `boot`, `test`, `build` |
+
+:::note[Construction sur la cible]
+`--build-on-target` : la compilation a lieu sur l'hôte déployé, pas sur le poste admin.
+:::
+
+```sh
+just apply @all                 # tous les hôtes
+just apply myserver             # switch (défaut)
+just apply myserver boot        # boot
+just apply 'db-*'               # tous les hôtes commençant par db-
+```
+
+{/* t:p c571fae90243f4af2294a4510f9960722399a7cf0af92e0f12da516dd4f750b3 */}
+### ✳️ `apply-verbose <c> [a]` / `av` ⭐
+
+Idem `apply` avec `--verbose --show-trace`.
+
+```sh
+just apply-verbose myserver
+```
+
+{/* t:p f016dc85244b427a954f8ce6ae1f265e7b4a6791ddb508ab91625eeef2e282e0 */}
+### ✳️ `apply-local [action]` / `al` ⭐
+
+Applique la configuration sur la machine courante.
+
+```sh
+just apply-local
+```
+
+{/* t:p 22f50550ea1db641342a91870b52519605c5002bc529388e25c22a3cfa9b3933 */}
+### ✳️ `apply-silenced <cible> [action]`
+
+Active le mode maintenance Alertmanager avant d'appliquer, le désactive après.
+
+```sh
+just apply-silenced myserver
+```
+
+---
+
+{/* t:p 91572a8d79cbf2009ef84cd3192218853bfb98a8ddaf2ba6c77f6a70f143348d */}
+## Commandes d'administration
+
+Ces commandes permettent d'interagir avec les hôtes du parc : maintenance,
+redémarrage, nettoyage et réparation du boot.
+
+{/* t:p 957b50ccd05ff2244bb5e360e6987bc526689d2de614c6d2042b3d678d40fd3d */}
+### ✳️ `enter <hôte>` / `e` ⭐
+
+Ouvre une session SSH interactive en tant que `nix@<hôte>`.
+
+```sh
+just enter myserver
+```
+
+{/* t:p 9b7b4e97dc24da8d0af1bcb9ff36b375c3556753bead84315fd0c1df5f548041 */}
+### ✳️ `reboot <hôte>`
+
+Redémarre l'hôte via colmena exec.
+
+:::caution[Confirmation]
+Une confirmation est demandée avant d'exécuter.
+:::
+
+```sh
+just reboot myserver
+just reboot 'web-*'         # tous les web-*
+```
+
+{/* t:p 111e1172fff6ed466c60e9e678595ed7ff7e013cb13b56844f31ebc9a4293908 */}
+### ✳️ `halt <hôte>`
+
+Arrête (poweroff) l'hôte via colmena exec.
+
+```sh
+just halt myserver
+```
+
+{/* t:p c97f80ae872f00719fe0ed20955e088009698f547a3063c132765aeca602aeae */}
+### ✳️ `gc <hôte>` ⭐
+
+Exécute `nix-collect-garbage -d` puis `switch-to-configuration boot` sur l'hôte.
+
+```sh
+just gc myserver
+```
+
+{/* t:p 6d9a61229063eda367273336d0ad2b8dc32f07bfbf01d167587d3ca4882500e1 */}
+### ✳️ `fix-boot <hôte>`
+
+Réinstalle le bootloader avec `NIXOS_INSTALL_BOOTLOADER=1`.
+
+```sh
+just fix-boot myserver
+```
+
+{/* t:p c24841a584d65e1fa801fb80eff87d295180301b683d59e60841ebbaeb1b1f1c */}
+### ✳️ `fix-zsh <hôte>`
+
+Supprime `.zshrc.bkp` sur l'hôte cible.
+
+```sh
+just fix-zsh myserver
+```
+
+---
+
+{/* t:p b49d5ebe223d56907dafe9ff9a0d06d2ec129382e49a87cc6766a3f851418c01 */}
+## Commandes de gestion des secrets
+
+Les mots de passe et clés sont chiffrés avec SOPS. Ces commandes les gèrent
+sans manipuler les fichiers chiffrés à la main.
+
+{/* t:p 32d4e43bfa3096f2ba0f52553e9d5dc1c9bd778b7693669ce59e9dc968845e9d */}
+### ✳️ `sops` ⭐
+
+Ouvre `usr/secrets/secrets.yaml` dans vim (via l'utilisateur `nix`).
+
+```sh
+just sops
+```
+
+{/* t:p f5f62b1bff747275760bb42bd53bd96917e2e8df27d6078b71917c019ac1b5a0 */}
+### ✳️ `passwd-default`
+
+Définit le mot de passe par défaut des postes DNF (chiffré SOPS, hashé bcrypt).
+
+```sh
+just passwd-default
+```
+
+{/* t:p 349eebd72e333582fbe3884c17581bea46ade2cd62e5c0ce8332b5b32d557c9c */}
+### ✳️ `passwd <utilisateur>` ⭐
+
+Met à jour le mot de passe d'un utilisateur spécifique.
+
+```sh
+just passwd darkone
+```
+
+{/* t:p 4ef084503f7899fdbc3781dcc76c9307f478f9a7d6e519f37192e40ec854ffd5 */}
+### ✳️ `passwd-restic`
+
+Génère un mot de passe REST par hôte et un mot de passe de dépôt par zone.
+
+:::tip[Idempotent]
+N'écrase jamais un mot de passe existant.
+:::
+
+```sh
+just passwd-restic
+```
+
+{/* t:p c721a639832b45fbdbb521264d00054fd9c54ef53c41e0d1c85d79114186406b */}
+### ✳️ `rotate init|push-keys|finalize`
+
+Rotation de la clé age `/etc/sops/age/infra.key` en 3 étapes avec vérifications
+d'intégrité.
+
+| Étape | Action |
+|---|---|
+| `init` | Génère une nouvelle clé, conserve l'ancienne, rechiffre les secrets |
+| `push-keys` | Pousse la clé combinée (nouvelle + ancienne) vers tous les hôtes |
+| `finalize` | Vérifie que tous les hôtes ont la nouvelle clé, supprime l'ancienne |
+
+:::danger[Rotation non terminée]
+Ne pas interrompre une rotation. Les sidecars `.cur` / `.old` marquent une rotation en cours.
+:::
+
+```sh
+just rotate init
+just rotate push-keys
+just rotate finalize
+```
+
+---
+
+{/* t:p 8272a88fea8a3168d56066a937766e855792dd168cfa08bdc58109bddf8a1695 */}
+## Commandes avancées
+
+Ces commandes couvrent des fonctionnalités spécifiques : provisionnement du bot
+d'alertes Matrix et gestion de la réplication Kanidm.
+
+{/* t:p 6f5392cdf438fd8eefc76271cb14d343baf4a5593495236de95b8b35b970a42f */}
+### ✳️ `configure-alert-bot`
+
+Crée ou rafraîchit le bot Matrix, le secret webhook et les salons d'alertes
+et d'incidents depuis la section `network.matrix` de `config.yaml`.
+
+```sh
+just configure-alert-bot
+```
+
+{/* t:p c42e83fd9c7a4f3c783eedfafd3f9f0b7516069ed1a976f4f14797c206d917bf */}
+### ✳️ `idm-sync-certs`
+
+Collecte les certificats de réplication Kanidm de tous les nœuds du parc
+vers `usr/secrets/replication/`.
+
+:::note[Déploiement en deux temps]
+1. `just apply` : chaque nœud génère son identité.
+2. `just idm-sync-certs` : collecte les certificats publics.
+3. Commit + `just apply` : la réplication démarre.
+:::
+
+```sh
+just idm-sync-certs
+```
+
+{/* t:p a5060e0adb11a791d702913bb1c2058a9b3312faa5a700f35dad0dc8c5f994b8 */}
+### ✳️ `idm-fix-replica <suppl> <cons>`
+
+Analyse la santé de la réplication Kanidm sans rien modifier. Prend le nœud
+supplier (HCS) et la liste des consumers (gateways, séparés par des virgules).
+
+```sh
+just idm-fix-replica hcs agate,gw
+```
+
+---
+
+{/* t:p c275f69268e2ac2ca99720d8f8aac121ad898c46abfccb9cfd92a9f4f5636b55 */}
+## Récapitulatif des alias
+
+| Alias | Commande |
+|---|---|
+| `a` | `apply` |
+| `al` | `apply-local` |
+| `av` | `apply-verbose` |
+| `c` | `clean` |
+| `d` | `develop` |
+| `e` | `enter` |
+| `g` | `git` |
+| `amend` | `git-amend` |
+| `commit` | `git-commit` |
+| `diff` | `git-diff` |
+| `pull` | `git-pull` |
+| `push` | `git-push` |
+| `status` | `git-status` |
