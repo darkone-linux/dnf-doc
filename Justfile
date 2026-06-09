@@ -57,10 +57,10 @@ update msg="":
 	just translate
 	just clean
 	just build
-	if [ -n "$(git status --porcelain)" ]; then
+	if [ -n "$(git -C darkone-linux.github.io status --porcelain)" ]; then
 	    just deploy "{{ msg }}"
 	else
-	    echo "Nothing changed — skipping build and deploy."
+	    echo "Nothing changed — skipping deploy."
 	fi
 
 # Generate documentation from code (includes clean)
