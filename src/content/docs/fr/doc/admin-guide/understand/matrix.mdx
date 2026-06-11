@@ -124,6 +124,17 @@ généralisation à tous les comptes du domaine est sans risque d'interférence.
 {/* t:p 87ba42236df0c4f7998588fb44bc52972e1717218b0476bf9253edb1b764597c */}
 ### Double puppeting
 
+:::note[A quoi ça sert ?]
+Sans double puppeting, les messages relayés par un pont apparaissent dans
+Matrix comme envoyés par le **robot** du pont (par ex. `@whatsappbot:domain.tld`).
+Avec le double puppeting, le pont utilise le **compte Matrix de l'utilisateur**
+pour envoyer les messages&nbsp;: le salon affiche «&nbsp;Alice a envoyé…&nbsp;» avec sa
+vraie identité, comme dans une conversation Matrix normale.
+
+C'est transparent pour l'utilisateur, qui voit ses messages (entrants et sortants) venir
+de son propre compte, sans savoir qu'ils transitent par un pont.
+:::
+
 Méthode officielle [appservice](https://docs.mau.fi/bridges/general/double-puppeting.html)&nbsp;:
 un appservice `doublepuppet` est enregistré dans Synapse
 (`app_service_config_files`) avec un namespace couvrant `@.*:domain.tld`.
@@ -167,3 +178,8 @@ configuration par `envsubst` avec le `environmentFile` du service.
 - **Statuts WhatsApp** : `network.enable_status_broadcast = false` dans la
   config du pont, sinon le bridge recrée indéfiniment le salon
   « WhatsApp Status Broadcast » pour chaque utilisateur.
+
+## Voir aussi
+
+- [Messagerie Matrix — guide utilisateur](/fr/doc/user-guide/usage/matrix/) : connexion aux ponts pour les utilisateurs
+- [Matrix — guide exploitation](/fr/doc/admin-guide/operate/matrix/) : activer, configurer et gérer les ponts
