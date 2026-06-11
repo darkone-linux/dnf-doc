@@ -164,16 +164,45 @@ injecté dans chaque config par substitution de variables d'environnement
 (`as_token:$MAUTRIX_DOUBLEPUPPET_AS_TOKEN`), les modules nixpkgs passant la
 configuration par `envsubst` avec le `environmentFile` du service.
 
-{/* t:p 55bdbca82129d10f51f66ac2f49a757f33e4088a00eaddb0cd0d9f16409bbd40 */}
+{/* t:p c799cf0d203f686c8830d4d320474b47216db73d0b94cd1ebf37848d4e6c34e0 */}
+### Les tokens d'appservice
+
+La *registration* d'un appservice est le contrat entre Synapse et le pont.
+Elle contient deux tokens, un par sens d'authentification&nbsp;:
+
+| Token | Sens | Usage |
+|---|---|---|
+| `as_token` | pont → Synapse | le pont s'authentifie sur l'API client (envoi de messages, sync...) |
+| `hs_token` | Synapse → pont | Synapse s'authentifie quand il pousse les événements au pont (`/transactions`) |
+
+Par défaut, les modules nixpkgs **génèrent ces tokens aléatoirement** au
+premier démarrage et les stockent dans `/var/lib/mautrix-*`. Conséquence&nbsp;:
+toute réinitialisation du répertoire d'état change la paire de tokens, alors
+que Synapse — qui ne lit les registrations **qu'au démarrage** — garde
+l'ancienne en mémoire&nbsp;; le pont est alors rejeté
+(«&nbsp;The as_token was not accepted&nbsp;»).
+
+DNF fixe donc les deux tokens de chaque pont via sops&nbsp;: la registration
+devient une **fonction pure des secrets**. Réinitialiser l'état d'un pont
+n'invalide plus rien côté Synapse, et l'ensemble est reproductible
+(redéploiement, migration, restauration de sauvegarde).
+
+<Aside type="note" title="Le cas doublepuppet">
+L'appservice `doublepuppet` a une `url` vide&nbsp;: Synapse ne lui pousse
+jamais rien, son `hs_token` n'est donc jamais utilisé — il n'est requis que
+par le format de la registration.
+</Aside>
+
+{/* t:p 1825668044e3aa12cfff0835ba4915818108282998110b153e0883ee4cfead14 */}
 ## Secrets et ports
 
 - **Secrets** : déclarés par bloc dans `matrix.nix` (`sops.secrets.*`), et
   assemblés en fichiers d'environnement par des `sops.templates.*` possédés
   par l'utilisateur système du pont. Liste complète dans
   [la page d'exploitation](/fr/doc/admin-guide/operate/matrix/#secrets-requis).
-- **Ports** : `matrix` et `matrixTelegram` sont fixés par le registre
-  `dnf/config/network.nix`&nbsp;; les ports appservice par défaut des autres
-  ponts (29318, 29319, 29328, 29334) y sont listés en `reserved` pour éviter
+- **Ports** : `matrix`, `matrixTelegram` et `matrixDiscord` sont fixés par le
+  registre `dnf/config/network.nix`&nbsp;; les ports appservice par défaut des
+  autres ponts (29318, 29319, 29328) y sont listés en `reserved` pour éviter
   toute collision future.
 - **Statuts WhatsApp** : `network.enable_status_broadcast = false` dans la
   config du pont, sinon le bridge recrée indéfiniment le salon

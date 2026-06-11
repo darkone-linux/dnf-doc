@@ -66,7 +66,7 @@ aucune création de compte Matrix n'est nécessaire.
 | `mautrix-doublepuppet-as-token` | Token appservice *double puppeting* (commun aux ponts) | `openssl rand -hex 32` |
 | `mautrix-doublepuppet-hs-token` | Idem, requis par Synapse, jamais utilisé | `openssl rand -hex 32` |
 
-{/* t:p 766e0032c193e53b03856351b8b049ec03ab54992807e5664bdbb25f477b25fa */}
+{/* t:p 7f73bc118495ab44ebe2f56861b316e8588835c78fcff9f62e56a46051dddf71 */}
 ## Gérer les ponts
 
 Les ponts WhatsApp, Signal, Telegram et Messenger sont **activés par
@@ -85,11 +85,25 @@ Chaque pont a ses secrets propres&nbsp;:
 
 | Pont | Clés sops | Remarque |
 |---|---|---|
-| WhatsApp | `mautrix-whatsapp-encryption-pickle-key` | `openssl rand -hex 32` |
-| Signal | `mautrix-signal-encryption-pickle-key` | `openssl rand -hex 32` |
-| Messenger | `mautrix-meta-as-token`, `mautrix-meta-encryption-pickle-key` | `openssl rand -hex 32` chacun |
+| WhatsApp | `mautrix-whatsapp-as-token`, `mautrix-whatsapp-hs-token`, `mautrix-whatsapp-encryption-pickle-key` | `openssl rand -hex 32` chacun |
+| Signal | `mautrix-signal-as-token`, `mautrix-signal-hs-token`, `mautrix-signal-encryption-pickle-key` | `openssl rand -hex 32` chacun |
+| Messenger | `mautrix-meta-as-token`, `mautrix-meta-hs-token`, `mautrix-meta-encryption-pickle-key` | `openssl rand -hex 32` chacun |
 | Telegram | `mautrix-telegram-api-id`, `mautrix-telegram-api-hash`, `mautrix-telegram-as-token`, `mautrix-telegram-hs-token` | API id/hash à créer sur [my.telegram.org](https://my.telegram.org) |
-| Discord | aucune | tokens auto-générés au premier démarrage |
+| Discord | `mautrix-discord-as-token`, `mautrix-discord-hs-token` | `openssl rand -hex 32` chacun |
+
+Les tokens `as`/`hs` rendent la *registration* appservice de chaque pont
+déterministe (voir
+[les tokens d'appservice](/fr/doc/admin-guide/understand/matrix/#les-tokens-dappservice)).
+
+<Aside type="caution" title="Migration d'un pont déjà déployé">
+Sur un pont WhatsApp ou Signal déployé **avant** l'introduction de ces tokens,
+la registration existante conserve les anciens tokens auto-générés. Pour basculer
+sur les tokens sops&nbsp;: supprimer `/var/lib/mautrix-<pont>/<pont>-registration.yaml`,
+redémarrer le pont (la registration est régénérée depuis la config), puis
+redémarrer `matrix-synapse`. Pour Messenger et Discord, un simple redéploiement
+suivi d'un redémarrage de Synapse suffit&nbsp;: leurs modules réécrivent la
+registration depuis la config à chaque démarrage.
+</Aside>
 
 {/* t:p f3eb4bb567f7ef6cafb1fd0f14a2f32d19ccfd22540309eef5aaad8f5d9ac836 */}
 ### Permissions
