@@ -5,6 +5,25 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-06-11
+
+### Added
+- New(justfile): justfile admin page.
+
+### Fixed
+- Fix(update): check before deploy.
+- Fix(translate): preserve MD & Astro tags.
+
+### Changed
+- Doc(matrix): init.
+- Doc(services): update table + readme.
+- Doc(modules): updates, removed Aim tags.
+- Doc(alerts): alertmanager & monitoring updated.
+- Doc(dev): prometheus alerting code map (lib/alerts.nix, rules pitfall).
+- Doc(dev): generated overlays pattern + service require how-to.
+- Doc(monitoring): alerts pages + prometheus/monitoring split, require.
+- Doc(oidc): oidc + oauth2.
+
 ## [0.1.1] - 2026-06-07
 
 ### Added
@@ -107,7 +126,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Initial Astro/Starlight documentation site for Darkone NixOS Framework.
 - Upgrade to Astro 6.
 
-[Unreleased]: https://github.com/darkone-linux/dnf-doc/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/darkone-linux/dnf-doc/compare/v0.1.2...HEAD
+[0.1.2]: https://github.com/darkone-linux/dnf-doc/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/darkone-linux/dnf-doc/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/darkone-linux/dnf-doc/compare/v0.0.2...v0.1.0
 [0.0.2]: https://github.com/darkone-linux/dnf-doc/compare/v0.0.1...v0.0.2
