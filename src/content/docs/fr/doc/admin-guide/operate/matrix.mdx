@@ -66,7 +66,7 @@ aucune création de compte Matrix n'est nécessaire.
 | `mautrix-doublepuppet-as-token` | Token appservice *double puppeting* (commun aux ponts) | `openssl rand -hex 32` |
 | `mautrix-doublepuppet-hs-token` | Idem, requis par Synapse, jamais utilisé | `openssl rand -hex 32` |
 
-{/* t:p 17c9eaf14abdf750c74b544e89cfe46dd5bf2d506612c524a47ff662edd7d093 */}
+{/* t:p 766e0032c193e53b03856351b8b049ec03ab54992807e5664bdbb25f477b25fa */}
 ## Gérer les ponts
 
 Les ponts WhatsApp, Signal, Telegram et Messenger sont **activés par
@@ -87,7 +87,7 @@ Chaque pont a ses secrets propres&nbsp;:
 |---|---|---|
 | WhatsApp | `mautrix-whatsapp-encryption-pickle-key` | `openssl rand -hex 32` |
 | Signal | `mautrix-signal-encryption-pickle-key` | `openssl rand -hex 32` |
-| Messenger | `mautrix-meta-as-token` | `openssl rand -hex 32` |
+| Messenger | `mautrix-meta-as-token`, `mautrix-meta-encryption-pickle-key` | `openssl rand -hex 32` chacun |
 | Telegram | `mautrix-telegram-api-id`, `mautrix-telegram-api-hash`, `mautrix-telegram-as-token`, `mautrix-telegram-hs-token` | API id/hash à créer sur [my.telegram.org](https://my.telegram.org) |
 | Discord | aucune | tokens auto-générés au premier démarrage |
 
