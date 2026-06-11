@@ -128,11 +128,11 @@ Trois familles de noms cohabitent sur le réseau. Toutes sont générées depuis
 | **FQDN de zone** | `<nom>.<zone>.<domaine>` | Tout le réseau interne | `cloud.maison.domain.tld` |
 | **Service global** | `<nom>.<domaine>` | Internet inclus | `git.domain.tld` |
 
-- **Noms simples** — ce sont les **machines** (hôtes déclarés). Résolus partout
+- **Noms simples** : ce sont les **machines** (hôtes déclarés). Résolus partout
   sur le réseau, vers l'adresse réelle de la machine, quelle que soit sa zone.
-- **FQDN de zone** — ce sont les **services d'une zone**. Ils pointent vers la
+- **FQDN de zone** : ce sont les **services d'une zone**. Ils pointent vers la
   passerelle de cette zone, qui les sert via son proxy inverse.
-- **Services globaux** — les services marqués `global` dans `etc/config.yaml`.
+- **Services globaux** : les services marqués `global` dans `etc/config.yaml`.
   Exposés sur le HCS avec un **DNS public** : joignables depuis n'importe où.
 
 Qui résout quoi :

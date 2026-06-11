@@ -33,16 +33,16 @@ network:
 
 Les rôles se déduisent du profil de chaque hôte :
 
-- **HCS** — coordination du maillage (Headscale).
-- **Passerelle** — *subnet router* + *exit node* : publie le sous-réseau de sa zone.
-- **Autres nœuds** — clients Tailscale.
+- **HCS** : coordination du maillage (Headscale).
+- **Passerelle** : *subnet router* + *exit node* : publie le sous-réseau de sa zone.
+- **Autres nœuds** : clients Tailscale.
 
 {/* t:p 71d76255b05357f48c5e17e2d7765cd525a3e9ad5ac9742e5e57a95e0be61e17 */}
 ## Enregistrer une passerelle
 
 <Steps>
 
-1. **Sur le HCS — créer l'utilisateur d'attache et une clé**
+1. **Sur le HCS : créer l'utilisateur d'attache et une clé**
 
    ```sh
    just enter hcs
@@ -62,7 +62,7 @@ Les rôles se déduisent du profil de chaque hôte :
 
    La passerelle s'enregistre ensuite automatiquement (au prochain `just apply`).
 
-3. **Sur la passerelle — annoncer le sous-réseau**
+3. **Sur la passerelle : annoncer le sous-réseau**
 
    ```sh
    sudo tailscale set --advertise-routes 10.0.0.0/16 --advertise-exit-node \
@@ -74,7 +74,7 @@ Les rôles se déduisent du profil de chaque hôte :
    fois avec `tailscale set`.
    :::
 
-4. **Sur le HCS — approuver les routes**
+4. **Sur le HCS : approuver les routes**
 
    ```sh
    sudo headscale nodes list                       # repérer l'ID de la passerelle

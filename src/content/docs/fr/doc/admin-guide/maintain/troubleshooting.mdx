@@ -41,8 +41,8 @@ Avant de committer ou déployer, normaliser le dépôt :
 just clean      # fix + check + generate + format
 ```
 
-- `just check-all` — tests unitaires + vérification des flakes (avant un déploiement).
-- `just gc <host>` — récupère l'espace disque (ancien générations supprimées).
+- `just check-all` : tests unitaires + vérification des flakes (avant un déploiement).
+- `just gc <host>` : récupère l'espace disque (ancien générations supprimées).
 
 {/* t:p 3f92e7be8139143e277bcd06f13c2239ef630a2d0fd61c666d3a6a388c9ea2f0 */}
 ## Revenir en arrière
@@ -51,16 +51,16 @@ Chaque déploiement crée une **génération** NixOS. En cas de problème :
 
 <Steps>
 
-1. **Au démarrage** — choisir une génération précédente dans le menu de boot.
+1. **Au démarrage** : choisir une génération précédente dans le menu de boot.
 
-2. **À chaud** — revenir à la génération précédente puis la rendre active :
+2. **À chaud** : revenir à la génération précédente puis la rendre active :
 
    ```sh
    just enter <host>
    sudo nixos-rebuild switch --rollback
    ```
 
-3. **Par le code** — `git revert` la mauvaise configuration, puis redéployer :
+3. **Par le code** : `git revert` la mauvaise configuration, puis redéployer :
 
    ```sh
    just apply <host>

@@ -16,8 +16,8 @@ déclarative `etc/config.yaml` en code Nix consommé par le framework.
 {/* t:p e4fc35d2af493818f7abda13c2eab50557279d67efeb60681004dbded55be715 */}
 ## De YAML à Nix
 
-- **Entrée** : `etc/config.yaml` — hôtes, utilisateurs, réseau, services.
-- **Sortie** : `var/generated/` — `hosts.nix`, `users.nix`, `network.nix`.
+- **Entrée** : `etc/config.yaml` → hôtes, utilisateurs, réseau, services.
+- **Sortie** : `var/generated/` → `hosts.nix`, `users.nix`, `network.nix`.
 
 Ces fichiers sont **générés** : on ne les édite jamais à la main. Pour les
 régénérer après une modification de la configuration :
@@ -79,7 +79,7 @@ just codegen           # régénérer uniquement la référence des modules (doc
 :::note[Lecture des modules]
 Le générateur lit aussi `dnf/config/modules.nix` (topologie des services) : il y
 applique les drapeaux (reverse proxy, unicité…) et **valide les dépendances
-`require`** — un service exigé doit être activé sur le même hôte, sinon la
+`require`** → un service exigé doit être activé sur le même hôte, sinon la
 génération échoue. Pour la commande `doc`, il **analyse les sources Nix** (parser
 `rnix`) pour en extraire les options et les en-têtes. Documenter une option = la
 décrire dans le module, puis `just codegen`.

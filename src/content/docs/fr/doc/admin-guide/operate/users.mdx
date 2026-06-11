@@ -138,9 +138,9 @@ Pour réinitialiser : [Réinitialiser un mot de passe](/fr/doc/how-to/admin/rese
 {/* t:p 8793ca3ee9a2d3dd3c168eecceebdeec7fba229d41aedd5b9b1699ff2bb11d79 */}
 ## Désactiver un compte
 
-- **Sur un hôte** — retirer le login de la liste `users` de l'hôte.
-- **Partout** — retirer l'entrée sous `users:`.
-- **Accès services** — retirer l'utilisateur des `groups` coupe l'accès SSO.
+- **Sur un hôte** : retirer le login de la liste `users` de l'hôte.
+- **Partout** : retirer l'entrée sous `users:`.
+- **Accès services** : retirer l'utilisateur des `groups` coupe l'accès SSO.
 
 Dans tous les cas, appliquer ensuite le cycle `just clean` → `just commit` →
 `just apply` sur les hôtes concernés.

@@ -107,7 +107,7 @@ Le provisionnement dépose trois secrets dans `usr/secrets/secrets.yaml` :
    ```
 
 2. Sous une minute, un message `ServiceDown` (ou `SystemdUnitFailed`) apparaît
-   dans `#alert-warnings` — `#alert-incidents` **et un e-mail** si le nœud est
+   dans `#alert-warnings`, `#alert-incidents` **et un e-mail** si le nœud est
    critique. Le lien de l'alerte pointe vers `https://prometheus.<zone>.domain.tld`.
 
 3. Relancer le service : l'alerte se résout (notification de résolution).

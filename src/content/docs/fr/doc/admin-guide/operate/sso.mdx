@@ -89,17 +89,17 @@ Le mode est déduit de l'endroit où `idm` est déclaré :
 style.fill: transparent
 direction: down
 
-hcs: HCS — fournisseur\nWriteReplica { shape: cylinder }
-gwa: Zone A — réplica\nlecture seule { shape: cylinder }
-gwb: Zone B — réplica\nlecture seule { shape: cylinder }
+hcs: HCS, fournisseur\nWriteReplica { shape: cylinder }
+gwa: Zone A, réplica\nlecture seule { shape: cylinder }
+gwb: Zone B, réplica\nlecture seule { shape: cylinder }
 
 hcs -> gwa
 hcs -> gwb
 ```
 
 :::caution[Amorçage en deux temps (scénario 3)]
-1. `just apply` — chaque nœud génère son certificat de réplication.
-2. `just idm-sync-certs` puis `just apply` — les passerelles passent en lecture seule (pull depuis le HCS).
+1. `just apply` : chaque nœud génère son certificat de réplication.
+2. `just idm-sync-certs` puis `just apply` : les passerelles passent en lecture seule (pull depuis le HCS).
 :::
 
 {/* t:p 694e5fdf9be2e87257305796f83a3e911d7fccb0826cdae46c46e13aa9866a7f */}

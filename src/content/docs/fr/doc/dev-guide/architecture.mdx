@@ -19,11 +19,11 @@ supérieur, du système de base jusqu'aux profils d'hôtes et d'utilisateurs.
 La structure complète et les couches d'abstraction sont décrites dans la
 [présentation du projet](/fr/doc/#organisation-des-fichiers).
 
-- `dnf/` — le framework : modules, configuration Home Manager, librairies.
-- `usr/` — le projet local (en écriture) : configuration, secrets, machines.
-- `var/generated/` — fichiers générés (ne pas éditer à la main).
-- `src/generator/` — sources du générateur (Rust).
-- `doc/` — cette documentation.
+- `dnf/` : le framework : modules, configuration Home Manager, librairies.
+- `usr/` : le projet local (en écriture) : configuration, secrets, machines.
+- `var/generated/` : fichiers générés (ne pas éditer à la main).
+- `src/generator/` : sources du générateur (Rust).
+- `doc/` : cette documentation.
 
 {/* t:p 612c2b3b727e2162a06c225b1ba018ba78f00a8918971764572149fa164f91cd */}
 ## Les modules de référence
@@ -38,8 +38,8 @@ service, sécurité, console, graphic, admin, user, mixin, home).
 Chaque niveau s'appuie sur le précédent : le système de base sert les modules,
 qui composent les profils, qui définissent les hôtes et les utilisateurs.
 
-- **[Structure complète des fichiers](/fr/doc/#structure)** — arborescence détaillée.
-- **[Schéma des couches](/fr/doc/#couches-dabstraction)** — du système aux profils.
+- **[Structure complète des fichiers](/fr/doc/#structure)** : arborescence détaillée.
+- **[Schéma des couches](/fr/doc/#couches-dabstraction)** : du système aux profils.
 
 | Couche | Où | Rôle |
 |---|---|---|

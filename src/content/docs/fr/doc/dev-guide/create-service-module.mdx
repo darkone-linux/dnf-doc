@@ -38,7 +38,7 @@ admonitions Starlight (`note`, `tip`, `caution`, `danger`) orientées usage /
 maintenance.
 
 ```nix
-# OxiCloud — Fast Sovereign Cloud (file storage, WebDAV, CalDAV & CardDAV).
+# OxiCloud : Fast Sovereign Cloud (file storage, WebDAV, CalDAV & CardDAV).
 #
 # :::note[Service currently being validated]
 # DNF wrapper around the nixpkgs module (from PR #516113).
@@ -71,9 +71,9 @@ Toujours `lib.mkMerge` de deux blocs :
 
 <Steps>
 
-1. **Bloc inconditionnel** — enregistrement auprès du système de services et
-   templates (proxy, persist, OAuth2…). Toujours évalué, même service désactivé.
-2. **Bloc `lib.mkIf cfg.enable`** — la configuration NixOS réelle (le service
+1. **Bloc inconditionnel** : enregistrement auprès du système de services et
+
+2. **Bloc `lib.mkIf cfg.enable`** : la configuration NixOS réelle (le service
    upstream, le pare-feu, les secrets…).
 
 </Steps>
@@ -124,14 +124,14 @@ config -> cond
 
 Outre `lib`, `config`, `pkgs`, chaque module de service reçoit des `specialArgs` :
 
-- `host` — hôte courant (`hostname`, `zone`, `ip`, `vpnIp`, `services`, `profile`…).
-- `hosts` — tous les hôtes du déploiement (toutes zones).
-- `zone` — zone de l'hôte courant (`name`, `domain`, `gateway`, `lang`…).
-- `network` — config globale (`domain`, `coordination`, `services`, `zones`).
-- `dnfLib` — helpers du framework (ne **jamais** importer `dnf/lib/` à la main).
-- `dnfConfig` — registres de config du framework (`dnfConfig.network.ports.<clé>` : registre des ports).
-- `workDir` — racine du workspace consumer.
-- `users` — tous les utilisateurs.
+- `host` : hôte courant (`hostname`, `zone`, `ip`, `vpnIp`, `services`, `profile`…).
+- `hosts` : tous les hôtes du déploiement (toutes zones).
+- `zone` : zone de l'hôte courant (`name`, `domain`, `gateway`, `lang`…).
+- `network` : config globale (`domain`, `coordination`, `services`, `zones`).
+- `dnfLib` : helpers du framework (ne **jamais** importer `dnf/lib/` à la main).
+- `dnfConfig` : registres de config du framework (`dnfConfig.network.ports.<clé>` : registre des ports).
+- `workDir` : racine du workspace consumer.
+- `users` : tous les utilisateurs.
 
 <Aside type="danger" title="Frontière framework ↔ consumer">
 Un module du framework atteint les fichiers consumer (`usr/secrets/…`,
@@ -160,11 +160,9 @@ darkone.system.services.service.oxicloud = {
 };
 ```
 
-- `proxy.servicePort` — port HTTP interne ; le reverse proxy Caddy s'y connecte
-  sur `params.ip`. Sans reverse proxy : `proxy.servicePort = null` +
-  `proxy.enable = false`.
-- `persist.{dirs,dbDirs,varDirs,mediaDirs,…}` — chemins persistés / sauvegardés.
-- `defaultParams` — métadonnées par défaut (`title`, `description`, `icon`),
+- `proxy.servicePort` : port HTTP interne ; le reverse proxy Caddy s'y connecte
+- `persist.{dirs,dbDirs,varDirs,mediaDirs,…}` : chemins persistés / sauvegardés.
+- `defaultParams` : métadonnées par défaut (`title`, `description`, `icon`),
   surchargeables depuis `config.yaml`. L'`icon` utilise le slug
   [selfh.st](https://selfh.st/icons/) (préfixé `sh-` par le framework).
 
@@ -225,13 +223,13 @@ Le framework résout `domain`/`global` en `params` (`fqdn`, `href`, `ip`…) via
 
 Tout port interne qu'un module **lie**, **ouvre** au pare-feu ou **proxifie**
 doit provenir du registre central `dnf/config/network.nix`, lu via
-`dnfConfig.network.ports.<clé>` — jamais un littéral codé en dur dans le module.
+`dnfConfig.network.ports.<clé>` → jamais un littéral codé en dur dans le module.
 C'est la source unique : un même numéro n'est jamais écrit deux fois et deux
 services ne peuvent pas entrer silencieusement en conflit.
 
 <Steps>
 
-1. **Nommer la clé** `<service>[Usage]` — le préfixe `ports.` dit déjà « port »,
+1. **Nommer la clé** `<service>[Usage]` : le préfixe `ports.` dit déjà « port »,
    la clé précise donc *à quoi il sert* (`kanidmReplication`, `garageRpc`). Un
    `<service>` seul désigne le port principal. Garder `network.nix` trié par valeur.
 2. **Ajouter la valeur** dans `ports.<clé>` quand DNF lie lui-même le port, puis
@@ -432,7 +430,7 @@ depuis un fork portant la PR, sans le reconstruire.
    ```
 
 2. Injecter le path du module dans la `modules` list de `mkNode`
-   (`dnf/lib/mk-configuration.nix`) — parsé inconditionnellement, sans effet
+   (`dnf/lib/mk-configuration.nix`) → parsé inconditionnellement, sans effet
    tant que `services.<nom>.enable = false` :
 
    ```nix
@@ -459,11 +457,11 @@ retirer le path du module (et l'overlay éventuel). Le wrapper
 
 <Steps>
 
-1. `just generate` — régénère les `default.nix` (auto-import du nouveau module).
-2. `just clean` — fix + check + generate + format (obligatoire avant commit).
+1. `just generate` : régénère les `default.nix` (auto-import du nouveau module).
+2. `just clean` : fix + check + generate + format (obligatoire avant commit).
 3. Évaluer / construire un hôte pour valider, puis commiter.
 
 </Steps>
 
 Message de commit : une ligne, 80 caractères max, anglais, format
-`<type>(<sujet>): <message>` — ex. `module(oxicloud): full DNF service with OIDC`.
+`<type>(<sujet>): <message>`, par ex. `module(oxicloud): full DNF service with OIDC`.

@@ -47,8 +47,8 @@ Une cible sauvegarde une ou plusieurs **catégories** dans des sous-dépôts :
 | `medias` | Médias `/srv/medias/...` |
 
 :::note[Deux secrets, à ne pas confondre]
-- **Passphrase de dépôt** (`restic-password-<zone>`) — chiffre le contenu.
-- **Credential REST** (`restic/<hôte>/rest-password`) — authentifie l'hôte.
+- **Passphrase de dépôt** (`restic-password-<zone>`) : chiffre le contenu.
+- **Credential REST** (`restic/<hôte>/rest-password`) : authentifie l'hôte.
 
 Les deux sont générés par `just passwd-restic`. Voir
 [Secrets](/fr/doc/admin-guide/operate/secrets/).

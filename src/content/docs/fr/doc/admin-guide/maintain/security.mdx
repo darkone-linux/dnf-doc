@@ -88,10 +88,10 @@ avant de monter le niveau en production.
 {/* t:p 4b6cf5967804f52c2c7079e98fa287bd8d11012e765f90ed1c6bc3f96c3f3a45 */}
 ## MAC, pare-feu, fail2ban
 
-- **MAC / AppArmor** (R37, R45) — confinement applicatif ; SELinux est
+- **MAC / AppArmor** (R37, R45) : confinement applicatif ; SELinux est
   structurellement non supporté sur NixOS (exceptions R46–R49 par défaut).
-- **Pare-feu & réseau** — durcis par la catégorie `server` (module `network`).
-- **fail2ban** — bannit les IP après tentatives répétées ; service à activer
+- **Pare-feu & réseau** : durcis par la catégorie `server` (module `network`).
+- **fail2ban** : bannit les IP après tentatives répétées ; service à activer
   dans le [catalogue](/fr/doc/admin-guide/operate/services/).
 
 :::note[Référence des règles]
