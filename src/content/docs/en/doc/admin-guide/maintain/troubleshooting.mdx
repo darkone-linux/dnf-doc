@@ -31,35 +31,35 @@ All these commands target a host (or a pattern / list) via colmena:
 The target accepts a pattern or list: `just gc '*'`, `just reboot a,b`.
 :::
 
-{/* t:p 9311ecb49367629602cb7ce9e0e1a524a3a017ce0ca2833150e901d097229ad0 */}
-## Clean and format the code
+{/* t:p 954560242917881cf17b1ee53c002c4bd7832d89da40e097699abbb75825415f */}
+## Clean and format code
 
-Before committing or deploying, normalize the repo:
+Before committing or deploying, normalize the repository:
 
 ```sh
 just clean      # fix + check + generate + format
 ```
 
-- `just check-all` — unit tests + flake verification (before a deployment).
-- `just gc <host>` — frees disk space (old generations deleted).
+- `just check-all` : unit tests + flake checking (before deployment).
+- `just gc <host>` : reclaim disk space (deletes old generations).
 
-{/* t:p 3f92e7be8139143e277bcd06f13c2239ef630a2d0fd61c666d3a6a388c9ea2f0 */}
+{/* t:p 9376adef28eee4541cef0c4da991075f26970350eff0e2a8768d5adef40e1d90 */}
 ## Rollback
 
-Each deployment creates a NixOS **generation**. In case of problem:
+Each deployment creates a NixOS **generation**. In case of issues:
 
 <Steps>
 
-1. **At boot** — choose a previous generation from the boot menu.
+1. **At boot** : choose a previous generation from the boot menu.
 
-2. **Hot rollback** — revert to the previous generation then make it active:
+2. **Live rollback** : revert to the previous generation then make it active:
 
    ```sh
    just enter <host>
    sudo nixos-rebuild switch --rollback
    ```
 
-3. **From the code** — `git revert` the bad configuration, then redeploy:
+3. **Through code** : `git revert` the faulty configuration, then redeploy:
 
    ```sh
    just apply <host>
@@ -67,9 +67,9 @@ Each deployment creates a NixOS **generation**. In case of problem:
 
 </Steps>
 
-:::caution[GC caution]
-`just gc` deletes old generations: you can no longer roll back to them at
-boot. Make sure the host is stable before cleaning.
+:::caution[GC warning]
+`just gc` removes old generations : you cannot revert to them at boot anymore.
+Verify the host is stable before cleaning.
 :::
 
 {/* t:p 2ec69970651a4f30e7dc069ea1e8fb75d5c15e1387cd42bf9e09db8c9b69d896 */}

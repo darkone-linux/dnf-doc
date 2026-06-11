@@ -30,7 +30,7 @@ options est généré dans la [référence](/fr/ref/modules/service/).
 Un module vit dans `dnf/modules/service/<nom>.nix`. Il est **auto-importé** via
 le `default.nix` généré (lancer `just generate` après création).
 
-{/* t:p 128f3700ab5e5748fab81512fcf718fdd55def120f90435d0eea1a0936a00716 */}
+{/* t:p 488bb3fa8a1cbf8e337613e39af5b6761ea5b5a026b413d9845c0f9c8fec65c8 */}
 ### En-tête
 
 Commentaire de tête obligatoire : 1re ligne descriptive, puis paragraphes et
@@ -64,7 +64,7 @@ paramètres déclarés dans `etc/config.yaml`, résolus par le framework via
 `dnfLib.extractServiceParams`. Voir [Activation par hôte](#enregistrement-et-activation).
 </Aside>
 
-{/* t:p 6573503e8ccc156046a70f3252ab2d0428be75a3dad221a7d58fbad5ee01707c */}
+{/* t:p 39c1e7d40a9083fc070b39d990424dffb66f3673b1a72e29227642a1f3fdec8c */}
 ### Structure de `config`
 
 Toujours `lib.mkMerge` de deux blocs :
@@ -119,7 +119,7 @@ config -> incond
 config -> cond
 ```
 
-{/* t:p d0211590f7603320e015ec5f283a7cf43897061ad1f2098cd98486d8b0cc1fc9 */}
+{/* t:p ffb85989d92222f21217363766e2f98bcf43eb5201987f3e748639283c0a9799 */}
 ## Arguments injectés et frontière consumer
 
 Outre `lib`, `config`, `pkgs`, chaque module de service reçoit des `specialArgs` :
@@ -142,7 +142,7 @@ Un module du framework atteint les fichiers consumer (`usr/secrets/…`,
 {/* t:p 87e14a0e85d4a423956560abb4ef0c2d28af6a1abfae3394ebc0080188da6477 */}
 ## Enregistrement et activation
 
-{/* t:p de3a0aa9eba9f647235738aed9df627b97a6a6ee3e7e144afe12d9a627a67f66 */}
+{/* t:p 47b4195921cbf9e27ef69e887f3ad700d18ef27c28feaec1954ea2b297985727 */}
 ### Exposition du service
 
 Le bloc **inconditionnel** déclare `darkone.system.services.service.<nom>`, lu
@@ -218,7 +218,7 @@ Le framework résout `domain`/`global` en `params` (`fqdn`, `href`, `ip`…) via
 {/* t:p ae9debfa23c989de21ed264ff9032d332e282b341c74b9b7e3ca24a9def26c41 */}
 ## Réseau, base de données et secrets
 
-{/* t:p fd9c25ec6dae8567787752d619578e4fb4ef0f400a1cb2601158f3c7b322dd86 */}
+{/* t:p 26765002e9ee8af933ac0511563de3dec5e099583b16273a1c080d7af79f5df3 */}
 ### Ports internes
 
 Tout port interne qu'un module **lie**, **ouvre** au pare-feu ou **proxifie**
@@ -414,7 +414,7 @@ d'ensemble côté admin :
 [Authentification et identités](/fr/doc/admin-guide/understand/auth-idm/).
 </Aside>
 
-{/* t:p b5659495936e23c188bec7aaca73626e6ae2a31c9b906e74d2e2d0a816745dd6 */}
+{/* t:p f9cc254f9539c986c130f7b78cb7fe72905cdc021a97eac42a277937e3b4180f */}
 ## Sourcer un module upstream
 
 Quand seul le **module** NixOS manque (paquet déjà dans nixpkgs), on le source
@@ -452,7 +452,7 @@ retirer le path du module (et l'overlay éventuel). Le wrapper
 `modules/service/<nom>.nix` reste inchangé.
 </Aside>
 
-{/* t:p a9f5c5cc341efe809e43bc2f6cee5ac4a493519dbfe8902c85104a03726d32f1 */}
+{/* t:p 2e6c98f07c0b05d5204721cda60c5f12179a4bcedd732ae5064eff7db3a9dcb7 */}
 ## Finaliser et committer
 
 <Steps>

@@ -75,28 +75,27 @@ Escalation is driven by severity, not by time:
 Mail is sent through the host's local Postfix relay; the Matrix bridge is a
 dedicated bot (`@alertbot:domain.tld`) that posts to both rooms.
 
-{/* t:p 52f3b8dd2ac449fafbc0700e3507cfc17e459fffc2d02e4c06d5f84e5cdb4272 */}
+{/* t:p 45e05cb0a367e25d497af9f9a3f36742060a6c64fd81a9e76e85f8e228d4e9ee */}
 ## Node classes
 
-The severity of a failure depends on the node's **importance**. A critical
-server going down is an incident; a workstation powered off is a mere info.
+The severity of a failure depends on the **importance** of the node. A critical
+server going down is an incident ; a powered-off workstation, a simple info.
 
 | Class | Who | Effect |
 |---|---|---|
-| critical | `gateway`, `hcs`, `server` profiles | failures as `critical` |
-| non-critical | desktops, laptops | failures as `warning` |
-| disabled | — | no alerts on this node |
+| critical | `gateway`, `hcs`, `server` profiles | failures in `critical` |
+| non-critical | desktops, laptops | failures in `warning` |
+| disabled | | no alert on this node |
 
-The default class follows the host's profile; you can override it with a
-**feature**:
+The default class follows the host profile ; it can be overridden with a **feature** :
 
-- `alert-critical`: raises the node to critical level.
-- `alert-non-critical`: lowers it.
-- `alert-disabled`: excludes it from alerts.
+- `alert-critical` : raises the node to critical level.
+- `alert-non-critical` : lowers it.
+- `alert-disabled` : removes it from alerts.
 
-Like `monitoring-node:<zone>`, these features accept an owner zone:
-`alert-critical:main` makes an external node (typically the HCS) monitored by
-the `main` zone.
+Like `monitoring-node:<zone>`, these features accept an owner zone :
+`alert-critical:main` makes a node (typically the HCS) monitored by the
+`main` zone.
 
 {/* t:p f26bd560527aba812f399d7abaa1dbf9cfcb7bd1b18fd0c7a9268d516b2c3446 */}
 ## What is monitored

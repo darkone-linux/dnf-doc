@@ -43,7 +43,7 @@ value customizes it:
 
 :::tip[Visible across the whole network]
 Declaring a service in `etc/config.yaml` makes it visible and resolvable from
-all zones. See [Names and DNS resolution](/en/doc/admin-guide/understand/network/#names-and-dns-resolution).
+all zones. See [Names and DNS resolution](/en/doc/admin-guide/understand/network/#dns-names-and-resolution).
 :::
 
 {/* t:p e3f296cf2c9354cd33ce95ef36a36e08419f5ac4aa6064e004c6db8d41c1317a */}
@@ -67,9 +67,9 @@ Detailed options for each service in the
 [module reference](/en/ref/modules/service/).
 :::
 
-{/* t:p ade9329a9007ab88dfa2d1b5ade3eaefbb72ee2d5da34148b4603fd50c760cd0 */}
+{/* t:p 5af71e667db357c0778a37eac1de0c4dbbe9db7f4ff0dd5a4c8a0e01f13a3e4b */}
 ## Portal and access
 
-- **Portal** — the `homepage` service provides a service home page, per zone.
-- **Single sign-on** — most services go through [Kanidm SSO](/en/doc/admin-guide/operate/sso/).
-- **Local or global** — a service stays within its zone, unless `global: true` exposes it publicly.
+- **Portal**: the `homepage` service provides a services dashboard, per zone.
+- **Single sign-on**: most services go through [SSO Kanidm](/en/doc/admin-guide/operate/sso/).
+- **Local or global**: a service stays in its zone, unless `global: true` exposes it publicly.

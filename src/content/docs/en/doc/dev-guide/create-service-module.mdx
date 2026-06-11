@@ -30,15 +30,15 @@ the [reference](/en/ref/modules/service/).
 A module lives in `dnf/modules/service/<name>.nix`. It is **auto-imported**
 via the generated `default.nix` (run `just generate` after creation).
 
-{/* t:p 128f3700ab5e5748fab81512fcf718fdd55def120f90435d0eea1a0936a00716 */}
+{/* t:p 488bb3fa8a1cbf8e337613e39af5b6761ea5b5a026b413d9845c0f9c8fec65c8 */}
 ### Header
 
-Mandatory top comment: 1 descriptive line, then paragraphs and Starlight
-admonitions (`note`, `tip`, `caution`, `danger`) oriented towards usage /
-maintenance.
+Mandatory header comment: 1st descriptive line, then paragraphs and
+Starlight admonitions (`note`, `tip`, `caution`, `danger`) oriented toward
+usage / maintenance.
 
 ```nix
-# OxiCloud — Fast Sovereign Cloud (file storage, WebDAV, CalDAV & CardDAV).
+# OxiCloud : Fast Sovereign Cloud (file storage, WebDAV, CalDAV & CardDAV).
 #
 # :::note[Service currently being validated]
 # DNF wrapper around the nixpkgs module (from PR #516113).
@@ -63,17 +63,17 @@ declared in `etc/config.yaml`, resolved by the framework via
 `dnfLib.extractServiceParams`. See [Per-host activation](#registration-and-activation).
 </Aside>
 
-{/* t:p 6573503e8ccc156046a70f3252ab2d0428be75a3dad221a7d58fbad5ee01707c */}
+{/* t:p 39c1e7d40a9083fc070b39d990424dffb66f3673b1a72e29227642a1f3fdec8c */}
 ### `config` structure
 
 Always `lib.mkMerge` of two blocks:
 
 <Steps>
 
-1. **Unconditional block** — registration with the service and template system
-   (proxy, persist, OAuth2…). Always evaluated, even if the service is disabled.
-2. **`lib.mkIf cfg.enable` block** — the actual NixOS configuration (upstream
-   service, firewall, secrets…).
+1. **Unconditional block**: registration with the service system and
+
+2. **`lib.mkIf cfg.enable` block**: the actual NixOS configuration (the upstream
+   service, the firewall, the secrets…).
 
 </Steps>
 
@@ -118,34 +118,34 @@ config -> incond
 config -> cond
 ```
 
-{/* t:p d0211590f7603320e015ec5f283a7cf43897061ad1f2098cd98486d8b0cc1fc9 */}
+{/* t:p ffb85989d92222f21217363766e2f98bcf43eb5201987f3e748639283c0a9799 */}
 ## Injected arguments and consumer boundary
 
-Besides `lib`, `config`, `pkgs`, each service module receives `specialArgs`:
+Beyond `lib`, `config`, `pkgs`, each service module receives `specialArgs`:
 
-- `host` — current host (`hostname`, `zone`, `ip`, `vpnIp`, `services`, `profile`…).
-- `hosts` — all hosts in the deployment (all zones).
-- `zone` — current host's zone (`name`, `domain`, `gateway`, `lang`…).
-- `network` — global config (`domain`, `coordination`, `services`, `zones`).
-- `dnfLib` — framework helpers (never import `dnf/lib/` manually).
-- `dnfConfig` — framework config registers (`dnfConfig.network.ports.<key>`: port registry).
-- `workDir` — consumer workspace root.
-- `users` — all users.
+- `host`: current host (`hostname`, `zone`, `ip`, `vpnIp`, `services`, `profile`…).
+- `hosts`: all hosts in the deployment (all zones).
+- `zone`: current host's zone (`name`, `domain`, `gateway`, `lang`…).
+- `network`: global config (`domain`, `coordination`, `services`, `zones`).
+- `dnfLib`: framework helpers (never import `dnf/lib/` manually).
+- `dnfConfig`: framework config registries (`dnfConfig.network.ports.<key>`: port registry).
+- `workDir`: consumer workspace root.
+- `users`: all users.
 
 <Aside type="danger" title="Framework ↔ consumer boundary">
-A framework module reaches consumer files (`usr/secrets/…`, `usr/www/…`) **only**
-via `workDir + "/usr/…"`, never by relative path (`./../../usr/…`). The
-framework flake root is not the consumer workspace.
+A framework module accesses consumer files (`usr/secrets/…`,
+`usr/www/…`) **only** via `workDir + "/usr/…"`, never by relative path
+(`./../../usr/…`). The framework flake root is not the consumer workspace.
 </Aside>
 
 {/* t:p 87e14a0e85d4a423956560abb4ef0c2d28af6a1abfae3394ebc0080188da6477 */}
 ## Registration and activation
 
-{/* t:p de3a0aa9eba9f647235738aed9df627b97a6a6ee3e7e144afe12d9a627a67f66 */}
+{/* t:p 47b4195921cbf9e27ef69e887f3ad700d18ef27c28feaec1954ea2b297985727 */}
 ### Service exposition
 
-The **unconditional** block declares `darkone.system.services.service.<name>`,
-read by `modules/system/services.nix` to generate reverse proxy, homepage,
+The **unconditional** block declares `darkone.system.services.service.<name>`, read
+by `modules/system/services.nix` to generate reverse proxy, homepage,
 persistence and backup.
 
 ```nix
@@ -159,12 +159,10 @@ darkone.system.services.service.oxicloud = {
 };
 ```
 
-- `proxy.servicePort` — internal HTTP port; the Caddy reverse proxy connects
-  to it on `params.ip`. Without reverse proxy: `proxy.servicePort = null` +
-  `proxy.enable = false`.
-- `persist.{dirs,dbDirs,varDirs,mediaDirs,…}` — persisted / backed up paths.
-- `defaultParams` — default metadata (`title`, `description`, `icon`),
-  overridable from `config.yaml`. The `icon` uses a
+- `proxy.servicePort`: internal HTTP port; the Caddy reverse proxy connects to it
+- `persist.{dirs,dbDirs,varDirs,mediaDirs,…}`: persisted / backed-up paths.
+- `defaultParams`: default metadata (`title`, `description`, `icon`),
+  overridable from `config.yaml`. The `icon` uses the
   [selfh.st](https://selfh.st/icons/) slug (prefixed `sh-` by the framework).
 
 ```nix
@@ -175,8 +173,9 @@ defaultParams = {
 };
 ```
 
-Protocols served on the same HTTP port (WebDAV, CalDAV, CardDAV for OxiCloud)
-naturally go through the single Caddy vhost: nothing special to configure.
+Protocols served on the same HTTP port (WebDAV, CalDAV, CardDAV for
+OxiCloud) naturally go through the single Caddy vhost: nothing special to
+configure.
 
 {/* t:p 2186d270149eb19c38f2ac759ee2e9644da881b654242eb4c01f9397f34be196 */}
 ### Per-host activation
@@ -218,21 +217,21 @@ The framework resolves `domain`/`global` into `params` (`fqdn`, `href`, `ip`…)
 {/* t:p ae9debfa23c989de21ed264ff9032d332e282b341c74b9b7e3ca24a9def26c41 */}
 ## Network, database and secrets
 
-{/* t:p fd9c25ec6dae8567787752d619578e4fb4ef0f400a1cb2601158f3c7b322dd86 */}
+{/* t:p 26765002e9ee8af933ac0511563de3dec5e099583b16273a1c080d7af79f5df3 */}
 ### Internal ports
 
-Any internal port that a module **binds**, **opens** in the firewall or **proxies**
+Any internal port a module **binds**, **opens** in the firewall or **proxies**
 must come from the central registry `dnf/config/network.nix`, read via
-`dnfConfig.network.ports.<key>` — never a hardcoded literal in the module.
-It is the single source of truth: the same number is never written twice and
-two services cannot silently conflict.
+`dnfConfig.network.ports.<key>` → never a hardcoded literal in the module.
+It is the single source of truth: the same number is never written twice and two
+services cannot silently conflict.
 
 <Steps>
 
-1. **Name the key** `<service>[Usage]` — the `ports.` prefix already says "port",
+1. **Name the key** `<service>[Usage]`: the `ports.` prefix already says "port",
    so the key specifies *what it is used for* (`kanidmReplication`, `garageRpc`). A
    `<service>` alone designates the main port. Keep `network.nix` sorted by value.
-2. **Add the value** in `ports.<key>` when DNF binds the port itself, then
+2. **Add the value** in `ports.<key>` when DNF itself binds the port, then
    read it in the module:
 
    ```nix
@@ -240,15 +239,15 @@ two services cannot silently conflict.
    ```
 
 3. **Port inherited from upstream** (`config.services.<x>.port`, not bound by DNF):
-   instead register it in `ports.reserved` (anti-conflict denylist); the module
+   register it in `ports.reserved` (anti-conflict denylist) instead; the module
    continues to read `config.services.<x>.port`.
 
 </Steps>
 
-<Aside type="note" title="Uniqueness tested">
-`dnf/tests/unit/config/network_test.nix` verifies global uniqueness across all
-`ports.*` values and the `ports.reserved` list. Any conflict causes the unit
-test suite to fail.
+<Aside type="note" title="Tested uniqueness">
+`dnf/tests/unit/config/network_test.nix` checks global uniqueness across all
+`ports.*` values and the `ports.reserved` list. Any conflict fails the unit
+test suite.
 </Aside>
 
 {/* t:p ce5f822760b5b07f5a3ea4233f2d59de88b4f575227356dfa7569b909f348bd0 */}
@@ -413,15 +412,15 @@ in front of a service that does not know who is connecting. Admin overview:
 [Authentication and identities](/en/doc/admin-guide/understand/auth-idm/).
 </Aside>
 
-{/* t:p b5659495936e23c188bec7aaca73626e6ae2a31c9b906e74d2e2d0a816745dd6 */}
-## Source an upstream module
+{/* t:p f9cc254f9539c986c130f7b78cb7fe72905cdc021a97eac42a277937e3b4180f */}
+## Sourcing an upstream module
 
-When only the NixOS **module** is missing (package already in nixpkgs), source
-it from a fork carrying the PR without rebuilding it.
+When only the NixOS **module** is missing (package already in nixpkgs), source it
+from a fork carrying the PR, without rebuilding it.
 
 <Steps>
 
-1. Add a dedicated input in `dnf/flake.nix` pointing to the fork branch,
+1. Add in `dnf/flake.nix` a dedicated input pointing to the fork branch,
    **without** `inputs.nixpkgs.follows` (we want the fork tree as-is):
 
    ```nix
@@ -429,8 +428,8 @@ it from a fork carrying the PR without rebuilding it.
    ```
 
 2. Inject the module path into the `modules` list of `mkNode`
-   (`dnf/lib/mk-configuration.nix`) — parsed unconditionally, no effect as long
-   as `services.<name>.enable = false`:
+   (`dnf/lib/mk-configuration.nix`) → parsed unconditionally, with no effect
+   as long as `services.<name>.enable = false`:
 
    ```nix
    "${nixpkgs-oxicloud}/nixos/modules/services/web-apps/oxicloud.nix"
@@ -438,7 +437,7 @@ it from a fork carrying the PR without rebuilding it.
 
 </Steps>
 
-<Aside type="caution" title="Package overlay: only if necessary">
+<Aside type="caution" title="Package overlay: only if needed">
 Distinguish two cases. **OxiCloud**: the package is already in nixpkgs → no
 overlay, `pkgs.oxicloud` comes from the main tree. **GeneWeb**: the package was
 missing (OCaml deps) → an overlay (`lib/overlays/geneweb.nix`) injects
@@ -447,19 +446,20 @@ missing (OCaml deps) → an overlay (`lib/overlays/geneweb.nix`) injects
 
 <Aside type="tip" title="Cleanup after merge">
 **Cleanup** once the PR is merged into `nixos-unstable`: remove the input,
-remove the module path (and the overlay if any). The wrapper
+remove the module path (and any overlay). The wrapper
 `modules/service/<name>.nix` stays unchanged.
 </Aside>
 
-{/* t:p a9f5c5cc341efe809e43bc2f6cee5ac4a493519dbfe8902c85104a03726d32f1 */}
+{/* t:p 2e6c98f07c0b05d5204721cda60c5f12179a4bcedd732ae5064eff7db3a9dcb7 */}
 ## Finalize and commit
 
 <Steps>
 
-1. `just generate` — regenerate `default.nix` (auto-import the new module).
-2. `just clean` — fix + check + generate + format (mandatory before commit).
+1. `just generate`: regenerates `default.nix` (auto-import of the new module).
+2. `just clean`: fix + check + generate + format (mandatory before commit).
 3. Evaluate / build a host to validate, then commit.
 
 </Steps>
 
-Commit message: one line, 80 characters max, English, `<type>(<subject>): <message>` format — e.g. `module(oxicloud): full DNF service with OIDC`.
+Commit message: one line, 80 characters max, English, format
+`<type>(<subject>): <message>`, e.g. `module(oxicloud): full DNF service with OIDC`.

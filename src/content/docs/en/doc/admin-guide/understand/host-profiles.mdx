@@ -41,18 +41,18 @@ server -> vm
 desktop -> laptop
 ```
 
-{/* t:p eb86c4ed035144c80b627ce6b36899930ab4c14ab1c134f275465c39d75f8b04 */}
+{/* t:p d8e727a17d2179cfdcabf129c38130aaa06eb639c41cd9f3aed2ede41d78623a */}
 ## Profiles
 
 | Profile | Purpose | Inherits from | Provides |
 |---|---|---|---|
-| `minimal` | Base for every host | — | Hardware, firewall, i18n, zsh, sudo |
-| `server` | Headless server | `minimal` | No sleep, watchdog, limited boot |
+| `minimal` | Base for every host | | Hardware, firewall, i18n, zsh, sudo |
+| `server` | Server without display | `minimal` | No suspend, watchdog, limited boot |
 | `desktop` | Workstation | `minimal` | GNOME, multimedia, office |
-| `laptop` | Laptop computer | `desktop` | Battery/sleep, sensors, thermald |
-| `portable` | Bootable USB key | `minimal` | Extended hardware drivers |
+| `laptop` | Laptop computer | `desktop` | Battery/suspend, sensors, thermald |
+| `portable` | Bootable USB drive | `minimal` | Extended hardware drivers |
 | `gateway` | Zone gateway | `server` | Router, firewall, DNS/DHCP, VPN |
-| `hcs` | VPN coordination | `server` | Headscale + shared services |
+| `hcs` | VPN orchestration | `server` | Headscale + shared services |
 | `vm` | Virtual machine | `server` | Guest tools (VirtualBox/QEMU/Xen) |
 
 {/* t:p 75269fb3fafa1ca4b385b89e5db4e05f3a4afd043866ccba4d93cb00a7f8e537 */}

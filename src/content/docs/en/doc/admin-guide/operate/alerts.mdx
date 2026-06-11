@@ -95,7 +95,7 @@ Provisioning stores three secrets in `usr/secrets/secrets.yaml`:
 | `alertmanager-matrix-token` | bot access token (message sending) |
 | `alertmanager-webhook-secret` | authenticates Alertmanager to the Matrix bridge |
 
-{/* t:p 78a3f2c93abffead121c030309e43e93d86ebde1cacada071c8d13b551a1b788 */}
+{/* t:p f32c7b8dcfd6d535fabe1e784c4eeddba81543756385f6400ccad5babc2fa83d */}
 ## Testing an alert
 
 <Steps>
@@ -103,17 +103,17 @@ Provisioning stores three secrets in `usr/secrets/secrets.yaml`:
 1. On a supervised node, stop a monitored service:
 
    ```sh
-   sudo systemctl stop <unit>
+   sudo systemctl stop <unité>
    ```
 
 2. Within a minute, a `ServiceDown` (or `SystemdUnitFailed`) message appears
-   in `#alert-warnings` — `#alert-incidents` **and an email** if the node is
+   in `#alert-warnings`, `#alert-incidents` **and an email** if the node is
    critical. The alert link points to `https://prometheus.<zone>.domain.tld`.
 
 3. Restart the service: the alert resolves (resolution notification).
 
    ```sh
-   sudo systemctl start <unit>
+   sudo systemctl start <unité>
    ```
 
 </Steps>

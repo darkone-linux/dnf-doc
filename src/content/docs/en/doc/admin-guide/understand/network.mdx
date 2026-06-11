@@ -116,30 +116,31 @@ The mesh is only enabled if `network.coordination.enable` is true in
 `etc/config.yaml`. Without it, zones remain local and independent.
 </Aside>
 
-{/* t:p dc98e399aab6187fe85228f5c26073a369879ba8ce96f4d545fcb551bcc081cf */}
-## Names and DNS resolution
+{/* t:p 0674a51f1e6ebc08cb3d2aac04dad67d13c8723bf425eb6bd5060e18888274a2 */}
+## DNS names and resolution
 
 Three families of names coexist on the network. All are generated from
 `etc/config.yaml`.
 
 | Name | Form | Scope | Example |
 |---|---|---|---|
-| **Simple name** | `<host>` | Entire internal network | `serveur` |
-| **Zone FQDN** | `<name>.<zone>.<domain>` | Entire internal network | `cloud.maison.domain.tld` |
+| **Simple name** | `<host>` | Entire internal network | `server` |
+| **Zone FQDN** | `<name>.<zone>.<domain>` | Entire internal network | `cloud.home.domain.tld` |
 | **Global service** | `<name>.<domain>` | Internet included | `git.domain.tld` |
 
-- **Simple names** — these are the **machines** (declared hosts). Resolved
-  everywhere on the network, to the machine's real address, regardless of its zone.
-- **Zone FQDNs** — these are a **zone's services**. They point to that zone's
-  gateway, which serves them through its reverse proxy.
-- **Global services** — services marked `global` in `etc/config.yaml`.
-  Exposed on the HCS with **public DNS**: reachable from anywhere.
+- **Simple names** : these are the **machines** (declared hosts). Resolved
+  everywhere on the network, to the machine's real address, regardless of its
+  zone.
+- **Zone FQDNs** : these are the **services of a zone**. They point to the
+  gateway of that zone, which serves them via its reverse proxy.
+- **Global services** : services marked `global` in `etc/config.yaml`.
+  Exposed on the HCS with **public DNS** : reachable from anywhere.
 
-Who resolves what:
+Who resolves what :
 
 - `dnsmasq`, on **each gateway**, knows all internal names (machines
-  and services from **all** zones): it resolves simple names and FQDNs.
-- The current zone is resolved locally; other zones and the global domain
+  and services of **all** zones) : it resolves simple names and FQDNs.
+- The current zone is resolved locally ; other zones and the global domain
   are routed to the correct gateway, or to the HCS pivot resolver.
-- Public names (Internet) go to upstream encrypted DNS servers, filtered by
+- Public (Internet) names go to upstream encrypted DNS, filtered by
   AdGuardHome if enabled.

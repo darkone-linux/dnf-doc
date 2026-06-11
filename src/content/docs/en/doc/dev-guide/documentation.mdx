@@ -14,15 +14,15 @@ This site is built with [Astro](https://astro.build/) and
 [Starlight](https://starlight.astro.build/). Pages live under
 `src/content/docs/<lang>/` (`fr`, `en`).
 
-{/* t:p b6b25c9513c814e98e8cd6533b6b4567aa55453b5dca27fea3db3a576222c69b */}
+{/* t:p 6b83178770c6b771dd3f8d6dca700e1b49f544533bc67292d6df88fb12140963 */}
 ## Where to write
 
-- `doc/<section>.mdx` — a section's **entry page**: introduction + links.
-- `doc/<section>/<leaf>.mdx` — detail **leaves**.
+- `doc/<section>.mdx` : **entry page** of a section, introduction + links.
+- `doc/<section>/<feuille>.mdx` : **detail pages**.
 - Short cross-cutting topics → `doc/how-to/{user,admin,dev}/`.
 
-Write in **French** (`fr/`); English is produced afterwards by `just translate`.
-Slugs and file names stay in English.
+Write in **French** (`fr/`) ; English is produced afterwards by
+`just translate`. Slugs and file names stay in English.
 
 {/* t:p 2bc5be94c96c567dc98778689d5237fe6b378aa15fc77fdfe15c869b54a8701e */}
 ## Essential Rules
@@ -47,18 +47,19 @@ The `{/* t:* */}` markers and generated pages (`*/ref/modules.mdx`) are managed
 by scripts. See `AGENTS.md`.
 :::
 
-{/* t:p 99ec1bd17b5fe31c546108cff58a8916c16af8267b4413c60e65acb4a18a54ff */}
+{/* t:p 4e3e70428dca276ff16231c600da69320ade5d62fc3d5b1a0275eeb17ba6d1d7 */}
 ## Languages and translation
 
-Write **only in French** (`fr/`) ; English (`en/`) is **produced** by `just translate`. Never edit `en/` manually.
+Write **only in French** (`fr/`) ; English (`en/`) is **produced**
+by `just translate`. Never edit `en/` manually.
 
 | Action | To do |
 |---|---|
-| **Create** a page | In `fr/` only; do not run `just translate`. |
+| **Create** a page | In `fr/` only ; do not run `just translate`. |
 | **Move** a page | Move **both** languages together (files, verbatim), then `just tags`. |
 | **Translate** | At the end of the work: `just tags` then `just translate`. |
 
-Translation markers are handled by the scripts — **never manually**:
+Translation markers are managed by the scripts, **never manually**:
 
 | Marker | Role |
 |---|---|
@@ -68,7 +69,8 @@ Translation markers are handled by the scripts — **never manually**:
 | `{/* t:p <hash> */}` | Paragraph hash (before each block). |
 
 :::caution[Translated file = read-only]
-A file with `t:translated-from` is **never** modified: it is overwritten by `just translate`. Edit the `fr/` source (`t:main`).
+A file bearing `t:translated-from` is **never** modified: it is
+overwritten by `just translate`. Edit the `fr/` source (`t:main`).
 :::
 
 {/* t:p 091c2721f294a4aed8fdf11b6b3bb7aa3b0789b29af5a1ba3ca31433cbe306b1 */}

@@ -16,14 +16,14 @@ Les fonctionnalités du framework sont fournies sous forme de **modules NixOS**
 haut-niveau, regroupés par catégorie sous `dnf/modules/` et documentés dans la
 [référence des modules](/fr/ref/modules/).
 
-{/* t:p 4afbc8e90fd606653e6f6b858d4b3bba199ee939ec52c31a0d6558dbaaa83d8a */}
+{/* t:p 09d5493fbcb2c54f2ad475c4d0e0d4f830ef87bccacb1e10edd9ac41630497bc */}
 ## Catégories
 
 - **standard** : système, console, graphic, service, admin, user.
 - **mixin** : macro-modules composant des profils d'hôtes et compléments de profils utilisateurs.
 - **home** : modules et profils [Home Manager](https://github.com/nix-community/home-manager).
 
-{/* t:p ef19b14d86449094e5e7ff00f32350596401d02a3210c01123b614dbc279ce88 */}
+{/* t:p ff784a3ca7ab70b99b97e118a5b73bd396fcece43e76ac03a4e7acf72c4e2cf9 */}
 ## Créer un module
 
 <Steps>
@@ -72,7 +72,7 @@ in
 }
 ```
 
-{/* t:p f8edfd1c2d94f4bab4b3c0b0897576d42b025421b94901b0574ee2b2df5238a2 */}
+{/* t:p a9b8d7a4e29ef6375e2a51e4732d9c9054fd553dbad02c2e6f7dabd338d7fe6e */}
 ## Convention de nommage
 
 Toutes les options du framework vivent sous l'espace de noms `darkone` :
@@ -110,7 +110,7 @@ Vérifier `dnf/lib/default.nix` : la fonction existe peut-être déjà. Réutili
 plutôt que dupliquer.
 :::
 
-{/* t:p 652286e5410d3708380f4718fa238625b50bc1740140a164b607deb7605d01ec */}
+{/* t:p a907db1ae5ae01cd173c0a512e3e8d5dbb864a39b7e6ff38af65486e1410ede9 */}
 ## Le registre des services
 
 Un service déclare sa **topologie** dans `dnf/config/modules.nix` (et non dans
@@ -133,7 +133,7 @@ adguardhome = {
 | `require` | `[ ]` | Services à activer sur le **même hôte** (sinon erreur de génération). |
 | `activation.profiles.<profil>` | | Activé d'office sur les hôtes d'un profil. |
 
-{/* t:p 9a6be91b8e2904daaf3ad92036dcab555d01745e973058e8f3c6188a3b2286a5 */}
+{/* t:p 3fbdddc2eb619ea2e43aeb47e3703af2d9828e5e6373c6bfef5abde13fed73b1 */}
 ## Le `default.nix` généré
 
 Chaque dossier de modules possède un `default.nix` qui **importe** ses fichiers.

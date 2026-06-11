@@ -119,14 +119,25 @@ permissions:
 Distant sessions are isolated per Matrix user: generalizing to all
 domain accounts carries no risk of interference.
 
-{/* t:p 87ba42236df0c4f7998588fb44bc52972e1717218b0476bf9253edb1b764597c */}
+{/* t:p 580fec2b6739ee349a69326fb1515efd838f21ba016a7e3767969df39b631af8 */}
 ### Double puppeting
 
-Official [appservice](https://docs.mau.fi/bridges/general/double-puppeting.html)&nbsp;:
+:::note[What is it for?]
+Without double puppeting, messages relayed by a bridge appear in
+Matrix as sent by the bridge's **bot** (e.g. `@whatsappbot:domain.tld`).
+With double puppeting, the bridge uses the user's **Matrix account**
+to send messages: the room shows "Alice sent…" with their
+real identity, like in a normal Matrix conversation.
+
+It's transparent for the user, who sees their messages (incoming and outgoing) coming
+from their own account, without knowing they go through a bridge.
+:::
+
+Official [appservice](https://docs.mau.fi/bridges/general/double-puppeting.html) method:
 a `doublepuppet` appservice is registered in Synapse
 (`app_service_config_files`) with a namespace covering `@.*:domain.tld`.
-Its `as_token` allows each bridge to emit events **on behalf of the user's
-real account**.
+Its `as_token` allows each bridge to emit events **on behalf of the
+user's real account**.
 
 ```d2
 style.fill: transparent
@@ -148,8 +159,8 @@ synapse -> room
 
 The token is unique for all bridges (`mautrix-doublepuppet-as-token`) and
 injected into each config by environment variable substitution
-(`as_token:$MAUTRIX_DOUBLEPUPPET_AS_TOKEN`), with nixpkgs modules passing the
-configuration through `envsubst` via the service's `environmentFile`.
+(`as_token:$MAUTRIX_DOUBLEPUPPET_AS_TOKEN`), as nixpkgs modules pass the
+configuration through `envsubst` with the service's `environmentFile`.
 
 {/* t:p 55bdbca82129d10f51f66ac2f49a757f33e4088a00eaddb0cd0d9f16409bbd40 */}
 ## Secrets and ports
@@ -165,3 +176,9 @@ configuration through `envsubst` via the service's `environmentFile`.
 - **WhatsApp Statuses** : `network.enable_status_broadcast = false` in the
   bridge config, otherwise the bridge indefinitely recreates
   the "WhatsApp Status Broadcast" room for each user.
+
+{/* t:p ebc4d3df25421e737099119b56fc77f8147dd8501c459ba274280882d74143ed */}
+## See also
+
+- [Matrix messaging : user guide](/en/doc/user-guide/usage/matrix/) : bridge connections for users
+- [Matrix : operations guide](/en/doc/admin-guide/operate/matrix/) : enable, configure and manage bridges

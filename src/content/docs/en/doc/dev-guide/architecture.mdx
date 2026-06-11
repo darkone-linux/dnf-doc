@@ -13,17 +13,17 @@ lang: en
 The framework is organized in layers: each level serves the one above, from the
 base system up to host and user profiles.
 
-{/* t:p 38646055c558081a2daddea9df3ad6533a79a8b96e4a91c19e18df854c29086c */}
-## File Organization
+{/* t:p 20e51e64d084c20b63249123be24faed1333cccf7cd7874cd9d5f4c78a843ddf */}
+## File organization
 
-The full structure and abstraction layers are described in the
+The complete structure and abstraction layers are described in the
 [project overview](/en/doc/#file-organization).
 
-- `dnf/` — the framework: modules, Home Manager configuration, libraries.
-- `usr/` — the local project (editable): configuration, secrets, machines.
-- `var/generated/` — generated files (do not edit manually).
-- `src/generator/` — generator sources (Rust).
-- `doc/` — this documentation.
+- `dnf/` : the framework : modules, Home Manager configuration, libraries.
+- `usr/` : the local project (writable) : configuration, secrets, machines.
+- `var/generated/` : generated files (do not edit by hand).
+- `src/generator/` : generator sources (Rust).
+- `doc/` : this documentation.
 
 {/* t:p 612c2b3b727e2162a06c225b1ba018ba78f00a8918971764572149fa164f91cd */}
 ## Reference modules
@@ -32,20 +32,21 @@ The ready-to-use modules are documented in the
 [module reference](/en/ref/modules/), sorted by category (system, service,
 security, console, graphic, admin, user, mixin, home).
 
-{/* t:p 312ca21b35c6ece6e70ed0ac4063d494391dda685aa334933b9d19b597dda00a */}
+{/* t:p 464d43da478e7f986653b28d427c4876377f7d15927ee13bee136aff2844257a */}
 ## Abstraction layers
 
-Each level builds on the previous one: the base system serves the modules, which compose the profiles, which define hosts and users.
+Each level builds upon the previous one: the base system serves the modules,
+which compose the profiles, which define hosts and users.
 
-- **[Full file structure](/en/doc/#structure)** — detailed directory tree.
-- **[Layers diagram](/en/doc/#abstraction-layers)** — from system to profiles.
+- **[Complete file structure](/en/doc/#structure)** : detailed directory tree.
+- **[Layer diagram](/en/doc/#abstraction-layers)** : from system to profiles.
 
 | Layer | Where | Role |
 |---|---|---|
-| **Modules** | `dnf/modules/standard/` | Unit bricks (one service, one system setting). |
-| **Mixins** | `dnf/modules/mixin/` | Macro-modules: host profiles, profile add-ons. |
+| **Modules** | `dnf/modules/standard/` | Unit bricks (a service, a system setting). |
+| **Mixins** | `dnf/modules/mixin/` | Macro-modules : host profiles, profile complements. |
 | **Home** | `dnf/home/` | [Home Manager](https://github.com/nix-community/home-manager) modules and profiles (users). |
-| **Library** | `dnf/lib/` | Shared helpers (`dnfLib`): network, OIDC, firewall, security… |
+| **Library** | `dnf/lib/` | Shared helpers (`dnfLib`) : network, OIDC, firewall, security… |
 | **Generation** | `src/generator/` | Transforms `etc/config.yaml` → `var/generated/`. |
 
 {/* t:p 472d57dc0d807d5acb57d0d9631fc00f1d36262b93f2a8519dd5513e77add8db */}

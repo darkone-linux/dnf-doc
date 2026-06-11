@@ -13,22 +13,20 @@ lang: en
 The generator (`src/generator/`, written in Rust) transforms the declarative
 configuration `etc/config.yaml` into Nix code consumed by the framework.
 
-{/* t:p e4fc35d2af493818f7abda13c2eab50557279d67efeb60681004dbded55be715 */}
+{/* t:p 922b0f6d037658bb1720c6b462c2b9c6df366359d00b0540206322a73567bf0f */}
 ## From YAML to Nix
 
-- **Input**: `etc/config.yaml` — hosts, users, network, services.
-- **Output**: `var/generated/` — `hosts.nix`, `users.nix`, `network.nix`.
+- **Input**: `etc/config.yaml` → hosts, users, network, services.
+- **Output**: `var/generated/` → `hosts.nix`, `users.nix`, `network.nix`.
 
-These files are **generated**: never edit them by hand. To
-regenerate them after a configuration change:
+These files are **generated**: never edit them by hand. To regenerate them after a configuration change:
 
 ```sh
 just generate
 ```
 
 :::caution[Generated files]
-`var/generated/` and `*/ref/modules.mdx` pages are produced by tools.
-Modify the generator or the source, never the output.
+`var/generated/` and the `*/ref/modules.mdx` pages are produced by tools. Edit the generator or the source, never the output.
 :::
 
 {/* t:p 8a788d9c13fa80bf66065a7860ec613d202cf00481581e7190e8d7961e4f1d62 */}
@@ -56,32 +54,26 @@ flake: flake.nix\n(framework → NixOS) {
 cfg -> gen -> out -> flake
 ```
 
-{/* t:p 790256df9bd8ae6c494acdf0a562d5aa854c4f1cb0a536cecdf35ae91084edf7 */}
+{/* t:p 24511c529b8d3bf1e9a30f520911728b56e0d2bf44426e0f52179f03e89b7039 */}
 ## Commands
 
-The generator exposes one command per target. `just generate` chains them all
-together; you can also invoke a single one.
+The generator exposes one command per target. `just generate` chains them all together; you can also invoke a single one.
 
 | Command | Output | Content |
 |---|---|---|
 | `hosts` | `var/generated/hosts.nix` | Hosts: profiles, services, colmena tags. |
 | `users` | `var/generated/users.nix` | Users: profiles, groups. |
 | `network` | `var/generated/network.nix` | Topology: zones, DNS, VPN. |
-| `disko` | `usr/machines/<host>/disko.nix` | Partitioning per host. |
+| `disko` | `usr/machines/<hôte>/disko.nix` | Per-host partitioning. |
 | `doc` | `*/ref/modules.mdx` | Module reference (documentation). |
 
 ```sh
-just generate          # regenerate everything (via Justfile)
+just generate          # regenerate everything (via the Justfile)
 just codegen           # regenerate only the module reference (doc)
 ```
 
 :::note[Reading modules]
-The generator also reads `dnf/config/modules.nix` (service topology): it applies
-flags (reverse proxy, uniqueness…) on it and **validates `require`
-dependencies** — a required service must be enabled on the same host, otherwise
-generation fails. For the `doc` command, it **parses Nix sources** (`rnix`
-parser) to extract options and headers. To document an option = describe it in
-the module, then `just codegen`.
+The generator also reads `dnf/config/modules.nix` (service topology): it applies flags (reverse proxy, uniqueness…) and **validates `require` dependencies** → a required service must be enabled on the same host, otherwise generation fails. For the `doc` command, it **parses Nix sources** (the `rnix` parser) to extract options and headers. Documenting an option = describing it in the module, then `just codegen`.
 :::
 
 {/* t:p 35896f9a3ec5e74a79bfaa399fa667a0c6b84f8cbf230b270288a8fdc362474f */}

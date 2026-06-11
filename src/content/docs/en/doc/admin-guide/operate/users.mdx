@@ -133,12 +133,12 @@ The full workflow (account + identity + initial password) is described in
 To reset: [Resetting a password](/en/doc/how-to/admin/reset-user-password/).
 :::
 
-{/* t:p 8793ca3ee9a2d3dd3c168eecceebdeec7fba229d41aedd5b9b1699ff2bb11d79 */}
-## Disabling an account
+{/* t:p d929a47941fb703dd34d9ac49a678dc511433d466b60b6ab033b9f661944261d */}
+## Disable an account
 
-- **On a host** — remove the login from the host's `users` list.
-- **Everywhere** — remove the entry under `users:`.
-- **Service access** — removing the user from `groups` cuts SSO access.
+- **On one host**: remove the login from the host's `users` list.
+- **Everywhere**: remove the entry under `users:`.
+- **Service access**: removing the user from `groups` cuts SSO access.
 
-In any case, then apply the cycle `just clean` → `just commit` →
-`just apply` on the affected hosts.
+In all cases, then apply the `just clean` → `just commit` →
+`just apply` cycle on the affected hosts.

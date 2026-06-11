@@ -77,13 +77,16 @@ darkone.system.security.exceptions = {
 Some rules hinder everyday use: `noexec /tmp` (R28), SMT disabled (R8), unsigned modules (R18). Check the module's `sideEffects` comments before raising the level in production.
 :::
 
-{/* t:p 4b6cf5967804f52c2c7079e98fa287bd8d11012e765f90ed1c6bc3f96c3f3a45 */}
+{/* t:p 786da2816c470373ef3f72a635ff3011994ae00fcfa2d14e8250c6ad103e90bd */}
 ## MAC, firewall, fail2ban
 
-- **MAC / AppArmor** (R37, R45) — application confinement; SELinux is structurally unsupported on NixOS (exceptions R46–R49 by default).
-- **Firewall & network** — hardened by the `server` category (`network` module).
-- **fail2ban** — bans IPs after repeated attempts; service to enable in the [catalog](/en/doc/admin-guide/operate/services/).
+- **MAC / AppArmor** (R37, R45) : application confinement; SELinux is
+  structurally unsupported on NixOS (exceptions R46–R49 by default).
+- **Firewall & network** : hardened by the `server` category (`network` module).
+- **fail2ban** : bans IPs after repeated attempts; service to enable
+  in the [catalogue](/en/doc/admin-guide/operate/services/).
 
-:::note[Rule reference]
-The complete mapping of rules (R0–R62…) is available in the framework's security modules and the [module reference](/en/ref/modules/security/).
+:::note[Rules reference]
+The complete mapping of rules (R0–R62…) is in the framework's security modules
+and the [module reference](/en/ref/modules/security/).
 :::

@@ -69,15 +69,15 @@ zone: it acts as the **anchor** for the connection flow. The details are explain
 [Authentication and identities](/en/doc/admin-guide/understand/auth-idm/).
 :::
 
-{/* t:p b1d628c6ebd9bd33b085868abcce9b72c5f9e08792ac1cb8f8bb340e4524e1e8 */}
+{/* t:p a4caa12f8d9a5ff1330b0f5283ce9d8e137d480391e48f8ce94c6f5c3007f30f */}
 ## Multi-zone replication
 
 :::danger[Not yet functional]
-Multi-zone replication is **under development** and is not operational.
-For now, declare `idm` **on the HCS only**.
+Multi-zone replication is **under development** and is not
+operational. For now, declare `idm` **on the HCS only**.
 :::
 
-The mode depends on where `idm` is declared:
+The mode is inferred from where `idm` is declared:
 
 1. `idm` on the **HCS only** → single instance, no replication.
 2. `idm` on a **gateway without HCS** → standalone instance in the zone.
@@ -87,17 +87,17 @@ The mode depends on where `idm` is declared:
 style.fill: transparent
 direction: down
 
-hcs: HCS — provider\nWriteReplica { shape: cylinder }
-gwa: Zone A — replica\nread-only { shape: cylinder }
-gwb: Zone B — replica\nread-only { shape: cylinder }
+hcs: HCS, provider\nWriteReplica { shape: cylinder }
+gwa: Zone A, replica\nread-only { shape: cylinder }
+gwb: Zone B, replica\nread-only { shape: cylinder }
 
 hcs -> gwa
 hcs -> gwb
 ```
 
-:::caution[Two-phase bootstrap (scenario 3)]
-1. `just apply` — each node generates its replication certificate.
-2. `just idm-sync-certs` then `just apply` — gateways switch to read-only (pull from HCS).
+:::caution[Two-step bootstrap (scenario 3)]
+1. `just apply`: each node generates its replication certificate.
+2. `just idm-sync-certs` then `just apply`: gateways switch to read-only (pull from the HCS).
 :::
 
 {/* t:p 694e5fdf9be2e87257305796f83a3e911d7fccb0826cdae46c46e13aa9866a7f */}

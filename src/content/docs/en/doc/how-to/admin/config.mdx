@@ -147,10 +147,11 @@ zones:
         mac: "aa:bb:cc:dd:ee:02"
 ```
 
-{/* t:p 138ff041bee506c5468ac84f7e9874ea81b2486299b2e851b9b15546d51f7009 */}
-## "users" section
+{/* t:p 2a35499826eb1e7477ade6bb40eb759637a4ed1823775bd399524efeb60261df */}
+## Section "users"
 
-Accounts common to all zones. Each account receives a [Home Manager](/en/doc/admin-guide/understand/user-profiles/) profile and groups.
+Shared accounts across all zones. Each account receives a profile
+[Home Manager](/en/doc/admin-guide/understand/user-profiles/) and groups.
 
 ```yaml
 # etc/config.yaml
@@ -170,19 +171,21 @@ users:
 
 | Key | Type | Role |
 |---|---|---|
-| *(key)* | — | Account identifier (login) (`[a-z]…`). |
+| *(key)* | | Account identifier (login) (`[a-z]…`). |
 | `uid` | integer | Stable numeric identifier (**required**). |
 | `name` | text | Display name (**required**). |
-| `email` | text | Address (also used for SSO identity), defaults to `<login>@<domain.tld>`. |
+| `email` | text | Email address (also used for SSO identity), defaults to `<login>@<domain.tld>`. |
 | `profile` | text | User profile (default `minimal`). |
-| `groups` | list | Installs the user on hosts having the same group. |
+| `groups` | list | Installs the user on hosts with the same group. |
 
-:::note[`nix` user]
-The maintenance account `nix` (profile `nix-admin`) is automatically added to every host. Do not declare it.
+:::note[User `nix`]
+The maintenance account `nix` (profile `nix-admin`) is automatically added to
+every host. Do not declare it.
 :::
 
 :::tip[Groups = access]
-A host authorizes a user if it lists them in `users`, **or** if one of their `groups` matches. See [Users](/en/doc/admin-guide/operate/users/).
+A host authorizes a user if it is listed in `users`, **or** if one of its
+`groups` matches. See [Users](/en/doc/admin-guide/operate/users/).
 :::
 
 {/* t:p fe4f7890aa5b9f5eb3a504344e1cc652925df10b80ae07f838f2ea44fa03a280 */}

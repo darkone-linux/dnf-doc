@@ -201,13 +201,13 @@ Setting `darkone.service.restic.enableDryRun = true` adds `--dry-run` to all
 jobs: the backup runs in dry mode, no snapshot is created.
 </Aside>
 
-{/* t:p 6407a8b110e4099a2fecf9ca4f692ba0438adee580da07f4c667ac7d202532da */}
+{/* t:p dff6414c99a0f909c00d093a20ee2dd090559e0cde2c8e1c0898f3e148559a87 */}
 ## Repository isolation
 
-The REST server runs with private repositories (`privateRepos = true`): each
-host can only access the repository whose path starts with its own hostname. The
-module automatically matches the REST account (`<host>`) to the repository
-prefix (`<root>/<host>/...`), so isolation is permanent — no setting to enable.
+The REST server runs with private repositories (`privateRepos = true`): each host
+only accesses the repository whose path starts with its own hostname. The
+module automatically aligns the REST account (`<hôte>`) with the repository prefix
+ (`<racine>/<hôte>/...`), so isolation is permanent → no configuration needed.
 An attempt to access another host's repository returns a **403** error.
 
 {/* t:p 885e44f9c93c436d450614e3a0be3a3dc2ea157e4511ba324e10f111f8aa5783 */}
