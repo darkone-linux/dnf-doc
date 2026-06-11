@@ -503,7 +503,7 @@ darkone.service.loki = {
 
 <hr/>
 
-{/* t:p 04083c3747f3e3710bb393f8500326bba123b94c6532d766a4154895627468dc */}
+{/* t:p 67dac901f08a85ffae5b653be6cc1657c237010aa609ec58f8f35648e54c7bbd */}
 ### &#x2728; darkone.service.matrix
 
 DNF matrix (synapse) server with mautrix bridges.
@@ -520,6 +520,12 @@ Double puppeting uses the official appservice method
 as the user's real matrix account. Required sops secrets:
 `mautrix-doublepuppet-as-token` and `mautrix-doublepuppet-hs-token`
 (`openssl rand -hex 32` each).
+
+Every bridge's appservice as/hs tokens are sops-provided rather than
+auto-generated: the registration file becomes a pure function of the
+secrets, so resetting a bridge's state dir never invalidates the
+registration synapse has loaded (which would otherwise require a registration
+wipe + synapse restart and produce "as_token was not accepted" errors).
 
 * **enable** `bool` Enable matrix (synapse) service
 * **bridges.whatsapp.enable** `bool` Mautrix WhatsApp bridge (login by QR code).

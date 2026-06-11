@@ -462,25 +462,18 @@ darkone.service.loki = {
 };
 ```
 
-{/* t:p 04083c3747f3e3710bb393f8500326bba123b94c6532d766a4154895627468dc */}
+{/* t:p 67dac901f08a85ffae5b653be6cc1657c237010aa609ec58f8f35648e54c7bbd */}
 ### &#x2728; darkone.service.matrix
 
-Serveur matrix DNF (synapse) avec ponts mautrix.
+Serveur Matrix DNF (synapse) avec les ponts mautrix.
 
-Les ponts (whatsapp, signal, telegram, messenger, discord) sont utilisables
-par tout compte local : chaque utilisateur relie son compte distant en
-discutant avec le robot du pont (`@whatsappbot`, `@signalbot`, ... puis
-`login`) ; les sessions sont isolées par utilisateur.
-L'`network.matrix.admin` déclaré administre les ponts.
+Les ponts (whatsapp, signal, telegram, messenger, discord) sont utilisables par tout compte local&nbsp;: chaque utilisateur relie son propre compte distant en dialoguant avec le robot du pont (`@whatsappbot`, `@signalbot`, ... puis `login`)&nbsp;; les sessions sont isolées par utilisateur. Le `network.matrix.admin` déclaré administre les ponts.
 
-Le double puppeting utilise la méthode officielle appservice
-(https://docs.mau.fi/bridges/general/double-puppeting.html) : un jeton
-appservice `doublepuppet` partagé permet aux ponts d'envoyer les messages
-provenant de services distants comme le compte matrix réel de l'utilisateur.
-Secrets sops requis : `mautrix-doublepuppet-as-token` et
-`mautrix-doublepuppet-hs-token` (`openssl rand -hex 32` chacun).
+Le double puppeting utilise la méthode officielle appservice (https://docs.mau.fi/bridges/general/double-puppeting.html)&nbsp;: un jeton `doublepuppet` appservice partagé permet aux ponts d'envoyer les messages provenant du distant en tant que vrai compte matrix de l'utilisateur. Secrets sops requis&nbsp;: `mautrix-doublepuppet-as-token` et `mautrix-doublepuppet-hs-token` (`openssl rand -hex 32` chacun).
 
-* **enable** `bool` Activer le service matrix (synapse)
+Les jetons as/hs appservice de chaque pont sont fournis par sops plutôt qu'auto-générés&nbsp;: le fichier d'enregistrement devient une fonction pure des secrets, donc réinitialiser le répertoire d'état d'un pont n'invalide jamais l'enregistrement que synapse a chargé (ce qui nécessiterait sinon un effacement d'enregistrement + redémarrage de synapse et produirait des erreurs «&nbsp;as_token was not accepted&nbsp;»).
+
+* **enable** `bool` Active le service Matrix (synapse)
 * **bridges.whatsapp.enable** `bool` Pont Mautrix WhatsApp (connexion par QR code).
 * **bridges.signal.enable** `bool` Pont Mautrix Signal (connexion par QR code).
 * **bridges.telegram.enable** `bool` Pont Mautrix Telegram (connexion par numéro de téléphone).

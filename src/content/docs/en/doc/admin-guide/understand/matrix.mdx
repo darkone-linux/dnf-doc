@@ -162,20 +162,49 @@ injected into each config by environment variable substitution
 (`as_token:$MAUTRIX_DOUBLEPUPPET_AS_TOKEN`), as nixpkgs modules pass the
 configuration through `envsubst` with the service's `environmentFile`.
 
-{/* t:p 55bdbca82129d10f51f66ac2f49a757f33e4088a00eaddb0cd0d9f16409bbd40 */}
+{/* t:p c799cf0d203f686c8830d4d320474b47216db73d0b94cd1ebf37848d4e6c34e0 */}
+### Appservice tokens
+
+The *registration* of an appservice is the contract between Synapse and the bridge.
+It contains two tokens, one per authentication direction&nbsp;:
+
+| Token | Direction | Usage |
+|---|---|---|
+| `as_token` | bridge → Synapse | the bridge authenticates on the client API (sending messages, sync...) |
+| `hs_token` | Synapse → bridge | Synapse authenticates when pushing events to the bridge (`/transactions`) |
+
+By default, nixpkgs modules **generate these tokens randomly** on
+first start and store them in `/var/lib/mautrix-*`. Consequence&nbsp;:
+any reset of the state directory changes the token pair, while
+Synapse — which reads registrations **only at startup** — keeps
+the old one in memory&nbsp;; the bridge is then rejected
+(«&nbsp;The as_token was not accepted&nbsp;»).
+
+DNF therefore fixes both tokens of each bridge via sops&nbsp;: the registration
+becomes a **pure function of secrets**. Resetting a bridge's state
+no longer invalidates anything on Synapse's side, and the whole setup is reproducible
+(redeployment, migration, backup restoration).
+
+<Aside type="note" title="The doublepuppet case">
+The `doublepuppet` appservice has an empty `url`&nbsp;: Synapse never pushes
+anything to it, so its `hs_token` is never used — it is only required
+by the registration format.
+</Aside>
+
+{/* t:p 1825668044e3aa12cfff0835ba4915818108282998110b153e0883ee4cfead14 */}
 ## Secrets and ports
 
-- **Secrets** : declared per block in `matrix.nix` (`sops.secrets.*`), and
+- **Secrets** : declared by block in `matrix.nix` (`sops.secrets.*`), and
   assembled into environment files by `sops.templates.*` owned
   by the bridge's system user. Full list in
-  [la page d'exploitation](/en/doc/admin-guide/operate/matrix/#required-secrets).
-- **Ports** : `matrix` and `matrixTelegram` are set by the `dnf/config/network.nix`
-  registry; the default appservice ports of the other bridges
-  (29318, 29319, 29328, 29334) are listed there as `reserved` to avoid
+  [the operations page](/en/doc/admin-guide/operate/matrix/#required-secrets).
+- **Ports** : `matrix`, `matrixTelegram` and `matrixDiscord` are set by the
+  `dnf/config/network.nix` registry&nbsp;; the default appservice ports of
+  other bridges (29318, 29319, 29328) are listed there as `reserved` to prevent
   any future collision.
-- **WhatsApp Statuses** : `network.enable_status_broadcast = false` in the
-  bridge config, otherwise the bridge indefinitely recreates
-  the "WhatsApp Status Broadcast" room for each user.
+- **WhatsApp statuses** : `network.enable_status_broadcast = false` in the
+  bridge config, otherwise the bridge endlessly recreates the
+  "WhatsApp Status Broadcast" room for each user.
 
 {/* t:p ebc4d3df25421e737099119b56fc77f8147dd8501c459ba274280882d74143ed */}
 ## See also

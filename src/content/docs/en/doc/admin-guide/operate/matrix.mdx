@@ -66,12 +66,12 @@ To fill in `usr/secrets/secrets.yaml`&nbsp;:
 | `mautrix-doublepuppet-as-token` | double puppeting appservice token (shared by bridges) | `openssl rand -hex 32` |
 | `mautrix-doublepuppet-hs-token` | Same, required by Synapse, never used | `openssl rand -hex 32` |
 
-{/* t:p 17c9eaf14abdf750c74b544e89cfe46dd5bf2d506612c524a47ff662edd7d093 */}
-## Manage bridges
+{/* t:p 4b0082b52e933f54e76d147deaa186b63e676a83c80d25de41f0d13ccafddecd */}
+## Managing bridges
 
 WhatsApp, Signal, Telegram and Messenger bridges are **enabled by
-default** with Matrix&nbsp;; Discord is **disabled by default**. Per-host
-adjustment in the machine's nix configuration&nbsp;:
+default** with Matrix&nbsp;; Discord is **disabled by default**. Per-host setting in the
+machine's nix configuration&nbsp;:
 
 ```nix
 # usr/machines/<host>/default.nix
@@ -83,13 +83,27 @@ darkone.service.matrix.bridges = {
 
 Each bridge has its own secrets&nbsp;:
 
-| Bridge | Sops keys | Notes |
+| Bridge | Sops keys | Note |
 |---|---|---|
-| WhatsApp | `mautrix-whatsapp-encryption-pickle-key` | `openssl rand -hex 32` |
-| Signal | `mautrix-signal-encryption-pickle-key` | `openssl rand -hex 32` |
-| Messenger | `mautrix-meta-as-token` | `openssl rand -hex 32` |
-| Telegram | `mautrix-telegram-api-id`, `mautrix-telegram-api-hash`, `mautrix-telegram-as-token`, `mautrix-telegram-hs-token` | API id/hash to create at [my.telegram.org](https://my.telegram.org) |
-| Discord | none | tokens auto-generated on first start |
+| WhatsApp | `mautrix-whatsapp-as-token`, `mautrix-whatsapp-hs-token`, `mautrix-whatsapp-encryption-pickle-key` | `openssl rand -hex 32` each |
+| Signal | `mautrix-signal-as-token`, `mautrix-signal-hs-token`, `mautrix-signal-encryption-pickle-key` | `openssl rand -hex 32` each |
+| Messenger | `mautrix-meta-as-token`, `mautrix-meta-hs-token`, `mautrix-meta-encryption-pickle-key` | `openssl rand -hex 32` each |
+| Telegram | `mautrix-telegram-api-id`, `mautrix-telegram-api-hash`, `mautrix-telegram-as-token`, `mautrix-telegram-hs-token` | API id/hash to create on [my.telegram.org](https://my.telegram.org) |
+| Discord | `mautrix-discord-as-token`, `mautrix-discord-hs-token` | `openssl rand -hex 32` each |
+
+The `as`/`hs` tokens make each bridge's appservice *registration*
+deterministic (see
+[appservice tokens](/en/doc/admin-guide/understand/matrix/#secrets-and-ports)).
+
+<Aside type="caution" title="Migrating an already deployed bridge">
+On a WhatsApp or Signal bridge deployed **before** these tokens were introduced,
+the existing registration keeps the old auto-generated tokens. To switch
+to sops tokens&nbsp;: delete `/var/lib/mautrix-<bridge>/<bridge>-registration.yaml`,
+restart the bridge (the registration is regenerated from config), then
+restart `matrix-synapse`. For Messenger and Discord, a simple redeploy
+followed by a Synapse restart is enough&nbsp;: their modules rewrite the
+registration from config at every startup.
+</Aside>
 
 {/* t:p f3eb4bb567f7ef6cafb1fd0f14a2f32d19ccfd22540309eef5aaad8f5d9ac836 */}
 ### Permissions
@@ -109,7 +123,7 @@ phone appear in Matrix as coming from the user's **real account**.
 This is automatic for all local accounts, no action per
 user.
 
-{/* t:p 5ec0b4c6cc8532b25aa284d7e87ebec6ccb8e985fbe6b7e2fd43c14f7145bcd5 */}
+{/* t:p 43e4a74b1b61aaa94acd4dffb65d44a7667e1c5cf3f0d508474f069dbf76a1ed */}
 ## Operations
 
 | Action | Command |
@@ -118,17 +132,79 @@ user.
 | Bridge logs | `journalctl -u mautrix-whatsapp -f` |
 | Synapse logs | `journalctl -u matrix-synapse -f` |
 
+{/* t:p bcaf9af44c4c57ba9ce23fc9b892065084d5b9263105ee81852098d74bb39cb3 */}
+### Diagnosing a mute bot
+
+:::note[Client-side checks]
+Check on the client (Element, Fractal...) that the bot is not ignored.
+Right-click the user corresponding to the bot → information
+→ security, then "ignored". If the bot responds in the logs but
+nothing happens, the block may be on the client side.
+:::
+
+A bot that does not respond to `help` while its service is running almost
+always falls into one of two cases&nbsp;: its tokens no longer match the
+registration loaded by Synapse, or it receives messages but cannot
+**decrypt** them. Diagnosis in order&nbsp;:
+
+<Steps>
+
+1. **Is the service actually running ?**
+
+   ```sh
+   systemctl status mautrix-<bridge>
+   journalctl -u mautrix-<bridge> -n 50
+   ```
+
+   If it keeps restarting with «&nbsp;The as_token was not accepted&nbsp;»,
+   Synapse's in-memory registration no longer matches the bridge's tokens
+   (typical after a reset or migration, see the callout
+   above)&nbsp;: `systemctl restart matrix-synapse`, then restart the bridge.
+
+2. **Does the message reach the bridge ?** Follow Synapse while sending
+   a `help` to the bot&nbsp;:
+
+   ```sh
+   journalctl -u matrix-synapse -f | grep transactions
+   ```
+
+   A line `PUT .../_matrix/app/v1/transactions/... 200` should appear.
+   If nothing goes out, the appservice is not loaded&nbsp;: check for the
+   registration file in `/var/lib/mautrix-<bridge>/` and restart Synapse.
+
+3. **Can the bridge decrypt it ?** If the transaction goes through (200) but
+   the bot remains mute, follow its logs during a new message&nbsp;:
+
+   ```sh
+   journalctl -u mautrix-<bridge> -f
+   ```
+
+   Look for `decrypt`, `session`, `verification`, `dropping`. A
+   decryption failure means the room session key was not shared with
+   the bot's current device (classic case after a bridge reset&nbsp;:
+   its e2ee identity has changed).
+
+4. **Recreate the conversation.** Leave the direct message with the bot and
+   start a new one&nbsp;: the client establishes a fresh encryption session
+   and shares the key with the bot's current device. Check along the way
+   that your own Element session is **verified**.
+
+5. **Last resort**&nbsp;: reset the bridge state (callout
+   below), then restart Synapse to reload the registration.
+
+</Steps>
+
 <Aside type="note" title="WhatsApp statuses disabled">
-The WhatsApp bridge does not relay "statuses" (stories): the
-`network.enable_status_broadcast` option is forced to `false`,
-otherwise each user would be repeatedly re-invited to a
-"WhatsApp Status Broadcast" room.
+The WhatsApp bridge does not relay « statuses » (stories) : the
+`network.enable_status_broadcast` option is forced to `false`, otherwise
+each user would be repeatedly re-invited to a « WhatsApp Status
+Broadcast » room.
 </Aside>
 
 <Aside type="caution" title="Resetting a bridge">
 A bridge's data (sessions, room mappings) lives in
 `/var/lib/mautrix-*`. Deleting this directory disconnects **all**
-users from the bridge and breaks existing room mappings:
+users from the bridge and breaks existing room mappings :
 only do this as a last resort, with the service stopped.
 </Aside>
 

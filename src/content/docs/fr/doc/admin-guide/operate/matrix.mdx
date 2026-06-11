@@ -66,7 +66,7 @@ aucune création de compte Matrix n'est nécessaire.
 | `mautrix-doublepuppet-as-token` | Token appservice *double puppeting* (commun aux ponts) | `openssl rand -hex 32` |
 | `mautrix-doublepuppet-hs-token` | Idem, requis par Synapse, jamais utilisé | `openssl rand -hex 32` |
 
-{/* t:p 7f73bc118495ab44ebe2f56861b316e8588835c78fcff9f62e56a46051dddf71 */}
+{/* t:p 4b0082b52e933f54e76d147deaa186b63e676a83c80d25de41f0d13ccafddecd */}
 ## Gérer les ponts
 
 Les ponts WhatsApp, Signal, Telegram et Messenger sont **activés par
@@ -97,9 +97,9 @@ déterministe (voir
 
 <Aside type="caution" title="Migration d'un pont déjà déployé">
 Sur un pont WhatsApp ou Signal déployé **avant** l'introduction de ces tokens,
-la registration existante conserve les anciens tokens auto-générés. Pour basculer
+l'enregistrement existant conserve les anciens tokens auto-générés. Pour basculer
 sur les tokens sops&nbsp;: supprimer `/var/lib/mautrix-<pont>/<pont>-registration.yaml`,
-redémarrer le pont (la registration est régénérée depuis la config), puis
+redémarrer le pont (l'enregistrement est régénérée depuis la config), puis
 redémarrer `matrix-synapse`. Pour Messenger et Discord, un simple redéploiement
 suivi d'un redémarrage de Synapse suffit&nbsp;: leurs modules réécrivent la
 registration depuis la config à chaque démarrage.
@@ -123,7 +123,7 @@ téléphone apparaissent dans Matrix comme venant du **vrai compte** de
 l'utilisateur. C'est automatique pour tous les comptes locaux, aucune action
 par utilisateur.
 
-{/* t:p 5ec0b4c6cc8532b25aa284d7e87ebec6ccb8e985fbe6b7e2fd43c14f7145bcd5 */}
+{/* t:p 43e4a74b1b61aaa94acd4dffb65d44a7667e1c5cf3f0d508474f069dbf76a1ed */}
 ## Exploitation
 
 | Action | Commande |
@@ -131,6 +131,68 @@ par utilisateur.
 | État des services | `systemctl status matrix-synapse mautrix-whatsapp mautrix-signal mautrix-telegram mautrix-meta-messenger` |
 | Journaux d'un pont | `journalctl -u mautrix-whatsapp -f` |
 | Journaux Synapse | `journalctl -u matrix-synapse -f` |
+
+{/* t:p bcaf9af44c4c57ba9ce23fc9b892065084d5b9263105ee81852098d74bb39cb3 */}
+### Diagnostiquer un bot muet
+
+:::note[Vérifications côté client]
+Vérifier sur le client (Element, Fractal...) que le bot n'est pas ignoré.
+Faire un clique droit sur l'utilisateur correspondant au bot → information
+→ sécurité, puis "ignoré". Si le bot réponds bien dans les logs mais que
+rien ne se passe, il se peut que le blocage soit côté client.
+:::
+
+Un bot qui ne répond pas à `help` alors que son service tourne tombe presque
+toujours dans l'un des deux cas&nbsp;: ses tokens ne correspondent plus à la
+registration chargée par Synapse, ou il reçoit les messages mais ne peut pas
+les **déchiffrer**. Diagnostic dans l'ordre&nbsp;:
+
+<Steps>
+
+1. **Le service tourne-t-il vraiment ?**
+
+   ```sh
+   systemctl status mautrix-<pont>
+   journalctl -u mautrix-<pont> -n 50
+   ```
+
+   S'il redémarre en boucle avec «&nbsp;The as_token was not accepted&nbsp;»,
+   l'enregistrement en mémoire de Synapse ne correspond plus aux tokens du
+   pont (typique après un reset ou une migration, voir l'encart plus
+   haut)&nbsp;: `systemctl restart matrix-synapse`, puis redémarrer le pont.
+
+2. **Le message arrive-t-il au pont ?** Suivre Synapse pendant l'envoi
+   d'un `help` au bot&nbsp;:
+
+   ```sh
+   journalctl -u matrix-synapse -f | grep transactions
+   ```
+
+   Une ligne `PUT .../_matrix/app/v1/transactions/... 200` doit apparaître.
+   Si rien ne part, l'appservice n'est pas chargé&nbsp;: vérifier la présence
+   de l'enregistrement dans `/var/lib/mautrix-<pont>/` et redémarrer Synapse.
+
+3. **Le pont peut-il le déchiffrer ?** Si la transaction passe (200) mais
+   que le bot reste muet, suivre ses logs pendant un nouvel envoi&nbsp;:
+
+   ```sh
+   journalctl -u mautrix-<pont> -f
+   ```
+
+   Chercher `decrypt`, `session`, `verification`, `dropping`. Un échec de
+   déchiffrement signifie que la clé de session du salon n'a pas été
+   partagée avec le device actuel du bot (cas classique après un reset du
+   pont&nbsp;: son identité e2ee a changé).
+
+4. **Recréer la conversation.** Quitter le message direct avec le bot et en
+   démarrer un nouveau&nbsp;: le client établit une session de chiffrement
+   neuve et partage la clé avec le device actuel du bot. Vérifier au passage
+   que sa propre session Element est **vérifiée**.
+
+5. **Dernier recours**&nbsp;: réinitialiser l'état du pont (encart
+   ci-dessous), puis redémarrer Synapse pour recharger l'enregistrement.
+
+</Steps>
 
 <Aside type="note" title="Statuts WhatsApp désactivés">
 Le pont WhatsApp ne relaie pas les « statuts » (stories) : l'option
