@@ -13,7 +13,7 @@ sidebar:
 **A system module** manages common, important, and general configurations.
 :::
 
-{/* t:p f771520fa07b96a3be18a816317b08b330bf3bfaab1db4f82dbdd481e4b73a5e */}
+{/* t:p a92e96e6639580a6a55bc3404aba931b6331f69a2f9dab2f64838ffcb675399a */}
 ### &#x2699; darkone.system.core
 
 The core DNF module.
@@ -25,7 +25,8 @@ It is required for the proper functioning of every NixOS computer on the local n
 
 Sets up the systemd-boot loader, the LTS kernel, JetBrains Mono Nerd
 Font (with `kmscon` for the TTY), nightly Nix store optimisation and
-weekly garbage collection (30 d retention), the firewall, suspend
+weekly garbage collection (30 d retention, or keep-last-N via
+`gcKeepGenerations` on disk-constrained hosts), the firewall, suspend
 policy (servers can fully disable it via `disableSuspend`), polkit
 rules letting `wheel` halt/reboot, and a shared `common-files`
 group/user for cross-service media folders.
@@ -42,6 +43,9 @@ and propagates `enableSops` to the sops module.
 * **enableSops** `bool` Enable sops dnf module (default true)
 * **enableFlatpak** `bool` Enable flatpak DNF configuration (only for graphic environments)
 * **enableKmscon** `bool` Enable nerd font for TTY
+* **gcKeepGenerations** `int` When &gt; 0, trim the system profile to the last N generations before
+each garbage collection, and collect daily without age-based
+retention. For hosts with a tight root partition (gateways).
 * **enableBoost** `bool` Enable overclocking, corectl
 * **enableAutoSuspend** `bool` Enable automatic suspend (for laptops, ignored if disableSuspend is true)
 * **disableSuspend** `bool` Full suspend disable (for servers)
@@ -56,6 +60,7 @@ darkone.system.core = {
   enableSops = true;
   enableFlatpak = true;
   enableKmscon = true;
+  gcKeepGenerations = 5;
   enableBoost = false;
   enableAutoSuspend = false;
   disableSuspend = false;

@@ -1,0 +1,167 @@
+---
+title: Matrix and mautrix bridges
+sidebar:
+  label: Matrix
+  order: 7
+lang: en
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+{/* t:translated-from fr */}
+{/* t:h 78ab60225c838376269e9260c29e77e5492fec2dc320f07579562cd4401adc45 */}
+
+{/* t:p d525e5e8f4ef5a1befbda36f8866a07aac504f96dacd3aae36d0c11fd0e028a5 */}
+How DNF implements the Matrix server (Synapse) and mautrix bridges.
+For day-to-day operation, see
+[Matrix et les ponts](/en/doc/admin-guide/operate/matrix/).
+
+{/* t:p 0b2b60bf2deee753330eff128d4bfa6196323ac0a89a392ed8db957804a5dacf */}
+## Overview
+
+Everything is handled by `dnf/modules/service/matrix.nix`, with two satellite
+modules&nbsp;: `element.nix` (static web client) and `turn.nix` (coturn relay
+for audio/video).
+
+```d2
+style.fill: transparent
+direction: down
+
+client: Clients\n(Element, Fractal) {
+  shape: person
+}
+caddy: Caddy\n(reverse proxy)
+synapse: Synapse {
+  shape: rectangle
+}
+pg: PostgreSQL {
+  shape: cylinder
+}
+idm: Kanidm\n(OIDC)
+turn: coturn\n(TURN/STUN)
+
+bridges: mautrix bridges {
+  wa: whatsapp
+  sig: signal
+  tg: telegram
+  meta: messenger
+  dc: discord
+}
+
+ext: External networks\n(WhatsApp, Telegram...) {
+  shape: cloud
+}
+
+client -> caddy -> synapse -> pg
+synapse -> idm
+client -> turn
+synapse <-> bridges <-> ext
+```
+
+- **Caddy** routes `/_matrix/*` and `/_synapse/client/*` to Synapse and serves
+  `/.well-known/matrix/{client,server}` files (client discovery and federation).
+- **Synapse** listens on `dnfConfig.network.ports.matrix`, local PostgreSQL
+  database (created with `C` collation by a `matrix-db-init` unit).
+- **Kanidm** provides authentication&nbsp;: OIDC client provisioned via
+  `darkone.service.idm.oauth2.matrix`, *local part* derived from
+  `preferred_username` (see [Authentication & IDM](/en/doc/admin-guide/understand/auth-idm/)).
+- **coturn** is wired automatically if the `turn` service is declared
+  (`turn_uris`, shared secret via sops).
+
+{/* t:p 13c6a2814eee915a3089c2fadfc14cd3e406e01ed88014bc51ae5bf898e7c861 */}
+## Module anatomy
+
+`matrix.nix` is a `lib.mkMerge` of independent blocks:
+
+| Block | Condition | Content |
+|---|---|---|
+| Base | always | OIDC client, reverse proxy, persistence |
+| Server | `matrix.enable` | Synapse, PostgreSQL, common secrets, `doublepuppet` appservice |
+| One block per bridge | `matrix.enable && bridges.<x>.enable` | sops secrets + bridge's mautrix service |
+
+Each bridge can thus be disabled individually
+(`darkone.service.matrix.bridges.{whatsapp,signal,telegram,messenger,discord}.enable`),
+its sops secrets only being declared if the bridge is active.
+
+{/* t:p 8b8301256d56c5de8ddf451ceae77dd7a0fead3191e43dad54c96654ba4f32a7 */}
+## Mautrix bridges
+
+DNF relies on the nixpkgs `services.mautrix-*` modules, which generate the
+appservice *registration* and register it with Synapse on startup.
+Two generations of bridges coexist, with different configuration keys:
+
+| Bridge | Generation | Double puppeting | Level |
+|---|---|---|---|
+| whatsapp | bridgev2 (Go) | `double_puppet.secrets` | `user` |
+| signal | bridgev2 (Go) | `double_puppet.secrets` | `user` |
+| messenger (meta) | bridgev2 (Go) | `double_puppet.secrets` | `user` |
+| telegram | legacy (Python) | `bridge.login_shared_secret_map` | `full` |
+| discord | legacy (Go) | `bridge.login_shared_secret_map` | `user` |
+
+<Aside type="note" title="Why « full » for Telegram?">
+On the legacy Telegram bridge, the `user` level doesn't allow connecting one's
+own account (at least `puppeting` is required). DNF gives `full` to the domain
+so that every local account can connect and share their rooms.
+</Aside>
+
+{/* t:p 872be0f0382f211b1da743be9b7ac2166fabde666dfde51b9691a7ae76e2a110 */}
+### Permissions
+
+The `mkBridgePermissions` helper (in `matrix.nix`) builds the same
+policy for all bridges:
+
+```yaml
+permissions:
+  "domain.tld": user          # tout compte local, avec son propre compte distant
+  "@alice:domain.tld": admin  # le matrix.admin déclaré dans etc/config.yaml
+```
+
+Distant sessions are isolated per Matrix user: generalizing to all
+domain accounts carries no risk of interference.
+
+{/* t:p 87ba42236df0c4f7998588fb44bc52972e1717218b0476bf9253edb1b764597c */}
+### Double puppeting
+
+Official [appservice](https://docs.mau.fi/bridges/general/double-puppeting.html)&nbsp;:
+a `doublepuppet` appservice is registered in Synapse
+(`app_service_config_files`) with a namespace covering `@.*:domain.tld`.
+Its `as_token` allows each bridge to emit events **on behalf of the user's
+real account**.
+
+```d2
+style.fill: transparent
+direction: down
+
+phone: Phone\n(WhatsApp) {
+  shape: person
+}
+bridge: mautrix bridge
+synapse: Synapse
+room: Matrix room\n(@alice's message) {
+  shape: page
+}
+
+phone -> bridge: outgoing message
+bridge -> synapse: as_token doublepuppet
+synapse -> room
+```
+
+The token is unique for all bridges (`mautrix-doublepuppet-as-token`) and
+injected into each config by environment variable substitution
+(`as_token:$MAUTRIX_DOUBLEPUPPET_AS_TOKEN`), with nixpkgs modules passing the
+configuration through `envsubst` via the service's `environmentFile`.
+
+{/* t:p 55bdbca82129d10f51f66ac2f49a757f33e4088a00eaddb0cd0d9f16409bbd40 */}
+## Secrets and ports
+
+- **Secrets** : declared per block in `matrix.nix` (`sops.secrets.*`), and
+  assembled into environment files by `sops.templates.*` owned
+  by the bridge's system user. Full list in
+  [la page d'exploitation](/en/doc/admin-guide/operate/matrix/#required-secrets).
+- **Ports** : `matrix` and `matrixTelegram` are set by the `dnf/config/network.nix`
+  registry; the default appservice ports of the other bridges
+  (29318, 29319, 29328, 29334) are listed there as `reserved` to avoid
+  any future collision.
+- **WhatsApp Statuses** : `network.enable_status_broadcast = false` in the
+  bridge config, otherwise the bridge indefinitely recreates
+  the "WhatsApp Status Broadcast" room for each user.

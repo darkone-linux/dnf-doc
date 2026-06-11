@@ -200,24 +200,47 @@ darkone.service.geneweb = {
 
 <hr/>
 
-{/* t:p 164b57feff8feab9906b0937a57155cf2faedbbccc37cc59bda656457f020849 */}
+{/* t:p 257000c70f8301eb389a3d38afad642c70dabdfb609861264c9b351737549679 */}
 ### &#x2728; darkone.service.harmonia
 
-Harmonia : serveur de cache binaire Nix local (sert /nix/store de cet hôte).
+Harmonia : serveur local de cache binaire Nix (sert le /nix/store de cet hôte).
 
-Expose les chemins de stockage construits/réalisés localement via HTTP simple (port 5000), signés avec la clé de cache binaire du déploiement. Activez par hôte à partir de `usr/config.yaml` (services.harmonia), comme tout autre service DNF.
+Expose les chemins de store construits / réalisés localement en HTTP simple
+(port 5000), signés avec la clé de cache binaire du déploiement. Activable
+par hôte depuis `usr/config.yaml` (services.harmonia), comme tout autre
+service DNF.
 
-:::note[Comment fonctionnent les services Harmonia avec NCPS]
-Harmonia est une *source* de paquets ; `ncps` est le proxy de mise en cache par zone auquel les clients parlent réellement. Le serveur `ncps` de chaque zone ajoute automatiquement, comme en amont :
+:::note[Fonctionnement des services Harmonia avec NCPS]
+Harmonia est une *source* de paquets ; `ncps` est le proxy de cache par zone
+auquel les clients s'adressent réellement. Chaque serveur `ncps` de zone
+ajoute automatiquement comme amont (upstreams) :
 
-- les instances harmonia de *sa propre zone* (priorité la plus élevée), puis
-- tout harmonia marqué `global` (généralement sur le HCS),
+- les instances harmonia de *sa propre zone* (priorité la plus haute), puis
+- toute harmonia marquée `global` (typiquement sur le HCS),
 
-et jamais harmonia des zones *autres* (non-global). Les clients n'extraient que via `ncps` ; la signature harmonia est transmise sans modification, donc chaque hôte fait confiance à la clé publique harmonia du déploiement (`usr/secrets/harmonia.pub`). Le transport est un HTTP simple sur le LAN / VPN de confiance : l'intégrité provient de la signature NAR, non pas de TLS.
+et jamais l'harmonia des *autres* zones (non globales). Les clients
+récupèrent uniquement via `ncps` ; la signature d'harmonia est transmise sans
+modification, donc chaque hôte fait confiance à la clé publique harmonia du
+déploiement (`usr/secrets/harmonia.pub`). Le transport est en HTTP simple sur
+le LAN/VPN de confiance : l'intégrité vient de la signature NAR, pas de TLS.
 :::
 
 :::tip[Provisionnement de la clé de signature]
-`just configure-admin-host` génère automatiquement la paire de clés du déploiement lorsque `usr/secrets/harmonia.pub` est manquante : la clé publique est validée et la clé privée est injectée dans le secret sops `harmonia-secret-key`.
+`just configure-admin-host` génère automatiquement la paire de clés du
+déploiement quand `usr/secrets/harmonia.pub` est absent : la clé publique est
+versionnée et la clé privée est injectée dans le secret sops
+`harmonia-secret-key`.
+:::
+
+:::note[Avertissement bénin au démarrage sur les permissions de la clé de signature]
+`WARN harmonia_cache::tls: /run/credentials/harmonia.service/sign-key-0 has
+insecure permissions 0o440; recommend 0600` est un faux positif : systemd
+expose les fichiers `LoadCredential` en mode 0440 appartenant à root avec une
+ACL qui donne accès uniquement à l'utilisateur du service
+(systemd/systemd#29435) ; harmonia vérifie naïvement les bits chmod. Surveillez
+l'amont cependant : harmonia rejette déjà fermement les clés *TLS* lisibles par
+le groupe au démarrage — si cette politique s'étend un jour aux clés de
+signature, cette unité cassera à la mise à jour.
 :::
 
 * **enable** `bool` Activer un serveur de cache binaire Nix Harmonia local
@@ -225,6 +248,8 @@ et jamais harmonia des zones *autres* (non-global). Les clients n'extraient que 
 ```nix
 darkone.service.harmonia.enable = false;
 ```
+
+<hr/>
 
 {/* t:p 37a8e8aa3b107db09b4f268e4447d391037f8dd2cf6f51d416a1c6212a8cb1c6 */}
 ### &#x2728; darkone.service.headscale
@@ -437,16 +462,43 @@ darkone.service.loki = {
 };
 ```
 
-{/* t:p 6be9a7955bf1d425c133f7761e8ceec954f4d81770ed1194ff1e611294c72a68 */}
+{/* t:p 04083c3747f3e3710bb393f8500326bba123b94c6532d766a4154895627468dc */}
 ### &#x2728; darkone.service.matrix
 
-Serveur DNF matrix (synapse).
+Serveur matrix DNF (synapse) avec ponts mautrix.
+
+Les ponts (whatsapp, signal, telegram, messenger, discord) sont utilisables
+par tout compte local : chaque utilisateur relie son compte distant en
+discutant avec le robot du pont (`@whatsappbot`, `@signalbot`, ... puis
+`login`) ; les sessions sont isolées par utilisateur.
+L'`network.matrix.admin` déclaré administre les ponts.
+
+Le double puppeting utilise la méthode officielle appservice
+(https://docs.mau.fi/bridges/general/double-puppeting.html) : un jeton
+appservice `doublepuppet` partagé permet aux ponts d'envoyer les messages
+provenant de services distants comme le compte matrix réel de l'utilisateur.
+Secrets sops requis : `mautrix-doublepuppet-as-token` et
+`mautrix-doublepuppet-hs-token` (`openssl rand -hex 32` chacun).
 
 * **enable** `bool` Activer le service matrix (synapse)
+* **bridges.whatsapp.enable** `bool` Pont Mautrix WhatsApp (connexion par QR code).
+* **bridges.signal.enable** `bool` Pont Mautrix Signal (connexion par QR code).
+* **bridges.telegram.enable** `bool` Pont Mautrix Telegram (connexion par numéro de téléphone).
+* **bridges.messenger.enable** `bool` Pont Mautrix Facebook Messenger (connexion par cookies).
+* **bridges.discord.enable** `bool` Pont Mautrix Discord (connexion par QR code, expérimental).
 
 ```nix
-darkone.service.matrix.enable = false;
+darkone.service.matrix = {
+  enable = false;
+  bridges.whatsapp.enable = true;
+  bridges.signal.enable = true;
+  bridges.telegram.enable = true;
+  bridges.messenger.enable = true;
+  bridges.discord.enable = false;
+};
 ```
+
+<hr/>
 
 {/* t:p 985f887f19e6cd4a0f22d72fcda7fc97b87012446cc1759bf5f3e3f44cd31108 */}
 ### &#x2728; darkone.service.mealie

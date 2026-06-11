@@ -8,10 +8,15 @@ lang: fr
 
 import { Steps, Aside } from '@astrojs/starlight/components';
 
+{/* t:main */}
+{/* t:h 66fe75361ae83f36f2fbd46b4e4a39984140c1ce80fae5aba20092adb9c516d3 */}
+
+{/* t:p f4b3fd89db59457fe2f56d06985e8783de109cbb5af89f75d4c2fb7e6e0fdb3a */}
 Le réseau héberge sa propre messagerie instantanée, basée sur
 [Matrix](https://matrix.org). Discussions, partage de photos et de fichiers,
 appels audio et vidéo&nbsp;: tout reste **chez nous**, sur notre serveur.
 
+{/* t:p 03665ec3e120fd75051402c1ebdcbea1c95646d5c7e4b8b30a2f625ae5d8c95e */}
 ## Matrix, c'est quoi ?
 
 Matrix est un système de messagerie comparable à WhatsApp ou Telegram, avec
@@ -20,12 +25,13 @@ trois différences qui changent tout&nbsp;:
 - **Privé** : les messages sont stockés sur le serveur de la maison, pas chez
   un géant du web.
 - **Chiffré** : les conversations sont chiffrées de bout en bout par défaut.
-- **Ouvert** : on choisit son application (« client ») parmi plusieurs,
-  sur ordinateur comme sur téléphone.
+- **Ouvert** : on choisit [son application (client) parmi plusieurs](https://matrix.org/ecosystem/clients/),
+  sur ordinateur ou téléphone.
 
 Les conversations s'organisent en **salons**&nbsp;: un salon par sujet, par
 famille, par projet... et des messages directs entre deux personnes.
 
+{/* t:p ac0b11d86d53ca271c7279238a480e6403eb57dff0ab7cb9a44061aeccdc0915 */}
 ## Me connecter
 
 Mon identifiant Matrix est construit sur mon compte habituel&nbsp;:
@@ -55,6 +61,7 @@ Dans toute cette page, `domain.tld` désigne le nom de domaine du réseau.
 En cas de doute, demander à l'administrateur.
 </Aside>
 
+{/* t:p 0877eacd2766608fd094e35a61528d143c17d2203a393b6fd77d80fa9ef5f94b */}
 ## Les ponts vers WhatsApp, Telegram et les autres
 
 Un **pont** (« bridge ») relie Matrix à une messagerie extérieure. Une fois
@@ -106,6 +113,7 @@ c'est inévitable, mais tout se passe sur **notre serveur**, pas dans un
 cloud inconnu. En cas de doute sur une commande, envoyer `help` au bot.
 </Aside>
 
+{/* t:p b590c0efce81f1982a68387e125d96251d61821db7e141c4f424c47517dc286e */}
 ### WhatsApp
 
 Bot&nbsp;: `@whatsappbot:domain.tld`. Envoyer `login`, choisir la méthode
@@ -114,6 +122,14 @@ connectés** → Connecter un appareil, et scanner le code affiché dans Element
 Le téléphone doit rester allumé et connecté de temps en temps, comme pour
 WhatsApp Web.
 
+{/* t:p 689b5a9afec86e7af415908cf89f6f0337cfe843992d0eff058d5c3cdff6e96c */}
+### Signal
+
+Bot&nbsp;: `@signalbot:domain.tld`. Envoyer `login`, choisir la méthode
+**QR-code**, puis sur le téléphone&nbsp;: Signal → Paramètres → **Appareils
+liés** → Ajouter, et scanner le code affiché dans Element.
+
+{/* t:p 53fe66ee327acd57a443de77a7a65a0b3ad61b431619cae5120b6da07a089670 */}
 ### Telegram
 
 Bot&nbsp;: `@telegrambot:domain.tld`. Envoyer `login`, puis mon **numéro de
@@ -121,14 +137,16 @@ téléphone** au format international (`+33612345678`). Telegram m'envoie un
 code de vérification, que je transmets au bot. Si mon compte a un mot de
 passe « deux étapes », le bot me le demandera aussi.
 
+{/* t:p 5dafc95f65d608f3a4fdccffd5c1b3d7b5158d9d2dc4a97fbe596ba8ecaf236e */}
 ### Messenger (Facebook)
 
 Bot&nbsp;: `@messengerbot:domain.tld`. Envoyer `login` et suivre les
 instructions&nbsp;: la connexion se fait en récupérant les **cookies** d'une
 session ouverte sur `messenger.com` depuis un navigateur d'ordinateur. C'est
-l'étape la plus technique des trois&nbsp;; ne pas hésiter à demander un coup
+la connexion la plus technique&nbsp;; ne pas hésiter à demander un coup
 de main à l'administrateur.
 
+{/* t:p a8342aacf09b9f93e62519aada248fdb632c28dc6718298daa9f1a45f4622f58 */}
 ### Discord
 
 Bot&nbsp;: `@discordbot:domain.tld`. Envoyer `login-qr` et scanner le
@@ -140,6 +158,7 @@ Le pont Discord n'est pas activé par défaut. S'il ne répond pas, demander à
 l'administrateur de l'activer.
 </Aside>
 
+{/* t:p 09e3725ab8bc2238fa4586a64944beb0d85077288dccb62c2d6fd14eaeb4c652 */}
 ### Commandes utiles
 
 À envoyer au bot d'un pont, dans sa conversation directe&nbsp;:

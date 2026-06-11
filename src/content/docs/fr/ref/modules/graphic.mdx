@@ -13,17 +13,18 @@ sidebar:
 **Un module d'application GUI** installe des applications graphiques et leur configuration optimisée pour DNF.
 :::
 
-{/* t:p 20f4185cfabd36595fdfb037bb750e3b98cbe241b2885ba206046e08547e796c */}
+{/* t:p 101c25b0e641045ab07cb82512f8050fd8567ac3a5b2c9bf87daa844bf130c43 */}
 ### &#x1F5BC; darkone.graphic.gnome
 
-Environnement gnome pré-configuré avec dépendances.
+Environnement gnome préconfiguré avec ses dépendances.
 
-* **enable** `bool` WM gnome pré-configuré
+* **enable** `bool` WM gnome préconfiguré
 * **enableDashToDock** `bool` Plugin Dash to dock
 * **enableLightDM** `bool` Activer LightDM au lieu de GDM
-* **enableCaffeine** `bool` Désactiver la suspension automatique
+* **enableCaffeine** `bool` Désactiver la mise en veille automatique
 * **enableGsConnect** `bool` Communication avec les appareils
-* **xkbVariant** `str` Variante de clavier. La mise en page est extraite de la disposition des touches de console.
+* **enableOnlineServices** `bool` Comptes en ligne, CalDAV, CardDAV...
+* **xkbVariant** `str` Variante de clavier. La disposition est extraite du keymap console.
 
 ```nix
 darkone.graphic.gnome = {
@@ -32,9 +33,12 @@ darkone.graphic.gnome = {
   enableLightDM = false;
   enableCaffeine = false;
   enableGsConnect = false;
+  enableOnlineServices = false;
   xkbVariant = "oss";
 };
 ```
+
+<hr/>
 
 {/* t:p 6e4cc84dcdeb4ebf552369f1565ee7cdcab57891db479be1a7a208fcb30ff40e */}
 ### &#x1F5BC; darkone.graphic.supertuxkart

@@ -1,0 +1,170 @@
+---
+title: Matrix Instant Messaging
+sidebar:
+  label: Matrix Messaging
+  order: 3
+lang: en
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+{/* t:translated-from fr */}
+{/* t:h 66fe75361ae83f36f2fbd46b4e4a39984140c1ce80fae5aba20092adb9c516d3 */}
+
+{/* t:p f4b3fd89db59457fe2f56d06985e8783de109cbb5af89f75d4c2fb7e6e0fdb3a */}
+The network hosts its own instant messaging, based on
+[Matrix](https://matrix.org). Discussions, photo and file sharing,
+audio and video calls&nbsp;: everything stays **with us**, on our server.
+
+{/* t:p 03665ec3e120fd75051402c1ebdcbea1c95646d5c7e4b8b30a2f625ae5d8c95e */}
+## What is Matrix?
+
+Matrix is a messaging system comparable to WhatsApp or Telegram, with
+three key differences&nbsp;:
+
+- **Private**: messages are stored on the home server, not with
+  a web giant.
+- **Encrypted**: conversations are end-to-end encrypted by default.
+- **Open**: you can choose [your application (client) among several](https://matrix.org/ecosystem/clients/),
+  on computer or phone.
+
+Conversations are organized into **rooms**&nbsp;: one room per topic, per
+family, per project... and direct messages between two people.
+
+{/* t:p ac0b11d86d53ca271c7279238a480e6403eb57dff0ab7cb9a44061aeccdc0915 */}
+## Connecting
+
+My Matrix ID is built from my usual account&nbsp;:
+`@prenom:domain.tld`. No new password to remember, authentication
+uses the network's single sign-on (same as for other
+services, see [Managing my account](/en/doc/user-guide/usage/account/)).
+
+<Steps>
+
+1. **On computer**: I open `https://element.domain.tld` in my
+   browser, click **Sign in**, and authenticate with my
+   network account.
+
+2. **On phone**: I install the **Element** app (Android or
+   iPhone). At startup, I choose "Other server" and enter
+   `matrix.domain.tld`, then authenticate the same way.
+
+3. On first connection, Element prompts me to **verify my session** and
+   back up my encryption keys. I follow the instructions&nbsp;:
+   this will let me read my old messages on a new
+   device.
+
+</Steps>
+
+<Aside type="tip" title="The home domain name">
+Throughout this page, `domain.tld` refers to the network's domain name.
+If in doubt, ask the administrator.
+</Aside>
+
+{/* t:p 0877eacd2766608fd094e35a61528d143c17d2203a393b6fd77d80fa9ef5f94b */}
+## Bridges to WhatsApp, Telegram, and others
+
+A **bridge** connects Matrix to an external messaging service. Once my bridge
+is activated, my WhatsApp, Telegram or Messenger conversations appear in
+Element as ordinary rooms: I read and reply from Element, and my contacts see
+no difference.
+
+```d2
+style.fill: transparent
+direction: right
+
+contact: My contact\nWhatsApp {
+  shape: person
+}
+wa: WhatsApp
+bridge: Bridge\n(home server) {
+  shape: hexagon
+}
+element: Element\n(Matrix) {
+  shape: rectangle
+}
+me: Me {
+  shape: person
+}
+
+contact -> wa <-> bridge <-> element -> me
+```
+
+Each bridge is operated by a **bot**: a special contact that I send commands
+to. The principle is the same for all:
+
+<Steps>
+
+1. In Element, I start a **direct conversation** with the bridge's bot (for
+   example `@whatsappbot:domain.tld`).
+
+2. I send it `login` and follow its instructions (scan a QR code, give my
+   number...).
+
+3. That's it: my conversations arrive as they come. Each person connects
+   **their own account**, without interfering with other users on the
+   network.
+
+</Steps>
+
+<Aside type="note" title="What about privacy?">
+The bridge decrypts messages to pass them from one world to another: it's
+unavoidable, but everything happens on **our server**, not in some unknown
+cloud. If in doubt about a command, send `help` to the bot.
+</Aside>
+
+{/* t:p b590c0efce81f1982a68387e125d96251d61821db7e141c4f424c47517dc286e */}
+### WhatsApp
+
+Bot&nbsp;: `@whatsappbot:domain.tld`. Send `login`, choose the
+**QR-code** method, then on the phone&nbsp;: WhatsApp → Settings → **Linked
+devices** → Link a device, and scan the code displayed in Element.
+The phone must remain on and connected from time to time, just like
+WhatsApp Web.
+
+{/* t:p 689b5a9afec86e7af415908cf89f6f0337cfe843992d0eff058d5c3cdff6e96c */}
+### Signal
+
+Bot&nbsp;: `@signalbot:domain.tld`. Send `login`, choose the
+**QR-code** method, then on the phone&nbsp;: Signal → Settings → **Linked
+devices** → Add, and scan the code displayed in Element.
+
+{/* t:p 53fe66ee327acd57a443de77a7a65a0b3ad61b431619cae5120b6da07a089670 */}
+### Telegram
+
+Bot&nbsp;: `@telegrambot:domain.tld`. Send `login`, then my **phone
+number** in international format (`+33612345678`). Telegram sends me a
+verification code, which I forward to the bot. If my account has a
+"two-step" password, the bot will ask for it too.
+
+{/* t:p 5dafc95f65d608f3a4fdccffd5c1b3d7b5158d9d2dc4a97fbe596ba8ecaf236e */}
+### Messenger (Facebook)
+
+Bot&nbsp;: `@messengerbot:domain.tld`. Send `login` and follow the
+instructions&nbsp;: connection is done by retrieving **cookies** from an
+open session on `messenger.com` using a desktop browser. This is the
+most technical connection&nbsp;; feel free to ask the administrator
+for help.
+
+{/* t:p a8342aacf09b9f93e62519aada248fdb632c28dc6718298daa9f1a45f4622f58 */}
+### Discord
+
+Bot&nbsp;: `@discordbot:domain.tld`. Send `login-qr` and scan the
+QR code with the **Discord** app on your phone (Settings → Scan
+QR code).
+
+<Aside type="caution" title="Optional bridge">
+The Discord bridge is not enabled by default. If it does not respond, ask the
+administrator to enable it.
+</Aside>
+
+{/* t:p 09e3725ab8bc2238fa4586a64944beb0d85077288dccb62c2d6fd14eaeb4c652 */}
+### Useful commands
+
+Send to the bridge's bot, in its direct conversation&nbsp;:
+
+| Command | Effect |
+|---|---|
+| `help` | List available commands |
+| `login` | Connect my account |
+| `logout` | Disconnect my account from the bridge |

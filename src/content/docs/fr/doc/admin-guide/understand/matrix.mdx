@@ -1,0 +1,169 @@
+---
+title: Matrix et les ponts mautrix
+sidebar:
+  label: Matrix
+  order: 7
+lang: fr
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+{/* t:main */}
+{/* t:h 78ab60225c838376269e9260c29e77e5492fec2dc320f07579562cd4401adc45 */}
+
+{/* t:p d525e5e8f4ef5a1befbda36f8866a07aac504f96dacd3aae36d0c11fd0e028a5 */}
+Comment DNF implémente le serveur Matrix (Synapse) et les ponts mautrix.
+Pour l'exploitation au quotidien, voir
+[Matrix et les ponts](/fr/doc/admin-guide/operate/matrix/).
+
+{/* t:p 0b2b60bf2deee753330eff128d4bfa6196323ac0a89a392ed8db957804a5dacf */}
+## Vue d'ensemble
+
+Tout est porté par `dnf/modules/service/matrix.nix`, avec deux modules
+satellites&nbsp;: `element.nix` (client web statique) et `turn.nix` (relais
+coturn pour l'audio/vidéo).
+
+```d2
+style.fill: transparent
+direction: down
+
+client: Clients\n(Element, Fractal) {
+  shape: person
+}
+caddy: Caddy\n(reverse proxy)
+synapse: Synapse {
+  shape: rectangle
+}
+pg: PostgreSQL {
+  shape: cylinder
+}
+idm: Kanidm\n(OIDC)
+turn: coturn\n(TURN/STUN)
+
+bridges: Ponts mautrix {
+  wa: whatsapp
+  sig: signal
+  tg: telegram
+  meta: messenger
+  dc: discord
+}
+
+ext: Réseaux externes\n(WhatsApp, Telegram...) {
+  shape: cloud
+}
+
+client -> caddy -> synapse -> pg
+synapse -> idm
+client -> turn
+synapse <-> bridges <-> ext
+```
+
+- **Caddy** route `/_matrix/*` et `/_synapse/client/*` vers Synapse et sert
+  les fichiers `/.well-known/matrix/{client,server}` (découverte des clients
+  et fédération).
+- **Synapse** écoute sur `dnfConfig.network.ports.matrix`, base PostgreSQL
+  locale (créée avec collation `C` par une unité `matrix-db-init`).
+- **Kanidm** fournit l'authentification&nbsp;: client OIDC provisionné via
+  `darkone.service.idm.oauth2.matrix`, *local part* dérivée du
+  `preferred_username` (voir [Authentification & IDM](/fr/doc/admin-guide/understand/auth-idm/)).
+- **coturn** est branché automatiquement si le service `turn` est déclaré
+  (`turn_uris`, secret partagé via sops).
+
+{/* t:p 13c6a2814eee915a3089c2fadfc14cd3e406e01ed88014bc51ae5bf898e7c861 */}
+## Anatomie du module
+
+`matrix.nix` est un `lib.mkMerge` de blocs indépendants&nbsp;:
+
+| Bloc | Condition | Contenu |
+|---|---|---|
+| Base | toujours | client OIDC, reverse proxy, persistance |
+| Serveur | `matrix.enable` | Synapse, PostgreSQL, secrets communs, appservice `doublepuppet` |
+| Un bloc par pont | `matrix.enable && bridges.<x>.enable` | secrets sops + service mautrix du pont |
+
+Chaque pont est donc débrayable individuellement
+(`darkone.service.matrix.bridges.{whatsapp,signal,telegram,messenger,discord}.enable`),
+ses secrets sops n'étant déclarés que si le pont est actif.
+
+{/* t:p 8b8301256d56c5de8ddf451ceae77dd7a0fead3191e43dad54c96654ba4f32a7 */}
+## Les ponts mautrix
+
+DNF s'appuie sur les modules nixpkgs `services.mautrix-*`, qui génèrent la
+*registration* appservice et l'enregistrent auprès de Synapse au démarrage.
+Deux générations de ponts cohabitent, avec des clés de configuration
+différentes&nbsp;:
+
+| Pont | Génération | Double puppeting | Niveau |
+|---|---|---|---|
+| whatsapp | bridgev2 (Go) | `double_puppet.secrets` | `user` |
+| signal | bridgev2 (Go) | `double_puppet.secrets` | `user` |
+| messenger (meta) | bridgev2 (Go) | `double_puppet.secrets` | `user` |
+| telegram | legacy (Python) | `bridge.login_shared_secret_map` | `full` |
+| discord | legacy (Go) | `bridge.login_shared_secret_map` | `user` |
+
+<Aside type="note" title="Pourquoi « full » pour Telegram ?">
+Sur le pont Telegram legacy, le niveau `user` ne permet pas de connecter son
+propre compte (il faut `puppeting` au minimum). DNF donne `full` au domaine
+pour que chaque compte local puisse se connecter et partager ses salons.
+</Aside>
+
+{/* t:p 872be0f0382f211b1da743be9b7ac2166fabde666dfde51b9691a7ae76e2a110 */}
+### Permissions
+
+Le helper `mkBridgePermissions` (dans `matrix.nix`) construit la même
+politique pour tous les ponts&nbsp;:
+
+```yaml
+permissions:
+  "domain.tld": user          # tout compte local, avec son propre compte distant
+  "@alice:domain.tld": admin  # le matrix.admin déclaré dans etc/config.yaml
+```
+
+Les sessions distantes sont isolées par utilisateur Matrix&nbsp;: la
+généralisation à tous les comptes du domaine est sans risque d'interférence.
+
+{/* t:p 87ba42236df0c4f7998588fb44bc52972e1717218b0476bf9253edb1b764597c */}
+### Double puppeting
+
+Méthode officielle [appservice](https://docs.mau.fi/bridges/general/double-puppeting.html)&nbsp;:
+un appservice `doublepuppet` est enregistré dans Synapse
+(`app_service_config_files`) avec un namespace couvrant `@.*:domain.tld`.
+Son `as_token` autorise chaque pont à émettre des événements **au nom du
+vrai compte** de l'utilisateur.
+
+```d2
+style.fill: transparent
+direction: down
+
+phone: Téléphone\n(WhatsApp) {
+  shape: person
+}
+bridge: Pont mautrix
+synapse: Synapse
+room: Salon Matrix\n(message de @alice) {
+  shape: page
+}
+
+phone -> bridge: message sortant
+bridge -> synapse: as_token doublepuppet
+synapse -> room
+```
+
+Le token est unique pour tous les ponts (`mautrix-doublepuppet-as-token`) et
+injecté dans chaque config par substitution de variables d'environnement
+(`as_token:$MAUTRIX_DOUBLEPUPPET_AS_TOKEN`), les modules nixpkgs passant la
+configuration par `envsubst` avec le `environmentFile` du service.
+
+{/* t:p 55bdbca82129d10f51f66ac2f49a757f33e4088a00eaddb0cd0d9f16409bbd40 */}
+## Secrets et ports
+
+- **Secrets** : déclarés par bloc dans `matrix.nix` (`sops.secrets.*`), et
+  assemblés en fichiers d'environnement par des `sops.templates.*` possédés
+  par l'utilisateur système du pont. Liste complète dans
+  [la page d'exploitation](/fr/doc/admin-guide/operate/matrix/#secrets-requis).
+- **Ports** : `matrix` et `matrixTelegram` sont fixés par le registre
+  `dnf/config/network.nix`&nbsp;; les ports appservice par défaut des autres
+  ponts (29318, 29319, 29328, 29334) y sont listés en `reserved` pour éviter
+  toute collision future.
+- **Statuts WhatsApp** : `network.enable_status_broadcast = false` dans la
+  config du pont, sinon le bridge recrée indéfiniment le salon
+  « WhatsApp Status Broadcast » pour chaque utilisateur.

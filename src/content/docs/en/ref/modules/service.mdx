@@ -221,7 +221,7 @@ darkone.service.geneweb = {
 
 <hr/>
 
-{/* t:p 164b57feff8feab9906b0937a57155cf2faedbbccc37cc59bda656457f020849 */}
+{/* t:p 257000c70f8301eb389a3d38afad642c70dabdfb609861264c9b351737549679 */}
 ### &#x2728; darkone.service.harmonia
 
 Harmonia: local Nix binary cache server (serves this host's /nix/store).
@@ -249,6 +249,16 @@ VPN: integrity comes from the NAR signature, not from TLS.
 `just configure-admin-host` auto-generates the deployment-wide key pair when
 `usr/secrets/harmonia.pub` is missing: the public key is committed and the
 private key is injected into the sops secret `harmonia-secret-key`.
+:::
+
+:::note[Benign startup warning about sign-key permissions]
+`WARN harmonia_cache::tls: /run/credentials/harmonia.service/sign-key-0 has
+insecure permissions 0o440; recommend 0600` is a false positive: systemd
+exposes `LoadCredential` files as root-owned mode 0440 with an ACL that
+grants access to the service user only (systemd/systemd#29435); harmonia
+naively checks the chmod bits. Watch upstream though: harmonia already
+hard-rejects group-readable *TLS* keys at startup — if that policy ever
+extends to sign keys, this unit will break on upgrade.
 :::
 
 * **enable** `bool` Enable a local Harmonia Nix binary cache server
@@ -493,15 +503,40 @@ darkone.service.loki = {
 
 <hr/>
 
-{/* t:p 6be9a7955bf1d425c133f7761e8ceec954f4d81770ed1194ff1e611294c72a68 */}
+{/* t:p 04083c3747f3e3710bb393f8500326bba123b94c6532d766a4154895627468dc */}
 ### &#x2728; darkone.service.matrix
 
-DNF matrix (synapse) server.
+DNF matrix (synapse) server with mautrix bridges.
+
+Bridges (whatsapp, signal, telegram, messenger, discord) are usable by every
+local account: each user links its own remote account by talking to the
+bridge bot (`@whatsappbot`, `@signalbot`, ... then `login`); sessions are
+isolated per user. The declared `network.matrix.admin` administrates the
+bridges.
+
+Double puppeting uses the official appservice method
+(https://docs.mau.fi/bridges/general/double-puppeting.html): a shared
+`doublepuppet` appservice token lets bridges send remote-originated messages
+as the user's real matrix account. Required sops secrets:
+`mautrix-doublepuppet-as-token` and `mautrix-doublepuppet-hs-token`
+(`openssl rand -hex 32` each).
 
 * **enable** `bool` Enable matrix (synapse) service
+* **bridges.whatsapp.enable** `bool` Mautrix WhatsApp bridge (login by QR code).
+* **bridges.signal.enable** `bool` Mautrix Signal bridge (login by QR code).
+* **bridges.telegram.enable** `bool` Mautrix Telegram bridge (login by phone number).
+* **bridges.messenger.enable** `bool` Mautrix Facebook Messenger bridge (login by cookies).
+* **bridges.discord.enable** `bool` Mautrix Discord bridge (login by QR code, experimental).
 
 ```nix
-darkone.service.matrix.enable = false;
+darkone.service.matrix = {
+  enable = false;
+  bridges.whatsapp.enable = true;
+  bridges.signal.enable = true;
+  bridges.telegram.enable = true;
+  bridges.messenger.enable = true;
+  bridges.discord.enable = false;
+};
 ```
 
 <hr/>

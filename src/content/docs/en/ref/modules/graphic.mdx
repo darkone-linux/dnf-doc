@@ -13,7 +13,7 @@ sidebar:
 **A GUI application module** installs graphical applications and their configuration optimized for DNF.
 :::
 
-{/* t:p 20f4185cfabd36595fdfb037bb750e3b98cbe241b2885ba206046e08547e796c */}
+{/* t:p 101c25b0e641045ab07cb82512f8050fd8567ac3a5b2c9bf87daa844bf130c43 */}
 ### &#x1F5BC; darkone.graphic.gnome
 
 Pre-configured gnome environment with dependences.
@@ -23,6 +23,7 @@ Pre-configured gnome environment with dependences.
 * **enableLightDM** `bool` Enable LightDM instead of GDM
 * **enableCaffeine** `bool` Disable auto-suspend
 * **enableGsConnect** `bool` Communication with devices
+* **enableOnlineServices** `bool` Online Accounts, CalDAV, CardDAV...
 * **xkbVariant** `str` Keyboard variant. Layout is extracted from console keymap.
 
 ```nix
@@ -32,6 +33,7 @@ darkone.graphic.gnome = {
   enableLightDM = false;
   enableCaffeine = false;
   enableGsConnect = false;
+  enableOnlineServices = false;
   xkbVariant = "oss";
 };
 ```

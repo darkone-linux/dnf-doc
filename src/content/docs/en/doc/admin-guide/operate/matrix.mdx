@@ -1,0 +1,133 @@
+---
+title: Matrix and messaging bridges
+sidebar:
+  label: Matrix
+  order: 9
+lang: en
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+{/* t:translated-from fr */}
+{/* t:h cc10345e1675f25a88b635ffac213dce7e7600cf513e46273a90255b91452c87 */}
+
+{/* t:p 06d06919c375aeef7880c632c504f540890fee29e91263e1119cad12cd22c562 */}
+Enable the Matrix server (Synapse), its Element web client and mautrix
+bridges (WhatsApp, Signal, Telegram, Messenger, Discord). For the architecture, see
+[Matrix in DNF](/en/doc/admin-guide/understand/matrix/).
+
+{/* t:p 8026b991054a535675002db4a5475a7412eb9eaaeec602690f5d2a5f48c5ae27 */}
+## Enable Matrix
+
+<Steps>
+
+1. Declare the services on the target host in `etc/config.yaml`&nbsp;:
+
+   ```yaml
+   # etc/config.yaml
+       services:
+         matrix:
+           title: "Matrix"
+           description: "Messagerie instantanée"
+         element:        # client web
+         turn:           # audio/video relay (recommended)
+   ```
+
+2. Declare the Matrix administrator (global key, outside hosts)&nbsp;:
+
+   ```yaml
+   # etc/config.yaml
+   matrix:
+     admin: "alice"    # local part of the admin account
+   ```
+
+   This account administers the bridges and receives
+   [supervision alerts](/en/doc/admin-guide/operate/alerts/).
+
+3. Create the required [secrets](/en/doc/admin-guide/operate/secrets/)
+   (see table below), then deploy.
+
+</Steps>
+
+Authentication goes through [SSO Kanidm](/en/doc/admin-guide/operate/sso/)
+(OIDC)&nbsp;: every declared user connects with their network account,
+no Matrix account creation is needed.
+
+{/* t:p 612e4b4b4c6fdc9f568eccb61bb4176b608d5b885eb2f88cbbb765f0d7e6f941 */}
+### Required secrets
+
+To fill in `usr/secrets/secrets.yaml`&nbsp;:
+
+| Sops key | Role | Generation |
+|---|---|---|
+| `matrix-rss-password` | Synapse registration shared secret | `openssl rand -hex 32` |
+| `oidc-secret-matrix` | OIDC Kanidm client secret | see [SSO](/en/doc/admin-guide/operate/sso/) |
+| `turn-secret` | coturn shared secret (if `turn` enabled) | `openssl rand -hex 32` |
+| `mautrix-doublepuppet-as-token` | double puppeting appservice token (shared by bridges) | `openssl rand -hex 32` |
+| `mautrix-doublepuppet-hs-token` | Same, required by Synapse, never used | `openssl rand -hex 32` |
+
+{/* t:p 17c9eaf14abdf750c74b544e89cfe46dd5bf2d506612c524a47ff662edd7d093 */}
+## Manage bridges
+
+WhatsApp, Signal, Telegram and Messenger bridges are **enabled by
+default** with Matrix&nbsp;; Discord is **disabled by default**. Per-host
+adjustment in the machine's nix configuration&nbsp;:
+
+```nix
+# usr/machines/<host>/default.nix
+darkone.service.matrix.bridges = {
+  discord.enable = true;     # opt-in
+  messenger.enable = false;  # disable a default bridge
+};
+```
+
+Each bridge has its own secrets&nbsp;:
+
+| Bridge | Sops keys | Notes |
+|---|---|---|
+| WhatsApp | `mautrix-whatsapp-encryption-pickle-key` | `openssl rand -hex 32` |
+| Signal | `mautrix-signal-encryption-pickle-key` | `openssl rand -hex 32` |
+| Messenger | `mautrix-meta-as-token` | `openssl rand -hex 32` |
+| Telegram | `mautrix-telegram-api-id`, `mautrix-telegram-api-hash`, `mautrix-telegram-as-token`, `mautrix-telegram-hs-token` | API id/hash to create at [my.telegram.org](https://my.telegram.org) |
+| Discord | none | tokens auto-generated on first start |
+
+{/* t:p f3eb4bb567f7ef6cafb1fd0f14a2f32d19ccfd22540309eef5aaad8f5d9ac836 */}
+### Permissions
+
+Nothing to manage&nbsp;: any local account (`@*:domain.tld`) can use each
+bridge with **their own** remote account, without interference between
+users. The `matrix.admin` account has the bot administration
+commands (`help` in direct conversation with the bot for the
+list).
+
+{/* t:p 57866a0b0c836e99e3a85df4799b3a07fa81c8c06bcd8807ab57b6fae2e5fbb9 */}
+### Double puppeting
+
+Bridges share a `doublepuppet` appservice (token
+`mautrix-doublepuppet-as-token`)&nbsp;: messages sent from the
+phone appear in Matrix as coming from the user's **real account**.
+This is automatic for all local accounts, no action per
+user.
+
+{/* t:p 5ec0b4c6cc8532b25aa284d7e87ebec6ccb8e985fbe6b7e2fd43c14f7145bcd5 */}
+## Operations
+
+| Action | Command |
+|---|---|
+| Service status | `systemctl status matrix-synapse mautrix-whatsapp mautrix-signal mautrix-telegram mautrix-meta-messenger` |
+| Bridge logs | `journalctl -u mautrix-whatsapp -f` |
+| Synapse logs | `journalctl -u matrix-synapse -f` |
+
+<Aside type="note" title="WhatsApp statuses disabled">
+The WhatsApp bridge does not relay "statuses" (stories): the
+`network.enable_status_broadcast` option is forced to `false`,
+otherwise each user would be repeatedly re-invited to a
+"WhatsApp Status Broadcast" room.
+</Aside>
+
+<Aside type="caution" title="Resetting a bridge">
+A bridge's data (sessions, room mappings) lives in
+`/var/lib/mautrix-*`. Deleting this directory disconnects **all**
+users from the bridge and breaks existing room mappings:
+only do this as a last resort, with the service stopped.
+</Aside>
