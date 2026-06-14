@@ -55,6 +55,8 @@ export default {
     // several calls (reliable parsing + avoids timeouts/output truncation), then
     // reassembled into one translated file.
     maxParasPerCall: Number(env.TRANSLATE_CHUNK || 12),
+    retries: Number(env.TRANSLATE_RETRIES || 4), // relances sur erreur transitoire (verrou SQLite opencode)
+    retryBaseMs: Number(env.TRANSLATE_RETRY_BASE || 500), // back-off de base (exponentiel + jitter)
   },
 
   // Command builder: returns { cmd, args }; the prompt is piped on stdin.
@@ -94,9 +96,13 @@ Rules:
     visible text between tags and the human-readable attribute VALUES (e.g.
     \`title="..."\`).
   * Markdown emphasis/markers: bold (\`**\`), italic (\`*\`), inline-code backticks,
-    blockquote \`>\`, list bullets (\`-\`, \`*\`, \`1.\`), table pipes \`|\` and
-    separators — keep every marker, leading/trailing whitespace and indentation
-    unchanged.
+    blockquote \`>\`, list bullets (\`-\`, \`*\`, \`1.\`) — keep every marker,
+    leading/trailing whitespace and indentation unchanged.
+  * Markdown tables: the alignment/separator row (e.g. \`|---|:-:|:-:|\`) and the
+    column count are STRUCTURE, not text. Copy the separator row VERBATIM (it has
+    NO translatable content) and keep the SAME number of \`|\`-separated columns in
+    EVERY row. Never add, remove, merge or split a column, and never change a \`:\`
+    alignment marker. Translate only the visible cell text.
   * When unsure whether something is syntax or text, DO NOT touch it.
 - Links and anchors are handled deterministically AFTER you, by tooling. So:
   keep every link target and every "#anchor" EXACTLY as in the source (do NOT
@@ -146,9 +152,13 @@ Rules:
     visible text between tags and the human-readable attribute VALUES (e.g.
     \`title="..."\`).
   * Markdown emphasis/markers: bold (\`**\`), italic (\`*\`), inline-code backticks,
-    blockquote \`>\`, list bullets (\`-\`, \`*\`, \`1.\`), table pipes \`|\` and
-    separators — keep every marker, leading/trailing whitespace and indentation
-    unchanged.
+    blockquote \`>\`, list bullets (\`-\`, \`*\`, \`1.\`) — keep every marker,
+    leading/trailing whitespace and indentation unchanged.
+  * Markdown tables: the alignment/separator row (e.g. \`|---|:-:|:-:|\`) and the
+    column count are STRUCTURE, not text. Copy the separator row VERBATIM (it has
+    NO translatable content) and keep the SAME number of \`|\`-separated columns in
+    EVERY row. Never add, remove, merge or split a column, and never change a \`:\`
+    alignment marker. Translate only the visible cell text.
   * When unsure whether something is syntax or text, DO NOT touch it.
 - Links and anchors are handled deterministically AFTER you, by tooling: keep every
   link target and every "#anchor" EXACTLY as in the source; only translate the

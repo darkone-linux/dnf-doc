@@ -1,8 +1,14 @@
 // Run translation agents (claude / opencode) with bounded concurrency.
 import { spawn, spawnSync } from 'node:child_process';
 
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+// Transient failures worth retrying: opencode shares one SQLite session store
+// across processes, so concurrent agent calls can hit "database is locked".
+const RETRYABLE = /database is locked|database table is locked|SQLITE_BUSY|EAGAIN|temporarily unavailable/i;
+
 // Spawn an agent CLI, feeding the prompt on stdin, returning stdout.
-export function runAgent({ cmd, args, input, timeoutMs }) {
+function spawnAgent({ cmd, args, input, timeoutMs }) {
   return new Promise((resolve, reject) => {
     const child = spawn(cmd, args, { stdio: ['pipe', 'pipe', 'pipe'] });
     let out = '', err = '';
@@ -20,6 +26,19 @@ export function runAgent({ cmd, args, input, timeoutMs }) {
     });
     child.stdin.end(input);
   });
+}
+
+// runAgent with bounded retry + exponential back-off (jittered) on transient
+// errors. Jitter spreads retries so concurrent calls don't re-collide on the lock.
+export async function runAgent({ cmd, args, input, timeoutMs, retries = 4, baseDelayMs = 500 }) {
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return await spawnAgent({ cmd, args, input, timeoutMs });
+    } catch (e) {
+      if (attempt >= retries || !RETRYABLE.test(e.message)) throw e;
+      await sleep(baseDelayMs * 2 ** attempt + Math.random() * baseDelayMs);
+    }
+  }
 }
 
 // Bounded-concurrency async map preserving order.

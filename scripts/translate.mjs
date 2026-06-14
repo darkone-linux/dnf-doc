@@ -261,7 +261,7 @@ async function main() {
   if (DRY) { console.log(`[translate] dry-run: ${written} file(s) would change without agent.`); return; }
   if (!agentJobs.length) { console.log(`[translate] up to date. ${written} file(s) updated.`); return; }
 
-  const { tool, model, d2Model, concurrency, timeoutMs, maxParasPerCall } = config.agent;
+  const { tool, model, d2Model, concurrency, timeoutMs, maxParasPerCall, retries, retryBaseMs } = config.agent;
   if (!commandExists(tool)) {
     console.error(`[translate] agent tool "${tool}" not found on PATH. Set TRANSLATE_TOOL or install it.`);
     process.exit(1);
@@ -279,7 +279,7 @@ async function main() {
     const { cmd, args } = task.kind === 'd2' ? d2Cmd : proseCmd;
     const prompt = buildPrompt(job, task.paras, task.includeHeader, task.kind);
     try {
-      const out = await runAgent({ cmd, args, input: prompt, timeoutMs });
+      const out = await runAgent({ cmd, args, input: prompt, timeoutMs, retries, baseDelayMs: retryBaseMs });
       const got = parseAgentOutput(out);
       if (got.header) job.got.header = got.header;
       Object.assign(job.got.paras, got.paras);
