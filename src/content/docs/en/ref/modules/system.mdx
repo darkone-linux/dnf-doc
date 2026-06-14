@@ -128,7 +128,7 @@ darkone.system.i18n = {
 
 <hr/>
 
-{/* t:p 07c23b4ee523fbac089c11f282bffcaa8dcf98c88bf37c303ad9029e51e91ae5 */}
+{/* t:p f1730af8eb5c74a41e0d9d1e6243dfee1dddff1bee111a3c738909b96af8320b */}
 ### &#x2699; darkone.system.security
 
 ANSSI BP-028 v2.0 (GNU/Linux) system hardening. (wip)
@@ -215,7 +215,10 @@ raising the level on a production system.
 * **exceptions** `attrs` Per-rule exceptions with mandatory rationale.
 * **adminMailbox** `str` Administrator email address (sudo R39, MTA aliases R75).
 * **useHardenedKernel** `bool` Use linuxPackages_hardened (R60, C1) instead of the default kernel.
-* **allowedActiveUsers** `listOf str` Exhaustive list of active user accounts (R30 validation).
+* **allowedActiveUsers** `listOf str` Human accounts allowed to authenticate (R30). Defaults to every user
+declared in config.yaml (host.users) plus the framework deploy
+account `nix`. Disabled accounts (no password credential) and service
+accounts (not normal users) need not be listed.
 
 ```nix
 darkone.system.security = {

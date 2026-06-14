@@ -13,52 +13,55 @@ sidebar:
 **Un module de sécurité** renforce le système, ses programmes et ses fonctionnalités.
 :::
 
-{/* t:p f0c7676bfbaa4b8e540cd41d0a07740ef9d0446af580eb1d383781a98dcb0456 */}
+{/* t:p fa706af719f95338ae438d0aca8a103cf147d044e40f3f74d0f82d003c532f51 */}
 ### &#x1F511; darkone.security.complement
 
-Mesures supplémentaires transversales — Annexe A (C1–C12). (en cours)
+Mesures complémentaires transverses — Annexe A (C1–C12). (wip)
 
 Ces mesures n'ont pas de numéro ANSSI mais sont essentielles à l'esprit du guide.
-Couvre les correctifs linux-hardened (C1), LSM Lockdown (C2), USBGuard (C3),
+Couverture des patches linux-hardened (C1), Lockdown LSM (C2), USBGuard (C3),
 nftables deny-by-default (C4), SSH durci (C5), LUKS2 (C6), NTP/NTS (C7),
-DNS sécurisé (C8), vidages de mémoire désactivés (C9), anti-brute-force PAM (C10),
+DNS sécurisé (C8), core dumps désactivés (C9), PAM anti brute-force (C10),
 bannières légales (C11) et restriction cron/at (C12).
 
 :::caution[Activation]
 L'option `enable` suit `darkone.system.security.enable` par défaut.
 Les règles (Rxx/Cxx) sont activées selon le niveau, la catégorie et les exclusions
-définis dans `darkone.system.security` (via `isActive`).
+définies dans `darkone.system.security` (via `isActive`).
 :::
 
-:::note[Niveau LSM Lockdown (C2)]
-- `none`: aucun Lockdown.
-- `integrity`: interdit les modifications du noyau via l'espace utilisateur.
-- `confidentiality`: idem + interdit la lecture des secrets du noyau.
+:::note[Niveau Lockdown LSM (C2)]
+- `none` : pas de Lockdown.
+- `integrity` : interdit les modifications du noyau depuis l'espace utilisateur.
+- `confidentiality` : idem + interdit la lecture des secrets du noyau.
 :::
 
-:::caution[C2 — LSM Lockdown]
+:::caution[C2 — Lockdown LSM]
 `lockdown=confidentiality` interdit kexec, les écritures /dev/mem, MSR, l'hibernation.
 Casse `dmidecode` sur certaines zones, `flashrom`, `i2c-tools`.
 :::
 
 :::caution[C4 — Filtrage sortant]
-La politique deny-by-default sortante casse les outils qui atteignent les CDN (curl,
-téléchargements du noyau). Requis : un proxy HTTP(S) sortant contrôlé.
+La politique de rejet par défaut en sortie casse les outils qui accèdent aux CDN (curl,
+téléchargements du noyau). Requis&nbsp;: un proxy HTTP(S) sortant contrôlé.
 :::
 
 :::caution[C5 — SSH durci]
-SSH tunnels, forwarding d'agent et X11 désactivés. Adaptez les workflows administrateur
-à ProxyJump (`ssh -J`). Ce module remplace `core.nix` pour SSH.
+Tunnels SSH, agent forwarding et X11 désactivés. Adapter les workflows
+d'administration à ProxyJump (`ssh -J`). Ce module surcharge `core.nix` pour SSH.
 :::
 
-* **enable** `bool` Activer les mesures supplémentaires ANSSI (C1–C12).
-* **lockdownLevel** `enum [ "none" "integrity" "confidentiality" ]` Niveau LSM Lockdown (C2)
-* **lsmStack** `listOf str` Ordre de pile LSM (C2, R11, R20). Modifie boot.kernelParams lsm=...
+* **enable** `bool` Activer les mesures complémentaires ANSSI (C1–C12).
+* **lockdownLevel** `enum [ "none" "integrity" "confidentiality" ]` Niveau Lockdown LSM (C2)
+* **lsmStack** `listOf str` Ordre de la pile LSM (C2, R11, R20). Modifie boot.kernelParams lsm=...
 * **ntpServers** `listOf str` Serveurs NTP/NTS (C7).
 * **useNts** `bool` Activer NTS (Network Time Security) pour l'authentification NTP (C7).
-* **sshBanner** `str` Bannière SSH affichée avant authentification (C11).
-* **cronAllowedUsers** `listOf str` Utilisateurs autorisés à programmer des tâches cron (C12).
-* **egressAllowlist** `listOf str` IP/CIDR autorisés en sortie pour le filtrage nftables sortant strict (C4).
+* **sshBanner** `str` Bannière SSH affichée avant l'authentification (C11).
+* **cronAllowedUsers** `listOf str` Utilisateurs autorisés à planifier des tâches cron (C12).
+* **atAllowedUsers** `listOf str` Utilisateurs autorisés à planifier des tâches at (C12). Reprend cronAllowedUsers par défaut.
+* **egressAllowlist** `listOf str` Adresses IPv4/IPv6 ou CIDR autorisées en sortie sous la politique
+de rejet par défaut renforcée C4. Une liste vide maintient la politique mais seul
+le trafic loopback et established/related passe (proxy requis).
 
 ```nix
 darkone.security.complement = {
@@ -72,9 +75,12 @@ darkone.security.complement = {
         All connections are logged and may be subject to prosecution.
       '';
   cronAllowedUsers = [ ];
+  atAllowedUsers = [ ];
   egressAllowlist = [ ];
 };
 ```
+
+<hr/>
 
 {/* t:p 2a965182b32d7af5b9e9e7a367807e0338a4406d467e0d074aa92eb3397bc4df */}
 ### &#x1F511; darkone.security.filesystem
@@ -374,41 +380,50 @@ définis dans `darkone.system.security` (via `isActive`).
 darkone.security.nss.enable = false;
 ```
 
-{/* t:p 58daf1bcf47ce2d5b46862436355709dc97c42fbb2f8fbf8b38eb722189e1fa1 */}
+{/* t:p fdf6c617fb43c54bc38d12b4a6da01c6f45bcad169f4923feefd0af237e5a37d */}
 ### &#x1F511; darkone.security.packages
 
-Gestion des paquets et mises à jour (R58–R61). (en cours)
+Gestion des paquets et mises à jour (R58–R61). (wip)
 
-Couvre l'installation uniquement de ce qui est strictement nécessaire (R58), des référentiels de confiance (R59),
-des référentiels durcis (R60 : linux_hardened) et des mises à jour régulières (R61).
+Couverture de l'installation du strict nécessaire (R58), des dépôts de confiance (R59),
+des dépôts durcis (R60&nbsp;: linux_hardened) et des mises à jour régulières (R61).
 
 :::caution[Activation]
 L'option `enable` suit `darkone.system.security.enable` par défaut.
 Les règles (Rxx/Cxx) sont activées selon le niveau, la catégorie et les exclusions
-définis dans `darkone.system.security` (via `isActive`).
+définies dans `darkone.system.security` (via `isActive`).
 :::
 
 :::caution[R59 — allow-import-from-derivation=false]
 Casse certains flakes complexes (Haskell, Python lourd avec générateurs Nix).
-Documentez les exceptions dans nix.settings.
+Documenter les exceptions dans nix.settings.
 :::
 
 :::caution[R60 — linux_hardened]
-Le noyau linux_hardened peut être en retard d'une version mineure par rapport à nixpkgs-unstable.
+Le noyau linux_hardened peut accuser un retard d'une version mineure sur nixpkgs-unstable.
 Les modules tiers (NVIDIA, ZFS) ne sont pas garantis compatibles.
 :::
 
 * **enable** `bool` Activer la gestion des paquets ANSSI (R58–R61).
 * **trustedSubstituters** `listOf str` Liste blanche des caches binaires Nix autorisés (R59).
-* **trustedPublicKeys** `listOf str` Clés publiques pour les caches binaires autorisés (R59).
+* **trustedPublicKeys** `listOf str` Clés publiques des caches binaires autorisés (R59).
+* **allowedUris** `listOf str` Liste blanche de préfixes d'URI récupérables pendant l'évaluation (R59).
+Restreint builtins.fetch* / les entrées flake aux miroirs internes.
+Une liste vide désactive la restriction.
+* **maxSystemPackages** `nullOr int` Seuil indicatif sur le nombre de paquets système (R58).
+Émet un avertissement d'évaluation quand dépassé&nbsp;; null désactive le contrôle.
 
 ```nix
 darkone.security.packages = {
   enable = false;
   trustedSubstituters = [ ];
   trustedPublicKeys = [ ];
+  allowedUris = [ ];
+  maxSystemPackages = 200;
 };
 ```
+
+<hr/>
 
 {/* t:p c407396b10860c7cdbee2f0b33fc73932799455b0c88034a184fd1b3d0cfde5e */}
 ### &#x1F511; darkone.security.pam

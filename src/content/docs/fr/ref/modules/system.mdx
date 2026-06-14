@@ -125,20 +125,20 @@ darkone.system.i18n = {
 };
 ```
 
-{/* t:p 07c23b4ee523fbac089c11f282bffcaa8dcf98c88bf37c303ad9029e51e91ae5 */}
+{/* t:p f1730af8eb5c74a41e0d9d1e6243dfee1dddff1bee111a3c738909b96af8320b */}
 ### &#x2699; darkone.system.security
 
-Durcissement du système ANSSI BP-028 v2.0 (GNU/Linux). (en cours)
+Durcissement système ANSSI BP-028 v2.0 (GNU/Linux). (wip)
 
-Module recommandé, activé dans certains profils d'hôte ou manuellement
-selon les besoins. Applique progressivement
-les recommandations ANSSI selon le niveau et la catégorie de machine choisis.
-Chaque profil d'hôte définit son niveau et sa catégorie :
+Module recommandé, activé dans certains profils hôtes ou manuellement
+selon les besoins. Applique progressivement les
+recommandations ANSSI selon le niveau choisi et la catégorie de machine.
+Chaque profil hôte définit son niveau et sa catégorie&nbsp;:
 
 :::danger[Module en développement]
-- Affinez et testez les options, les fonctionnalités, etc.
-- Créez le « checkScript », un outil d'introspection de configuration de sécurité.
-- Configuration locale simple pour les paramètres spécifiques au matériel et aux besoins.
+- Affiner et tester les options, fonctionnalités, etc.
+- Créer le «&nbsp;checkScript&nbsp;», un outil d'introspection de la config de sécurité.
+- Configuration locale simple pour les réglages spécifiques au matériel et aux besoins.
 :::
 
 ```nix
@@ -148,13 +148,13 @@ darkone.system.security = {
 };
 ```
 
-Les règles incompatibles avec l'environnement sont exclues par tag :
+Les règles incompatibles avec l'environnement sont exclues par tag&nbsp;:
 
 ```nix
 darkone.system.security.excludes = [ "needs-jit" "needs-hibernation" ];
 ```
 
-Une règle spécifique peut être contournée avec une justification obligatoire :
+Une règle spécifique peut être contournée avec une justification obligatoire&nbsp;:
 
 ```nix
 darkone.system.security.exceptions = {
@@ -163,33 +163,33 @@ darkone.system.security.exceptions = {
 ```
 
 :::note[Niveau de durcissement ANSSI]
-- `minimal`      : base commune, tout système (par défaut).
-- `intermediary` : recommandé pour presque tous les systèmes.
-- `reinforced`   : systèmes sensibles ou multi-locataires.
-- `high`         : compétences et budget dédiés ; implique la recompilation du noyau
-                   (tag `kernel-recompile`) si non exclu.
+- `minimal`      : socle commun, tout système (défaut).
+- `intermediary` : recommandé pour la quasi-totalité des systèmes.
+- `reinforced`   : systèmes sensibles ou multi-utilisateurs.
+- `high`         : compétences et budget dédiés ; implique une
+                   recompilation du noyau (tag `kernel-recompile`) si non exclu.
 :::
 
 :::note[Catégorie de machine]
-- `base`   : règles universelles, toujours appliquées (par défaut).
-- `client` : station de travail (GUI, USB, session, verrouillage).
-- `server` : serveur (réseau durci, journalisation centralisée, services exposés).
+- `base`   : règles universelles, toujours appliquées (défaut).
+- `client` : poste de travail (GUI, USB, session, verrouillage).
+- `server` : serveur (réseau durci, centralisation des logs, services exposés).
 
-Indépendant de `host.profile` — à définir explicitement dans chaque profil d'hôte.
+Indépendant de `host.profile` — à définir explicitement dans chaque profil hôte.
 :::
 
 :::note[Tags d'exclusion]
 - `kernel-recompile`             : ignore R15–R27, C1 (pas de noyau personnalisé).
-- `disable-kernel-module-loading`: ignore R10 (peut casser les appareils).
-- `no-ipv6`                      : ignore R13, R22 (désactiver IPv6).
+- `disable-kernel-module-loading`: ignore R10 (peut casser des périphériques).
+- `no-ipv6`                      : ignore R13, R22 (désactivation IPv6).
 - `no-mac`                       : ignore R37, R45 (pas de MAC actif).
 - `no-sealing`                   : ignore R76, R77 (pas de HIDS/AIDE).
 - `no-auditd`                    : ignore R73 (auditd non configurable).
-- `embedded`                     : assouplir les contraintes /var, /home, etc.
-- `needs-jit`                    : permet W^X détendu (Java, .NET, V8, Wasm).
+- `embedded`                     : assouplit les contraintes /var, /home, etc.
+- `needs-jit`                    : autorise W^X assoupli (Java, .NET, V8, Wasm).
 - `needs-kexec`                  : conserve kexec pour kdump.
 - `needs-binfmt`                 : conserve binfmt_misc (Java, qemu-static).
-- `needs-hibernation`            : conserve l'hibernation (ordinateurs portables).
+- `needs-hibernation`            : conserve l'hibernation (portables).
 - `needs-usb-hotplug`            : désactive USBGuard / deny_new_usb.
 :::
 
@@ -199,20 +199,23 @@ Justification obligatoire dans `rationale`.
 :::
 
 :::caution[Effets secondaires]
-Certaines règles peuvent casser l'utilisation courante : `noexec /tmp` (R28),
-SMT désactivé (R8), modules non signés (R18), conteneurs sans root (R9),
-JIT (R63). Consultez les commentaires `sideEffects` dans chaque fichier à thème avant
+Certaines règles peuvent casser un usage courant&nbsp;: `noexec /tmp` (R28),
+SMT désactivé (R8), modules non signés (R18), conteneurs rootless (R9),
+JIT (R63). Voir les commentaires `sideEffects` dans chaque fichier thématique avant
 d'augmenter le niveau sur un système de production.
 :::
 
-* **enable** `bool` Activer le module de durcissement ANSSI BP-028 v2.0.
-* **level** `enum [ "minimal" "intermediary" "reinforced" "high" ]` Niveau de durcissement ANSSI cible.
+* **enable** `bool` Active le module de durcissement ANSSI BP-028 v2.0.
+* **level** `enum [ "minimal" "intermediary" "reinforced" "high" ]` Niveau de durcissement ANSSI ciblé.
 * **category** `enum [ "base" "client" "server" ]` Catégorie de machine qui sélectionne les sous-ensembles de règles.
-* **excludes** `listOf str` Tags qui désactivent des groupes de règles entiers.
+* **excludes** `listOf str` Tags qui désactivent des groupes entiers de règles.
 * **exceptions** `attrs` Exceptions par règle avec justification obligatoire.
 * **adminMailbox** `str` Adresse e-mail de l'administrateur (sudo R39, alias MTA R75).
-* **useHardenedKernel** `bool` Utiliser linuxPackages_hardened (R60, C1) au lieu du noyau par défaut.
-* **allowedActiveUsers** `listOf str` Liste exhaustive des comptes utilisateurs actifs (validation R30).
+* **useHardenedKernel** `bool` Utilise linuxPackages_hardened (R60, C1) au lieu du noyau par défaut.
+* **allowedActiveUsers** `listOf str` Comptes humains autorisés à s'authentifier (R30). Par défaut, chaque utilisateur
+déclaré dans config.yaml (host.users) plus le compte de déploiement
+de l'infrastructure `nix`. Les comptes désactivés (sans identifiant de mot de passe) et les comptes
+de service (pas des utilisateurs normaux) n'ont pas besoin d'être listés.
 
 ```nix
 darkone.system.security = {
@@ -226,6 +229,8 @@ darkone.system.security = {
   allowedActiveUsers = [ ];
 };
 ```
+
+<hr/>
 
 {/* t:p d227acf5a744b623c95b251ea6d4dbe833c48fb19db44080b6dc0f6c72129e50 */}
 ### &#x2699; darkone.system.services

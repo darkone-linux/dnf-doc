@@ -1,0 +1,233 @@
+---
+title: Security rules catalog
+sidebar:
+  label: Security rules
+  order: 10
+lang: en
+---
+
+{/* t:translated-from fr */}
+{/* t:h 8a19eb2d3a8a4a917b65e1a22259f0dd79f6f477ffc9f477154c1a488a67da4a */}
+
+{/* t:p 054fae31781777f31e1bd20a2bbc4d3626591128fd0ee30f93ed0f9213b91458 */}
+This page summarizes **which ANSSI rules are activated**, according to the **level** and
+**category** of a host. It is the reference to consult before hardening a machine.
+
+:::tip[Understand first]
+The concepts used here (levels, categories, labels, MAC, egress…) are
+explained in [Security
+notions](/en/doc/admin-guide/understand/security-notions/).
+:::
+
+{/* t:p 68a4c9db7877ba6e627b323b0aa6db0c52e20c58f59a2d03d52b9919e0d2d590 */}
+## Reminder: level and category
+
+```nix
+darkone.system.security = {
+  enable   = true;
+  level    = "intermediary";   # minimal | intermediary | reinforced | high
+  category = "server";         # base | client | server
+};
+```
+
+Levels are **cumulative**: `intermediary` adds its rules to those of
+`minimal`, and so on. The category adds the rules specific to a workstation
+(`client`) or a server (`server`).
+
+{/* t:p 59d6590db674be9de1f7fac85f5ce3c28eac555ac91ff1eddf3e6ad3f14a02b5 */}
+## Recommended category per profile
+
+| Profile | Recommended category | Why |
+|---|---|---|
+| `minimal`, `portable` | `base` | Universal base |
+| `desktop`, `laptop` | `client` | Screen, USB, interactive session |
+| `server`, `gateway`, `hcs`, `vm` | `server` | Exposed services, network |
+
+:::caution[Today: `base` everywhere]
+Automatic profile → category mapping is not yet active. All hosts are
+set to `minimal` / `base` by default. To apply a category, set
+`category` manually on the relevant host.
+:::
+
+{/* t:p e4ce9900a3c7288db0de5450b196339aae6adbe90a222dba1e3771b714eb0867 */}
+## Comparison table by level
+
+Each column shows the rule's **state at that level** (levels being
+cumulative). Legend:
+
+| Icon | Meaning |
+|---|---|
+| ✅ | Active at this level |
+| ⚠️ | Partial (see note) |
+| ❌ | Not yet active at this level |
+
+:::note[Categories]
+Rules marked **(server)** or **(client)** only activate with the
+corresponding category (`server` or `client`), in addition to the indicated level.
+:::
+
+{/* t:p 80af236b1e8dcc6875db52df348b05cd57949c959fc2a338d9a3508eb89a63ba */}
+### Boot and hardware
+
+| Code | Rule | Min | Inter | Renf | High |
+|---|---|:-:|:-:|:-:|:-:|
+| `R3` | UEFI Secure Boot (if supported) | ❌ | ✅ | ✅ | ✅ |
+| `R5` | Bootloader password | ❌ | ✅ | ✅ | ✅ |
+| `C6` | LUKS2 disk encryption | ❌ | ✅ | ✅ | ✅ |
+| `R7` | IOMMU enabled | ❌ | ❌ | ✅ | ✅ |
+| `R29` | `/boot` restricted | ❌ | ❌ | ✅ | ✅ |
+| `R6` | cmdline and initramfs protection | ❌ | ❌ | ❌ | ✅ |
+
+{/* t:p 39ffe2c427bb1dd64be21221d1dd6e7855673b3992e33480da38510659fba48b */}
+### Kernel
+
+| Code | Rule | Min | Inter | Renf | High |
+|---|---|:-:|:-:|:-:|:-:|
+| `R8` | Memory options on the command line | ❌ | ✅ | ✅ | ✅ |
+| `R9` | Hardening sysctls | ❌ | ✅ | ✅ | ✅ |
+| `R11` | Yama: `ptrace` restricted | ❌ | ✅ | ✅ | ✅ |
+| `R10` | Module loading disabled | ❌ | ❌ | ✅ | ✅ |
+| `R60` | `linux_hardened` kernel | ❌ | ❌ | ✅ | ✅ |
+| `C1` | linux-hardened patches | ❌ | ❌ | ❌ | ✅ |
+| `C2` | LSM Lockdown | ❌ | ❌ | ❌ | ✅ |
+| `R15`–`R27` | Compile-time hardening | ❌ | ❌ | ❌ | ✅ |
+
+{/* t:p 919010fa6ef3557878aae4d2882f6f57135572846f3d5e85540146dadc736b97 */}
+### Accounts and authentication
+
+| Code | Rule | Min | Inter | Renf | High |
+|---|---|:-:|:-:|:-:|:-:|
+| `R30` | Unused accounts disabled | ✅ | ✅ | ✅ | ✅ |
+| `R31` | Strong passwords | ✅ | ✅ | ✅ | ✅ |
+| `R68` | Password storage in `yescrypt` | ✅ | ✅ | ✅ | ✅ |
+| `R32` | Lock on inactivity | ❌ | ✅ | ✅ | ✅ |
+| `R33` | Admin action traceability | ❌ | ✅ | ✅ | ✅ |
+| `R34` | Service accounts without shell | ❌ | ✅ | ✅ | ✅ |
+| `R35` | Unique service accounts | ❌ | ✅ | ✅ | ✅ |
+| `R67` | Secure remote PAM | ❌ | ✅ | ✅ | ✅ |
+| `R69` | User databases over TLS | ❌ | ✅ | ✅ | ✅ |
+| `R70` | System accounts ≠ directory | ❌ | ✅ | ✅ | ✅ |
+| `C10` | Anti brute-force, session limits | ❌ | ✅ | ✅ | ✅ |
+
+{/* t:p 528d129ae4723581358ce42fc281b8d52b9487c10c24982d45778aa18b648516 */}
+### Administration rights (sudo)
+
+| Code | Rule | Min | Inter | Renf | High |
+|---|---|:-:|:-:|:-:|:-:|
+| `R39` | Hardened `sudo` directives | ❌ | ✅ | ✅ | ✅ |
+| `R40` | Non-root `sudo` targets | ❌ | ✅ | ✅ | ✅ |
+| `R42` | Negation prohibition | ❌ | ✅ | ✅ | ✅ |
+| `R44` | `sudoedit` for editing | ❌ | ✅ | ✅ | ✅ |
+| `R38` | Dedicated `sudo` group | ❌ | ❌ | ✅ | ✅ |
+| `R41` | Limited `NOEXEC` overrides | ❌ | ❌ | ✅ | ✅ |
+
+{/* t:p 4bd3f8b3cf0bc9f0fd32caa96b5ad021a6a62f88717cfb14d91871212707c899 */}
+### Files and permissions
+
+| Code | Rule | Min | Inter | Renf | High |
+|---|---|:-:|:-:|:-:|:-:|
+| `R53` | Detection of orphan files | ✅ | ✅ | ✅ | ✅ |
+| `R54` | Sticky bit on `/tmp` and `/var/tmp` | ✅ | ✅ | ✅ | ✅ |
+| `R56` | Detection of non-whitelisted `setuid` | ✅ | ✅ | ✅ | ✅ |
+| `R14` | Filesystem sysctls | ❌ | ✅ | ✅ | ✅ |
+| `R28` | Partitioning and mount options | ❌ | ✅ | ✅ | ✅ |
+| `R50` | Restriction of sensitive files | ❌ | ✅ | ✅ | ✅ |
+| `R52` | Permissions on sockets and named pipes | ❌ | ✅ | ✅ | ✅ |
+| `R55` | Per-user temporary directories | ❌ | ✅ | ✅ | ✅ |
+| `R36` | `UMASK` 0077 | ❌ | ❌ | ✅ | ✅ |
+| `R57` | Minimal root `setuid` (capabilities) | ❌ | ❌ | ✅ | ✅ |
+
+{/* t:p 0f34c2fe137d54f134230923a673e27e455ffc3692a6bd8b2f8274ee55893302 */}
+### Services and confinement
+
+| Code | Rule | Min | Inter | Renf | High |
+|---|---|:-:|:-:|:-:|:-:|
+| `R62` | Obsolete services disabled | ✅ | ✅ | ✅ | ✅ |
+| `R63` | Reduced service capabilities | ❌ | ✅ | ✅ | ✅ |
+| `R37` | Mandatory access control (MAC) | ❌ | ❌ | ✅ | ✅ |
+| `R45` | AppArmor profiles | ❌ | ❌ | ✅ | ✅ |
+| `R64` | Restricted service privileges | ❌ | ❌ | ✅ | ✅ |
+| `R65` | Service isolation (namespaces) | ❌ | ❌ | ✅ | ✅ |
+| `R66` | Container hardening | ❌ | ❌ | ❌ | ✅ |
+
+{/* t:p f463c066b8dde638f3eab2eb0c7daef12a51a6115c6ca12c1e651cd5a1a0745d */}
+### Network
+
+| Code | Rule | Min | Inter | Renf | High |
+|---|---|:-:|:-:|:-:|:-:|
+| `R80` | Monitoring listening ports | ✅ | ✅ | ✅ | ✅ |
+| `C4` | Firewall default deny | ⚠️ | ⚠️ | ✅ | ✅ |
+| `R12` | IPv4 network sysctls | ❌ | ✅ | ✅ | ✅ |
+| `R13` | IPv6 disabled (unless `no-ipv6`) | ❌ | ✅ | ✅ | ✅ |
+| `C5` | OpenSSH hardening | ❌ | ✅ | ✅ | ✅ |
+| `C7` | NTS time synchronization | ❌ | ✅ | ✅ | ✅ |
+| `C8` | Secure DNS resolver (DNSSEC, DoT) | ❌ | ✅ | ✅ | ✅ |
+| `R79` | Hardened exposed services **(server)** | ❌ | ✅ | ✅ | ✅ |
+| `R78` | Network service isolation **(server)** | ❌ | ❌ | ✅ | ✅ |
+
+:::note[`C4` partial at the first two levels]
+At `minimal` and `intermediary` levels, `C4` covers **inbound** filtering
+(default deny). **Outbound** filtering (egress) is added from
+`reinforced` and above.
+:::
+
+{/* t:p f59cb27147ba7402e4a96f7569e41a10ad12531fce1d1012e41269834820e6aa */}
+### Logs and integrity
+
+| Code | Rule | Min | Inter | Renf | High |
+|---|---|:-:|:-:|:-:|:-:|
+| `R71` | Persisting sealed logging | ❌ | ❌ | ✅ | ✅ |
+| `R72` | Dedicated logs per service | ❌ | ❌ | ✅ | ✅ |
+| `R73` | auditd with ANSSI rules | ❌ | ❌ | ✅ | ✅ |
+| `C9` | Core dumps disabled | ❌ | ❌ | ✅ | ✅ |
+| `R76` | Sealing and integrity verification | ❌ | ❌ | ❌ | ✅ |
+| `R77` | Sealed base protection | ❌ | ❌ | ❌ | ✅ |
+
+{/* t:p dfd3fa0a642fcb615177eda75e932b7da2c4238ef2a88927d66782954d051cfa */}
+### System and miscellaneous
+
+| Code | Rule | Min | Inter | Hard | High |
+|---|---|:-:|:-:|:-:|:-:|
+| `C11` | Legal access banners | ✅ | ✅ | ✅ | ✅ |
+| `C12` | `cron` / `at` restricted | ✅ | ✅ | ✅ | ✅ |
+| `R61` | Regular updates | ⚠️ | ⚠️ | ⚠️ | ⚠️ |
+| `R74` | Hardened local mail | ❌ | ✅ | ✅ | ✅ |
+| `R75` | Mail alias (`root` → admin) | ❌ | ✅ | ✅ | ✅ |
+| `R51` | Installation secret rotation | ❌ | ❌ | ✅ | ✅ |
+| `C3` | USBGuard **(workstation)** | ❌ | ❌ | ✅ | ✅ |
+
+:::note[`R61` : managed by DNF]
+Updates are **centrally** managed by the declarative deployment. The
+`autoUpgrade` mechanism is therefore disabled at all levels.
+:::
+
+:::caution[Tag `kernel-recompile`]
+The `high`-level kernel hardening (R15 to R27, C1) requires **recompiling** the
+kernel. On a machine without this need, add `kernel-recompile` to `excludes` to
+ignore it.
+:::
+
+{/* t:p b499d88790ef0bb2ca9b0f567b4a59e224d5c71ff2191c85e27ff9c79e56aa43 */}
+## Adapt without breaking everything
+
+Two mechanisms allow bypassing a specific protection without lowering the overall
+level.
+
+- **Labels** (`excludes`): exclude a **group** of incompatible rules
+  (e.g. `needs-jit`, `no-ipv6`).
+- **Exceptions** (`exceptions`): override **one** rule, justification
+  required.
+
+Details of these mechanisms are in [Security
+concepts](/en/doc/admin-guide/understand/security-notions/#exclusion-labels).
+
+:::danger[Module being stabilized]
+Raise the level **gradually** and test each host before production.
+:::
+
+{/* t:p e7e75fc2664cff04022043f12392c2bbcb3e4ba07577b01d877932b81320a7ca */}
+## See also
+
+- [Security concepts](/en/doc/admin-guide/understand/security-notions/): concepts for reading this catalog
+- [Security and hardening](/en/doc/admin-guide/maintain/security/): day-to-day implementation
+- [Security modules reference](/en/ref/modules/security/): all options exposed by the code

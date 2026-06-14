@@ -1,0 +1,242 @@
+---
+title: Security concepts
+sidebar:
+  label: Security concepts
+  order: 8
+lang: en
+---
+
+{/* t:translated-from fr */}
+{/* t:h 38218599dd7dd7159a7934e3ae359bf3674cb4431518e898540b601747ede6cb */}
+
+{/* t:p a051ef0d415a1bcd969f63d68bf3b56ac277583e611b8ef90b581a690fb9af75 */}
+Before configuring the hardening of a host, you need to understand **what is protected**
+by the `darkone.system.security` module and **how it decides** to enable a
+protection. This page gathers all the useful concepts for configuring
+security with confidence.
+
+Hardening follows the
+[ANSSI BP-028](https://cyber.gouv.fr/publications/recommandations-de-securite-relatives-un-systeme-gnulinux)
+(GNU/Linux) standard. Each recommendation bears a code (`R30`, `C4`…) and is activated
+**automatically** according to the machine's level and category.
+
+:::tip[Two complementary pages]
+This page explains the **concepts**. The [rules
+catalog](/en/doc/admin-guide/operate/security/) lists what is activated at each
+level, and the [Security and hardening](/en/doc/admin-guide/maintain/security/) page
+describes **day-to-day implementation**.
+:::
+
+{/* t:p 013efaf15d69ff0a822e2b463ee5edadd33f5aa4c8edf0e7244fa0d6faafea73 */}
+## A philosophy: progressive hardening
+
+Security is not a switch, it's a **slider**. Start from a safe foundation for everyone, then harden where the risk justifies it. Three principles guide every rule.
+
+| Principle | Idea | Example in DNF |
+|---|---|---|
+| Defense in depth | Stack barriers, none alone | Firewall, service isolation, encryption |
+| Least privilege | Give just what's needed, nothing more | Targeted `sudo`, services without root rights |
+| Reduced attack surface | Less exposed code, fewer flaws | Outdated services disabled, ports monitored |
+
+```d2
+style.fill: transparent
+direction: down
+
+title: Defense in depth {
+  shape: text
+  style.font-size: 20
+}
+
+boot: Boot (Secure Boot, LUKS, IOMMU)
+kernel: Kernel (sysctls, Lockdown, signed modules)
+system: System (accounts, sudo, file permissions)
+services: Services (systemd isolation, MAC)
+network: Network (firewall, secure DNS, monitoring)
+data: Data (encryption, sealed logs, backups)
+
+boot -> kernel -> system -> services -> network -> data
+```
+
+{/* t:p 315f8790ef17f19aac980acf07c26dbbe4fa928c20689146c89db9aee435cda3 */}
+## The five activation levers
+
+A rule applies if, and only if, **all** of these conditions are
+met. These are the only settings you need to know.
+
+| Lever | Role |
+|---|---|
+| `enable` | Activates the module (enabled by default on all hosts) |
+| `level` | The targeted level: the higher it is, the more rules are activated |
+| `category` | The machine type: adds rules specific to workstation or server |
+| `excludes` | **Labels** that disable a group of incompatible rules |
+| `exceptions` | A specific rule overridden, with **mandatory justification** |
+
+```nix
+darkone.system.security = {
+  enable   = true;
+  level    = "intermediary";   # minimal | intermediary | reinforced | high
+  category = "server";         # base | client | server
+};
+```
+
+:::note[How a rule is decided]
+Rule active if: the module is enabled **and** the current level reaches the
+rule's severity **and** the category matches **and** no exclusion
+label applies **and** no exception is set.
+:::
+
+{/* t:p 2d87a6944d6b089d90a61d2810aaabdf90dee622cb92f3edf3f432858ed7a557 */}
+## The four levels
+
+Levels are **cumulative**: each tier adds its rules to those
+of lower tiers. You go up **gradually**, testing each host.
+
+| Level | What for | Cost / constraints |
+|---|---|---|
+| `minimal` | Common base, any system (default) | Nearly none, transparent |
+| `intermediary` | Recommended for almost all systems | Low, a few adjustments |
+| `reinforced` | Sensitive or multi-user systems | Real: isolation, MAC, auditd |
+| `high` | Dedicated skills and budget | High: kernel recompilation |
+
+{/* t:p 6c8545f1260fe9e60d5ce71c788fee3801d0a3338ed153622552f277f16c747b */}
+## The three categories
+
+The category selects **subsets** of rules according to the machine's
+usage. It is independent of the level.
+
+| Category | Targeted machine | Notably adds |
+|---|---|---|
+| `base` | Universal, always applied | All common rules |
+| `client` | Workstation (screen, USB, session) | USBGuard, session locking |
+| `server` | Server (exposed services) | Network isolation, service monitoring |
+
+:::caution[Current state: `base` category everywhere]
+Today, all hosts run `minimal` / `base` by default. Automatic
+assignment of a category to each profile (workstation → `client`,
+server → `server`) **is not yet wired up**. The recommended category per
+profile still has to be set manually for now.
+:::
+
+{/* t:p 3cf10d0cba016eea8b4219d8d81b1385d2ef18d5aff96526b77783f371907b6d */}
+## Glossary of ANSSI concepts
+
+The module's protections rely on standard Linux mechanisms. Here are
+the ones you need to know to read the rules catalog.
+
+{/* t:p 870674f22fb4a6f3fd611876c667d9e17bcc27c09d06b69e5f80cdd23727b847 */}
+### Boot and hardware
+
+| Concept | What it does |
+|---|---|
+| [Secure Boot](https://wiki.archlinux.org/title/Unified_Extensible_Firmware_Interface/Secure_Boot) | Only allows signed code at boot (anti-rootkit) |
+| [LUKS2](https://gitlab.com/cryptsetup/cryptsetup) | Encrypts the disk: stolen machine = unreadable data |
+| [IOMMU](https://en.wikipedia.org/wiki/Input%E2%80%93output_memory_management_unit) | Isolates device memory access (anti-DMA) |
+| Bootloader password | Prevents modifying the boot process without authentication |
+
+{/* t:p 60e533791fe7920cfe8f27793832127b7a8c88d7e4768025acedc358e9053091 */}
+### Kernel
+
+| Concept | What it does |
+|---|---|
+| [sysctl](https://www.kernel.org/doc/html/latest/admin-guide/sysctl/index.html) | Kernel settings that close risky behaviors |
+| [LSM](https://www.kernel.org/doc/html/latest/admin-guide/LSM/index.html) | Security modules hooked into the kernel |
+| [Lockdown](https://www.kernel.org/doc/html/latest/admin-guide/kernel-parameters.html) | Locks direct kernel access (memory, kexec) |
+| [Yama](https://www.kernel.org/doc/html/latest/admin-guide/LSM/Yama.html) | Restricts `ptrace` (a process cannot spy on another) |
+| Signed modules | Refuses to load an unsigned kernel driver |
+| [linux_hardened](https://github.com/anthraxx/linux-hardened) | Precompiled kernel with enhanced protections |
+
+{/* t:p 7ff8209f96faf9db23cdd9043f84e9c86111b54836d50600afd3fe724b0fc2f3 */}
+### Accounts and authentication
+
+| Concept | What it does |
+|---|---|
+| [PAM](https://www.man7.org/linux/man-pages/man8/pam.8.html) | The chain that validates each authentication |
+| [yescrypt](https://www.openwall.com/yescrypt/) | Modern password storage algorithm |
+| `pam_faillock` | Locks the account after several failures (anti brute force) |
+| Immutable accounts | Accounts are declared in config, not created on the fly |
+| Least privilege `sudo` | Targeted, traced admin rights, without negation |
+
+{/* t:p 342700b8bf9e8b4e7c6ff44191a81a2f9c84d47479f45e6c89977d3aebb1d3eb */}
+### Services and confinement
+
+| Concept | What it does |
+|---|---|
+| [MAC](https://www.kernel.org/doc/html/latest/admin-guide/LSM/apparmor.html) | Mandatory Access Control (AppArmor): a service does not leave its sandbox |
+| systemd isolation | `ProtectSystem`, namespaces, reduced capabilities per service |
+| Capabilities | Grant a specific right (e.g. open a port) without full root |
+| Minimal `setuid` | Reduce binaries that run as root |
+
+{/* t:p 9f42007584003ee18c5165f94c90fec409e0572d2e0ad7d0139e3c7b7a7e41de */}
+### Network
+
+| Concept | What it does |
+|---|---|
+| [nftables](https://wiki.nftables.org/) | The firewall engine (DNF is deny-by-default) |
+| Egress filtering | Blocks what the machine is allowed to contact |
+| [DNSSEC](https://www.dnssec.net/) / [DoT](https://en.wikipedia.org/wiki/DNS_over_TLS) | Authenticated and encrypted DNS resolution |
+| [NTS](https://www.ntp.org/documentation/nts/) | Authenticated time synchronization |
+| Reduced network surface | Monitors and limits listening ports |
+
+{/* t:p f849c018f0abf86dfe38f5a857cb0b5becd9a6ff294b2de72ab1fc66fa397749 */}
+### Logging and integrity
+
+| Concept | What it does |
+|---|---|
+| Sealed persistent logs | Tamper-proof traces, preserved across reboots |
+| [auditd](https://www.man7.org/linux/man-pages/man8/auditd.8.html) | Records sensitive system calls |
+| Sealing / HIDS | Verifies that no system file has been altered |
+
+{/* t:p 893ddb92a5ee9dcf7605da616a7d3dba4e6c8a2d7e961bd96efe2e9335b6c9a6 */}
+## Exclusion labels
+
+Some rules break legitimate usage. They are neutralized by **label**
+in `excludes`, without lowering the global level.
+
+| Label | Ignores |
+|---|---|
+| `kernel-recompile` | Kernel hardening at compilation (R15 to R27, C1) |
+| `no-ipv6` | IPv6 disabling (R13, R22) |
+| `no-mac` | Mandatory access control (R37, R45) |
+| `no-auditd` | auditd (R73) |
+| `needs-jit` | Strict W^X (Java, .NET, V8, WebAssembly) |
+| `needs-hibernation` | Disabling hibernation (laptops) |
+| `needs-usb-hotplug` | USBGuard (workstations with frequent USB connections) |
+
+```nix
+darkone.system.security.excludes = [ "needs-jit" "no-ipv6" ];
+```
+
+{/* t:p f572435ff01582c438b5c43cbb2f363b27049f12b16624967f09e479dd6de525 */}
+## Justified exceptions
+
+To bypass **one** specific rule without affecting the rest, set an exception with a justification (mandatory, tracked in configuration).
+
+```nix
+darkone.system.security.exceptions = {
+  R9.rationale = "Conteneurs rootless requis en développement.";
+};
+```
+
+:::note[Structural exception: SELinux]
+Rules `R46` to `R49` (SELinux) are automatically exempt: SELinux is not supported on NixOS. AppArmor (`R45`) fills the MAC role.
+:::
+
+{/* t:p c7361bcac487e5abbfc35000a0eeb4c1f02e1a580edd30b9710320dca23a3d7e */}
+## Side effects to anticipate
+
+Raising a level may hinder common usage. Main pitfalls:
+
+:::caution[Test before production]
+- `noexec /tmp`, IPv6 disabling, unsigned modules may break applications or devices.
+- Egress filtering cuts direct downloads: plan a relay or a whitelist.
+- `auditd` lockdown (`-e 2`) makes configuration immutable: changing rules requires a reboot.
+:::
+
+Each rule file documents its side effects in `sideEffects` comments. The [rule catalog](/en/doc/admin-guide/operate/security/) provides an overview by level.
+
+{/* t:p 299c12de709d7507623525715d0bbfa2911d6b19c875786b81b2dd3ff2753c68 */}
+## See also
+
+- [Security rule catalog](/en/doc/admin-guide/operate/security/): what activates at each level and category
+- [Security and hardening](/en/doc/admin-guide/maintain/security/): day-to-day implementation
+- [Security modules reference](/en/ref/modules/security/): all options exposed by the code

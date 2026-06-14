@@ -13,7 +13,7 @@ sidebar:
 **A security module** hardens the system, its programs and functionalities.
 :::
 
-{/* t:p f0c7676bfbaa4b8e540cd41d0a07740ef9d0446af580eb1d383781a98dcb0456 */}
+{/* t:p fa706af719f95338ae438d0aca8a103cf147d044e40f3f74d0f82d003c532f51 */}
 ### &#x1F511; darkone.security.complement
 
 Cross-cutting complementary measures — Annex A (C1–C12). (wip)
@@ -58,7 +58,10 @@ to ProxyJump (`ssh -J`). This module overrides `core.nix` for SSH.
 * **useNts** `bool` Enable NTS (Network Time Security) for NTP authentication (C7).
 * **sshBanner** `str` SSH banner displayed before authentication (C11).
 * **cronAllowedUsers** `listOf str` Users allowed to schedule cron jobs (C12).
-* **egressAllowlist** `listOf str` IP/CIDR allowed outbound for strict nftables egress filtering (C4).
+* **atAllowedUsers** `listOf str` Users allowed to schedule at jobs (C12). Mirrors cronAllowedUsers by default.
+* **egressAllowlist** `listOf str` IPv4/IPv6 addresses or CIDRs allowed outbound under the C4 reinforced
+egress deny-by-default policy. Empty list keeps the policy but only
+loopback and established/related traffic pass (proxy required).
 
 ```nix
 darkone.security.complement = {
@@ -72,6 +75,7 @@ darkone.security.complement = {
         All connections are logged and may be subject to prosecution.
       '';
   cronAllowedUsers = [ ];
+  atAllowedUsers = [ ];
   egressAllowlist = [ ];
 };
 ```
@@ -394,7 +398,7 @@ darkone.security.nss.enable = false;
 
 <hr/>
 
-{/* t:p 58daf1bcf47ce2d5b46862436355709dc97c42fbb2f8fbf8b38eb722189e1fa1 */}
+{/* t:p fdf6c617fb43c54bc38d12b4a6da01c6f45bcad169f4923feefd0af237e5a37d */}
 ### &#x1F511; darkone.security.packages
 
 Package management and updates (R58–R61). (wip)
@@ -421,12 +425,19 @@ Third-party modules (NVIDIA, ZFS) are not guaranteed compatible.
 * **enable** `bool` Enable ANSSI package management (R58–R61).
 * **trustedSubstituters** `listOf str` Allowlist of authorized Nix binary caches (R59).
 * **trustedPublicKeys** `listOf str` Public keys for authorized binary caches (R59).
+* **allowedUris** `listOf str` Prefix allowlist of URIs fetchable during evaluation (R59).
+Restricts builtins.fetch* / flake inputs to internal mirrors.
+Empty list disables the restriction.
+* **maxSystemPackages** `nullOr int` Soft threshold on the number of system packages (R58).
+Emits an evaluation warning when exceeded; null disables the check.
 
 ```nix
 darkone.security.packages = {
   enable = false;
   trustedSubstituters = [ ];
   trustedPublicKeys = [ ];
+  allowedUris = [ ];
+  maxSystemPackages = 200;
 };
 ```
 

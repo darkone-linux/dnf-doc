@@ -1,0 +1,251 @@
+---
+title: Notions de sécurité
+sidebar:
+  label: Notions de sécurité
+  order: 8
+lang: fr
+---
+
+{/* t:main */}
+{/* t:h 38218599dd7dd7159a7934e3ae359bf3674cb4431518e898540b601747ede6cb */}
+
+{/* t:p a051ef0d415a1bcd969f63d68bf3b56ac277583e611b8ef90b581a690fb9af75 */}
+Avant de régler le durcissement d'un hôte, il faut comprendre **ce que protège**
+le module `darkone.system.security` et **comment il décide** d'activer une
+protection. Cette page rassemble toutes les notions utiles pour paramétrer la
+sécurité en confiance.
+
+Le durcissement suit le référentiel
+[ANSSI BP-028](https://cyber.gouv.fr/publications/recommandations-de-securite-relatives-un-systeme-gnulinux)
+(GNU/Linux). Chaque recommandation porte un code (`R30`, `C4`…) et s'active
+**automatiquement** selon le niveau et la catégorie de la machine.
+
+:::tip[Deux pages complémentaires]
+Cette page explique les **concepts**. Le [catalogue des
+règles](/fr/doc/admin-guide/operate/security/) liste ce qui s'active à chaque
+niveau, et la page [Sécurité et durcissement](/fr/doc/admin-guide/maintain/security/)
+décrit la **mise en œuvre** au quotidien.
+:::
+
+{/* t:p 013efaf15d69ff0a822e2b463ee5edadd33f5aa4c8edf0e7244fa0d6faafea73 */}
+## Une philosophie : le durcissement progressif
+
+La sécurité n'est pas un interrupteur, c'est un **curseur**. On part d'un socle
+sûr pour tous, puis on renforce là où le risque le justifie. Trois principes
+guident chaque règle.
+
+| Principe | Idée | Exemple dans DNF |
+|---|---|---|
+| Défense en profondeur | Empiler les barrières, aucune n'est seule | Pare-feu, isolation des services, chiffrement |
+| Moindre privilège | Donner juste ce qu'il faut, rien de plus | `sudo` ciblé, services sans droits root |
+| Surface d'attaque réduite | Moins de code exposé, moins de failles | Services obsolètes coupés, ports surveillés |
+
+```d2
+style.fill: transparent
+direction: down
+
+title: Défense en profondeur {
+  shape: text
+  style.font-size: 20
+}
+
+boot: Amorçage (Secure Boot, LUKS, IOMMU)
+kernel: Noyau (sysctls, Lockdown, modules signés)
+system: Système (comptes, sudo, droits fichiers)
+services: Services (isolation systemd, MAC)
+network: Réseau (pare-feu, DNS sûr, supervision)
+data: Données (chiffrement, journaux scellés, sauvegardes)
+
+boot -> kernel -> system -> services -> network -> data
+```
+
+{/* t:p 315f8790ef17f19aac980acf07c26dbbe4fa928c20689146c89db9aee435cda3 */}
+## Les cinq leviers d'activation
+
+Une règle s'applique si, et seulement si, **toutes** ces conditions sont
+réunies. Ce sont les seuls réglages à connaître.
+
+| Levier | Rôle |
+|---|---|
+| `enable` | Active le module (activé par défaut sur tous les hôtes) |
+| `level` | Le niveau visé : plus il est haut, plus de règles s'activent |
+| `category` | Le type de machine : ajoute les règles propres au poste ou au serveur |
+| `excludes` | Des **étiquettes** qui coupent un groupe de règles incompatibles |
+| `exceptions` | Une règle précise contournée, avec **justification obligatoire** |
+
+```nix
+darkone.system.security = {
+  enable   = true;
+  level    = "intermediary";   # minimal | intermediary | reinforced | high
+  category = "server";         # base | client | server
+};
+```
+
+:::note[Comment une règle se décide]
+Règle active si&nbsp;: le module est activé **et** le niveau courant atteint la
+sévérité de la règle **et** la catégorie correspond **et** aucune étiquette
+d'exclusion ne s'applique **et** aucune exception n'est posée.
+:::
+
+{/* t:p 2d87a6944d6b089d90a61d2810aaabdf90dee622cb92f3edf3f432858ed7a557 */}
+## Les quatre niveaux
+
+Les niveaux sont **cumulatifs**&nbsp;: chaque palier ajoute ses règles à celles
+des paliers inférieurs. On monte **progressivement**, en testant chaque hôte.
+
+| Niveau | Pour quoi | Coût / contraintes |
+|---|---|---|
+| `minimal` | Socle commun, tout système (défaut) | Quasi nul, transparent |
+| `intermediary` | Recommandé pour presque tous les systèmes | Faible, quelques ajustements |
+| `reinforced` | Systèmes sensibles ou multi-utilisateurs | Réel : isolation, MAC, auditd |
+| `high` | Compétences et budget dédiés | Élevé : recompilation du noyau |
+
+{/* t:p 6c8545f1260fe9e60d5ce71c788fee3801d0a3338ed153622552f277f16c747b */}
+## Les trois catégories
+
+La catégorie sélectionne des **sous-ensembles** de règles selon l'usage de la
+machine. Elle est indépendante du niveau.
+
+| Catégorie | Machine visée | Ajoute notamment |
+|---|---|---|
+| `base` | Universelle, toujours appliquée | Toutes les règles communes |
+| `client` | Poste de travail (écran, USB, session) | USBGuard, verrouillage de session |
+| `server` | Serveur (services exposés) | Isolation réseau, supervision des services |
+
+:::caution[État actuel : catégorie `base` partout]
+Aujourd'hui, tous les hôtes tournent en `minimal` / `base` par défaut. Le
+rattachement automatique d'une catégorie à chaque profil (poste → `client`,
+serveur → `server`) **n'est pas encore câblé**. La catégorie conseillée par
+profil reste à fixer à la main pour l'instant.
+:::
+
+{/* t:p 3cf10d0cba016eea8b4219d8d81b1385d2ef18d5aff96526b77783f371907b6d */}
+## Le glossaire des notions ANSSI
+
+Les protections du module reposent sur des mécanismes Linux standards. Voici
+ceux qu'il faut connaître pour lire le catalogue des règles.
+
+{/* t:p 870674f22fb4a6f3fd611876c667d9e17bcc27c09d06b69e5f80cdd23727b847 */}
+### Amorçage et matériel
+
+| Notion | À quoi ça sert |
+|---|---|
+| [Secure Boot](https://wiki.archlinux.org/title/Unified_Extensible_Firmware_Interface/Secure_Boot) | N'autorise au démarrage que du code signé (anti-rootkit) |
+| [LUKS2](https://gitlab.com/cryptsetup/cryptsetup) | Chiffre le disque : vol de machine = données illisibles |
+| [IOMMU](https://en.wikipedia.org/wiki/Input%E2%80%93output_memory_management_unit) | Isole les accès mémoire des périphériques (anti-DMA) |
+| Mot de passe du chargeur | Empêche de modifier le démarrage sans authentification |
+
+{/* t:p 60e533791fe7920cfe8f27793832127b7a8c88d7e4768025acedc358e9053091 */}
+### Noyau
+
+| Notion | À quoi ça sert |
+|---|---|
+| [sysctl](https://www.kernel.org/doc/html/latest/admin-guide/sysctl/index.html) | Réglages noyau qui ferment des comportements risqués |
+| [LSM](https://www.kernel.org/doc/html/latest/admin-guide/LSM/index.html) | Modules de sécurité greffés dans le noyau |
+| [Lockdown](https://www.kernel.org/doc/html/latest/admin-guide/kernel-parameters.html) | Verrouille les accès directs au noyau (mémoire, kexec) |
+| [Yama](https://www.kernel.org/doc/html/latest/admin-guide/LSM/Yama.html) | Restreint `ptrace` (un process ne peut pas en espionner un autre) |
+| Modules signés | Refuse de charger un pilote noyau non signé |
+| [linux_hardened](https://github.com/anthraxx/linux-hardened) | Noyau précompilé avec des protections renforcées |
+
+{/* t:p 7ff8209f96faf9db23cdd9043f84e9c86111b54836d50600afd3fe724b0fc2f3 */}
+### Comptes et authentification
+
+| Notion | À quoi ça sert |
+|---|---|
+| [PAM](https://www.man7.org/linux/man-pages/man8/pam.8.html) | La chaîne qui valide chaque authentification |
+| [yescrypt](https://www.openwall.com/yescrypt/) | Algorithme moderne de stockage des mots de passe |
+| `pam_faillock` | Bloque le compte après plusieurs échecs (anti force brute) |
+| Comptes non mutables | Les comptes sont déclarés en config, pas créés à la volée |
+| Moindre privilège `sudo` | Droits d'administration ciblés, tracés, sans négation |
+
+{/* t:p 342700b8bf9e8b4e7c6ff44191a81a2f9c84d47479f45e6c89977d3aebb1d3eb */}
+### Services et confinement
+
+| Notion | À quoi ça sert |
+|---|---|
+| [MAC](https://www.kernel.org/doc/html/latest/admin-guide/LSM/apparmor.html) | Contrôle d'accès obligatoire (AppArmor) : un service ne sort pas de son bac à sable |
+| Isolation systemd | `ProtectSystem`, namespaces, capacités réduites par service |
+| Capabilities | Donner un droit précis (ex. ouvrir un port) sans tout root |
+| `setuid` minimal | Réduire les binaires qui s'exécutent en root |
+
+{/* t:p 9f42007584003ee18c5165f94c90fec409e0572d2e0ad7d0139e3c7b7a7e41de */}
+### Réseau
+
+| Notion | À quoi ça sert |
+|---|---|
+| [nftables](https://wiki.nftables.org/) | Le moteur de pare-feu (DNF est en refus par défaut) |
+| Filtrage sortant (egress) | Bloque ce que la machine a le droit de contacter |
+| [DNSSEC](https://www.dnssec.net/) / [DoT](https://en.wikipedia.org/wiki/DNS_over_TLS) | Résolution DNS authentifiée et chiffrée |
+| [NTS](https://www.ntp.org/documentation/nts/) | Synchronisation de l'heure authentifiée |
+| Surface réseau réduite | Surveille et limite les ports en écoute |
+
+{/* t:p f849c018f0abf86dfe38f5a857cb0b5becd9a6ff294b2de72ab1fc66fa397749 */}
+### Journalisation et intégrité
+
+| Notion | À quoi ça sert |
+|---|---|
+| Journaux persistants scellés | Traces inviolables, conservées au redémarrage |
+| [auditd](https://www.man7.org/linux/man-pages/man8/auditd.8.html) | Enregistre les appels système sensibles |
+| Scellement / HIDS | Vérifie qu'aucun fichier système n'a été altéré |
+
+{/* t:p 893ddb92a5ee9dcf7605da616a7d3dba4e6c8a2d7e961bd96efe2e9335b6c9a6 */}
+## Les étiquettes d'exclusion
+
+Certaines règles cassent un usage légitime. On les neutralise par **étiquette**
+dans `excludes`, sans descendre le niveau global.
+
+| Étiquette | Ignore |
+|---|---|
+| `kernel-recompile` | Le durcissement noyau à la compilation (R15 à R27, C1) |
+| `no-ipv6` | La désactivation d'IPv6 (R13, R22) |
+| `no-mac` | Le contrôle d'accès obligatoire (R37, R45) |
+| `no-auditd` | auditd (R73) |
+| `needs-jit` | Le W^X strict (Java, .NET, V8, WebAssembly) |
+| `needs-hibernation` | La coupure de l'hibernation (ordinateurs portables) |
+| `needs-usb-hotplug` | USBGuard (postes à branchements USB fréquents) |
+
+```nix
+darkone.system.security.excludes = [ "needs-jit" "no-ipv6" ];
+```
+
+{/* t:p f572435ff01582c438b5c43cbb2f363b27049f12b16624967f09e479dd6de525 */}
+## Les exceptions justifiées
+
+Pour contourner **une** règle précise sans toucher au reste, on pose une
+exception avec une justification (obligatoire, tracée dans la configuration).
+
+```nix
+darkone.system.security.exceptions = {
+  R9.rationale = "Conteneurs rootless requis en développement.";
+};
+```
+
+:::note[Exception structurelle : SELinux]
+Les règles `R46` à `R49` (SELinux) sont exceptées d'office : SELinux n'est pas
+supporté sur NixOS. AppArmor (`R45`) joue le rôle de MAC.
+:::
+
+{/* t:p c7361bcac487e5abbfc35000a0eeb4c1f02e1a580edd30b9710320dca23a3d7e */}
+## Les effets de bord à anticiper
+
+Monter un niveau peut gêner un usage courant. Les principaux pièges&nbsp;:
+
+:::caution[À tester avant la production]
+- `noexec /tmp`, désactivation IPv6, modules non signés peuvent casser des
+  applications ou des périphériques.
+- Le filtrage sortant (egress) coupe les téléchargements directs : prévoir un
+  relais ou une liste blanche.
+- Le verrouillage `auditd` (`-e 2`) rend la configuration immuable : un
+  changement de règles exige un redémarrage.
+:::
+
+Chaque fichier de règle documente ses effets de bord dans des commentaires
+`sideEffects`. Le [catalogue des règles](/fr/doc/admin-guide/operate/security/)
+en donne la vue d'ensemble par niveau.
+
+{/* t:p 299c12de709d7507623525715d0bbfa2911d6b19c875786b81b2dd3ff2753c68 */}
+## Voir aussi
+
+- [Catalogue des règles de sécurité](/fr/doc/admin-guide/operate/security/) : ce qui s'active à chaque niveau et catégorie
+- [Sécurité et durcissement](/fr/doc/admin-guide/maintain/security/) : la mise en œuvre au quotidien
+- [Référence des modules de sécurité](/fr/ref/modules/security/) : toutes les options exposées par le code
