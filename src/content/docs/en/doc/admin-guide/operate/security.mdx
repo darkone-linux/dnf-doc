@@ -223,22 +223,22 @@ kernel. On a machine without this need, add `kernel-recompile` to `excludes` to
 ignore it.
 :::
 
-{/* t:p b499d88790ef0bb2ca9b0f567b4a59e224d5c71ff2191c85e27ff9c79e56aa43 */}
+{/* t:p bd52fe6aa55ab1a5b3abfa55798db39b658200d3d37d3a18346916037adb1aab */}
 ## Adapt without breaking everything
 
-Two mechanisms allow bypassing a specific protection without lowering the overall
-level.
+Two safety valves allow bypassing a specific protection without lowering the
+global level.
 
-- **Labels** (`excludes`): exclude a **group** of incompatible rules
+- **Tags** (`excludes`): exclude a **group** of incompatible rules
   (e.g. `needs-jit`, `no-ipv6`).
-- **Exceptions** (`exceptions`): override **one** rule, justification
+- **Exceptions** (`exceptions`): bypass **one** rule, justification
   required.
 
-Details of these mechanisms are in [Security
+Details on these safety valves are in [Security
 concepts](/en/doc/admin-guide/understand/security-notions/#exclusion-labels).
 
-:::danger[Module being stabilized]
-Raise the level **gradually** and test each host before production.
+:::danger[Module under stabilization]
+Raise the level **progressively** and test each host before production.
 :::
 
 {/* t:p e7e75fc2664cff04022043f12392c2bbcb3e4ba07577b01d877932b81320a7ca */}
