@@ -1,13 +1,29 @@
 ---
-title: Security rules catalog
+title: Security rule catalog
 sidebar:
   label: Security rules
   order: 10
 lang: en
+head:
+  - tag: style
+    content: |
+      /* « Rule catalog » tables (6 col., centered columns) :
+         consistent widths across tables. */
+      .sl-markdown-content table:has(td[align="center"]) {
+        display: table; /* Starlight forces tables to `block`, overriding width:100% */
+        table-layout: fixed;
+        width: 100%;
+      }
+      .sl-markdown-content table:has(td[align="center"]) :is(th, td):first-child {
+        width: 6.5rem; /* Code : accommodates `R15`–`R27` */
+      }
+      .sl-markdown-content table:has(td[align="center"]) :is(th, td):nth-child(n+3) {
+        width: 3.5rem; /* Min / Inter / Reinforced / High */
+      }
 ---
 
 {/* t:translated-from fr */}
-{/* t:h 8a19eb2d3a8a4a917b65e1a22259f0dd79f6f477ffc9f477154c1a488a67da4a */}
+{/* t:h 3f65f89818cab30174dca07696f8c2a9520efc8ee7ac589bde7707c8eeaffc21 */}
 
 {/* t:p 054fae31781777f31e1bd20a2bbc4d3626591128fd0ee30f93ed0f9213b91458 */}
 This page summarizes **which ANSSI rules are activated**, according to the **level** and
