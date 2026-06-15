@@ -69,6 +69,10 @@ mon pont activé, mes conversations WhatsApp, Telegram ou Messenger
 apparaissent dans Element comme des salons ordinaires&nbsp;: je lis et je
 réponds depuis Element, mes correspondants ne voient aucune différence.
 
+Ces ponts reposent sur le projet [mautrix](https://docs.mau.fi/bridges/go/setup.html),
+la référence du domaine. Chaque pont a sa propre page de documentation
+officielle, vers laquelle renvoient les sections ci-dessous.
+
 ```d2
 style.fill: transparent
 direction: right
@@ -116,47 +120,121 @@ cloud inconnu. En cas de doute sur une commande, envoyer `help` au bot.
 {/* t:p b590c0efce81f1982a68387e125d96251d61821db7e141c4f424c47517dc286e */}
 ### WhatsApp
 
-Bot&nbsp;: `@whatsappbot:domain.tld`. Envoyer `login`, choisir la méthode
-**QR-code**, puis sur le téléphone&nbsp;: WhatsApp → Réglages → **Appareils
-connectés** → Connecter un appareil, et scanner le code affiché dans Element.
-Le téléphone doit rester allumé et connecté de temps en temps, comme pour
-WhatsApp Web.
+Le pont WhatsApp se connecte comme un **appareil lié**, exactement comme
+WhatsApp Web. Simple et fiable.
+
+<Steps>
+
+1. Démarrer une conversation directe avec `@whatsappbot:domain.tld` et lui
+   envoyer `login qr`.
+
+2. Sur le téléphone&nbsp;: WhatsApp → Réglages → **Appareils connectés** →
+   Connecter un appareil, puis scanner le QR-code affiché dans Element.
+
+</Steps>
+
+<Aside type="tip" title="Garder le téléphone à portée">
+Comme WhatsApp Web, le téléphone doit se reconnecter de temps en temps&nbsp;:
+au-delà de **deux semaines** hors ligne, l'appareil lié est déconnecté et il
+faut refaire la manipulation. Variante sans scan&nbsp;: `login phone` affiche un
+code à saisir sur le téléphone.
+</Aside>
+
+📖 [Documentation officielle du pont WhatsApp](https://docs.mau.fi/bridges/go/whatsapp/authentication.html)
 
 {/* t:p 689b5a9afec86e7af415908cf89f6f0337cfe843992d0eff058d5c3cdff6e96c */}
 ### Signal
 
-Bot&nbsp;: `@signalbot:domain.tld`. Envoyer `login`, choisir la méthode
-**QR-code**, puis sur le téléphone&nbsp;: Signal → Paramètres → **Appareils
-liés** → Ajouter, et scanner le code affiché dans Element.
+Le pont Signal se relie comme un **appareil lié** supplémentaire, sans toucher
+à la connexion existante du téléphone.
+
+<Steps>
+
+1. Démarrer une conversation directe avec `@signalbot:domain.tld` et lui
+   envoyer `login`.
+
+2. Sur le téléphone&nbsp;: Signal → Paramètres → **Appareils liés** → Ajouter,
+   puis scanner le QR-code affiché dans Element.
+
+</Steps>
+
+<Aside type="note" title="Historique des messages">
+À la connexion, Signal peut proposer de **transférer l'historique** des
+conversations. À défaut, les salons se remplissent au fil des nouveaux
+messages.
+</Aside>
+
+📖 [Documentation officielle du pont Signal](https://docs.mau.fi/bridges/go/signal/authentication.html)
 
 {/* t:p 53fe66ee327acd57a443de77a7a65a0b3ad61b431619cae5120b6da07a089670 */}
 ### Telegram
 
-Bot&nbsp;: `@telegrambot:domain.tld`. Envoyer `login`, puis mon **numéro de
-téléphone** au format international (`+33612345678`). Telegram m'envoie un
-code de vérification, que je transmets au bot. Si mon compte a un mot de
-passe « deux étapes », le bot me le demandera aussi.
+Le pont Telegram se connecte avec mon **numéro de téléphone**, comme un client
+Telegram de plus.
+
+<Steps>
+
+1. Démarrer une conversation directe avec `@telegrambot:domain.tld` et lui
+   envoyer `login phone +33612345678` (numéro au format international).
+
+2. Saisir le **code de vérification** envoyé par Telegram, puis, si mon compte
+   a un mot de passe « deux étapes », ce mot de passe.
+
+</Steps>
+
+<Aside type="note" title="Où arrive le code ?">
+Telegram **n'envoie pas** le code par SMS&nbsp;: il l'affiche dans une session
+Telegram déjà ouverte (téléphone ou ordinateur). Il faut donc avoir un client
+Telegram déjà connecté. Variante&nbsp;: `login qr` pour scanner un QR-code.
+</Aside>
+
+📖 [Documentation officielle du pont Telegram](https://docs.mau.fi/bridges/go/telegram/authentication.html)
 
 {/* t:p 5dafc95f65d608f3a4fdccffd5c1b3d7b5158d9d2dc4a97fbe596ba8ecaf236e */}
 ### Messenger (Facebook)
 
-Bot&nbsp;: `@messengerbot:domain.tld`. Envoyer `login` et suivre les
-instructions&nbsp;: la connexion se fait en récupérant les **cookies** d'une
-session ouverte sur `messenger.com` depuis un navigateur d'ordinateur. C'est
-la connexion la plus technique&nbsp;; ne pas hésiter à demander un coup
-de main à l'administrateur.
+Le pont Messenger se connecte en réutilisant les **cookies** d'une session
+ouverte dans un navigateur. C'est la connexion la plus technique de toutes.
+
+<Steps>
+
+1. Démarrer une conversation directe avec `@messengerbot:domain.tld` et lui
+   envoyer `login`.
+
+2. Se connecter sur `messenger.com` dans une fenêtre privée, puis suivre les
+   instructions du bot pour lui transmettre les cookies de la session.
+
+</Steps>
+
+<Aside type="caution" title="Étape délicate">
+Récupérer les cookies passe par les **outils de développement** du navigateur.
+En cas de doute, demander un coup de main à l'administrateur. Activer la
+**double authentification** sur le compte Facebook limite les blocages.
+</Aside>
+
+📖 [Documentation officielle du pont Meta (Messenger)](https://docs.mau.fi/bridges/go/meta/authentication.html)
 
 {/* t:p a8342aacf09b9f93e62519aada248fdb632c28dc6718298daa9f1a45f4622f58 */}
 ### Discord
 
-Bot&nbsp;: `@discordbot:domain.tld`. Envoyer `login-qr` et scanner le
-QR-code avec l'application **Discord** du téléphone (Réglages → Scanner le
-QR code).
+Le pont Discord se connecte d'un simple scan de QR-code.
+
+<Steps>
+
+1. Démarrer une conversation directe avec `@discordbot:domain.tld` et lui
+   envoyer `login-qr`.
+
+2. Scanner le QR-code avec l'application **Discord** du téléphone (Réglages →
+   Scanner le QR code).
+
+</Steps>
 
 <Aside type="caution" title="Pont optionnel">
 Le pont Discord n'est pas activé par défaut. S'il ne répond pas, demander à
 l'administrateur de l'activer.
 </Aside>
+
+📖 [Documentation officielle du pont Discord](https://docs.mau.fi/bridges/go/discord/authentication.html)
 
 {/* t:p 09e3725ab8bc2238fa4586a64944beb0d85077288dccb62c2d6fd14eaeb4c652 */}
 ### Commandes utiles
