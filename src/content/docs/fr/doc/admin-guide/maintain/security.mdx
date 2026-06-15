@@ -85,7 +85,7 @@ Certaines règles gênent l'usage courant : `noexec /tmp` (R28), SMT désactivé
 avant de monter le niveau en production.
 :::
 
-{/* t:p 786da2816c470373ef3f72a635ff3011994ae00fcfa2d14e8250c6ad103e90bd */}
+{/* t:p 5ca2399225ec22c276944381d8a9b4918a20d84f4c4c7179400f212b2c2083a9 */}
 ## MAC, pare-feu, fail2ban
 
 - **MAC / AppArmor** (R37, R45) : confinement applicatif ; SELinux est
@@ -94,7 +94,26 @@ avant de monter le niveau en production.
 - **fail2ban** : bannit les IP après tentatives répétées ; service à activer
   dans le [catalogue](/fr/doc/admin-guide/operate/services/).
 
+{/* t:p b760b080d259ac3fdcd87ffda6369730305015387aef4c727ac50538104fb08e */}
+## Confinement des services et amorçage
+
+Deux règles demandent une décision explicite de l'administrateur :
+
+- **Bac à sable systemd** (R52, R55, R63) : le confinement complet s'applique aux
+  unités déclarées dans `darkone.security.services.hardenedUnits` — **vide par
+  défaut**, car un durcissement aveugle casserait des services. On y ajoute les
+  unités au cas par cas après test.
+- **Amorçage et chiffrement** (R3, R5, C6) : le module **avertit** si le Secure
+  Boot ou LUKS ne sont pas détectés, mais ne reconfigure pas le démarrage. Ces
+  protections se déclarent dans la configuration disque de l'hôte (`disko`,
+  `lanzaboote`).
+
+```nix
+darkone.security.services.hardenedUnits = [ "nginx" "gitea" ];
+```
+
 :::note[Référence des règles]
-La cartographie complète des règles (R0–R62…) figure dans les modules de
-sécurité du framework et la [référence des modules](/fr/ref/modules/security/).
+La cartographie complète des règles (R1–R80, C1–C12) figure dans le
+[catalogue](/fr/doc/admin-guide/operate/security/) et la [référence des
+modules](/fr/ref/modules/security/).
 :::

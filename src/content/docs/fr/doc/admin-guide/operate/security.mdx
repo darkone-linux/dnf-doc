@@ -83,17 +83,25 @@ Les règles marquées **(serveur)** ou **(poste)** ne s'activent qu'avec la
 catégorie correspondante (`server` ou `client`), en plus du niveau indiqué.
 :::
 
-{/* t:p 80af236b1e8dcc6875db52df348b05cd57949c959fc2a338d9a3508eb89a63ba */}
+{/* t:p c36904e0276f372fa3beda70f5cec86636e1605193ce2e35fcdd6d40f34ae9ef */}
 ### Amorçage et matériel
 
 | Code | Règle | Min | Inter | Renf | Élevé |
 |---|---|:-:|:-:|:-:|:-:|
-| `R3` | Secure Boot UEFI (si supporté) | ❌ | ✅ | ✅ | ✅ |
-| `R5` | Mot de passe du chargeur d'amorçage | ❌ | ✅ | ✅ | ✅ |
-| `C6` | Chiffrement disque LUKS2 | ❌ | ✅ | ✅ | ✅ |
+| `R3` | Secure Boot UEFI (si supporté) | ❌ | ⚠️ | ⚠️ | ⚠️ |
+| `R5` | Mot de passe du chargeur d'amorçage | ❌ | ⚠️ | ⚠️ | ⚠️ |
+| `C6` | Chiffrement disque LUKS2 | ❌ | ⚠️ | ⚠️ | ⚠️ |
 | `R7` | IOMMU activé | ❌ | ❌ | ✅ | ✅ |
 | `R29` | `/boot` restreint | ❌ | ❌ | ✅ | ✅ |
 | `R6` | Protection cmdline et initramfs | ❌ | ❌ | ❌ | ✅ |
+
+:::note[`R3`, `R5`, `C6` : avertissement, pas de reconfiguration de l'amorçage]
+À partir de `intermediary`, ces règles **émettent un avertissement** quand la
+protection n'est pas détectée, mais ne reconfigurent pas le démarrage. Le Secure
+Boot (lanzaboote, enrôlement de clés) et le chiffrement LUKS se **déclarent dans
+la configuration disque** de l'hôte (`disko`) ; le module ne fait que signaler
+leur absence. Le futur `checkScript` vérifiera leur état réel.
+:::
 
 {/* t:p 39ffe2c427bb1dd64be21221d1dd6e7855673b3992e33480da38510659fba48b */}
 ### Noyau
@@ -109,7 +117,7 @@ catégorie correspondante (`server` ou `client`), en plus du niveau indiqué.
 | `C2` | LSM Lockdown | ❌ | ❌ | ❌ | ✅ |
 | `R15`–`R27` | Durcissement à la compilation | ❌ | ❌ | ❌ | ✅ |
 
-{/* t:p 919010fa6ef3557878aae4d2882f6f57135572846f3d5e85540146dadc736b97 */}
+{/* t:p e12981676425489f682f8bdd5c291f7b454a0d43b012ffe810eaca861842839b */}
 ### Comptes et authentification
 
 | Code | Règle | Min | Inter | Renf | Élevé |
@@ -121,10 +129,17 @@ catégorie correspondante (`server` ou `client`), en plus du niveau indiqué.
 | `R33` | Traçabilité des actions admin | ❌ | ✅ | ✅ | ✅ |
 | `R34` | Comptes de service sans shell | ❌ | ✅ | ✅ | ✅ |
 | `R35` | Comptes de service uniques | ❌ | ✅ | ✅ | ✅ |
-| `R67` | PAM distant sécurisé | ❌ | ✅ | ✅ | ✅ |
-| `R69` | Bases d'utilisateurs en TLS | ❌ | ✅ | ✅ | ✅ |
-| `R70` | Comptes système ≠ annuaire | ❌ | ✅ | ✅ | ✅ |
+| `R67` | PAM distant sécurisé | ❌ | ⚠️ | ⚠️ | ⚠️ |
+| `R69` | Bases d'utilisateurs en TLS | ❌ | ⚠️ | ⚠️ | ⚠️ |
+| `R70` | Comptes système ≠ annuaire | ❌ | ⚠️ | ⚠️ | ⚠️ |
 | `C10` | Anti force brute, limites de session | ❌ | ✅ | ✅ | ✅ |
+
+:::note[`R67`, `R69`, `R70` : annuaire distant différé]
+Ces règles ne concernent qu'un **annuaire distant** (SSSD/nslcd), non utilisé
+par DNF aujourd'hui ; leur volet TLS est différé (futur `checkScript`). Seul
+l'anti-force-brute **local** (`pam_faillock`, voir `C10`) est actif dès
+`intermediary`.
+:::
 
 {/* t:p 528d129ae4723581358ce42fc281b8d52b9487c10c24982d45778aa18b648516 */}
 ### Droits d'administration (sudo)
@@ -138,7 +153,7 @@ catégorie correspondante (`server` ou `client`), en plus du niveau indiqué.
 | `R38` | Groupe `sudo` dédié | ❌ | ❌ | ✅ | ✅ |
 | `R41` | Limitation des overrides `NOEXEC` | ❌ | ❌ | ✅ | ✅ |
 
-{/* t:p 4bd3f8b3cf0bc9f0fd32caa96b5ad021a6a62f88717cfb14d91871212707c899 */}
+{/* t:p ce99852047f4ca6a5a71c15d5fa508052467924d30f4591db6f648155ce8a897 */}
 ### Fichiers et permissions
 
 | Code | Règle | Min | Inter | Renf | Élevé |
@@ -149,23 +164,40 @@ catégorie correspondante (`server` ou `client`), en plus du niveau indiqué.
 | `R14` | sysctls système de fichiers | ❌ | ✅ | ✅ | ✅ |
 | `R28` | Partitionnement et options de montage | ❌ | ✅ | ✅ | ✅ |
 | `R50` | Restriction des fichiers sensibles | ❌ | ✅ | ✅ | ✅ |
-| `R52` | Permissions des sockets et tubes nommés | ❌ | ✅ | ✅ | ✅ |
-| `R55` | Répertoires temporaires par utilisateur | ❌ | ✅ | ✅ | ✅ |
+| `R52` | Permissions des sockets et tubes nommés | ❌ | ⚠️ | ⚠️ | ⚠️ |
+| `R55` | Répertoires temporaires par utilisateur | ❌ | ⚠️ | ⚠️ | ⚠️ |
 | `R36` | `UMASK` 0077 | ❌ | ❌ | ✅ | ✅ |
 | `R57` | `setuid` root minimal (capabilities) | ❌ | ❌ | ✅ | ✅ |
 
-{/* t:p 0f34c2fe137d54f134230923a673e27e455ffc3692a6bd8b2f8274ee55893302 */}
+:::note[`R28`, `R52`, `R55` : services et partitions désignés]
+`R28` durcit d'office `/tmp`, `/proc` et `/dev/shm` ; les options sur `/var/log`,
+`/srv`, `/opt`, `/home` s'ajoutent via `darkone.security.filesystem.extraMountHardening`
+(partitions séparées requises). `R52` (mode `0750` des répertoires d'exécution)
+et `R55` (`/tmp` privé par service) s'appliquent aux unités listées dans
+`darkone.security.services.hardenedUnits` — vide par défaut. Voir `R63`.
+:::
+
+{/* t:p 1dfc54618127e4183dc0a6137f2382e47156604b5c525a114b9baaca9ef7097b */}
 ### Services et confinement
 
 | Code | Règle | Min | Inter | Renf | Élevé |
 |---|---|:-:|:-:|:-:|:-:|
 | `R62` | Services obsolètes coupés | ✅ | ✅ | ✅ | ✅ |
-| `R63` | Capacités des services réduites | ❌ | ✅ | ✅ | ✅ |
+| `R63` | Capacités des services réduites | ❌ | ⚠️ | ⚠️ | ⚠️ |
 | `R37` | Contrôle d'accès obligatoire (MAC) | ❌ | ❌ | ✅ | ✅ |
 | `R45` | Profils AppArmor | ❌ | ❌ | ✅ | ✅ |
 | `R64` | Privilèges de service restreints | ❌ | ❌ | ✅ | ✅ |
 | `R65` | Isolation des services (namespaces) | ❌ | ❌ | ✅ | ✅ |
 | `R66` | Durcissement des conteneurs | ❌ | ❌ | ❌ | ✅ |
+
+:::note[`R63` : bac à sable opt-in par service]
+Le confinement systemd complet (`ProtectSystem=strict`, filtres d'appels
+système, `MemoryDenyWriteExecute`, `UMask=0027`…) s'applique aux unités déclarées
+dans `darkone.security.services.hardenedUnits`. **Vide par défaut** : un
+durcissement aveugle casserait des services. La liste agit comme un *plancher*,
+surchargeable par unité, et `needs-jit` lève `MemoryDenyWriteExecute` pour les
+moteurs JIT.
+:::
 
 {/* t:p f463c066b8dde638f3eab2eb0c7daef12a51a6115c6ca12c1e651cd5a1a0745d */}
 ### Réseau

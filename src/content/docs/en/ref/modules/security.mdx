@@ -82,7 +82,7 @@ darkone.security.complement = {
 
 <hr/>
 
-{/* t:p 2a965182b32d7af5b9e9e7a367807e0338a4406d467e0d074aa92eb3397bc4df */}
+{/* t:p ba0d62ebcf0567643fdb658645f929514423c5cd1b1e6be3747d68f9bf274346 */}
 ### &#x1F511; darkone.security.filesystem
 
 Partitioning, file tree, and file permissions (R28–R29, R50–R57). (wip)
@@ -110,11 +110,18 @@ A `nixos-rebuild` wrapper must ensure automatic mount/unmount.
 
 * **enable** `bool` Enable ANSSI filesystem hardening (R28–R29, R50–R57).
 * **allowedSetuid** `listOf str` Allowlist of tolerated setuid/setgid binaries (R56, R57).
+* **extraMountHardening** `listOf str` Mount points to harden with `nosuid,nodev,noexec` (R28). Each listed
+path MUST be a separate partition declared elsewhere (hardware-
+configuration / disko); the options are merged into its existing
+`fileSystems` entry. An explicit list (rather than a global flag)
+avoids guessing the layout and never creates phantom mounts. Do not
+list `/home` if users run scripts there — `noexec` would break them.
 
 ```nix
 darkone.security.filesystem = {
   enable = false;
   allowedSetuid = [ ];
+  extraMountHardening = [ ];
 };
 ```
 
@@ -504,7 +511,7 @@ darkone.security.preboot.enable = false;
 
 <hr/>
 
-{/* t:p ce54cd48de98ec5dc22ff373035246c28bb79ec2dd9d0a12065aa0be732eed2f */}
+{/* t:p e8dcc414f690076517da5ede50aebcc4a5748fb4d62f61fa542eddeae4f5e859 */}
 ### &#x1F511; darkone.security.services
 
 Hardening of systemd services (R62–R66). (wip)
@@ -531,11 +538,18 @@ volumes required before enabling.
 
 * **enable** `bool` Enable ANSSI hardening of systemd services (R62–R66).
 * **rootServicesAllowed** `listOf str` systemd services allowed to run as root without CapabilityBoundingSet (R64).
+* **hardenedUnits** `listOf str` systemd units to which the ANSSI hardening baseline is applied
+(R52 RuntimeDirectoryMode, R55 PrivateTmp, R63 full sandbox via
+`dnfLib.mkHardenedServiceConfig`). Empty by default: blanket
+sandboxing can break services that need write access or extra
+syscalls, so units are opt-in. List framework-owned units known to
+tolerate confinement; per-unit `serviceConfig` overrides still win.
 
 ```nix
 darkone.security.services = {
   enable = false;
   rootServicesAllowed = [ ];
+  hardenedUnits = [ ];
 };
 ```
 

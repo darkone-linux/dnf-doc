@@ -82,14 +82,14 @@ darkone.security.complement = {
 
 <hr/>
 
-{/* t:p 2a965182b32d7af5b9e9e7a367807e0338a4406d467e0d074aa92eb3397bc4df */}
+{/* t:p ba0d62ebcf0567643fdb658645f929514423c5cd1b1e6be3747d68f9bf274346 */}
 ### &#x1F511; darkone.security.filesystem
 
-Partitionnement, arborescence de fichiers et permissions de fichiers (R28–R29, R50–R57). (en cours)
+Partitionnement, arborescence et permissions des fichiers (R28–R29, R50–R57). (wip)
 
 Couvre les options de montage sécurisées (R28), la restriction de /boot (R29),
-les permissions des fichiers sensibles (R50), les mots de passe hors du magasin (R51),
-les sockets (R52), les fichiers orphelins (R53), le bit collant (R54),
+les permissions des fichiers sensibles (R50), les mots de passe exclus du store (R51),
+les sockets (R52), les fichiers orphelins (R53), le sticky bit (R54),
 les répertoires temporaires par utilisateur (R55) et setuid (R56, R57).
 
 :::caution[Activation]
@@ -99,24 +99,34 @@ définis dans `darkone.system.security` (via `isActive`).
 :::
 
 :::caution[R28 — noexec /tmp]
-`noexec` sur /tmp casse de nombreux installateurs et compilateurs (pip, cargo, gcc).
-Contournement : `export TMPDIR=$XDG_RUNTIME_DIR` dans les profils shell.
+`noexec` sur /tmp casse de nombreux installeurs et compilateurs (pip, cargo, gcc).
+Solution : `export TMPDIR=$XDG_RUNTIME_DIR` dans les profils shell.
 :::
 
 :::caution[R29 — /boot noauto]
 `noauto` sur /boot nécessite un remontage manuel à chaque mise à jour NixOS.
-Un wrapper `nixos-rebuild` doit assurer le montage/démontage automatique.
+Un wrapper `nixos-rebuild` doit garantir le montage/démontage automatique.
 :::
 
-* **enable** `bool` Activer le durcissement du système de fichiers ANSSI (R28–R29, R50–R57).
-* **allowedSetuid** `listOf str` Liste blanche des binaires setuid/setgid tolérés (R56, R57).
+* **enable** `bool` Active le durcissement du système de fichiers ANSSI (R28–R29, R50–R57).
+* **allowedSetuid** `listOf str` Liste blanche des binaires setuid/setgid autorisés (R56, R57).
+* **extraMountHardening** `listOf str` Points de montage à durcir avec `nosuid,nodev,noexec` (R28). Chaque chemin
+listé DOIT être une partition séparée déclarée ailleurs (hardware-
+configuration / disko) ; les options sont fusionnées dans son entrée
+`fileSystems` existante. Une liste explicite (plutôt qu'un flag global)
+évite de deviner le layout et ne crée jamais de montages fantômes. Ne pas
+lister `/home` si des utilisateurs y exécutent des scripts — `noexec` les
+casserait.
 
 ```nix
 darkone.security.filesystem = {
   enable = false;
   allowedSetuid = [ ];
+  extraMountHardening = [ ];
 };
 ```
+
+<hr/>
 
 {/* t:p c6ded5ab27c1e83903c5b94036a686004124ab6ff6dc269c0a0ceafe4bf226a1 */}
 ### &#x1F511; darkone.security.integrity
@@ -482,10 +492,10 @@ sur les tableaux NVMe à très haut débit.
 darkone.security.preboot.enable = false;
 ```
 
-{/* t:p ce54cd48de98ec5dc22ff373035246c28bb79ec2dd9d0a12065aa0be732eed2f */}
+{/* t:p e8dcc414f690076517da5ede50aebcc4a5748fb4d62f61fa542eddeae4f5e859 */}
 ### &#x1F511; darkone.security.services
 
-Durcissement des services systemd (R62–R66). (en cours)
+Durcissement des services systemd (R62–R66). (wip)
 
 Couvre la désactivation des services inutiles (R62), la réduction des fonctionnalités via
 les options de sécurité systemd (R63), la restriction des privilèges (R64),
@@ -503,19 +513,29 @@ tag `needs-jit` dans `excludes` ou excluez le service individuellement.
 :::
 
 :::caution[R66 — Docker userns-remap]
-Casse les bind-mounts hôte-conteneur (décalage UID). Migration des volumes existants
-requise avant activation.
+Casse les bind-mounts hôte-conteneur (décalage UID). Migration des
+volumes existants requise avant activation.
 :::
 
-* **enable** `bool` Activer le durcissement ANSSI des services systemd (R62–R66).
-* **rootServicesAllowed** `listOf str` services systemd autorisés à s'exécuter en tant que root sans CapabilityBoundingSet (R64).
+* **enable** `bool` Active le durcissement des services systemd ANSSI (R62–R66).
+* **rootServicesAllowed** `listOf str` services systemd autorisés à tourner en root sans CapabilityBoundingSet (R64).
+* **hardenedUnits** `listOf str` Unités systemd auxquelles la base de durcissement ANSSI est appliquée
+(R52 RuntimeDirectoryMode, R55 PrivateTmp, R63 sandbox complète via
+`dnfLib.mkHardenedServiceConfig`). Vide par défaut : le sandboxing
+généralisé peut casser les services nécessitant un accès en écriture ou des
+appels système supplémentaires, les unités sont donc opt-in. Listez les unités
+connues du framework qui tolèrent le confinement ; les surcharges `serviceConfig`
+par unité prévalent toujours.
 
 ```nix
 darkone.security.services = {
   enable = false;
   rootServicesAllowed = [ ];
+  hardenedUnits = [ ];
 };
 ```
+
+<hr/>
 
 {/* t:p dc75c5d9d99ca996012e9ba428f13856e96a7462d8215997de5ba6b38348b9a7 */}
 ### &#x1F511; darkone.security.sudo

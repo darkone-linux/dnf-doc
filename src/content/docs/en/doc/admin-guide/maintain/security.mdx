@@ -77,16 +77,35 @@ darkone.system.security.exceptions = {
 Some rules hinder everyday use: `noexec /tmp` (R28), SMT disabled (R8), unsigned modules (R18). Check the module's `sideEffects` comments before raising the level in production.
 :::
 
-{/* t:p 786da2816c470373ef3f72a635ff3011994ae00fcfa2d14e8250c6ad103e90bd */}
+{/* t:p 5ca2399225ec22c276944381d8a9b4918a20d84f4c4c7179400f212b2c2083a9 */}
 ## MAC, firewall, fail2ban
 
-- **MAC / AppArmor** (R37, R45) : application confinement; SELinux is
+- **MAC / AppArmor** (R37, R45) : application confinement ; SELinux is
   structurally unsupported on NixOS (exceptions R46–R49 by default).
 - **Firewall & network** : hardened by the `server` category (`network` module).
-- **fail2ban** : bans IPs after repeated attempts; service to enable
+- **fail2ban** : bans IPs after repeated attempts ; service to enable
   in the [catalogue](/en/doc/admin-guide/operate/services/).
 
+{/* t:p b760b080d259ac3fdcd87ffda6369730305015387aef4c727ac50538104fb08e */}
+## Service confinement and boot
+
+Two rules require an explicit decision from the administrator :
+
+- **systemd sandbox** (R52, R55, R63) : full confinement applies to
+  units declared in `darkone.security.services.hardenedUnits` — **empty by
+  default**, since blind hardening would break services. Units are added
+  on a case-by-case basis after testing.
+- **Boot and encryption** (R3, R5, C6) : the module **warns** if Secure
+  Boot or LUKS are not detected, but does not reconfigure the boot process. These
+  protections are declared in the host's disk configuration (`disko`,
+  `lanzaboote`).
+
+```nix
+darkone.security.services.hardenedUnits = [ "nginx" "gitea" ];
+```
+
 :::note[Rules reference]
-The complete mapping of rules (R0–R62…) is in the framework's security modules
-and the [module reference](/en/ref/modules/security/).
+The complete mapping of rules (R1–R80, C1–C12) is in the
+[catalogue](/en/doc/admin-guide/operate/security/) and the [modules
+reference](/en/ref/modules/security/).
 :::

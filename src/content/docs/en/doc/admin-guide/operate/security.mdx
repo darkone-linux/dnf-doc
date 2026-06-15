@@ -82,17 +82,25 @@ Rules marked **(server)** or **(client)** only activate with the
 corresponding category (`server` or `client`), in addition to the indicated level.
 :::
 
-{/* t:p 80af236b1e8dcc6875db52df348b05cd57949c959fc2a338d9a3508eb89a63ba */}
+{/* t:p c36904e0276f372fa3beda70f5cec86636e1605193ce2e35fcdd6d40f34ae9ef */}
 ### Boot and hardware
 
-| Code | Rule | Min | Inter | Renf | High |
+| Code | Rule | Min | Inter | Rein | High |
 |---|---|:-:|:-:|:-:|:-:|
-| `R3` | UEFI Secure Boot (if supported) | ❌ | ✅ | ✅ | ✅ |
-| `R5` | Bootloader password | ❌ | ✅ | ✅ | ✅ |
-| `C6` | LUKS2 disk encryption | ❌ | ✅ | ✅ | ✅ |
+| `R3` | UEFI Secure Boot (if supported) | ❌ | ⚠️ | ⚠️ | ⚠️ |
+| `R5` | Bootloader password | ❌ | ⚠️ | ⚠️ | ⚠️ |
+| `C6` | LUKS2 disk encryption | ❌ | ⚠️ | ⚠️ | ⚠️ |
 | `R7` | IOMMU enabled | ❌ | ❌ | ✅ | ✅ |
 | `R29` | `/boot` restricted | ❌ | ❌ | ✅ | ✅ |
 | `R6` | cmdline and initramfs protection | ❌ | ❌ | ❌ | ✅ |
+
+:::note[`R3`, `R5`, `C6`: warning, no boot reconfiguration]
+From `intermediary` onward, these rules **emit a warning** when the protection
+is not detected, but do not reconfigure the boot. Secure Boot (lanzaboote, key
+enrollment) and LUKS encryption are **declared in the host disk configuration**
+(`disko`); the module only signals their absence. The future `checkScript` will
+verify their actual state.
+:::
 
 {/* t:p 39ffe2c427bb1dd64be21221d1dd6e7855673b3992e33480da38510659fba48b */}
 ### Kernel
@@ -108,22 +116,28 @@ corresponding category (`server` or `client`), in addition to the indicated leve
 | `C2` | LSM Lockdown | ❌ | ❌ | ❌ | ✅ |
 | `R15`–`R27` | Compile-time hardening | ❌ | ❌ | ❌ | ✅ |
 
-{/* t:p 919010fa6ef3557878aae4d2882f6f57135572846f3d5e85540146dadc736b97 */}
+{/* t:p e12981676425489f682f8bdd5c291f7b454a0d43b012ffe810eaca861842839b */}
 ### Accounts and authentication
 
-| Code | Rule | Min | Inter | Renf | High |
+| Code | Rule | Min | Inter | Rein | High |
 |---|---|:-:|:-:|:-:|:-:|
-| `R30` | Unused accounts disabled | ✅ | ✅ | ✅ | ✅ |
+| `R30` | Disabled unused accounts | ✅ | ✅ | ✅ | ✅ |
 | `R31` | Strong passwords | ✅ | ✅ | ✅ | ✅ |
 | `R68` | Password storage in `yescrypt` | ✅ | ✅ | ✅ | ✅ |
 | `R32` | Lock on inactivity | ❌ | ✅ | ✅ | ✅ |
 | `R33` | Admin action traceability | ❌ | ✅ | ✅ | ✅ |
 | `R34` | Service accounts without shell | ❌ | ✅ | ✅ | ✅ |
 | `R35` | Unique service accounts | ❌ | ✅ | ✅ | ✅ |
-| `R67` | Secure remote PAM | ❌ | ✅ | ✅ | ✅ |
-| `R69` | User databases over TLS | ❌ | ✅ | ✅ | ✅ |
-| `R70` | System accounts ≠ directory | ❌ | ✅ | ✅ | ✅ |
+| `R67` | Secure remote PAM | ❌ | ⚠️ | ⚠️ | ⚠️ |
+| `R69` | User databases over TLS | ❌ | ⚠️ | ⚠️ | ⚠️ |
+| `R70` | System accounts ≠ directory | ❌ | ⚠️ | ⚠️ | ⚠️ |
 | `C10` | Anti brute-force, session limits | ❌ | ✅ | ✅ | ✅ |
+
+:::note[`R67`, `R69`, `R70`: remote directory deferred]
+These rules only concern a **remote directory** (SSSD/nslcd), not used by DNF
+today; their TLS aspect is deferred (future `checkScript`). Only **local**
+anti-brute-force (`pam_faillock`, see `C10`) is active from `intermediary`.
+:::
 
 {/* t:p 528d129ae4723581358ce42fc281b8d52b9487c10c24982d45778aa18b648516 */}
 ### Administration rights (sudo)
@@ -137,34 +151,50 @@ corresponding category (`server` or `client`), in addition to the indicated leve
 | `R38` | Dedicated `sudo` group | ❌ | ❌ | ✅ | ✅ |
 | `R41` | Limited `NOEXEC` overrides | ❌ | ❌ | ✅ | ✅ |
 
-{/* t:p 4bd3f8b3cf0bc9f0fd32caa96b5ad021a6a62f88717cfb14d91871212707c899 */}
+{/* t:p ce99852047f4ca6a5a71c15d5fa508052467924d30f4591db6f648155ce8a897 */}
 ### Files and permissions
 
-| Code | Rule | Min | Inter | Renf | High |
+| Code | Rule | Min | Inter | Rein | High |
 |---|---|:-:|:-:|:-:|:-:|
-| `R53` | Detection of orphan files | ✅ | ✅ | ✅ | ✅ |
+| `R53` | Orphaned file detection | ✅ | ✅ | ✅ | ✅ |
 | `R54` | Sticky bit on `/tmp` and `/var/tmp` | ✅ | ✅ | ✅ | ✅ |
-| `R56` | Detection of non-whitelisted `setuid` | ✅ | ✅ | ✅ | ✅ |
+| `R56` | `setuid` detection outside whitelist | ✅ | ✅ | ✅ | ✅ |
 | `R14` | Filesystem sysctls | ❌ | ✅ | ✅ | ✅ |
 | `R28` | Partitioning and mount options | ❌ | ✅ | ✅ | ✅ |
-| `R50` | Restriction of sensitive files | ❌ | ✅ | ✅ | ✅ |
-| `R52` | Permissions on sockets and named pipes | ❌ | ✅ | ✅ | ✅ |
-| `R55` | Per-user temporary directories | ❌ | ✅ | ✅ | ✅ |
+| `R50` | Sensitive file restriction | ❌ | ✅ | ✅ | ✅ |
+| `R52` | Socket and named pipe permissions | ❌ | ⚠️ | ⚠️ | ⚠️ |
+| `R55` | Per-user temporary directories | ❌ | ⚠️ | ⚠️ | ⚠️ |
 | `R36` | `UMASK` 0077 | ❌ | ❌ | ✅ | ✅ |
 | `R57` | Minimal root `setuid` (capabilities) | ❌ | ❌ | ✅ | ✅ |
 
-{/* t:p 0f34c2fe137d54f134230923a673e27e455ffc3692a6bd8b2f8274ee55893302 */}
+:::note[`R28`, `R52`, `R55`: designated services and partitions]
+`R28` hardens `/tmp`, `/proc` and `/dev/shm` by default; options on `/var/log`,
+`/srv`, `/opt`, `/home` are added via `darkone.security.filesystem.extraMountHardening`
+(separate partitions required). `R52` (`0750` mode for runtime directories)
+and `R55` (private `/tmp` per service) apply to units listed in
+`darkone.security.services.hardenedUnits` — empty by default. See `R63`.
+:::
+
+{/* t:p 1dfc54618127e4183dc0a6137f2382e47156604b5c525a114b9baaca9ef7097b */}
 ### Services and confinement
 
-| Code | Rule | Min | Inter | Renf | High |
+| Code | Rule | Min | Inter | Rein | High |
 |---|---|:-:|:-:|:-:|:-:|
 | `R62` | Obsolete services disabled | ✅ | ✅ | ✅ | ✅ |
-| `R63` | Reduced service capabilities | ❌ | ✅ | ✅ | ✅ |
+| `R63` | Reduced service capabilities | ❌ | ⚠️ | ⚠️ | ⚠️ |
 | `R37` | Mandatory access control (MAC) | ❌ | ❌ | ✅ | ✅ |
 | `R45` | AppArmor profiles | ❌ | ❌ | ✅ | ✅ |
 | `R64` | Restricted service privileges | ❌ | ❌ | ✅ | ✅ |
 | `R65` | Service isolation (namespaces) | ❌ | ❌ | ✅ | ✅ |
 | `R66` | Container hardening | ❌ | ❌ | ❌ | ✅ |
+
+:::note[`R63`: opt-in sandboxing per service]
+Full systemd confinement (`ProtectSystem=strict`, system call filters,
+`MemoryDenyWriteExecute`, `UMask=0027`…) applies to units declared in
+`darkone.security.services.hardenedUnits`. **Empty by default**: blind
+hardening would break services. The list acts as a *floor*, overridable per
+unit, and `needs-jit` lifts `MemoryDenyWriteExecute` for JIT engines.
+:::
 
 {/* t:p f463c066b8dde638f3eab2eb0c7daef12a51a6115c6ca12c1e651cd5a1a0745d */}
 ### Network
