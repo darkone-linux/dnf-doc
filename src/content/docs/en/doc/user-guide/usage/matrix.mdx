@@ -61,13 +61,17 @@ Throughout this page, `domain.tld` refers to the network's domain name.
 If in doubt, ask the administrator.
 </Aside>
 
-{/* t:p 0877eacd2766608fd094e35a61528d143c17d2203a393b6fd77d80fa9ef5f94b */}
+{/* t:p b8ad02b707c9af8b1d9b4b9504dacc2c3155265b731ecb3f03de95ba1597340d */}
 ## Bridges to WhatsApp, Telegram, and others
 
-A **bridge** connects Matrix to an external messaging service. Once my bridge
-is activated, my WhatsApp, Telegram or Messenger conversations appear in
-Element as ordinary rooms: I read and reply from Element, and my contacts see
+A **bridge** connects Matrix to an external messaging service. Once the bridge
+is activated, my WhatsApp, Telegram, or Messenger conversations appear in
+Element as regular rooms: I read and reply from Element, while my contacts see
 no difference.
+
+These bridges are built on the [mautrix](https://docs.mau.fi/bridges/go/setup.html)
+project, the reference in the field. Each bridge has its own official documentation
+page, linked in the sections below.
 
 ```d2
 style.fill: transparent
@@ -90,73 +94,145 @@ me: Me {
 contact -> wa <-> bridge <-> element -> me
 ```
 
-Each bridge is operated by a **bot**: a special contact that I send commands
-to. The principle is the same for all:
+Each bridge is operated by a **bot**: a special contact I send commands to. The
+principle is the same for all:
 
 <Steps>
 
-1. In Element, I start a **direct conversation** with the bridge's bot (for
+1. In Element, I start a **direct conversation** with the bridge bot (for
    example `@whatsappbot:domain.tld`).
 
-2. I send it `login` and follow its instructions (scan a QR code, give my
-   number...).
+2. I send it `login` and follow its instructions (scan a QR code, provide my
+   phone number...).
 
-3. That's it: my conversations arrive as they come. Each person connects
-   **their own account**, without interfering with other users on the
-   network.
+3. That's it: my conversations appear gradually. Each user connects **their own
+   account**, without interfering with other users on the network.
 
 </Steps>
 
 <Aside type="note" title="What about privacy?">
-The bridge decrypts messages to pass them from one world to another: it's
+The bridge decrypts messages to relay them from one world to another: this is
 unavoidable, but everything happens on **our server**, not in some unknown
 cloud. If in doubt about a command, send `help` to the bot.
 </Aside>
 
-{/* t:p b590c0efce81f1982a68387e125d96251d61821db7e141c4f424c47517dc286e */}
+{/* t:p ad8bb037a527d5acb3a3d3f03366ff97b6f2a1fe0db564aa3d258b386aff7b78 */}
 ### WhatsApp
 
-Bot&nbsp;: `@whatsappbot:domain.tld`. Send `login`, choose the
-**QR-code** method, then on the phone&nbsp;: WhatsApp → Settings → **Linked
-devices** → Link a device, and scan the code displayed in Element.
-The phone must remain on and connected from time to time, just like
-WhatsApp Web.
+The WhatsApp bridge connects as a **linked device**, exactly like WhatsApp Web.
+Simple and reliable.
 
-{/* t:p 689b5a9afec86e7af415908cf89f6f0337cfe843992d0eff058d5c3cdff6e96c */}
+<Steps>
+
+1. Start a direct conversation with `@whatsappbot:domain.tld` and send it
+   `login qr`.
+
+2. On the phone: WhatsApp → Settings → **Linked devices** → Link a device,
+   then scan the QR code displayed in Element.
+
+</Steps>
+
+<Aside type="tip" title="Keep the phone within reach">
+Like WhatsApp Web, the phone must reconnect from time to time: beyond
+**two weeks** offline, the linked device is disconnected and you need to
+repeat the process. Alternative without scanning: `login phone` displays a
+code to enter on the phone.
+</Aside>
+
+📖 [Official WhatsApp bridge documentation](https://docs.mau.fi/bridges/go/whatsapp/authentication.html)
+
+{/* t:p d17ab3adaefde43050ef66b284134af9d7cfe147042c026935e423184441f524 */}
 ### Signal
 
-Bot&nbsp;: `@signalbot:domain.tld`. Send `login`, choose the
-**QR-code** method, then on the phone&nbsp;: Signal → Settings → **Linked
-devices** → Add, and scan the code displayed in Element.
+The Signal bridge connects as an additional **linked device**, without
+touching the phone's existing connection.
 
-{/* t:p 53fe66ee327acd57a443de77a7a65a0b3ad61b431619cae5120b6da07a089670 */}
+<Steps>
+
+1. Start a direct conversation with `@signalbot:domain.tld` and send it
+   `login`.
+
+2. On the phone: Signal → Settings → **Linked devices** → Add, then scan the
+   QR code displayed in Element.
+
+</Steps>
+
+<Aside type="note" title="Message history">
+When connecting, Signal may offer to **transfer conversation history**.
+Otherwise, rooms fill up as new messages come in.
+</Aside>
+
+📖 [Official Signal bridge documentation](https://docs.mau.fi/bridges/go/signal/authentication.html)
+
+{/* t:p 962dd0b87d77b805bfb4c2e80f0cc0278efbf098002917f2780a141a93dac667 */}
 ### Telegram
 
-Bot&nbsp;: `@telegrambot:domain.tld`. Send `login`, then my **phone
-number** in international format (`+33612345678`). Telegram sends me a
-verification code, which I forward to the bot. If my account has a
-"two-step" password, the bot will ask for it too.
+The Telegram bridge connects with my **phone number**, like another Telegram
+client.
 
-{/* t:p 5dafc95f65d608f3a4fdccffd5c1b3d7b5158d9d2dc4a97fbe596ba8ecaf236e */}
+<Steps>
+
+1. Start a direct conversation with `@telegrambot:domain.tld` and send it
+   `login phone +33612345678` (number in international format).
+
+2. Enter the **verification code** sent by Telegram, then, if my account has a
+   "two-step" password, that password.
+
+</Steps>
+
+<Aside type="note" title="Where does the code arrive?">
+Telegram does **not send** the code by SMS: it displays it in an already open
+Telegram session (phone or desktop). So you need an already connected Telegram
+client. Alternative: `login qr` to scan a QR code.
+</Aside>
+
+📖 [Official Telegram bridge documentation](https://docs.mau.fi/bridges/go/telegram/authentication.html)
+
+{/* t:p c4c1d4ec050a484b0e7fe479de2b5d6b5a935b4a6395f423ab70576ea135d43f */}
 ### Messenger (Facebook)
 
-Bot&nbsp;: `@messengerbot:domain.tld`. Send `login` and follow the
-instructions&nbsp;: connection is done by retrieving **cookies** from an
-open session on `messenger.com` using a desktop browser. This is the
-most technical connection&nbsp;; feel free to ask the administrator
-for help.
+The Messenger bridge connects by reusing the **cookies** of a session open in a
+browser. This is the most technical connection of all.
 
-{/* t:p a8342aacf09b9f93e62519aada248fdb632c28dc6718298daa9f1a45f4622f58 */}
+<Steps>
+
+1. Start a direct conversation with `@messengerbot:domain.tld` and send it
+   `login`.
+
+2. Log in to `messenger.com` in a private window, then follow the bot's
+   instructions to hand over the session cookies.
+
+</Steps>
+
+<Aside type="caution" title="Tricky step">
+Retrieving cookies requires using the browser's **developer tools**. If in
+doubt, ask the administrator for help. Enabling **two-factor authentication**
+on the Facebook account limits blocks.
+</Aside>
+
+📖 [Official Meta (Messenger) bridge documentation](https://docs.mau.fi/bridges/go/meta/authentication.html)
+
+{/* t:p 18f43d7dd68c91eac834b35348b00afa80d33a8ef44e04f03579dbaf25a77f6b */}
 ### Discord
 
-Bot&nbsp;: `@discordbot:domain.tld`. Send `login-qr` and scan the
-QR code with the **Discord** app on your phone (Settings → Scan
-QR code).
+The Discord bridge connects with a simple QR code scan.
+
+<Steps>
+
+1. Start a direct conversation with `@discordbot:domain.tld` and send it
+   `login-qr`.
+
+2. Scan the QR code with the **Discord** app on your phone (Settings → Scan
+   QR code).
+
+</Steps>
 
 <Aside type="caution" title="Optional bridge">
 The Discord bridge is not enabled by default. If it does not respond, ask the
 administrator to enable it.
 </Aside>
+
+📖 [Official Discord bridge documentation](https://docs.mau.fi/bridges/go/discord/authentication.html)
 
 {/* t:p 09e3725ab8bc2238fa4586a64944beb0d85077288dccb62c2d6fd14eaeb4c652 */}
 ### Useful commands
