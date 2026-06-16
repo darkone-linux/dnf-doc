@@ -10,61 +10,61 @@ lang: en
 {/* t:h 777875dfafa330d27fd01a6c5efabeec8318af313b167eac705ab00a8873e5c9 */}
 
 {/* t:p 856035b32520bee8079ec7d1a03fd6d30716387944917bf9249b66ced7b81121 */}
-### The Services
+### Services
 
-These reliable [open-source](https://en.wikipedia.org/wiki/Open_source) applications are meticulously selected for their usefulness, maturity and ease of use.
+These reliable [open-source](https://en.wikipedia.org/wiki/Open_source) applications are carefully selected for their usefulness, maturity and ease of use.
 
-:::tip[Single Sign-On (SSO)]
-A single login is sufficient for each of them (no need to enter 36 passwords).
+:::tip[Single sign-on (SSO)]
+A single login works for all of them (no need to remember many passwords).
 :::
 
-| **Service** | **App** | **Usefulness** |
+| **Service** | **App** | **Use** |
 |----|----|----|
 | 🔐 [Vault](#vaultwarden) | Vaultwarden | My passwords, keys and critical data. |
-| 🖼️ [Photos & videos](#immich-photos) | Immich | Complete photo and video manager with AI. |
+| 🖼️ [Photos & videos](#immich-photos) | Immich | Full photo and video manager with AI. |
 | ☁️ [Data](#nextcloud-files--data) | Nextcloud | A secure place for my data. |
-| 💬 [Messages & visio](#matrix-messaging--video) | Matrix | Alternative to "WhatsApp" (messaging and visio). |
-| 🎬&nbsp;[Films&nbsp;&&nbsp;Musics](#jellyfin-films--musics) | Jellyfin | A great "Netflix"-like media library. |
-| 📝 [Notes](#outline-notes) | Outline | Individual and collective note-taking. |
-| 🍽️ [Cooking](#mealie-cooking-recipes) | Mealie | Cooking recipe application. |
-| 🔎 [Search](#searxng-search) | Searxng | Global, secure, ad-free search. |
+| 💬 [Messages & video](#matrix-messages--video) | Matrix | Alternative to WhatsApp (messaging and video calls). |
+| 🎬 [Movies & music](#jellyfin-movies--music) | Jellyfin | A great media library like Netflix. |
+| 📝 [Notes](#outline-notes) | Outline | Individual and collaborative notes. |
+| 🍽️ [Cooking](#mealie-recipes) | Mealie | Recipe management app. |
+| 🔎 [Search](#searxng-search) | Searxng | Global, private, ad-free search. |
 | 🤖 [Generative AI](#open-webui-ai) | Open WebUI | Local and sovereign artificial intelligence. |
 
 Technical services:
 
-| **Service** | **App** | **Usefulness** |
+| **Service** | **App** | **Use** |
 |----|----|----|
 | 👨 [Identity](#kanidm-idm) | Kanidm | My identity (single password - SSO). |
-| 🛑 [Ad-blocker](#adguardhome-firewall-anti-ads) | AdguardHome | Firewall and anti-malware filter that speeds up Internet. |
-| 🧑‍💻&nbsp;[GIT&nbsp;Forge](#forgejo-git-forge) | Forgejo | [GIT](https://git-scm.com/) repository and manager for developers. |
+| 🛑 [Ad-blocker](#adguardhome-ad-blocking-firewall) | AdguardHome | Firewall and ad-blocker that speeds up the Internet. |
+| 🧑‍💻 [GIT Forge](#forgejo-git-forge) | Forgejo | [GIT](https://git-scm.com/) repository and manager for developers. |
 
 {/* t:p e4f50467add70ce456ce92223da06ccd291e20ecf5237b35b1944b745a90e6cc */}
-## Online Services
+## Online services
 
-All cloud services are open-source and have their own online documentation. But here are some useful introductions.
+All cloud services are open-source and have their own online documentation. But here are a few useful introductions.
 
 {/* t:p a3a240cb6d338b7e5621f4aeeadf07be4e600ba91460ed46ad4fac2f36810fac */}
 ### Vaultwarden
 
-**Vaultwarden** is my digital vault: passwords, one-time codes (2FA), bank cards, and confidential notes. Everything is encrypted, automatically backed up, and by default I'm the only one with access.
+**Vaultwarden** is my digital vault: passwords, two-factor (2FA) codes, credit cards and confidential notes. Everything is encrypted, backed up automatically, and by default I'm the only one who can access it.
 
-Why this instead of LastPass or 1Password? It is **compatible with Bitwarden apps**, but my data stays at home rather than on an editor's server.
+Why choose it over LastPass or 1Password? It is **compatible with Bitwarden apps**, but my data stays at home rather than on a vendor's server.
 
-:::tip[Useful Features]
-- Share credentials with others using "collections".
-- Organize passwords and keys into folders.
+:::tip[Useful features]
+- Share access with others using "collections".
+- Organize my passwords and keys in folders.
 - Send confidential information using "sends".
 :::
 
-:::note[Bitwarden: the Client App]
+:::note[Bitwarden: the client app]
 Bitwarden can be installed as a **browser plugin** or as a **mobile app**.
-It makes life easier with automatic form filling of my usernames and passwords, and many other features.
-Bitwarden can do everything Vaultwarden (the server that holds the data) can do.
+It makes my life easier with automatic filling of my usernames and passwords and many other features.
+Bitwarden can do everything that Vaultwarden (the server that holds the data) can do.
 :::
 
-:::caution[Important: Bitwarden Configuration]
+:::caution[Important: Bitwarden setup]
 By default, Bitwarden is set to "bitwarden.com".
-You must select "self-hosted" then enter the Vaultwarden URL to use Bitwarden with the cloud.
+You must select "self-hosted" and then enter the Vaultwarden URL to use Bitwarden with the cloud.
 
 ⚠️ I MUST NOT ENTER MY MASTER PASSWORD BEFORE DOING THIS.
 :::
@@ -74,87 +74,87 @@ You must select "self-hosted" then enter the Vaultwarden URL to use Bitwarden wi
 {/* t:p 6d4f2a4f2922143597c2bc2b74acc3775104bba3a0c78713461ef8f2ca147130 */}
 ### Kanidm (idm)
 
-**Kanidm** is my digital identity guardian: it verifies who I am and opens the doors to all services with **a single login** (SSO). No more remembering one password per service.
+**Kanidm** is the guardian of my digital identity: it verifies who I am and opens the doors to all services with **a single login** (SSO). No need to remember a password for each service.
 
 Modern and built for security, it goes further than traditional directories:
 
-- Login with **passkeys** and security keys (WebAuthn), passwordless.
-- Standard **SSO** (OAuth2 / OpenID Connect) supported by all services.
-- Fine-grained **groups and permissions** management.
+- Login with **passkeys** and security keys (WebAuthn), without a password.
+- **SSO** standard (OAuth2 / OpenID Connect) recognized by all services.
+- Fine-grained **group and permission** management.
 
-Daily use is detailed in [Manage my account](/en/doc/user-guide/usage/account/).
+Day-to-day use is detailed in [Managing my account](/en/doc/user-guide/usage/account/).
 
 📖 Documentation: [Kanidm](https://kanidm.com/).
 
 {/* t:p d9961d1a8312c9a3e2c46525c1f9bbd2fc8c6bc2e768eed870bcfbf761823811 */}
 ### Immich (photos)
 
-**Immich** manages my photos and videos with the comfort of Google Photos, but **at home**: no paid quotas, no commercial analysis of my memories.
+**Immich** manages my photos and videos with the convenience of Google Photos, but **at home**: no paid quota, no commercial analysis of my memories.
 
 Highlights:
 
 - **Automatic backup** of smartphone photos (Android / iOS).
-- **AI search** and face, place, and object recognition, locally.
-- Shared albums, memories, map… a true family photo library.
+- **AI-powered search** and recognition of faces, places and objects, locally.
+- Shared albums, memories, map… a real family photo library.
 
 To sync my smartphone:
 
 1. Install the **Immich** app on the smartphone.
-2. Configure backup by entering the Immich URL.
+2. Set up the backup by providing the Immich URL.
 
 📖 Documentation: [Immich](https://immich.app/).
 
 {/* t:p 40d59a3e37b27adfbdf4d8cc369360fa5446c4cc29bc52c1e5fcfd716c3aafbd */}
 ### Nextcloud (files & data)
 
-**Nextcloud** is my personal cloud, replacing Google Drive or Dropbox: files, contacts, and calendars synced across all my devices, shareable with a link.
+**Nextcloud** is my personal cloud, replacing Google Drive or Dropbox: files, contacts and calendars synced across all my devices, and shareable with a link.
 
 Highlights:
 
-- **Synced files** (computer, mobile) and link sharing.
+- **Files** synced (computer, mobile) and link sharing.
 - **Contacts and calendars** (CardDAV / CalDAV) for phone and email.
-- **Online document editing**, tasks, forms, and many apps.
+- **Online document editing**, tasks, forms and many applications.
 
 📖 Documentation: [Nextcloud](https://nextcloud.com/).
 
 {/* t:p 48e6a6ce57774acd4197c7d1764a1fc4c011846fa5e4cecb3ed70183c60eff31 */}
-### Matrix (messaging & video)
+### Matrix (messages & video)
 
-**Matrix** is my messaging platform, like WhatsApp or Telegram, but **encrypted, open, and self-hosted**. My app is [Element](https://element.io/).
+**Matrix** is my messaging platform, like WhatsApp or Telegram, but **encrypted, open and hosted at home**. My app is [Element](https://element.io/).
 
 Highlights:
 
-- Messages, files, and **audio / video calls** end-to-end encrypted.
+- Messages, files and **audio / video calls** with end-to-end encryption.
 - **Bridges** to WhatsApp, Messenger, Telegram, Signal, Discord… (everything in one app).
-- **Federated** network: communicate with other Matrix servers, or stay in a closed environment.
+- **Federated** network: chat with other Matrix servers, or stay within your own bubble.
 
-Connection, apps, and bridges are detailed in [Matrix Messaging](/en/doc/user-guide/usage/matrix/).
+Connection, apps and bridges are detailed in [Matrix messaging](/en/doc/user-guide/usage/matrix/).
 
 📖 Documentation: [Matrix](https://matrix.org/).
 
 {/* t:p 3f8a4ebdd6c1ce75815233c1056547beab58d8d3391e7bd88e57f73ae56e8b2f */}
 ### Jellyfin (movies & music)
 
-**Jellyfin** is my home media library, like Netflix: movies, TV series, music, and photos, on the TV, computer, or phone.
+**Jellyfin** is my home media library, like Netflix: movies, series, music and photos, on TV, computer or phone.
 
 Highlights:
 
-- **100% free and open source**, no subscription or paid features (unlike Plex).
-- Apps for TV, mobile, browser, and media boxes.
-- Covers, subtitles, and metadata fetched automatically.
+- **100% free and open-source**, no subscription or paid features (unlike Plex).
+- Apps for TV, mobile, browser and media streaming devices.
+- Posters, subtitles and metadata fetched automatically.
 
 📖 Documentation: [Jellyfin](https://jellyfin.org/).
 
 {/* t:p 0cf524fc661471834efb3f44c036d82cdd2f25e5ec621f166ce5fd6743b241bb */}
 ### Open WebUI (AI)
 
-**Open WebUI** is my generative AI assistant, like ChatGPT, but **conversations never leave home**. It runs on [Ollama](https://ollama.com/) with locally executed models.
+**Open WebUI** is my generative AI assistant, like ChatGPT, but **conversations never leave home**. It runs on [Ollama](https://ollama.com/) with locally-executed models.
 
 Highlights:
 
-- **No data sent** to a third-party service, histories stored locally.
+- **No data sent** to a third-party service, history stored locally.
 - Multiple **models** to choose from depending on the need.
-- Chat with my documents, web search, and custom prompts.
+- Chat with my documents, web search and custom prompts.
 
 📖 Documentation: [Open WebUI](https://openwebui.com/).
 
@@ -166,21 +166,21 @@ Highlights:
 Highlights:
 
 - Fast **markdown** editor with powerful search.
-- Organized into **collections** and nested documents.
-- Sharing, collaborative writing, and checklists.
+- Organization into **collections** and nested documents.
+- Sharing, collaborative writing and checklists.
 
 📖 Documentation: [Outline](https://www.getoutline.com/).
 
 {/* t:p 2ccd2aecb42da4ce97f25d9f057a4c626f23fbaa45408d4e5fd027ae01b3560d */}
-### Mealie (cookbook)
+### Mealie (recipes)
 
-**Mealie** organizes all my cooking recipes and helps plan meals.
+**Mealie** stores all my cooking recipes and helps me organize meals.
 
 Highlights:
 
 - **Import a recipe** from a simple URL.
 - **Meal planner** and **shopping lists** generated automatically.
-- Categories, tags, and search.
+- Categories, tags and search.
 
 📖 Documentation: [Mealie](https://mealie.io/).
 
@@ -192,33 +192,33 @@ Highlights:
 Highlights:
 
 - **Metasearch engine**: cross-references many sources in a single search.
-- No **ads**, no advertising profile built about me.
-- Image, video, map, news search…
+- No **ads**, no advertising profile built behind my back.
+- Search for images, videos, maps, news…
 
 📖 Documentation: [SearXNG](https://docs.searxng.org/).
 
 {/* t:p 0f30f7d4ee6f7d1c0ca33ca834f04b0cbb162088212b3367282d4a0e17eb4a14 */}
 ### AdguardHome (ad-blocking firewall)
 
-**AdGuard Home** filters ads, trackers, and malicious sites for **the whole network**, directly at the gateway. Result: faster and safer browsing on all devices, without installing anything on each one.
+**AdGuard Home** filters ads, trackers and malicious websites for **the whole network**, directly at the gateway level. Result&nbsp;: faster and safer browsing on all devices, without installing anything on each one.
 
-Highlights:
+Key features&nbsp;:
 
-- **Network-level** (DNS) blocking of ads and trackers, for all devices.
+- **Network**-wide (DNS) ad and tracker blocking, for all devices.
 - Protection against **malicious** domains and tracking.
-- **Parental control** and per-device filtering.
+- **Parental controls** and per-device filtering.
 
-📖 Documentation: [AdGuard Home](https://github.com/AdguardTeam/AdGuardHome).
+📖 Docs&nbsp;: [AdGuard Home](https://github.com/AdguardTeam/AdGuardHome).
 
 {/* t:p 32187144675a8d03a9a6619f13831b7b8664ac939ad9e7613ac1fbb635a5fbe5 */}
 ### Forgejo (git forge)
 
-**Forgejo** is my software forge, a personal and sovereign GitHub (free fork of [Gitea](https://about.gitea.com/)). Beyond code, Git is also an excellent way to organize, version, and back up documents.
+**Forgejo** is my software forge, a personal and sovereign GitHub (free fork of [Gitea](https://about.gitea.com/)). Beyond code, Git is also an excellent way to organize, version and back up your documents.
 
-Highlights:
+Key features&nbsp;:
 
-- Git repositories, **issue** tracking, and **pull requests**.
-- **100% free**, with no corporate dependency.
-- Continuous integration, wiki, and releases.
+- Git repositories, **issue** tracking and **pull requests**.
+- **100% free**, without dependency on any company.
+- Continuous integration, wiki and releases.
 
-📖 Documentation: [Forgejo](https://forgejo.org/).
+📖 Docs&nbsp;: [Forgejo](https://forgejo.org/).
