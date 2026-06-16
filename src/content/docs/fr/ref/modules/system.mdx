@@ -387,19 +387,25 @@ darkone.system.srv-dirs = {
 };
 ```
 
-{/* t:p 3c2dd1fad679d4a06a9d6a08622e6f2579ae6041bc24520a208c2b2e22f0fbcc */}
+{/* t:p 5419ce292dc882f4b69061721d7793c506bc032955c7b7562980be7b3873c2c2 */}
 ### &#x2699; darkone.system.testing
 
-Mode de test autonome pour le NixOS Test Driver.
+Mode test autonome pour le NixOS Test Driver.
 
-Quand activé, neutralise les parties incompressiblement externes/d'exécution pour qu'un nœud puisse être testé dans une VM&nbsp;: headscale/tailscale deviennent des no-op et un certificat TLS fixe peut stuber ACME. Il permet aussi à core/ncps d'ignorer la config propre à workDir (nix.pub, harmonia.pub). sops reste REAL (grande fidélité).
+Quand activé, neutralise les parties irréductiblement externes/exécution afin
+qu'un nœud puisse être testé dans une VM&nbsp;: headscale/tailscale deviennent
+des no-op et un certificat TLS fixe peut simuler ACME. Permet également à la
+configuration propre à workDir (nix.pub, harmonia.pub) d'être ignorée par
+core/nix-cache. sops reste RÉEL (haute fidélité).
 
-:::caution[Test uniquement]
-Activé uniquement via `tests/lib/test-tuning.nix`. Ce module ne référence jamais de chemin sous `tests/` — le chemin du certificat est passé comme valeur d'option.
+:::caution[Tests uniquement]
+Activé uniquement via `tests/lib/test-tuning.nix`. Ce module ne référence
+jamais de chemin sous `tests/` — le chemin du certificat est passé comme
+valeur d'option.
 :::
 
-* **standalone** `bool` Mode test autonome — ignore la config propre à workDir (nix.pub, harmonia.pub) et neutralise les services externes
-* **tlsCert** `nullOr path` Certificat auto-signé (PEM) fourni par le harnais de test pour stuber ACME. Jamais un chemin tests/ intégré au framework.
+* **standalone** `bool` Mode test autonome — ignore la configuration propre à workDir (nix.pub, harmonia.pub) et neutralise les services externes
+* **tlsCert** `nullOr path` Certificat auto-signé (PEM) fourni par le harnais de test pour simuler ACME. Jamais un chemin tests/ intégré dans le framework.
 * **tlsKey** `nullOr path` Clé privée (PEM) associée à tlsCert.
 
 ```nix

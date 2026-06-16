@@ -85,15 +85,31 @@ Avant un déploiement large, validez localement : `just check-flake` (ou
 `just check-all`), puis `just apply <hôte-pilote>` sur **un** hôte témoin.
 :::
 
-{/* t:p b8557b4360409f3ae5684e453aeffa4202263f19f0d01eb4b4c9a70308c57c2c */}
+{/* t:p 60c2b54056d3b4a37b4bc8c7019fb5db5da69a99002062396ee50c60064a0b01 */}
 ## Cache binaire
 
-Le service `harmonia` sert de **cache binaire** signé au parc, et `ncps` le
-relaie. Les hôtes récupèrent ainsi les dérivations déjà construites au lieu de
-recompiler, ce qui accélère nettement les déploiements.
+Deux services se combinent pour éviter de recompiler ou de retélécharger les
+dérivations à chaque déploiement.
+
+| Service | Rôle |
+|---|---|
+| `harmonia` | Sert le `/nix/store` local, signé, **directement** aux hôtes (LAN, ou VPN s'il est `global`). |
+| `nix-cache` | Proxy `nginx` par zone qui met en cache le cache public `cache.nixos.org` sur la passerelle. |
+
+Un hôte récupère donc une dérivation dans cet ordre&nbsp;: la `harmonia` de sa
+zone, une éventuelle `harmonia` `global`, puis le proxy `nix-cache` de sa zone.
+La première récupération depuis Internet est ainsi mutualisée pour toute la zone.
 
 :::note[Activation]
-`harmonia` et `ncps` sont des [services](/fr/doc/admin-guide/operate/services/) à
-activer sur un hôte du réseau. La clé de signature est gérée par
+`harmonia` et `nix-cache` sont des [services](/fr/doc/admin-guide/operate/services/)
+à activer sur un hôte du réseau (`nix-cache` sur la passerelle de zone). La clé
+de signature de harmonia est gérée par
 [sops](/fr/doc/admin-guide/operate/secrets/) (`just configure-admin-host`).
+:::
+
+:::tip[Pourquoi un proxy à upstream unique]
+`nix-cache` ne relaie qu'**un seul** upstream (`cache.nixos.org`)&nbsp;: il met
+en cache `narinfo` et `nar` tels quels, signatures intactes. Pas de réécriture
+d'URL ni de base de données, donc pas l'erreur HTTP 500 « invalid nar hash » de
+l'ancien relais `ncps`.
 :::

@@ -221,7 +221,7 @@ darkone.service.geneweb = {
 
 <hr/>
 
-{/* t:p 257000c70f8301eb389a3d38afad642c70dabdfb609861264c9b351737549679 */}
+{/* t:p 5f69084db556c36ba25289912cad45c65954431c501d4baff89dc6936b1332f6 */}
 ### &#x2728; darkone.service.harmonia
 
 Harmonia: local Nix binary cache server (serves this host's /nix/store).
@@ -230,19 +230,22 @@ Exposes locally built / realised store paths over plain HTTP (port 5000),
 signed with the deployment-wide binary-cache key. Enable per host from
 `usr/config.yaml` (services.harmonia), like any other DNF service.
 
-:::note[How Harmonia Services Work with NCPS]
-Harmonia is a *source* of packages; `ncps` is the per-zone caching proxy that
-clients actually talk to. Each zone's `ncps` server automatically adds, as
-upstreams:
+:::note[How harmonia works with the nix-cache proxy]
+Harmonia is a *source* of packages, served **directly** to clients over the
+LAN (in-zone) or the tailnet (when flagged `global`). The per-zone `nix-cache`
+proxy is a separate concern: it caches the *public* binary cache
+(`cache.nixos.org`), never harmonia.
 
-- the harmonia instances of *its own zone* (highest priority), then
-- any harmonia flagged `global` (typically on the HCS),
+Each local-zone host's substituters become, in priority order:
 
-and never the harmonia of *other* (non-global) zones. Clients fetch only
-through `ncps`; harmonia's signature is passed through unchanged, so every
-host trusts the deployment-wide harmonia public key
-(`usr/secrets/harmonia.pub`). Transport is plain HTTP on the trusted LAN /
-VPN: integrity comes from the NAR signature, not from TLS.
+- the harmonia instances of *its own zone* (highest priority, LAN), then
+- any harmonia flagged `global` (typically on the HCS, over the tailnet), then
+- the zone's `nix-cache` proxy (public cache).
+
+Other zones' non-global harmonia are never used. Harmonia's signature is
+passed through unchanged, so every host trusts the deployment-wide harmonia
+public key (`usr/secrets/harmonia.pub`). Transport is plain HTTP on the
+trusted LAN / VPN: integrity comes from the NAR signature, not from TLS.
 :::
 
 :::tip[Signing key provisioning]
@@ -615,36 +618,6 @@ darkone.service.monitoring = {
 
 <hr/>
 
-{/* t:p 8abafbbeea97844d60a649a51c5fe8f4eb1dd1721f19a8456bd4f5a8fdd47240 */}
-### &#x2728; darkone.service.ncps
-
-Nix cache proxy with NCPS module.
-
-This module is activated by core. Server and clients are automatically detected.
-
-:::tip
-To check if a host contains the local gateway in substituters:
-
-```sh
-nix --extra-experimental-features nix-command show-config | grep substituters
-telnet <your-gateway> 8501
-```
-:::
-
-* **enable** `bool` Enable nix cache proxy for packages
-* **dataPath** `str` Nix cache proxy cache folder
-* **extraOptions** `attrs` services.ncps extra options
-
-```nix
-darkone.service.ncps = {
-  enable = false;
-  dataPath = "/var/cache/ncps";
-  extraOptions = { };
-};
-```
-
-<hr/>
-
 {/* t:p 04c63d6522b245488795514bff87f61c2e4859e865024a341114e997134944b7 */}
 ### &#x2728; darkone.service.nextcloud
 
@@ -693,6 +666,46 @@ In config.yaml file (hosts):
 darkone.service.nfs = {
   enable = hasServer && (isServer || isClient);
   serverDomain = "nfs";
+};
+```
+
+<hr/>
+
+{/* t:p 6b2cac8b56aa0b6124785c3f51888ce793903563d1f94cecc521471f1f24b997 */}
+### &#x2728; darkone.service.nix-cache
+
+Per-zone Nix binary-cache proxy (nginx `proxy_cache`).
+
+Caches the public Nix cache (`cache.nixos.org`) on the zone gateway so a
+fleet-wide deploy pulls each closure from the WAN once, then serves it over
+the LAN to every other host. Locally built paths are served straight from
+`harmonia` (see `harmonia.nix`); this proxy never fronts harmonia.
+
+:::note[Why nginx and not a rewriting proxy]
+One cache endpoint fronts exactly **one** upstream. A `narinfo` and its `nar`
+are two separate requests and the `nar` URL is upstream-agnostic, so a
+multi-upstream proxy must rewrite `narinfo` URLs into its own namespace and
+track them in a database (the approach the former `ncps` proxy took — and the
+source of its recurring HTTP 500 "invalid nar hash"). With a single upstream
+there is no ambiguity:
+nginx caches `narinfo` + `nar` verbatim, signatures pass through untouched and
+clients verify them. No rewrite, no database, no such bug by construction.
+:::
+
+:::tip[Topology]
+- server: the gateway host that lists `nix-cache` in `config.yaml` (one per
+  zone). Runs nginx on the internal IP, port `network.ports.nixCache`.
+- clients: every local-zone host. Their substituters become the zone's
+  harmonia instances (direct, LAN/tailnet) plus this proxy.
+:::
+
+* **enable** `bool` the per-zone Nix binary-cache proxy (nginx in front of cache.nixos.org)
+* **maxSize** `str` Maximum on-disk cache size; nginx evicts least-recently-used entries beyond it.
+
+```nix
+darkone.service.nix-cache = {
+  enable = false;
+  maxSize = "40g";
 };
 ```
 

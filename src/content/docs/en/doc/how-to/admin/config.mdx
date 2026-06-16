@@ -357,20 +357,19 @@ A feature is a simple flag read by a module.
 The `:<zone>` suffix targets a zone other than the host's.
 :::
 
-{/* t:p 3c837568b5b0702ea8a08d2e344eba7f20b0cf68e1cdf4a7bee8dfd5b3746d16 */}
-### Declaring services
+{/* t:p b8360df1ecf9cbbb650e8aabc868e1d421c416f0d5c65a7a1157aa216c2303e5 */}
+### Declare services
 
-The `services` key contains a collection of services to be automatically installed on
-the host. Values are optional and allow service customization.
+The `services` key holds a collection of services to automatically install on the
+host. Values are optional and allow service customization.
 
-:::note[Service type and node type]
-Most services can be installed on any node, but some may have
-constraints&nbsp;:
+:::note[Service and node type]
+Most services can be installed on any node, but some may have constraints&nbsp;:
 
-- Only one service per zone (e.g. adguardhome, ncps)
-- Special out-of-zone service (e.g. headscale, turn)
+- One service per zone (e.g. adguardhome, nix-cache)
+- Special zone-less service (e.g. headscale, turn)
 
-Safeguards may prevent you from installing any
+Guardrails may prevent you from installing any
 service anywhere.
 :::
 
@@ -379,12 +378,12 @@ service anywhere.
     services:
       immich:
         title: "Photos"
-        description: "My photos & videos"
-        domain: "photos"          # sub-domain
+        description: "Mes photos & vidéos"
+        domain: "photos"          # sous-domaine
         global: true              # → https://photos.domain.tld (public)
       nextcloud:
         domain: "cloud"           # → cloud.<zone>.domain.tld (non global)
-      restic:                     # default values
+      restic:                     # valeurs par défaut
 ```
 
 | Field | Role |
@@ -392,12 +391,12 @@ service anywhere.
 | *(key)* | Service to enable (e.g. `immich`). |
 | `title` | Name displayed on the portal. |
 | `description` | Subtitle on the portal. |
-| `domain` | Sub-domain (default: service name). |
+| `domain` | Subdomain (default: service name). |
 | `global` | Exposes publicly via the HCS: `<domain>.domain.tld`, **without the zone**. |
 | `icon` | Portal icon. |
 
 :::tip[Full service name]
-By default a service is at `<domain>.<zone>.domain.tld` ; with `global: true`,
+By default a service is at `<domain>.<zone>.domain.tld`; with `global: true`,
 at `<domain>.domain.tld`. Catalog and details&nbsp;:
 [Services](/en/doc/admin-guide/operate/services/).
 :::

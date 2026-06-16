@@ -200,47 +200,52 @@ darkone.service.geneweb = {
 
 <hr/>
 
-{/* t:p 257000c70f8301eb389a3d38afad642c70dabdfb609861264c9b351737549679 */}
+{/* t:p 5f69084db556c36ba25289912cad45c65954431c501d4baff89dc6936b1332f6 */}
 ### &#x2728; darkone.service.harmonia
 
-Harmonia : serveur local de cache binaire Nix (sert le /nix/store de cet hôte).
+Harmonia&nbsp;: serveur local de cache binaire Nix (sert le /nix/store de cet hôte).
 
-Expose les chemins de store construits / réalisés localement en HTTP simple
-(port 5000), signés avec la clé de cache binaire du déploiement. Activable
+Expose les chemins du store construits / réalisés localement en HTTP brut
+(port 5000), signés avec la clé de cache binaire du déploiement. Activation
 par hôte depuis `usr/config.yaml` (services.harmonia), comme tout autre
 service DNF.
 
-:::note[Fonctionnement des services Harmonia avec NCPS]
-Harmonia est une *source* de paquets ; `ncps` est le proxy de cache par zone
-auquel les clients s'adressent réellement. Chaque serveur `ncps` de zone
-ajoute automatiquement comme amont (upstreams) :
+:::note[Fonctionnement d'harmonia avec le proxy nix-cache]
+Harmonia est une *source* de paquets, servis **directement** aux clients sur
+le LAN (dans la zone) ou le tailnet (quand le flag `global` est positionné).
+Le proxy `nix-cache` par zone est une préoccupation distincte&nbsp;: il met en
+cache le cache binaire *public* (`cache.nixos.org`), jamais harmonia.
 
-- les instances harmonia de *sa propre zone* (priorité la plus haute), puis
-- toute harmonia marquée `global` (typiquement sur le HCS),
+Les substituters de chaque hôte local d'une zone deviennent, par ordre de
+priorité&nbsp;:
 
-et jamais l'harmonia des *autres* zones (non globales). Les clients
-récupèrent uniquement via `ncps` ; la signature d'harmonia est transmise sans
-modification, donc chaque hôte fait confiance à la clé publique harmonia du
-déploiement (`usr/secrets/harmonia.pub`). Le transport est en HTTP simple sur
-le LAN/VPN de confiance : l'intégrité vient de la signature NAR, pas de TLS.
+- les instances harmonia de *sa propre zone* (priorité la plus haute, LAN),
+- puis toute harmonia marquée `global` (typiquement sur le HCS, via le tailnet),
+- puis le `nix-cache` proxy de la zone (cache public).
+
+Les harmonia non-globales des autres zones ne sont jamais utilisées. La
+signature d'harmonia est transmise sans modification, donc chaque hôte
+approuve la clé publique harmonia du déploiement
+(`usr/secrets/harmonia.pub`). Le transport est en HTTP brut sur le LAN / VPN
+de confiance&nbsp;: l'intégrité provient de la signature NAR, pas de TLS.
 :::
 
 :::tip[Provisionnement de la clé de signature]
 `just configure-admin-host` génère automatiquement la paire de clés du
-déploiement quand `usr/secrets/harmonia.pub` est absent : la clé publique est
-versionnée et la clé privée est injectée dans le secret sops
+déploiement quand `usr/secrets/harmonia.pub` est absent&nbsp;: la clé publique
+est commitée et la clé privée est injectée dans le secret sops
 `harmonia-secret-key`.
 :::
 
 :::note[Avertissement bénin au démarrage sur les permissions de la clé de signature]
 `WARN harmonia_cache::tls: /run/credentials/harmonia.service/sign-key-0 has
-insecure permissions 0o440; recommend 0600` est un faux positif : systemd
-expose les fichiers `LoadCredential` en mode 0440 appartenant à root avec une
-ACL qui donne accès uniquement à l'utilisateur du service
-(systemd/systemd#29435) ; harmonia vérifie naïvement les bits chmod. Surveillez
-l'amont cependant : harmonia rejette déjà fermement les clés *TLS* lisibles par
-le groupe au démarrage — si cette politique s'étend un jour aux clés de
-signature, cette unité cassera à la mise à jour.
+insecure permissions 0o440; recommend 0600` est un faux positif&nbsp;: systemd
+expose les fichiers `LoadCredential` comme appartenant à root en mode 0440
+avec une ACL qui accorde l'accès uniquement à l'utilisateur du service
+(systemd/systemd#29435)&nbsp;; harmonia vérifie naïvement les bits chmod.
+À surveiller en amont toutefois&nbsp;: harmonia rejette déjà durement les clés
+*TLS* lisibles par le groupe au démarrage — si cette politique s'étend un
+jour aux clés de signature, cette unité cassera à la mise à jour.
 :::
 
 * **enable** `bool` Activer un serveur de cache binaire Nix Harmonia local
@@ -554,34 +559,6 @@ darkone.service.monitoring = {
 
 <hr/>
 
-{/* t:p 8abafbbeea97844d60a649a51c5fe8f4eb1dd1721f19a8456bd4f5a8fdd47240 */}
-### &#x2728; darkone.service.ncps
-
-Proxy de cache Nix avec le module NCPS.
-
-Ce module est activé par le cœur. Le serveur et les clients sont automatiquement détectés.
-
-:::tip
-Pour vérifier si un hôte contient la passerelle locale dans les substituteurs :
-
-```sh
-nix --extra-experimental-features nix-command show-config | grep substituters
-telnet <your-gateway> 8501
-```
-:::
-
-* **enable** `bool` Activer le proxy de cache nix pour les packages
-* **dataPath** `str` Dossier de cache du proxy de cache nix
-* **extraOptions** `attrs` Options supplémentaires de services.ncps
-
-```nix
-darkone.service.ncps = {
-  enable = false;
-  dataPath = "/var/cache/ncps";
-  extraOptions = { };
-};
-```
-
 {/* t:p 04c63d6522b245488795514bff87f61c2e4859e865024a341114e997134944b7 */}
 ### &#x2728; darkone.service.nextcloud
 
@@ -628,6 +605,52 @@ darkone.service.nfs = {
   serverDomain = "nfs";
 };
 ```
+
+{/* t:p 6b2cac8b56aa0b6124785c3f51888ce793903563d1f94cecc521471f1f24b997 */}
+### &#x2728; darkone.service.nix-cache
+
+Proxy de cache binaire Nix par zone (nginx `proxy_cache`).
+
+Met en cache le cache binaire Nix public (`cache.nixos.org`) sur la
+passerelle de zone, de sorte qu'un déploiement à l'échelle de la flotte
+tire chaque closure du WAN une fois, puis la sert sur le LAN à tous les
+autres hôtes. Les chemins construits localement sont servis directement
+depuis `harmonia` (voir `harmonia.nix`)&nbsp;; ce proxy ne se place jamais
+devant harmonia.
+
+:::note[Pourquoi nginx et pas un proxy de réécriture]
+Un point de terminaison de cache sert exactement **une** source amont. Une
+`narinfo` et sa `nar` sont deux requêtes distinctes et l'URL de `nar` est
+indépendante de la source, donc un proxy multi-sources doit réécrire les URL
+`narinfo` dans son propre espace de noms et les suivre dans une base de
+données (l'approche qu'adoptait l'ancien proxy `ncps` — et la source de ses
+HTTP 500 récurrents «&nbsp;invalid nar hash&nbsp;»). Avec une source unique,
+il n'y a pas d'ambiguïté&nbsp;:
+nginx met en cache `narinfo` + `nar` verbatim, les signatures traversent
+sans modification et les clients les vérifient. Pas de réécriture, pas de
+base de données, pas de tel bug par construction.
+:::
+
+:::tip[Topologie]
+- serveur&nbsp;: l'hôte passerelle qui liste `nix-cache` dans `config.yaml`
+  (un par zone). Fait tourner nginx sur l'IP interne, port
+  `network.ports.nixCache`.
+- clients&nbsp;: tous les hôtes de la zone locale. Leurs substituters
+  deviennent les instances harmonia de la zone (direct, LAN/tailnet) ainsi
+  que ce proxy.
+:::
+
+* **enable** `bool` le proxy de cache binaire Nix par zone (nginx devant cache.nixos.org)
+* **maxSize** `str` Taille maximale du cache disque&nbsp;; nginx supprime les entrées les moins récemment utilisées au-delà.
+
+```nix
+darkone.service.nix-cache = {
+  enable = false;
+  maxSize = "40g";
+};
+```
+
+<hr/>
 
 {/* t:p d3c0fa3b19d29d002cae847c48764064e5cbd739cba3d6171b8d22a9289a4f9b */}
 ### &#x2728; darkone.service.outline

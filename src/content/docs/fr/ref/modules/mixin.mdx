@@ -24,23 +24,22 @@ Une configuration de bureau complète avec gnome, outils multimédias et outils 
 darkone.host.desktop.enable = false;
 ```
 
-{/* t:p 6fce8f19f8ac11797904242e8e1a8edb6a71dd269cd38a72739792ed023e67b6 */}
+{/* t:p 33a59e2f5527f24669f8a48491c1addaab696474e038cfafe8276abd9097971c */}
 ### &#x1F4E6; darkone.host.gateway
 
 La passerelle / routeur principal d'une zone de réseau local.
 
-:::tip[Une passerelle prête à l'emploi!]
-La passerelle est configurée dans le fichier `usr/config.yaml`.
-Les services supplémentaires activés (homepage, adguardhome, forgejo, ncps...)
-sont automatiquement configurés avec une infrastructure réseau cohérente sur la
-passerelle et toutes les machines du réseau local.
+:::tip[Une passerelle prête à l'emploi !]
+La passerelle est configurée dans le fichier `usr/config.yaml`. Les services supplémentaires activés (homepage, adguardhome, forgejo, nix-cache...) sont automatiquement configurés avec un réseau homogène sur la passerelle et toutes les machines du réseau local.
 :::
 
-* **enable** `bool` Activer les fonctionnalités de passerelle pour l'hôte actuel (dhcp, dns, proxy, etc.)
+* **enable** `bool` Active les fonctionnalités de passerelle pour la machine courante (dhcp, dns, proxy, etc.)
 
 ```nix
 darkone.host.gateway.enable = false;
 ```
+
+<hr/>
 
 {/* t:p a25a6447424b89248f28dcf40734e88a9127f7c2bf9701f162dfce61c4f6bcf9 */}
 ### &#x1F4E6; darkone.host.hcs
