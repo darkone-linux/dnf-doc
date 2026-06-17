@@ -285,28 +285,30 @@ darkone.home.music = {
 };
 ```
 
-{/* t:p f3717354241eaa1a6155fe2b44e8fc0f444e95c0a76dbd4536e9d61d5f5383ee */}
+{/* t:p eb831c224bf147bd867984a90176577b8a418c082768f77dce604f8f418a19e4 */}
 ### &#x1F3E0; darkone.home.office
 
-Outils courants pour le bureau de bureau.
+Outils courants pour le bureau.
 
 * **enable** `bool` Paquets utiles par défaut
 * **enableMore** `bool` Plus de paquets alternatifs
-* **enableUnsafeFeatures** `bool` Fonctionnalités pour les utilisateurs avancés non-enfants
-* **enableUBlock** `bool` Activer le plugin ublock
+* **enableUnsafeFeatures** `bool` Fonctionnalités pour utilisateurs avancés non-enfants
+* **enableUBlock** `bool` Activer le plugin uBlock
 * **enableTools** `bool` Petits outils (gnome) (iotas, dialect, etc.)
 * **enableProductivity** `bool` Applications de productivité (obsidian, gestion du temps, projets, etc.)
 * **enableCommunication** `bool` Outils de communication
-* **enableOffice** `bool` Paquets Office (libreoffice)
-* **enableFirefox** `bool` Activer firefox
-* **enableLibreWolf** `bool` Activer firefox
-* **enableChromium** `bool` Activer chromium
-* **enableBrave** `bool` Activer le navigateur Brave
-* **enableEmail** `bool` Paquets de gestion des e-mails (thunderbird)
+* **enableOffice** `bool` Paquets bureautiques (libreoffice)
+* **enableFirefox** `bool` Activer Firefox
+* **enableLibreWolf** `bool` Activer Firefox
+* **enableChromium** `bool` Activer Chromium
+* **enableBrave** `bool` Activer Brave Browser
+* **enableEmail** `bool` Paquets de gestion d'email (thunderbird)
 * **enableSecurity** `bool` Outils de sécurité (keepass)
-* **enableCalendarContacts** `bool` Calendrier gnome, contacts et applications connexes
+* **enableCalendarContacts** `bool` Calendrier Gnome, contacts et applications associées
 * **enableEssentials** `bool` Outils essentiels
-* **huntspellLang** `str` [Huntspell Lang](https://mynixos.com/nixpkgs/packages/hunspellDicts)
+* **huntspellLang** `str` [Langue Huntspell](https://mynixos.com/nixpkgs/packages/hunspellDicts)
+* **enableElementAutoStart** `bool` Démarrer Element Desktop automatiquement à la connexion quand un serveur Matrix local est présent
+* **enableFractalAutoStart** `bool` Démarrer Fractal automatiquement à la connexion quand un serveur Matrix local est présent (opt-in, voir mises en garde ci-dessous)
 
 ```nix
 darkone.home.office = {
@@ -327,8 +329,12 @@ darkone.home.office = {
   enableCalendarContacts = false;
   enableEssentials = true;
   huntspellLang = "en-us";
+  enableElementAutoStart = true;
+  enableFractalAutoStart = false;
 };
 ```
+
+<hr/>
 
 {/* t:p 547ee4daed2acde13003ad986f960568575e0bc22291ee241f854bd57a1cc21c */}
 ### &#x1F3E0; darkone.home.video

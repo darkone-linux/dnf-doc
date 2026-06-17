@@ -303,7 +303,7 @@ darkone.home.music = {
 
 <hr/>
 
-{/* t:p f3717354241eaa1a6155fe2b44e8fc0f444e95c0a76dbd4536e9d61d5f5383ee */}
+{/* t:p eb831c224bf147bd867984a90176577b8a418c082768f77dce604f8f418a19e4 */}
 ### &#x1F3E0; darkone.home.office
 
 Common tools for office desktop.
@@ -325,6 +325,8 @@ Common tools for office desktop.
 * **enableCalendarContacts** `bool` Gnome calendar, contacts and related apps
 * **enableEssentials** `bool` Essential tools
 * **huntspellLang** `str` [Huntspell Lang](https://mynixos.com/nixpkgs/packages/hunspellDicts)
+* **enableElementAutoStart** `bool` Auto-start Element Desktop on login when a local Matrix server is present
+* **enableFractalAutoStart** `bool` Auto-start Fractal on login when a local Matrix server is present (opt-in, see caveats below)
 
 ```nix
 darkone.home.office = {
@@ -345,6 +347,8 @@ darkone.home.office = {
   enableCalendarContacts = false;
   enableEssentials = true;
   huntspellLang = "en-us";
+  enableElementAutoStart = true;
+  enableFractalAutoStart = false;
 };
 ```
 
