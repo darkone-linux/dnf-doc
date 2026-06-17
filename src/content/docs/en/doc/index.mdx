@@ -142,35 +142,6 @@ These configurations are organized by category:
 - **[User profiles](/en/doc/dev-guide/modules/)**, standard [Home Manager](https://github.com/nix-community/home-manager) configurations.
 - **Tools** to maintain a quality configuration.
 
-{/* t:p 41dd8d07220a4ca866da0a0aa9fa75dcc0f39f017e784bc4e2276fba6aed46fe */}
-## SSO Services Status (OIDC / Oauth2)
-
-- **Oauth2** = supports oauth2 / oidc login
-- **Native** = no plugin or extra needed, can be configured directly
-- **PKCE** = supports PKCE
-- **Decl.** (declarative) = all parameters can be declared in the configuration
-- **OK** = functional implementation
-
-| Application | Oauth2 | Native | PKCE | Decl. | OK | Comments |
-| -------------- | ------ | ----- | ---- | ---------- | --- | ----------------------------------- |
-| [Outline](https://www.getoutline.com) | ✅ | ✅ | ✅ | ✅ | ✅ | Works perfectly |
-| [Mealie](https://mealie.io) | ✅ | ✅ | ✅ | ✅ | ✅ | Works perfectly |
-| [Vaultwarden](https://github.com/dani-garcia/vaultwarden) | ✅ | ✅ | ✅ | ✅ | ✅ | Works perfectly |
-| [Matrix Synapse](https://matrix.org) | ✅ | ✅ | ✅ | ✅ | ✅ | All good (+Element +Coturn) |
-| [Open WebUI](https://openwebui.com) | ✅ | ✅ | ✅ | ✅ | ✅ | All good (+Ollama) |
-| [Grafana](https://grafana.com) | ✅ | ✅ |  ✅ |  ✅ |  ✅ | All good |
-| [LaSuite Docs](https://lasuite.numerique.gouv.fr) | ✅ | ✅ | ⚠️ | ✅ | ✅ | Good except PKCE |
-| [Immich](https://immich.app) | ✅ | ✅ | ✅ | ⚠️ | ✅ | Manual configuration |
-| [Forgejo](https://forgejo.org) | ✅ | ✅ | ✅ | ❌ | ✅ | Manual configuration |
-| [Nextcloud](https://nextcloud.com) | ✅ | ❌ | ❌ | ❌ | ✅ | Plugin + manual config |
-| [Oauth2 Proxy](https://oauth2-proxy.github.io/oauth2-proxy/) | ✅ | ✅ | ✅ | ✅ | ✅ | Linked to Caddy and Kanidm |
-| [Homepage](https://gethomepage.dev/) | 🔁 | 🔁 | 🔁 | 🔁 | ✅ | Via OAuth2 Proxy |
-| [Prometheus](https://prometheus.io/) | 🔁 | 🔁 | 🔁 | 🔁 | ✅ | Via OAuth2 Proxy |
-| [Jellyfin](https://jellyfin.org) | ℹ️ | ℹ️ | ℹ️ | ℹ️ | ℹ️ | Shared access |
-| [AdGuard Home](https://adguard.com/en/adguard-home/overview.html) | ℹ️ | ℹ️ | ℹ️ | ℹ️ | ℹ️ | Shared access |
-| [Geneweb](https://geneweb.tuxfamily.org/wiki/GeneWeb/fr) | ℹ️ | ℹ️ | ℹ️ | ℹ️ | ℹ️ | Shared access |
-| [~~Mattermost~~](https://mattermost.com) | ❌ | ❌ | ❌ | ❌ | ❌ | No more OAuth2 (TEAM) |
-
 {/* t:p dc0d22252ecc370000e27b4f58252cfb6f5e5a74181ed35ceca85e57f6d236b5 */}
 ## AI Usage
 
