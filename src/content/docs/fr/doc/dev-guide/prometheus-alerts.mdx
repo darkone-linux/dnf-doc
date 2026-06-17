@@ -36,14 +36,38 @@ Exposés via `dnfLib` (voir `dnf/lib/default.nix`) :
 |---|---|
 | `serviceUnits` | Service DNF → unité systemd (ex. `idm` → `kanidmd.service`) |
 | `nodeClass` | Classe d'un nœud (critique / non-critique / désactivé) : features `alert-*` puis profil |
+| `nodeAlertEligible` | Sélection : un nœud n'est surveillé que s'il est nœud réseau/serveur, porte `alert-non-critical`, ou héberge un service mappé |
 | `severityForClass` | Classe → sévérité (`critical` ou `warning`) |
 | `hostExpectedUnits` | Unités attendues d'un hôte (d'après ses services activés) |
-| `mkNodeRuleGroups` | `NodeDown`, `ServiceDown`, `SystemdUnitFailed` |
-| `mkResourceRuleGroups` | Disque, RAM, charge, inodes, OOM (seuils `defaultThresholds`) |
-| `mkNetworkRuleGroups` | Sondes blackbox (passerelle, tailnet, DNS) |
+| `mkNodeRuleGroups` | `NodeDown`, `ServiceDown`, `SystemdUnitFailed` (+ label `reach` local/wan) |
+| `mkResourceRuleGroups` | Disque, RAM, charge, inodes, OOM, FS read-only, prédiction disque, horloge, conntrack |
+| `mkNetworkRuleGroups` | Sondes blackbox (passerelle, tailnet, DNS, `ZoneInternetDown`) |
+| `mkHttpRuleGroups` | Sondes HTTP : `ServiceEndpointDown` + expiration de certificat TLS |
+| `mkResticRuleGroups` | Fraîcheur des sauvegardes (`ResticBackupStale`/`Critical`) |
 | `mkMaintenanceRuleGroups` | Drapeau de maintenance (silence pendant rebuild) |
 | `mergeRuleGroups` | Fusionne des fragments en **un seul** document |
-| `mkAlertRuleGroups` | Raccourci : nœuds + ressources |
+| `mkAlertRuleGroups` | Raccourci : nœuds + ressources + restic |
+
+### Sélection des nœuds surveillés
+
+La supervision est *opt-out* pour l'infrastructure, *opt-in* pour le reste.
+`nodeAlertEligible` retient un nœud uniquement s'il est de classe `critical`
+(profil `gateway`/`hcs`/`server` ou feature `alert-critical`), s'il porte
+explicitement `alert-non-critical`, ou s'il héberge au moins un service mappé
+dans `serviceUnits`. Un laptop/desktop nu ne génère donc aucune alerte node.
+
+### Panne internet vs hôte distant down
+
+Le Prometheus d'une zone joint les hôtes des autres zones (ex. le HCS public)
+uniquement via le WAN. Quand internet tombe, ces cibles deviennent injoignables
+et déclencheraient un faux « *host* down ». Pour l'éviter :
+
+- chaque règle node porte un label `reach` (`local` même zone, `wan` cross-zone) ;
+- une sonde blackbox ICMP vers des IP externes alimente `ZoneInternetDown`
+  (déclenchée seulement si **toutes** les cibles externes échouent) ;
+- une règle d'inhibition Alertmanager (`equal: [zone]`) fait taire les alertes
+  `reach="wan"` de la zone tant que `ZoneInternetDown` est active — la vraie
+  cause est notifiée, pas les symptômes.
 
 {/* t:p c5d86961939c4492ce81c4a9d92772bf2385dfb6d920af9820758e2928e60fc4 */}
 ## Le piège : un seul document de règles
@@ -77,6 +101,9 @@ services.prometheus.rules = [
 | une nouvelle famille de règles | un `mkXRuleGroups` + l'ajouter au `mergeRuleGroups` du module |
 | changer un seuil par défaut | `defaultThresholds` dans `alerts.nix` |
 | changer la classe d'un nœud | feature `alert-*[:zone]` (aucun code) |
+| forcer/exclure un nœud de la surveillance | feature `alert-non-critical` / `alert-disabled` |
+| surveiller une URL + son certificat TLS | `alerting.network.httpProbeUrls` dans la config |
+| ajuster la détection de panne internet | `alerting.network.internetProbeTargets` |
 | une nouvelle destination | le bloc `alertmanager` de `prometheus.nix` (receiver + route) |
 
 :::tip[Convention DNF]
