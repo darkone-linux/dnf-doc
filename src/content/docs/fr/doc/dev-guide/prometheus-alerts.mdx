@@ -44,6 +44,9 @@ Exposés via `dnfLib` (voir `dnf/lib/default.nix`) :
 | `mkNetworkRuleGroups` | Sondes blackbox (passerelle, tailnet, DNS, `ZoneInternetDown`) |
 | `mkHttpRuleGroups` | Sondes HTTP : `ServiceEndpointDown` + expiration de certificat TLS |
 | `mkResticRuleGroups` | Fraîcheur des sauvegardes (`ResticBackupStale`/`Critical`) |
+| `mkSmartctlRuleGroups` | Santé disque SMART (`DiskSmartFailing`, `DiskTemperatureHigh`) |
+| `mkPostfixRuleGroups` | Relais Postfix (`PostfixRelayUnhealthy`, `PostfixDeferredQueueHigh`) |
+| `mkSynapseRuleGroups` | Synapse (`SynapseRestarting`, `SynapseHighErrorRate`) |
 | `mkMaintenanceRuleGroups` | Drapeau de maintenance (silence pendant rebuild) |
 | `mergeRuleGroups` | Fusionne des fragments en **un seul** document |
 | `mkAlertRuleGroups` | Raccourci : nœuds + ressources + restic |
@@ -99,6 +102,7 @@ services.prometheus.rules = [
 |---|---|
 | surveiller un nouveau service | `serviceUnits` dans `alerts.nix` |
 | une nouvelle famille de règles | un `mkXRuleGroups` + l'ajouter au `mergeRuleGroups` du module |
+| câbler un exporter de métriques | exporter dans son module (gated `monitoring-node`, bind `preferredIp`) + job de scrape + `mkXRuleGroups` gated dans `prometheus.nix` |
 | changer un seuil par défaut | `defaultThresholds` dans `alerts.nix` |
 | changer la classe d'un nœud | feature `alert-*[:zone]` (aucun code) |
 | forcer/exclure un nœud de la surveillance | feature `alert-non-critical` / `alert-disabled` |
