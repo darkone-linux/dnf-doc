@@ -791,7 +791,7 @@ darkone.service.printing = {
 
 <hr/>
 
-{/* t:p c644346db8ff29f516607774dcf35bfefb6a26c7dac14272d0daa5cb914fcf4b */}
+{/* t:p ef428e05706c4045d350b7b2f52743660f8fd3d31691e17e003ce35acf67f91b */}
 ### &#x2728; darkone.service.prometheus
 
 Prometheus monitoring server with declarative Alertmanager escalation.
@@ -822,6 +822,14 @@ which also fixes the alert links pointing back to Prometheus.
 * **alerting.email.enable** `bool` Also send critical alerts by mail (through the local Postfix relay)
 * **alerting.email.to** `str` Recipient of critical alert mails
 * **alerting.network.enable** `bool` Probe network reachability (gateway/tailnet/DNS) with blackbox_exporter
+* **alerting.network.internetProbeTargets** `listOf str` External IPs the zone gateway pings to detect a WAN outage. When all
+fail, `ZoneInternetDown` fires and inhibits the (false) down-alerts of
+hosts reachable only across the WAN (e.g. the HCS). Empty disables it.
+* **alerting.network.httpProbeUrls** `listOf str` HTTP(S) URLs probed for liveness (`ServiceEndpointDown`) and TLS
+certificate expiry (`CertificateExpiringSoon`/`Critical`). Empty by
+default: list the public web endpoints worth watching. Redirects to an
+SSO login (3xx) count as up; cert expiry is read from the TLS
+handshake regardless of HTTP status.
 * **alerting.silenceOnRebuild** `bool` Ship the dnf-maintenance flag (textfile collector) so rebuilds inhibit a node's alerts
 * **alerting.thresholds** `attrs` Override resource alert thresholds (see dnf/lib/alerts.nix defaults)
 
@@ -837,6 +845,8 @@ darkone.service.prometheus = {
   alerting.email.enable = true;
   alerting.email.to = "admin@${network.domain}";
   alerting.network.enable = true;
+  alerting.network.internetProbeTargets = [ ];
+  alerting.network.httpProbeUrls = [ ];
   alerting.silenceOnRebuild = true;
   alerting.thresholds = { };
 };

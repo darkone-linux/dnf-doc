@@ -27,7 +27,7 @@ Le code est scindé en deux, pour garder la génération des règles **testable*
 Toute logique non triviale va dans `alerts.nix` ; le module se contente de la
 brancher.
 
-{/* t:p 03d816808d6ca32418b39cf39298cca92f6e060efadcf2c4b616a1d9156e0642 */}
+{/* t:p de4e62e5577e8a7266b168cecc70e9811a3fddc64318dc3124c1cfa600ae7603 */}
 ## Les helpers (`alerts.nix`)
 
 Exposés via `dnfLib` (voir `dnf/lib/default.nix`) :
@@ -51,6 +51,7 @@ Exposés via `dnfLib` (voir `dnf/lib/default.nix`) :
 | `mergeRuleGroups` | Fusionne des fragments en **un seul** document |
 | `mkAlertRuleGroups` | Raccourci : nœuds + ressources + restic |
 
+{/* t:p 7c13d3bbffc588d69c9063078871bec5dde8fca22801d89ebdad825c59ee2d66 */}
 ### Sélection des nœuds surveillés
 
 La supervision est *opt-out* pour l'infrastructure, *opt-in* pour le reste.
@@ -59,6 +60,7 @@ La supervision est *opt-out* pour l'infrastructure, *opt-in* pour le reste.
 explicitement `alert-non-critical`, ou s'il héberge au moins un service mappé
 dans `serviceUnits`. Un laptop/desktop nu ne génère donc aucune alerte node.
 
+{/* t:p 7118836dd86dace4a9bc592f0d10cccaee095656e2ba723fc757ac17b196ed87 */}
 ### Panne internet vs hôte distant down
 
 Le Prometheus d'une zone joint les hôtes des autres zones (ex. le HCS public)
@@ -95,7 +97,7 @@ services.prometheus.rules = [
 ];
 ```
 
-{/* t:p 30c03461a85dc9959e5e3879fe31dd8e64d114868a3990ed1eff28ac3627a289 */}
+{/* t:p e5cd599bef789e0600181bf998ec23d9c7da9d578d2a7055e5a2a24c46af18ac */}
 ## Où ajouter quoi
 
 | Je veux… | Je touche… |

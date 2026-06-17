@@ -726,39 +726,47 @@ darkone.service.printing = {
 };
 ```
 
-{/* t:p c644346db8ff29f516607774dcf35bfefb6a26c7dac14272d0daa5cb914fcf4b */}
+{/* t:p ef428e05706c4045d350b7b2f52743660f8fd3d31691e17e003ce35acf67f91b */}
 ### &#x2728; darkone.service.prometheus
 
-Serveur de monitoring Prometheus avec escalade Alertmanager déclarative.
+Serveur de monitoring Prometheus avec escalade déclarative via Alertmanager.
 
 :::tip[Prometheus & Grafana]
 Service de métriques + alerting autonome, indépendant de Grafana&nbsp;:
 
 - Scrape chaque nœud de zone portant la feature `monitoring-node:<zone>`.
-- Alertmanager achemine par sévérité&nbsp;: warning → Matrix #warnings,
-  critical → Matrix #incidents + mail (relais Postfix local).
-- blackbox_exporter sonde la reachabilité gateway / tailnet / DNS.
-- Les classes de nœuds (critique/non-critique/disabled) proviennent des
-  features `alert-*` ou du profil hôte (voir `dnf/lib/alerts.nix`).
+- Alertmanager route par sévérité&nbsp;: warning -> Matrix #warnings,
+  critical -> Matrix #incidents + mail (relais Postfix local).
+- blackbox_exporter sonde la reachabilité de la passerelle / tailnet / DNS.
+- Les classes de nœuds (critical/non-critical/disabled) proviennent des features `alert-*`
+  ou du profil hôte (voir `dnf/lib/alerts.nix`).
 
 `monitoring` (Grafana) nécessite un `prometheus` sur le même hôte
-(imposé par le `require` du générateur). L'interface web est exposée à
+(imposé par le `require` du générateur). L'interface web est exposée sur
 `https://prometheus.<zone>.<domain>` derrière oauth2-proxy (groupe `admins`),
 qui corrige aussi les liens d'alerte pointant vers Prometheus.
 :::
 
-* **enable** `bool` Activer le serveur de métriques + alerting Prometheus
+* **enable** `bool` Active le serveur de métriques + alerting Prometheus
 * **retentionTime** `str` Durée de rétention des métriques Prometheus
-* **alerting.enable** `bool` Activer Alertmanager (activé par défaut une fois les salons d'alerte Matrix provisionnés)
-* **alerting.matrix.enable** `bool` Envoyer les alertes dans des salons Matrix via le bot matrix-alertmanager
-* **alerting.matrix.userId** `str` Identifiant Matrix du bot d'alertes (défaut depuis network.matrix.bot)
-* **alerting.matrix.warningsRoom** `str` Identifiant du salon Matrix pour les avertissements (défaut depuis network.matrix.warningsRoom)
-* **alerting.matrix.incidentsRoom** `str` Identifiant du salon Matrix pour les incidents (défaut depuis network.matrix.incidentsRoom)
-* **alerting.email.enable** `bool` Envoyer aussi les alertes critiques par courriel (via le relais Postfix local)
-* **alerting.email.to** `str` Destinataire des courriels d'alerte critique
-* **alerting.network.enable** `bool` Sonder la reachabilité réseau (gateway/tailnet/DNS) avec blackbox_exporter
-* **alerting.silenceOnRebuild** `bool` Envoyer le flag dnf-maintenance (collecteur textfile) pour que les rebuilds inhibent les alertes d'un nœud
-* **alerting.thresholds** `attrs` Surcharger les seuils d'alerte ressource (voir défauts dans dnf/lib/alerts.nix)
+* **alerting.enable** `bool` Active Alertmanager (activé par défaut une fois les salons d'alerte Matrix provisionnés)
+* **alerting.matrix.enable** `bool` Envoie les alertes dans les salons Matrix via le bot matrix-alertmanager
+* **alerting.matrix.userId** `str` ID Matrix du bot d'alerte (par défaut depuis network.matrix.bot)
+* **alerting.matrix.warningsRoom** `str` ID Matrix du salon pour les warnings (par défaut depuis network.matrix.warningsRoom)
+* **alerting.matrix.incidentsRoom** `str` ID Matrix du salon pour les incidents (par défaut depuis network.matrix.incidentsRoom)
+* **alerting.email.enable** `bool` Envoie aussi les alertes critiques par mail (via le relais Postfix local)
+* **alerting.email.to** `str` Destinataire des mails d'alerte critique
+* **alerting.network.enable** `bool` Sonde la reachabilité réseau (passerelle/tailnet/DNS) avec blackbox_exporter
+* **alerting.network.internetProbeTargets** `listOf str` IPs externes que la passerelle de zone ping pour détecter une panne WAN. Quand toutes
+échouent, `ZoneInternetDown` se déclenche et inhibe les alertes (faussement) down des
+hôtes joignables uniquement via le WAN (ex.&nbsp;: le HCS). Vide désactive.
+* **alerting.network.httpProbeUrls** `listOf str` URLs HTTP(S) sondées pour la vivacité (`ServiceEndpointDown`) et l'expiration
+du certificat TLS (`CertificateExpiringSoon`/`Critical`). Vide par
+défaut&nbsp;: lister les endpoints web publics qui méritent une surveillance. Les
+redirections vers un SSO (3xx) comptent comme up&nbsp;; l'expiration du cert est lue
+depuis la handshake TLS, indépendamment du statut HTTP.
+* **alerting.silenceOnRebuild** `bool` Envoie le flag dnf-maintenance (collecteur textfile) pour que les rebuilds inhibent les alertes d'un nœud
+* **alerting.thresholds** `attrs` Surcharge les seuils d'alerte ressource (voir les défauts dans dnf/lib/alerts.nix)
 
 ```nix
 darkone.service.prometheus = {
@@ -772,6 +780,8 @@ darkone.service.prometheus = {
   alerting.email.enable = true;
   alerting.email.to = "admin@${network.domain}";
   alerting.network.enable = true;
+  alerting.network.internetProbeTargets = [ ];
+  alerting.network.httpProbeUrls = [ ];
   alerting.silenceOnRebuild = true;
   alerting.thresholds = { };
 };

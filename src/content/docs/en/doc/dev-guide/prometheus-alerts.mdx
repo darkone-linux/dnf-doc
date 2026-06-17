@@ -26,23 +26,52 @@ The code is split in two to keep rule generation **testable**:
 
 Any non-trivial logic goes into `alerts.nix` ; the module merely plugs it in.
 
-{/* t:p 03d816808d6ca32418b39cf39298cca92f6e060efadcf2c4b616a1d9156e0642 */}
+{/* t:p de4e62e5577e8a7266b168cecc70e9811a3fddc64318dc3124c1cfa600ae7603 */}
 ## Helpers (`alerts.nix`)
 
-Exposed via `dnfLib` (see `dnf/lib/default.nix`) :
+Exposed via `dnfLib` (see `dnf/lib/default.nix`):
 
 | Helper | Role |
 |---|---|
 | `serviceUnits` | DNF service → systemd unit (e.g. `idm` → `kanidmd.service`) |
-| `nodeClass` | Node class (critical / non-critical / disabled) : `alert-*` features then profile |
+| `nodeClass` | Node class (critical / non-critical / disabled): `alert-*` features then profile |
+| `nodeAlertEligible` | Selection: a node is monitored only if it is a network/server node, carries `alert-non-critical`, or hosts a mapped service |
 | `severityForClass` | Class → severity (`critical` or `warning`) |
 | `hostExpectedUnits` | Expected units for a host (based on its enabled services) |
-| `mkNodeRuleGroups` | `NodeDown`, `ServiceDown`, `SystemdUnitFailed` |
-| `mkResourceRuleGroups` | Disk, RAM, load, inodes, OOM (thresholds `defaultThresholds`) |
-| `mkNetworkRuleGroups` | Blackbox probes (gateway, tailnet, DNS) |
+| `mkNodeRuleGroups` | `NodeDown`, `ServiceDown`, `SystemdUnitFailed` (+ `reach` label local/wan) |
+| `mkResourceRuleGroups` | Disk, RAM, load, inodes, OOM, FS read-only, disk prediction, clock, conntrack |
+| `mkNetworkRuleGroups` | Blackbox probes (gateway, tailnet, DNS, `ZoneInternetDown`) |
+| `mkHttpRuleGroups` | HTTP probes: `ServiceEndpointDown` + TLS certificate expiration |
+| `mkResticRuleGroups` | Backup freshness (`ResticBackupStale`/`Critical`) |
+| `mkSmartctlRuleGroups` | SMART disk health (`DiskSmartFailing`, `DiskTemperatureHigh`) |
+| `mkPostfixRuleGroups` | Postfix relay (`PostfixRelayUnhealthy`, `PostfixDeferredQueueHigh`) |
+| `mkSynapseRuleGroups` | Synapse (`SynapseRestarting`, `SynapseHighErrorRate`) |
 | `mkMaintenanceRuleGroups` | Maintenance flag (silence during rebuild) |
 | `mergeRuleGroups` | Merges fragments into a **single** document |
-| `mkAlertRuleGroups` | Shortcut : nodes + resources |
+| `mkAlertRuleGroups` | Shortcut: nodes + resources + restic |
+
+{/* t:p 7c13d3bbffc588d69c9063078871bec5dde8fca22801d89ebdad825c59ee2d66 */}
+### Monitored node selection
+
+Monitoring is *opt-out* for infrastructure, *opt-in* for the rest.
+`nodeAlertEligible` retains a node only if it is of class `critical`
+(`gateway`/`hcs`/`server` profile or `alert-critical` feature), if it carries
+`alert-non-critical` explicitly, or if it hosts at least one service mapped
+in `serviceUnits`. A bare laptop/desktop therefore generates no node alerts.
+
+{/* t:p 7118836dd86dace4a9bc592f0d10cccaee095656e2ba723fc757ac17b196ed87 */}
+### Internet outage vs remote host down
+
+A zone's Prometheus connects to hosts in other zones (e.g. the public HCS)
+only over the WAN. When internet goes down, these targets become unreachable
+and would trigger a false "*host* down" alert. To prevent this:
+
+- each node rule carries a `reach` label (`local` same zone, `wan` cross-zone);
+- an ICMP blackbox probe to external IPs feeds `ZoneInternetDown`
+  (fired only if **all** external targets fail);
+- an Alertmanager inhibition rule (`equal: [zone]`) silences `reach="wan"` alerts
+  of the zone while `ZoneInternetDown` is active — the real cause is notified,
+  not the symptoms.
 
 {/* t:p c5d86961939c4492ce81c4a9d92772bf2385dfb6d920af9820758e2928e60fc4 */}
 ## The trap : a single rule document
@@ -67,18 +96,22 @@ services.prometheus.rules = [
 ];
 ```
 
-{/* t:p 30c03461a85dc9959e5e3879fe31dd8e64d114868a3990ed1eff28ac3627a289 */}
-## What to touch where
+{/* t:p e5cd599bef789e0600181bf998ec23d9c7da9d578d2a7055e5a2a24c46af18ac */}
+## Where to add what
 
 | I want to… | I touch… |
 |---|---|
 | monitor a new service | `serviceUnits` in `alerts.nix` |
 | add a new rule family | a `mkXRuleGroups` + add it to the module's `mergeRuleGroups` |
+| wire up a metrics exporter | exporter in its module (gated `monitoring-node`, bind `preferredIp`) + scrape job + `mkXRuleGroups` gated in `prometheus.nix` |
 | change a default threshold | `defaultThresholds` in `alerts.nix` |
 | change a node's class | `alert-*[:zone]` feature (no code) |
-| add a new destination | the `alertmanager` block in `prometheus.nix` (receiver + route) |
+| force/exclude a node from monitoring | `alert-non-critical` / `alert-disabled` feature |
+| monitor a URL + its TLS certificate | `alerting.network.httpProbeUrls` in config |
+| adjust internet outage detection | `alerting.network.internetProbeTargets` |
+| add a new destination | `alertmanager` block in `prometheus.nix` (receiver + route) |
 
 :::tip[DNF Convention]
-A helper in `lib/` = a test. Any function added to `alerts.nix` comes with
+A helper in `lib/` = a test. Any function added to `alerts.nix` is paired with
 a test case in `dnf/tests/unit/lib/alerts_test.nix` (`nix-unit`).
 :::
