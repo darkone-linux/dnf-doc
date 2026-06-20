@@ -13,18 +13,19 @@ sidebar:
 **Un module d'application GUI** installe des applications graphiques et leur configuration optimisée pour DNF.
 :::
 
-{/* t:p 101c25b0e641045ab07cb82512f8050fd8567ac3a5b2c9bf87daa844bf130c43 */}
+{/* t:p c6444be5817a3c9e022e12c0ca22a68fdea9b3ef90df02f0581053ed09e0ff01 */}
 ### &#x1F5BC; darkone.graphic.gnome
 
-Environnement gnome préconfiguré avec ses dépendances.
+Environnement GNOME préconfiguré avec dépendances.
 
-* **enable** `bool` WM gnome préconfiguré
-* **enableDashToDock** `bool` Plugin Dash to dock
+* **enable** `bool` Environnement GNOME préconfiguré
+* **enableDashToDock** `bool` Extension Dash to dock
 * **enableLightDM** `bool` Activer LightDM au lieu de GDM
-* **enableCaffeine** `bool` Désactiver la mise en veille automatique
+* **enableCaffeine** `bool` Désactiver la suspension automatique
 * **enableGsConnect** `bool` Communication avec les appareils
 * **enableOnlineServices** `bool` Comptes en ligne, CalDAV, CardDAV...
-* **xkbVariant** `str` Variante de clavier. La disposition est extraite du keymap console.
+* **xkbVariant** `str` Variante de clavier. La disposition est extraite de la console keymap.
+* **screenBlankDelay** `ints.unsigned` Délai d'extinction de l'écran en secondes (0 = jamais). Les laptops le fixent à 900 (15 min).
 
 ```nix
 darkone.graphic.gnome = {
@@ -35,6 +36,7 @@ darkone.graphic.gnome = {
   enableGsConnect = false;
   enableOnlineServices = false;
   xkbVariant = "oss";
+  screenBlankDelay = 1800;
 };
 ```
 

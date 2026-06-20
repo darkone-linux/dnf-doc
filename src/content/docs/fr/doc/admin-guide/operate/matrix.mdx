@@ -123,6 +123,122 @@ téléphone apparaissent dans Matrix comme venant du **vrai compte** de
 l'utilisateur. C'est automatique pour tous les comptes locaux, aucune action
 par utilisateur.
 
+{/* t:p 0f41ac433fa1137ed832a36a6ca0cd7b09466c8c17ef82ceed896991b4fb8656 */}
+## Ouvrir le réseau à la fédération
+
+Par défaut, le serveur fédère avec **tous** les serveurs Matrix, tout en restant
+**invisible dans les recherches** (annuaires non exposés). Pour contrôler la
+portée, régler `darkone.service.matrix.federation` dans la config nix de
+l'hôte&nbsp;:
+
+```nix
+# usr/machines/<host>/default.nix
+darkone.service.matrix.federation = {
+  enable = true;       # false = fédération totalement bloquée
+  whitelist = [ ];     # vide = ouverte ; sinon liste blanche
+};
+```
+
+| Objectif | Réglage |
+|---|---|
+| Réseau isolé (aucune fédération) | `enable = false;` |
+| Ouvert à tout l'écosystème Matrix | `enable = true; whitelist = [ ];` |
+| Restreint à des serveurs de confiance | `enable = true; whitelist = [ "ami.org" "matrix.org" ];` |
+
+<Aside type="caution" title="Réseau familial">
+La liste blanche est **bidirectionnelle**&nbsp;: un serveur non listé ne peut ni
+écrire à vos utilisateurs ni recevoir d'eux. Pour un réseau utilisé par des
+enfants, renseigner `whitelist` plutôt que de laisser la fédération ouverte.
+</Aside>
+
+Vérifier après déploiement&nbsp;:
+
+<Steps>
+
+1. Tester la fédération entrante avec
+   [federationtester.matrix.org](https://federationtester.matrix.org/) sur
+   `domain.tld` → tous les voyants verts.
+
+2. En liste blanche, un serveur **non listé** est refusé (journal Synapse&nbsp;:
+   `Federation denied`), un domaine listé fonctionne.
+
+</Steps>
+
+{/* t:p ab159511804ed5a826296b329e895cdf509308683f2be8751be74dbb8fa19549 */}
+## Inscrire des amis (comptes locaux)
+
+En plus des utilisateurs du SSO, on peut ouvrir une inscription **sur jeton**
+pour des comptes locaux (amis). Aucune inscription n'est possible sans jeton.
+
+<Steps>
+
+1. Activer l'inscription sur jeton dans la config nix de l'hôte, puis
+   déployer&nbsp;:
+
+   ```nix
+   # usr/machines/<host>/default.nix
+   darkone.service.matrix.friendRegistration.enable = true;
+   ```
+
+2. Promouvoir le compte `matrix.admin` en *server admin* (une seule fois), sur
+   l'hôte Matrix&nbsp;:
+
+   ```sh
+   sudo -u matrix-synapse psql matrix-synapse \
+     -c "UPDATE users SET admin = 1 WHERE name = '@alice:domain.tld';"
+   ```
+
+3. Créer un jeton d'inscription via l'API d'administration (avec un *access
+   token* du compte admin)&nbsp;:
+
+   ```sh
+   curl -X POST \
+     -H "Authorization: Bearer <ACCESS_TOKEN>" \
+     -H "Content-Type: application/json" \
+     -d '{"uses_allowed": 1, "expiry_time": null}' \
+     https://matrix.domain.tld/_synapse/admin/v1/registration_tokens/new
+   ```
+
+   La réponse contient le `token` à transmettre à l'ami.
+
+4. L'ami s'inscrit dans Element&nbsp;: *Créer un compte* → serveur `domain.tld` →
+   il colle le jeton lorsqu'il est demandé.
+
+</Steps>
+
+<Aside type="note" title="L'access token admin">
+Récupérer un *access token* dans Element (*Paramètres → Aide & à propos →
+Avancé*) avec le compte promu, ou par connexion API
+(`POST /_matrix/client/v3/login`). La future interface Synapse-Admin
+simplifiera promotion et jetons.
+</Aside>
+
+{/* t:p 652e85dad5e7f42f023bdc7511fc1076c3bc21466cd0d47cab67597fc8299bc1 */}
+## Salons publics avec validation (knock)
+
+Un salon **public** au sens Matrix se rejoint **librement**&nbsp;: pas de
+validation. Pour un salon «&nbsp;joignable mais sur approbation&nbsp;», utiliser
+la règle d'accès **knock** (toquer) — réglage **par salon**, côté client, sans
+configuration serveur.
+
+<Steps>
+
+1. Dans Element&nbsp;: salon → *Paramètres du salon* → *Sécurité &
+   confidentialité*.
+
+2. Accès au salon → **«&nbsp;Demander à rejoindre&nbsp;»** (knock).
+
+3. Un utilisateur (local ou distant fédéré) demande l'accès&nbsp;; un modérateur
+   approuve ou refuse.
+
+</Steps>
+
+<Aside type="tip" title="Vraiment privé ?">
+Pour un salon confidentiel&nbsp;: le retirer de l'annuaire **et** le passer en
+`knock` ou sur invitation. Le chiffrement de bout en bout est déjà actif par
+défaut sur les nouveaux salons.
+</Aside>
+
 {/* t:p 43e4a74b1b61aaa94acd4dffb65d44a7667e1c5cf3f0d508474f069dbf76a1ed */}
 ## Exploitation
 

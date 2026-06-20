@@ -123,6 +123,118 @@ phone appear in Matrix as coming from the user's **real account**.
 This is automatic for all local accounts, no action per
 user.
 
+{/* t:p 0f41ac433fa1137ed832a36a6ca0cd7b09466c8c17ef82ceed896991b4fb8656 */}
+## Opening the network to federation
+
+By default, the server federates with **all** Matrix servers, while remaining
+**invisible in searches** (directories not exposed). To control the scope, set
+`darkone.service.matrix.federation` in the host's nix config:
+
+```nix
+# usr/machines/<host>/default.nix
+darkone.service.matrix.federation = {
+  enable = true;       # false = federation fully blocked
+  whitelist = [ ];     # empty = open ; otherwise whitelist
+};
+```
+
+| Goal | Setting |
+|---|---|
+| Isolated network (no federation) | `enable = false;` |
+| Open to the entire Matrix ecosystem | `enable = true; whitelist = [ ];` |
+| Restricted to trusted servers | `enable = true; whitelist = [ "ami.org" "matrix.org" ];` |
+
+<Aside type="caution" title="Family network">
+The whitelist is **bidirectional**: an unlisted server can neither write to
+your users nor receive from them. For a network used by children, fill in
+`whitelist` rather than leaving federation open.
+</Aside>
+
+Verify after deployment:
+
+<Steps>
+
+1. Test incoming federation with
+   [federationtester.matrix.org](https://federationtester.matrix.org/) on
+   `domain.tld` → all green lights.
+
+2. With a whitelist, an **unlisted** server is denied (Synapse log:
+   `Federation denied`), a listed domain works.
+
+</Steps>
+
+{/* t:p ab159511804ed5a826296b329e895cdf509308683f2be8751be74dbb8fa19549 */}
+## Registering friends (local accounts)
+
+In addition to SSO users, you can enable **token-based** registration for local
+accounts (friends). No registration is possible without a token.
+
+<Steps>
+
+1. Enable token-based registration in the host's nix config, then deploy:
+
+   ```nix
+   # usr/machines/<host>/default.nix
+   darkone.service.matrix.friendRegistration.enable = true;
+   ```
+
+2. Promote the `matrix.admin` account to *server admin* (one time only), on
+   the Matrix host:
+
+   ```sh
+   sudo -u matrix-synapse psql matrix-synapse \
+     -c "UPDATE users SET admin = 1 WHERE name = '@alice:domain.tld';"
+   ```
+
+3. Create a registration token via the admin API (with an *access token* from
+   the admin account):
+
+   ```sh
+   curl -X POST \
+     -H "Authorization: Bearer <ACCESS_TOKEN>" \
+     -H "Content-Type: application/json" \
+     -d '{"uses_allowed": 1, "expiry_time": null}' \
+     https://matrix.domain.tld/_synapse/admin/v1/registration_tokens/new
+   ```
+
+   The response contains the `token` to pass on to the friend.
+
+4. The friend registers in Element: *Create account* → server `domain.tld` →
+   they paste the token when prompted.
+
+</Steps>
+
+<Aside type="note" title="The admin access token">
+Retrieve an *access token* in Element (*Settings → Help & About → Advanced*)
+with the promoted account, or via API login
+(`POST /_matrix/client/v3/login`). The future Synapse-Admin interface will
+simplify promotion and tokens.
+</Aside>
+
+{/* t:p 652e85dad5e7f42f023bdc7511fc1076c3bc21466cd0d47cab67597fc8299bc1 */}
+## Public rooms with approval (knock)
+
+A **public** room in the Matrix sense can be joined **freely**: no validation.
+For a room that is "joinable but on approval", use the **knock** access rule —
+a **per-room** setting, on the client side, no server configuration needed.
+
+<Steps>
+
+1. In Element: room → *Room Settings* → *Security & Privacy*.
+
+2. Room access → **"Ask to join"** (knock).
+
+3. A user (local or federated remote) requests access; a moderator approves or
+   denies.
+
+</Steps>
+
+<Aside type="tip" title="Really private?">
+For a confidential room: remove it from the directory **and** set it to `knock`
+or invitation only. End-to-end encryption is already active by default on new
+rooms.
+</Aside>
+
 {/* t:p 43e4a74b1b61aaa94acd4dffb65d44a7667e1c5cf3f0d508474f069dbf76a1ed */}
 ## Operations
 

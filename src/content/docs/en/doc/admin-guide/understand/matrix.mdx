@@ -191,6 +191,66 @@ anything to it, so its `hs_token` is never used — it is only required
 by the registration format.
 </Aside>
 
+{/* t:p 40e21c2e2606a62713bc3abaa68a2b132ed0a825076094bb03e6ce7313b173ad */}
+## Federation
+
+Matrix federation is **server-to-server** communication: an account
+`@alice:domain.tld` talks to `@bob:autre.org` without an account on the other
+server. DNF makes it **configurable and explicit** via
+`darkone.service.matrix.federation`.
+
+{/* t:p b23cdfc68daffeebba0a53cf27f81128ea5359de0d7287fec23fd6fb18533020 */}
+### Discovery ≠ connectivity
+
+Two distinct notions, often confused:
+
+- **Discovery**: appearing in remote directories (room and profile search). DNF
+  **locks it by default**
+  (`allow_public_rooms_over_federation = false`, user directory disabled,
+  profiles private on federation). The network remains **reachable but not
+  searchable**.
+- **Connectivity**: the ability to exchange events with another server. This is
+  what federation controls.
+
+<Aside type="caution" title="Hiding isn't hiding">
+Removing a room from directories does not make it secret: anyone who knows its
+alias (`#salon:domain.tld`) can attempt to join it. For a truly private room:
+unlisted **and** `knock` or invite-only access.
+</Aside>
+
+{/* t:p 765c6b4ee94af9bed3144c24c1918bed068f05671750f24f38c55342bac71794 */}
+### Three modes
+
+The module maps two options to a single Synapse key
+`federation_domain_whitelist`, whose **presence** changes the meaning:
+
+| Setting | Synapse key | Effect |
+|---|---|---|
+| `enable = false` | `[ ]` (empty list) | federation **fully blocked** |
+| `enable = true; whitelist = [ ]` | *(absent)* | federation **open** to all |
+| `enable = true; whitelist = [ "ami.org" ]` | `[ "ami.org" ]` | **whitelist** (inbound + outbound) |
+
+The whitelist is **bidirectional**: outside the listed domains, neither inbound
+nor outbound. This is the recommended setting for a family network. Delegation
+(`/.well-known/matrix/server` → `matrix.domain.tld:443`) is served by Caddy, so
+no dedicated port 8448 is needed.
+
+{/* t:p 701e0d65bfb1e4f3fed6f3723553782a6f71f39402324ff71322d1ddca886aff */}
+## Accounts: SSO and friends
+
+Two account origins coexist on the same server:
+
+- **Declared users**: authenticated via Kanidm SSO (OIDC). No Matrix password,
+  no account creation (see
+  [Authentication & IDM](/en/doc/admin-guide/understand/auth-idm/)).
+- **Friends**: local password accounts, opened by registration **with a
+  token** (`friendRegistration.enable`). Without a token, no registration is
+  possible.
+
+Both types share the same rights (bridges included). Creating a token requires a
+*server admin* (see
+[the operations guide](/en/doc/admin-guide/operate/matrix/#registering-friends-local-accounts)).
+
 {/* t:p 1825668044e3aa12cfff0835ba4915818108282998110b153e0883ee4cfead14 */}
 ## Secrets and ports
 

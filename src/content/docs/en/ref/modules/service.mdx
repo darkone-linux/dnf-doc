@@ -506,7 +506,7 @@ darkone.service.loki = {
 
 <hr/>
 
-{/* t:p 67dac901f08a85ffae5b653be6cc1657c237010aa609ec58f8f35648e54c7bbd */}
+{/* t:p 5fa91d2fdec3ee058790e0dcd60e5acf0247c642b4fc1ad565aebda00ac945fc */}
 ### &#x2728; darkone.service.matrix
 
 DNF matrix (synapse) server with mautrix bridges.
@@ -530,7 +530,32 @@ secrets, so resetting a bridge's state dir never invalidates the
 registration synapse has loaded (which would otherwise require a registration
 wipe + synapse restart and produce "as_token was not accepted" errors).
 
+{/* t:p 818cb673e7de08738940871fba0ab15054813a479bcd923a945daea063c8ec4c */}
+## Federation
+
+Federation is configurable via `darkone.service.matrix.federation`:
+
+- `enable = false`: blocks all federation (empty domain whitelist).
+- `enable = true; whitelist = [ ]`: open federation with every server.
+- `enable = true; whitelist = [ "ami.org" ]`: allowlist (inbound + outbound).
+
+Discovery stays locked regardless (rooms absent from remote directories,
+profiles private over federation), so the network is reachable but not
+searchable.
+
+:::caution[Safe-for-kids]
+Open federation lets any federated server DM/invite local users. For a
+family network, fill `whitelist` with trusted servers only.
+:::
+
+Friend self-registration (`friendRegistration.enable`) opens token-gated
+local password accounts alongside Kanidm OIDC users. Minting a token needs a
+server admin (Synapse admin API / Synapse-Admin UI).
+
 * **enable** `bool` Enable matrix (synapse) service
+* **federation.enable** `bool` Allow server-to-server federation. False blocks all federation.
+* **federation.whitelist** `listOf str` Empty = federate with all servers; non-empty = only these domains (inbound + outbound).
+* **friendRegistration.enable** `bool` Allow friends to self-register with an invite token (token-gated).
 * **bridges.whatsapp.enable** `bool` Mautrix WhatsApp bridge (login by QR code).
 * **bridges.signal.enable** `bool` Mautrix Signal bridge (login by QR code).
 * **bridges.telegram.enable** `bool` Mautrix Telegram bridge (login by phone number).
@@ -540,6 +565,9 @@ wipe + synapse restart and produce "as_token was not accepted" errors).
 ```nix
 darkone.service.matrix = {
   enable = false;
+  federation.enable = true;
+  federation.whitelist = [ ];
+  friendRegistration.enable = false;
   bridges.whatsapp.enable = true;
   bridges.signal.enable = true;
   bridges.telegram.enable = true;

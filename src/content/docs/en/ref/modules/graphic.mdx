@@ -13,7 +13,7 @@ sidebar:
 **A GUI application module** installs graphical applications and their configuration optimized for DNF.
 :::
 
-{/* t:p 101c25b0e641045ab07cb82512f8050fd8567ac3a5b2c9bf87daa844bf130c43 */}
+{/* t:p c6444be5817a3c9e022e12c0ca22a68fdea9b3ef90df02f0581053ed09e0ff01 */}
 ### &#x1F5BC; darkone.graphic.gnome
 
 Pre-configured gnome environment with dependences.
@@ -25,6 +25,7 @@ Pre-configured gnome environment with dependences.
 * **enableGsConnect** `bool` Communication with devices
 * **enableOnlineServices** `bool` Online Accounts, CalDAV, CardDAV...
 * **xkbVariant** `str` Keyboard variant. Layout is extracted from console keymap.
+* **screenBlankDelay** `ints.unsigned` Screen-blank delay in seconds (0 = never). Laptops override it to 900 (15 min).
 
 ```nix
 darkone.graphic.gnome = {
@@ -35,6 +36,7 @@ darkone.graphic.gnome = {
   enableGsConnect = false;
   enableOnlineServices = false;
   xkbVariant = "oss";
+  screenBlankDelay = 1800;
 };
 ```
 
