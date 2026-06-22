@@ -1,0 +1,134 @@
+---
+title: Hôtes aarch64 (Raspberry Pi)
+sidebar:
+  label: Raspberry Pi
+  order: 4
+lang: fr
+---
+
+import { Steps } from '@astrojs/starlight/components';
+
+{/* t:main */}
+
+DNF gère des nœuds **aarch64** au même titre que les nœuds x86_64 : ils se
+déclarent dans `etc/config.yaml`, se construisent et se déploient avec les mêmes
+commandes. Le support matériel (noyau, firmware, bootloader) provient du flake
+[nixos-raspberrypi](https://github.com/nvmd/nixos-raspberrypi).
+
+:::note[Matériel supporté]
+Aujourd'hui : **Raspberry Pi Zero 2 W**, **3**, **4** et **5**. Le Raspberry Pi
+Zero (W) original (armv6, 32-bit) n'est pas supporté ; les cartes Odroid et un
+aarch64 générique ne sont pas (encore) câblés.
+:::
+
+## Déclarer un hôte aarch64
+
+L'architecture d'un hôte se choisit avec le champ `arch`, au format
+`cpu[:board]`. En l'absence de ce champ, l'hôte est un x86_64 classique.
+
+| Valeur de `arch`   | Machine                    |
+| ------------------ | -------------------------- |
+| `x86_64` (défaut)  | PC / serveur x86_64        |
+| `aarch64:rpi02`    | Raspberry Pi Zero 2 W      |
+| `aarch64:rpi3`     | Raspberry Pi 3             |
+| `aarch64:rpi4`     | Raspberry Pi 4             |
+| `aarch64:rpi5`     | Raspberry Pi 5             |
+
+```yaml
+# etc/config.yaml
+hosts:
+  - hostname: "pi"
+    name: "Raspberry Pi du salon"
+    zone: "maison:1.20"
+    arch: "aarch64:rpi5"
+    profile: "server"
+    users: ["alice"]
+    services:
+      homepage:
+```
+
+:::caution[Valeurs contrôlées]
+Le générateur valide `arch` contre une liste blanche : une valeur inconnue
+(ex. `aarch64:rpi3`) fait échouer `just generate` avec un message explicite.
+:::
+
+## Comment ça fonctionne
+
+<Steps>
+
+1. **Génération** — `just generate` valide `arch` puis l'écrit tel quel dans
+   `var/generated/hosts.nix`.
+
+2. **Interprétation** — le framework éclate `cpu:board` en un système NixOS
+   (`aarch64-linux`) et un modèle de carte (`rpi5` → `raspberry-pi-5`).
+
+3. **Injection matérielle** — pour une carte Raspberry Pi, les modules
+   nixos-raspberrypi (noyau et firmware constructeur, bootloader, cache binaire)
+   sont ajoutés automatiquement à la configuration du nœud.
+
+4. **Construction** — Colmena construit ce nœud avec un `nixpkgs` aarch64 dédié,
+   transparent pour le reste du parc.
+
+</Steps>
+
+## Prérequis de construction
+
+Construire de l'aarch64 depuis une machine d'administration x86_64 demande l'une
+de ces trois approches :
+
+:::tip[Émulation binfmt (le plus simple)]
+Activer l'émulation aarch64 sur la machine d'administration (le déployeur) :
+
+```nix
+# sur l'hôte qui lance les déploiements
+boot.binfmt.emulatedSystems = [ "aarch64-linux" ];
+```
+
+Simple, mais la construction émulée est lente.
+:::
+
+- **Construire sur la cible** : déployer avec Colmena en `build-on-target`, le
+  Raspberry Pi compile lui-même (natif mais lent).
+- **Builder distant aarch64** : déléguer la construction à une machine ARM
+  (le plus rapide pour un parc conséquent).
+
+## Installer un Raspberry Pi
+
+Une image SD bootable amorce le Pi, qui est ensuite intégré au parc comme
+n'importe quel nœud (cf. [installation initiale](/fr/doc/admin-guide/install/first-network-installation/)).
+
+<Steps>
+
+1. **Construire l'image SD** (choisir l'attribut selon le modèle) :
+
+   ```sh
+   nix build .#nixosConfigurations.sd-image-raspberry-pi-5.config.system.build.sdImage
+   ```
+
+2. **Écrire l'image sur la carte** :
+
+   ```sh
+   zstd -dc result/sd-image/*.img.zst | sudo dd of=/dev/sdX bs=4M status=progress conv=fsync
+   ```
+
+   :::caution[Vérifiez le périphérique]
+   Remplacez `/dev/sdX` par la **bonne** carte SD (`lsblk`) : `dd` écrase la
+   cible sans confirmation.
+   :::
+
+3. **Premier démarrage** — branché au réseau (Ethernet, ou Wi-Fi pour les cartes
+   sans port filaire comme le Zero 2 W), le Pi prend une adresse en DHCP (nom
+   `dnf-install`), avec SSH actif et l'utilisateur `nix` autorisé par la clé
+   d'administration (`usr/secrets/nix.pub`).
+
+4. **Déclarer puis déployer** — ajouter l'hôte dans `etc/config.yaml` avec son
+   `arch`, lancer `just generate`, puis déployer la configuration réelle
+   ([déploiement](/fr/doc/admin-guide/operate/deploy/)).
+
+</Steps>
+
+:::note[Image par modèle]
+L'image SD est spécifique à la carte. Un attribut par modèle :
+`sd-image-raspberry-pi-02` (Zero 2 W), `sd-image-raspberry-pi-3`,
+`sd-image-raspberry-pi-4`, `sd-image-raspberry-pi-5`.
+:::
