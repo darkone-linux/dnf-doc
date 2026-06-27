@@ -94,6 +94,32 @@ sudo headscale nodes list      # clients connectés
 sudo headscale nodes routes    # routes annoncées / approuvées
 ```
 
+{/* t:p 57f43a04ecd0435cf5602521b8b31ebb7243b8523504c043f23ca0b3f30dc508 */}
+## Auto-réparation du client
+
+Un `tailscaled` peut **décrocher silencieusement** de Headscale : la connexion de
+contrôle est perdue alors que le service reste « actif », et le sous-réseau d'une
+passerelle devient injoignable jusqu'à un redémarrage manuel. Un *watchdog* local
+détecte et corrige ce cas, sur **chaque client** Tailscale.
+
+| Aspect | Comportement |
+|---|---|
+| Sonde | toutes les 60&nbsp;s : `tailscale status` (backend, état en ligne, santé) |
+| Anti-rebond | 3 sondes en échec d'affilée (~3&nbsp;min) avant d'agir : encaisse les coupures WAN passagères |
+| Correction | `systemctl restart tailscaled` (ré-enregistrement automatique sur Headscale) |
+| Anti-boucle | une seule correction par fenêtre de 10&nbsp;min |
+| Observabilité | métriques `dnf_tailscale_healthy` et `dnf_tailscale_selfheal_restarts_total` (textfile node_exporter) |
+
+Deux [alertes](/fr/doc/admin-guide/operate/alerts/) accompagnent le mécanisme :
+
+- **`TailscaleUnhealthy`** : toujours décroché malgré la correction (problème de fond) ;
+- **`TailscaleFlapping`** : l'auto-réparation se répète trop souvent (cause à traiter).
+
+:::note[Activé par défaut]
+Le watchdog tourne sur tout client Tailscale. Pour le désactiver sur un hôte :
+`darkone.service.tailscale.selfHeal.enable = false;`.
+:::
+
 {/* t:p e0299c915299f5fddae3bae5314b854f0cea6de180f96b58b418f6a7892780d8 */}
 ## Accès depuis l'extérieur
 

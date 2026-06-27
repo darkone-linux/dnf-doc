@@ -99,7 +99,7 @@ Comme `monitoring-node:<zone>`, ces features acceptent une zone propriétaire :
 `alert-critical:main` fait surveiller un nœud externe (typiquement le HCS) par la
 zone `main`.
 
-{/* t:p f26bd560527aba812f399d7abaa1dbf9cfcb7bd1b18fd0c7a9268d516b2c3446 */}
+{/* t:p 3a477cc8a84650c465c0e2cf8f48cea74c8320fcd1d84d399f37b68c822ca8c6 */}
 ## Ce qui est surveillé
 
 Les règles sont dérivées de ce que chaque nœud déclare ; rien à lister à la main.
@@ -111,6 +111,7 @@ Les règles sont dérivées de ce que chaque nœud déclare ; rien à lister à 
 | Unité en échec | une unité systemd `failed` (`SystemdUnitFailed`) |
 | Ressources | disque, RAM, charge, inodes, OOM (seuils surchargeables) |
 | Réseau | passerelle, tailnet (headscale) ou DNS injoignable (sondes blackbox) |
+| Auto-réparation tailnet | client Tailscale décroché ou watchdog qui boucle (`TailscaleUnhealthy`, `TailscaleFlapping`) |
 
 {/* t:p d4e3ff350edb205693bfda166ccbb65803e3c6365b08e39ffdf1110cb2ecd97d */}
 ## Silence pendant les rebuilds

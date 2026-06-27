@@ -27,7 +27,7 @@ Le code est scindé en deux, pour garder la génération des règles **testable*
 Toute logique non triviale va dans `alerts.nix` ; le module se contente de la
 brancher.
 
-{/* t:p de4e62e5577e8a7266b168cecc70e9811a3fddc64318dc3124c1cfa600ae7603 */}
+{/* t:p 6c84c89cd0bc0be1392507e3a37579cc354efe7489649cffa2a6917c342d494d */}
 ## Les helpers (`alerts.nix`)
 
 Exposés via `dnfLib` (voir `dnf/lib/default.nix`) :
@@ -48,8 +48,9 @@ Exposés via `dnfLib` (voir `dnf/lib/default.nix`) :
 | `mkPostfixRuleGroups` | Relais Postfix (`PostfixRelayUnhealthy`, `PostfixDeferredQueueHigh`) |
 | `mkSynapseRuleGroups` | Synapse (`SynapseRestarting`, `SynapseHighErrorRate`) |
 | `mkMaintenanceRuleGroups` | Drapeau de maintenance (silence pendant rebuild) |
+| `mkTailscaleRuleGroups` | Auto-réparation tailnet (`TailscaleUnhealthy`, `TailscaleFlapping`) |
 | `mergeRuleGroups` | Fusionne des fragments en **un seul** document |
-| `mkAlertRuleGroups` | Raccourci : nœuds + ressources + restic |
+| `mkAlertRuleGroups` | Raccourci : nœuds + ressources + restic + SMART + tailscale |
 
 {/* t:p 7c13d3bbffc588d69c9063078871bec5dde8fca22801d89ebdad825c59ee2d66 */}
 ### Sélection des nœuds surveillés
@@ -97,7 +98,7 @@ services.prometheus.rules = [
 ];
 ```
 
-{/* t:p e5cd599bef789e0600181bf998ec23d9c7da9d578d2a7055e5a2a24c46af18ac */}
+{/* t:p 1877eff88c0a5918b909dddf45fc377a172d9b253b0b9045ea82ed325c0f1090 */}
 ## Où ajouter quoi
 
 | Je veux… | Je touche… |
@@ -115,4 +116,11 @@ services.prometheus.rules = [
 :::tip[Convention DNF]
 Un helper de `lib/` = un test. Toute fonction ajoutée à `alerts.nix` se double
 d'un cas dans `dnf/tests/unit/lib/alerts_test.nix` (`nix-unit`).
+:::
+
+:::caution[Métrique textfile : permissions]
+Un fichier `.prom` du collecteur textfile doit être lisible par `node-exporter`
+(utilisateur non-root). `mktemp` crée en `0600` : poser un `chmod 0644` **avant**
+le `mv` atomique, sinon le fichier est ignoré (`node_textfile_scrape_error 1`) et
+la métrique n'est jamais exposée, donc l'alerte reste aveugle.
 :::

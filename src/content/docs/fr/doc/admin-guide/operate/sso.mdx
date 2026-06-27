@@ -47,7 +47,7 @@ provisionne un client OAuth2 par service, et son secret est géré par
 Outline, Mealie, Vaultwarden, Grafana, Immich, Forgejo, Jellyfin, Open WebUI…
 :::
 
-{/* t:p 64a6a287516b8f5184000146d34d675d99736d3800ab68bd21885d1f4658ec2e */}
+{/* t:p 9f6590e1566b3fb9f0c7eeac0ea7e74f4d34ced2c716019432fed0965022d60e */}
 ## Protéger un service sans OIDC
 
 Un service sans authentification propre (page d'accueil, site statique) se
@@ -69,6 +69,14 @@ darkone.service.homepage.protectExternalOnly = true; # interne libre, externe au
 Le service `idm` doit tourner (HCS) et le service `homepage` être présent dans la
 zone : il sert d'**ancre** au flux de connexion. Le fonctionnement est détaillé
 dans [Authentification et identités](/fr/doc/admin-guide/understand/auth-idm/).
+:::
+
+:::tip[Démarrage résilient]
+`oauth2-proxy` a besoin de joindre l'émetteur OIDC (Kanidm sur le HCS) à son
+démarrage. S'il est momentanément injoignable (typiquement juste après un rebuild
+du HCS), le proxy **attend** que l'émetteur réponde, puis ne renonce jamais : il
+réessaie jusqu'au rétablissement. Plus besoin de relancer un déploiement à la
+main, le service se répare seul.
 :::
 
 {/* t:p a4caa12f8d9a5ff1330b0f5283ce9d8e137d480391e48f8ce94c6f5c3007f30f */}
