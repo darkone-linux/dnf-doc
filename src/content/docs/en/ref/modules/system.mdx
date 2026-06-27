@@ -13,7 +13,7 @@ sidebar:
 **A system module** manages common, important, and general configurations.
 :::
 
-{/* t:p a92e96e6639580a6a55bc3404aba931b6331f69a2f9dab2f64838ffcb675399a */}
+{/* t:p dc1847ee8697e38f31cf09e408b7648fd89d7619b60c41d7cd6455ae2ade4e45 */}
 ### &#x2699; darkone.system.core
 
 The core DNF module.
@@ -23,7 +23,8 @@ This module is enabled by default (required by DNF configuration).
 It is required for the proper functioning of every NixOS computer on the local network.
 :::
 
-Sets up the systemd-boot loader, the LTS kernel, JetBrains Mono Nerd
+Sets up the systemd-boot loader, the LTS kernel (or latest mainline via
+`enableLatestKernel`), JetBrains Mono Nerd
 Font (with `kmscon` for the TTY), nightly Nix store optimisation and
 weekly garbage collection (30 d retention, or keep-last-N via
 `gcKeepGenerations` on disk-constrained hosts), the firewall, suspend
@@ -38,6 +39,7 @@ and propagates `enableSops` to the sops module.
 
 * **enable** `bool` Darkone framework core system (activated by default)
 * **enableSystemdBoot** `bool` Enable the default boot loader
+* **enableLatestKernel** `bool` Use the latest mainline kernel (linuxPackages_latest) instead of the LTS one
 * **enableFstrim** `bool` SSD optimisation with fstrim
 * **enableFirewall** `bool` Enable firewall (default true)
 * **enableSops** `bool` Enable sops dnf module (default true)
@@ -55,6 +57,7 @@ retention. For hosts with a tight root partition (gateways).
 darkone.system.core = {
   enable = true;
   enableSystemdBoot = true;
+  enableLatestKernel = false;
   enableFstrim = true;
   enableFirewall = true;
   enableSops = true;

@@ -97,18 +97,19 @@ Like `monitoring-node:<zone>`, these features accept an owner zone :
 `alert-critical:main` makes a node (typically the HCS) monitored by the
 `main` zone.
 
-{/* t:p f26bd560527aba812f399d7abaa1dbf9cfcb7bd1b18fd0c7a9268d516b2c3446 */}
+{/* t:p 3a477cc8a84650c465c0e2cf8f48cea74c8320fcd1d84d399f37b68c822ca8c6 */}
 ## What is monitored
 
-Rules are derived from what each node declares; nothing to list by hand.
+Rules are derived from what each node declares; nothing to list manually.
 
 | Family | Trigger |
 |---|---|
 | Node unreachable | `node-exporter` silent (`NodeDown`) |
-| Active service but failing | expected systemd unit not `active` (`ServiceDown`) |
+| Active but broken service | expected systemd unit not `active` (`ServiceDown`) |
 | Unit in failure | a systemd unit `failed` (`SystemdUnitFailed`) |
 | Resources | disk, RAM, load, inodes, OOM (overridable thresholds) |
 | Network | gateway, tailnet (headscale) or DNS unreachable (blackbox probes) |
+| Tailnet self-healing | Tailscale client disconnected or watchdog looping (`TailscaleUnhealthy`, `TailscaleFlapping`) |
 
 {/* t:p d4e3ff350edb205693bfda166ccbb65803e3c6365b08e39ffdf1110cb2ecd97d */}
 ## Silence during rebuilds

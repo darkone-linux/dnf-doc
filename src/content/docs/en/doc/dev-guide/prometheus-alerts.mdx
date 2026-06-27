@@ -26,29 +26,30 @@ The code is split in two to keep rule generation **testable**:
 
 Any non-trivial logic goes into `alerts.nix` ; the module merely plugs it in.
 
-{/* t:p de4e62e5577e8a7266b168cecc70e9811a3fddc64318dc3124c1cfa600ae7603 */}
+{/* t:p 6c84c89cd0bc0be1392507e3a37579cc354efe7489649cffa2a6917c342d494d */}
 ## Helpers (`alerts.nix`)
 
-Exposed via `dnfLib` (see `dnf/lib/default.nix`):
+Exposed via `dnfLib` (see `dnf/lib/default.nix`) :
 
 | Helper | Role |
 |---|---|
 | `serviceUnits` | DNF service → systemd unit (e.g. `idm` → `kanidmd.service`) |
-| `nodeClass` | Node class (critical / non-critical / disabled): `alert-*` features then profile |
-| `nodeAlertEligible` | Selection: a node is monitored only if it is a network/server node, carries `alert-non-critical`, or hosts a mapped service |
+| `nodeClass` | Node class (critical / non-critical / disabled) : `alert-*` features then profile |
+| `nodeAlertEligible` | Selection : a node is only monitored if it is a network/server node, carries `alert-non-critical`, or hosts a mapped service |
 | `severityForClass` | Class → severity (`critical` or `warning`) |
-| `hostExpectedUnits` | Expected units for a host (based on its enabled services) |
+| `hostExpectedUnits` | Expected units of a host (based on its enabled services) |
 | `mkNodeRuleGroups` | `NodeDown`, `ServiceDown`, `SystemdUnitFailed` (+ `reach` label local/wan) |
 | `mkResourceRuleGroups` | Disk, RAM, load, inodes, OOM, FS read-only, disk prediction, clock, conntrack |
 | `mkNetworkRuleGroups` | Blackbox probes (gateway, tailnet, DNS, `ZoneInternetDown`) |
-| `mkHttpRuleGroups` | HTTP probes: `ServiceEndpointDown` + TLS certificate expiration |
+| `mkHttpRuleGroups` | HTTP probes : `ServiceEndpointDown` + TLS certificate expiry |
 | `mkResticRuleGroups` | Backup freshness (`ResticBackupStale`/`Critical`) |
 | `mkSmartctlRuleGroups` | SMART disk health (`DiskSmartFailing`, `DiskTemperatureHigh`) |
 | `mkPostfixRuleGroups` | Postfix relay (`PostfixRelayUnhealthy`, `PostfixDeferredQueueHigh`) |
 | `mkSynapseRuleGroups` | Synapse (`SynapseRestarting`, `SynapseHighErrorRate`) |
 | `mkMaintenanceRuleGroups` | Maintenance flag (silence during rebuild) |
-| `mergeRuleGroups` | Merges fragments into a **single** document |
-| `mkAlertRuleGroups` | Shortcut: nodes + resources + restic |
+| `mkTailscaleRuleGroups` | Tailnet self-repair (`TailscaleUnhealthy`, `TailscaleFlapping`) |
+| `mergeRuleGroups` | Merges fragments into **a single** document |
+| `mkAlertRuleGroups` | Shortcut : nodes + resources + restic + SMART + tailscale |
 
 {/* t:p 7c13d3bbffc588d69c9063078871bec5dde8fca22801d89ebdad825c59ee2d66 */}
 ### Monitored node selection
@@ -96,22 +97,25 @@ services.prometheus.rules = [
 ];
 ```
 
-{/* t:p e5cd599bef789e0600181bf998ec23d9c7da9d578d2a7055e5a2a24c46af18ac */}
+{/* t:p 1877eff88c0a5918b909dddf45fc377a172d9b253b0b9045ea82ed325c0f1090 */}
 ## Where to add what
 
 | I want to… | I touch… |
 |---|---|
 | monitor a new service | `serviceUnits` in `alerts.nix` |
-| add a new rule family | a `mkXRuleGroups` + add it to the module's `mergeRuleGroups` |
-| wire up a metrics exporter | exporter in its module (gated `monitoring-node`, bind `preferredIp`) + scrape job + `mkXRuleGroups` gated in `prometheus.nix` |
+| a new rule family | a `mkXRuleGroups` + add it to the module's `mergeRuleGroups` |
+| wire a metrics exporter | exporter in its module (gated `monitoring-node`, bind `preferredIp`) + scrape job + `mkXRuleGroups` gated in `prometheus.nix` |
 | change a default threshold | `defaultThresholds` in `alerts.nix` |
-| change a node's class | `alert-*[:zone]` feature (no code) |
-| force/exclude a node from monitoring | `alert-non-critical` / `alert-disabled` feature |
-| monitor a URL + its TLS certificate | `alerting.network.httpProbeUrls` in config |
+| change a node's class | feature `alert-*[:zone]` (no code) |
+| force/exclude a node from monitoring | feature `alert-non-critical` / `alert-disabled` |
+| monitor a URL + its TLS certificate | `alerting.network.httpProbeUrls` in the config |
 | adjust internet outage detection | `alerting.network.internetProbeTargets` |
-| add a new destination | `alertmanager` block in `prometheus.nix` (receiver + route) |
+| a new destination | the `alertmanager` block in `prometheus.nix` (receiver + route) |
 
 :::tip[DNF Convention]
-A helper in `lib/` = a test. Any function added to `alerts.nix` is paired with
-a test case in `dnf/tests/unit/lib/alerts_test.nix` (`nix-unit`).
+A helper in `lib/` = a test. Any function added to `alerts.nix` gets a test case in `dnf/tests/unit/lib/alerts_test.nix` (`nix-unit`).
+:::
+
+:::caution[Textfile metric: permissions]
+A `.prom` file from the textfile collector must be readable by `node-exporter` (non-root user). `mktemp` creates with `0600`: add a `chmod 0644` **before** the atomic `mv`, otherwise the file is ignored (`node_textfile_scrape_error 1`) and the metric is never exposed, hence the alert remains blind.
 :::

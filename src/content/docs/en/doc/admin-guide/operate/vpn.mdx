@@ -94,6 +94,29 @@ sudo headscale nodes list      # connected clients
 sudo headscale nodes routes    # advertised / approved routes
 ```
 
+{/* t:p 57f43a04ecd0435cf5602521b8b31ebb7243b8523504c043f23ca0b3f30dc508 */}
+## Client self-healing
+
+A `tailscaled` can **silently disconnect** from Headscale: the control connection is lost while the service remains "active", and a gateway's subnet becomes unreachable until a manual restart. A local *watchdog* detects and fixes this, on **every** Tailscale client.
+
+| Aspect | Behavior |
+|---|---|
+| Probe | every 60&nbsp;s: `tailscale status` (backend, online state, health) |
+| Debounce | 3 consecutive probe failures (~3&nbsp;min) before acting: tolerates transient WAN outages |
+| Fix | `systemctl restart tailscaled` (automatic re-registration on Headscale) |
+| Anti-loop | only one fix per 10&nbsp;min window |
+| Observability | metrics `dnf_tailscale_healthy` and `dnf_tailscale_selfheal_restarts_total` (textfile node_exporter) |
+
+Two [alerts](/en/doc/admin-guide/operate/alerts/) accompany the mechanism:
+
+- **`TailscaleUnhealthy`**: stuck unhealthy despite the fix (underlying issue);
+- **`TailscaleFlapping`**: self-heal triggers too often (root cause to address).
+
+:::note[Enabled by default]
+The watchdog runs on every Tailscale client. To disable it on a host:
+`darkone.service.tailscale.selfHeal.enable = false;`.
+:::
+
 {/* t:p e0299c915299f5fddae3bae5314b854f0cea6de180f96b58b418f6a7892780d8 */}
 ## Access from outside
 

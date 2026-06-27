@@ -916,24 +916,27 @@ darkone.service.searx.enable = false;
 
 <hr/>
 
-{/* t:p adb7a368d11f04b73284b28312dcdaf06b6dad34ec7a9bf5f4188c289bc6b27e */}
+{/* t:p a4820ace01564f46d58b9a4d694e783fa9e705e94cedb8d8d1a1bf5a98c3b4f4 */}
 ### &#x2728; darkone.service.tailscale
 
-Service client Tailscale pour HCS.
+Service client Tailscale pour le HCS.
 
 :::note
-Un client Tailscale pour connecter un hôte externe à HCS. Ne pas l'utiliser pour connecter une passerelle pour un sous-réseau tailnet.
+Un client Tailscale pour connecter un hôte externe au HCS.
+Ne pas l'utiliser pour connecter une passerelle pour un sous-réseau tailnet.
 :::
 
-* **enable** `bool` Activer le client Tailscale pour connecter HCS
+* **enable** `bool` Activer le client Tailscale pour connecter le HCS
 * **isGateway** `bool` Ce nœud Tailscale est une passerelle de sous-réseau
 * **isExitNode** `bool` Configurer ce client comme nœud de sortie
+* **selfHeal.enable** `bool` Watchdog&nbsp;: détecter la déconnexion de headscale et redémarrer tailscaled.
 
 ```nix
 darkone.service.tailscale = {
   enable = false;
   isGateway = false;
   isExitNode = false;
+  selfHeal.enable = true;
 };
 ```
 

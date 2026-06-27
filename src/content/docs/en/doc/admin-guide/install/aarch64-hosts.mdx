@@ -1,0 +1,140 @@
+---
+title: aarch64 Hosts (Raspberry Pi)
+sidebar:
+  label: Raspberry Pi
+  order: 4
+lang: en
+---
+
+import { Steps } from '@astrojs/starlight/components';
+
+{/* t:translated-from fr */}
+{/* t:h b0443070848d8457da30d295f8b3ba254e5313789a5ad4456541642009186248 */}
+
+{/* t:p 5902edd4dc01bf23d88295e5a9330e4bf6d2675dceeb90dc22bbc2de34b27fb3 */}
+DNF manages **aarch64** nodes exactly the same as x86_64 nodes: they are
+declared in `etc/config.yaml`, built and deployed with the same
+commands. Hardware support (kernel, firmware, bootloader) comes from the
+[nixos-raspberrypi](https://github.com/nvmd/nixos-raspberrypi) flake.
+
+:::note[Supported Hardware]
+Today: **Raspberry Pi Zero 2 W**, **3**, **4** and **5**. The original Raspberry Pi
+Zero (W) (armv6, 32-bit) is not supported; Odroid boards and generic
+aarch64 are not (yet) wired in.
+:::
+
+{/* t:p 9cccd22930101c8be988147c2b5f1e1c832faf3d73530ea49eaaf54b654e7d97 */}
+## Declare an aarch64 Host
+
+A host's architecture is set with the `arch` field, in the
+`cpu[:board]` format. When this field is absent, the host is a standard x86_64.
+
+| `arch` value        | Machine                    |
+| ------------------- | -------------------------- |
+| `x86_64` (default)  | PC / x86_64 server         |
+| `aarch64:rpi02`     | Raspberry Pi Zero 2 W      |
+| `aarch64:rpi3`      | Raspberry Pi 3             |
+| `aarch64:rpi4`      | Raspberry Pi 4             |
+| `aarch64:rpi5`      | Raspberry Pi 5             |
+
+```yaml
+# etc/config.yaml
+hosts:
+  - hostname: "pi"
+    name: "Raspberry Pi du salon"
+    zone: "maison:1.20"
+    arch: "aarch64:rpi5"
+    profile: "server"
+    users: ["alice"]
+    services:
+      homepage:
+```
+
+:::caution[Validated Values]
+The generator validates `arch` against a whitelist: an unknown value
+(e.g. `aarch64:rpi3`) causes `just generate` to fail with an explicit message.
+:::
+
+{/* t:p c21395c81c0ef5a46c4419cbda9d43e472d9b790a4b623318d59d69fb3288acc */}
+## How It Works
+
+<Steps>
+
+1. **Generation** — `just generate` validates `arch` then writes it as-is into
+   `var/generated/hosts.nix`.
+
+2. **Interpretation** — the framework splits `cpu:board` into a NixOS system
+   (`aarch64-linux`) and a board model (`rpi5` → `raspberry-pi-5`).
+
+3. **Hardware injection** — for a Raspberry Pi board, the nixos-raspberrypi
+   modules (kernel and vendor firmware, bootloader, binary cache) are
+   automatically added to the node configuration.
+
+4. **Building** — Colmena builds this node with a dedicated aarch64 `nixpkgs`,
+   transparent to the rest of the fleet.
+
+</Steps>
+
+{/* t:p 3979b73e6afe8409adcdff36f60e1cbca92244bfb4dc6c2801eb6fd6614dfa3d */}
+## Build Prerequisites
+
+Building aarch64 from an x86_64 administration machine requires one of
+these three approaches:
+
+:::tip[binfmt emulation (easiest)]
+Enable aarch64 emulation on the administration machine (the deployer):
+
+```nix
+# on the host that runs deployments
+boot.binfmt.emulatedSystems = [ "aarch64-linux" ];
+```
+
+Simple, but emulated building is slow.
+:::
+
+- **Build on target**: deploy with Colmena using `build-on-target`, the
+  Raspberry Pi compiles itself (native but slow).
+- **Remote aarch64 builder**: delegate building to an ARM machine
+  (fastest for a large fleet).
+
+{/* t:p a2b0308f94f873ebf8090bfe8a73b1be7bbc978eb7c58316f2d2d79fb36b5ff1 */}
+## Install a Raspberry Pi
+
+A bootable SD image boots the Pi, which is then integrated into the fleet like
+any other node (see [initial installation](/en/doc/admin-guide/install/first-network-installation/)).
+
+<Steps>
+
+1. **Build the SD image** (choose the attribute matching your model):
+
+   ```sh
+   nix build .#nixosConfigurations.sd-image-raspberry-pi-5.config.system.build.sdImage
+   ```
+
+2. **Write the image to the card**:
+
+   ```sh
+   zstd -dc result/sd-image/*.img.zst | sudo dd of=/dev/sdX bs=4M status=progress conv=fsync
+   ```
+
+   :::caution[Check the device]
+   Replace `/dev/sdX` with the **correct** SD card (`lsblk`): `dd` overwrites the
+   target without confirmation.
+   :::
+
+3. **First boot** — connected to the network (Ethernet, or Wi-Fi for boards
+   without a wired port like the Zero 2 W), the Pi gets an address via DHCP (name
+   `dnf-install`), with SSH enabled and the `nix` user authorized by the
+   administration key (`usr/secrets/nix.pub`).
+
+4. **Declare then deploy** — add the host to `etc/config.yaml` with its
+   `arch`, run `just generate`, then deploy the actual configuration
+   ([deployment](/en/doc/admin-guide/operate/deploy/)).
+
+</Steps>
+
+:::note[Image per model]
+The SD image is board-specific. One attribute per model:
+`sd-image-raspberry-pi-02` (Zero 2 W), `sd-image-raspberry-pi-3`,
+`sd-image-raspberry-pi-4`, `sd-image-raspberry-pi-5`.
+:::

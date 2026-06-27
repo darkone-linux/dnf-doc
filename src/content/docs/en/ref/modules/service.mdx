@@ -965,7 +965,7 @@ darkone.service.searx.enable = false;
 
 <hr/>
 
-{/* t:p adb7a368d11f04b73284b28312dcdaf06b6dad34ec7a9bf5f4188c289bc6b27e */}
+{/* t:p a4820ace01564f46d58b9a4d694e783fa9e705e94cedb8d8d1a1bf5a98c3b4f4 */}
 ### &#x2728; darkone.service.tailscale
 
 Tailscale client service for HCS.
@@ -978,12 +978,14 @@ Do not use it to connect a gateway for a tailnet subnet.
 * **enable** `bool` Enable tailscale client to connect HCS
 * **isGateway** `bool` This tailscale node is a subnet gateway
 * **isExitNode** `bool` Configure this client as exit node
+* **selfHeal.enable** `bool` Watchdog: detect headscale disconnection and restart tailscaled.
 
 ```nix
 darkone.service.tailscale = {
   enable = false;
   isGateway = false;
   isExitNode = false;
+  selfHeal.enable = true;
 };
 ```
 

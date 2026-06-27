@@ -13,50 +13,51 @@ sidebar:
 **Un module système** gère les configurations communes, importantes et générales.
 :::
 
-{/* t:p a92e96e6639580a6a55bc3404aba931b6331f69a2f9dab2f64838ffcb675399a */}
+{/* t:p dc1847ee8697e38f31cf09e408b7648fd89d7619b60c41d7cd6455ae2ade4e45 */}
 ### &#x2699; darkone.system.core
 
-Module noyau de DNF.
+Le module central de DNF.
 
 :::danger[Module requis]
 Ce module est activé par défaut (requis par la configuration DNF).
 Il est nécessaire au bon fonctionnement de chaque ordinateur NixOS sur le réseau local.
 :::
 
-Configure le chargeur d'amorçage systemd-boot, le noyau LTS, la police
-JetBrains Mono Nerd Font (avec `kmscon` pour le TTY), l'optimisation
-nocturne du store Nix et le nettoyage hebdomadaire (rétention 30 j,
-ou keep-last-N via `gcKeepGenerations` sur les hôtes à espace disque
-limité), le pare-feu, la politique de suspension (les serveurs peuvent
-la désactiver complètement via `disableSuspend`), les règles polkit
-permettant au groupe `wheel` d'arrêter/redémarrer, ainsi qu'un
-groupe/utilisateur partagé `common-files` pour les dossiers multimédia
-inter-services.
+Configure le chargeur systemd-boot, le noyau LTS (ou le dernier mainline via
+`enableLatestKernel`), JetBrains Mono Nerd
+Font (avec `kmscon` pour le TTY), l'optimisation nocturne du store Nix et
+le garbage collection hebdomadaire (rétention 30 j, ou keep-last-N via
+`gcKeepGenerations` sur les hôtes à espace disque limité), le pare-feu, la
+politique de suspension (les serveurs peuvent la désactiver complètement via
+`disableSuspend`), les règles polkit permettant à `wheel` d'éteindre/redémarrer,
+et un groupe/utilisateur `common-files` partagé pour les dossiers média inter-services.
 
 :::note[Point d'entrée du mixin]
 Active le mixin de profil de l'hôte (`darkone.host.${host.profile}.enable`)
 et propage `enableSops` vers le module sops.
 :::
 
-* **enable** `bool` Framework noyau Darkone (activé par défaut)
-* **enableSystemdBoot** `bool` Activer le chargeur d'amorçage par défaut
+* **enable** `bool` Fondation Darkone du système (activée par défaut)
+* **enableSystemdBoot** `bool` Activer le chargeur de démarrage par défaut
+* **enableLatestKernel** `bool` Utiliser le dernier noyau mainline (linuxPackages_latest) au lieu du LTS
 * **enableFstrim** `bool` Optimisation SSD avec fstrim
 * **enableFirewall** `bool` Activer le pare-feu (true par défaut)
 * **enableSops** `bool` Activer le module sops DNF (true par défaut)
-* **enableFlatpak** `bool` Activer la configuration DNF pour flatpak (environnements graphiques uniquement)
-* **enableKmscon** `bool` Activer la police nerd pour le TTY
+* **enableFlatpak** `bool` Activer la configuration DNF Flatpak (environnements graphiques uniquement)
+* **enableKmscon** `bool` Activer la nerd font pour le TTY
 * **gcKeepGenerations** `int` Quand &gt; 0, réduire le profil système aux N dernières générations avant
-chaque nettoyage, et collecter quotidiennement sans rétention par âge.
-Pour les hôtes à partition racine limitée (passerelles).
+chaque garbage collection, et collecter quotidiennement sans rétention par âge.
+Pour les hôtes avec une partition racine restreinte (passerelles).
 * **enableBoost** `bool` Activer l'overclocking, corectl
 * **enableAutoSuspend** `bool` Activer la suspension automatique (pour les laptops, ignoré si disableSuspend est true)
-* **disableSuspend** `bool` Désactiver complètement la suspension (pour les serveurs)
+* **disableSuspend** `bool` Désactivation complète de la suspension (pour les serveurs)
 * **enableCommonFilesUser** `bool` Activer l'utilisateur common-files utilisé par plusieurs services
 
 ```nix
 darkone.system.core = {
   enable = true;
   enableSystemdBoot = true;
+  enableLatestKernel = false;
   enableFstrim = true;
   enableFirewall = true;
   enableSops = true;
