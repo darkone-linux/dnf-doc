@@ -9,7 +9,9 @@ lang: fr
 import { Steps } from '@astrojs/starlight/components';
 
 {/* t:main */}
+{/* t:h b0443070848d8457da30d295f8b3ba254e5313789a5ad4456541642009186248 */}
 
+{/* t:p 5902edd4dc01bf23d88295e5a9330e4bf6d2675dceeb90dc22bbc2de34b27fb3 */}
 DNF gère des nœuds **aarch64** au même titre que les nœuds x86_64 : ils se
 déclarent dans `etc/config.yaml`, se construisent et se déploient avec les mêmes
 commandes. Le support matériel (noyau, firmware, bootloader) provient du flake
@@ -21,6 +23,7 @@ Zero (W) original (armv6, 32-bit) n'est pas supporté ; les cartes Odroid et un
 aarch64 générique ne sont pas (encore) câblés.
 :::
 
+{/* t:p 9cccd22930101c8be988147c2b5f1e1c832faf3d73530ea49eaaf54b654e7d97 */}
 ## Déclarer un hôte aarch64
 
 L'architecture d'un hôte se choisit avec le champ `arch`, au format
@@ -52,6 +55,7 @@ Le générateur valide `arch` contre une liste blanche : une valeur inconnue
 (ex. `aarch64:rpi3`) fait échouer `just generate` avec un message explicite.
 :::
 
+{/* t:p c21395c81c0ef5a46c4419cbda9d43e472d9b790a4b623318d59d69fb3288acc */}
 ## Comment ça fonctionne
 
 <Steps>
@@ -71,6 +75,7 @@ Le générateur valide `arch` contre une liste blanche : une valeur inconnue
 
 </Steps>
 
+{/* t:p 3979b73e6afe8409adcdff36f60e1cbca92244bfb4dc6c2801eb6fd6614dfa3d */}
 ## Prérequis de construction
 
 Construire de l'aarch64 depuis une machine d'administration x86_64 demande l'une
@@ -92,6 +97,7 @@ Simple, mais la construction émulée est lente.
 - **Builder distant aarch64** : déléguer la construction à une machine ARM
   (le plus rapide pour un parc conséquent).
 
+{/* t:p a2b0308f94f873ebf8090bfe8a73b1be7bbc978eb7c58316f2d2d79fb36b5ff1 */}
 ## Installer un Raspberry Pi
 
 Une image SD bootable amorce le Pi, qui est ensuite intégré au parc comme
