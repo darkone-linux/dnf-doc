@@ -46,6 +46,34 @@ Déclarer un service dans `etc/config.yaml` le rend visible et résolvable depui
 toutes les zones. Voir [Noms et résolution DNS](/fr/doc/admin-guide/understand/network/#noms-et-résolution-dns).
 :::
 
+## Joindre un service de zone depuis l'extérieur
+
+Un service **de zone** (non `global`) garde son URL de zone
+`<domain>.<zone>.domain.tld` et ne répond normalement que sur le LAN, les autres
+zones et le tailnet. Certains services sont en plus marqués `externalAccess` dans
+le registre du framework (`dnf/config/modules.nix`) : le **HCS les publie alors
+vers l'extérieur** tout en conservant l'URL de zone.
+
+Routage : `internet → DNS public → HCS → (tailnet) → passerelle de zone →
+backend`. Le HCS termine le certificat TLS public et relaie la requête vers la
+passerelle de zone, dont le propre vhost gère le [SSO](/fr/doc/admin-guide/operate/sso/)
+et le backend. La résolution interne est inchangée (directe vers l'hôte/la
+passerelle).
+
+| Exposer un service… | Drapeau | Résultat |
+|---|---|---|
+| Publiquement, tout le réseau | `global: true` (par service, `config.yaml`) | `<domain>.domain.tld`, sans zone, servi par le HCS |
+| Publiquement, en gardant l'URL de zone | `externalAccess` (registre) | `<domain>.<zone>.domain.tld`, fronté par le HCS |
+
+:::caution[Deux pré-requis]
+- **DNS public** : `<domain>.<zone>.domain.tld` (ou le joker
+  `*.<zone>.domain.tld`) doit résoudre vers l'**IP publique du HCS** chez votre
+  registrar — le HCS en a aussi besoin pour obtenir le certificat ACME.
+- Un service marqué `proxy.isInternal` (LAN uniquement, ex. `adguardhome`,
+  `searx`) **ne peut pas** être `externalAccess` : le build échoue sur une
+  assertion.
+:::
+
 {/* t:p 9cd06f13d6d83057c26a808c4d87055e5bfd0ce96c1f98baf77f96418e6efd54 */}
 ## Le catalogue
 

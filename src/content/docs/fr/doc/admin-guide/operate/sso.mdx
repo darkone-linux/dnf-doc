@@ -52,18 +52,16 @@ Outline, Mealie, Vaultwarden, Grafana, Immich, Forgejo, Jellyfin, Open WebUI…
 
 Un service sans authentification propre (page d'accueil, site statique) se
 protège en plaçant une **mire de connexion Kanidm devant lui** (oauth2-proxy +
-Caddy). Pour la page d'accueil, deux réglages sur l'hôte passerelle
+Caddy). Pour la page d'accueil, un réglage sur l'hôte passerelle
 (`usr/machines/<passerelle>/`) :
 
 ```nix
-darkone.service.homepage.protect = true;             # exige une session Kanidm
-darkone.service.homepage.protectExternalOnly = true; # interne libre, externe authentifié
+darkone.service.homepage.protect = true; # exige une session Kanidm
 ```
 
 | Option | Défaut | Effet |
 |---|---|---|
 | `protect` | `true` | Page d'accueil réservée aux utilisateurs Kanidm (groupe `users`) |
-| `protectExternalOnly` | `false` | LAN/VPN sans connexion, login requis depuis l'extérieur |
 
 :::note[Pré-requis]
 Le service `idm` doit tourner (HCS) et le service `homepage` être présent dans la

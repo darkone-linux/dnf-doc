@@ -381,7 +381,7 @@ Quand le service **ne sait pas** parler OIDC (page d'accueil, site statique, UI
 sans auth), DNF protège son vhost en amont via **oauth2-proxy** + **Caddy forward
 auth**, adossé à Kanidm. Une seule instance oauth2-proxy par passerelle, partagée
 par tous les services protégés de la zone. Tout est déclaratif sur
-l'enregistrement du service (bloc inconditionnel), via trois options `proxy` :
+l'enregistrement du service (bloc inconditionnel), via deux options `proxy` :
 
 ```nix
 darkone.system.services.service.oxicloud = {
@@ -389,7 +389,6 @@ darkone.system.services.service.oxicloud = {
   proxy.servicePort = srvPort;
   proxy.isProtected = true;            # place le vhost derrière oauth2-proxy
   proxy.allowedGroups = [ "users" ];   # groupes autorisés (SPN ajouté par le framework)
-  proxy.protectExternalOnly = true;    # interne sans login, externe authentifié
 };
 ```
 
@@ -397,7 +396,6 @@ darkone.system.services.service.oxicloud = {
 |---|---|---|
 | `proxy.isProtected` | `false` | Met le vhost derrière oauth2-proxy (forward auth) |
 | `proxy.allowedGroups` | `[ ]` | Groupes Kanidm autorisés (vide : tout utilisateur authentifié) |
-| `proxy.protectExternalOnly` | `false` | Bypass auth pour le LAN/tailnet, login requis depuis l'extérieur |
 
 <Aside type="note" title="Ancre et pré-requis">
 Le flux de connexion (`/oauth2/*`) est hébergé sur le FQDN de la page d'accueil de
