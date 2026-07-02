@@ -238,7 +238,7 @@ darkone.system.security = {
 
 <hr/>
 
-{/* t:p d227acf5a744b623c95b251ea6d4dbe833c48fb19db44080b6dc0f6c72129e50 */}
+{/* t:p 9db8b221e9b60f619f49705fc46a6a30ddd5765dbd9b1232e9552edfbabe9c9e */}
 ### &#x2699; darkone.system.services
 
 DNF Service registration and configuration.
@@ -278,7 +278,6 @@ This module is used to register and configure DNF modules:
   * **proxy.enable** `bool` Whether to create virtualHost configuration (false for services that manage their own)
   * **proxy.isProtected** `bool` Oauth2 protected service
   * **proxy.allowedGroups** `listOf str` Kanidm groups allowed on this protected service (empty = any authenticated user)
-  * **proxy.protectExternalOnly** `bool` Only require auth for external clients; internal LAN/tailnet callers bypass the login
   * **proxy.isInternal** `bool` Bind service on internal interface only (not internet accessible)
   * **proxy.hasReverseProxy** `bool` This is a reverse proxy (or another virtualhost configuration via extraConfig)
   * **proxy.defaultService** `bool` Is the default service
@@ -314,7 +313,6 @@ darkone.system.services = {
   service.proxy.enable = true;
   service.proxy.isProtected = false;
   service.proxy.allowedGroups = [ ];
-  service.proxy.protectExternalOnly = false;
   service.proxy.isInternal = false;
   service.proxy.hasReverseProxy = true;
   service.proxy.defaultService = false;

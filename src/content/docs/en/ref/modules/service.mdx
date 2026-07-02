@@ -302,7 +302,7 @@ darkone.service.home-assistant.enable = false;
 
 <hr/>
 
-{/* t:p 9df8f6930414bf65be33266bd7f70ba22dcec5cc9eeb6d7f27c9f554649bae9a */}
+{/* t:p 66060c823802bbf87e622dbfbc00e1bfe08139060f4222df636de47837029fa6 */}
 ### &#x2728; darkone.service.homepage
 
 Dynamically configured homepage dashboard for your local network.
@@ -313,7 +313,6 @@ For each DNF service enabled, an entry is automatically added to the homepage co
 
 * **enable** `bool` Enable homepage dashboard + httpd + host
 * **protect** `bool` Restrict homepage to authenticated Kanidm users (oauth2-proxy forward auth)
-* **protectExternalOnly** `bool` When protected, let internal LAN/tailnet clients in without login; only challenge external clients
 * **localServices** `listOf attrs` Services to add in Local Applications section
 * **globalServices** `listOf attrs` Full network common &amp; public-accessible services
 * **remoteServices** `listOf attrs` Services to add in Remote Applications section
@@ -324,7 +323,6 @@ For each DNF service enabled, an entry is automatically added to the homepage co
 darkone.service.homepage = {
   enable = false;
   protect = true;
-  protectExternalOnly = false;
   localServices = [ ];
   globalServices = [ ];
   remoteServices = [ ];
@@ -965,7 +963,7 @@ darkone.service.searx.enable = false;
 
 <hr/>
 
-{/* t:p a4820ace01564f46d58b9a4d694e783fa9e705e94cedb8d8d1a1bf5a98c3b4f4 */}
+{/* t:p ad4e7bcd765ea48f63abb54610cbab874d45252607bce47041cf3522f0980673 */}
 ### &#x2728; darkone.service.tailscale
 
 Tailscale client service for HCS.
@@ -979,6 +977,8 @@ Do not use it to connect a gateway for a tailnet subnet.
 * **isGateway** `bool` This tailscale node is a subnet gateway
 * **isExitNode** `bool` Configure this client as exit node
 * **selfHeal.enable** `bool` Watchdog: detect headscale disconnection and restart tailscaled.
+* **autoPauseOnLan.enable** `bool` Roaming client: pause tailscale (down) while plugged into a known DNF
+zone LAN, resume it elsewhere. Non-gateway NetworkManager clients only.
 
 ```nix
 darkone.service.tailscale = {
@@ -986,6 +986,7 @@ darkone.service.tailscale = {
   isGateway = false;
   isExitNode = false;
   selfHeal.enable = true;
+  autoPauseOnLan.enable = false;
 };
 ```
 

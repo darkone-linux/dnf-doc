@@ -282,7 +282,7 @@ Un Home Assistant avec certains plugins (en cours).
 darkone.service.home-assistant.enable = false;
 ```
 
-{/* t:p 9df8f6930414bf65be33266bd7f70ba22dcec5cc9eeb6d7f27c9f554649bae9a */}
+{/* t:p 66060c823802bbf87e622dbfbc00e1bfe08139060f4222df636de47837029fa6 */}
 ### &#x2728; darkone.service.homepage
 
 Tableau de bord de page d'accueil configuré dynamiquement pour votre réseau local.
@@ -291,20 +291,18 @@ Tableau de bord de page d'accueil configuré dynamiquement pour votre réseau lo
 Pour chaque service DNF activé, une entrée est automatiquement ajoutée à la configuration de la page d'accueil.
 :::
 
-* **enable** `bool` Active le tableau de bord de la page d'accueil + httpd + hôte
-* **protect** `bool` Restreint la page d'accueil aux utilisateurs Kanidm authentifiés (oauth2-proxy forward auth)
-* **protectExternalOnly** `bool` Quand elle est protégée, laisse les clients LAN/tailnet internes entrer sans connexion ; authentifie seulement les clients externes
+* **enable** `bool` Activer le tableau de bord de la page d'accueil + httpd + hôte
+* **protect** `bool` Restreindre la page d'accueil aux utilisateurs Kanidm authentifiés (oauth2-proxy forward auth)
 * **localServices** `listOf attrs` Services à ajouter dans la section Applications locales
 * **globalServices** `listOf attrs` Services communs du réseau &amp; accessibles publiquement
 * **remoteServices** `listOf attrs` Services à ajouter dans la section Applications distantes
-* **bookmarks** `listOf attrs` Remplace les marque-pages par défaut (liens)
-* **widgets** `listOf attrs` Remplace les widgets par défaut
+* **bookmarks** `listOf attrs` Remplacer les favoris par défaut (liens)
+* **widgets** `listOf attrs` Remplacer les widgets par défaut
 
 ```nix
 darkone.service.homepage = {
   enable = false;
   protect = true;
-  protectExternalOnly = false;
   localServices = [ ];
   globalServices = [ ];
   remoteServices = [ ];
@@ -916,20 +914,21 @@ darkone.service.searx.enable = false;
 
 <hr/>
 
-{/* t:p a4820ace01564f46d58b9a4d694e783fa9e705e94cedb8d8d1a1bf5a98c3b4f4 */}
+{/* t:p ad4e7bcd765ea48f63abb54610cbab874d45252607bce47041cf3522f0980673 */}
 ### &#x2728; darkone.service.tailscale
 
-Service client Tailscale pour le HCS.
+Service client Tailscale pour HCS.
 
 :::note
-Un client Tailscale pour connecter un hôte externe au HCS.
+Un client Tailscale pour connecter un hôte externe à HCS.
 Ne pas l'utiliser pour connecter une passerelle pour un sous-réseau tailnet.
 :::
 
-* **enable** `bool` Activer le client Tailscale pour connecter le HCS
+* **enable** `bool` Activer le client Tailscale pour connecter HCS
 * **isGateway** `bool` Ce nœud Tailscale est une passerelle de sous-réseau
 * **isExitNode** `bool` Configurer ce client comme nœud de sortie
-* **selfHeal.enable** `bool` Watchdog&nbsp;: détecter la déconnexion de headscale et redémarrer tailscaled.
+* **selfHeal.enable** `bool` Watchdog : détecter une déconnexion headscale et redémarrer tailscaled.
+* **autoPauseOnLan.enable** `bool` Client itinérant : mettre en pause tailscale (down) lorsqu'il est branché sur un réseau local DNF connu, le reprendre ailleurs. Clients NetworkManager non-passerelle uniquement.
 
 ```nix
 darkone.service.tailscale = {
@@ -937,6 +936,7 @@ darkone.service.tailscale = {
   isGateway = false;
   isExitNode = false;
   selfHeal.enable = true;
+  autoPauseOnLan.enable = false;
 };
 ```
 
