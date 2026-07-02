@@ -625,6 +625,20 @@ Never overwrites an existing password.
 just passwd-restic
 ```
 
+{/* t:p 492a5aa3b45a9f68964c089348bdb4f0284b5dd11ec4ad7a6c1922473d97cb9d */}
+### ✳️ `yubikey <user> [key] [action]`
+
+Enrolls a YubiKey (`main` by default, or `backup`) for a user: PAM
+(session/sudo), LUKS and Kanidm enrollment link, in a single pass on the
+admin machine. `action=revoke` revokes the key across all machines at next
+deployment. See [Strong authentication](/en/doc/admin-guide/operate/yubikey/).
+
+```sh
+just yubikey darkone            # enrolls the primary key
+just yubikey darkone backup     # enrolls the backup key
+just yubikey darkone main revoke
+```
+
 {/* t:p c721a639832b45fbdbb521264d00054fd9c54ef53c41e0d1c85d79114186406b */}
 ### ✳️ `rotate init|push-keys|finalize`
 

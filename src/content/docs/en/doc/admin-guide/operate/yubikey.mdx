@@ -1,0 +1,112 @@
+---
+title: Strong authentication (YubiKey)
+sidebar:
+  label: YubiKey
+  order: 2.5
+lang: en
+---
+
+import { Steps } from '@astrojs/starlight/components';
+
+{/* t:translated-from fr */}
+{/* t:h 5b811d92775368f75e84cc4201563aff17de24e38c033d75d09c5f43f888a878 */}
+
+{/* t:p 4b0a707875f70beb2407f4a704bb556e3c0037a891b1a0ccfc2a82c02c51d074 */}
+Every network member can associate a **YubiKey** primary key and a **backup**
+key with their account, in addition to their password (which remains mandatory
+and serves as automatic fallback).
+
+The key principle: **one single enrollment** per key, on the administration
+machine. Everything else propagates declaratively with `just apply` — the key
+is never plugged into the fleet hosts, only when it needs to be used.
+
+{/* t:p 8464395d7306c39267ac2411ba3e63f6cda37aa32b168b8390b7db2cbb1a18d9 */}
+## What a key covers
+
+| Usage | Mechanism | Effect |
+|---|---|---|
+| **Session, sudo, login screen** | pam_u2f (`sufficient`) | Touching the key replaces the password |
+| **Encrypted disks (LUKS)** | FIDO2 `hmac-secret` | Unlock at boot by touching the key |
+| **SSO (Kanidm)** | Passkey WebAuthn | Passwordless login to services |
+| **Vaultwarden** | WebAuthn (2FA) | Second factor for the vault |
+
+:::note[No lockout risk]
+The session password (sops) and the install LUKS passphrase are **never
+removed**: without a key (lost, forgotten), everything works as before.
+:::
+
+{/* t:p ff339b87eb14566ac360a7112af0d197f492b87051b44b6ff4843d5bfa1c0950 */}
+## Enrolling a key
+
+<Steps>
+
+1. Plug the user's YubiKey into the admin machine, then:
+
+   ```sh
+   just yubikey <login>          # primary key (~3 touches of the key)
+   just yubikey <login> backup   # backup key (optional)
+   ```
+
+2. Commit and deploy:
+
+   ```sh
+   git add usr/secrets/yubikeys.json
+   just commit "user(yubikey): <login>"
+   just apply
+   ```
+
+3. That's it: session and sudo respond to the key on all of the user's
+   machines, and encrypted hosts enroll the key in their LUKS headers
+   **themselves**, upon deployment.
+
+</Steps>
+
+:::tip[Kanidm and Vaultwarden: a one-time web ceremony]
+WebAuthn requires (by anti-phishing design) an interactive registration in the
+browser. `just yubikey` generates the Kanidm reset link to transmit to the
+user; for Vaultwarden, the key is added in the web vault
+(*Settings → Security → Two-step login → WebAuthn*).
+:::
+
+{/* t:p d22811cdd571a457247435be74d2c32996f01d605735f3d41883a13c39a4198b */}
+## Under the hood
+
+| File | Content | Status |
+|---|---|---|
+| `usr/secrets/yubikeys.json` | Public credentials (PAM, FIDO2 ID, salt) | Public, versioned |
+| `secrets.yaml` → `yubikey/<login>/<key>/luks-secret` | LUKS secret derived from the key | Encrypted with sops |
+| `secrets.yaml` → `luks-passphrase` | Passphrase entered during disko install | Encrypted with sops (requested on 1st enrollment) |
+
+- **PAM**: the origin is fixed (`pam://<domain>`), so one credential works on
+  the entire fleet. The `darkone.system.yubikey` module (enabled automatically
+  as soon as the registry exists) distributes `/etc/u2f_mappings` on each host.
+- **LUKS**: the derived secret (`HMAC(key, salt)`) can only be computed with
+  the physical key. Each encrypted host enrolls it in its LUKS header (keyslot +
+  `systemd-fido2` token, the exact format from `systemd-cryptenroll`) via an
+  idempotent service, and removes those no longer declared.
+
+:::caution[Fixed origin]
+Changing `darkone.system.yubikey.origin` (or the network domain) invalidates
+all PAM credentials: all keys would need to be re-enrolled.
+:::
+
+{/* t:p d1ff1ba1dc7323f7a1896d61c07ea485223df86d69f3af7cb23b712f04600f77 */}
+## Revoking a lost key
+
+```sh
+just yubikey <login> main revoke   # or backup
+just commit "user(yubikey): revoke <login>" && just apply
+```
+
+Upon deployment, the PAM credential disappears from hosts and the corresponding
+LUKS keyslots are removed. Remember to also remove the passkey from Kanidm
+(web interface or reset token) and Vaultwarden.
+
+{/* t:p 127dcbf3e5479dd95464d74f2a6f4bbd92237463a29f136a72b1f7295fcf8e58 */}
+## Limits and future
+
+- TOTP remains available on the web side (Kanidm, Vaultwarden), not at local login.
+- LUKS unlock **without PIN code** (touch only) in this version.
+- Coming soon: FIDO2 SSH keys (`ed25519-sk`) and git signing, mandatory
+  second-factor mode per host, admin sops decryption gated by the key
+  (`age-plugin-fido2-hmac`).

@@ -636,6 +636,20 @@ N'écrase jamais un mot de passe existant.
 just passwd-restic
 ```
 
+{/* t:p 492a5aa3b45a9f68964c089348bdb4f0284b5dd11ec4ad7a6c1922473d97cb9d */}
+### ✳️ `yubikey <utilisateur> [clé] [action]`
+
+Enrôle une YubiKey (`main` par défaut, ou `backup`) pour un utilisateur : PAM
+(session/sudo), LUKS et lien d'enrôlement Kanidm, en un seul passage sur le
+poste admin. `action=revoke` révoque la clé sur tout le parc au prochain
+déploiement. Voir [Authentification forte](/fr/doc/admin-guide/operate/yubikey/).
+
+```sh
+just yubikey darkone            # enrôle la clé principale
+just yubikey darkone backup     # enrôle la clé de secours
+just yubikey darkone main revoke
+```
+
 {/* t:p c721a639832b45fbdbb521264d00054fd9c54ef53c41e0d1c85d79114186406b */}
 ### ✳️ `rotate init|push-keys|finalize`
 

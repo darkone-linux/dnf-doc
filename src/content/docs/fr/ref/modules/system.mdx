@@ -416,3 +416,56 @@ darkone.system.testing = {
 ```
 
 <hr/>
+
+{/* t:p 5692389295bc3a7aa3a624993f5a5253de1c632eea0be0af09679abc23a4e852 */}
+### &#x2699; darkone.system.yubikey
+
+Authentification forte YubiKey&nbsp;: PAM U2F à l'échelle du parc + LUKS FIDO2 déclaratif.
+
+Un enrôlement physique par (utilisateur, clé) sur l'hôte admin&nbsp;: `just yubikey
+<user> [key] [action]` alimente&nbsp;:
+
+- un registre **public** `usr/secrets/yubikeys.json` dans le workspace
+  consommateur&nbsp;: identifiant pamu2fcfg, id et salt du credential hmac-secret
+  FIDO2 (inutiles sans la clé physique, donc commitables)&nbsp;;
+- un secret sops `yubikey/<user>/<key>/luks-secret` (la passphrase LUKS dérivée
+  de FIDO2) plus la `luks-passphrase` partagée (la passphrase saisie lors de
+  l'installation disko, nécessaire pour autoriser de nouveaux keyslots).
+
+Le module propage ensuite le tout déclarativement (`just apply`), sans jamais
+brancher la clé sur les hôtes cibles&nbsp;:
+
+- **login / sudo / greeter**&nbsp;: pam_u2f comme *alternative* au mot de passe
+  (`sufficient`)&nbsp;: toucher la clé connecte, le mot de passe sops reste le
+  repli automatique. Un seul credential est valable dans tout le parc grâce à
+  l'origine fixe (`pam://<network.domain>`).
+- **hôtes chiffrés**&nbsp;: un service oneshot auto-enrôle chaque clé déclarée
+  dans chaque en-tête LUKS2 déclaré par disko (keyslot + jeton `systemd-fido2`,
+  le format exact écrit par `systemd-cryptenroll`) et élimine les révoquées. La
+  clé physique n'est nécessaire qu'au démarrage pour déverrouiller le disque.
+
+:::note[Aucune configuration]
+Activé par défaut, mais totalement inerte tant que le fichier registry n'existe pas.
+Le support LUKS cible les volumes LUKS trouvés dans la config disko de l'hôte
+(`usr/machines/<host>/disko.nix`, importée au runtime).
+:::
+
+:::caution[Pas de verrouillage par conception]
+Le keyslot de la passphrase d'installation et les mots de passe de session sops
+ne sont jamais touchés&nbsp;: perdre une clé au pire revient à utiliser la
+passphrase/mot de passe.
+:::
+
+* **enable** `bool` Authentification YubiKey (défaut&nbsp;: activé quand usr/secrets/yubikeys.json existe)
+* **origin** `str` Origine/appid pam_u2f fixe&nbsp;: un seul enrôlement est valable dans tout le parc
+* **luks.enable** `bool` Déverrouillage FIDO2 des volumes LUKS de l'hôte (inerte sans disko LUKS + clés enrôlées)
+
+```nix
+darkone.system.yubikey = {
+  enable = hasRegistry;
+  origin = "pam://${network.domain}";
+  luks.enable = true;
+};
+```
+
+<hr/>

@@ -1,0 +1,113 @@
+---
+title: Authentification forte (YubiKey)
+sidebar:
+  label: YubiKey
+  order: 2.5
+lang: fr
+---
+
+import { Steps } from '@astrojs/starlight/components';
+
+{/* t:main */}
+{/* t:h 5b811d92775368f75e84cc4201563aff17de24e38c033d75d09c5f43f888a878 */}
+
+{/* t:p 4b0a707875f70beb2407f4a704bb556e3c0037a891b1a0ccfc2a82c02c51d074 */}
+Chaque membre du réseau peut associer à son compte une clé **YubiKey**
+principale et une clé de **secours**, en plus de son mot de passe (qui reste
+obligatoire et sert de repli automatique).
+
+Le principe clé : **un seul enrôlement** par clé, sur le poste
+d'administration. Tout le reste se propage déclarativement avec `just apply` —
+la clé n'est jamais branchée sur les hôtes du parc, seulement au moment de s'en
+servir.
+
+{/* t:p 8464395d7306c39267ac2411ba3e63f6cda37aa32b168b8390b7db2cbb1a18d9 */}
+## Ce que couvre une clé
+
+| Usage | Mécanisme | Effet |
+|---|---|---|
+| **Session, sudo, écran de connexion** | pam_u2f (`sufficient`) | Toucher la clé remplace le mot de passe |
+| **Disques chiffrés (LUKS)** | FIDO2 `hmac-secret` | Déverrouillage au boot en touchant la clé |
+| **SSO (Kanidm)** | Passkey WebAuthn | Connexion sans mot de passe aux services |
+| **Vaultwarden** | WebAuthn (2FA) | Second facteur du coffre-fort |
+
+:::note[Aucun risque de verrouillage]
+Le mot de passe de session (sops) et la passphrase LUKS d'installation ne sont
+**jamais supprimés** : sans clé (perdue, oubliée), tout fonctionne comme avant.
+:::
+
+{/* t:p ff339b87eb14566ac360a7112af0d197f492b87051b44b6ff4843d5bfa1c0950 */}
+## Enrôler une clé
+
+<Steps>
+
+1. Brancher la YubiKey de l'utilisateur sur le poste admin, puis :
+
+   ```sh
+   just yubikey <login>          # clé principale (~3 touches de la clé)
+   just yubikey <login> backup   # clé de secours (optionnel)
+   ```
+
+2. Committer et déployer :
+
+   ```sh
+   git add usr/secrets/yubikeys.json
+   just commit "user(yubikey): <login>"
+   just apply
+   ```
+
+3. C'est tout : session et sudo répondent à la clé sur tous les postes de
+   l'utilisateur, et les hôtes chiffrés inscrivent la clé dans leurs en-têtes
+   LUKS **eux-mêmes**, au déploiement.
+
+</Steps>
+
+:::tip[Kanidm et Vaultwarden : une cérémonie web, une seule fois]
+WebAuthn impose (par conception anti-hameçonnage) un enregistrement interactif
+dans le navigateur. `just yubikey` génère le lien de réinitialisation Kanidm à
+transmettre à l'utilisateur ; pour Vaultwarden, la clé s'ajoute dans le coffre
+web (*Paramètres → Sécurité → Connexion en deux étapes → WebAuthn*).
+:::
+
+{/* t:p d22811cdd571a457247435be74d2c32996f01d605735f3d41883a13c39a4198b */}
+## Sous le capot
+
+| Fichier | Contenu | Statut |
+|---|---|---|
+| `usr/secrets/yubikeys.json` | Credentials publics (PAM, id FIDO2, sel) | Public, versionné |
+| `secrets.yaml` → `yubikey/<login>/<clé>/luks-secret` | Secret LUKS dérivé de la clé | Chiffré sops |
+| `secrets.yaml` → `luks-passphrase` | Passphrase saisie à l'installation disko | Chiffré sops (demandée au 1ᵉʳ enrôlement) |
+
+- **PAM** : l'origine est fixe (`pam://<domaine>`), donc un credential vaut sur
+  tout le parc. Le module `darkone.system.yubikey` (activé automatiquement dès
+  que le registre existe) distribue `/etc/u2f_mappings` sur chaque hôte.
+- **LUKS** : le secret dérivé (`HMAC(clé, sel)`) n'est calculable qu'avec la
+  clé physique. Chaque hôte chiffré l'inscrit dans son en-tête LUKS (keyslot +
+  token `systemd-fido2`, le format exact de `systemd-cryptenroll`) via un
+  service idempotent, et retire ceux qui ne sont plus déclarés.
+
+:::caution[Origine fixe]
+Changer `darkone.system.yubikey.origin` (ou le domaine du réseau) invalide
+tous les credentials PAM : il faudrait ré-enrôler toutes les clés.
+:::
+
+{/* t:p d1ff1ba1dc7323f7a1896d61c07ea485223df86d69f3af7cb23b712f04600f77 */}
+## Révoquer une clé perdue
+
+```sh
+just yubikey <login> main revoke   # ou backup
+just commit "user(yubikey): revoke <login>" && just apply
+```
+
+Au déploiement, le credential PAM disparaît des hôtes et les keyslots LUKS
+correspondants sont supprimés. Penser aussi à retirer la passkey côté Kanidm
+(interface web ou jeton de réinitialisation) et Vaultwarden.
+
+{/* t:p 127dcbf3e5479dd95464d74f2a6f4bbd92237463a29f136a72b1f7295fcf8e58 */}
+## Limites et suite
+
+- Le TOTP reste disponible côté web (Kanidm, Vaultwarden), pas au login local.
+- Déverrouillage LUKS **sans code PIN** (touche seule) dans cette version.
+- À venir : clés SSH FIDO2 (`ed25519-sk`) et signature git, mode « second
+  facteur obligatoire » par hôte, déchiffrement sops admin conditionné à la
+  clé (`age-plugin-fido2-hmac`).
