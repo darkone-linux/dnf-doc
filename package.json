@@ -14,16 +14,14 @@
     "test": "node --test 'scripts/**/*.test.mjs'"
   },
   "dependencies": {
-    "@astro-community/astro-embed-youtube": "^0.5.6",
-    "@astrojs/starlight": "^0.39.2",
+    "@astrojs/starlight": "^0.41.2",
     "@noble/hashes": "^2.2.0",
-    "astro": "^6.3.5",
-    "astro-embed": "^0.13.0",
+    "astro": "^7.0.5",
     "rehype-external-links": "^3.0.0",
-    "sharp": "^0.32.5"
+    "sharp": "^0.35.3"
   },
   "devDependencies": {
     "astro-d2": "^0.11.0",
-    "starlight-links-validator": "^0.24.0"
+    "starlight-links-validator": "^0.25.2"
   }
 }
