@@ -143,3 +143,62 @@ Qui résout quoi :
   sont aiguillés vers la bonne passerelle, ou vers le résolveur pivot du HCS.
 - Les noms publics (Internet) partent vers les DNS chiffrés en amont, filtrés par
   AdGuardHome s'il est activé.
+
+{/* t:p c9144db0481f8a97ed7d130a099ca5cf98925d1e1e53b8cba1f734e4a2513e0a */}
+### Le résolveur pivot (HCS)
+
+Sur le serveur de coordination (HCS), un **résolveur pivot** centralise la
+résolution interne du VPN. Il connaît le découpage en zones et se contente
+d'aiguiller&nbsp;:
+
+- chaque FQDN de zone part vers la passerelle de sa zone&nbsp;;
+- le reste part vers un DNS externe chiffré.
+
+Toutes les machines du VPN l'interrogent sur l'adresse VPN du HCS. C'est lui qui
+relie les zones entre elles pour la résolution des noms.
+
+{/* t:p 886f7c04c865952614e60b28e4c6c7e5066e128f49234faf36fb6771149f7280 */}
+### Résolution depuis l'extérieur
+
+Une machine hors de toute zone (portable en déplacement, smartphone) rejoint le
+réseau par le VPN. Sa résolution DNS est **scindée** (split-DNS) selon la nature
+du nom demandé&nbsp;:
+
+- **noms internes** : dirigés, à travers le VPN, vers le résolveur pivot du HCS,
+  qui les aiguille ensuite vers la bonne passerelle&nbsp;;
+- **noms publics** : résolus par le résolveur local du réseau visité (box, point
+  d'accès public), sans passer par le VPN.
+
+```d2
+style.fill: transparent
+direction: down
+
+pc: Machine itinérante { shape: person }
+split: Aiguillage split-DNS { shape: diamond }
+
+pivot: Résolveur pivot\nHCS { shape: cylinder }
+gwa: Passerelle zone A
+gwb: Passerelle zone B
+local: Résolveur local\ndu réseau visité { shape: cloud }
+net: Internet { shape: cloud }
+
+pc -> split
+split -> pivot: Noms internes\n(via VPN)
+split -> local: Noms publics
+pivot -> gwa: Zone A
+pivot -> gwb: Zone B
+local -> net
+```
+
+:::note[Pourquoi ne pas router les noms publics par le VPN]
+Tout faire passer par le résolveur du HCS tunnelise l'intégralité du DNS dans le
+VPN. Si le chemin du VPN faiblit (relais intermédiaire, UDP bloqué), plus rien ne
+se résout. Laisser les noms publics au résolveur local préserve l'accès Internet
+même quand le lien VPN est instable.
+:::
+
+:::tip[Poste rebranché dans une zone]
+Un portable itinérant rebranché en filaire dans une zone n'a plus besoin du VPN
+pour l'atteindre. Son client VPN se met alors en pause pour rendre la main à la
+passerelle locale (résolution et routage directs), puis se réactive au départ.
+:::

@@ -144,3 +144,59 @@ Who resolves what :
   are routed to the correct gateway, or to the HCS pivot resolver.
 - Public (Internet) names go to upstream encrypted DNS, filtered by
   AdGuardHome if enabled.
+
+{/* t:p c9144db0481f8a97ed7d130a099ca5cf98925d1e1e53b8cba1f734e4a2513e0a */}
+### The pivot resolver (HCS)
+
+On the coordination server (HCS), a **pivot resolver** centralizes the internal DNS resolution of the VPN. It knows the zone layout and merely routes&nbsp;:
+
+- each zone FQDN to its zone's gateway&nbsp;;
+- the rest to an encrypted external DNS.
+
+All VPN machines query it on the HCS's VPN address. It bridges zones together for name resolution.
+
+{/* t:p 886f7c04c865952614e60b28e4c6c7e5066e128f49234faf36fb6771149f7280 */}
+### Resolution from outside
+
+A machine outside any zone (laptop on the go, smartphone) joins the network via
+the VPN. Its DNS resolution is **split** (split-DNS) according to the type of name
+requested:
+
+- **internal names**: routed, through the VPN, to the HCS hub resolver, which
+  then directs them to the correct gateway;
+- **public names**: resolved by the local resolver of the visited network (ISP
+  box, public access point), without going through the VPN.
+
+```d2
+style.fill: transparent
+direction: down
+
+pc: Roaming device { shape: person }
+split: Split-DNS routing { shape: diamond }
+
+pivot: Hub resolver\nHCS { shape: cylinder }
+gwa: Zone A gateway
+gwb: Zone B gateway
+local: Local resolver\nof the visited network { shape: cloud }
+net: Internet { shape: cloud }
+
+pc -> split
+split -> pivot: Internal names\n(via VPN)
+split -> local: Public names
+pivot -> gwa: Zone A
+pivot -> gwb: Zone B
+local -> net
+```
+
+:::note[Why not route public names through the VPN]
+Routing everything through the HCS resolver tunnels all DNS traffic inside the
+VPN. If the VPN path degrades (intermediate relay, blocked UDP), nothing resolves
+anymore. Leaving public names to the local resolver preserves Internet access even
+when the VPN link is unstable.
+:::
+
+:::tip[Device reconnected in a zone]
+A roaming laptop reconnected via ethernet in a zone no longer needs the VPN to
+reach it. Its VPN client then pauses to hand control back to the local gateway
+(direct resolution and routing), then reactivates upon departure.
+:::

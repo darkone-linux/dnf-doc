@@ -45,37 +45,25 @@ OIDC-compatible services are linked to SSO **automatically**: Kanidm provisions 
 Outline, Mealie, Vaultwarden, Grafana, Immich, Forgejo, Jellyfin, Open WebUI…
 :::
 
-{/* t:p 9f6590e1566b3fb9f0c7eeac0ea7e74f4d34ced2c716019432fed0965022d60e */}
-## Protect a service without OIDC
+{/* t:p 15be575810a3fdc85cf97e6be423f713ce6f5cb99685f4edfe2cc04c62a3c572 */}
+## Protecting a service without OIDC
 
-A service without its own authentication (homepage, static site) is protected
-by placing a **Kanidm login gateway in front of it** (oauth2-proxy + Caddy).
-For the homepage, two settings on the gateway host
-(`usr/machines/<passerelle>/`) :
+A service without its own authentication (homepage, static site) is protected by placing a **Kanidm login screen in front of it** (oauth2-proxy + Caddy). For the homepage, a setting on the gateway host (`usr/machines/<gateway>/`) :
 
 ```nix
-darkone.service.homepage.protect = true;             # requires a Kanidm session
-darkone.service.homepage.protectExternalOnly = true; # internal free, external authenticated
+darkone.service.homepage.protect = true; # requires a Kanidm session
 ```
 
 | Option | Default | Effect |
 |---|---|---|
-| `protect` | `true` | Homepage reserved for Kanidm users (group `users`) |
-| `protectExternalOnly` | `false` | LAN/VPN without login, login required from outside |
+| `protect` | `true` | Homepage reserved for Kanidm users (`users` group) |
 
 :::note[Prerequisites]
-The `idm` service must be running (HCS) and the `homepage` service must be
-present in the zone : it serves as an **anchor** for the login flow. The
-mechanism is detailed in [Authentication and
-identities](/en/doc/admin-guide/understand/auth-idm/).
+The `idm` service must be running (HCS) and the `homepage` service must be present in the zone: it serves as the **anchor** for the login flow. The operation is detailed in [Authentication and identities](/en/doc/admin-guide/understand/auth-idm/).
 :::
 
 :::tip[Resilient startup]
-`oauth2-proxy` needs to reach the OIDC issuer (Kanidm on the HCS) at startup.
-If it is temporarily unreachable (typically right after a HCS rebuild), the
-proxy **waits** for the issuer to respond, and never gives up : it retries
-until recovery. No need to manually restart a deployment anymore, the service
-heals itself.
+`oauth2-proxy` needs to reach the OIDC issuer (Kanidm on the HCS) at its startup. If it is temporarily unreachable (typically right after an HCS rebuild), the proxy **waits** for the issuer to respond, and never gives up: it retries until recovery. No need to manually restart a deployment, the service heals itself.
 :::
 
 {/* t:p a4caa12f8d9a5ff1330b0f5283ce9d8e137d480391e48f8ce94c6f5c3007f30f */}

@@ -372,14 +372,14 @@ Only the service-side wiring (`settings.oidc`, secret, env) is guarded by
 Reference patterns: `outline.nix`, `immich.nix`, `forgejo.nix`.
 </Aside>
 
-{/* t:p 77599c9cf85807b21e9e9dd62d38131e764dad3858a080c3953dc6f690fc29fb */}
+{/* t:p 1cf2e767b2008927ee6467278b37ed1b500359392a4baba3dbdc8436488b0818 */}
 ## Protecting a service without OIDC
 
-When the service **cannot** speak OIDC (homepage, static site, UI without auth),
-DNF protects its vhost upstream via **oauth2-proxy** + **Caddy forward auth**,
-backed by Kanidm. A single oauth2-proxy instance per gateway, shared by all
-protected services in the zone. Everything is declarative on the service
-registration (unconditional block), via three `proxy` options:
+When the service **cannot** speak OIDC (landing page, static site, UI without
+auth), DNF protects its vhost upstream via **oauth2-proxy** + **Caddy forward
+auth**, backed by Kanidm. A single oauth2-proxy instance per gateway, shared
+by all protected services in the zone. Everything is declarative on the service
+record (unconditional block), via two `proxy` options:
 
 ```nix
 darkone.system.services.service.oxicloud = {
@@ -387,28 +387,26 @@ darkone.system.services.service.oxicloud = {
   proxy.servicePort = srvPort;
   proxy.isProtected = true;            # places the vhost behind oauth2-proxy
   proxy.allowedGroups = [ "users" ];   # allowed groups (SPN added by the framework)
-  proxy.protectExternalOnly = true;    # internal without login, external authenticated
 };
 ```
 
 | Option | Default | Role |
 |---|---|---|
-| `proxy.isProtected` | `false` | Places the vhost behind oauth2-proxy (forward auth) |
+| `proxy.isProtected` | `false` | Puts the vhost behind oauth2-proxy (forward auth) |
 | `proxy.allowedGroups` | `[ ]` | Allowed Kanidm groups (empty: any authenticated user) |
-| `proxy.protectExternalOnly` | `false` | Bypass auth for LAN/tailnet, login required from outside |
 
 <Aside type="note" title="Anchor and prerequisites">
-The login flow (`/oauth2/*`) is hosted on the zone homepage's FQDN: the
-`homepage` service must therefore be present whenever a service is protected (an
-assertion checks this). Groups are compared using **SPN**
-(`name@<domain>`): the framework appends the suffix, declaring the short name is
-enough.
+The login flow (`/oauth2/*`) is hosted on the zone's landing page FQDN: the
+`homepage` service must therefore be present as soon as a service is protected
+(an assertion checks this). Groups are compared by **SPN**
+(`name@<domain>`) : the framework appends the suffix, declaring the short name
+suffices.
 </Aside>
 
 <Aside type="tip" title="Native OIDC or forward auth?">
 If the service **can** speak OIDC, prefer native wiring (previous section): it
-passes identity and roles to the service. Forward auth only **keeps the door**
-in front of a service that does not know who is connecting. Admin overview:
+passes identity and roles to the service. Forward auth only **guards the door**
+in front of a service that ignores who connects. Admin overview:
 [Authentication and identities](/en/doc/admin-guide/understand/auth-idm/).
 </Aside>
 
