@@ -8,8 +8,8 @@ lang: fr
 {/* t:main */}
 {/* t:h 681e6c971869b915c25419c494c195abd02ef902d1819633ce1477192f0436b5 */}
 
-{/* t:p f02ad94b8cefa3c09b201471dde8fd37704c876950f94d1abc4a27d5c9af8ac5 */}
-## S'identifier
+{/* t:p 534d8b71b2d39511e981a58599a3ad9772daf9c75dd7ffb662c61dea59bb104c */}
+## M'identifier
 
 J’ai besoin :
 
@@ -23,11 +23,11 @@ Mon administrateur doit effectuer une procédure pour que je puisse définir ces
 
 :::tip[A savoir !]
 - 🔒 **Mon mot de passe principal** (Vaultwarden / Bitwarden)<br/>permet de me connecter à mon coffre-fort.
-- 🔑 **Ma clé d’authentification** (Clé IDM)<br/>permet de me connecter à toutes les applications du cloud.
-- 🔐 **Mon mot de passe “2 facteurs”** (Clé 2FA)<br/>permet de me connecter aussi, si j'ai un problème avec ma clé.
+- 🔑 **Une clé d’authentification** (Clé IDM ou [YubiKey](#utiliser-ma-yubikey))<br/>permet de me connecter à toutes les applications du cloud.
+- 🔐 **Un 2ème facteur d'authentification** ([2FA](#ajouter-un-2ème-facteur))<br/>permet de renforcer un accès par mot de passe avec une étape supplémentaire.
 :::
 
-Le **mot de passe principal** est primordial, c'est la seule chose qu'il faut **absolument retenir**.
+Le **mot de passe principal** est primordial, c'est le seul qu'il faut **absolument retenir**.
 
 Mon identification suit le schéma suivant :
 
@@ -79,6 +79,20 @@ user -> 2fa {
 }
 ```
 
+{/* t:p 92afacbf371e1bfbfef50c286678a725f21c1be75fe2ba01bd3961dfcc21808d */}
+## Utiliser ma YubiKey
+
+Ma YubiKey est une clé physique qui remplace le mot de passe dans la plupart
+des situations :
+
+- **Ordinateur chiffré** : au démarrage, je touche la YubiKey quand la
+  diode clignote → le disque se déverrouille tout seul, sans passphrase.
+- **Connexion à ma session** : je touche la YubiKey sur l'écran de
+  connexion au lieu de taper mon mot de passe.
+- **Kanidm (SSO)** : mon administrateur me transmet un lien
+  d'enregistrement. Je le visite une fois, je crée ma passkey avec la YubiKey
+  → ensuite, je touche la clé pour me connecter à tous les services du cloud.
+
 :::note[Qu'est-ce qu'une clé ?]
 Une clé numérique permet de s’identifier sans avoir à utiliser de mot de passe.
 Elle est située dans mon coffre fort.
@@ -86,16 +100,27 @@ Quand une application en a besoin, Bitwarden s’ouvre automatiquement.
 C’est le moyen **LE PLUS SIMPLE ET SÉCURISÉ** pour m’authentifier.
 :::
 
-:::note[Un mot de passe “2 facteurs” ?]
-Une authentification 2 facteurs (2FA) utilise :
-- un mot de passe (quelque chose que je connais)
-- ET un autre “facteur” (quelque chose que je possède)
-
-Ce dernier peut être un code envoyé par mail / sms, un générateur de code à 6 chiffres, etc.
-De nos jours, énormément de mots de passe sont compromis, c’est pourquoi ce type d’authentification devient nécessaire.
+:::tip[YubiKey = le plus simple]
+Une fois enregistrée, je n'ai plus qu'à toucher ma clé. Pas de mot de passe à
+retenir ni de code à recopier.
 :::
 
-:::caution[Sécuriser mon coffre-fort]
-Pour faciliter l’accès au coffre (vaultwarden / bitwarden), un mot de passe principal “simple” est autorisé par défaut.
-Mais il est vivement recommandé de lui adjoindre un 2ème facteur pour sécuriser l’accès, surtout je met tous mes mots de passe dedans (banque, comptes sociaux, etc.).
+{/* t:p 7d003dc86426ea0c28236f56e873fa7e1be14f9011be73b398bf24a43036c775 */}
+## Ajouter un 2ème facteur
+
+On ajoute souvent un 2ème facteur à un mot de passe, pour le sécuriser.
+De nos jours, énormément de mots de passe sont compromis, c’est pourquoi ce type
+d’authentification devient nécessaire.
+
+:::tip[Une authentification 2 facteurs (2FA) associe]
+- Un mot de passe (que je connais)
+- ET un autre “facteur” (que je possède)
+:::
+
+Le 2ème facteur peut être un code envoyé par mail / sms, un générateur de code à 6 chiffres, etc.
+
+:::caution[Sécuriser mon coffre-fort Vaultwarden]
+Un mot de passe principal “simple” est autorisé par défaut.
+Mais il est vivement recommandé de lui adjoindre un 2ème facteur pour sécuriser l’accès,
+surtout je met tous mes mots de passe dedans (banque, comptes sociaux, etc.).
 :::

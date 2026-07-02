@@ -8,26 +8,26 @@ lang: en
 {/* t:translated-from fr */}
 {/* t:h 681e6c971869b915c25419c494c195abd02ef902d1819633ce1477192f0436b5 */}
 
-{/* t:p f02ad94b8cefa3c09b201471dde8fd37704c876950f94d1abc4a27d5c9af8ac5 */}
+{/* t:p 534d8b71b2d39511e981a58599a3ad9772daf9c75dd7ffb662c61dea59bb104c */}
 ## Signing in
 
 I need:
 
-* **A master password** for my vault (Vaultwarden).
-* **A unique identity** for all cloud services (Kanidm / IDM).
+* **A master password** for my vault (vaultwarden).
+* **A unique identity** for all cloud services (kanidm / IDM).
 
-My administrator must perform a procedure so I can set up these access methods.
+My administrator must perform a procedure so I can set these up.
 
-* **Master password**: an email containing a link to set the password.
-* **Identity**: a QR Code or a link to set a key and a "2FA" password.
+* **Master password**: an email with a link to enter the password.
+* **Identity**: a QR code or a link to set a key and a "2FA" password.
 
 :::tip[Good to know!]
-- 🔒 **My master password** (Vaultwarden / Bitwarden)<br/>allows me to log in to my vault.
-- 🔑 **My authentication key** (IDM Key)<br/>allows me to log in to all cloud applications.
-- 🔐 **My "2-factor" password** (2FA Key)<br/>also allows me to log in, if I have an issue with my key.
+- 🔒 **My master password** (Vaultwarden / Bitwarden)<br/>lets me log into my vault.
+- 🔑 **An authentication key** (IDM Key or [YubiKey](#using-my-yubikey))<br/>lets me log into all cloud applications.
+- 🔐 **A second authentication factor** ([2FA](#adding-a-2nd-factor))<br/>strengthens a password-based access with an extra step.
 :::
 
-The **master password** is essential, it's the only thing you **absolutely** need to remember.
+The **master password** is essential, it's the only one I **absolutely must remember**.
 
 My identification follows this diagram:
 
@@ -45,7 +45,7 @@ master: Master\npassword {
 2fac: 2FA\n(vault) {
   shape: hexagon
 }
-vault: Vault\nBitwarden {
+vault: Bitwarden\nVault {
   shape: cylinder
 }
 idp: Username\n+\nPassword {
@@ -79,23 +79,47 @@ user -> 2fa {
 }
 ```
 
+{/* t:p 92afacbf371e1bfbfef50c286678a725f21c1be75fe2ba01bd3961dfcc21808d */}
+## Using my YubiKey
+
+My YubiKey is a physical key that replaces the password in most situations:
+
+- **Encrypted computer**: at startup, I touch the YubiKey when the LED
+  flashes → the drive unlocks by itself, without a passphrase.
+- **Logging into my session**: I touch the YubiKey on the login
+  screen instead of typing my password.
+- **Kanidm (SSO)**: my administrator sends me a registration link.
+  I visit it once, I create my passkey with the YubiKey → then I touch the
+  key to log in to all cloud services.
+
 :::note[What is a key?]
-A digital key allows you to identify yourself without using a password.
+A digital key lets me identify myself without using a password.
 It is stored in my vault.
 When an application needs it, Bitwarden opens automatically.
-It is the **SIMPLEST AND MOST SECURE** way to authenticate.
+It is the **SIMPLEST AND MOST SECURE** way to authenticate myself.
 :::
 
-:::note[A "2-factor" password?]
-2-factor authentication (2FA) uses:
-- a password (something I know)
-- AND another "factor" (something I have)
-
-This can be a code sent by email / SMS, a 6-digit code generator, etc.
-Nowadays, many passwords are compromised, which is why this type of authentication is becoming necessary.
+:::tip[YubiKey = the simplest]
+Once registered, I only have to touch my key. No password to
+remember or code to copy.
 :::
 
-:::caution[Securing my vault]
-To make accessing the vault (Vaultwarden / Bitwarden) easier, a "simple" master password is allowed by default.
-But it is highly recommended to add a 2nd factor to secure access, especially since I store all my passwords in it (bank, social accounts, etc.).
+{/* t:p 7d003dc86426ea0c28236f56e873fa7e1be14f9011be73b398bf24a43036c775 */}
+## Adding a 2nd factor
+
+We often add a 2nd factor to a password to secure it.
+Nowadays, a huge number of passwords are compromised, which is why this type
+of authentication is becoming necessary.
+
+:::tip[2-factor authentication (2FA) combines]
+- A password (what I know)
+- AND another "factor" (what I have)
+:::
+
+The 2nd factor can be a code sent by email / SMS, a 6-digit code generator, etc.
+
+:::caution[Securing my Vaultwarden vault]
+A "simple" master password is allowed by default.
+But it is highly recommended to add a 2nd factor to secure access,
+especially since I put all my passwords in it (bank, social accounts, etc.).
 :::

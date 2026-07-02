@@ -43,30 +43,28 @@ Technical services:
 
 All cloud services are open-source and have their own online documentation. But here are a few useful introductions.
 
-{/* t:p a3a240cb6d338b7e5621f4aeeadf07be4e600ba91460ed46ad4fac2f36810fac */}
+{/* t:p 7ad7fae0408acf1973401eb410bd5ae5ff6096ec81aee4bf205730642f2bc600 */}
 ### Vaultwarden
 
-**Vaultwarden** is my digital vault: passwords, two-factor (2FA) codes, credit cards and confidential notes. Everything is encrypted, backed up automatically, and by default I'm the only one who can access it.
+**Vaultwarden** is my digital vault: passwords, one-time codes (2FA), bank cards, and confidential notes. Everything is encrypted, automatically backed up, and by default only I have access.
 
 Why choose it over LastPass or 1Password? It is **compatible with Bitwarden apps**, but my data stays at home rather than on a vendor's server.
 
+:::caution[Important: Bitwarden configuration]
+By default, the Bitwarden client (see below) is set to "bitwarden.com".
+You must select "self-hosted" then enter the Vaultwarden URL to use Bitwarden with the cloud.
+:::
+
 :::tip[Useful features]
 - Share access with others using "collections".
-- Organize my passwords and keys in folders.
+- Organize passwords and keys into folders.
 - Send confidential information using "sends".
 :::
 
-:::note[Bitwarden: the client app]
+:::note[Bitwarden: the client application]
 Bitwarden can be installed as a **browser plugin** or as a **mobile app**.
-It makes my life easier with automatic filling of my usernames and passwords and many other features.
-Bitwarden can do everything that Vaultwarden (the server that holds the data) can do.
-:::
-
-:::caution[Important: Bitwarden setup]
-By default, Bitwarden is set to "bitwarden.com".
-You must select "self-hosted" and then enter the Vaultwarden URL to use Bitwarden with the cloud.
-
-⚠️ I MUST NOT ENTER MY MASTER PASSWORD BEFORE DOING THIS.
+It simplifies my life with automatic filling of my credentials and passwords, plus many other features.
+Bitwarden can do everything Vaultwarden (the server, which holds the data) can do.
 :::
 
 📖 Documentation: [Vaultwarden](https://github.com/dani-garcia/vaultwarden) and [Bitwarden help](https://bitwarden.com/help/).
