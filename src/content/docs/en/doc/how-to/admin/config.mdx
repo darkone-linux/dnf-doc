@@ -10,11 +10,13 @@ import { Steps } from '@astrojs/starlight/components';
 {/* t:translated-from fr */}
 {/* t:h c690a687601030c0ac07c896fe0992e04c491e8af0d684b35aa6b2b3a31a181c */}
 
-{/* t:p 9532c8b5586c541b61c71afc873fde4e139694d591a66f07452806688e641279 */}
-`config.yaml` is a simple, high-level configuration. It is the **source of truth** for the network. The [generator](/en/doc/dev-guide/generator/) reads it and produces `var/generated/*.nix`, consumed by the framework.
+{/* t:p b3b9d4adcf7a04f3ba9c5416b758d19fae1a9fa22983cccab31415649dcb4404 */}
+`config.yaml` is a simple, high-level configuration. It is the
+**source of truth** of the network. The [generator](/en/doc/dev-guide/generator/)
+reads it and produces `var/generated/*.nix`, consumed by the framework.
 
 :::tip[Validate changes]
-After every change, run `just generate` (or `just clean`), then `just apply`.
+After each modification, run `just generate` (or `just clean`), then `just apply`.
 :::
 
 The file has **four sections**&nbsp;:
@@ -27,10 +29,11 @@ The file has **four sections**&nbsp;:
 | `hosts` | Machines to deploy. |
 
 :::note[Convention]
-Keys use `camelCase` (they become Nix attributes). The examples below are **generic** (`domain.tld`, `10.0`/`10.1` prefixes).
+Keys are in `camelCase` (they become Nix attributes). The examples
+below are **generic** (`domain.tld`, `10.0`/`10.1` prefixes).
 :::
 
-{/* t:p b75efabfddc516ddb4f482c956a30a3bcc51a228f776f9d9d317b6b958604848 */}
+{/* t:p fc08c864fc14796ebcd50b4bafc2c71a2c317dc6aa26a90cfb99d54a012ced53 */}
 ## "network" section
 
 This optional section defines the global parameters of our network.
@@ -40,32 +43,37 @@ This optional section defines the global parameters of our network.
 network:
   domain: "domain.tld"          # root DNS domain (services, VPN, certificates)
   default:
-    locale: "fr_FR.UTF-8"       # default locale for every host
+    locale: "fr_FR.UTF-8"       # default locale of each host
     timezone: "Europe/Paris"    # default timezone
   coordination:
-    enable: true                # enables VPN mesh (Headscale)
-    hostname: "hcs"             # short name of the coordination host
+    enable: true                # enables the VPN mesh (Headscale)
+    hostname: "hcs"             # short hostname of the coordination host
     domain: "headscale"         # subdomain → headscale.domain.tld
 ```
 
-:::caution[Choose a domain]
-It is strongly recommended to use a **real domain** for `network.domain`. This facilitates external access to services, as well as setting up the VPN network.
+:::caution[Choosing a domain]
+It is strongly recommended to use a **real domain** for `network.domain`. This
+makes it easier to access services from outside the network, as well as setting up
+the VPN network.
 
-Furthermore, these features need TLS to operate.
-The network's TLS certificate management is automatic (acme, transfer to zones) but requires using a real domain and appropriate DNS configuration.
+Moreover, these features require TLS to work.
+Network TLS certificate management is automatic (acme, transfer to
+zones) but requires using a real domain and proper DNS configuration.
 :::
 
 | Key | Role |
 |---|---|
-| `domain` | Root DNS domain (services, Headscale, certificates). |
+| `domain` | Top DNS domain (services, Headscale, certificates). |
 | `default.locale` | Default values, possibly overridden by zone. |
 | `default.timezone` | Default values, possibly overridden by zone. |
-| `coordination.enable` | Enables VPN coordination. `false` → local zones only. |
+| `coordination.enable` | Enables the VPN coordination. `false` → local zones only. |
 | `coordination.hostname` | Headscale host and subdomain. |
 | `coordination.domain` | Headscale host and subdomain. |
 
 :::tip[Network without VPN]
-`coordination.enable: false` is still valid&nbsp;: you can define one or more zones and deploy locally. With multiple zones, a VPN nevertheless facilitates administration of remote nodes thanks to direct secured access.
+`coordination.enable: false` remains valid: you can define one or more zones and
+deploy locally. With several zones, a VPN however makes it easier to administer
+remote nodes thanks to secure direct access.
 :::
 
 {/* t:p f25aebabc7ca78b86dc1b4e576d2d56e378c21055132186894358de3beecaccd */}
