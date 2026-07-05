@@ -4,6 +4,7 @@ import starlightLinksValidator from "starlight-links-validator";
 import rehypeExternalLinks from "rehype-external-links";
 import astroD2 from "astro-d2";
 import { targetBlank } from "./src/plugins/targetBlank";
+import { unified } from "@astrojs/markdown-remark";
 
 // https://astro.build/config
 export default defineConfig({
@@ -13,15 +14,18 @@ export default defineConfig({
     assets: "astro",
   },
   markdown: {
-    rehypePlugins: [
-      [targetBlank, { domain: "darkone-linux.github.io" }],
-      [
-        rehypeExternalLinks,
-        {
-          content: { type: "text", value: "\u{00A0}\u{1F855}" },
-        },
+    processor: unified({
+      remarkPlugins: [],
+      rehypePlugins: [
+        [targetBlank, { domain: "darkone-linux.github.io" }],
+        [
+          rehypeExternalLinks,
+          {
+            content: { type: "text", value: "\u{00A0}\u{1F855}" },
+          },
+        ],
       ],
-    ],
+    }),
   },
   redirects: {
     "/": "/fr/",

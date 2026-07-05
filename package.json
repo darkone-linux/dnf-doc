@@ -21,7 +21,7 @@
     "sharp": "^0.35.3"
   },
   "devDependencies": {
-    "astro-d2": "^0.11.0",
+    "astro-d2": "^0.12.0",
     "starlight-links-validator": "^0.25.2"
   }
 }
