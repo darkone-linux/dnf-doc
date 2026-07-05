@@ -99,7 +99,7 @@ déterministe (voir
 Sur un pont WhatsApp ou Signal déployé **avant** l'introduction de ces tokens,
 l'enregistrement existant conserve les anciens tokens auto-générés. Pour basculer
 sur les tokens sops&nbsp;: supprimer `/var/lib/mautrix-<pont>/<pont>-registration.yaml`,
-redémarrer le pont (l'enregistrement est régénérée depuis la config), puis
+redémarrer le pont (l'enregistrement est régénéré depuis la config), puis
 redémarrer `matrix-synapse`. Pour Messenger et Discord, un simple redéploiement
 suivi d'un redémarrage de Synapse suffit&nbsp;: leurs modules réécrivent la
 registration depuis la config à chaque démarrage.
@@ -253,8 +253,8 @@ défaut sur les nouveaux salons.
 
 :::note[Vérifications côté client]
 Vérifier sur le client (Element, Fractal...) que le bot n'est pas ignoré.
-Faire un clique droit sur l'utilisateur correspondant au bot → information
-→ sécurité, puis "ignoré". Si le bot réponds bien dans les logs mais que
+Faire un clic droit sur l'utilisateur correspondant au bot → information
+→ sécurité, puis "ignoré". Si le bot répond bien dans les logs mais que
 rien ne se passe, il se peut que le blocage soit côté client.
 :::
 
