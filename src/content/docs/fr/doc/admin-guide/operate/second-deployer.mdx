@@ -1,0 +1,165 @@
+---
+title: Déployer depuis un second hôte
+sidebar:
+  label: Second déployeur
+  order: 12
+lang: fr
+---
+
+import { Steps } from '@astrojs/starlight/components';
+
+{/* t:main */}
+{/* t:h 2112cd338253974d8b42c5ea83ce91fd87ac5fd09031324e1290b32db00a49c0 */}
+
+{/* t:p b8562e2bdf85a446d7cd53fe7432ba27fd362b340f59e5fa9fb8a9c28a427529 */}
+Par défaut, un seul poste admin déploie tout le parc (voir
+[Déploiement](/fr/doc/admin-guide/operate/deploy/)). Un déployeur unique est un
+point de défaillance&nbsp;: s'il tombe, plus aucun `just apply` n'est possible.
+On peut promouvoir un second hôte, typiquement un serveur puissant et souvent
+disponible, en **déployeur de secours autonome** capable de piloter le parc à
+la place du poste admin.
+
+{/* t:p fc23c6b2223f90f3eb04955a74c321f3eabda1cf48ef2a06f59f772e5ff74a3d */}
+## Le principe
+
+Un déployeur ne repose que sur quatre éléments. Deux existent déjà sur chaque
+hôte, deux se préparent une fois.
+
+| Élément | Détail | À faire |
+|---|---|---|
+| Outillage | `colmena`, `just`, `sops` (via un profil admin) | Activer un drapeau |
+| Cache binaire | `harmonia` propre au déployeur | Activer un service |
+| Espace de travail | clone du dépôt (config + framework) | Cloner + synchroniser |
+| Identité SSH `nix` | déjà autorisée sur tout le parc | Copier la clé privée |
+
+La topologie visée&nbsp;: deux déployeurs alimentés par une **source commune**,
+chacun capable de déployer le parc.
+
+```d2
+style.fill: transparent
+direction: right
+
+git: Dépôt git\npartagé { shape: cylinder }
+
+deployers: Déployeurs {
+  main: Poste admin
+  sec: Serveur secondaire
+}
+
+fleet: Parc de nœuds { shape: package }
+
+git -> deployers.main: pull
+git -> deployers.sec: pull
+deployers.main -> fleet: just apply
+deployers.sec -> fleet: just apply
+```
+
+{/* t:p 9b3181bc1a20b5de643f41c7b26a1a4e69896b4dddeb906013d9640e1b111e1f */}
+## Activer l'outillage
+
+Les outils de déploiement accompagnent un profil home **admin** (ex.
+`nix-admin`), mais restent masqués tant que l'hôte ne se déclare pas hôte
+d'administration. Activez ce drapeau sur le second hôte&nbsp;:
+
+```nix
+# usr/machines/<hôte>/features.nix
+darkone.admin.nix.enable = true;
+```
+
+- L'utilisateur qui déploiera doit porter un
+  [profil](/fr/doc/admin-guide/understand/user-profiles/) home admin.
+- Serveur sans bureau, les paquets graphiques du profil sont automatiquement
+  exclus&nbsp;: l'outillage installé reste léger.
+
+:::note[Garder le profil d'hôte serveur]
+Inutile de basculer l'hôte en profil `admin-desktop`, qui tirerait tout un
+bureau. Le seul drapeau `darkone.admin.nix.enable` suffit à débloquer
+`colmena` et `just` dans le home de l'utilisateur.
+:::
+
+{/* t:p b587213ec62b446ffa8d0786f1240c041ab6a1008f51d3812305141f01ac1c63 */}
+## Adjoindre un cache binaire
+
+Recommandé&nbsp;: donner au déployeur son propre
+[cache binaire](/fr/doc/admin-guide/operate/deploy/#cache-binaire). Il compile
+le parc, puis **re-sert** ses dérivations aux autres hôtes.
+
+```yaml
+# etc/config.yaml
+services:
+  harmonia:
+    global: true
+```
+
+- `global: true` rend le cache joignable **cross-zone** via le VPN, utile
+  quand le déployeur et ses cibles ne sont pas dans la même zone.
+- La clé de signature est déjà gérée par
+  [sops](/fr/doc/admin-guide/operate/secrets/), commune à tout le réseau&nbsp;:
+  rien de neuf à provisionner.
+
+{/* t:p 0385534a3e80db673a47318226e978788f0c9e6fede779370b4e004d1c010795 */}
+## Mettre en place
+
+<Steps>
+
+1. **Déclarer et déployer.** Depuis le poste admin, poser les deux options
+   ci-dessus, régénérer, puis déployer le second hôte&nbsp;:
+
+   ```sh
+   just generate
+   just apply <hôte>
+   ```
+
+2. **Cloner l'espace de travail** sur le second hôte, au **même chemin** que
+   sur le poste admin, avec le sous-dépôt du framework au même endroit.
+
+   :::caution[Chemin verrouillé]
+   Le flake référence le framework par un chemin **absolu**
+   (`git+file:///etc/nixos/dnf`). Le clone doit vivre exactement à cet
+   emplacement, sinon l'évaluation échoue.
+   :::
+
+3. **Partager la source.** Un remote git commun, ou un `pull` régulier depuis
+   le poste admin, tient les deux déployeurs alignés. Seul l'état **committé**
+   est déployé.
+
+4. **Copier la clé privée** de l'utilisateur de déploiement (`nix`) vers le
+   second hôte, en `600` et propriété de `nix`&nbsp;:
+
+   ```sh
+   # sur le second hôte
+   /home/nix/.ssh/id_ed25519
+   ```
+
+   Sa clé publique est déjà autorisée sur tout le parc, aucun redéploiement
+   des accès n'est nécessaire.
+
+5. **Valider** depuis le second hôte&nbsp;:
+
+   ```sh
+   colmena --version
+   just apply <cible-témoin> test
+   ```
+
+</Steps>
+
+{/* t:p 4d5fec3559baaa91db4ef991858c45e74203dc315aebf44369b18c978e357cf7 */}
+## Deux déployeurs, une règle d'or
+
+:::danger[Un seul déployeur à la fois]
+Chaque déployeur pousse depuis son propre clone. Deux `apply` concurrents
+peuvent appliquer deux états divergents au parc. Déployez toujours depuis **un
+seul** poste à la fois et gardez les clones synchronisés via le remote partagé.
+:::
+
+{/* t:p c8671c9657afcceee5deb614600e16f1affff77e47e397eb3155981a4f3534e4 */}
+## Jusqu'où va ce déployeur
+
+| Usage | Clé admin sops |
+|---|---|
+| Déployer et inspecter (`apply`, `exec`, `enter`, `reboot`) | Non requise |
+| Éditer ou faire tourner les [secrets](/fr/doc/admin-guide/operate/secrets/) | Requise |
+
+Le déploiement seul n'a pas besoin de la clé admin&nbsp;: les secrets se
+déchiffrent sur chaque cible avec sa clé d'infra. Ne copiez la clé admin sur le
+second hôte que si vous voulez aussi y gérer les secrets.

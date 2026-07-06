@@ -601,24 +601,36 @@ darkone.service.monitoring = {
 
 <hr/>
 
-{/* t:p 04c63d6522b245488795514bff87f61c2e4859e865024a341114e997134944b7 */}
+{/* t:p beb65211c65525ae9ac13ecefdfd7f4760298ade87e704c6a6c4268345f7bf37 */}
 ### &#x2728; darkone.service.nextcloud
 
-Service Nextcloud entièrement configuré.
+Service Nextcloud complètement configuré.
 
 :::caution[Secret sops requis]
-Lorsqu'il est activé, ce module lit le mot de passe administrateur Nextcloud à partir du secret sops `nextcloud-admin-password`. Ajoutez l'entrée à `usr/secrets/` avant de reconstruire, sinon l'activation sops-nix échouera.
+Quand ce module est activé, il lit le mot de passe administrateur Nextcloud
+depuis le secret sops `nextcloud-admin-password`. Ajoutez l'entrée dans
+`usr/secrets/` avant de reconstruire, sinon l'activation de sops-nix échouera.
 :::
 
-* **enable** `bool` Activer le service nextcloud local
-* **adminUser** `str` Nom d'utilisateur administrateur pour Nextcloud
+* **enable** `bool` Activer le service Nextcloud local
+* **adminUser** `str` Nom d'utilisateur admin pour Nextcloud
+* **plugins** `listOf (enum (appstoreApps ++ shippedToggleableApps))` Applications Nextcloud à activer. Seules `calendar` et `contacts` sont
+activées par défaut&nbsp;; Talk (`spreed`), le tableau de bord, le flux
+d'activité, les photos et toute autre application restent désactivées
+tant qu'elles ne sont pas listées ici.
+
+`user_oidc` est requis pour le SSO Kanidm et est inclus de force
+indépendamment de cette liste.
 
 ```nix
 darkone.service.nextcloud = {
   enable = false;
   adminUser = "admin";
+  plugins = [ ];
 };
 ```
+
+<hr/>
 
 {/* t:p f5c1a3bbc132e8d12d2b7cb4528d0dc501a736ba23dcb03ae5beea479308efde */}
 ### &#x2728; darkone.service.nfs

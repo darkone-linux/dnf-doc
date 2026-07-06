@@ -644,7 +644,7 @@ darkone.service.monitoring = {
 
 <hr/>
 
-{/* t:p 04c63d6522b245488795514bff87f61c2e4859e865024a341114e997134944b7 */}
+{/* t:p beb65211c65525ae9ac13ecefdfd7f4760298ade87e704c6a6c4268345f7bf37 */}
 ### &#x2728; darkone.service.nextcloud
 
 Nextcloud full-configured service.
@@ -657,11 +657,18 @@ rebuilding, otherwise sops-nix activation will fail.
 
 * **enable** `bool` Enable local nextcloud service
 * **adminUser** `str` Admin username for Nextcloud
+* **plugins** `listOf (enum (appstoreApps ++ shippedToggleableApps))` Nextcloud apps to enable. Only `calendar` and `contacts` are on by
+default; Talk (`spreed`), the dashboard, activity feed, photos, and
+every other app stay disabled until listed here.
+
+`user_oidc` is required for Kanidm SSO and is force-included
+regardless of this list.
 
 ```nix
 darkone.service.nextcloud = {
   enable = false;
   adminUser = "admin";
+  plugins = [ ];
 };
 ```
 

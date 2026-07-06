@@ -1,0 +1,163 @@
+---
+title: Deploy from a secondary host
+sidebar:
+  label: Secondary deployer
+  order: 12
+lang: en
+---
+
+import { Steps } from '@astrojs/starlight/components';
+
+{/* t:translated-from fr */}
+{/* t:h 2112cd338253974d8b42c5ea83ce91fd87ac5fd09031324e1290b32db00a49c0 */}
+
+{/* t:p b8562e2bdf85a446d7cd53fe7432ba27fd362b340f59e5fa9fb8a9c28a427529 */}
+By default, a single admin workstation deploys the entire fleet (see
+[Deployment](/en/doc/admin-guide/operate/deploy/)). A single deployer is a
+single point of failure: if it goes down, no `just apply` is possible anymore.
+A secondary host—typically a powerful, often available server—can be promoted
+to an **autonomous backup deployer** capable of managing the fleet in place of
+the admin workstation.
+
+{/* t:p fc23c6b2223f90f3eb04955a74c321f3eabda1cf48ef2a06f59f772e5ff74a3d */}
+## How it works
+
+A deployer relies on just four elements. Two already exist on every host, two are prepared once.
+
+| Element | Detail | To do |
+|---|---|---|
+| Tooling | `colmena`, `just`, `sops` (via an admin profile) | Enable a flag |
+| Binary cache | `harmonia` specific to the deployer | Enable a service |
+| Workspace | clone of the repository (config + framework) | Clone + sync |
+| SSH identity `nix` | already authorized on the entire fleet | Copy the private key |
+
+The target topology: two deployers fed by a **shared source**, each capable of deploying the fleet.
+
+```d2
+style.fill: transparent
+direction: right
+
+git: Shared\ngit repo { shape: cylinder }
+
+deployers: Deployers {
+  main: Admin workstation
+  sec: Secondary server
+}
+
+fleet: Fleet of nodes { shape: package }
+
+git -> deployers.main: pull
+git -> deployers.sec: pull
+deployers.main -> fleet: just apply
+deployers.sec -> fleet: just apply
+```
+
+{/* t:p 9b3181bc1a20b5de643f41c7b26a1a4e69896b4dddeb906013d9640e1b111e1f */}
+## Enable the tooling
+
+Deployment tools come with an **admin** home profile (e.g.
+`nix-admin`), but remain hidden until the host declares itself as an
+administration host. Enable this flag on the secondary host:
+
+```nix
+# usr/machines/<host>/features.nix
+darkone.admin.nix.enable = true;
+```
+
+- The user who will deploy must have an
+  [admin](/en/doc/admin-guide/understand/user-profiles/) home profile.
+- On a server without a desktop, the graphical packages of the profile are
+  automatically excluded: the installed tooling stays lightweight.
+
+:::note[Keep the server host profile]
+No need to switch the host to the `admin-desktop` profile, which would pull in
+an entire desktop. The single `darkone.admin.nix.enable` flag is enough to
+unlock `colmena` and `just` in the user's home.
+:::
+
+{/* t:p b587213ec62b446ffa8d0786f1240c041ab6a1008f51d3812305141f01ac1c63 */}
+## Add a binary cache
+
+Recommended: give the deployer its own
+[binary cache](/en/doc/admin-guide/operate/deploy/#binary-cache). It compiles
+the fleet, then **re-serves** its derivations to other hosts.
+
+```yaml
+# etc/config.yaml
+services:
+  harmonia:
+    global: true
+```
+
+- `global: true` makes the cache reachable **cross-zone** via the VPN, useful
+  when the deployer and its targets are not in the same zone.
+- The signing key is already managed by
+  [sops](/en/doc/admin-guide/operate/secrets/), shared across the entire network:
+  nothing new to provision.
+
+{/* t:p 0385534a3e80db673a47318226e978788f0c9e6fede779370b4e004d1c010795 */}
+## Set up
+
+<Steps>
+
+1. **Declare and deploy.** From the admin workstation, set both options
+   above, regenerate, then deploy the secondary host:
+
+   ```sh
+   just generate
+   just apply <host>
+   ```
+
+2. **Clone the workspace** on the secondary host, at the **same path** as
+   on the admin workstation, with the framework sub-repo in the same location.
+
+   :::caution[Locked path]
+   The flake references the framework via an **absolute** path
+   (`git+file:///etc/nixos/dnf`). The clone must live exactly at this
+   location, otherwise evaluation fails.
+   :::
+
+3. **Share the source.** A common git remote, or regular `pull` from the
+   admin workstation, keeps both deployers aligned. Only **committed** state
+   is deployed.
+
+4. **Copy the private key** of the deployment user (`nix`) to the secondary
+   host, with `600` permissions and owned by `nix`:
+
+   ```sh
+   # on the secondary host
+   /home/nix/.ssh/id_ed25519
+   ```
+
+   Its public key is already authorized across the entire fleet, no
+   redeployment of access is needed.
+
+5. **Validate** from the secondary host:
+
+   ```sh
+   colmena --version
+   just apply <test-target> test
+   ```
+
+</Steps>
+
+{/* t:p 4d5fec3559baaa91db4ef991858c45e74203dc315aebf44369b18c978e357cf7 */}
+## Two deployers, one golden rule
+
+:::danger[One deployer at a time]
+Each deployer pushes from its own clone. Two concurrent `apply` runs can apply
+two divergent states to the fleet. Always deploy from **one** workstation at a
+time and keep the clones synchronized via the shared remote.
+:::
+
+{/* t:p c8671c9657afcceee5deb614600e16f1affff77e47e397eb3155981a4f3534e4 */}
+## What this deployer can do
+
+| Usage | Sops admin key |
+|---|---|
+| Deploy and inspect (`apply`, `exec`, `enter`, `reboot`) | Not required |
+| Edit or run [secrets](/en/doc/admin-guide/operate/secrets/) | Required |
+
+Deployment alone does not need the admin key: secrets are decrypted on each
+target using its infra key. Only copy the admin key to the secondary host if
+you also want to manage secrets there.
