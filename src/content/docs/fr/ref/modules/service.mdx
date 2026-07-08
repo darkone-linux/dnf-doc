@@ -490,34 +490,66 @@ jamais l'enregistrement que synapse a chargé (ce qui autrement nécessiterait
 un wipe d'enregistrement + redémarrage de synapse et produirait des erreurs
 «&nbsp;as_token was not accepted&nbsp;»).
 
-{/* t:p 818cb673e7de08738940871fba0ab15054813a479bcd923a945daea063c8ec4c */}
+{/* t:p 77da6b221509f356b34f13d2358034d9660d78a669733b8aafb63272ace51de7 */}
 ## Fédération
 
 La fédération est configurable via `darkone.service.matrix.federation`&nbsp;:
 
 - `enable = false`&nbsp;: bloque toute fédération (liste blanche de domaines vide).
-- `enable = true; whitelist = [ ]`&nbsp;: fédération ouverte avec tout serveur.
-- `enable = true; whitelist = [ "ami.org" ]`&nbsp;: liste autorisée (entrant + sortant).
+- `enable = true; whitelist = [ ]`&nbsp;: fédération ouverte avec tous les serveurs.
+- `enable = true; whitelist = [ "ami.org" ]`&nbsp;: liste d'autorisation (entrante + sortante).
 
-La découverte reste verrouillée quoi qu'il arrive (pièces absentes des
-annuaires distants, profils privés sur la fédération), donc le réseau est
-joignable mais pas trouvable.
+La découverte reste verrouillée quoi qu'il arrive (salons absents des annuaires
+distants, profils privés en fédération) donc le réseau est joignable mais pas
+explorable.
 
-:::caution[Sûr pour les enfants]
-La fédération ouverte permet à tout serveur fédéré de DM/inviter des
-utilisateurs locaux. Pour un réseau familial, remplissez `whitelist` avec
-les serveurs de confiance uniquement.
+:::caution[Sans danger pour les enfants]
+Une fédération ouverte permet à n'importe quel serveur fédéré d'envoyer un MP
+ou d'inviter des utilisateurs locaux. Pour un réseau familial, ne remplissez
+`whitelist` qu'avec des serveurs de confiance.
 :::
 
-L'auto-inscription des invités (`friendRegistration.enable`) ouvre des comptes
-locaux avec mot de passe protégés par jeton, en plus des utilisateurs OIDC
-Kanidm. La création d'un jeton nécessite un administrateur du serveur (API
-admin Synapse / interface Synapse-Admin).
+L'auto-inscription d'amis (`friendRegistration.enable`) ouvre des comptes
+locaux avec mot de passe protégés par jeton, en complément des utilisateurs
+OIDC Kanidm. La création d'un jeton nécessite un administrateur du serveur
+(API admin Synapse / interface Synapse-Admin)&nbsp;; avec MAS activé, créez-le
+avec `mas-cli manage issue-user-registration-token` sur l'hôte à la place.
+
+{/* t:p bd24403f81cddc364441e7053690975aca2f1497d9db5f6c725a323e368a5ec5 */}
+## Authentification nouvelle génération (MAS)
+
+`mas.enable` délègue toute l'authentification à Matrix Authentication Service
+(nécessaire pour Element X, connexion par QR, portail libre-service
+`/account`). Kanidm reste la source d'identité&nbsp;: MAS devient le client
+OIDC à la place de synapse, et synapse ne fait plus qu'interroger MAS pour
+l'inspection des jetons. Servi sur le même vhost&nbsp;: MAS possède la racine
+et les endpoints d'auth compat, synapse garde `/_matrix/*` et `/_synapse/*`&nbsp;;
+la découverte client est automatique (synapse sert `auth_metadata` lui-même),
+donc aucun changement de well-known.
+
+Secrets sops requis (`openssl rand -hex 32` sauf indication contraire)&nbsp;:
+`mas-encryption-secret`, `mas-synapse-secret`, et `mas-rsa-private-key`
+(`openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:4096`).
+
+:::danger[Immuable après le premier démarrage]
+`mas-encryption-secret` et l'ULID du fournisseur Kanidm ne doivent jamais
+changer après le premier démarrage de MAS (données chiffrées en base / liens
+de comptes amont).
+:::
+
+:::caution[Migration d'une instance existante]
+Activer `mas.enable` sur un serveur déjà en production nécessite la migration
+`mas-cli syn2mas` (comptes, sessions, identifiants externes) et une
+régénération des enregistrements de ponts (le flag `io.element.msc4190` n'est
+écrit qu'au moment de la génération)&nbsp;: procédure dans
+`.specs/matrix-authentication-service.md`.
+:::
 
 * **enable** `bool` Activer le service matrix (synapse)
-* **federation.enable** `bool` Autoriser la fédération serveur-à-serveur. False bloque toute fédération.
-* **federation.whitelist** `listOf str` Vide = fédération avec tous les serveurs&nbsp;; non vide = seulement ces domaines (entrant + sortant).
-* **friendRegistration.enable** `bool` Permettre aux invités de s'inscrire avec un jeton d'invitation (protégé par jeton).
+* **federation.enable** `bool` Autoriser la fédération entre serveurs. False bloque toute fédération.
+* **federation.whitelist** `listOf str` Vide = fédérer avec tous les serveurs&nbsp;; non vide = seuls ces domaines (entrante + sortante).
+* **mas.enable** `bool` Déléguer toute l'authentification à Matrix Authentication Service (support Element X).
+* **friendRegistration.enable** `bool` Permettre aux amis de s'inscrire avec un jeton d'invitation (protégé par jeton).
 * **bridges.whatsapp.enable** `bool` Pont Mautrix WhatsApp (connexion par QR code).
 * **bridges.signal.enable** `bool` Pont Mautrix Signal (connexion par QR code).
 * **bridges.telegram.enable** `bool` Pont Mautrix Telegram (connexion par numéro de téléphone).
@@ -529,6 +561,7 @@ darkone.service.matrix = {
   enable = false;
   federation.enable = true;
   federation.whitelist = [ ];
+  mas.enable = false;
   friendRegistration.enable = false;
   bridges.whatsapp.enable = true;
   bridges.signal.enable = true;

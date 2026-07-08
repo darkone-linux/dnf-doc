@@ -528,7 +528,7 @@ secrets, so resetting a bridge's state dir never invalidates the
 registration synapse has loaded (which would otherwise require a registration
 wipe + synapse restart and produce "as_token was not accepted" errors).
 
-{/* t:p 818cb673e7de08738940871fba0ab15054813a479bcd923a945daea063c8ec4c */}
+{/* t:p 77da6b221509f356b34f13d2358034d9660d78a669733b8aafb63272ace51de7 */}
 ## Federation
 
 Federation is configurable via `darkone.service.matrix.federation`:
@@ -548,11 +548,40 @@ family network, fill `whitelist` with trusted servers only.
 
 Friend self-registration (`friendRegistration.enable`) opens token-gated
 local password accounts alongside Kanidm OIDC users. Minting a token needs a
-server admin (Synapse admin API / Synapse-Admin UI).
+server admin (Synapse admin API / Synapse-Admin UI); with MAS enabled, mint
+with `mas-cli manage issue-user-registration-token` on the host instead.
+
+{/* t:p bd24403f81cddc364441e7053690975aca2f1497d9db5f6c725a323e368a5ec5 */}
+## Next-gen auth (MAS)
+
+`mas.enable` delegates all authentication to Matrix Authentication Service
+(required by Element X, QR login, `/account` self-service portal). Kanidm
+stays the identity source: MAS becomes the OIDC client instead of synapse,
+and synapse only asks MAS to introspect tokens. Served on the same vhost:
+MAS owns the root + compat auth endpoints, synapse keeps `/_matrix/*` and
+`/_synapse/*`; client discovery is automatic (synapse serves
+`auth_metadata` itself), so no well-known change.
+
+Required sops secrets (`openssl rand -hex 32` unless stated):
+`mas-encryption-secret`, `mas-synapse-secret`, and `mas-rsa-private-key`
+(`openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:4096`).
+
+:::danger[Immutable once started]
+`mas-encryption-secret` and the Kanidm provider ULID must never change
+after MAS's first start (encrypted DB data / upstream account links).
+:::
+
+:::caution[Migrating an existing instance]
+Enabling `mas.enable` on a live homeserver requires the `mas-cli syn2mas`
+migration (accounts, sessions, external ids) and a bridge registration
+regen (the `io.element.msc4190` flag is only written at generation time):
+procedure in `.specs/matrix-authentication-service.md`.
+:::
 
 * **enable** `bool` Enable matrix (synapse) service
 * **federation.enable** `bool` Allow server-to-server federation. False blocks all federation.
 * **federation.whitelist** `listOf str` Empty = federate with all servers; non-empty = only these domains (inbound + outbound).
+* **mas.enable** `bool` Delegate all authentication to Matrix Authentication Service (Element X support).
 * **friendRegistration.enable** `bool` Allow friends to self-register with an invite token (token-gated).
 * **bridges.whatsapp.enable** `bool` Mautrix WhatsApp bridge (login by QR code).
 * **bridges.signal.enable** `bool` Mautrix Signal bridge (login by QR code).
@@ -565,6 +594,7 @@ darkone.service.matrix = {
   enable = false;
   federation.enable = true;
   federation.whitelist = [ ];
+  mas.enable = false;
   friendRegistration.enable = false;
   bridges.whatsapp.enable = true;
   bridges.signal.enable = true;

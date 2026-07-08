@@ -213,6 +213,70 @@ Avancé*) avec le compte promu, ou par connexion API
 simplifiera promotion et jetons.
 </Aside>
 
+{/* t:p 4d985ff45de254a46df5c163d64d47dcea6f4b33da5b3e6cc58bd19ba39cba9a */}
+## Authentification nouvelle génération (MAS)
+
+Le [Matrix Authentication Service](https://element-hq.github.io/matrix-authentication-service/)
+remplace l'authentification interne de Synapse (requis par Element X). Pour ce
+qu'il change et comment il s'insère, voir
+[l'architecture](/fr/doc/admin-guide/understand/matrix/#authentification-nouvelle-génération-mas).
+
+:::danger[En cours de validation]
+Implémenté mais pas encore éprouvé en production&nbsp;: la migration d'un
+serveur existant (`syn2mas`) et l'outillage `mas-cli` sur l'hôte restent à
+valider. En attendant, laisser `mas.enable = false` (défaut)&nbsp;:
+l'authentification OIDC classique reste pleinement fonctionnelle.
+:::
+
+<Steps>
+
+1. Créer les secrets dédiés dans `usr/secrets/secrets.yaml`&nbsp;:
+
+   | Clé sops | Rôle | Génération |
+   |---|---|---|
+   | `mas-encryption-secret` | Chiffrement interne MAS | `openssl rand -hex 32` |
+   | `mas-synapse-secret` | Secret partagé MAS ↔ Synapse | `openssl rand -hex 32` |
+   | `mas-rsa-private-key` | Clé de signature des tokens | `openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:4096` |
+
+2. Activer l'option dans la config nix de l'hôte, puis déployer&nbsp;:
+
+   ```nix
+   # usr/machines/<host>/default.nix
+   darkone.service.matrix.mas.enable = true;
+   ```
+
+</Steps>
+
+:::danger[Secret immuable]
+`mas-encryption-secret` ne doit **jamais** changer après le premier démarrage
+de MAS&nbsp;: il protège des données chiffrées en base, qui deviendraient
+illisibles.
+:::
+
+{/* t:p 3e253e69f2f4d0e5f30daa73eed0b02f49d300c58cba60955d659617e3011794 */}
+### Migrer un serveur déjà en production
+
+Basculer un Synapse existant exige une **fenêtre de maintenance**&nbsp;: MAS
+devient le propriétaire des comptes et sessions, qui doivent être importés
+avec l'outil officiel [syn2mas](https://element-hq.github.io/matrix-authentication-service/setup/migration.html)
+(comptes, mots de passe, sessions, liens OIDC). Sans cette migration, tous
+les utilisateurs sont déconnectés et les comptes amis perdus. Points
+clés&nbsp;:
+
+- sauvegarder PostgreSQL avant (la migration n'est pas réversible)&nbsp;;
+- `syn2mas check` puis `--dry-run` s'exécutent **sans arrêter** Synapse&nbsp;;
+- supprimer les registrations des ponts (`/var/lib/mautrix-*/*-registration.yaml`)
+  pour qu'elles se régénèrent avec le flag MSC4190, puis redémarrer Synapse.
+
+{/* t:p 3a8e25f5d597286618ecde21c708f10c789647a68a72ad8662f704ad5ff0119d */}
+### Inscrire des amis avec MAS
+
+Les jetons d'inscription ne passent plus par l'API admin de Synapse&nbsp;:
+ils se créent sur l'hôte Matrix avec `mas-cli`
+(`manage issue-user-registration-token`), et la promotion d'un compte
+administrateur devient `mas-cli manage promote-admin`. La procédure détaillée
+sera documentée une fois l'outillage validé (voir l'encart ci-dessus).
+
 {/* t:p 652e85dad5e7f42f023bdc7511fc1076c3bc21466cd0d47cab67597fc8299bc1 */}
 ## Salons publics avec validation (knock)
 

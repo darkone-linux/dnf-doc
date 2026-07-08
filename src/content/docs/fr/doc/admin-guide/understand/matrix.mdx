@@ -252,6 +252,58 @@ Les deux types partagent les mêmes droits (ponts inclus). La création d'un jet
 exige un *server admin* (voir
 [le guide d'exploitation](/fr/doc/admin-guide/operate/matrix/#inscrire-des-amis-comptes-locaux)).
 
+{/* t:p 7713816f602feb9b27df6ef81a2138a8aef01021238a59cc2d1c0b6fc2de528b */}
+## Authentification nouvelle génération (MAS)
+
+Optionnel (`darkone.service.matrix.mas.enable`), le
+[Matrix Authentication Service](https://element-hq.github.io/matrix-authentication-service/)
+(MAS) déporte **toute** l'authentification hors de Synapse&nbsp;: connexion,
+comptes, sessions, portail self-service `/account`. C'est le socle
+d'[Element X](https://element.io/app/) (connexion par QR code) et la voie
+officielle, l'authentification interne de Synapse étant en fin de vie.
+
+```d2
+style.fill: transparent
+direction: down
+
+client: Clients\n(Element, Element X) {
+  shape: person
+}
+caddy: Caddy\n(matrix.domain.tld)
+mas: MAS\n(authentification, comptes)
+synapse: Synapse
+idm: Kanidm\n(OIDC)
+
+client -> caddy
+caddy -> synapse: "/_matrix/*, /_synapse/*"
+caddy -> mas: "/, login, logout, refresh"
+synapse <-> mas: "introspection, provisioning"
+mas -> idm: SSO amont
+```
+
+- **Un seul vhost**&nbsp;: MAS partage `matrix.domain.tld`. Caddy lui route la
+  racine (pages de connexion, `/account`, `/oauth2/*`) et les trois endpoints
+  de compatibilité (`login`, `logout`, `refresh`)&nbsp;; Synapse garde
+  `/_matrix/*` et `/_synapse/*`. Aucun sous-domaine ni DNS supplémentaire.
+- **Kanidm reste la source d'identité**&nbsp;: MAS devient le client OIDC à la
+  place de Synapse (mêmes identifiant et secret), déclaré comme fournisseur
+  amont sous un ULID fixe. Synapse ne fait plus que demander à MAS de valider
+  chaque token (secret partagé, loopback).
+- **Découverte automatique**&nbsp;: relié à MAS, Synapse sert lui-même
+  `auth_metadata` ([MSC2965](https://github.com/matrix-org/matrix-spec-proposals/pull/2965)).
+  Les clients trouvent MAS sans modification du `.well-known`.
+- **Ponts inchangés**&nbsp;: registrations et double puppeting fonctionnent à
+  l'identique. Seule adaptation, automatique&nbsp;: les ponts gèrent leurs
+  devices e2ee via
+  [MSC4190](https://github.com/matrix-org/matrix-spec-proposals/pull/4190),
+  l'API `/login` d'appservice n'existant plus.
+- **Amis**&nbsp;: l'inscription sur jeton bascule de Synapse vers MAS
+  (`friendRegistration.enable` reste le commutateur)&nbsp;; les comptes à mot
+  de passe continuent de fonctionner via la couche de compatibilité.
+
+Activation et limitations&nbsp;: voir
+[le guide d'exploitation](/fr/doc/admin-guide/operate/matrix/#authentification-nouvelle-génération-mas).
+
 {/* t:p 1825668044e3aa12cfff0835ba4915818108282998110b153e0883ee4cfead14 */}
 ## Secrets et ports
 

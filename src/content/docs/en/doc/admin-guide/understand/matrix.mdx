@@ -251,6 +251,58 @@ Both types share the same rights (bridges included). Creating a token requires a
 *server admin* (see
 [the operations guide](/en/doc/admin-guide/operate/matrix/#registering-friends-local-accounts)).
 
+{/* t:p 7713816f602feb9b27df6ef81a2138a8aef01021238a59cc2d1c0b6fc2de528b */}
+## Next-generation authentication (MAS)
+
+Optional (`darkone.service.matrix.mas.enable`), the
+[Matrix Authentication Service](https://element-hq.github.io/matrix-authentication-service/)
+(MAS) offloads **all** authentication from Synapse&nbsp;: login, accounts,
+sessions, self-service `/account` portal. It is the foundation of
+[Element X](https://element.io/app/) (QR code login) and the official path, as
+Synapse's internal authentication is being deprecated.
+
+```d2
+style.fill: transparent
+direction: down
+
+client: Clients\n(Element, Element X) {
+  shape: person
+}
+caddy: Caddy\n(matrix.domain.tld)
+mas: MAS\n(authentication, accounts)
+synapse: Synapse
+idm: Kanidm\n(OIDC)
+
+client -> caddy
+caddy -> synapse: "/_matrix/*, /_synapse/*"
+caddy -> mas: "/, login, logout, refresh"
+synapse <-> mas: "introspection, provisioning"
+mas -> idm: Upstream SSO
+```
+
+- **Single vhost**&nbsp;: MAS shares `matrix.domain.tld`. Caddy routes it the
+  root (login pages, `/account`, `/oauth2/*`) and the three compatibility
+  endpoints (`login`, `logout`, `refresh`)&nbsp;; Synapse keeps `/_matrix/*`
+  and `/_synapse/*`. No additional subdomain or DNS.
+- **Kanidm stays the identity source**&nbsp;: MAS becomes the OIDC client
+  instead of Synapse (same client ID and secret), declared as an upstream
+  provider under a fixed ULID. Synapse only asks MAS to validate each token
+  (shared secret, loopback).
+- **Auto-discovery**&nbsp;: connected to MAS, Synapse serves `auth_metadata`
+  itself ([MSC2965](https://github.com/matrix-org/matrix-spec-proposals/pull/2965)).
+  Clients find MAS without modifying `.well-known`.
+- **Bridges unchanged**&nbsp;: registrations and double puppeting work
+  identically. The only adaptation, automatic&nbsp;: bridges manage their e2ee
+  devices via
+  [MSC4190](https://github.com/matrix-org/matrix-spec-proposals/pull/4190),
+  as the appservice `/login` API no longer exists.
+- **Friends**&nbsp;: token registration switches from Synapse to MAS
+  (`friendRegistration.enable` remains the switch)&nbsp;; password accounts
+  continue to work via the compatibility layer.
+
+Activation and limitations&nbsp;: see
+[the operations guide](/en/doc/admin-guide/operate/matrix/#migrating-an-existing-production-server).
+
 {/* t:p 1825668044e3aa12cfff0835ba4915818108282998110b153e0883ee4cfead14 */}
 ## Secrets and ports
 
