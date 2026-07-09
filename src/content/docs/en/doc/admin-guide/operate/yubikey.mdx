@@ -35,17 +35,20 @@ The session password (sops) and the install LUKS passphrase are **never
 removed**: without a key (lost, forgotten), everything works as before.
 :::
 
-{/* t:p ff339b87eb14566ac360a7112af0d197f492b87051b44b6ff4843d5bfa1c0950 */}
-## Enrolling a key
+{/* t:p 59465abd9a04a2fb3028fbc99dd4b2907b325f217ba034e6f45f9eaa6758c293 */}
+## Enroll a key
 
 <Steps>
 
-1. Plug the user's YubiKey into the admin machine, then:
+1. Plug the user's YubiKey into the admin workstation, then:
 
    ```sh
-   just yubikey <login>          # primary key (~3 touches of the key)
+   just yubikey <login>          # main key (FIDO2 PIN + ~3 touches)
    just yubikey <login> backup   # backup key (optional)
    ```
+
+   If the key does not have a FIDO2 PIN yet, the recipe creates it first
+   (required for Kanidm, see below).
 
 2. Commit and deploy:
 
@@ -56,17 +59,44 @@ removed**: without a key (lost, forgotten), everything works as before.
    ```
 
 3. That's it: session and sudo respond to the key on all of the user's
-   machines, and encrypted hosts enroll the key in their LUKS headers
-   **themselves**, upon deployment.
+   workstations, and encrypted hosts enroll the key into their LUKS headers
+   **themselves**, at deployment time.
 
 </Steps>
 
-:::tip[Kanidm and Vaultwarden: a one-time web ceremony]
-WebAuthn requires (by anti-phishing design) an interactive registration in the
-browser. `just yubikey` generates the Kanidm reset link to transmit to the
-user; for Vaultwarden, the key is added in the web vault
-(*Settings → Security → Two-step login → WebAuthn*).
+:::tip[Kanidm and Vaultwarden: a web ceremony, once only]
+WebAuthn requires (by anti-phishing design) interactive registration in the
+browser. `just yubikey` generates the Kanidm reset link to send to the user;
+for Vaultwarden, the key is added in the web vault (*Settings → Security →
+Two-step login → WebAuthn*).
 :::
+
+:::caution[Two pitfalls of the web ceremony]
+- **Password manager**: Bitwarden or KeePassXC intercept creation and store the
+  passkey in **their vault**, not on the physical key (symptom at login: the key
+  blinks then `NotAllowedError`). Decline their popup (« Use the browser ») or
+  temporarily disable the « Save passkeys » option in the extension.
+- **FIDO2 PIN required**: Kanidm requires user verification, so the browser
+  asks for the key's PIN in addition to the touch. Session, sudo and LUKS never
+  ask for the PIN: they remain touch-only.
+:::
+
+{/* t:p f3a81a37690c7a0b53b9fff99e04621b5b386bb92666e2115c57a24cbf773bcc */}
+## One key for multiple accounts
+
+The same physical key can serve multiple users: simply repeat enrollment for
+each login, key plugged in.
+
+```sh
+just yubikey <login1>
+just yubikey <login2>   # same physical key, different account
+```
+
+Each enrollment creates credentials **specific to the account** (PAM, LUKS, and
+a Kanidm reset link per user to redo the web ceremony with the same key).
+Kanidm passkeys are non-resident: they do not occupy any slot on the key, the
+number of accounts is unlimited. A revocation (`just yubikey <login> main
+revoke`) only affects the targeted login.
 
 {/* t:p d22811cdd571a457247435be74d2c32996f01d605735f3d41883a13c39a4198b */}
 ## Under the hood

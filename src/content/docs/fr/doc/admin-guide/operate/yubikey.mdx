@@ -36,7 +36,7 @@ Le mot de passe de session (sops) et la passphrase LUKS d'installation ne sont
 **jamais supprimés** : sans clé (perdue, oubliée), tout fonctionne comme avant.
 :::
 
-{/* t:p ff339b87eb14566ac360a7112af0d197f492b87051b44b6ff4843d5bfa1c0950 */}
+{/* t:p 59465abd9a04a2fb3028fbc99dd4b2907b325f217ba034e6f45f9eaa6758c293 */}
 ## Enrôler une clé
 
 <Steps>
@@ -44,9 +44,12 @@ Le mot de passe de session (sops) et la passphrase LUKS d'installation ne sont
 1. Brancher la YubiKey de l'utilisateur sur le poste admin, puis :
 
    ```sh
-   just yubikey <login>          # clé principale (~3 touches de la clé)
+   just yubikey <login>          # clé principale (PIN FIDO2 + ~3 touches)
    just yubikey <login> backup   # clé de secours (optionnel)
    ```
+
+   Si la clé n'a pas encore de PIN FIDO2, la recette le crée d'abord
+   (indispensable pour Kanidm, voir plus bas).
 
 2. Committer et déployer :
 
@@ -68,6 +71,35 @@ dans le navigateur. `just yubikey` génère le lien de réinitialisation Kanidm 
 transmettre à l'utilisateur ; pour Vaultwarden, la clé s'ajoute dans le coffre
 web (*Paramètres → Sécurité → Connexion en deux étapes → WebAuthn*).
 :::
+
+:::caution[Deux pièges de la cérémonie web]
+- **Gestionnaire de mots de passe**&nbsp;: Bitwarden ou KeePassXC interceptent
+  la création et rangent la passkey dans **leur coffre**, pas sur la clé
+  physique (symptôme au login&nbsp;: la clé clignote puis `NotAllowedError`).
+  Refuser leur popup (« Utiliser le navigateur ») ou désactiver le temps de la
+  cérémonie l'option « enregistrer les clés d'accès » de l'extension.
+- **PIN FIDO2 obligatoire**&nbsp;: Kanidm exige la vérification utilisateur, le
+  navigateur demande donc le PIN de la clé en plus du toucher. Session, sudo
+  et LUKS ne demandent jamais le PIN&nbsp;: ils restent au toucher seul.
+:::
+
+{/* t:p f3a81a37690c7a0b53b9fff99e04621b5b386bb92666e2115c57a24cbf773bcc */}
+## Une clé pour plusieurs comptes
+
+Une même clé physique peut servir à plusieurs utilisateurs&nbsp;: répéter
+simplement l'enrôlement pour chaque login, clé branchée.
+
+```sh
+just yubikey <login1>
+just yubikey <login2>   # même clé physique, autre compte
+```
+
+Chaque enrôlement crée des credentials **propres au compte** (PAM, LUKS, et un
+lien de réinitialisation Kanidm par utilisateur pour refaire la cérémonie web
+avec la même clé). Les passkeys Kanidm sont non résidentes&nbsp;: elles
+n'occupent aucun emplacement sur la clé, le nombre de comptes est illimité.
+Une révocation (`just yubikey <login> main revoke`) ne touche que le login
+visé.
 
 {/* t:p d22811cdd571a457247435be74d2c32996f01d605735f3d41883a13c39a4198b */}
 ## Sous le capot
