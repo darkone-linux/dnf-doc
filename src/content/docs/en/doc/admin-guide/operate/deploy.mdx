@@ -79,3 +79,48 @@ just apply '*'        # deploys the update
 Before a large deployment, validate locally: `just check-flake` (or
 `just check-all`), then `just apply <pilot-host>` on **one** test host.
 :::
+
+{/* t:p 034ad86a008699b83fe5564eda526afb8946a67c29f64519afecadf841766305 */}
+## Binary cache
+
+Two services work together to avoid recompiling or re-downloading
+derivations at every deployment.
+
+| Service | Role |
+|---|---|
+| `harmonia` | Serves the local, signed `/nix/store` **directly** to hosts (LAN, or VPN if `global`). |
+| `nix-cache` | Per-zone `nginx` proxy that caches the public `cache.nixos.org` cache on the gateway. |
+
+A host therefore fetches a derivation in this order: its zone's `harmonia`, any
+`global` `harmonia`, then its zone's `nix-cache` proxy.
+The first fetch from the Internet is thus shared for the entire zone.
+
+:::tip[Roaming host (multi-zone laptop)]
+A laptop that changes zones must not keep fixed substituters from its declared
+zone: unreachable elsewhere, they cause timeouts on every request. Enable
+*roaming* mode:
+
+```nix
+# usr/machines/<hôte>/default.nix
+darkone.service.nix-cache.roaming = true;
+```
+
+Its substituters become **neutral** names (`harmonia.dnf.internal`,
+`nix-cache.dnf.internal`) that each zone's DNS resolves to its own caches → the
+cache follows the machine. Outside any zone, immediate NXDOMAIN response →
+direct fallback on `cache.nixos.org`, no delay. Since signing keys are shared
+across the entire network, nothing else to configure.
+:::
+
+:::note[Activation]
+`harmonia` and `nix-cache` are [services](/en/doc/admin-guide/operate/services/)
+to enable on a network host (`nix-cache` on the zone gateway). harmonia's
+signing key is managed by
+[sops](/en/doc/admin-guide/operate/secrets/) (`just configure-admin-host`).
+:::
+
+:::tip[Why a single-upstream proxy]
+`nix-cache` only relays **one** upstream (`cache.nixos.org`): it caches
+`narinfo` and `nar` as-is, signatures intact. No URL rewriting or database, so
+no HTTP 500 "invalid nar hash" error from the old `ncps` relay.
+:::
