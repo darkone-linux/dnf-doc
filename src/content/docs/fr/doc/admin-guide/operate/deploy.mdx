@@ -85,7 +85,7 @@ Avant un déploiement large, validez localement : `just check-flake` (ou
 `just check-all`), puis `just apply <hôte-pilote>` sur **un** hôte témoin.
 :::
 
-{/* t:p 60c2b54056d3b4a37b4bc8c7019fb5db5da69a99002062396ee50c60064a0b01 */}
+{/* t:p 034ad86a008699b83fe5564eda526afb8946a67c29f64519afecadf841766305 */}
 ## Cache binaire
 
 Deux services se combinent pour éviter de recompiler ou de retélécharger les
@@ -99,6 +99,23 @@ dérivations à chaque déploiement.
 Un hôte récupère donc une dérivation dans cet ordre&nbsp;: la `harmonia` de sa
 zone, une éventuelle `harmonia` `global`, puis le proxy `nix-cache` de sa zone.
 La première récupération depuis Internet est ainsi mutualisée pour toute la zone.
+
+:::tip[Hôte nomade (portable multi-zones)]
+Un portable qui change de zone ne doit pas garder des substituters figés sur sa
+zone déclarée&nbsp;: injoignables ailleurs, ils coûtent des timeouts à chaque
+requête. Activez le mode *roaming*&nbsp;:
+
+```nix
+# usr/machines/<hôte>/default.nix
+darkone.service.nix-cache.roaming = true;
+```
+
+Ses substituters deviennent des noms **neutres** (`harmonia.dnf.internal`,
+`nix-cache.dnf.internal`) que le DNS de chaque zone résout vers ses propres
+caches → le cache suit la machine. Hors de toute zone, réponse NXDOMAIN
+immédiate → repli direct sur `cache.nixos.org`, sans délai. Les clés de
+signature étant communes à tout le réseau, rien d'autre à configurer.
+:::
 
 :::note[Activation]
 `harmonia` et `nix-cache` sont des [services](/fr/doc/admin-guide/operate/services/)

@@ -1,7 +1,7 @@
 ---
-title: Déployer depuis un second hôte
+title: Déployer depuis un hôte alternatif
 sidebar:
-  label: Second déployeur
+  label: Déployeur alternatif
   order: 12
 lang: fr
 ---
@@ -9,17 +9,17 @@ lang: fr
 import { Steps } from '@astrojs/starlight/components';
 
 {/* t:main */}
-{/* t:h 2112cd338253974d8b42c5ea83ce91fd87ac5fd09031324e1290b32db00a49c0 */}
+{/* t:h 8834e7e13d30dbe86d33e4c6ecb3c76ea60095f3b68d7d33ab55b4001b956b76 */}
 
-{/* t:p b8562e2bdf85a446d7cd53fe7432ba27fd362b340f59e5fa9fb8a9c28a427529 */}
+{/* t:p c04bad2abcd8f3830fd3fcdda8215d0a1a19815f6698b92ce8e994eba803bd9e */}
 Par défaut, un seul poste admin déploie tout le parc (voir
 [Déploiement](/fr/doc/admin-guide/operate/deploy/)). Un déployeur unique est un
 point de défaillance&nbsp;: s'il tombe, plus aucun `just apply` n'est possible.
-On peut promouvoir un second hôte, typiquement un serveur puissant et souvent
-disponible, en **déployeur de secours autonome** capable de piloter le parc à
-la place du poste admin.
+On peut promouvoir un hôte alternatif, typiquement un serveur puissant et
+souvent disponible, en **déployeur de secours autonome** capable de piloter le
+parc à la place du poste admin.
 
-{/* t:p fc23c6b2223f90f3eb04955a74c321f3eabda1cf48ef2a06f59f772e5ff74a3d */}
+{/* t:p e5608099f1e6203c6f29a95549f0d203f7218616fe465e6d31fb1158a1eddb93 */}
 ## Le principe
 
 Un déployeur ne repose que sur quatre éléments. Deux existent déjà sur chaque
@@ -43,7 +43,7 @@ git: Dépôt git\npartagé { shape: cylinder }
 
 deployers: Déployeurs {
   main: Poste admin
-  sec: Serveur secondaire
+  sec: Hôte alternatif
 }
 
 fleet: Parc de nœuds { shape: package }
@@ -54,12 +54,12 @@ deployers.main -> fleet: just apply
 deployers.sec -> fleet: just apply
 ```
 
-{/* t:p 9b3181bc1a20b5de643f41c7b26a1a4e69896b4dddeb906013d9640e1b111e1f */}
+{/* t:p fec6c5c2f3c7125756236bd1f2c441c347654d926b61e399706abd7c47ad1244 */}
 ## Activer l'outillage
 
 Les outils de déploiement accompagnent un profil home **admin** (ex.
 `nix-admin`), mais restent masqués tant que l'hôte ne se déclare pas hôte
-d'administration. Activez ce drapeau sur le second hôte&nbsp;:
+d'administration. Activez ce drapeau sur l'hôte alternatif&nbsp;:
 
 ```nix
 # usr/machines/<hôte>/features.nix
@@ -77,7 +77,24 @@ bureau. Le seul drapeau `darkone.admin.nix.enable` suffit à débloquer
 `colmena` et `just` dans le home de l'utilisateur.
 :::
 
-{/* t:p b587213ec62b446ffa8d0786f1240c041ab6a1008f51d3812305141f01ac1c63 */}
+:::caution[git refuse d'ouvrir le dépôt&nbsp;: safe.directory]
+`darkone.admin.nix.enable` installe l'outillage, mais colmena/nix évalue le
+flake sous l'utilisateur `nix`, pas celui qui a cloné `/etc/nixos`&nbsp;: git
+refuse alors d'ouvrir le dépôt (`repository path ... is not owned by current
+user`). Activez aussi&nbsp;:
+
+```nix
+# usr/machines/<hôte>/features.nix
+darkone.console.git.enable = true;
+```
+
+Ce module déclare `/etc/nixos` en `safe.directory` dans `/etc/gitconfig`,
+lisible par tout utilisateur du système. Un hôte déjà en profil
+`admin-desktop` ou `darkone.profile.advanced.enable` l'a déjà&nbsp;: rien à
+faire de plus.
+:::
+
+{/* t:p bd81ae58822ac3f527567b11d36dd43b0d2329585df9124ea00a41394a7fbe91 */}
 ## Adjoindre un cache binaire
 
 Recommandé&nbsp;: donner au déployeur son propre
@@ -97,20 +114,27 @@ services:
   [sops](/fr/doc/admin-guide/operate/secrets/), commune à tout le réseau&nbsp;:
   rien de neuf à provisionner.
 
-{/* t:p 0385534a3e80db673a47318226e978788f0c9e6fede779370b4e004d1c010795 */}
+:::tip[Déployeur nomade]
+Déployeur alternatif sur un portable qui change de zone&nbsp;? Activez aussi le
+[mode roaming](/fr/doc/admin-guide/operate/deploy/#cache-binaire) du cache
+(`darkone.service.nix-cache.roaming`)&nbsp;: ses substituters suivent la zone
+où il est branché au lieu de rester figés sur sa zone déclarée.
+:::
+
+{/* t:p 92fdd1a115f8a6680a925afbd2652bf864a7160d50bf95f136abbdbc99c0e52d */}
 ## Mettre en place
 
 <Steps>
 
 1. **Déclarer et déployer.** Depuis le poste admin, poser les deux options
-   ci-dessus, régénérer, puis déployer le second hôte&nbsp;:
+   ci-dessus, régénérer, puis déployer l'hôte alternatif&nbsp;:
 
    ```sh
    just generate
    just apply <hôte>
    ```
 
-2. **Cloner l'espace de travail** sur le second hôte, au **même chemin** que
+2. **Cloner l'espace de travail** sur l'hôte alternatif, au **même chemin** que
    sur le poste admin, avec le sous-dépôt du framework au même endroit.
 
    :::caution[Chemin verrouillé]
@@ -123,18 +147,18 @@ services:
    le poste admin, tient les deux déployeurs alignés. Seul l'état **committé**
    est déployé.
 
-4. **Copier la clé privée** de l'utilisateur de déploiement (`nix`) vers le
-   second hôte, en `600` et propriété de `nix`&nbsp;:
+4. **Copier la clé privée** de l'utilisateur de déploiement (`nix`) vers
+   l'hôte alternatif, en `600` et propriété de `nix`&nbsp;:
 
    ```sh
-   # sur le second hôte
+   # sur l'hôte alternatif
    /home/nix/.ssh/id_ed25519
    ```
 
    Sa clé publique est déjà autorisée sur tout le parc, aucun redéploiement
    des accès n'est nécessaire.
 
-5. **Valider** depuis le second hôte&nbsp;:
+5. **Valider** depuis l'hôte alternatif&nbsp;:
 
    ```sh
    colmena --version
@@ -152,7 +176,7 @@ peuvent appliquer deux états divergents au parc. Déployez toujours depuis **un
 seul** poste à la fois et gardez les clones synchronisés via le remote partagé.
 :::
 
-{/* t:p c8671c9657afcceee5deb614600e16f1affff77e47e397eb3155981a4f3534e4 */}
+{/* t:p 1c77924df130336ee4564a6c62cc3bbe6dcd8bf83430624dc2340ebfb0a6ec23 */}
 ## Jusqu'où va ce déployeur
 
 | Usage | Clé admin sops |
@@ -161,5 +185,5 @@ seul** poste à la fois et gardez les clones synchronisés via le remote partag�
 | Éditer ou faire tourner les [secrets](/fr/doc/admin-guide/operate/secrets/) | Requise |
 
 Le déploiement seul n'a pas besoin de la clé admin&nbsp;: les secrets se
-déchiffrent sur chaque cible avec sa clé d'infra. Ne copiez la clé admin sur le
-second hôte que si vous voulez aussi y gérer les secrets.
+déchiffrent sur chaque cible avec sa clé d'infra. Ne copiez la clé admin sur
+l'hôte alternatif que si vous voulez aussi y gérer les secrets.

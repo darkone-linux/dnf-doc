@@ -693,47 +693,55 @@ darkone.service.nfs = {
 };
 ```
 
-{/* t:p 6b2cac8b56aa0b6124785c3f51888ce793903563d1f94cecc521471f1f24b997 */}
+{/* t:p 4cc2c30044225948c46c2f0c744d31d42df99400fc4c97f341251bffb163c980 */}
 ### &#x2728; darkone.service.nix-cache
 
 Proxy de cache binaire Nix par zone (nginx `proxy_cache`).
 
-Met en cache le cache binaire Nix public (`cache.nixos.org`) sur la
-passerelle de zone, de sorte qu'un déploiement à l'échelle de la flotte
-tire chaque closure du WAN une fois, puis la sert sur le LAN à tous les
-autres hôtes. Les chemins construits localement sont servis directement
-depuis `harmonia` (voir `harmonia.nix`)&nbsp;; ce proxy ne se place jamais
-devant harmonia.
+Met en cache le cache Nix public (`cache.nixos.org`) sur la passerelle de zone
+pour qu'un déploiement sur tout le parc tire chaque closure du WAN une fois,
+puis la serve sur le LAN à tous les autres hôtes. Les chemins construits
+localement sont servis directement depuis `harmonia` (voir `harmonia.nix`) ;
+ce proxy ne fait jamais face à harmonia.
 
-:::note[Pourquoi nginx et pas un proxy de réécriture]
-Un point de terminaison de cache sert exactement **une** source amont. Une
-`narinfo` et sa `nar` sont deux requêtes distinctes et l'URL de `nar` est
-indépendante de la source, donc un proxy multi-sources doit réécrire les URL
-`narinfo` dans son propre espace de noms et les suivre dans une base de
-données (l'approche qu'adoptait l'ancien proxy `ncps` — et la source de ses
-HTTP 500 récurrents «&nbsp;invalid nar hash&nbsp;»). Avec une source unique,
-il n'y a pas d'ambiguïté&nbsp;:
-nginx met en cache `narinfo` + `nar` verbatim, les signatures traversent
-sans modification et les clients les vérifient. Pas de réécriture, pas de
-base de données, pas de tel bug par construction.
+:::note[Pourquoi nginx et pas un proxy réécrivant]
+Un point de terminaison de cache fait face à exactement **une** source
+amont. Un `narinfo` et son `nar` sont deux requêtes distinctes et l'URL du
+`nar` est indépendante de la source amont, donc un proxy multi-sources doit
+réécrire les URLs `narinfo` dans son propre espace de noms et les suivre dans
+une base de données (l'approche qu'avait l'ancien proxy `ncps` — et la source
+de ses HTTP 500 récurrents « hash nar invalide »). Avec une source unique, il
+n'y a pas d'ambiguïté :
+nginx met en cache `narinfo` + `nar` verbatim, les signatures passent
+inchangées et les clients les vérifient. Pas de réécriture, pas de base de
+données, pas de tel bogue par construction.
 :::
 
 :::tip[Topologie]
-- serveur&nbsp;: l'hôte passerelle qui liste `nix-cache` dans `config.yaml`
-  (un par zone). Fait tourner nginx sur l'IP interne, port
-  `network.ports.nixCache`.
-- clients&nbsp;: tous les hôtes de la zone locale. Leurs substituters
-  deviennent les instances harmonia de la zone (direct, LAN/tailnet) ainsi
-  que ce proxy.
+- serveur : l'hôte passerelle qui liste `nix-cache` dans `config.yaml` (un
+  par zone). Fait tourner nginx sur l'IP interne, port `network.ports.nixCache`.
+- clients : tous les hôtes de la zone locale. Leurs substituters deviennent
+  les instances harmonia de la zone (direct, LAN/tailnet) plus ce proxy.
+- clients nomades (`roaming = true`) : hôtes nomades déplacés entre zones.
+  Leurs substituters sont les noms neutres de zone (`harmonia.dnf.internal`,
+  `nix-cache.dnf.internal`) que le DNS de chaque zone résout vers ses propres
+  services de cache (voir `service/dnsmasq.nix`), ainsi le cache suit le
+  portable.
 :::
 
 * **enable** `bool` le proxy de cache binaire Nix par zone (nginx devant cache.nixos.org)
-* **maxSize** `str` Taille maximale du cache disque&nbsp;; nginx supprime les entrées les moins récemment utilisées au-delà.
+* **maxSize** `str` Taille maximale du cache disque ; nginx évince les entrées les moins récemment utilisées au-delà.
+* **roaming** `bool` Hôte nomade (portable déplacé entre zones) : remplace les
+substituters liés à la zone par les noms neutres de zone que le DNS de chaque
+zone résout vers ses propres services de cache. En dehors de toute zone DNF,
+les noms deviennent instantanément NXDOMAIN et Nix se rabat sur
+cache.nixos.org.
 
 ```nix
 darkone.service.nix-cache = {
   enable = false;
   maxSize = "40g";
+  roaming = false;
 };
 ```
 

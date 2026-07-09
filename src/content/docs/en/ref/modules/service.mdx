@@ -734,7 +734,7 @@ darkone.service.nfs = {
 
 <hr/>
 
-{/* t:p 6b2cac8b56aa0b6124785c3f51888ce793903563d1f94cecc521471f1f24b997 */}
+{/* t:p 4cc2c30044225948c46c2f0c744d31d42df99400fc4c97f341251bffb163c980 */}
 ### &#x2728; darkone.service.nix-cache
 
 Per-zone Nix binary-cache proxy (nginx `proxy_cache`).
@@ -760,15 +760,24 @@ clients verify them. No rewrite, no database, no such bug by construction.
   zone). Runs nginx on the internal IP, port `network.ports.nixCache`.
 - clients: every local-zone host. Their substituters become the zone's
   harmonia instances (direct, LAN/tailnet) plus this proxy.
+- roaming clients (`roaming = true`): nomadic hosts moved between zones.
+  Their substituters are the zone-neutral names (`harmonia.dnf.internal`,
+  `nix-cache.dnf.internal`) that each zone's DNS resolves to its own cache
+  services (see `service/dnsmasq.nix`), so the cache follows the laptop.
 :::
 
 * **enable** `bool` the per-zone Nix binary-cache proxy (nginx in front of cache.nixos.org)
 * **maxSize** `str` Maximum on-disk cache size; nginx evicts least-recently-used entries beyond it.
+* **roaming** `bool` Nomadic host (laptop moved between zones): replace the zone-pinned
+substituters with the zone-neutral names every zone's DNS resolves to
+its own cache services. Outside any DNF zone the names NXDOMAIN
+instantly and Nix falls back to cache.nixos.org.
 
 ```nix
 darkone.service.nix-cache = {
   enable = false;
   maxSize = "40g";
+  roaming = false;
 };
 ```
 

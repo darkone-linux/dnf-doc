@@ -1,0 +1,186 @@
+---
+title: Deploy from an alternative host
+sidebar:
+  label: Alternative deployer
+  order: 12
+lang: en
+---
+
+import { Steps } from '@astrojs/starlight/components';
+
+{/* t:translated-from fr */}
+{/* t:h 8834e7e13d30dbe86d33e4c6ecb3c76ea60095f3b68d7d33ab55b4001b956b76 */}
+
+{/* t:p c04bad2abcd8f3830fd3fcdda8215d0a1a19815f6698b92ce8e994eba803bd9e */}
+By default, a single admin workstation deploys the entire fleet (see
+[Deployment](/en/doc/admin-guide/operate/deploy/)). A single deployer is a
+single point of failure: if it goes down, no `just apply` is possible anymore.
+You can promote an alternative host, typically a powerful and always-available
+server, into a **standalone backup deployer** capable of managing the fleet
+in place of the admin workstation.
+
+{/* t:p e5608099f1e6203c6f29a95549f0d203f7218616fe465e6d31fb1158a1eddb93 */}
+## The principle
+
+A deployer relies on only four elements. Two already exist on each host, two are prepared once.
+
+| Element | Detail | To do |
+|---|---|---|
+| Tooling | `colmena`, `just`, `sops` (via an admin profile) | Enable a flag |
+| Binary cache | `harmonia` specific to the deployer | Enable a service |
+| Workspace | clone of the repository (config + framework) | Clone + sync |
+| SSH identity `nix` | already authorized on all hosts | Copy the private key |
+
+The target topology&nbsp;: two deployers fed by a **common source**, each capable of deploying the fleet.
+
+```d2
+style.fill: transparent
+direction: right
+
+git: Shared\ngit repo { shape: cylinder }
+
+deployers: Deployers {
+  main: Admin workstation
+  sec: Alternate host
+}
+
+fleet: Fleet of nodes { shape: package }
+
+git -> deployers.main: pull
+git -> deployers.sec: pull
+deployers.main -> fleet: just apply
+deployers.sec -> fleet: just apply
+```
+
+{/* t:p fec6c5c2f3c7125756236bd1f2c441c347654d926b61e399706abd7c47ad1244 */}
+## Enable the tooling
+
+Deployment tools ship with an **admin** home profile (e.g.
+`nix-admin`), but remain hidden until the host declares itself an
+admin host. Enable this flag on the alternative host:
+
+```nix
+# usr/machines/<hôte>/features.nix
+darkone.admin.nix.enable = true;
+```
+
+- The user who will deploy must have an admin home
+  [profile](/en/doc/admin-guide/understand/user-profiles/).
+- On a headless server, the graphical packages of the profile are automatically
+  excluded: the installed tooling stays lightweight.
+
+:::note[Keep the server host profile]
+There is no need to switch the host to the `admin-desktop` profile, which would
+pull in an entire desktop. The `darkone.admin.nix.enable` flag alone is enough
+to unlock `colmena` and `just` in the user's home.
+:::
+
+:::caution[git refuses to open the repository: safe.directory]
+`darkone.admin.nix.enable` installs the tooling, but colmena/nix evaluates the
+flake under the `nix` user, not the one who cloned `/etc/nixos`: git then
+refuses to open the repository (`repository path ... is not owned by current
+user`). Also enable:
+
+```nix
+# usr/machines/<hôte>/features.nix
+darkone.console.git.enable = true;
+```
+
+This module declares `/etc/nixos` as a `safe.directory` in `/etc/gitconfig`,
+readable by any system user. A host already set to the
+`admin-desktop` or `darkone.profile.advanced.enable` profile already has it: nothing more to do.
+:::
+
+{/* t:p bd81ae58822ac3f527567b11d36dd43b0d2329585df9124ea00a41394a7fbe91 */}
+## Attach a binary cache
+
+Recommended: give the deployer its own
+[binary cache](/en/doc/admin-guide/operate/deploy/#binary-cache). It builds
+the fleet, then **re-serves** its derivations to other hosts.
+
+```yaml
+# etc/config.yaml
+services:
+  harmonia:
+    global: true
+```
+
+- `global: true` makes the cache reachable **cross-zone** via VPN, useful
+  when the deployer and its targets are not in the same zone.
+- The signing key is already managed by
+  [sops](/en/doc/admin-guide/operate/secrets/), common to the whole network:
+  nothing new to provision.
+
+:::tip[Roaming deployer]
+An alternative deployer on a laptop that changes zone? Also enable
+[roaming mode](/en/doc/admin-guide/operate/deploy/#binary-cache) for the cache
+(`darkone.service.nix-cache.roaming`): its substituters follow the zone it is
+connected to instead of staying fixed on its declared zone.
+:::
+
+{/* t:p 92fdd1a115f8a6680a925afbd2652bf864a7160d50bf95f136abbdbc99c0e52d */}
+## Set up
+
+<Steps>
+
+1. **Declare and deploy.** From the admin workstation, apply the two options
+   above, regenerate, then deploy the alternative host:
+
+   ```sh
+   just generate
+   just apply <hôte>
+   ```
+
+2. **Clone the workspace** on the alternative host, at the **same path** as on
+   the admin workstation, with the framework sub-repository in the same location.
+
+   :::caution[Locked path]
+   The flake references the framework via an **absolute** path
+   (`git+file:///etc/nixos/dnf`). The clone must live at that exact location,
+   otherwise evaluation will fail.
+   :::
+
+3. **Share the source.** A common git remote, or regular `pull` from the admin
+   workstation, keeps both deployers in sync. Only **committed** state is
+   deployed.
+
+4. **Copy the private key** of the deployment user (`nix`) to the alternative
+   host, with `600` permissions and owned by `nix`:
+
+   ```sh
+   # on the alternative host
+   /home/nix/.ssh/id_ed25519
+   ```
+
+   Its public key is already authorized across the entire fleet, so no
+   redeployment of access rights is needed.
+
+5. **Validate** from the alternative host:
+
+   ```sh
+   colmena --version
+   just apply <cible-témoin> test
+   ```
+
+</Steps>
+
+{/* t:p 4d5fec3559baaa91db4ef991858c45e74203dc315aebf44369b18c978e357cf7 */}
+## Two deployers, one golden rule
+
+:::danger[One deployer at a time]
+Each deployer pushes from its own clone. Two concurrent `apply` runs can apply
+two divergent states to the fleet. Always deploy from **one** workstation at a
+time and keep the clones synchronized via the shared remote.
+:::
+
+{/* t:p 1c77924df130336ee4564a6c62cc3bbe6dcd8bf83430624dc2340ebfb0a6ec23 */}
+## How far does this deployer go
+
+| Usage | Admin sops key |
+|---|---|
+| Deploy and inspect (`apply`, `exec`, `enter`, `reboot`) | Not required |
+| Edit or manage [secrets](/en/doc/admin-guide/operate/secrets/) | Required |
+
+Deployment alone does not need the admin key: secrets are decrypted on each
+target using its infra key. Only copy the admin key to the alternative host if
+you also want to manage secrets there.
