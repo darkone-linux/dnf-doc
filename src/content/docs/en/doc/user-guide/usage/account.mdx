@@ -79,29 +79,41 @@ user -> 2fa {
 }
 ```
 
-{/* t:p 633bcc9c5acdee7fda3ca519d269d248d6acdd2f1281c17ffaa49ac458a6510f */}
+{/* t:p 22e8204a73e683a74556227d63c8b1e7c484df1b1b04cd899711f013483251c8 */}
+## My login methods
+
+My account accepts **four** ways to log in to cloud services. They coexist: if one becomes unavailable, the others remain valid.
+
+| Method | What I do | When |
+|---|---|---|
+| **Main YubiKey** | Enter the key's PIN code, then touch it | Daily use |
+| **Backup YubiKey** | Same, key stored in a safe place | If the main key is lost |
+| **Vault access key** | Unlock the vault, confirm | When no YubiKey is at hand |
+| **Password + 2FA code** | Enter the password, then the code | Safety net |
+
+:::tip[Nothing is registered on my own]
+Key registration is done **with my administrator**. I never have to create an access key on my own, or decide where to store it.
+:::
+
+:::caution[If the wrong window opens]
+I wanted to use my YubiKey and the vault opens instead? Or the other way around? **I decline**, and I notify my administrator. Confirming the wrong window can replace an existing key with a different one.
+:::
+
+{/* t:p 27c4d3cabeda52eb998045a802e3a953a4436c1d31d369e12251d25e9748c009 */}
 ## Using my YubiKey
 
 My YubiKey is a physical key that replaces the password in most situations:
 
-- **Encrypted computer**: at boot, I touch the YubiKey when the LED
-  blinks → the disk unlocks by itself, no passphrase needed.
-- **Logging into my session**: I touch the YubiKey on the login
-  screen instead of typing my password.
-- **Kanidm (SSO)**: my administrator sends me a registration
-  link. I visit it once, I create my passkey with the YubiKey
-  → then, I touch the key to log into all cloud services.
+- **Encrypted computer**: at boot, I touch the YubiKey when the LED blinks → the disk unlocks automatically, no passphrase needed.
+- **Logging in to my session**: I touch the YubiKey on the login screen instead of typing my password.
+- **Kanidm (SSO)**: registration is done once, with my administrator. After that, I enter the key's PIN code and touch it to log in to all cloud services.
 
-:::note[What is a key?]
-A digital key allows me to identify myself without using a password.
-It is stored in my vault.
-When an application needs it, Bitwarden opens automatically.
-This is the **SIMPLEST AND MOST SECURE** way to authenticate.
+:::note[What is an access key?]
+An access key allows you to identify yourself **without a password**. Each key is stored in **one place only**: either in my vault, or on my YubiKey. This storage location determines what opens when I log in: the vault window, or the PIN prompt for my physical key.
 :::
 
-:::tip[YubiKey = the simplest]
-Once registered, I only need to touch my key. No password to
-remember or code to copy.
+:::tip[YubiKey = simplest option]
+Once registered, I just have to touch my key. No password to remember, no code to copy.
 :::
 
 {/* t:p 783930fb5b1ca9dd075b6c128f9943326417009e147f2d769cf22a9af5662025 */}

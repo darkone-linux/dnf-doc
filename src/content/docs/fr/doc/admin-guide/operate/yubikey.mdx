@@ -36,7 +36,29 @@ Le mot de passe de session (sops) et la passphrase LUKS d'installation ne sont
 **jamais supprimés** : sans clé (perdue, oubliée), tout fonctionne comme avant.
 :::
 
-{/* t:p 59465abd9a04a2fb3028fbc99dd4b2907b325f217ba034e6f45f9eaa6758c293 */}
+{/* t:p 69faf7b1a2bcb653da68196a60f99592f1b49ab2266ac784f8365d0d41d1a09c */}
+## Les quatre moyens de connexion Kanidm
+
+Un compte Kanidm expose plusieurs moyens d'authentification, indépendants les
+uns des autres. L'objectif est qu'aucune perte de clé ne verrouille un compte.
+
+| Moyen | Nature Kanidm | Support |
+|---|---|---|
+| **YubiKey principale** | Passkey WebAuthn | Clé physique (PIN + toucher) |
+| **YubiKey de secours** | Passkey WebAuthn | Clé physique rangée à part |
+| **Clé logicielle** | Passkey WebAuthn | Coffre-fort (Bitwarden, KeePassXC) |
+| **Mot de passe + TOTP** | Credential primaire | Filet de sécurité, jamais supprimé |
+
+Les trois premiers sont des **passkeys**&nbsp;: Kanidm les stocke côte à côte et
+les propose ensemble au navigateur. Le quatrième vit ailleurs (le credential
+primaire) et ne peut pas être écrasé par une cérémonie WebAuthn.
+
+:::note[L'enrôlement est un acte administrateur]
+Les utilisateurs ne créent pas leurs passkeys. Chaque cérémonie web comporte un
+choix (coffre-fort ou clé physique) dont l'erreur détruit une clé existante.
+:::
+
+{/* t:p a77982213590f9a3866896150357f92a6ef31720ee0461dff55a55700597bac3 */}
 ## Enrôler une clé
 
 <Steps>
@@ -72,15 +94,116 @@ transmettre à l'utilisateur ; pour Vaultwarden, la clé s'ajoute dans le coffre
 web (*Paramètres → Sécurité → Connexion en deux étapes → WebAuthn*).
 :::
 
-:::caution[Deux pièges de la cérémonie web]
-- **Gestionnaire de mots de passe**&nbsp;: Bitwarden ou KeePassXC interceptent
-  la création et rangent la passkey dans **leur coffre**, pas sur la clé
-  physique (symptôme au login&nbsp;: la clé clignote puis `NotAllowedError`).
-  Refuser leur popup (« Utiliser le navigateur ») ou désactiver le temps de la
-  cérémonie l'option « enregistrer les clés d'accès » de l'extension.
-- **PIN FIDO2 obligatoire**&nbsp;: Kanidm exige la vérification utilisateur, le
-  navigateur demande donc le PIN de la clé en plus du toucher. Session, sudo
-  et LUKS ne demandent jamais le PIN&nbsp;: ils restent au toucher seul.
+:::danger[Le gestionnaire de mots de passe peut détruire une passkey]
+Une extension de coffre-fort (Bitwarden, KeePassXC) intercepte la cérémonie
+WebAuthn et propose d'enregistrer la passkey **dans son coffre**, pas sur la
+clé physique. Pire&nbsp;: si l'enregistrement vise un élément de coffre qui
+porte **déjà** une clé d'accès, cette dernière est **remplacée**, pas
+complétée. La passkey logicielle précédente disparaît du coffre, alors que
+Kanidm continue de la réclamer.
+
+Voir [Ordre d'enrôlement des passkeys](#ordre-denrôlement-des-passkeys) pour la
+procédure qui rend cet accident impossible.
+:::
+
+:::caution[PIN FIDO2 obligatoire]
+Kanidm exige la vérification utilisateur, le navigateur demande donc le PIN de
+la clé en plus du toucher. Session, sudo et LUKS ne demandent jamais le
+PIN&nbsp;: ils restent au toucher seul.
+:::
+
+{/* t:p b5453c6489959b9ecc70239539000f3b86e6be3cf35bca9c875432fac013fe20 */}
+## Ordre d'enrôlement des passkeys
+
+Le principe&nbsp;: **isoler chaque cérémonie** de tout ce qui pourrait
+l'intercepter. Une passkey physique s'enrôle dans un navigateur sans extension
+de coffre-fort, une passkey logicielle s'enrôle dans le navigateur habituel.
+L'ordre garantit qu'un filet de sécurité existe avant chaque étape risquée.
+
+<Steps>
+
+1. **Mot de passe et TOTP d'abord.** Ils vivent hors des passkeys et ne peuvent
+   pas être écrasés. Tant qu'ils existent, aucune erreur des étapes suivantes
+   n'enferme l'utilisateur dehors.
+
+2. **Clé logicielle ensuite**, dans le navigateur habituel, extension du
+   coffre-fort déverrouillée. Au moment où le coffre propose d'enregistrer,
+   choisir **créer un nouvel élément**, jamais « enregistrer dans un élément
+   existant ».
+
+3. **YubiKey principale**, dans un navigateur **jetable et vierge**&nbsp;: sans
+   extension, l'interception est impossible.
+
+   ```sh
+   firefox --new-instance --profile "$(mktemp -d)" https://idm.domain.tld
+   ```
+
+   Puis coller le lien de réinitialisation Kanidm imprimé par `just yubikey`.
+
+4. **YubiKey de secours**, dans le même navigateur jetable, autre clé branchée.
+
+5. **Vérifier le résultat** avant de fermer&nbsp;: le compte doit présenter
+   trois passkeys. Voir [Diagnostic des passkeys](#diagnostic-des-passkeys).
+
+</Steps>
+
+:::tip[Un profil jetable par cérémonie]
+Le profil créé par `mktemp -d` disparaît au prochain nettoyage du système. Rien
+à désinstaller, rien à réactiver, et aucun risque d'oublier de réactiver
+l'extension du coffre-fort ensuite.
+:::
+
+:::caution[Procédure en cours de validation]
+Cette section décrit un accident observé une fois, dont le mécanisme exact
+côté coffre-fort n'a pas encore été reproduit en conditions contrôlées. La
+séquence ci-dessus le rend impossible quoi qu'il en soit.
+:::
+
+{/* t:p 4803b9cd474256038251370972a2ff108d868b088abe21499be9ac99addfa53a */}
+## Diagnostic des passkeys
+
+:::danger[La commande credential status n'affiche jamais les passkeys]
+`kanidm person credential status <login>` ne montre que le **credential
+primaire** (mot de passe, TOTP, codes de secours). Un compte couvert de
+passkeys y apparaît sans aucune. Ne jamais en conclure qu'il n'y en a pas.
+:::
+
+Pour lister réellement les passkeys d'un compte, ouvrir une session interactive
+de mise à jour des credentials&nbsp;:
+
+```sh
+kanidm person credential update <login> --name idm_admin
+```
+
+Pour voir ce que le serveur envoie réellement au navigateur, ouvrir la console
+(`F12`) sur la page de connexion, coller ce code, puis cliquer sur
+**Passkey**&nbsp;:
+
+```js
+const _get = navigator.credentials.get.bind(navigator.credentials);
+navigator.credentials.get = (o) => {
+  const b64 = (v) => btoa(String.fromCharCode(...new Uint8Array(v)));
+  const p = o.publicKey;
+  console.log("rpId:", p.rpId, "| uv:", p.userVerification);
+  console.log("allowCredentials:", (p.allowCredentials || []).map((c) => b64(c.id)));
+  return _get(o);
+};
+```
+
+Le nombre d'entrées de `allowCredentials` est la vérité&nbsp;: c'est la liste
+exacte des passkeys que Kanidm connaît pour ce compte.
+
+| Symptôme | Cause probable |
+|---|---|
+| Le navigateur réclame le PIN d'une YubiKey, aucune fenêtre de coffre-fort | Passkey logicielle orpheline, absente du coffre |
+| `allowCredentials` compte moins d'entrées que prévu | Une cérémonie a écrasé une passkey |
+| Le PIN est réclamé alors que la clé physique n'est pas visée | Kanidm n'émet pas de `transports`, voir ci-dessous |
+
+:::note[Prompt PIN parasite]
+Kanidm ne renseigne pas les `transports` de ses passkeys. Sans cette indication,
+le navigateur sonde **tous** les supports, dont l'USB, et réclame le PIN de la
+YubiKey branchée même quand la passkey visée est logicielle. Contournement
+immédiat&nbsp;: débrancher la clé.
 :::
 
 {/* t:p f3a81a37690c7a0b53b9fff99e04621b5b386bb92666e2115c57a24cbf773bcc */}

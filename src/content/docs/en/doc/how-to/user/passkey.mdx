@@ -1,0 +1,56 @@
+---
+title: Sign in with a passkey
+sidebar:
+  label: Passkey
+  order: 3
+lang: en
+---
+
+import { Steps } from '@astrojs/starlight/components';
+
+{/* t:translated-from fr */}
+{/* t:h b686a9cffdf7f20e36e612178e2f6be80a25c261f02a49d866ecb8e6c7e1b8ea */}
+
+{/* t:p 459ab2db26717b2ec0fb677f30b9f6ed39879a9058373132411865b3d537c872 */}
+A passkey replaces the password: nothing to remember, nothing to type.
+My account accepts several, so losing one never locks me out.
+
+{/* t:p 82aa2f4a4a34c068205896233a2ecb590f20649ddcd9aa3690202e6f75b5d89a */}
+## Where my key lives
+
+A passkey is stored in **one place only**, and that place never changes after registration.
+
+| My key is stored in | To use it |
+|---|---|
+| On my **YubiKey** | I enter the key's PIN, then touch it |
+| In my **vault** | I unlock the vault, then confirm |
+
+I don't have to choose when signing in: the right window opens automatically, depending on the key the service requires.
+
+{/* t:p 5ccda994d1af2b624d0b842b30c1dcb2360c747ea44fc00c4162a23d684a4d83 */}
+## Signing in
+
+<Steps>
+
+1. I open the service and enter my username.
+2. I click **Passkey**.
+3. The window that opens tells me what to do: enter the PIN and touch the YubiKey, or unlock the vault.
+
+</Steps>
+
+:::tip[Multiple keys, no lockout]
+Primary YubiKey, backup YubiKey, vault passkey, and finally password plus a six-digit code. These four methods remain valid at all times. See [Managing my account](/en/doc/user-guide/usage/account/).
+:::
+
+{/* t:p 2efdad14507373b0e6744acdaf824266e6d3f9731d3224de60dae5d9b9c2c1ac */}
+## When things don't go as planned
+
+Three symptoms come up often. None fixes itself: in all three cases, I notify my administrator.
+
+- **The browser asks for a YubiKey PIN when I wanted to use my vault.** I unplug the YubiKey and try again. If the prompt persists, my vault passkey was probably lost on the server side.
+- **The vault opens when I wanted to use my YubiKey.** I dismiss the window. Confirming it would replace an existing key.
+- **No window opens**, or the sign-in fails silently. I sign in with my password and six-digit code, then report the issue.
+
+:::caution[Never register a key yourself]
+A window offering to **register** or **replace** a passkey only appears during a registration done with an administrator. Outside of that moment, I always dismiss it.
+:::

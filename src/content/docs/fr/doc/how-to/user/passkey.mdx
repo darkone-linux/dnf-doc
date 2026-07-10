@@ -1,0 +1,70 @@
+---
+title: Me connecter avec une clé d'accès
+sidebar:
+  label: Clé d'accès
+  order: 3
+lang: fr
+---
+
+import { Steps } from '@astrojs/starlight/components';
+
+{/* t:main */}
+{/* t:h b686a9cffdf7f20e36e612178e2f6be80a25c261f02a49d866ecb8e6c7e1b8ea */}
+
+{/* t:p 459ab2db26717b2ec0fb677f30b9f6ed39879a9058373132411865b3d537c872 */}
+Une clé d'accès remplace le mot de passe&nbsp;: rien à retenir, rien à recopier.
+Mon compte en accepte plusieurs, pour que la perte de l'une ne me bloque jamais.
+
+{/* t:p 82aa2f4a4a34c068205896233a2ecb590f20649ddcd9aa3690202e6f75b5d89a */}
+## Où vit ma clé
+
+Une clé d'accès est rangée à **un seul endroit**, et cet endroit ne change
+jamais après l'enregistrement.
+
+| Ma clé est rangée | Pour m'en servir |
+|---|---|
+| Sur ma **YubiKey** | Je saisis le code PIN de la clé, puis je la touche |
+| Dans mon **coffre-fort** | Je déverrouille le coffre, puis je valide |
+
+Je n'ai pas à choisir au moment de me connecter&nbsp;: la bonne fenêtre s'ouvre
+toute seule, selon la clé que le service réclame.
+
+{/* t:p 5ccda994d1af2b624d0b842b30c1dcb2360c747ea44fc00c4162a23d684a4d83 */}
+## Me connecter
+
+<Steps>
+
+1. J'ouvre le service, je saisis mon identifiant.
+2. Je clique sur **Clé d'accès** (*passkey*).
+3. La fenêtre qui s'ouvre m'indique quoi faire&nbsp;: code PIN et toucher de la
+   YubiKey, ou déverrouillage du coffre-fort.
+
+</Steps>
+
+:::tip[Plusieurs clés, aucun blocage]
+YubiKey principale, YubiKey de secours, clé d'accès du coffre-fort, et enfin
+mot de passe accompagné d'un code à six chiffres. Ces quatre moyens restent
+valables en permanence. Voir [Gérer mon compte](/fr/doc/user-guide/usage/account/).
+:::
+
+{/* t:p 2efdad14507373b0e6744acdaf824266e6d3f9731d3224de60dae5d9b9c2c1ac */}
+## Quand ça ne se passe pas comme prévu
+
+Trois symptômes reviennent souvent. Aucun ne se répare seul&nbsp;: dans les
+trois cas, je préviens mon administrateur.
+
+- **Le navigateur réclame le code PIN d'une YubiKey alors que je voulais
+  utiliser mon coffre-fort.** Je débranche la YubiKey et je réessaie. Si la
+  demande persiste, ma clé d'accès du coffre-fort est probablement perdue côté
+  serveur.
+- **Le coffre-fort s'ouvre alors que je voulais utiliser ma YubiKey.** Je
+  refuse la fenêtre. La valider remplacerait une clé existante.
+- **Aucune fenêtre ne s'ouvre**, ou la connexion échoue sans message. Je me
+  connecte avec mon mot de passe et mon code à six chiffres, puis je signale le
+  problème.
+
+:::caution[Ne jamais enregistrer une clé soi-même]
+Une fenêtre qui propose d'**enregistrer** ou de **remplacer** une clé d'accès
+n'apparaît que pendant un enregistrement fait avec l'administrateur. En dehors
+de ce moment, je la refuse toujours.
+:::

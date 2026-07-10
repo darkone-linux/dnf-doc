@@ -35,15 +35,37 @@ The session password (sops) and the install LUKS passphrase are **never
 removed**: without a key (lost, forgotten), everything works as before.
 :::
 
-{/* t:p 59465abd9a04a2fb3028fbc99dd4b2907b325f217ba034e6f45f9eaa6758c293 */}
-## Enroll a key
+{/* t:p 69faf7b1a2bcb653da68196a60f99592f1b49ab2266ac784f8365d0d41d1a09c */}
+## The four Kanidm authentication methods
+
+A Kanidm account exposes several authentication methods, independent from one
+another. The goal is that no key loss locks an account.
+
+| Method | Kanidm nature | Support |
+|---|---|---|
+| **Primary YubiKey** | Passkey WebAuthn | Physical key (PIN + touch) |
+| **Backup YubiKey** | Passkey WebAuthn | Physical key stored separately |
+| **Software key** | Passkey WebAuthn | Vault (Bitwarden, KeePassXC) |
+| **Password + TOTP** | Primary credential | Safety net, never deleted |
+
+The first three are **passkeys**: Kanidm stores them side by side and offers
+them together to the browser. The fourth lives elsewhere (the primary
+credential) and cannot be overwritten by a WebAuthn ceremony.
+
+:::note[Enrollment is an admin action]
+Users do not create their own passkeys. Each web ceremony includes a choice
+(vault or physical key) where an error destroys an existing key.
+:::
+
+{/* t:p a77982213590f9a3866896150357f92a6ef31720ee0461dff55a55700597bac3 */}
+## Enrolling a key
 
 <Steps>
 
 1. Plug the user's YubiKey into the admin workstation, then:
 
    ```sh
-   just yubikey <login>          # main key (FIDO2 PIN + ~3 touches)
+   just yubikey <login>          # primary key (FIDO2 PIN + ~3 touches)
    just yubikey <login> backup   # backup key (optional)
    ```
 
@@ -59,26 +81,125 @@ removed**: without a key (lost, forgotten), everything works as before.
    ```
 
 3. That's it: session and sudo respond to the key on all of the user's
-   workstations, and encrypted hosts enroll the key into their LUKS headers
-   **themselves**, at deployment time.
+   workstations, and encrypted hosts register the key in their LUKS
+   headers **themselves**, at deployment.
 
 </Steps>
 
-:::tip[Kanidm and Vaultwarden: a web ceremony, once only]
-WebAuthn requires (by anti-phishing design) interactive registration in the
+:::tip[Kanidm and Vaultwarden: a web ceremony, only once]
+WebAuthn requires (by anti-phishing design) an interactive registration in the
 browser. `just yubikey` generates the Kanidm reset link to send to the user;
 for Vaultwarden, the key is added in the web vault (*Settings → Security →
 Two-step login → WebAuthn*).
 :::
 
-:::caution[Two pitfalls of the web ceremony]
-- **Password manager**: Bitwarden or KeePassXC intercept creation and store the
-  passkey in **their vault**, not on the physical key (symptom at login: the key
-  blinks then `NotAllowedError`). Decline their popup (« Use the browser ») or
-  temporarily disable the « Save passkeys » option in the extension.
-- **FIDO2 PIN required**: Kanidm requires user verification, so the browser
-  asks for the key's PIN in addition to the touch. Session, sudo and LUKS never
-  ask for the PIN: they remain touch-only.
+:::danger[The password manager can destroy a passkey]
+A vault extension (Bitwarden, KeePassXC) intercepts the WebAuthn ceremony and
+offers to save the passkey **in its vault**, not on the physical key. Worse: if
+the registration targets a vault item that **already** holds an access key, the
+latter is **replaced**, not supplemented. The previous software passkey
+disappears from the vault, while Kanidm still requires it.
+
+See [Passkey enrollment order](#passkey-enrollment-order) for the procedure that
+makes this accident impossible.
+:::
+
+:::caution[FIDO2 PIN required]
+Kanidm requires user verification, so the browser asks for the key's PIN in
+addition to the touch. Session, sudo and LUKS never ask for the PIN: they
+remain touch-only.
+:::
+
+{/* t:p b5453c6489959b9ecc70239539000f3b86e6be3cf35bca9c875432fac013fe20 */}
+## Passkey enrollment order
+
+The principle: **isolate each ceremony** from anything that could intercept it.
+A physical passkey is enrolled in a browser without vault extension, a software
+passkey is enrolled in the usual browser. The order ensures a safety net exists
+before each risky step.
+
+<Steps>
+
+1. **Password and TOTP first.** They live outside passkeys and cannot be
+   overwritten. As long as they exist, no error in the following steps locks
+   the user out.
+
+2. **Software key next**, in the usual browser, vault extension unlocked. When
+   the vault offers to save, choose **create a new item**, never "save in an
+   existing item".
+
+3. **Primary YubiKey**, in a **throwaway and clean** browser: without any
+   extension, interception is impossible.
+
+   ```sh
+   firefox --new-instance --profile "$(mktemp -d)" https://idm.domain.tld
+   ```
+
+   Then paste the Kanidm reset link printed by `just yubikey`.
+
+4. **Backup YubiKey**, in the same throwaway browser, another key plugged in.
+
+5. **Verify the result** before closing: the account must show three passkeys.
+   See [Passkey diagnostics](#passkey-diagnostics).
+
+</Steps>
+
+:::tip[One throwaway profile per ceremony]
+The profile created by `mktemp -d` disappears on the next system cleanup.
+Nothing to uninstall, nothing to reactivate, and no risk of forgetting to
+reactivate the vault extension afterwards.
+:::
+
+:::caution[Procedure being validated]
+This section describes an accident observed once, whose exact mechanism on the
+vault side has not yet been reproduced under controlled conditions. The
+sequence above makes it impossible regardless.
+:::
+
+{/* t:p 4803b9cd474256038251370972a2ff108d868b088abe21499be9ac99addfa53a */}
+## Passkey diagnostics
+
+:::danger[The credential status command never shows passkeys]
+`kanidm person credential status <login>` only shows the **primary credential**
+(password, TOTP, recovery codes). An account full of passkeys appears without
+any. Never conclude there are none.
+:::
+
+To actually list an account's passkeys, open an interactive credential update
+session:
+
+```sh
+kanidm person credential update <login> --name idm_admin
+```
+
+To see what the server actually sends the browser, open the console (`F12`) on
+the login page, paste this code, then click **Passkey**:
+
+```js
+const _get = navigator.credentials.get.bind(navigator.credentials);
+navigator.credentials.get = (o) => {
+  const b64 = (v) => btoa(String.fromCharCode(...new Uint8Array(v)));
+  const p = o.publicKey;
+  console.log("rpId:", p.rpId, "| uv:", p.userVerification);
+  console.log("allowCredentials:", (p.allowCredentials || []).map((c) => b64(c.id)));
+  return _get(o);
+};
+```
+
+The number of entries in `allowCredentials` is the truth: it is the exact list
+of passkeys Kanidm knows for this account.
+
+| Symptom | Likely cause |
+|---|---|
+| The browser asks for a YubiKey PIN, no vault window appears | Orphaned software passkey, missing from the vault |
+| `allowCredentials` has fewer entries than expected | A ceremony overwrote a passkey |
+| PIN is requested even though the physical key is not targeted | Kanidm does not emit `transports`, see below |
+
+:::note[Spurious PIN prompt]
+Kanidm does not fill in the `transports` of its passkeys. Without this
+indication, the browser probes **all** transports, including USB, and asks for
+the PIN of the plugged YubiKey even when the targeted passkey is software.
+Workaround: unplug the key.
 :::
 
 {/* t:p f3a81a37690c7a0b53b9fff99e04621b5b386bb92666e2115c57a24cbf773bcc */}

@@ -79,7 +79,31 @@ user -> 2fa {
 }
 ```
 
-{/* t:p 633bcc9c5acdee7fda3ca519d269d248d6acdd2f1281c17ffaa49ac458a6510f */}
+{/* t:p 22e8204a73e683a74556227d63c8b1e7c484df1b1b04cd899711f013483251c8 */}
+## Mes moyens de connexion
+
+Mon compte accepte **quatre** moyens de me connecter aux services du cloud. Ils
+coexistent&nbsp;: si l'un devient indisponible, les autres restent valables.
+
+| Moyen | Ce que je fais | Quand |
+|---|---|---|
+| **YubiKey principale** | Code PIN de la clé, puis je la touche | Au quotidien |
+| **YubiKey de secours** | Idem, clé rangée en lieu sûr | Si la principale est perdue |
+| **Clé d'accès du coffre-fort** | Je déverrouille le coffre, je valide | Sans YubiKey sous la main |
+| **Mot de passe + code 2FA** | Je tape le mot de passe, puis le code | Filet de sécurité |
+
+:::tip[Je n'enregistre rien moi-même]
+L'enregistrement des clés est fait **avec mon administrateur**. Je n'ai jamais à
+créer une clé d'accès seul, ni à décider où elle se range.
+:::
+
+:::caution[Si la mauvaise fenêtre s'ouvre]
+Je voulais utiliser ma YubiKey et c'est le coffre-fort qui s'ouvre&nbsp;? Ou
+l'inverse&nbsp;? **Je refuse**, et je préviens mon administrateur. Valider la
+mauvaise fenêtre peut remplacer une clé existante par une autre.
+:::
+
+{/* t:p 27c4d3cabeda52eb998045a802e3a953a4436c1d31d369e12251d25e9748c009 */}
 ## Utiliser ma YubiKey
 
 Ma YubiKey est une clé physique qui remplace le mot de passe dans la plupart
@@ -89,15 +113,16 @@ des situations :
   diode clignote → le disque se déverrouille tout seul, sans passphrase.
 - **Connexion à ma session** : je touche la YubiKey sur l'écran de
   connexion au lieu de taper mon mot de passe.
-- **Kanidm (SSO)** : mon administrateur me transmet un lien
-  d'enregistrement. Je le visite une fois, je crée ma passkey avec la YubiKey
-  → ensuite, je touche la clé pour me connecter à tous les services du cloud.
+- **Kanidm (SSO)** : l'enregistrement se fait une fois, avec mon
+  administrateur. Ensuite, je saisis le code PIN de la clé et je la touche pour
+  me connecter à tous les services du cloud.
 
-:::note[Qu'est-ce qu'une clé ?]
-Une clé numérique permet de s’identifier sans avoir à utiliser de mot de passe.
-Elle est située dans mon coffre-fort.
-Quand une application en a besoin, Bitwarden s’ouvre automatiquement.
-C’est le moyen **LE PLUS SIMPLE ET SÉCURISÉ** pour m’authentifier.
+:::note[Qu'est-ce qu'une clé d'accès ?]
+Une clé d'accès permet de s'identifier **sans mot de passe**. Chaque clé est
+rangée à **un seul endroit**&nbsp;: soit dans mon coffre-fort, soit sur ma
+YubiKey. C'est ce rangement qui décide de ce qui s'ouvre au moment de me
+connecter&nbsp;: la fenêtre du coffre-fort, ou la demande de code PIN de ma clé
+physique.
 :::
 
 :::tip[YubiKey = le plus simple]
