@@ -37,49 +37,110 @@ Roles are derived from each host's profile:
 - **Gateway**: *subnet router* + *exit node*: publishes its zone's subnet.
 - **Other nodes**: Tailscale clients.
 
-{/* t:p a7a6e891fcff36bb7941a36654555dfe94086ed3ed5d7b83e688ba694f1e06db */}
-## Registering a gateway
+{/* t:p 8613f51a270bd20bb99e7e1edc5742d208e04db4770be256123ea4a3f11e5638 */}
+## Prepare the tailnet (once)
+
+All machines join the mesh via a shared **Headscale attach user** (`nix`). It is created **once** for the entire network; if it already exists, skip this step.
+
+```sh
+just enter hcs
+sudo headscale users list        # already present? → nothing to do
+sudo headscale users create nix --display-name "Nix Admin" --email "nix@domain.tld"
+```
+
+:::caution[Not modifiable]
+A user's email and display name are **not** modifiable after creation.
+:::
+
+{/* t:p 7024a1a0eb07db8310341bcec3137b7dc104f32f44464887045be017beef3ba4 */}
+## Register a gateway
+
+The `gateway` profile already makes the gateway a **Tailscale client**: at
+deployment, the `tailscaled-autoconnect` service registers it automatically on
+Headscale and announces its zone's subnet. Two manual steps remain:
+provide an **attach key** in sops (before deployment) and **approve the
+routes** on the HCS (after).
 
 <Steps>
 
-1. **On the HCS: create the attachment user and a key**
+1. **On the HCS: generate an attach key**
 
    ```sh
    just enter hcs
-   sudo headscale users create nix --display-name "Nix Admin" --email "nix@domain.tld"
-   sudo headscale preauthkeys create --reusable --expiration "1d" --user 1
+   sudo headscale users list                                    # ID of the nix user
+   sudo headscale preauthkeys create --reusable --expiration 1h --user <id>
    ```
 
-   :::caution[Not modifiable]
-   A user's email and display name are **not** modifiable after creation.
+   Copy the displayed key (`tskey-...`). It only needs to live long enough for the
+   deployment.
+
+2. **Store the key in secrets**
+
+   ```sh
+   just sops        # opens usr/secrets/secrets.yaml
+   ```
+
+   Set the key under `tailscale/authKey`:
+
+   ```yaml
+   # usr/secrets/secrets.yaml
+   tailscale:
+       authKey: "tskey-..."
+   ```
+
+   :::caution[Before installation]
+   Place this key **before** the first `just apply` (or `just full-install`) of the
+   gateway: without the `tailscale/authKey` secret, sops activation will fail.
    :::
 
-2. **Fill in the key in secrets**
+3. **Deploy the gateway**
 
    ```sh
-   just sops      # edits usr/secrets/secrets.yaml → tailscale/authKey key
+   just apply gw
    ```
 
-   The gateway then registers automatically (on the next `just apply`).
-
-3. **On the gateway: advertise the subnet**
+   The gateway registers itself automatically. Internally, the daemon runs:
 
    ```sh
-   sudo tailscale set --advertise-routes 10.0.0.0/16 --advertise-exit-node \
-     --accept-routes --accept-dns=false --ssh --snat-subnet-routes=false
+   tailscale up \
+     --login-server https://headscale.domain.tld \
+     --auth-key file:/run/secrets/tailscale/authKey \
+     --advertise-routes 10.0.0.0/16 --accept-routes --reset
    ```
 
-   :::caution[Manual for now]
-   These options are not yet set at startup: they must be applied once
-   with `tailscale set`.
+   :::note[Nothing to type manually]
+   There is no need to run `tailscale up` or `tailscale set` yourself: the
+   `tailscaled-autoconnect` service applies these options (login-server, key,
+   routes) at every startup. If registration did not happen (HCS unreachable at
+   deployment time), the [watchdog](#auto-repair-of-the-client) retries it; you can
+   also force it with `sudo systemctl restart tailscaled-autoconnect`.
    :::
 
-4. **On the HCS: approve the routes**
+4. **On the HCS: approve the announced routes**
 
    ```sh
-   sudo headscale nodes list                       # find the gateway ID
+   sudo headscale nodes list                                    # ID of the gateway
    sudo headscale nodes approve-routes --identifier <id> --routes 10.0.0.0/16
    ```
+
+5. **Declare the gateway's tailnet IP**
+
+   At registration, Headscale assigns the gateway a tailnet IP
+   (`100.64.x.y`), visible in `headscale nodes list`. Record it in
+   `etc/config.yaml`: other nodes reach the zone (internal DNS, replication,
+   monitoring) via this address.
+
+   ```yaml
+   # etc/config.yaml
+   zones:
+     maison:
+       gateway:
+         vpn:
+           ipv4: "100.64.0.8"
+   ```
+
+   Then regenerate and redeploy the affected nodes (the HCS and the zone's
+   clients) to propagate the address.
 
 </Steps>
 

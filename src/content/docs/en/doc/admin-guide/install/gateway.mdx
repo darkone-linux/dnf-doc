@@ -64,35 +64,57 @@ VPN client. Declared services (homepage, adguardhome…) are configured
 automatically. See [Network](/en/doc/admin-guide/understand/network/).
 :::
 
-{/* t:p c5ce7b18406eacfc6a39db8c2c6698ef3fc4b2c0fbe4c93962958de0e52c4afd */}
+{/* t:p d364e7e8a4fbec956a763e99cf5af6ee47be8b043ff829702e6c0eec24cc8b6e */}
 ## Install the gateway
 
-Installation is often done **remotely**: someone on-site prepares the machine,
-the administrator installs over SSH.
+Installation is often done **remotely**: a person on site prepares the
+machine, the administrator installs via SSH.
 
 <Steps>
 
-1. **Prepare the gateway** (on-site)
+1. **Prepare the gateway** (on site)
 
-   1. Connect the gateway to the ISP box.
-   2. Boot from the USB drive (`just build-iso` image).
+   1. Plug the gateway into the box.
+   2. Boot from the USB key (`just build-iso` image).
    3. Note the gateway's IP address.
-   4. Forward port 22 from the ISP box to the gateway.
+   4. Redirect port 22 of the box to the gateway.
 
-   :::note[Why forward port 22?]
-   It allows SSH access during installation. The USB drive only accepts
-   authentication keys (no password). The forwarding can be removed afterwards.
+   :::note[Why redirect port 22?]
+   It provides SSH access during installation. The USB key only accepts
+   authentication keys (no password). The redirect can be removed
+   afterward.
    :::
 
 2. **Install** (administrator)
 
+   A single command chains disk formatting, hardware configuration,
+   deployment and cleanup&nbsp;:
+
    ```sh
-   just install gw nix <ip>     # nixos-anywhere + disko
-   just configure gw            # hardware + infrastructure key
-   just apply-verbose gw        # first deployment
+   just full-install gw nixos <ip>
    ```
 
+   - `gw`: hostname declared in `etc/config.yaml`.
+   - `nixos`: user of the live USB key (DNF image).
+   - `<ip>`: address noted in the previous step.
+
+   :::note[The IP address may change]
+   After the first reboot, the gateway may fall back to DHCP on a
+   different address. While the script waits for it to return, you can
+   **type the new IP** to continue without restarting everything.
+   :::
+
 </Steps>
+
+{/* t:p 01d1c74ecd46a9bb5299e084fe813b35adde90d4685c6c6272ac2edb72f8bbe0 */}
+## Register the gateway on the VPN
+
+A gateway is a **Tailscale client**: it advertises its zone's subnet in
+the [Headscale](/en/doc/admin-guide/operate/vpn/) mesh. Until it is
+registered on the tailnet, other zones cannot see it.
+
+Follow the dedicated procedure: [Register a
+gateway](/en/doc/admin-guide/operate/vpn/#administration).
 
 {/* t:p 61db6fbe1ce1034ab649b1b95dfbf897a78af5208463a659932ba8a06f78ef1f */}
 ## Connecting other machines
