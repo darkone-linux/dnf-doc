@@ -37,49 +37,112 @@ Les rôles se déduisent du profil de chaque hôte :
 - **Passerelle** : *subnet router* + *exit node* : publie le sous-réseau de sa zone.
 - **Autres nœuds** : clients Tailscale.
 
-{/* t:p a7a6e891fcff36bb7941a36654555dfe94086ed3ed5d7b83e688ba694f1e06db */}
+{/* t:p 8613f51a270bd20bb99e7e1edc5742d208e04db4770be256123ea4a3f11e5638 */}
+## Préparer le tailnet (une fois)
+
+Toutes les machines rejoignent le maillage via un **utilisateur Headscale
+d'attache** partagé (`nix`). Il se crée **une seule fois** pour tout le réseau ;
+s'il existe déjà, passer cette étape.
+
+```sh
+just enter hcs
+sudo headscale users list        # déjà présent ? → rien à faire
+sudo headscale users create nix --display-name "Nix Admin" --email "nix@domain.tld"
+```
+
+:::caution[Non modifiable]
+L'e-mail et le nom affiché d'un utilisateur ne sont **pas** modifiables après création.
+:::
+
+{/* t:p 7024a1a0eb07db8310341bcec3137b7dc104f32f44464887045be017beef3ba4 */}
 ## Enregistrer une passerelle
+
+Le profil `gateway` fait déjà de la passerelle un **client Tailscale** : au
+déploiement, le service `tailscaled-autoconnect` l'enregistre tout seul sur
+Headscale et annonce le sous-réseau de sa zone. Il reste deux gestes manuels :
+fournir une **clé d'attache** dans sops (avant le déploiement) et **approuver les
+routes** sur le HCS (après).
 
 <Steps>
 
-1. **Sur le HCS : créer l'utilisateur d'attache et une clé**
+1. **Sur le HCS : générer une clé d'attache**
 
    ```sh
    just enter hcs
-   sudo headscale users create nix --display-name "Nix Admin" --email "nix@domain.tld"
-   sudo headscale preauthkeys create --reusable --expiration "1d" --user 1
+   sudo headscale users list                                    # ID de l'utilisateur nix
+   sudo headscale preauthkeys create --reusable --expiration 1h --user <id>
    ```
 
-   :::caution[Non modifiable]
-   L'e-mail et le nom affiché d'un utilisateur ne sont **pas** modifiables après création.
+   Copier la clé affichée (`tskey-...`). Elle n'a besoin de vivre que le temps du
+   déploiement.
+
+2. **Déposer la clé dans les secrets**
+
+   ```sh
+   just sops        # ouvre usr/secrets/secrets.yaml
+   ```
+
+   Renseigner la clé sous `tailscale/authKey` :
+
+   ```yaml
+   # usr/secrets/secrets.yaml
+   tailscale:
+       authKey: "tskey-..."
+   ```
+
+   :::caution[Avant l'installation]
+   Poser cette clé **avant** le premier `just apply` (ou `just full-install`) de la
+   passerelle : sans le secret `tailscale/authKey`, l'activation sops échoue.
    :::
 
-2. **Renseigner la clé dans les secrets**
+3. **Déployer la passerelle**
 
    ```sh
-   just sops      # édite usr/secrets/secrets.yaml → clé tailscale/authKey
+   just apply gw
    ```
 
-   La passerelle s'enregistre ensuite automatiquement (au prochain `just apply`).
-
-3. **Sur la passerelle : annoncer le sous-réseau**
+   La passerelle s'enregistre automatiquement. En interne, le démon exécute :
 
    ```sh
-   sudo tailscale set --advertise-routes 10.0.0.0/16 --advertise-exit-node \
-     --accept-routes --accept-dns=false --ssh --snat-subnet-routes=false
+   tailscale up \
+     --login-server https://headscale.domain.tld \
+     --auth-key file:/run/secrets/tailscale/authKey \
+     --advertise-routes 10.0.0.0/16 --accept-routes --reset
    ```
 
-   :::caution[Manuel pour l'instant]
-   Ces options ne sont pas encore posées au démarrage : il faut les appliquer une
-   fois avec `tailscale set`.
+   :::note[Rien à taper à la main]
+   Inutile de lancer `tailscale up` ou `tailscale set` soi-même : le service
+   `tailscaled-autoconnect` applique ces options (login-server, clé, routes) à
+   chaque démarrage. Si l'enregistrement n'a pas eu lieu (HCS injoignable au
+   déploiement), le [watchdog](#auto-réparation-du-client) le rejoue&nbsp;; on peut
+   aussi forcer avec `sudo systemctl restart tailscaled-autoconnect`.
    :::
 
-4. **Sur le HCS : approuver les routes**
+4. **Sur le HCS : approuver les routes annoncées**
 
    ```sh
-   sudo headscale nodes list                       # repérer l'ID de la passerelle
+   sudo headscale nodes list                                    # ID de la passerelle
    sudo headscale nodes approve-routes --identifier <id> --routes 10.0.0.0/16
    ```
+
+5. **Déclarer l'IP tailnet de la passerelle**
+
+   À l'enregistrement, Headscale attribue à la passerelle une IP tailnet
+   (`100.64.x.y`), visible dans `headscale nodes list`. La reporter dans
+   `etc/config.yaml`&nbsp;: les autres nœuds joignent la zone (DNS interne,
+   réplication, supervision) par cette adresse.
+
+   ```yaml
+   # etc/config.yaml
+   zones:
+     maison:
+       gateway:
+         vpn:
+           ipv4: "100.64.0.8"
+   ```
+
+   Puis régénérer et redéployer les nœuds concernés (le HCS et les clients de la
+   zone) pour propager l'adresse.
 
 </Steps>
 

@@ -68,7 +68,7 @@ client VPN. Les services déclarés (homepage, adguardhome…) sont configurés 
 seuls. Voir [Réseau](/fr/doc/admin-guide/understand/network/).
 :::
 
-{/* t:p c5ce7b18406eacfc6a39db8c2c6698ef3fc4b2c0fbe4c93962958de0e52c4afd */}
+{/* t:p d364e7e8a4fbec956a763e99cf5af6ee47be8b043ff829702e6c0eec24cc8b6e */}
 ## Installer la passerelle
 
 L'installation se fait souvent **à distance** : une personne sur place prépare la
@@ -91,13 +91,34 @@ machine, l'administrateur installe par SSH.
 
 2. **Installer** (administrateur)
 
+   Une seule commande enchaîne le formatage disque, la configuration matérielle,
+   le déploiement et le nettoyage&nbsp;:
+
    ```sh
-   just install gw nix <ip>     # nixos-anywhere + disko
-   just configure gw            # matériel + clé d'infra
-   just apply-verbose gw        # premier déploiement
+   just full-install gw nixos <ip>
    ```
 
+   - `gw` : nom d'hôte déclaré dans `etc/config.yaml`.
+   - `nixos` : utilisateur de la clé USB live (image DNF).
+   - `<ip>` : adresse notée à l'étape précédente.
+
+   :::note[L'adresse IP peut changer]
+   Après le premier redémarrage, la passerelle peut repasser en DHCP sur une
+   autre adresse. Pendant que le script attend son retour, on peut **saisir la
+   nouvelle IP au clavier** pour continuer sans tout relancer.
+   :::
+
 </Steps>
+
+{/* t:p 01d1c74ecd46a9bb5299e084fe813b35adde90d4685c6c6272ac2edb72f8bbe0 */}
+## Enregistrer la passerelle sur le VPN
+
+Une passerelle est un **client Tailscale** : elle publie le sous-réseau de sa
+zone dans le maillage [Headscale](/fr/doc/admin-guide/operate/vpn/). Tant qu'elle
+n'est pas enregistrée sur le tailnet, les autres zones ne la voient pas.
+
+Suivre la procédure dédiée : [Enregistrer une
+passerelle](/fr/doc/admin-guide/operate/vpn/#enregistrer-une-passerelle).
 
 {/* t:p 61db6fbe1ce1034ab649b1b95dfbf897a78af5208463a659932ba8a06f78ef1f */}
 ## Brancher d'autres machines

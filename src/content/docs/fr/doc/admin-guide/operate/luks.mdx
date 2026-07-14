@@ -1,0 +1,167 @@
+---
+title: Chiffrement des disques (LUKS)
+sidebar:
+  label: LUKS
+  order: 2.7
+lang: fr
+---
+
+Un hôte chiffré (volume LUKS2 déclaré dans sa configuration disko) protège ses
+données en cas de vol ou de mise au rebut, mais réclame une passphrase à chaque
+démarrage. DNF industrialise ce point de friction avec deux garanties :
+
+- **plusieurs moyens de déverrouillage coexistent** en permanence — la perte
+  d'un moyen (passphrase oubliée, YubiKey égarée) n'enferme jamais dehors ;
+- **le prompt du boot se répond à distance**, depuis le poste
+  d'administration, sans écran ni clavier branchés sur l'hôte.
+
+## Les moyens de déverrouillage
+
+Chaque moyen occupe son propre keyslot dans l'en-tête LUKS2. Tous sont valables
+en même temps, sur chaque volume chiffré de l'hôte.
+
+| Moyen | Où il vit | Rôle |
+|---|---|---|
+| **Passphrase d'installation** | Mémoire de l'admin (saisie à l'install disko) | Filet ultime, **jamais touchée** par DNF |
+| **Passphrase partagée** | sops → `luks-passphrase` | Une seule pour tout le parc ; autorise la gestion des keyslots |
+| **Passphrase par hôte** | sops → `luks/<hôte>/passphrase` | À confier à l'utilisateur de la machine sans exposer le parc |
+| **YubiKeys FIDO2** | Dérivé de la clé physique | Toucher la clé au boot, rien à taper |
+
+:::note[Rien à déclarer dans la configuration Nix]
+Le module `darkone.system.luks` est actif par défaut mais **totalement inerte**
+tant que l'hôte n'apparaît pas dans le manifeste `usr/secrets/luks.json` **et**
+ne déclare pas de volume LUKS dans son disko. Les hôtes chiffrés existants ne
+bougent pas tant que `just luks <hôte>` n'a pas été lancé.
+:::
+
+## Provisionner un hôte
+
+```sh
+just luks <hôte>            # provisionne (ou converge) le chiffrement
+just luks <hôte> passwd     # fait tourner la passphrase par hôte
+just luks <hôte> '' <ip>    # cible une IP explicite (hôte pas encore résolu)
+```
+
+La recette est **idempotente** : chaque exécution converge et ne demande que ce
+qui manque. Elle est d'ailleurs appelée automatiquement par
+`just configure <hôte>` (sans volume LUKS dans le disko, c'est un no-op
+journalisé). Dans l'ordre :
+
+1. crée la **passphrase partagée** dans sops si absente (demandée une seule
+   fois pour tout le parc) ;
+2. crée la **passphrase par hôte** dans sops si absente (saisie vide = valeur
+   aléatoire forte, l'hôte reste déverrouillable par la partagée et les
+   YubiKeys) ;
+3. inscrit l'hôte dans le **manifeste public** `usr/secrets/luks.json`
+   (versionné en clair : il ne contient aucun secret) — c'est cette entrée qui
+   active le module ;
+4. génère sur la cible la **clé d'hôte SSH de l'initrd**
+   (`/var/lib/luks-initrd/ssh_host_ed25519_key`, persistante) ;
+5. sur une **passerelle**, relève l'**IP WAN** courante dans le manifeste
+   (repli de `just enter`, voir plus bas) — relancer la recette si le
+   fournisseur d'accès renumérote ;
+6. si **aucune passphrase gérée** ne déverrouille encore le volume (hôte
+   installé avec une autre passphrase), demande la passphrase d'installation
+   une fois et enrôle la partagée avec.
+
+Puis committer et déployer :
+
+```sh
+git add usr/secrets/luks.json
+just commit "system(luks): <hôte>"
+just apply <hôte>
+```
+
+Au déploiement, deux services idempotents convergent l'en-tête LUKS à chaque
+apply : `luks-passphrase-sync` (passphrases partagée et par hôte) et
+`yubikey-luks-enroll` (une entrée FIDO2 par YubiKey enrôlée sur le parc, voir
+[Authentification forte](/fr/doc/admin-guide/operate/yubikey/)).
+
+:::caution[Provisionner avant de déployer]
+La clé d'hôte de l'initrd doit exister sur la cible **avant** l'apply : les
+secrets d'initrd sont embarqués à l'installation du chargeur d'amorçage. C'est
+`just luks <hôte>` qui la crée via SSH — ne jamais ajouter un hôte à
+`luks.json` à la main. Si l'hôte était éteint au moment du provisionnement,
+relancer la recette une fois la machine allumée, avant tout apply.
+:::
+
+:::caution[Réinstallation d'un hôte provisionné]
+Une réinstallation avec nixos-anywhere doit soit déposer la clé d'initrd sous
+`/mnt` (`--extra-files`), soit retirer d'abord l'hôte du manifeste, puis
+relancer `just luks <hôte>` après l'installation.
+:::
+
+## Rotation des passphrases
+
+- **Par hôte** : `just luks <hôte> passwd`, puis commit et apply. L'ancien
+  keyslot est supprimé et remplacé au déploiement suivant.
+- **Partagée** : modifier `luks-passphrase` via `just sops`, puis apply sur
+  tout le parc — chaque hôte chiffré fait tourner son keyslot au passage.
+
+Le service de synchronisation détecte les changements grâce à un registre
+local (`/var/lib/luks-passphrase/ledger`) : une valeur sops modifiée tue
+l'ancien slot et enrôle la nouvelle, sans jamais toucher au keyslot
+d'installation.
+
+## Déverrouiller au démarrage
+
+Sur place, deux gestes possibles devant la console :
+
+- **YubiKey enrôlée branchée** : toucher la clé quand la diode clignote
+  (`fido2-device=auto`), rien à taper ;
+- **au clavier** : taper la passphrase par hôte, la partagée, ou celle
+  d'installation.
+
+À distance, l'initrd démarre un **sshd dédié sur le port 2222**, avec sa
+propre clé d'hôte persistante, accessible uniquement avec la clé de
+déploiement `nix`. Le point d'entrée reste le même qu'en temps normal :
+
+```sh
+just reboot <hôte>     # ou toute autre cause de redémarrage
+just enter <hôte>      # détecte l'attente en initrd et présente le prompt
+```
+
+Quand le port 22 ne répond pas, `just enter` sonde le port 2222 sur l'IP
+explicite (si fournie), le nom d'hôte, puis l'**IP WAN enregistrée dans le
+manifeste**, et répond au prompt LUKS via `systemd-tty-ask-password-agent`.
+La passphrase saisie, le démarrage continue et le port 22 revient.
+
+:::note[Pourquoi l'IP WAN ?]
+Le VPN d'une zone meurt avec sa passerelle : quand celle-ci attend sa
+passphrase, seule sa patte WAN est joignable. Son initrd réplique d'ailleurs
+l'adressage de production (IP statique sur le pont `lan0`, DHCP côté WAN),
+puisqu'elle est elle-même le serveur DHCP que son initrd attendrait sinon.
+Les autres hôtes font un simple DHCP sur leurs interfaces filaires.
+:::
+
+:::note[Portables en Wi-Fi]
+Pas de réseau en initrd sans câble : un portable chiffré se déverrouille à la
+console (passphrase ou YubiKey), le déverrouillage à distance ne s'applique
+pas.
+:::
+
+## Sous le capot
+
+| Emplacement | Contenu | Statut |
+|---|---|---|
+| `usr/secrets/luks.json` | Manifeste des hôtes provisionnés + IP WAN des passerelles | Public, versionné |
+| `secrets.yaml` → `luks-passphrase` | Passphrase partagée du parc | Chiffré sops |
+| `secrets.yaml` → `luks/<hôte>/passphrase` | Passphrase par hôte | Chiffré sops |
+| `/var/lib/luks-initrd/` (cible) | Clé d'hôte SSH de l'initrd | Persistant, hors dépôt |
+| `/var/lib/luks-passphrase/ledger` (cible) | Registre des keyslots gérés (détection des rotations) | Persistant, hors dépôt |
+
+Le module expose deux options : `darkone.system.luks.enable` (défaut `true`)
+et `darkone.system.luks.sshPort` (défaut `2222`).
+
+:::danger[Budget de keyslots]
+Un en-tête LUKS2 contient au plus **32 keyslots**. Chaque YubiKey enrôlée en
+consomme un sur **chaque** hôte chiffré (politique de parc), en plus des
+passphrases d'installation, partagée et par hôte. Le module avertit quand le
+total projeté approche de la limite.
+:::
+
+## Voir aussi
+
+- [Authentification forte (YubiKey)](/fr/doc/admin-guide/operate/yubikey/) : l'enrôlement des clés physiques, dont le volet LUKS FIDO2
+- [Gestion des secrets](/fr/doc/admin-guide/operate/secrets/) : sops, clés age et rotation
+- [Le Justfile](/fr/doc/admin-guide/operate/justfile/) : la référence des recettes `luks`, `enter` et `configure`

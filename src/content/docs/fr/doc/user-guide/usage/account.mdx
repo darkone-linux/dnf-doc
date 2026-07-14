@@ -130,6 +130,29 @@ Une fois enregistrée, je n'ai plus qu'à toucher ma clé. Pas de mot de passe �
 retenir ni de code à recopier.
 :::
 
+### Démarrer mon ordinateur chiffré
+
+Si mon disque est chiffré, l'ordinateur demande à être déverrouillé au
+démarrage, **avant** l'écran de connexion. C'est normal : tant que je ne l'ai
+pas déverrouillé, son contenu est illisible — même en cas de vol.
+
+- **Avec ma YubiKey** : je la branche avant d'allumer (ou dès que la demande
+  apparaît), puis je la touche quand sa diode clignote. Le disque se
+  déverrouille tout seul, rien à taper.
+- **Sans la clé** : je tape la phrase secrète que mon administrateur m'a
+  remise, puis <kbd>Entrée</kbd>. Les caractères ne s'affichent pas pendant la
+  saisie, c'est voulu.
+- **Rien ne fonctionne ?** Je peux me tromper et réessayer sans risque. Si je
+  reste bloqué, je contacte mon administrateur : il peut déverrouiller ma
+  machine **à distance**, sans se déplacer.
+
+:::note[Phrase secrète ≠ mot de passe]
+La phrase secrète du démarrage déverrouille le **disque** ; mon mot de passe
+ouvre ensuite **ma session**. Ce sont deux choses différentes, et la YubiKey
+peut remplacer les deux : un toucher au démarrage, un toucher à l'écran de
+connexion.
+:::
+
 {/* t:p 783930fb5b1ca9dd075b6c128f9943326417009e147f2d769cf22a9af5662025 */}
 ## Ajouter un 2ème facteur
 

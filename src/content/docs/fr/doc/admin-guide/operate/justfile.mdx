@@ -402,7 +402,8 @@ just install-key myusbhost
 {/* t:p 5e1c2c42a2e22be19db0111bbc224163f55c65fcbf098ae941d22d1bef570fe4 */}
 ### ✳️ `configure <hôte>`
 
-Enchaîne `copy-id` → `copy-hw` → `push-key`.
+Enchaîne `copy-id` → `copy-hw` → `push-key` → `luks` (ce dernier ne fait rien
+sur un hôte non chiffré).
 
 ```sh
 just configure myserver
@@ -438,6 +439,23 @@ Transfère la clé age `/etc/sops/age/infra.key` vers l'hôte cible.
 
 ```sh
 just push-key myserver
+```
+
+### ✳️ `luks <hôte> [action] [ip]`
+
+Provisionne le chiffrement d'un hôte : passphrases partagée et par hôte dans
+sops, manifeste `usr/secrets/luks.json`, clé SSH de l'initrd sur la cible,
+IP WAN des passerelles. `action=passwd` fait tourner la passphrase par hôte.
+Voir [Chiffrement des disques (LUKS)](/fr/doc/admin-guide/operate/luks/).
+
+:::tip[Idempotent]
+Appelée par `just configure` ; sans volume LUKS dans le disko de l'hôte,
+c'est un no-op journalisé.
+:::
+
+```sh
+just luks myserver
+just luks myserver passwd
 ```
 
 {/* t:p 1d7625ca4b5468c8c5ff9610a5f8b1838f3633c930ef8f3ac52bb58c17360814 */}
@@ -532,7 +550,11 @@ redémarrage, nettoyage et réparation du boot.
 {/* t:p 957b50ccd05ff2244bb5e360e6987bc526689d2de614c6d2042b3d678d40fd3d */}
 ### ✳️ `enter <hôte>` / `e` ⭐
 
-Ouvre une session SSH interactive en tant que `nix@<hôte>`.
+Ouvre une session SSH interactive en tant que `nix@<hôte>`. Si l'hôte attend
+sa passphrase LUKS au démarrage (port 22 fermé), bascule sur le sshd de son
+initrd (port 2222, avec repli sur l'IP WAN du manifeste pour une passerelle)
+et présente la demande de passphrase. Voir
+[Chiffrement des disques (LUKS)](/fr/doc/admin-guide/operate/luks/).
 
 ```sh
 just enter myserver

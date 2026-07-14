@@ -239,7 +239,9 @@ visé.
 - **LUKS** : le secret dérivé (`HMAC(clé, sel)`) n'est calculable qu'avec la
   clé physique. Chaque hôte chiffré l'inscrit dans son en-tête LUKS (keyslot +
   token `systemd-fido2`, le format exact de `systemd-cryptenroll`) via un
-  service idempotent, et retire ceux qui ne sont plus déclarés.
+  service idempotent, et retire ceux qui ne sont plus déclarés. La politique
+  complète des passphrases et le déverrouillage à distance sont décrits dans
+  [Chiffrement des disques (LUKS)](/fr/doc/admin-guide/operate/luks/).
 
 :::caution[Origine fixe]
 Changer `darkone.system.yubikey.origin` (ou le domaine du réseau) invalide
