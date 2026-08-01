@@ -112,7 +112,7 @@ routes** on the HCS (after).
    There is no need to run `tailscale up` or `tailscale set` yourself: the
    `tailscaled-autoconnect` service applies these options (login-server, key,
    routes) at every startup. If registration did not happen (HCS unreachable at
-   deployment time), the [watchdog](#auto-repair-of-the-client) retries it; you can
+   deployment time), the [watchdog](#client-self-healing) retries it; you can
    also force it with `sudo systemctl restart tailscaled-autoconnect`.
    :::
 
