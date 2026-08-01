@@ -351,32 +351,37 @@ just fixtures check
 
 Installing a new host follows a precise sequence.
 
-{/* t:p d14baec5b0376679bae1d0a0a003046361405791774a8844fdc1752ef074921c */}
+{/* t:p 6fe6c77be19f614937a9263e242ac5f8bbfec11c34aa9d2ea7b130bbbcc6da7a */}
 ### ✳️ `install <host> [user] [ip]`
 
-Formats disks via **disko** and installs NixOS via **nixos-anywhere**.
+Formats the disks via **disko** and installs NixOS via **nixos-anywhere**.
 
 :::danger[Destructive]
-All data on the target host is wiped. Confirmation is required before execution.
+All data on the target host is erased. Confirmation is required before running.
 :::
 
-:::note[Requirements]
-The host must have a disko configuration in `etc/config.yaml` and a `usr/machines/<host>/default.nix` directory.
+:::note[Required configuration]
+The host must have a disko configuration in `etc/config.yaml` and a `usr/machines/<host>/default.nix` folder.
 :::
+
+The `ip` argument defaults to `auto`: the address is computed the same way as for `full-install`, no need to read it off.
 
 ```sh
 just install myserver
 just install myserver nixos 10.0.0.5     # custom IP
-just install myserver do=test             # VM test only
+just install myserver do=test             # test VM only
 ```
 
-{/* t:p ac3b2fd2d96f8a080081e401177db29d977c3da3fc6a0fcfd8cfd58df4d1ad33 */}
+{/* t:p 32db8998f99d6b1f4c88d9067e206ecf74a13a0c749b6cbef30e4ac80c9d51ac */}
 ### ✳️ `full-install <host> [user] [ip]` ⭐
 
-Full chain: `install` + wait reboot + `configure` + `apply` + `gc` + reboot.
+Full chain: `install` + wait for reboot + `configure` + `apply` + `gc` + reboot.
+
+The address is computed automatically: the host name in its own zone, or the reserved roaming address if it is connected elsewhere. See [Machines outside their zone](/en/doc/admin-guide/understand/network/#machines-outside-their-zone).
 
 ```sh
 just full-install myserver
+just full-install myserver nixos 10.0.3.42   # forced address
 ```
 
 {/* t:p c35851dd84a1ba4918b713d16e21603553a1b6ba8b087a32612bc98d8c64de97 */}
@@ -388,10 +393,12 @@ Formats a USB device with disko and installs NixOS on it.
 just install-key myusbhost
 ```
 
-{/* t:p 5e1c2c42a2e22be19db0111bbc224163f55c65fcbf098ae941d22d1bef570fe4 */}
-### ✳️ `configure <host>`
+{/* t:p f2604796613946cc8f0264ada1a3c717f8f01e8d335c9d12922d88de0e7fd415 */}
+### ✳️ `configure <host> [ip]`
 
-Runs `copy-id` → `copy-hw` → `push-key`.
+Chains `copy-id` → `copy-hw` → `push-key` → `luks` (the last one does nothing on an unencrypted host).
+
+The address is resolved once and passed to the whole chain. If the host is connected outside its zone, the SSH redirect is set up on the fly so that the following `apply` can reach it: run `just roaming-clear <host>` once the machine is back home.
 
 ```sh
 just configure myserver
@@ -427,6 +434,42 @@ Transfers the age key `/etc/sops/age/infra.key` to the target host.
 
 ```sh
 just push-key myserver
+```
+
+{/* t:p e2077d65cbf0b2b4af3bcfcb2e76080b031c99761e15c7ab0ecb3e27b693f552 */}
+### ✳️ `luks <host> [action] [ip]`
+
+Provisions a host's encryption: shared and per-host passphrases in sops, `usr/secrets/luks.json` manifest, initrd SSH key on the target, WAN IP of the gateways. `action=passwd` rotates the per-host passphrase. See [Disk encryption (LUKS)](/en/doc/admin-guide/operate/luks/).
+
+:::tip[Idempotent]
+Called by `just configure`; without a LUKS volume in the host's disko config, it's a logged no-op.
+:::
+
+```sh
+just luks myserver
+just luks myserver passwd
+```
+
+{/* t:p 40874d9bfd781dfb02423530d635f069985c211874beaaa18c75567a4056b453 */}
+### ✳️ `roaming [host] [ip]`
+
+Redirects SSH to a host connected outside its zone, for the duration of the installation. Colmena addresses a node by its name, which refers to its original address; this redirect points it to where the machine actually is.
+
+Set up by `just configure` when needed, removed by `full-install` at the end of the run. Without arguments, displays the current redirects.
+
+```sh
+just roaming             # display
+just roaming myserver    # redirect (computed address)
+```
+
+{/* t:p cbad707b656990002f7ba9d6b5ef822db230d05f099c0bfc0080cf0d7c9bfe99 */}
+### ✳️ `roaming-clear [host]`
+
+Removes a host's redirect, or all of them if none is given.
+
+```sh
+just roaming-clear myserver
+just roaming-clear
 ```
 
 {/* t:p 1d7625ca4b5468c8c5ff9610a5f8b1838f3633c930ef8f3ac52bb58c17360814 */}
@@ -518,10 +561,10 @@ just apply-silenced myserver
 These commands interact with fleet hosts: maintenance,
 reboot, cleanup, and boot repair.
 
-{/* t:p 957b50ccd05ff2244bb5e360e6987bc526689d2de614c6d2042b3d678d40fd3d */}
+{/* t:p 9d330bebbc10ed7f0f1d8f494deb95df3363124b85db188c57f5347b25b011f0 */}
 ### ✳️ `enter <host>` / `e` ⭐
 
-Opens an interactive SSH session as `nix@<host>`.
+Opens an interactive SSH session as `nix@<host>`. If the host is waiting for its LUKS passphrase at boot (port 22 closed), it switches to its initrd sshd (port 2222, falling back to the manifest's WAN IP for a gateway) and presents the passphrase prompt. See [Disk encryption (LUKS)](/en/doc/admin-guide/operate/luks/).
 
 ```sh
 just enter myserver

@@ -6,6 +6,10 @@ sidebar:
 lang: fr
 ---
 
+{/* t:main */}
+{/* t:h 254e857338e9595c03a7667fac194bc95e30f99e6371ec6670586678427032f6 */}
+
+{/* t:p af783705169f6a4bc72b07e7fb250335108742038a247c22e6eb804ab281f74e */}
 Un hôte chiffré (volume LUKS2 déclaré dans sa configuration disko) protège ses
 données en cas de vol ou de mise au rebut, mais réclame une passphrase à chaque
 démarrage. DNF industrialise ce point de friction avec deux garanties :
@@ -15,6 +19,7 @@ démarrage. DNF industrialise ce point de friction avec deux garanties :
 - **le prompt du boot se répond à distance**, depuis le poste
   d'administration, sans écran ni clavier branchés sur l'hôte.
 
+{/* t:p edd729de32f9e8fb828be810f1268c4594886c1436b1d4695863408a30b84661 */}
 ## Les moyens de déverrouillage
 
 Chaque moyen occupe son propre keyslot dans l'en-tête LUKS2. Tous sont valables
@@ -34,6 +39,7 @@ ne déclare pas de volume LUKS dans son disko. Les hôtes chiffrés existants ne
 bougent pas tant que `just luks <hôte>` n'a pas été lancé.
 :::
 
+{/* t:p 5469bdbe1ad7616c7b3e8e25a6dffb29a16ba52dfb6eb7c27e19841bfcc9d8d4 */}
 ## Provisionner un hôte
 
 ```sh
@@ -91,6 +97,7 @@ Une réinstallation avec nixos-anywhere doit soit déposer la clé d'initrd sous
 relancer `just luks <hôte>` après l'installation.
 :::
 
+{/* t:p 0d4399f24cf21c90398100bb7d0dfd5dedfac86467e4dc46cd2c5bf96ee18b6a */}
 ## Rotation des passphrases
 
 - **Par hôte** : `just luks <hôte> passwd`, puis commit et apply. L'ancien
@@ -103,6 +110,7 @@ local (`/var/lib/luks-passphrase/ledger`) : une valeur sops modifiée tue
 l'ancien slot et enrôle la nouvelle, sans jamais toucher au keyslot
 d'installation.
 
+{/* t:p 0dbd0d693f7ba0020ca5d8bae4b6126ac03c3bea783ed6a1ddd17165b97a51b5 */}
 ## Déverrouiller au démarrage
 
 Sur place, deux gestes possibles devant la console :
@@ -140,6 +148,7 @@ console (passphrase ou YubiKey), le déverrouillage à distance ne s'applique
 pas.
 :::
 
+{/* t:p b2e48a2ef1e330c748b75cd9143d12c276cde06e38d46b7033372022b534e739 */}
 ## Sous le capot
 
 | Emplacement | Contenu | Statut |
@@ -160,6 +169,7 @@ passphrases d'installation, partagée et par hôte. Le module avertit quand le
 total projeté approche de la limite.
 :::
 
+{/* t:p dfceb630353cb65ed8c0887148b11be424125fce0a38013882e9f28165469e56 */}
 ## Voir aussi
 
 - [Authentification forte (YubiKey)](/fr/doc/admin-guide/operate/yubikey/) : l'enrôlement des clés physiques, dont le volet LUKS FIDO2

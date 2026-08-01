@@ -58,7 +58,7 @@ darkone.service.audio.enable = false;
 
 <hr/>
 
-{/* t:p 539c09634166201544ef42e6dc93e59159f1699e6c95adcadb19dd43be808c76 */}
+{/* t:p b8bd1bac5ac9c996171f518aef8aa7d3d316a8e7e5c4111b49f503c93693a018 */}
 ### &#x2728; darkone.service.dnsmasq
 
 Pre-configured dnsmasq for local gateway / router.
@@ -66,6 +66,16 @@ Pre-configured dnsmasq for local gateway / router.
 :::note
 This configuration reads the `network` conf in `config.yaml` file.
 It is the essential functionality of the local gateway.
+:::
+
+:::tip[Hosts visiting from another zone]
+Every zone reserves `<ipPrefix>.6.0/24` for hosts whose home is elsewhere.
+The generator emits, in `zone.extraDnsmasqSettings`, one `dhcp-host` per
+known fleet MAC that is not native here, plus a `host-record` binding
+`<host>.<this-zone-domain>` to that address — so a machine plugged into the
+wrong zone (installing a gateway, a roaming laptop) still gets a predictable
+lease and a name. Its short name keeps resolving to its home address.
+`zone.roaming` exposes the same table to the install tooling.
 :::
 
 * **enable** `bool` Enable local dnsmasq service

@@ -64,47 +64,58 @@ VPN client. Declared services (homepage, adguardhome…) are configured
 automatically. See [Network](/en/doc/admin-guide/understand/network/).
 :::
 
-{/* t:p d364e7e8a4fbec956a763e99cf5af6ee47be8b043ff829702e6c0eec24cc8b6e */}
+{/* t:p 2c59fff36d0188b311cc880b8a2547c299427d9c917f010c8e84cf844166fcd0 */}
 ## Install the gateway
 
-Installation is often done **remotely**: a person on site prepares the
-machine, the administrator installs via SSH.
+Installation is often done **remotely**: someone on site prepares the machine, the administrator installs over SSH.
 
 <Steps>
 
 1. **Prepare the gateway** (on site)
 
    1. Plug the gateway into the box.
-   2. Boot from the USB key (`just build-iso` image).
+   2. Boot from the USB stick (image `just build-iso`).
    3. Note the gateway's IP address.
-   4. Redirect port 22 of the box to the gateway.
+   4. Forward port 22 of the box to the gateway.
 
-   :::note[Why redirect port 22?]
-   It provides SSH access during installation. The USB key only accepts
-   authentication keys (no password). The redirect can be removed
-   afterward.
+   :::note[Why forward port 22?]
+   It provides SSH access during the installation. The USB stick only accepts authentication keys (no password). The forwarding can be removed afterwards.
    :::
 
 2. **Install** (administrator)
 
-   A single command chains disk formatting, hardware configuration,
-   deployment and cleanup&nbsp;:
+   A single command chains disk formatting, hardware configuration, deployment, and cleanup&nbsp;:
 
    ```sh
    just full-install gw nixos <ip>
    ```
 
-   - `gw`: hostname declared in `etc/config.yaml`.
-   - `nixos`: user of the live USB key (DNF image).
-   - `<ip>`: address noted in the previous step.
+   - `gw`: host name declared in `etc/config.yaml`.
+   - `nixos`: user of the live USB stick (DNF image).
+   - `<ip>`: address noted at the previous step.
 
-   :::note[The IP address may change]
-   After the first reboot, the gateway may fall back to DHCP on a
-   different address. While the script waits for it to return, you can
-   **type the new IP** to continue without restarting everything.
+   :::tip[Do without the address]
+   If the gateway's `mac` key is listed in `etc/config.yaml`, its address is reserved in advance and does not change between the USB stick and the installed system. `just full-install gw` is then enough, without reading or entering anything.
    :::
 
 </Steps>
+
+{/* t:p c67eb0fc005e21027bd8197f3d013133aba05b23f43ffac3ea439b11d277bf91 */}
+## Install from another zone
+
+A gateway is often prepared somewhere other than its destination. Plug its **WAN** interface into the local network of the hosting zone&nbsp;: it receives the roaming address that this zone reserves for it based on its MAC.
+
+Three conditions&nbsp;:
+
+- the gateway's `mac` key is declared in `etc/config.yaml`&nbsp;;
+- the gateway of the hosting zone has been redeployed since that declaration;
+- the administration machine too, so that SSH reads the forwarding set up during the installation.
+
+Then, `just full-install gw` does without an address&nbsp;: the tooling computes the target and tracks it from start to finish. The principle is described in [Machines outside their zone](/en/doc/admin-guide/understand/network/#machines-outside-their-zone).
+
+:::note[Once the gateway is delivered]
+On site, it takes back the fixed address of its zone (`.1.1`). The SSH forwarding set up for the installation is no longer needed&nbsp;: `just roaming-clear gw`.
+:::
 
 {/* t:p 01d1c74ecd46a9bb5299e084fe813b35adde90d4685c6c6272ac2edb72f8bbe0 */}
 ## Register the gateway on the VPN

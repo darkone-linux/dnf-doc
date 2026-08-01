@@ -200,3 +200,97 @@ A roaming laptop reconnected via ethernet in a zone no longer needs the VPN to
 reach it. Its VPN client then pauses to hand control back to the local gateway
 (direct resolution and routing), then reactivates upon departure.
 :::
+
+{/* t:p ed143a8571d029b2acb5bf9bafee916d8f1ec6a7705b70d4732a70ecd9aea7e4 */}
+## Machines outside their zone
+
+A machine is declared in **one** zone, but it is not always there. A laptop
+goes on the road. A new gateway is installed from another zone, before being
+delivered on site.
+
+Without special provision, this machine receives an arbitrary address from the
+DHCP range of the visited zone, and its name keeps pointing to its original
+address, unreachable from there. Nothing allows reaching it reliably.
+
+```d2
+style.fill: transparent
+direction: right
+
+maison: Home zone (10.0) {
+  gwa: Gateway
+  pc: laptop\n10.0.2.4
+  gwa -> pc
+}
+
+atelier: Workshop zone (10.1) {
+  gwb: Gateway
+  res: visiting laptop\n10.1.6.3
+  gwb -> res: Reserved on its MAC
+}
+
+maison.pc -> atelier.res: Relocation
+```
+
+{/* t:p 31433dd4303e068c905912de9f0da247597cb91caac98e3081b7fb2c680b2eed */}
+### A reserved address in each zone
+
+Each zone reserves the `<prefix>.6.x` block for machines from the **other**
+zones. The generator places a DHCP reservation there for every MAC address known
+on the network that does not belong to the zone.
+
+The number is assigned at the scale of the whole network&nbsp;: a machine keeps
+the **same last octet** in every zone it visits.
+
+| Machine | Declared zone | At home | Visiting `atelier` |
+|---|---|---|---|
+| `portable` | `maison` | `10.0.2.4` | `10.1.6.3` |
+| `serveur` | `atelier` | `10.1.1.2` | (it is at home there) |
+
+The address is therefore known **before** the machine boots, without observing
+anything on the network.
+
+{/* t:p 9bcaa563c5cc08308eaeb63d5c2d77d641f7ace70f95da33ca19f2311f041d2f */}
+### A name that designates the place
+
+The reservation comes with a DNS name in the visited zone. The simple name, for
+its part, keeps its meaning.
+
+| Name | Resolves to |
+|---|---|
+| `portable` | its original address, everywhere on the network |
+| `portable.atelier.domain.tld` | its address in the `atelier` zone |
+
+{/* t:p 08057d344c865d9f05bf2bb704bee382cd9cde2e400fffaa206fc6bf7a6a7fcb */}
+### A lease that never changes
+
+`dnsmasq` indexes leases on the **MAC address** alone, and not on the DHCP client
+identifier.
+
+The reason&nbsp;: the same device does not advertise the same identifier
+depending on the system running on it. An installation image and the installed
+system pass for two different machines, and receive two addresses. By relying on
+the MAC, the address no longer changes between installation and the first real
+boot.
+
+<Aside type="note" title="Machines without a declared MAC address">
+The reservation requires a `mac` key in `etc/config.yaml`. Without it, the
+machine stays reachable at home, but not elsewhere.
+</Aside>
+
+{/* t:p aac999ab348f678ee23942259fe310677c3dfc03e4ca688282841d6622aa8d90 */}
+### What the tooling does
+
+The installation recipes compute the address by themselves. They first identify
+the zone where the administration machine is located, from its **real default
+gateway** and not from its declared zone (an administration laptop is precisely
+what moves around), then deduce the address of the target.
+
+What remains is deployment&nbsp;: [Colmena](https://colmena.cli.rs/) addresses a
+node by its name, which designates the original address. For a visiting host,
+`just configure` therefore sets up a temporary SSH redirect, removed at the end
+of the installation or by hand&nbsp;:
+
+```sh
+just roaming             # show the current redirects
+just roaming-clear       # remove them all
+```

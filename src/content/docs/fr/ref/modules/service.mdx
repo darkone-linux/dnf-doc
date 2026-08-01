@@ -52,21 +52,34 @@ Ajoute automatiquement les utilisateurs au groupe `audio` quand il est activé.
 darkone.service.audio.enable = false;
 ```
 
-{/* t:p 539c09634166201544ef42e6dc93e59159f1699e6c95adcadb19dd43be808c76 */}
+{/* t:p b8bd1bac5ac9c996171f518aef8aa7d3d316a8e7e5c4111b49f503c93693a018 */}
 ### &#x2728; darkone.service.dnsmasq
 
-dnsmasq pré-configuré pour la passerelle locale / routeur.
+dnsmasq pré-configuré pour la passerelle / routeur local.
 
 :::note
-Cette configuration lit la conf `network` du fichier `config.yaml`.
+Cette configuration lit la conf `network` dans le fichier `config.yaml`.
 C'est la fonctionnalité essentielle de la passerelle locale.
 :::
 
-* **enable** `bool` Activer le service dnsmasq local
+:::tip[Hôtes venant d'une autre zone]
+Chaque zone réserve `<ipPrefix>.6.0/24` pour les hôtes dont le domicile est ailleurs.
+Le générateur émet, dans `zone.extraDnsmasqSettings`, un `dhcp-host` par
+MAC de flotte connu non natif ici, plus un `host-record` liant
+`<host>.<this-zone-domain>` à cette adresse, de sorte qu'une machine branchée
+sur la mauvaise zone (installation d'une passerelle, ordinateur portable en
+itinérance) obtienne quand même un bail et un nom prévisibles. Son nom court
+continue de résoudre vers son adresse de domicile. `zone.roaming` expose la
+même table à l'outillage d'installation.
+:::
+
+* **enable** `bool` Active le service dnsmasq local
 
 ```nix
 darkone.service.dnsmasq.enable = false;
 ```
+
+<hr/>
 
 {/* t:p 7dbbd8f16305d1f9b5d6cbda211462abdd8c31c8a314808b7a4d7537b413b3ce */}
 ### &#x2728; darkone.service.docs

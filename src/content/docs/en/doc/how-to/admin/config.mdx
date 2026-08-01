@@ -76,27 +76,27 @@ deploy locally. With several zones, a VPN however makes it easier to administer
 remote nodes thanks to secure direct access.
 :::
 
-{/* t:p f25aebabc7ca78b86dc1b4e576d2d56e378c21055132186894358de3beecaccd */}
+{/* t:p 1af6bec1066118c14995da1f716b6aaa0dc931b41b71819e769ac897ece7af2b */}
 ## "zones" section
 
-A **zone** is a subnet (home LAN, guest network, remote site…).
-Each zone has an IP `/16` prefix, a gateway and, optionally, non-NixOS devices.
+A **zone** is a subnet (home LAN, guest network, remote site...). Each zone
+carries an IP prefix in `/16`, a gateway and, optionally, non-NixOS devices.
 
 ```yaml
 # etc/config.yaml
 zones:
   main:
-    description: "Main network"
-    locale: "fr_FR.UTF-8"        # optional (default: network.default.locale)
-    timezone: "Europe/Paris"     # optional
-    ipPrefix: "10.0"             # the zone uses 10.0.0.0/16
+    description: "Réseau principal"
+    locale: "fr_FR.UTF-8"        # optionnel (défaut : network.default.locale)
+    timezone: "Europe/Paris"     # optionnel
+    ipPrefix: "10.0"             # la zone utilise 10.0.0.0/16
     gateway:
       wan:
-        interface: "enp1s0"      # interface to Internet (required)
+        interface: "enp1s0"      # interface vers Internet (requis)
       lan:
-        interfaces: ["enp2s0"]   # internal interface(s) (required)
+        interfaces: ["enp2s0"]   # interface(s) interne(s) (requis)
       vpn:
-        ipv4: "10.0.0.1"         # gateway VPN IP (after registration)
+        ipv4: "10.0.0.1"         # IP VPN de la passerelle (après enregistrement)
 ```
 
 | Key | Role |
@@ -108,13 +108,14 @@ zones:
 | `extraHosts` | Non-NixOS devices resolved by name (see below). |
 
 :::tip[Addressing convention]
-The project reserves octets as follows (prefix `10.0`)&nbsp;:
+The project reserves the octets as follows (prefix `10.0`)&nbsp;:
 
 - `10.0.1.x` servers and network nodes (`.1.1` = gateway),
 - `10.0.2.x` NixOS workstations,
 - `10.0.3.x` DHCP range,
 - `10.0.4-5.x` non-NixOS devices,
-- `10.0.11-99.x` hosts in range.
+- `10.0.6.x` machines from other zones, passing through (reserved, computed),
+- `10.0.11-99.x` hosts in the range.
 :::
 
 {/* t:p 0f49f42cf7c0764aa411b0b315edfddd8408273654c08f913ff29b85541765e2 */}
@@ -312,14 +313,14 @@ Under a range, `hosts.<i>` adds keys **specific** to the host at index `i` (only
 | `range` | list | `[start, end]` for a range. |
 | `hosts` | map | Members (collection) or per-index overrides (range). |
 
-{/* t:p 436527307e778d36427035653d50fdacc54c75aa7a7a423fba0abd9e78727bed */}
+{/* t:p fc11a3883b8a1efd7001f2ebde9cdaeac17604d7a3fc54a12671eb4a488ed318 */}
 ### Assigning a zone
 
 The **`zone`** key sets the network membership and the IP address&nbsp;:
 
 | Form | Effect |
 |---|---|
-| `zone: "main:1.2"` | **Fixed** IP `<ipPrefix>.1.2` (e.g. `10.1.1.2` in zone `main` in `10.1`). |
+| `zone: "main:1.2"` | **Fixed** IP `<ipPrefix>.1.2` (e.g. `10.1.1.2` in zone `main` on `10.1`). |
 | `zone: "main:11.%d"` | Fixed IP with range index (e.g. `10.1.11.1`, `10.1.11.2`...). |
 | `zone: "main"` | **Dynamic** address (DHCP) in the zone. |
 
@@ -331,12 +332,17 @@ An **external** host (the HCS) has no zone but an `ipv4` block&nbsp;:
     name: "Coordination"
     profile: "hcs"
     ipv4:
-      external: "203.0.113.26"   # public IP (external zone)
-      internal: "10.0.0.2"       # IP in the VPN
+      external: "203.0.113.26"   # IP publique (zone externe)
+      internal: "10.0.0.2"       # IP dans le VPN
 ```
 
 :::caution[Zone assignment and physical location]
-Set zones consistently; the machine must belong to the physical network (local network) of the declared zone.
+Declare the zone where the machine **usually** resides. That's where it carries
+its fixed address and where its simple name points.
+
+It remains reachable elsewhere, provided it has a `mac` key&nbsp;: each zone then
+reserves a transit address for it. See [Machines outside their
+zone](/en/doc/admin-guide/understand/network/#machines-outside-their-zone).
 :::
 
 {/* t:p 21e31cba3b23bd022f123d21c3673c5a5cf1b0943dbc40aeadd6705fe4fcb4ec */}

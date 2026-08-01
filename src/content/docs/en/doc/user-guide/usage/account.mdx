@@ -116,6 +116,28 @@ An access key allows you to identify yourself **without a password**. Each key i
 Once registered, I just have to touch my key. No password to remember, no code to copy.
 :::
 
+{/* t:p 39420f9bfc7aa691bd075a116bb3e874bc84b7c6f4c54917eefec737c1fd8040 */}
+### Starting my encrypted computer
+
+If my disk is encrypted, the computer asks to be unlocked at startup,
+**before** the login screen. That's normal: until I unlock it, its contents are
+unreadable, even in case of theft.
+
+- **With my YubiKey**: I plug it in before turning on (or as soon as the prompt
+  appears), then I touch it when its LED blinks. The disk unlocks on its own,
+  nothing to type.
+- **Without the key**: I type the passphrase my administrator gave me, then
+  <kbd>Enter</kbd>. The characters don't show while typing; that's intentional.
+- **Nothing works?** I can make mistakes and retry without risk. If I stay
+  stuck, I contact my administrator: they can unlock my machine **remotely**,
+  without moving.
+
+:::note[Passphrase ≠ password]
+The startup passphrase unlocks the **disk**; my password then opens **my
+session**. They are two different things, and the YubiKey can replace both: one
+touch at startup, one touch at the login screen.
+:::
+
 {/* t:p 783930fb5b1ca9dd075b6c128f9943326417009e147f2d769cf22a9af5662025 */}
 ## Adding a second factor
 

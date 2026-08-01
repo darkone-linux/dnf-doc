@@ -219,26 +219,29 @@ Kanidm passkeys are non-resident: they do not occupy any slot on the key, the
 number of accounts is unlimited. A revocation (`just yubikey <login> main
 revoke`) only affects the targeted login.
 
-{/* t:p d22811cdd571a457247435be74d2c32996f01d605735f3d41883a13c39a4198b */}
+{/* t:p bf73b616d1b62102dae18da269fc58fb7def64edad402a43a46734c715f5b428 */}
 ## Under the hood
 
 | File | Content | Status |
 |---|---|---|
-| `usr/secrets/yubikeys.json` | Public credentials (PAM, FIDO2 ID, salt) | Public, versioned |
-| `secrets.yaml` → `yubikey/<login>/<key>/luks-secret` | LUKS secret derived from the key | Encrypted with sops |
-| `secrets.yaml` → `luks-passphrase` | Passphrase entered during disko install | Encrypted with sops (requested on 1st enrollment) |
+| `usr/secrets/yubikeys.json` | Public credentials (PAM, FIDO2 id, salt) | Public, versioned |
+| `secrets.yaml` → `yubikey/<login>/<key>/luks-secret` | LUKS secret derived from the key | sops-encrypted |
+| `secrets.yaml` → `luks-passphrase` | Passphrase entered at disko install time | sops-encrypted (requested at first enrollment) |
 
-- **PAM**: the origin is fixed (`pam://<domain>`), so one credential works on
-  the entire fleet. The `darkone.system.yubikey` module (enabled automatically
-  as soon as the registry exists) distributes `/etc/u2f_mappings` on each host.
-- **LUKS**: the derived secret (`HMAC(key, salt)`) can only be computed with
-  the physical key. Each encrypted host enrolls it in its LUKS header (keyslot +
-  `systemd-fido2` token, the exact format from `systemd-cryptenroll`) via an
-  idempotent service, and removes those no longer declared.
+- **PAM** : the origin is fixed (`pam://<domain>`), so a credential works
+  across the whole fleet. The `darkone.system.yubikey` module (enabled
+  automatically as soon as the registry exists) distributes
+  `/etc/u2f_mappings` to every host.
+- **LUKS** : the derived secret (`HMAC(key, salt)`) can only be computed with
+  the physical key. Each encrypted host writes it to its LUKS header (keyslot +
+  `systemd-fido2` token, the exact `systemd-cryptenroll` format) via an
+  idempotent service, and removes those that are no longer declared. The full
+  passphrase policy and remote unlocking are described in
+  [Disk encryption (LUKS)](/en/doc/admin-guide/operate/luks/).
 
 :::caution[Fixed origin]
 Changing `darkone.system.yubikey.origin` (or the network domain) invalidates
-all PAM credentials: all keys would need to be re-enrolled.
+all PAM credentials: every key would need to be re-enrolled.
 :::
 
 {/* t:p d1ff1ba1dc7323f7a1896d61c07ea485223df86d69f3af7cb23b712f04600f77 */}

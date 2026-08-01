@@ -76,7 +76,7 @@ déployer localement. Avec plusieurs zones, un VPN facilite cependant l'administ
 noeuds distants grâce à des accès directs sécurisés.
 :::
 
-{/* t:p f25aebabc7ca78b86dc1b4e576d2d56e378c21055132186894358de3beecaccd */}
+{/* t:p 1af6bec1066118c14995da1f716b6aaa0dc931b41b71819e769ac897ece7af2b */}
 ## Section "zones"
 
 Une **zone** est un sous-réseau (LAN maison, réseau invité, site distant…).
@@ -115,6 +115,7 @@ Le projet réserve les octets ainsi (préfixe `10.0`)&nbsp;:
 - `10.0.2.x` postes NixOS,
 - `10.0.3.x` plage DHCP,
 - `10.0.4-5.x` appareils non-NixOS,
+- `10.0.6.x` machines des autres zones, de passage (réservé, calculé),
 - `10.0.11-99.x` hôtes en plage.
 :::
 
@@ -323,7 +324,7 @@ Sous une plage, `hosts.<i>` ajoute des clés **propres** à l'hôte d'indice `i`
 | `range` | liste | `[début, fin]` pour une plage. |
 | `hosts` | map | Membres (collection) ou surcharges par indice (plage). |
 
-{/* t:p 436527307e778d36427035653d50fdacc54c75aa7a7a423fba0abd9e78727bed */}
+{/* t:p fc11a3883b8a1efd7001f2ebde9cdaeac17604d7a3fc54a12671eb4a488ed318 */}
 ### Attribuer une zone
 
 La clé **`zone`** fixe l'appartenance réseau et l'adresse IP&nbsp;:
@@ -347,8 +348,12 @@ Un hôte **externe** (le HCS) n'a pas de zone mais un bloc `ipv4`&nbsp;:
 ```
 
 :::caution[Attribution de zone et emplacement physique]
-Fixez les zones de manière cohérente, il faut que la machine appartienne au réseau
-physique (réseau local) de la zone déclarée.
+Déclarez la zone où la machine réside **habituellement**. C'est là qu'elle porte
+son adresse fixe et que son nom simple pointe.
+
+Elle reste joignable ailleurs, sous réserve d'avoir une clé `mac`&nbsp;: chaque
+zone lui réserve alors une adresse de passage. Voir [Machines hors de leur
+zone](/fr/doc/admin-guide/understand/network/#machines-hors-de-leur-zone).
 :::
 
 {/* t:p 21e31cba3b23bd022f123d21c3673c5a5cf1b0943dbc40aeadd6705fe4fcb4ec */}

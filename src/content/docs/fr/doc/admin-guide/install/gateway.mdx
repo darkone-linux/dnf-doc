@@ -68,7 +68,7 @@ client VPN. Les services déclarés (homepage, adguardhome…) sont configurés 
 seuls. Voir [Réseau](/fr/doc/admin-guide/understand/network/).
 :::
 
-{/* t:p d364e7e8a4fbec956a763e99cf5af6ee47be8b043ff829702e6c0eec24cc8b6e */}
+{/* t:p 2c59fff36d0188b311cc880b8a2547c299427d9c917f010c8e84cf844166fcd0 */}
 ## Installer la passerelle
 
 L'installation se fait souvent **à distance** : une personne sur place prépare la
@@ -102,13 +102,36 @@ machine, l'administrateur installe par SSH.
    - `nixos` : utilisateur de la clé USB live (image DNF).
    - `<ip>` : adresse notée à l'étape précédente.
 
-   :::note[L'adresse IP peut changer]
-   Après le premier redémarrage, la passerelle peut repasser en DHCP sur une
-   autre adresse. Pendant que le script attend son retour, on peut **saisir la
-   nouvelle IP au clavier** pour continuer sans tout relancer.
+   :::tip[Se passer de l'adresse]
+   Si la clé `mac` de la passerelle figure dans `etc/config.yaml`, son adresse
+   est réservée d'avance et ne change pas entre la clé USB et le système
+   installé. `just full-install gw` suffit alors, sans rien relever ni saisir.
    :::
 
 </Steps>
+
+{/* t:p c67eb0fc005e21027bd8197f3d013133aba05b23f43ffac3ea439b11d277bf91 */}
+## Installer depuis une autre zone
+
+Une passerelle se prépare souvent ailleurs que chez son destinataire. Branchez
+son interface **WAN** au réseau local de la zone d'accueil&nbsp;: elle y reçoit
+l'adresse de passage que cette zone lui réserve sur sa MAC.
+
+Trois conditions&nbsp;:
+
+- la clé `mac` de la passerelle est déclarée dans `etc/config.yaml`&nbsp;;
+- la passerelle de la zone d'accueil a été redéployée depuis cette déclaration ;
+- la machine d'administration aussi, pour que SSH lise la redirection posée
+  pendant l'installation.
+
+Ensuite, `just full-install gw` se passe d'adresse&nbsp;: l'outillage calcule la
+cible et la suit d'un bout à l'autre. Le principe est décrit dans [Machines hors
+de leur zone](/fr/doc/admin-guide/understand/network/#machines-hors-de-leur-zone).
+
+:::note[Une fois la passerelle livrée]
+Sur place, elle reprend l'adresse fixe de sa zone (`.1.1`). La redirection SSH
+posée pour l'installation ne sert plus&nbsp;: `just roaming-clear gw`.
+:::
 
 {/* t:p 01d1c74ecd46a9bb5299e084fe813b35adde90d4685c6c6272ac2edb72f8bbe0 */}
 ## Enregistrer la passerelle sur le VPN

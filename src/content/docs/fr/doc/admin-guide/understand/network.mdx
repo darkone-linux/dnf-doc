@@ -202,3 +202,98 @@ Un portable itinérant rebranché en filaire dans une zone n'a plus besoin du VP
 pour l'atteindre. Son client VPN se met alors en pause pour rendre la main à la
 passerelle locale (résolution et routage directs), puis se réactive au départ.
 :::
+
+{/* t:p ed143a8571d029b2acb5bf9bafee916d8f1ec6a7705b70d4732a70ecd9aea7e4 */}
+## Machines hors de leur zone
+
+Une machine est déclarée dans **une** zone, mais elle ne s'y trouve pas toujours.
+Un portable part en déplacement. Une passerelle neuve est installée depuis une
+autre zone, avant d'être livrée sur place.
+
+Sans disposition particulière, cette machine reçoit une adresse quelconque de la
+plage DHCP de la zone visitée, et son nom continue de désigner son adresse
+d'origine, injoignable depuis là. Rien ne permet de la joindre de façon fiable.
+
+```d2
+style.fill: transparent
+direction: right
+
+maison: Zone maison (10.0) {
+  gwa: Passerelle
+  pc: portable\n10.0.2.4
+  gwa -> pc
+}
+
+atelier: Zone atelier (10.1) {
+  gwb: Passerelle
+  res: portable en visite\n10.1.6.3
+  gwb -> res: Réservé sur sa MAC
+}
+
+maison.pc -> atelier.res: Déplacement
+```
+
+{/* t:p 31433dd4303e068c905912de9f0da247597cb91caac98e3081b7fb2c680b2eed */}
+### Une adresse réservée dans chaque zone
+
+Chaque zone réserve le bloc `<préfixe>.6.x` aux machines des **autres** zones.
+Le générateur y place une réservation DHCP pour chaque adresse MAC connue du
+réseau qui n'appartient pas à la zone.
+
+Le numéro est attribué à l'échelle du réseau entier&nbsp;: une machine garde le
+**même dernier octet** dans toutes les zones où elle passe.
+
+| Machine | Zone déclarée | Chez elle | En visite dans `atelier` |
+|---|---|---|---|
+| `portable` | `maison` | `10.0.2.4` | `10.1.6.3` |
+| `serveur` | `atelier` | `10.1.1.2` | (elle y est chez elle) |
+
+L'adresse est donc connue **avant** que la machine ne démarre, sans rien
+observer sur le réseau.
+
+{/* t:p 9bcaa563c5cc08308eaeb63d5c2d77d641f7ace70f95da33ca19f2311f041d2f */}
+### Un nom qui désigne l'endroit
+
+La réservation vient avec un nom DNS dans la zone visitée. Le nom simple, lui,
+ne change pas de sens.
+
+| Nom | Résout vers |
+|---|---|
+| `portable` | son adresse d'origine, partout sur le réseau |
+| `portable.atelier.domain.tld` | son adresse dans la zone `atelier` |
+
+{/* t:p 08057d344c865d9f05bf2bb704bee382cd9cde2e400fffaa206fc6bf7a6a7fcb */}
+### Un bail qui ne bouge plus
+
+`dnsmasq` indexe les baux sur la seule **adresse MAC**, et non sur l'identifiant
+client DHCP.
+
+La raison&nbsp;: un même équipement n'annonce pas le même identifiant selon le
+système qui tourne dessus. Une image d'installation et le système installé
+passent pour deux machines différentes, et reçoivent deux adresses. En
+s'appuyant sur la MAC, l'adresse ne change plus entre l'installation et le
+premier démarrage réel.
+
+<Aside type="note" title="Machines sans adresse MAC déclarée">
+La réservation exige une clé `mac` dans `etc/config.yaml`. Sans elle, la machine
+reste joignable chez elle, mais pas ailleurs.
+</Aside>
+
+{/* t:p aac999ab348f678ee23942259fe310677c3dfc03e4ca688282841d6622aa8d90 */}
+### Ce que fait l'outillage
+
+Les recettes d'installation calculent l'adresse toutes seules. Elles identifient
+d'abord la zone où se trouve la machine d'administration, à partir de sa
+**passerelle par défaut réelle** et non de sa zone déclarée (un portable
+d'administration est précisément ce qui se déplace), puis en déduisent l'adresse
+de la cible.
+
+Reste le déploiement&nbsp;: [Colmena](https://colmena.cli.rs/) s'adresse à un
+nœud par son nom, qui désigne l'adresse d'origine. Pour un hôte en visite,
+`just configure` pose donc une redirection SSH temporaire, retirée en fin
+d'installation ou à la main&nbsp;:
+
+```sh
+just roaming             # afficher les redirections en cours
+just roaming-clear       # toutes les retirer
+```

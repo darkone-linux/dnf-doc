@@ -360,7 +360,7 @@ just fixtures check
 
 L'installation d'un nouvel hôte suit un enchaînement précis.
 
-{/* t:p d14baec5b0376679bae1d0a0a003046361405791774a8844fdc1752ef074921c */}
+{/* t:p 6fe6c77be19f614937a9263e242ac5f8bbfec11c34aa9d2ea7b130bbbcc6da7a */}
 ### ✳️ `install <hôte> [user] [ip]`
 
 Formate les disques via **disko** et installe NixOS via **nixos-anywhere**.
@@ -375,19 +375,27 @@ L'hôte doit avoir une configuration disko dans `etc/config.yaml` et un
 dossier `usr/machines/<hôte>/default.nix`.
 :::
 
+L'argument `ip` vaut `auto` par défaut&nbsp;: l'adresse est calculée comme pour
+`full-install`, inutile de la relever.
+
 ```sh
 just install myserver
 just install myserver nixos 10.0.0.5     # IP personnalisée
 just install myserver do=test             # VM test uniquement
 ```
 
-{/* t:p ac3b2fd2d96f8a080081e401177db29d977c3da3fc6a0fcfd8cfd58df4d1ad33 */}
+{/* t:p 32db8998f99d6b1f4c88d9067e206ecf74a13a0c749b6cbef30e4ac80c9d51ac */}
 ### ✳️ `full-install <hôte> [user] [ip]` ⭐
 
 Chaîne complète : `install` + attente reboot + `configure` + `apply` + `gc` + reboot.
 
+L'adresse est calculée toute seule&nbsp;: nom de l'hôte dans sa propre zone,
+adresse de passage réservée s'il est branché ailleurs. Voir [Machines hors de
+leur zone](/fr/doc/admin-guide/understand/network/#machines-hors-de-leur-zone).
+
 ```sh
 just full-install myserver
+just full-install myserver nixos 10.0.3.42   # adresse forcée
 ```
 
 {/* t:p c35851dd84a1ba4918b713d16e21603553a1b6ba8b087a32612bc98d8c64de97 */}
@@ -399,11 +407,16 @@ Formate un périphérique USB avec disko et installe NixOS dessus.
 just install-key myusbhost
 ```
 
-{/* t:p 5e1c2c42a2e22be19db0111bbc224163f55c65fcbf098ae941d22d1bef570fe4 */}
-### ✳️ `configure <hôte>`
+{/* t:p f2604796613946cc8f0264ada1a3c717f8f01e8d335c9d12922d88de0e7fd415 */}
+### ✳️ `configure <hôte> [ip]`
 
 Enchaîne `copy-id` → `copy-hw` → `push-key` → `luks` (ce dernier ne fait rien
 sur un hôte non chiffré).
+
+L'adresse est résolue une fois et transmise à toute la chaîne. Si l'hôte est
+branché hors de sa zone, la redirection SSH est posée dans la foulée, pour que
+l'`apply` qui suit l'atteigne&nbsp;: `just roaming-clear <hôte>` une fois la
+machine revenue chez elle.
 
 ```sh
 just configure myserver
@@ -441,6 +454,7 @@ Transfère la clé age `/etc/sops/age/infra.key` vers l'hôte cible.
 just push-key myserver
 ```
 
+{/* t:p e2077d65cbf0b2b4af3bcfcb2e76080b031c99761e15c7ab0ecb3e27b693f552 */}
 ### ✳️ `luks <hôte> [action] [ip]`
 
 Provisionne le chiffrement d'un hôte : passphrases partagée et par hôte dans
@@ -456,6 +470,31 @@ c'est un no-op journalisé.
 ```sh
 just luks myserver
 just luks myserver passwd
+```
+
+{/* t:p 40874d9bfd781dfb02423530d635f069985c211874beaaa18c75567a4056b453 */}
+### ✳️ `roaming [hôte] [ip]`
+
+Redirige SSH vers un hôte branché hors de sa zone, le temps de l'installation.
+Colmena s'adresse à un nœud par son nom, qui désigne son adresse d'origine&nbsp;;
+cette redirection le renvoie là où la machine se trouve vraiment.
+
+Posée par `just configure` quand c'est nécessaire, retirée par `full-install`
+en fin de course. Sans argument, affiche les redirections en cours.
+
+```sh
+just roaming             # afficher
+just roaming myserver    # rediriger (adresse calculée)
+```
+
+{/* t:p cbad707b656990002f7ba9d6b5ef822db230d05f099c0bfc0080cf0d7c9bfe99 */}
+### ✳️ `roaming-clear [hôte]`
+
+Retire la redirection d'un hôte, ou toutes si aucun n'est donné.
+
+```sh
+just roaming-clear myserver
+just roaming-clear
 ```
 
 {/* t:p 1d7625ca4b5468c8c5ff9610a5f8b1838f3633c930ef8f3ac52bb58c17360814 */}
@@ -547,7 +586,7 @@ just apply-silenced myserver
 Ces commandes permettent d'interagir avec les hôtes du parc : maintenance,
 redémarrage, nettoyage et réparation du boot.
 
-{/* t:p 957b50ccd05ff2244bb5e360e6987bc526689d2de614c6d2042b3d678d40fd3d */}
+{/* t:p 9d330bebbc10ed7f0f1d8f494deb95df3363124b85db188c57f5347b25b011f0 */}
 ### ✳️ `enter <hôte>` / `e` ⭐
 
 Ouvre une session SSH interactive en tant que `nix@<hôte>`. Si l'hôte attend

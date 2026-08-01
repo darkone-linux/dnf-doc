@@ -1,0 +1,177 @@
+---
+title: Disk Encryption (LUKS)
+sidebar:
+  label: LUKS
+  order: 2.7
+lang: en
+---
+
+{/* t:translated-from fr */}
+{/* t:h 254e857338e9595c03a7667fac194bc95e30f99e6371ec6670586678427032f6 */}
+
+{/* t:p af783705169f6a4bc72b07e7fb250335108742038a247c22e6eb804ab281f74e */}
+An encrypted host (LUKS2 volume declared in its disko configuration) protects
+its data in case of theft or disposal, but requires a passphrase at every
+boot. DNF industrializes this friction point with two guarantees:
+
+- **multiple unlock methods coexist** permanently — losing one method
+  (forgotten passphrase, lost YubiKey) never locks you out;
+- **the boot prompt can be answered remotely**, from the administration
+  workstation, without a screen or keyboard connected to the host.
+
+{/* t:p edd729de32f9e8fb828be810f1268c4594886c1436b1d4695863408a30b84661 */}
+## Unlock methods
+
+Each method occupies its own keyslot in the LUKS2 header. All of them are valid
+at the same time, on every encrypted volume of the host.
+
+| Method | Where it lives | Role |
+|---|---|---|
+| **Installation passphrase** | Admin's memory (entered at disko install) | Ultimate safety net, **never touched** by DNF |
+| **Shared passphrase** | sops → `luks-passphrase` | A single one for the whole fleet; authorizes keyslot management |
+| **Per-host passphrase** | sops → `luks/<host>/passphrase` | To be entrusted to the machine's user without exposing the fleet |
+| **FIDO2 YubiKeys** | Derived from the physical key | Touch the key at boot, nothing to type |
+
+:::note[Nothing to declare in the Nix configuration]
+The `darkone.system.luks` module is active by default but **completely inert**
+as long as the host does not appear in the `usr/secrets/luks.json` manifest
+**and** does not declare a LUKS volume in its disko. Existing encrypted hosts
+do not change until `just luks <host>` has been run.
+:::
+
+{/* t:p 5469bdbe1ad7616c7b3e8e25a6dffb29a16ba52dfb6eb7c27e19841bfcc9d8d4 */}
+## Provisioning a host
+
+```sh
+just luks <host>            # provisions (or converges) the encryption
+just luks <host> passwd     # rotates the per-host passphrase
+just luks <host> '' <ip>    # targets an explicit IP (host not yet resolvable)
+```
+
+The recipe is **idempotent**: each run converges and only asks for what is
+missing. It is also called automatically by
+`just configure <host>` (without a LUKS volume in the disko, it is a
+logged no-op). In order:
+
+1. creates the **shared passphrase** in sops if absent (asked only once
+   for the whole fleet);
+2. creates the **per-host passphrase** in sops if absent (empty input =
+   strong random value, the host stays unlockable by the shared one and the
+   YubiKeys);
+3. registers the host in the **public manifest** `usr/secrets/luks.json`
+   (versioned in cleartext: it contains no secret) — this entry is what
+   activates the module;
+4. generates on the target the **initrd host SSH key**
+   (`/var/lib/luks-initrd/ssh_host_ed25519_key`, persistent);
+5. on a **gateway**, records the current **WAN IP** in the manifest
+   (fallback for `just enter`, see below) — rerun the recipe if the
+   access provider renumbers;
+6. if **no managed passphrase** unlocks the volume yet (host installed with
+   another passphrase), asks for the installation passphrase once and enrolls
+   the shared one with it.
+
+Then commit and deploy:
+
+```sh
+git add usr/secrets/luks.json
+just commit "system(luks): <host>"
+just apply <host>
+```
+
+At deployment, two idempotent services converge the LUKS header on every
+apply: `luks-passphrase-sync` (shared and per-host passphrases) and
+`yubikey-luks-enroll` (one FIDO2 entry per YubiKey enrolled on the fleet, see
+[Strong authentication](/en/doc/admin-guide/operate/yubikey/)).
+
+:::caution[Provision before deploying]
+The initrd host key must exist on the target **before** the apply: the
+initrd secrets are embedded at bootloader installation. It is
+`just luks <host>` that creates it over SSH — never add a host to
+`luks.json` by hand. If the host was off at provisioning time, rerun the
+recipe once the machine is on, before any apply.
+:::
+
+:::caution[Reinstalling a provisioned host]
+A reinstallation with nixos-anywhere must either drop the initrd key under
+`/mnt` (`--extra-files`), or first remove the host from the manifest, then
+rerun `just luks <host>` after the installation.
+:::
+
+{/* t:p 0d4399f24cf21c90398100bb7d0dfd5dedfac86467e4dc46cd2c5bf96ee18b6a */}
+## Passphrase rotation
+
+- **Per host**: `just luks <host> passwd`, then commit and apply. The old
+  keyslot is deleted and replaced at the next deployment.
+- **Shared**: modify `luks-passphrase` via `just sops`, then apply across the
+  whole fleet — each encrypted host rotates its keyslot in the process.
+
+The sync service detects changes thanks to a local registry
+(`/var/lib/luks-passphrase/ledger`): a modified sops value kills the
+old slot and enrolls the new one, without ever touching the
+installation keyslot.
+
+{/* t:p 0dbd0d693f7ba0020ca5d8bae4b6126ac03c3bea783ed6a1ddd17165b97a51b5 */}
+## Unlocking at boot
+
+On site, two possible actions at the console:
+
+- **Enrolled YubiKey plugged in**: touch the key when the LED blinks
+  (`fido2-device=auto`), nothing to type;
+- **at the keyboard**: type the per-host, shared, or installation
+  passphrase.
+
+Remotely, the initrd starts a **dedicated sshd on port 2222**, with its
+own persistent host key, accessible only with the deployment key `nix`.
+The entry point stays the same as in normal times:
+
+```sh
+just reboot <host>     # or any other cause of restart
+just enter <host>      # detects the initrd wait and presents the prompt
+```
+
+When port 22 does not answer, `just enter` probes port 2222 on the explicit
+IP (if provided), the host name, then the **WAN IP recorded in the
+manifest**, and answers the LUKS prompt via `systemd-tty-ask-password-agent`.
+Once the passphrase is typed, the boot continues and port 22 comes back.
+
+:::note[Why the WAN IP?]
+The VPN of a zone dies with its gateway: when the latter waits for its
+passphrase, only its WAN side is reachable. Its initrd also replicates
+the production addressing (static IP on the `lan0` bridge, DHCP on the WAN
+side), since it is itself the DHCP server its initrd would otherwise wait
+for. The other hosts simply do DHCP on their wired interfaces.
+:::
+
+:::note[Laptops on Wi-Fi]
+No network in initrd without a cable: an encrypted laptop unlocks at the
+console (passphrase or YubiKey), remote unlocking does not
+apply.
+:::
+
+{/* t:p b2e48a2ef1e330c748b75cd9143d12c276cde06e38d46b7033372022b534e739 */}
+## Under the hood
+
+| Location | Content | Status |
+|---|---|---|
+| `usr/secrets/luks.json` | Manifest of provisioned hosts + WAN IP of gateways | Public, versioned |
+| `secrets.yaml` → `luks-passphrase` | Fleet shared passphrase | sops encrypted |
+| `secrets.yaml` → `luks/<host>/passphrase` | Per-host passphrase | sops encrypted |
+| `/var/lib/luks-initrd/` (target) | Initrd SSH host key | Persistent, outside the repo |
+| `/var/lib/luks-passphrase/ledger` (target) | Registry of managed keyslots (rotation detection) | Persistent, outside the repo |
+
+The module exposes two options: `darkone.system.luks.enable` (default `true`)
+and `darkone.system.luks.sshPort` (default `2222`).
+
+:::danger[Keyslot budget]
+A LUKS2 header holds at most **32 keyslots**. Each enrolled YubiKey consumes
+one on **every** encrypted host (fleet policy), in addition to the
+installation, shared and per-host passphrases. The module warns when the
+projected total approaches the limit.
+:::
+
+{/* t:p dfceb630353cb65ed8c0887148b11be424125fce0a38013882e9f28165469e56 */}
+## See also
+
+- [Strong authentication (YubiKey)](/en/doc/admin-guide/operate/yubikey/): enrollment of physical keys, including the LUKS FIDO2 part
+- [Secrets management](/en/doc/admin-guide/operate/secrets/): sops, age keys and rotation
+- [The Justfile](/en/doc/admin-guide/operate/justfile/): reference for the `luks`, `enter` and `configure` recipes
