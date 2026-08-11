@@ -129,6 +129,66 @@ dnf-maintenance on    # inhibits node alerts
 dnf-maintenance off   # re-enables them
 ```
 
+{/* t:p 09e1d9f6c43658c16003d2b8e5b0d10da8f3e3f5e7b9c3f38f6e5ddd45dd6115 */}
+## Silence a known alert
+
+Some alerts are accurate but not actionable: a backup disk that is deliberately
+filled permanently crosses `DiskSpaceLow`. `silences` prevents them from
+notifying.
+
+```nix
+# usr/modules/alerts.nix
+{
+  darkone.service.prometheus.alerting.silences = [
+    {
+      alert = "DiskSpaceLow";
+      host = "srv-backup";
+      matchers.mountpoint = "/mnt/backup";
+      reason = ''
+        Backup disk deliberately filled, threshold structurally crossed. Remove
+        if retention is reduced.
+      '';
+    }
+  ];
+}
+```
+
+| Field | Role |
+|---|---|
+| `alert` | Name of the alert to silence (`alertname`) |
+| `host` | Host name to target (`host` label), `null` for the whole fleet |
+| `matchers` | Additional labels in strict equality, combined with AND |
+| `reason` | Required: why the alert is accepted |
+
+Each entry becomes an Alertmanager route to the `null` receiver. The alert still
+fires and stays visible in Prometheus, Alertmanager and Grafana, it simply stops
+notifying.
+
+:::caution[A silence is surgical, not global]
+Only the cited `alertname` is affected: silencing `DiskSpaceLow` on one mount
+point leaves `DiskSpaceCritical` and `DiskWillFillSoon` fully armed on that same
+mount point. A real fill-up always alerts.
+:::
+
+:::note[Where to declare these silences]
+The rules and routes of a zone are generated on the host running Prometheus, not
+on the machine concerned. Since each host is evaluated independently,
+`usr/machines/<host>/` is not enough. A consumer module
+(`usr/modules/alerts.nix`) is imported everywhere and groups in a single file
+what is deliberately ignored, across all zones.
+:::
+
+Check the routing on the Prometheus host:
+
+```sh
+amtool config routes test --config.file=/etc/alertmanager.yml \
+  alertname=DiskSpaceLow host=srv-backup mountpoint=/mnt/backup
+```
+
+To silence a systemic failure mode rather than a one-off case, see
+`ignoredUnits` (`dnf/config/alerts.nix`), which excludes a systemd unit from
+`SystemdUnitFailed` across the whole fleet.
+
 {/* t:p 8051eff71befb2af62a438ff4d88cbefe0d796fc0d44b6a8dc75fd301d012bbc */}
 ## Troubleshooting
 

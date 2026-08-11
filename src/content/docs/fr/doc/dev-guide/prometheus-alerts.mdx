@@ -27,7 +27,7 @@ Le code est scindé en deux, pour garder la génération des règles **testable*
 Toute logique non triviale va dans `alerts.nix` ; le module se contente de la
 brancher.
 
-{/* t:p 6c84c89cd0bc0be1392507e3a37579cc354efe7489649cffa2a6917c342d494d */}
+{/* t:p a1f0ed460485e47cee72b5462f112713775280ce9bd95b316e2262f207480a79 */}
 ## Les helpers (`alerts.nix`)
 
 Exposés via `dnfLib` (voir `dnf/lib/default.nix`) :
@@ -51,6 +51,36 @@ Exposés via `dnfLib` (voir `dnf/lib/default.nix`) :
 | `mkTailscaleRuleGroups` | Auto-réparation tailnet (`TailscaleUnhealthy`, `TailscaleFlapping`) |
 | `mergeRuleGroups` | Fusionne des fragments en **un seul** document |
 | `mkAlertRuleGroups` | Raccourci : nœuds + ressources + restic + SMART + tailscale |
+| `mkSilenceRoutes` | Routes Alertmanager vers le receiver `null` (alertes connues, acceptées) |
+
+{/* t:p 3a2c869b4919f9263d282820c9cbb697290831064b24501d391499b2482005f8 */}
+### Le label `host`, ou pourquoi les alertes se nomment
+
+Chaque cible de scrape porte un label `host` valant le nom d'hôte, posé par
+`mkHostTargets` dans `prometheus.nix` (un `static_config` par hôte plutôt qu'une
+liste unique de cibles). Deux effets :
+
+- le bot Matrix affiche `DiskSpaceLow at srv-backup` au lieu de l'instance brute
+  `<ip>:<port>` ;
+- une route de silence peut viser une seule machine.
+
+Le poser au scrape le propage gratuitement à toutes les alertes issues de ces
+jobs, y compris les règles ressources génériques, qui ignorent tout de la
+topologie à l'évaluation.
+
+:::caution[Les agrégations effacent les labels]
+Une clause `by (...)` supprime tout label non groupé. `ResticBackupStale`
+(`max by (instance, job, host)`) et `SynapseHighErrorRate`
+(`sum by (instance, host)`) citent donc `host` explicitement. L'oublier dans une
+nouvelle règle agrégée fait retomber la notification sur l'instance brute.
+:::
+
+:::note[Le bot n'affiche pas `summary`]
+Le bot Matrix rend le titre puis l'annotation `description`, et ne se rabat sur
+`summary` que si `description` est absente&nbsp;: toutes les règles DNF en
+définissent une, donc `summary` ne lui parvient jamais. Une information à faire
+figurer dans la notification doit aller dans `description`.
+:::
 
 {/* t:p 7c13d3bbffc588d69c9063078871bec5dde8fca22801d89ebdad825c59ee2d66 */}
 ### Sélection des nœuds surveillés
@@ -98,7 +128,7 @@ services.prometheus.rules = [
 ];
 ```
 
-{/* t:p 1877eff88c0a5918b909dddf45fc377a172d9b253b0b9045ea82ed325c0f1090 */}
+{/* t:p 97c1f486cf7857b104bd4a84f6cbae530541aa913a4c7e490fcb69b16928eb5f */}
 ## Où ajouter quoi
 
 | Je veux… | Je touche… |
@@ -111,11 +141,22 @@ services.prometheus.rules = [
 | forcer/exclure un nœud de la surveillance | feature `alert-non-critical` / `alert-disabled` |
 | surveiller une URL + son certificat TLS | `alerting.network.httpProbeUrls` dans la config |
 | ajuster la détection de panne internet | `alerting.network.internetProbeTargets` |
+| taire une alerte connue et acceptée | `alerting.silences` dans un module consumer (aucun code) |
+| taire une unité systemd cassée sur tout le parc | `ignoredUnits` dans `dnf/config/alerts.nix` |
 | une nouvelle destination | le bloc `alertmanager` de `prometheus.nix` (receiver + route) |
 
 :::tip[Convention DNF]
 Un helper de `lib/` = un test. Toute fonction ajoutée à `alerts.nix` se double
 d'un cas dans `dnf/tests/unit/lib/alerts_test.nix` (`nix-unit`).
+:::
+
+:::caution[Ordre des routes Alertmanager]
+`continue` vaut `false` par défaut&nbsp;: la première route enfant qui matche
+gagne. Les routes de `mkSilenceRoutes` doivent donc être insérées **avant** les
+routes par sévérité, sinon elles ne sont jamais atteintes et l'alerte notifie
+quand même. Le receiver `null` est partagé avec la route de maintenance, d'où sa
+garde `silenceOnRebuild || silences != []`&nbsp;: référencer un receiver absent
+empêche Alertmanager de démarrer.
 :::
 
 :::caution[Métrique textfile : permissions]

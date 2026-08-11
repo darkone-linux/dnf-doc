@@ -135,33 +135,41 @@ Une forge git forgejo entièrement configurée.
 darkone.service.forgejo.enable = false;
 ```
 
-{/* t:p b77a42c08c4adf566b2d74dc9185dd20d0b4aa3067a595247f5dbe35775add9a */}
+{/* t:p 881a8b411b10022df50c94fe313500947f69275f1df66d439ca9399175d7483e */}
 ### &#x2728; darkone.service.garage
 
 Un service Garage S3 local entièrement configuré.
 
-Fournit un serveur de stockage d'objets compatible S3 interne accessible uniquement sur 127.0.0.1:3900.
+Fournit un stockage d'objets interne compatible S3 accessible
+uniquement sur 127.0.0.1:3900.
 
 :::note[Création manuelle des buckets]
 Les buckets ne sont PAS créés automatiquement par ce module.
-Chaque service consommateur provisionne son propre bucket et sa clé d'accès via une unité systemd oneshot dédiée ordonnée After= `garage-init.service`.
-Les identifiants par consommateur sont stockés dans sops sous les noms `garage-<consumer>-key-id` et `garage-<consumer>-key-secret`, importés dans Garage au premier démarrage.
+Chaque service consommateur provisionne son propre bucket et sa clé d'accès via
+une unité systemd oneshot dédiée ordonnée After= `garage-init.service`.
+Les identifiants de chaque consommateur sont stockés dans sops en tant que
+`garage-<consumer>-key-id` et `garage-<consumer>-key-secret`, importés dans
+Garage au premier démarrage.
 :::
 
-:::tip[Migration de cluster multi-nœud]
-Simple nœud, replication_factor = 1. Pour évoluer vers un cluster multi-nœud, augmentez `replication_factor`, exposez `rpc_public_addr` sur le maillage, et étendez `garage-init` pour piloter une disposition multi-nœud.
+:::tip[Migration vers un cluster multi-nœuds]
+Nœud unique, replication_factor = 1. Pour évoluer vers un cluster multi-nœuds,
+augmenter `replication_factor`, exposer `rpc_public_addr` sur le maillage, et
+étendre `garage-init` pour piloter un layout multi-nœuds.
 :::
 
-:::caution[Initialisation de la disposition du cluster]
-S'il échoue, attendez que le service garage soit totalement opérationnel, puis redémarrez-le.
+:::caution[Initialisation du layout du cluster]
+En cas d'échec, attendre que le service garage soit pleinement opérationnel,
+puis le redémarrer.
 :::
 
 * **enable** `bool` Activer le service Garage S3 local
-* **srvPort** `port` Port S3 API exposé sur l'IP interne
+* **srvPort** `port` Port de l'API S3 exposé sur l'IP interne
 * **s3Region** `str` Nom de la région S3 (doit correspondre à la config du consommateur)
-* **capacity** `str` Indice de capacité de stockage du nœud transmis à `garage layout assign`.
-Utilisé uniquement au premier démarrage pour l'initialisation de la disposition ; n'agit pas comme un quota strict sur le système de fichiers sous-jacent.
-Suffixes supportés : B, KB, MB, GB, TB, PB.
+* **capacity** `str` Indication de capacité de stockage du nœud transmise à `garage layout assign`.
+  Utilisée uniquement au premier démarrage pour l'initialisation du layout ; n'agit pas
+  comme un quota strict sur le système de fichiers sous-jacent.
+  Suffixes pris en charge : B, KB, MB, GB, TB, PB.
 
 ```nix
 darkone.service.garage = {
@@ -171,6 +179,8 @@ darkone.service.garage = {
   capacity = "500GB";
 };
 ```
+
+<hr/>
 
 {/* t:p a27ed7ea0a78feae324db216076fedd195e45040ec431444c9ae870ddd3a527f */}
 ### &#x2728; darkone.service.geneweb
@@ -326,25 +336,25 @@ darkone.service.homepage = {
 
 <hr/>
 
-{/* t:p 89f6a8dbb80b7fb0d0f0205c9e2735c6c2956a799625399c079be9c8d3a36d72 */}
+{/* t:p 130e1fea9fa4fe702f9537e7740b826eeb8e2aa49d7454a8eb044384adee0ed0 */}
 ### &#x2728; darkone.service.idm
 
-Service DNF Kanidm (gestionnaire d'identité).
+Service DNF Kanidm (gestionnaire d'identités).
 
-* **enable** `bool` Activer l'authentification unique locale avec Kanidm
-* **oauth2** `attrs` Modèles de client OAuth2/OIDC fournis par les modules de service.
-Kanidm provisionne un client par entrée correspondante dans `network.services`,
-avec `clientId = dnfLib.oauth2ClientName`.
+* **enable** `bool` Activer le SSO local avec Kanidm
+* **oauth2** `attrs` Modèles de clients OAuth2/OIDC fournis par les modules de service.
+  Kanidm provisionne un client pour chaque entrée correspondante dans `network.services`,
+  avec `clientId = dnfLib.oauth2ClientName`.
   * **enable** `bool` Indique s'il faut provisionner des clients OAuth2 pour ce modèle.
-  * **clientName** `nullOr str` Remplacer le nom du client kanidm. Par défaut : dnfLib.oauth2ClientName.
-  * **displayName** `str` Nom lisible montré sur l'écran de consentement kanidm.
-  * **imageFile** `path` Icône de l'application. Téléchargée de nouveau à chaque exécution de kanidm-provision.
-  * **redirectPaths** `listOf str` Chemins de redirection OAuth2 (un par URL de rappel acceptée).
+  * **clientName** `nullOr str` Remplacer le nom du client kanidm. Par défaut, dnfLib.oauth2ClientName.
+  * **displayName** `str` Nom lisible affiché sur l'écran de consentement kanidm.
+  * **imageFile** `path` Icône de l'application. Réimportée à chaque exécution de kanidm-provision.
+  * **redirectPaths** `listOf str` Chemins de redirection OAuth2 (un par URL de callback acceptée).
   * **landingPath** `str` Chemin du point d'entrée de connexion automatique sur le service.
-  * **enableLegacyCrypto** `bool` Autoriser les anciens algorithmes de signature JWT (par ex. RS256).
+  * **enableLegacyCrypto** `bool` Autoriser les anciens algorithmes de signature JWT (ex. RS256).
   * **allowInsecureClientDisablePkce** `bool` Désactiver PKCE sur le client (uniquement pour les clients qui ne l'implémentent pas).
-  * **preferShortUsername** `nullOr bool` Utiliser le nom d'utilisateur court (sans domaine) dans la réclamation `preferred_username`.
-  * **extra** `attrs` Attributs supplémentaires fusionnés dans le client provisionné (claimMaps, etc.).
+  * **preferShortUsername** `nullOr bool` Utiliser le nom d'utilisateur court (sans domaine) dans la revendication `preferred_username`.
+  * **extra** `attrs` Attributs supplémentaires fusionnés dans le client provisionné (claimMaps, etc).
 
 ```nix
 darkone.service.idm = {
@@ -361,6 +371,8 @@ darkone.service.idm = {
   oauth2.extra = { };
 };
 ```
+
+<hr/>
 
 {/* t:p cd274ca0dd9a219fba59c4353516a1833000a2ba53c6b455481d31261bf00aa0 */}
 ### &#x2728; darkone.service.immich
@@ -528,41 +540,38 @@ OIDC Kanidm. La création d'un jeton nécessite un administrateur du serveur
 (API admin Synapse / interface Synapse-Admin)&nbsp;; avec MAS activé, créez-le
 avec `mas-cli manage issue-user-registration-token` sur l'hôte à la place.
 
-{/* t:p bd24403f81cddc364441e7053690975aca2f1497d9db5f6c725a323e368a5ec5 */}
-## Authentification nouvelle génération (MAS)
+{/* t:p b4e5d55ae3ca2a6d272ff13c66f2e86e65d7c1acbcc8f821bc1e543337af25d7 */}
+## Next-gen auth (MAS)
 
-`mas.enable` délègue toute l'authentification à Matrix Authentication Service
-(nécessaire pour Element X, connexion par QR, portail libre-service
-`/account`). Kanidm reste la source d'identité&nbsp;: MAS devient le client
-OIDC à la place de synapse, et synapse ne fait plus qu'interroger MAS pour
-l'inspection des jetons. Servi sur le même vhost&nbsp;: MAS possède la racine
-et les endpoints d'auth compat, synapse garde `/_matrix/*` et `/_synapse/*`&nbsp;;
-la découverte client est automatique (synapse sert `auth_metadata` lui-même),
-donc aucun changement de well-known.
+`mas.enable` délègue toute l'authentification au Matrix Authentication Service
+(requis par Element X, le login par QR code, le portail en libre-service `/account`). Kanidm
+reste la source d'identité : MAS devient le client OIDC à la place de synapse,
+et synapse ne demande plus qu'à MAS d'inspecter les tokens. Servi sur le même vhost :
+MAS possède la racine et les endpoints d'auth compat, synapse garde `/_matrix/*` et
+`/_synapse/*` ; la découverte client est automatique (synapse sert
+`auth_metadata` lui-même), donc aucun changement de well-known.
 
-Secrets sops requis (`openssl rand -hex 32` sauf indication contraire)&nbsp;:
-`mas-encryption-secret`, `mas-synapse-secret`, et `mas-rsa-private-key`
+Secrets sops requis (`openssl rand -hex 32` sauf indication contraire) :
+`mas-encryption-secret`, `mas-synapse-secret` et `mas-rsa-private-key`
 (`openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:4096`).
 
-:::danger[Immuable après le premier démarrage]
-`mas-encryption-secret` et l'ULID du fournisseur Kanidm ne doivent jamais
-changer après le premier démarrage de MAS (données chiffrées en base / liens
-de comptes amont).
+:::danger[Immuable une fois démarré]
+`mas-encryption-secret` et l'ULID du fournisseur Kanidm ne doivent jamais changer
+après le premier démarrage de MAS (données de base chiffrées / liens de comptes en amont).
 :::
 
-:::caution[Migration d'une instance existante]
-Activer `mas.enable` sur un serveur déjà en production nécessite la migration
-`mas-cli syn2mas` (comptes, sessions, identifiants externes) et une
-régénération des enregistrements de ponts (le flag `io.element.msc4190` n'est
-écrit qu'au moment de la génération)&nbsp;: procédure dans
-`.specs/matrix-authentication-service.md`.
+:::caution[Migrer une instance existante]
+Activer `mas.enable` sur un homeserver en production nécessite la migration `mas-cli syn2mas`
+(comptes, sessions, identifiants externes) et une régénération des registrations de ponts
+(le flag `io.element.msc4190` n'est écrit qu'au moment de la génération) :
+procédure dans `.specs/matrix-authentication-service.md`.
 :::
 
-* **enable** `bool` Activer le service matrix (synapse)
-* **federation.enable** `bool` Autoriser la fédération entre serveurs. False bloque toute fédération.
-* **federation.whitelist** `listOf str` Vide = fédérer avec tous les serveurs&nbsp;; non vide = seuls ces domaines (entrante + sortante).
-* **mas.enable** `bool` Déléguer toute l'authentification à Matrix Authentication Service (support Element X).
-* **friendRegistration.enable** `bool` Permettre aux amis de s'inscrire avec un jeton d'invitation (protégé par jeton).
+* **enable** `bool` Active le service matrix (synapse)
+* **federation.enable** `bool` Autorise la fédération serveur à serveur. False bloque toute fédération.
+* **federation.whitelist** `listOf str` Vide = fédérer avec tous les serveurs ; non vide = uniquement ces domaines (entrant + sortant).
+* **mas.enable** `bool` Délègue toute l'authentification au Matrix Authentication Service (support d'Element X).
+* **friendRegistration.enable** `bool` Autorise les amis à s'enregistrer avec un jeton d'invitation (contrôlé par jeton).
 * **bridges.whatsapp.enable** `bool` Pont Mautrix WhatsApp (connexion par QR code).
 * **bridges.signal.enable** `bool` Pont Mautrix Signal (connexion par QR code).
 * **bridges.telegram.enable** `bool` Pont Mautrix Telegram (connexion par numéro de téléphone).
@@ -572,7 +581,7 @@ régénération des enregistrements de ponts (le flag `io.element.msc4190` n'est
 ```nix
 darkone.service.matrix = {
   enable = false;
-  federation.enable = true;
+  federation.enable = false;
   federation.whitelist = [ ];
   mas.enable = false;
   friendRegistration.enable = false;
@@ -616,26 +625,26 @@ Les identifiants sont gérés via sops.
 darkone.service.minio.enable = false;
 ```
 
-{/* t:p 4ac5d8872d4080b34eb239433d32bc7ca7571c437eae230ab702d347b6959411 */}
+{/* t:p 2f827799d5d62f27c5dfa4be69f664d8ae8c62c5cdcd4737e8e79be386e364d7 */}
 ### &#x2728; darkone.service.monitoring
 
 Module de supervision : tableaux de bord Grafana + exportateur par nœud.
 
 :::tip
 Grafana visualise les métriques collectées par le service `prometheus` (qu'il
-nécessite sur le même hôte, imposé par le générateur). Pour chaque zone :
+exige sur le même hôte, imposé par le générateur). Pour chaque zone :
 
-- Tous les nœuds avec la balise « monitoring-node » exécutent l'exportateur de nœud.
-- Le nœud avec le service « monitoring » exécute Grafana (et nécessite `prometheus`).
+- Tous les nœuds portant le tag "monitoring-node" exécutent l'exportateur de nœud.
+- Le nœud portant le service "monitoring" exécute Grafana (et exige `prometheus`).
 - Un seul hôte de supervision par zone est accepté.
-- Une balise « monitoring-node:[zone] » attache un nœud au Prometheus de cette zone.
+- Un tag "monitoring-node:[zone]" rattache un nœud au Prometheus de cette zone.
 :::
 
-* **enable** `bool` Activer la supervision avec Prometheus, Grafana et l'exportateur de nœud
+* **enable** `bool` Activer la supervision avec prometheus, grafana et l'exportateur de nœud
 * **isNode** `bool` Est un nœud de supervision
 * **kioskTarget** `str` Cible (relative, sans `/`) pour la redirection automatique vers Grafana
-depuis la racine du domaine de supervision. Surchargé par le module Loki
-lorsqu'il est actif pour pointer vers un tableau de bord d'accueil multi-sources.
+  depuis la racine du domaine de supervision. Remplacée par le module Loki
+  lorsqu'il est actif pour pointer vers un tableau de bord d'accueil multi-sources.
 
 ```nix
 darkone.service.monitoring = {
@@ -647,26 +656,26 @@ darkone.service.monitoring = {
 
 <hr/>
 
-{/* t:p beb65211c65525ae9ac13ecefdfd7f4760298ade87e704c6a6c4268345f7bf37 */}
+{/* t:p ce920a23a0983060b06be107bf123f60c5296f0c69ed7aca84a2c7bfe2c4fc8f */}
 ### &#x2728; darkone.service.nextcloud
 
-Service Nextcloud complètement configuré.
+Service Nextcloud entièrement configuré.
 
 :::caution[Secret sops requis]
-Quand ce module est activé, il lit le mot de passe administrateur Nextcloud
-depuis le secret sops `nextcloud-admin-password`. Ajoutez l'entrée dans
-`usr/secrets/` avant de reconstruire, sinon l'activation de sops-nix échouera.
+Lorsqu'il est activé, ce module lit le mot de passe administrateur Nextcloud
+depuis le secret sops `nextcloud-admin-password`. Ajouter l'entrée à
+`usr/secrets/` avant de reconstruire, sinon l'activation sops-nix échouera.
 :::
 
-* **enable** `bool` Activer le service Nextcloud local
-* **adminUser** `str` Nom d'utilisateur admin pour Nextcloud
-* **plugins** `listOf (enum (appstoreApps ++ shippedToggleableApps))` Applications Nextcloud à activer. Seules `calendar` et `contacts` sont
-activées par défaut&nbsp;; Talk (`spreed`), le tableau de bord, le flux
-d'activité, les photos et toute autre application restent désactivées
-tant qu'elles ne sont pas listées ici.
+* **enable** `bool` Activer le service nextcloud local
+* **adminUser** `str` Nom d'utilisateur administrateur pour Nextcloud
+* **plugins** `listOf (enum (appstoreApps ++ shippedToggleableApps))` Applications Nextcloud à activer. Seuls `calendar` et `contacts` sont activés par
+  défaut ; Talk (`spreed`), le tableau de bord, le flux d'activités, les photos,
+  et toutes les autres applications restent désactivés jusqu'à ce qu'ils soient
+  listés ici.
 
-`user_oidc` est requis pour le SSO Kanidm et est inclus de force
-indépendamment de cette liste.
+  `user_oidc` est requis pour le SSO Kanidm et est inclus de force
+  indépendamment de cette liste.
 
 ```nix
 darkone.service.nextcloud = {
@@ -706,49 +715,48 @@ darkone.service.nfs = {
 };
 ```
 
-{/* t:p 4cc2c30044225948c46c2f0c744d31d42df99400fc4c97f341251bffb163c980 */}
+{/* t:p 636e9c56d6d9cd6bd903ed9d145a5a4398e258dafa574b71ead00f7164734bef */}
 ### &#x2728; darkone.service.nix-cache
 
 Proxy de cache binaire Nix par zone (nginx `proxy_cache`).
 
-Met en cache le cache Nix public (`cache.nixos.org`) sur la passerelle de zone
-pour qu'un déploiement sur tout le parc tire chaque closure du WAN une fois,
-puis la serve sur le LAN à tous les autres hôtes. Les chemins construits
-localement sont servis directement depuis `harmonia` (voir `harmonia.nix`) ;
-ce proxy ne fait jamais face à harmonia.
+Met en cache le cache Nix public (`cache.nixos.org`) sur la passerelle de la
+zone afin qu'un déploiement à l'échelle de la flotte tire chaque closure du WAN
+une seule fois, puis la sert sur le LAN à tous les autres hôtes. Les chemins
+construits localement sont servis directement par `harmonia` (voir
+`harmonia.nix`) ; ce proxy ne se place jamais devant harmonia.
 
-:::note[Pourquoi nginx et pas un proxy réécrivant]
-Un point de terminaison de cache fait face à exactement **une** source
-amont. Un `narinfo` et son `nar` sont deux requêtes distinctes et l'URL du
-`nar` est indépendante de la source amont, donc un proxy multi-sources doit
-réécrire les URLs `narinfo` dans son propre espace de noms et les suivre dans
-une base de données (l'approche qu'avait l'ancien proxy `ncps` — et la source
-de ses HTTP 500 récurrents « hash nar invalide »). Avec une source unique, il
-n'y a pas d'ambiguïté :
-nginx met en cache `narinfo` + `nar` verbatim, les signatures passent
-inchangées et les clients les vérifient. Pas de réécriture, pas de base de
-données, pas de tel bogue par construction.
+:::note[Pourquoi nginx et pas un proxy de réécriture]
+Un point de terminaison de cache fait face à **un** amont exactement. Un
+`narinfo` et son `nar` sont deux requêtes distinctes et l'URL du `nar` ne dépend
+pas de l'amont, donc un proxy multi-amont doit réécrire les URL `narinfo` dans
+son propre espace de noms et les suivre dans une base de données (l'approche
+qu'adoptait l'ancien proxy `ncps`, et la source de ses HTTP 500 « invalid nar
+hash » récurrents). Avec un seul amont, il n'y a pas d'ambiguïté :
+nginx met en cache `narinfo` + `nar` verbatim, les signatures transitent
+intactes et les clients les vérifient. Pas de réécriture, pas de base de
+données, ce bug est impossible par construction.
 :::
 
 :::tip[Topologie]
-- serveur : l'hôte passerelle qui liste `nix-cache` dans `config.yaml` (un
-  par zone). Fait tourner nginx sur l'IP interne, port `network.ports.nixCache`.
-- clients : tous les hôtes de la zone locale. Leurs substituters deviennent
-  les instances harmonia de la zone (direct, LAN/tailnet) plus ce proxy.
-- clients nomades (`roaming = true`) : hôtes nomades déplacés entre zones.
+- serveur : l'hôte passerelle qui liste `nix-cache` dans `config.yaml` (un par
+  zone). Exécute nginx sur l'IP interne, port `network.ports.nixCache`.
+- clients : tous les hôtes de la zone locale. Leurs substituters deviennent les
+  instances harmonia de la zone (directes, LAN/tailnet) plus ce proxy.
+- clients nomades (`roaming = true`) : hôtes itinérants déplacés entre les zones.
   Leurs substituters sont les noms neutres de zone (`harmonia.dnf.internal`,
   `nix-cache.dnf.internal`) que le DNS de chaque zone résout vers ses propres
-  services de cache (voir `service/dnsmasq.nix`), ainsi le cache suit le
+  services de cache (voir `service/dnsmasq.nix`), afin que le cache suive le
   portable.
 :::
 
 * **enable** `bool` le proxy de cache binaire Nix par zone (nginx devant cache.nixos.org)
-* **maxSize** `str` Taille maximale du cache disque ; nginx évince les entrées les moins récemment utilisées au-delà.
-* **roaming** `bool` Hôte nomade (portable déplacé entre zones) : remplace les
-substituters liés à la zone par les noms neutres de zone que le DNS de chaque
-zone résout vers ses propres services de cache. En dehors de toute zone DNF,
-les noms deviennent instantanément NXDOMAIN et Nix se rabat sur
-cache.nixos.org.
+* **maxSize** `str` Taille maximale du cache sur disque ; au-delà, nginx évince les entrées les moins récemment utilisées.
+* **roaming** `bool` Hôte nomade (portable déplacé entre zones) : remplacer les
+  substituters épinglés à la zone par les noms neutres de zone que le DNS de
+  chaque zone résout vers ses propres services de cache. En dehors de toute
+  zone DNF, les noms répondent NXDOMAIN instantanément et Nix retombe sur
+  cache.nixos.org.
 
 ```nix
 darkone.service.nix-cache = {
@@ -834,47 +842,65 @@ darkone.service.printing = {
 };
 ```
 
-{/* t:p ef428e05706c4045d350b7b2f52743660f8fd3d31691e17e003ce35acf67f91b */}
+{/* t:p aa03ca0f6bff647650439d5ffd0997d660d7bf3517393fb71923fadde102d2c7 */}
 ### &#x2728; darkone.service.prometheus
 
-Serveur de monitoring Prometheus avec escalade déclarative via Alertmanager.
+Serveur de monitoring Prometheus avec escalade Alertmanager déclarative.
 
 :::tip[Prometheus & Grafana]
-Service de métriques + alerting autonome, indépendant de Grafana&nbsp;:
+Service autonome de métriques + alerting, indépendant de Grafana :
 
-- Scrape chaque nœud de zone portant la feature `monitoring-node:<zone>`.
-- Alertmanager route par sévérité&nbsp;: warning -> Matrix #warnings,
+- Scrape chaque nœud de zone portant la fonctionnalité `monitoring-node:<zone>`.
+- Alertmanager route par sévérité : warning -> Matrix #warnings,
   critical -> Matrix #incidents + mail (relais Postfix local).
-- blackbox_exporter sonde la reachabilité de la passerelle / tailnet / DNS.
-- Les classes de nœuds (critical/non-critical/disabled) proviennent des features `alert-*`
-  ou du profil hôte (voir `dnf/lib/alerts.nix`).
+- blackbox_exporter sonde la joignabilité de la passerelle / du tailnet / du DNS.
+- Les classes de nœuds (critical/non-critical/disabled) proviennent des
+  fonctionnalités `alert-*` ou du profil hôte (voir `dnf/lib/alerts.nix`).
 
-`monitoring` (Grafana) nécessite un `prometheus` sur le même hôte
+`monitoring` (Grafana) requiert un `prometheus` sur le même hôte
 (imposé par le `require` du générateur). L'interface web est exposée sur
 `https://prometheus.<zone>.<domain>` derrière oauth2-proxy (groupe `admins`),
-qui corrige aussi les liens d'alerte pointant vers Prometheus.
+ce qui corrige aussi les liens d'alerte pointant vers Prometheus.
 :::
 
 * **enable** `bool` Active le serveur de métriques + alerting Prometheus
 * **retentionTime** `str` Durée de rétention des métriques Prometheus
 * **alerting.enable** `bool` Active Alertmanager (activé par défaut une fois les salons d'alerte Matrix provisionnés)
-* **alerting.matrix.enable** `bool` Envoie les alertes dans les salons Matrix via le bot matrix-alertmanager
-* **alerting.matrix.userId** `str` ID Matrix du bot d'alerte (par défaut depuis network.matrix.bot)
-* **alerting.matrix.warningsRoom** `str` ID Matrix du salon pour les warnings (par défaut depuis network.matrix.warningsRoom)
-* **alerting.matrix.incidentsRoom** `str` ID Matrix du salon pour les incidents (par défaut depuis network.matrix.incidentsRoom)
+* **alerting.matrix.enable** `bool` Livre les alertes dans les salons Matrix via le bot matrix-alertmanager
+* **alerting.matrix.userId** `str` ID utilisateur Matrix du bot d'alerte (par défaut depuis network.matrix.bot)
+* **alerting.matrix.warningsRoom** `str` ID du salon Matrix pour les warnings (par défaut depuis network.matrix.warningsRoom)
+* **alerting.matrix.incidentsRoom** `str` ID du salon Matrix pour les incidents (par défaut depuis network.matrix.incidentsRoom)
 * **alerting.email.enable** `bool` Envoie aussi les alertes critiques par mail (via le relais Postfix local)
 * **alerting.email.to** `str` Destinataire des mails d'alerte critique
-* **alerting.network.enable** `bool` Sonde la reachabilité réseau (passerelle/tailnet/DNS) avec blackbox_exporter
-* **alerting.network.internetProbeTargets** `listOf str` IPs externes que la passerelle de zone ping pour détecter une panne WAN. Quand toutes
-échouent, `ZoneInternetDown` se déclenche et inhibe les alertes (faussement) down des
-hôtes joignables uniquement via le WAN (ex.&nbsp;: le HCS). Vide désactive.
-* **alerting.network.httpProbeUrls** `listOf str` URLs HTTP(S) sondées pour la vivacité (`ServiceEndpointDown`) et l'expiration
-du certificat TLS (`CertificateExpiringSoon`/`Critical`). Vide par
-défaut&nbsp;: lister les endpoints web publics qui méritent une surveillance. Les
-redirections vers un SSO (3xx) comptent comme up&nbsp;; l'expiration du cert est lue
-depuis la handshake TLS, indépendamment du statut HTTP.
-* **alerting.silenceOnRebuild** `bool` Envoie le flag dnf-maintenance (collecteur textfile) pour que les rebuilds inhibent les alertes d'un nœud
-* **alerting.thresholds** `attrs` Surcharge les seuils d'alerte ressource (voir les défauts dans dnf/lib/alerts.nix)
+* **alerting.network.enable** `bool` Sonde la joignabilité réseau (gateway/tailnet/DNS) avec blackbox_exporter
+* **alerting.network.internetProbeTargets** `listOf str` Adresses IP externes que la passerelle de zone ping pour détecter une coupure WAN. Quand toutes
+  échouent, `ZoneInternetDown` se déclenche et inhibe les (fausses) alertes down des
+  hôtes joignables uniquement via le WAN (ex. le HCS). Vide pour désactiver.
+* **alerting.network.httpProbeUrls** `listOf str` URLs HTTP(S) sondées pour la vivacité (`ServiceEndpointDown`) et l'expiration des certificats TLS
+  (`CertificateExpiringSoon`/`Critical`). Vide par défaut : listez les endpoints
+  web publics à surveiller. Les redirections vers une connexion SSO (3xx) comptent
+  comme up ; l'expiration du certificat est lue à partir de la poignée de main TLS,
+  indépendamment du statut HTTP.
+* **alerting.silenceOnRebuild** `bool` Livre le flag dnf-maintenance (collecteur textfile) pour que les rebuilds inhibent les alertes d'un nœud
+* **alerting.thresholds** `attrs` Remplace les seuils d'alerte des ressources (voir les défauts de dnf/lib/alerts.nix)
+* **alerting.silences** `listOf submodule` Alertes connues et acceptées qui ne doivent jamais notifier. Chaque entrée devient une
+  route Alertmanager vers le récepteur `null` : l'alerte se déclenche toujours et
+  reste visible dans les UIs Prometheus/Alertmanager/Grafana, elle cesse juste
+  d'atteindre Matrix et le mail.
+
+  Déclarées sur l'hôte exécutant Prometheus, car c'est là que les règles et routes
+  de la zone sont générées. Un module consommateur à l'échelle de la flotte
+  (`usr/modules/alerts.nix`) est l'endroit pratique : il est importé partout et ne
+  prend effet que là où Prometheus tourne.
+
+  :::caution[En dernier recours]
+  Corrigez ou reconfigurez d'abord la condition sous-jacente. Un silence masque un
+  vrai signal, donc `reason` est obligatoire et la liste reste auditable.
+  :::
+  * **alert** `str` Nom de l'alerte à mettre en sourdine (label `alertname`). Toujours contraint, pour que les sévérités voisines restent armées.
+  * **host** `nullOr str` Restreint le silence à un seul hôte. Null met l'alerte en sourdine sur toute la flotte.
+  * **matchers** `attrs` Matchers de labels exacts supplémentaires, combinés en ET avec les autres (ex. le montage ou le périphérique concerné par l'alerte).
+  * **reason** `str` Pourquoi cette alerte est acceptée, et ce qui rendrait le silence retirable.
 
 ```nix
 darkone.service.prometheus = {
@@ -882,9 +908,9 @@ darkone.service.prometheus = {
   retentionTime = "30d";
   alerting.enable = roomsReady;
   alerting.matrix.enable = true;
-  alerting.matrix.userId = "@alertbot:poncon.fr";
-  alerting.matrix.warningsRoom = "!warnings:poncon.fr";
-  alerting.matrix.incidentsRoom = "!incidents:poncon.fr";
+  alerting.matrix.userId = "@alertbot:domain.tld";
+  alerting.matrix.warningsRoom = "!warnings:domain.tld";
+  alerting.matrix.incidentsRoom = "!incidents:domain.tld";
   alerting.email.enable = true;
   alerting.email.to = "admin@${network.domain}";
   alerting.network.enable = true;
@@ -892,24 +918,29 @@ darkone.service.prometheus = {
   alerting.network.httpProbeUrls = [ ];
   alerting.silenceOnRebuild = true;
   alerting.thresholds = { };
+  alerting.silences = [ ];
+  alerting.silences.alert = "DiskSpaceLow";
+  alerting.silences.host = "srv-main";
+  alerting.silences.matchers = { };
+  alerting.silences.reason = null;
 };
 ```
 
 <hr/>
 
-{/* t:p 4f6dec6f606592f53369c9292cdf27c970c32ecd32fbacc634e7005148c08b0a */}
+{/* t:p a4fd815fff1082747914abd9682bdaf88033edd18963a330eef659357ceb9300 */}
 ### &#x2728; darkone.service.restic
 
-Module de sauvegarde Restic : serveur REST + cibles de sauvegarde par hôte.
+Module de sauvegarde restic : serveur REST + cibles de sauvegarde par hôte.
 
-:::tip[Deux rôles, un seul module]
-- Serveur : un hôte avec `restic` dans ses services de config.yaml exécute le
-  serveur REST (`enableServer`) et stocke les dépôts de chaque hôte.
-- Client : tout hôte avec `enable = true` déclare des `targets`
+:::tip[Deux rôles, un module]
+- Serveur : un hôte ayant `restic` dans les services de son config.yaml exécute
+  le serveur REST (`enableServer`) et stocke le dépôt de chaque hôte.
+- Client : tout hôte avec `enable = true` déclare des `targets` de sauvegarde
   (chemin local ou `rest:http://restic.<zone>:<port>`).
 :::
 
-:::note[Deux mots de passe, ne pas confondre]
+:::note[Deux mots de passe, à ne pas confondre]
 - Phrase de passe du dépôt : `restic-password-<zone>`, chiffre le contenu du dépôt.
 - Identifiant REST : par hôte `restic/<hostname>/rest-password`, authentifie
   l'hôte auprès du serveur REST. Généré par `just passwd-restic`.
@@ -927,26 +958,26 @@ darkone.service.restic = {
 };
 ```
 
-Arborescence du dépôt par cible :
+Disposition du dépôt par cible :
 
 ```
-<root>/<hostname>/system     <- catégorie « system » (/) moins les exclusions
-<root>/<hostname>/srv/nfs    <- catégorie « nfs »    (/srv/nfs/<...>)
-<root>/<hostname>/srv/medias <- catégorie « medias » (/srv/medias/<...>)
+<root>/<hostname>/system     <- "system" category (/ minus excludes)
+<root>/<hostname>/srv/nfs    <- "nfs" category    (/srv/nfs/<...>)
+<root>/<hostname>/srv/medias <- "medias" category (/srv/medias/<...>)
 ```
 
-* **enable** `bool` Active le client de sauvegarde restic
-* **enableDryRun** `bool` Mode essai (dry run)
+* **enable** `bool` Activer le client de sauvegarde restic
+* **enableDryRun** `bool` Mode Dry Run
 * **enableWaitRemoteFs** `bool` Exécuter les sauvegardes seulement après remote-fs.target
-* **enableServer** `bool` Active le serveur REST restic
-* **serverDataDir** `str` Racine de stockage locale du serveur REST (dépôts de tous les hôtes)
-* **targets** `listOf ( submodule { options = { name = lib.mkOption { type = str; default = "main"; description = "Identifiant de cible, utilisé dans les noms d'unités de sauvegarde (<catégorie>-<nom>)"; }; root = lib.mkOption { type = str; default = "/mnt/backup/restic"; example = "rest:http://restic.${zone.domain}:${toString srvPort}"; description = "Racine du dépôt : chemin local ou URL REST"; }; zone = lib.mkOption { type = str; default = zone.name; description = "Zone sélectionnant la phrase de passe du dépôt (restic-password-<zone>)"; }; categories = lib.mkOption { type = listOf ( enum [ "system" "nfs" "medias" ] ); default = [ "system" ]; description = "Éléments à sauvegarder sur cette cible"; }; }; } )` Destinations de sauvegarde pour cet hôte (chemin local ou URL REST)
-  * **name** `str` Identifiant de cible, utilisé dans les noms d'unités de sauvegarde (&lt;catégorie&gt;-&lt;nom&gt;)
+* **enableServer** `bool` Activer le serveur REST restic
+* **serverDataDir** `str` Racine de stockage locale du serveur REST (les dépôts de tous les hôtes)
+* **targets** `listOf submodule` Destinations de sauvegarde pour cet hôte (chemin local ou URL REST)
+  * **name** `str` Identifiant de cible, utilisé dans les noms de sauvegarde/unité (&lt;category&gt;-&lt;name&gt;)
   * **root** `str` Racine du dépôt : chemin local ou URL REST
   * **zone** `str` Zone sélectionnant la phrase de passe du dépôt (restic-password-&lt;zone&gt;)
-  * **categories** `listOf ( enum [ "system" "nfs" "medias" ] )` Éléments à sauvegarder sur cette cible
-* **nfsPaths** `listOf str` Répertoires NFS (/srv/nfs/&lt;xxx&gt;) inclus dans la catégorie « nfs »
-* **mediasPaths** `listOf str` Répertoires medias (/srv/medias/&lt;xxx&gt;) inclus dans la catégorie « medias »
+  * **categories** `listOf ( enum [ "system" "nfs" "medias" ] )` Quoi sauvegarder vers cette cible
+* **nfsPaths** `listOf str` Dossiers NFS (/srv/nfs/&lt;xxx&gt;) inclus dans la catégorie 'nfs'
+* **mediasPaths** `listOf str` Dossiers medias (/srv/medias/&lt;xxx&gt;) inclus dans la catégorie 'medias'
 
 ```nix
 darkone.service.restic = {
@@ -980,21 +1011,23 @@ darkone.service.searx.enable = false;
 
 <hr/>
 
-{/* t:p ad4e7bcd765ea48f63abb54610cbab874d45252607bce47041cf3522f0980673 */}
+{/* t:p 4905a9139054d20bc5aff8a08be0a65e71b480c72521af5d1567e3a11febfb29 */}
 ### &#x2728; darkone.service.tailscale
 
-Service client Tailscale pour HCS.
+Service client Tailscale pour le HCS.
 
 :::note
-Un client Tailscale pour connecter un hôte externe à HCS.
-Ne pas l'utiliser pour connecter une passerelle pour un sous-réseau tailnet.
+Un client tailscale pour connecter un hôte externe au HCS.
+Ne pas l'utiliser pour connecter une passerelle d'un sous-réseau tailnet.
 :::
 
-* **enable** `bool` Activer le client Tailscale pour connecter HCS
-* **isGateway** `bool` Ce nœud Tailscale est une passerelle de sous-réseau
+* **enable** `bool` Activer le client tailscale pour connecter le HCS
+* **isGateway** `bool` Ce nœud tailscale est une passerelle de sous-réseau
 * **isExitNode** `bool` Configurer ce client comme nœud de sortie
-* **selfHeal.enable** `bool` Watchdog : détecter une déconnexion headscale et redémarrer tailscaled.
-* **autoPauseOnLan.enable** `bool` Client itinérant : mettre en pause tailscale (down) lorsqu'il est branché sur un réseau local DNF connu, le reprendre ailleurs. Clients NetworkManager non-passerelle uniquement.
+* **selfHeal.enable** `bool` Chien de garde : détecter la déconnexion de headscale et redémarrer tailscaled.
+* **autoPauseOnLan.enable** `bool` Client nomade : mettre en pause tailscale (down) tant qu'il est branché sur un LAN
+  d'une zone DNF connue, le reprendre ailleurs. Clients NetworkManager
+  non-passerelles uniquement.
 
 ```nix
 darkone.service.tailscale = {

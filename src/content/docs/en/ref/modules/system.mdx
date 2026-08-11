@@ -13,7 +13,7 @@ sidebar:
 **A system module** manages common, important, and general configurations.
 :::
 
-{/* t:p dc1847ee8697e38f31cf09e408b7648fd89d7619b60c41d7cd6455ae2ade4e45 */}
+{/* t:p 022340be29c9749763365e1bcb1941918be15358e9f86c033d2bb6fe44588273 */}
 ### &#x2699; darkone.system.core
 
 The core DNF module.
@@ -46,8 +46,8 @@ and propagates `enableSops` to the sops module.
 * **enableFlatpak** `bool` Enable flatpak DNF configuration (only for graphic environments)
 * **enableKmscon** `bool` Enable nerd font for TTY
 * **gcKeepGenerations** `int` When &gt; 0, trim the system profile to the last N generations before
-each garbage collection, and collect daily without age-based
-retention. For hosts with a tight root partition (gateways).
+  each garbage collection, and collect daily without age-based
+  retention. For hosts with a tight root partition (gateways).
 * **enableBoost** `bool` Enable overclocking, corectl
 * **enableAutoSuspend** `bool` Enable automatic suspend (for laptops, ignored if disableSuspend is true)
 * **disableSuspend** `bool` Full suspend disable (for servers)
@@ -197,7 +197,7 @@ darkone.system.luks = {
 
 <hr/>
 
-{/* t:p f1730af8eb5c74a41e0d9d1e6243dfee1dddff1bee111a3c738909b96af8320b */}
+{/* t:p 041916cd4113f0a72db3207a756d7cd316e448f724b142147e12a57f127392d3 */}
 ### &#x2699; darkone.system.security
 
 ANSSI BP-028 v2.0 (GNU/Linux) system hardening. (wip)
@@ -285,9 +285,9 @@ raising the level on a production system.
 * **adminMailbox** `str` Administrator email address (sudo R39, MTA aliases R75).
 * **useHardenedKernel** `bool` Use linuxPackages_hardened (R60, C1) instead of the default kernel.
 * **allowedActiveUsers** `listOf str` Human accounts allowed to authenticate (R30). Defaults to every user
-declared in config.yaml (host.users) plus the framework deploy
-account `nix`. Disabled accounts (no password credential) and service
-accounts (not normal users) need not be listed.
+  declared in config.yaml (host.users) plus the framework deploy
+  account `nix`. Disabled accounts (no password credential) and service
+  accounts (not normal users) need not be listed.
 
 ```nix
 darkone.system.security = {

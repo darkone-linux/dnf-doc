@@ -13,7 +13,7 @@ sidebar:
 **A security module** hardens the system, its programs and functionalities.
 :::
 
-{/* t:p fa706af719f95338ae438d0aca8a103cf147d044e40f3f74d0f82d003c532f51 */}
+{/* t:p 82efc324f2e32b588e940c97afc58034a6a0e57c9913366b87b9f4fc91da2d5c */}
 ### &#x1F511; darkone.security.complement
 
 Cross-cutting complementary measures — Annex A (C1–C12). (wip)
@@ -60,8 +60,8 @@ to ProxyJump (`ssh -J`). This module overrides `core.nix` for SSH.
 * **cronAllowedUsers** `listOf str` Users allowed to schedule cron jobs (C12).
 * **atAllowedUsers** `listOf str` Users allowed to schedule at jobs (C12). Mirrors cronAllowedUsers by default.
 * **egressAllowlist** `listOf str` IPv4/IPv6 addresses or CIDRs allowed outbound under the C4 reinforced
-egress deny-by-default policy. Empty list keeps the policy but only
-loopback and established/related traffic pass (proxy required).
+  egress deny-by-default policy. Empty list keeps the policy but only
+  loopback and established/related traffic pass (proxy required).
 
 ```nix
 darkone.security.complement = {
@@ -82,7 +82,7 @@ darkone.security.complement = {
 
 <hr/>
 
-{/* t:p ba0d62ebcf0567643fdb658645f929514423c5cd1b1e6be3747d68f9bf274346 */}
+{/* t:p 490bf588fd5118381d40d7e7cfc7dff2e5bb8745ffe345c167c517ed7cde80f7 */}
 ### &#x1F511; darkone.security.filesystem
 
 Partitioning, file tree, and file permissions (R28–R29, R50–R57). (wip)
@@ -111,11 +111,11 @@ A `nixos-rebuild` wrapper must ensure automatic mount/unmount.
 * **enable** `bool` Enable ANSSI filesystem hardening (R28–R29, R50–R57).
 * **allowedSetuid** `listOf str` Allowlist of tolerated setuid/setgid binaries (R56, R57).
 * **extraMountHardening** `listOf str` Mount points to harden with `nosuid,nodev,noexec` (R28). Each listed
-path MUST be a separate partition declared elsewhere (hardware-
-configuration / disko); the options are merged into its existing
-`fileSystems` entry. An explicit list (rather than a global flag)
-avoids guessing the layout and never creates phantom mounts. Do not
-list `/home` if users run scripts there — `noexec` would break them.
+  path MUST be a separate partition declared elsewhere (hardware-
+  configuration / disko); the options are merged into its existing
+  `fileSystems` entry. An explicit list (rather than a global flag)
+  avoids guessing the layout and never creates phantom mounts. Do not
+  list `/home` if users run scripts there — `noexec` would break them.
 
 ```nix
 darkone.security.filesystem = {
@@ -127,7 +127,7 @@ darkone.security.filesystem = {
 
 <hr/>
 
-{/* t:p c6ded5ab27c1e83903c5b94036a686004124ab6ff6dc269c0a0ceafe4bf226a1 */}
+{/* t:p 6b2d922bb2e8cbb9d034384a0493bcf2cc4acb4c4af95b9fa10aefaab91a4354 */}
 ### &#x1F511; darkone.security.integrity
 
 Filesystem integrity — HIDS (R76–R77). (wip)
@@ -153,7 +153,7 @@ The AIDE database must be re-signed at every major NixOS update
 :::
 
 * **enable** `bool` Enable ANSSI HIDS integrity — AIDE (R76–R77).
-* **aideRemoteCopy** `nullOr ( submodule { options = { host = lib.mkOption { type = str; description = "Remote host for the AIDE database copy."; }; sshKeyFile = lib.mkOption { type = path; description = "Path to the private SSH key for the remote copy."; }; }; } )` Remote copy of the GPG-signed AIDE database (R77). null = disabled.
+* **aideRemoteCopy** `nullOr submodule` Remote copy of the GPG-signed AIDE database (R77). null = disabled.
   * **host** `str` Remote host for the AIDE database copy.
   * **sshKeyFile** `path` Path to the private SSH key for the remote copy.
 
@@ -405,7 +405,7 @@ darkone.security.nss.enable = false;
 
 <hr/>
 
-{/* t:p fdf6c617fb43c54bc38d12b4a6da01c6f45bcad169f4923feefd0af237e5a37d */}
+{/* t:p c56c55ef5b432cd081c6b2745e3014e10567e35e5159d508572d5cbbcc83deb7 */}
 ### &#x1F511; darkone.security.packages
 
 Package management and updates (R58–R61). (wip)
@@ -433,10 +433,10 @@ Third-party modules (NVIDIA, ZFS) are not guaranteed compatible.
 * **trustedSubstituters** `listOf str` Allowlist of authorized Nix binary caches (R59).
 * **trustedPublicKeys** `listOf str` Public keys for authorized binary caches (R59).
 * **allowedUris** `listOf str` Prefix allowlist of URIs fetchable during evaluation (R59).
-Restricts builtins.fetch* / flake inputs to internal mirrors.
-Empty list disables the restriction.
+  Restricts builtins.fetch* / flake inputs to internal mirrors.
+  Empty list disables the restriction.
 * **maxSystemPackages** `nullOr int` Soft threshold on the number of system packages (R58).
-Emits an evaluation warning when exceeded; null disables the check.
+  Emits an evaluation warning when exceeded; null disables the check.
 
 ```nix
 darkone.security.packages = {
@@ -511,7 +511,7 @@ darkone.security.preboot.enable = false;
 
 <hr/>
 
-{/* t:p e8dcc414f690076517da5ede50aebcc4a5748fb4d62f61fa542eddeae4f5e859 */}
+{/* t:p 88e7a30cd436a2fd9b439e6e0b5509d368b94680780e7efaa95366fb936883bd */}
 ### &#x1F511; darkone.security.services
 
 Hardening of systemd services (R62–R66). (wip)
@@ -539,11 +539,11 @@ volumes required before enabling.
 * **enable** `bool` Enable ANSSI hardening of systemd services (R62–R66).
 * **rootServicesAllowed** `listOf str` systemd services allowed to run as root without CapabilityBoundingSet (R64).
 * **hardenedUnits** `listOf str` systemd units to which the ANSSI hardening baseline is applied
-(R52 RuntimeDirectoryMode, R55 PrivateTmp, R63 full sandbox via
-`dnfLib.mkHardenedServiceConfig`). Empty by default: blanket
-sandboxing can break services that need write access or extra
-syscalls, so units are opt-in. List framework-owned units known to
-tolerate confinement; per-unit `serviceConfig` overrides still win.
+  (R52 RuntimeDirectoryMode, R55 PrivateTmp, R63 full sandbox via
+  `dnfLib.mkHardenedServiceConfig`). Empty by default: blanket
+  sandboxing can break services that need write access or extra
+  syscalls, so units are opt-in. List framework-owned units known to
+  tolerate confinement; per-unit `serviceConfig` overrides still win.
 
 ```nix
 darkone.security.services = {

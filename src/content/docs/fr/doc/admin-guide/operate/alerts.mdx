@@ -129,6 +129,66 @@ dnf-maintenance on    # inhibe les alertes du nœud
 dnf-maintenance off   # les réactive
 ```
 
+{/* t:p 09e1d9f6c43658c16003d2b8e5b0d10da8f3e3f5e7b9c3f38f6e5ddd45dd6115 */}
+## Silencer une alerte connue
+
+Certaines alertes sont exactes mais non actionnables&nbsp;: un disque de sauvegarde
+volontairement rempli franchit `DiskSpaceLow` en permanence. `silences` les
+empêche de notifier.
+
+```nix
+# usr/modules/alerts.nix
+{
+  darkone.service.prometheus.alerting.silences = [
+    {
+      alert = "DiskSpaceLow";
+      host = "srv-backup";
+      matchers.mountpoint = "/mnt/backup";
+      reason = ''
+        Disque de sauvegarde volontairement rempli, seuil structurellement
+        franchi. Retirer si la rétention est réduite.
+      '';
+    }
+  ];
+}
+```
+
+| Champ | Rôle |
+|---|---|
+| `alert` | Nom de l'alerte à taire (`alertname`) |
+| `host` | Nom d'hôte à cibler (label `host`), `null` pour tout le parc |
+| `matchers` | Labels supplémentaires en égalité stricte, combinés en ET |
+| `reason` | Obligatoire&nbsp;: pourquoi l'alerte est acceptée |
+
+Chaque entrée devient une route Alertmanager vers le receiver `null`. L'alerte
+continue de se déclencher et reste visible dans Prometheus, Alertmanager et
+Grafana, elle cesse simplement de notifier.
+
+:::caution[Un silence est chirurgical, pas global]
+Seul l'`alertname` cité est concerné&nbsp;: taire `DiskSpaceLow` sur un point de
+montage laisse `DiskSpaceCritical` et `DiskWillFillSoon` pleinement armés sur ce
+même montage. Le vrai remplissage alerte toujours.
+:::
+
+:::note[Où déclarer ces silences]
+Les règles et routes d'une zone sont générées sur l'hôte qui fait tourner
+Prometheus, pas sur la machine concernée. Chaque hôte étant évalué
+indépendamment, `usr/machines/<hôte>/` n'y suffit pas. Un module consumer
+(`usr/modules/alerts.nix`) est importé partout et regroupe en un seul fichier ce
+qui est volontairement ignoré, toutes zones confondues.
+:::
+
+Vérifier le routage sur l'hôte Prometheus&nbsp;:
+
+```sh
+amtool config routes test --config.file=/etc/alertmanager.yml \
+  alertname=DiskSpaceLow host=srv-backup mountpoint=/mnt/backup
+```
+
+Pour taire un mode de défaillance systémique plutôt qu'un cas ponctuel, voir
+`ignoredUnits` (`dnf/config/alerts.nix`), qui exclut une unité systemd de
+`SystemdUnitFailed` sur tout le parc.
+
 {/* t:p 8051eff71befb2af62a438ff4d88cbefe0d796fc0d44b6a8dc75fd301d012bbc */}
 ## Dépannage
 

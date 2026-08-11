@@ -13,44 +13,45 @@ sidebar:
 **Un module système** gère les configurations communes, importantes et générales.
 :::
 
-{/* t:p dc1847ee8697e38f31cf09e408b7648fd89d7619b60c41d7cd6455ae2ade4e45 */}
+{/* t:p 022340be29c9749763365e1bcb1941918be15358e9f86c033d2bb6fe44588273 */}
 ### &#x2699; darkone.system.core
 
-Le module central de DNF.
+Module DNF de base.
 
 :::danger[Module requis]
 Ce module est activé par défaut (requis par la configuration DNF).
-Il est nécessaire au bon fonctionnement de chaque ordinateur NixOS sur le réseau local.
+Il est nécessaire au bon fonctionnement de chaque ordinateur NixOS du réseau local.
 :::
 
-Configure le chargeur systemd-boot, le noyau LTS (ou le dernier mainline via
-`enableLatestKernel`), JetBrains Mono Nerd
-Font (avec `kmscon` pour le TTY), l'optimisation nocturne du store Nix et
-le garbage collection hebdomadaire (rétention 30 j, ou keep-last-N via
-`gcKeepGenerations` sur les hôtes à espace disque limité), le pare-feu, la
-politique de suspension (les serveurs peuvent la désactiver complètement via
-`disableSuspend`), les règles polkit permettant à `wheel` d'éteindre/redémarrer,
-et un groupe/utilisateur `common-files` partagé pour les dossiers média inter-services.
+Configure le chargeur systemd-boot, le noyau LTS (ou la dernière version mainline via
+`enableLatestKernel`), la police JetBrains Mono Nerd
+(avec `kmscon` pour le TTY), l'optimisation nocturne du store Nix et la
+collecte hebdomadaire des déchets (rétention de 30 j, ou conservation des N dernières
+générations via `gcKeepGenerations` sur les hôtes à partition réduite), le pare-feu, la
+politique de mise en veille (les serveurs peuvent la désactiver complètement via
+`disableSuspend`), les règles polkit
+permettant au groupe `wheel` de couper l'alimentation/redémarrer, ainsi qu'un groupe/utilisateur
+`common-files` partagé pour les dossiers multimédia transversaux aux services.
 
 :::note[Point d'entrée du mixin]
 Active le mixin de profil de l'hôte (`darkone.host.${host.profile}.enable`)
 et propage `enableSops` vers le module sops.
 :::
 
-* **enable** `bool` Fondation Darkone du système (activée par défaut)
+* **enable** `bool` Module système de base du framework Darkone (activé par défaut)
 * **enableSystemdBoot** `bool` Activer le chargeur de démarrage par défaut
-* **enableLatestKernel** `bool` Utiliser le dernier noyau mainline (linuxPackages_latest) au lieu du LTS
+* **enableLatestKernel** `bool` Utiliser le noyau mainline le plus récent (linuxPackages_latest) au lieu du noyau LTS
 * **enableFstrim** `bool` Optimisation SSD avec fstrim
 * **enableFirewall** `bool` Activer le pare-feu (true par défaut)
-* **enableSops** `bool` Activer le module sops DNF (true par défaut)
-* **enableFlatpak** `bool` Activer la configuration DNF Flatpak (environnements graphiques uniquement)
-* **enableKmscon** `bool` Activer la nerd font pour le TTY
-* **gcKeepGenerations** `int` Quand &gt; 0, réduire le profil système aux N dernières générations avant
-chaque garbage collection, et collecter quotidiennement sans rétention par âge.
-Pour les hôtes avec une partition racine restreinte (passerelles).
+* **enableSops** `bool` Activer le module DNF sops (true par défaut)
+* **enableFlatpak** `bool` Activer la configuration DNF flatpak (uniquement pour les environnements graphiques)
+* **enableKmscon** `bool` Activer la police nerd pour le TTY
+* **gcKeepGenerations** `int` Quand &gt; 0, réduit le profil système aux N dernières générations avant
+  chaque collecte des déchets, et collecte quotidiennement sans rétention par
+  âge. Pour les hôtes à partition racine restreinte (passerelles).
 * **enableBoost** `bool` Activer l'overclocking, corectl
-* **enableAutoSuspend** `bool` Activer la suspension automatique (pour les laptops, ignoré si disableSuspend est true)
-* **disableSuspend** `bool` Désactivation complète de la suspension (pour les serveurs)
+* **enableAutoSuspend** `bool` Activer la mise en veille automatique (pour les portables, ignoré si disableSuspend est true)
+* **disableSuspend** `bool` Désactivation complète de la mise en veille (pour les serveurs)
 * **enableCommonFilesUser** `bool` Activer l'utilisateur common-files utilisé par plusieurs services
 
 ```nix
@@ -160,19 +161,19 @@ darkone.system.luks = {
 
 <hr/>
 
-{/* t:p f1730af8eb5c74a41e0d9d1e6243dfee1dddff1bee111a3c738909b96af8320b */}
+{/* t:p 041916cd4113f0a72db3207a756d7cd316e448f724b142147e12a57f127392d3 */}
 ### &#x2699; darkone.system.security
 
 Durcissement système ANSSI BP-028 v2.0 (GNU/Linux). (wip)
 
-Module recommandé, activé dans certains profils hôtes ou manuellement
+Module recommandé, activé dans certains profils d'hôtes ou manuellement
 selon les besoins. Applique progressivement les
 recommandations ANSSI selon le niveau choisi et la catégorie de machine.
-Chaque profil hôte définit son niveau et sa catégorie&nbsp;:
+Chaque profil d'hôte définit son niveau et sa catégorie :
 
-:::danger[Module en développement]
+:::danger[Module en cours de développement]
 - Affiner et tester les options, fonctionnalités, etc.
-- Créer le «&nbsp;checkScript&nbsp;», un outil d'introspection de la config de sécurité.
+- Créer le «&nbsp;checkScript&nbsp;», un outil d'introspection de la configuration de sécurité.
 - Configuration locale simple pour les réglages spécifiques au matériel et aux besoins.
 :::
 
@@ -183,13 +184,13 @@ darkone.system.security = {
 };
 ```
 
-Les règles incompatibles avec l'environnement sont exclues par tag&nbsp;:
+Les règles incompatibles avec l'environnement sont exclues par tag :
 
 ```nix
 darkone.system.security.excludes = [ "needs-jit" "needs-hibernation" ];
 ```
 
-Une règle spécifique peut être contournée avec une justification obligatoire&nbsp;:
+Une règle spécifique peut être contournée avec une justification obligatoire :
 
 ```nix
 darkone.system.security.exceptions = {
@@ -198,19 +199,19 @@ darkone.system.security.exceptions = {
 ```
 
 :::note[Niveau de durcissement ANSSI]
-- `minimal`      : socle commun, tout système (défaut).
-- `intermediary` : recommandé pour la quasi-totalité des systèmes.
-- `reinforced`   : systèmes sensibles ou multi-utilisateurs.
+- `minimal`      : base commune, tout système (défaut).
+- `intermediary` : recommandé pour presque tous les systèmes.
+- `reinforced`   : systèmes sensibles ou multi-locataires.
 - `high`         : compétences et budget dédiés ; implique une
-                   recompilation du noyau (tag `kernel-recompile`) si non exclu.
+                   recompilation du noyau (tag `kernel-recompile`) si non exclue.
 :::
 
 :::note[Catégorie de machine]
 - `base`   : règles universelles, toujours appliquées (défaut).
 - `client` : poste de travail (GUI, USB, session, verrouillage).
-- `server` : serveur (réseau durci, centralisation des logs, services exposés).
+- `server` : serveur (réseau durci, journalisation centralisée, services exposés).
 
-Indépendant de `host.profile` — à définir explicitement dans chaque profil hôte.
+Indépendant de `host.profile` — à définir explicitement dans chaque profil d'hôte.
 :::
 
 :::note[Tags d'exclusion]
@@ -221,7 +222,7 @@ Indépendant de `host.profile` — à définir explicitement dans chaque profil 
 - `no-sealing`                   : ignore R76, R77 (pas de HIDS/AIDE).
 - `no-auditd`                    : ignore R73 (auditd non configurable).
 - `embedded`                     : assouplit les contraintes /var, /home, etc.
-- `needs-jit`                    : autorise W^X assoupli (Java, .NET, V8, Wasm).
+- `needs-jit`                    : autorise un W^X assoupli (Java, .NET, V8, Wasm).
 - `needs-kexec`                  : conserve kexec pour kdump.
 - `needs-binfmt`                 : conserve binfmt_misc (Java, qemu-static).
 - `needs-hibernation`            : conserve l'hibernation (portables).
@@ -234,23 +235,23 @@ Justification obligatoire dans `rationale`.
 :::
 
 :::caution[Effets secondaires]
-Certaines règles peuvent casser un usage courant&nbsp;: `noexec /tmp` (R28),
+Certaines règles peuvent casser un usage courant : `noexec /tmp` (R28),
 SMT désactivé (R8), modules non signés (R18), conteneurs rootless (R9),
-JIT (R63). Voir les commentaires `sideEffects` dans chaque fichier thématique avant
+JIT (R63). Vérifiez les commentaires `sideEffects` dans chaque fichier thématique avant
 d'augmenter le niveau sur un système de production.
 :::
 
-* **enable** `bool` Active le module de durcissement ANSSI BP-028 v2.0.
-* **level** `enum [ "minimal" "intermediary" "reinforced" "high" ]` Niveau de durcissement ANSSI ciblé.
+* **enable** `bool` Activer le module de durcissement ANSSI BP-028 v2.0.
+* **level** `enum [ "minimal" "intermediary" "reinforced" "high" ]` Niveau de durcissement ANSSI visé.
 * **category** `enum [ "base" "client" "server" ]` Catégorie de machine qui sélectionne les sous-ensembles de règles.
 * **excludes** `listOf str` Tags qui désactivent des groupes entiers de règles.
 * **exceptions** `attrs` Exceptions par règle avec justification obligatoire.
 * **adminMailbox** `str` Adresse e-mail de l'administrateur (sudo R39, alias MTA R75).
-* **useHardenedKernel** `bool` Utilise linuxPackages_hardened (R60, C1) au lieu du noyau par défaut.
+* **useHardenedKernel** `bool` Utiliser linuxPackages_hardened (R60, C1) au lieu du noyau par défaut.
 * **allowedActiveUsers** `listOf str` Comptes humains autorisés à s'authentifier (R30). Par défaut, chaque utilisateur
-déclaré dans config.yaml (host.users) plus le compte de déploiement
-de l'infrastructure `nix`. Les comptes désactivés (sans identifiant de mot de passe) et les comptes
-de service (pas des utilisateurs normaux) n'ont pas besoin d'être listés.
+  déclaré dans config.yaml (host.users) plus le compte de déploiement du
+  framework `nix`. Les comptes désactivés (sans justificatif de mot de passe) et les comptes
+  de service (qui ne sont pas des utilisateurs normaux) n'ont pas besoin d'être listés.
 
 ```nix
 darkone.system.security = {

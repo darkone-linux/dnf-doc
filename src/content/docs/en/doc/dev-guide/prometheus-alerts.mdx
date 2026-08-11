@@ -26,30 +26,60 @@ The code is split in two to keep rule generation **testable**:
 
 Any non-trivial logic goes into `alerts.nix` ; the module merely plugs it in.
 
-{/* t:p 6c84c89cd0bc0be1392507e3a37579cc354efe7489649cffa2a6917c342d494d */}
-## Helpers (`alerts.nix`)
+{/* t:p a1f0ed460485e47cee72b5462f112713775280ce9bd95b316e2262f207480a79 */}
+## The helpers (`alerts.nix`)
 
 Exposed via `dnfLib` (see `dnf/lib/default.nix`) :
 
 | Helper | Role |
 |---|---|
 | `serviceUnits` | DNF service → systemd unit (e.g. `idm` → `kanidmd.service`) |
-| `nodeClass` | Node class (critical / non-critical / disabled) : `alert-*` features then profile |
-| `nodeAlertEligible` | Selection : a node is only monitored if it is a network/server node, carries `alert-non-critical`, or hosts a mapped service |
+| `nodeClass` | Class of a node (critical / non-critical / disabled) : `alert-*` features then profile |
+| `nodeAlertEligible` | Selection : a node is monitored only if it is a network/server node, carries `alert-non-critical`, or hosts a mapped service |
 | `severityForClass` | Class → severity (`critical` or `warning`) |
-| `hostExpectedUnits` | Expected units of a host (based on its enabled services) |
+| `hostExpectedUnits` | Expected units of a host (from its enabled services) |
 | `mkNodeRuleGroups` | `NodeDown`, `ServiceDown`, `SystemdUnitFailed` (+ `reach` label local/wan) |
-| `mkResourceRuleGroups` | Disk, RAM, load, inodes, OOM, FS read-only, disk prediction, clock, conntrack |
+| `mkResourceRuleGroups` | Disk, RAM, load, inodes, OOM, read-only FS, disk prediction, clock, conntrack |
 | `mkNetworkRuleGroups` | Blackbox probes (gateway, tailnet, DNS, `ZoneInternetDown`) |
-| `mkHttpRuleGroups` | HTTP probes : `ServiceEndpointDown` + TLS certificate expiry |
+| `mkHttpRuleGroups` | HTTP probes : `ServiceEndpointDown` + TLS certificate expiration |
 | `mkResticRuleGroups` | Backup freshness (`ResticBackupStale`/`Critical`) |
 | `mkSmartctlRuleGroups` | SMART disk health (`DiskSmartFailing`, `DiskTemperatureHigh`) |
 | `mkPostfixRuleGroups` | Postfix relay (`PostfixRelayUnhealthy`, `PostfixDeferredQueueHigh`) |
 | `mkSynapseRuleGroups` | Synapse (`SynapseRestarting`, `SynapseHighErrorRate`) |
 | `mkMaintenanceRuleGroups` | Maintenance flag (silence during rebuild) |
-| `mkTailscaleRuleGroups` | Tailnet self-repair (`TailscaleUnhealthy`, `TailscaleFlapping`) |
-| `mergeRuleGroups` | Merges fragments into **a single** document |
+| `mkTailscaleRuleGroups` | Tailnet self-healing (`TailscaleUnhealthy`, `TailscaleFlapping`) |
+| `mergeRuleGroups` | Merges fragments into **one single** document |
 | `mkAlertRuleGroups` | Shortcut : nodes + resources + restic + SMART + tailscale |
+| `mkSilenceRoutes` | Alertmanager routes to the `null` receiver (known, accepted alerts) |
+
+{/* t:p 3a2c869b4919f9263d282820c9cbb697290831064b24501d391499b2482005f8 */}
+### The `host` label, or why alerts are named
+
+Each scrape target carries a `host` label set to the hostname, assigned by
+`mkHostTargets` in `prometheus.nix` (one `static_config` per host rather than a
+single list of targets). Two effects :
+
+- the Matrix bot displays `DiskSpaceLow at srv-backup` instead of the raw
+  instance `<ip>:<port>` ;
+- a silence route can target a single machine.
+
+Setting it at scrape time propagates it for free to all alerts from these jobs,
+including the generic resource rules, which know nothing of the topology at
+evaluation time.
+
+:::caution[Aggregations erase labels]
+A `by (...)` clause removes every non-grouped label. `ResticBackupStale`
+(`max by (instance, job, host)`) and `SynapseHighErrorRate`
+(`sum by (instance, host)`) therefore quote `host` explicitly. Forgetting it in a
+new aggregated rule makes the notification fall back to the raw instance.
+:::
+
+:::note[The bot does not display `summary`]
+The Matrix bot renders the title then the `description` annotation, and only
+falls back to `summary` if `description` is missing&nbsp;: all DNF rules define
+one, so `summary` never reaches it. Information that must appear in the
+notification has to go into `description`.
+:::
 
 {/* t:p 7c13d3bbffc588d69c9063078871bec5dde8fca22801d89ebdad825c59ee2d66 */}
 ### Monitored node selection
@@ -97,25 +127,40 @@ services.prometheus.rules = [
 ];
 ```
 
-{/* t:p 1877eff88c0a5918b909dddf45fc377a172d9b253b0b9045ea82ed325c0f1090 */}
+{/* t:p 97c1f486cf7857b104bd4a84f6cbae530541aa913a4c7e490fcb69b16928eb5f */}
 ## Where to add what
 
 | I want to… | I touch… |
 |---|---|
 | monitor a new service | `serviceUnits` in `alerts.nix` |
-| a new rule family | a `mkXRuleGroups` + add it to the module's `mergeRuleGroups` |
-| wire a metrics exporter | exporter in its module (gated `monitoring-node`, bind `preferredIp`) + scrape job + `mkXRuleGroups` gated in `prometheus.nix` |
+| add a new rule family | a `mkXRuleGroups` + add it to the module's `mergeRuleGroups` |
+| wire up a metrics exporter | exporter in its module (gated `monitoring-node`, bind `preferredIp`) + scrape job + `mkXRuleGroups` gated in `prometheus.nix` |
 | change a default threshold | `defaultThresholds` in `alerts.nix` |
-| change a node's class | feature `alert-*[:zone]` (no code) |
-| force/exclude a node from monitoring | feature `alert-non-critical` / `alert-disabled` |
+| change a node's class | `alert-*[:zone]` feature (no code) |
+| force/exclude a node from monitoring | `alert-non-critical` / `alert-disabled` feature |
 | monitor a URL + its TLS certificate | `alerting.network.httpProbeUrls` in the config |
-| adjust internet outage detection | `alerting.network.internetProbeTargets` |
-| a new destination | the `alertmanager` block in `prometheus.nix` (receiver + route) |
+| tune internet outage detection | `alerting.network.internetProbeTargets` |
+| silence a known, accepted alert | `alerting.silences` in a consumer module (no code) |
+| silence a broken systemd unit across the whole fleet | `ignoredUnits` in `dnf/config/alerts.nix` |
+| add a new destination | the `alertmanager` block of `prometheus.nix` (receiver + route) |
 
-:::tip[DNF Convention]
-A helper in `lib/` = a test. Any function added to `alerts.nix` gets a test case in `dnf/tests/unit/lib/alerts_test.nix` (`nix-unit`).
+:::tip[DNF convention]
+A `lib/` helper = a test. Any function added to `alerts.nix` comes with a case
+in `dnf/tests/unit/lib/alerts_test.nix` (`nix-unit`).
 :::
 
-:::caution[Textfile metric: permissions]
-A `.prom` file from the textfile collector must be readable by `node-exporter` (non-root user). `mktemp` creates with `0600`: add a `chmod 0644` **before** the atomic `mv`, otherwise the file is ignored (`node_textfile_scrape_error 1`) and the metric is never exposed, hence the alert remains blind.
+:::caution[Alertmanager route order]
+`continue` is `false` by default&nbsp;: the first matching child route wins. The
+routes of `mkSilenceRoutes` must therefore be inserted **before** the routes by
+severity, otherwise they are never reached and the alert notifies anyway. The
+`null` receiver is shared with the maintenance route, hence its guard
+`silenceOnRebuild || silences != []`&nbsp;: referencing a missing receiver
+prevents Alertmanager from starting.
+:::
+
+:::caution[Textfile metric : permissions]
+A `.prom` file from the textfile collector must be readable by `node-exporter`
+(non-root user). `mktemp` creates with `0600` : set a `chmod 0644` **before**
+the atomic `mv`, otherwise the file is ignored (`node_textfile_scrape_error 1`)
+and the metric is never exposed, so the alert stays blind.
 :::
