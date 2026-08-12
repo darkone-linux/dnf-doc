@@ -102,3 +102,26 @@ Options détaillées de chaque service dans la
 - **Portail** : le service `homepage` dresse une page d'accueil des services, par zone.
 - **Authentification unique** : la plupart des services passent par le [SSO Kanidm](/fr/doc/admin-guide/operate/sso/).
 - **Local ou global** : un service reste dans sa zone, sauf `global: true` qui l'expose publiquement.
+
+## Services à version épinglée
+
+Quelques services ne peuvent pas suivre la version par défaut de nixpkgs&nbsp;:
+leur éditeur interdit de sauter une version majeure. DNF épingle donc le paquet
+dans le module, et la montée se fait **une majeure à la fois**.
+
+| Service | Option | Contrainte amont |
+|---|---|---|
+| `idm` (Kanidm) | `services.kanidm.package` | Une seule version maintenue, fin de vie 30 jours après la sortie de la suivante |
+| `nextcloud` | `services.nextcloud.package` | 33 → 34 possible, 33 → 35 impossible |
+
+:::caution[Contrôler la version en place avant de monter]
+Épingler la majeure suivante alors que l'instance n'y est pas encore prête fait
+échouer la migration au démarrage. Interroger d'abord le service lui-même&nbsp;:
+`kanidmd domain upgrade-check` pour Kanidm, `nextcloud-occ status` pour
+Nextcloud.
+:::
+
+Le signal d'une montée à planifier est un `warning` à l'évaluation, émis dès que
+la version épinglée est dépréciée. La procédure détaillée de Kanidm, transposable
+aux autres, est décrite dans
+[SSO et identités](/fr/doc/admin-guide/operate/sso/#mettre-à-jour-kanidm).
