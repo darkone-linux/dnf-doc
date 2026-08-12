@@ -6,6 +6,8 @@ sidebar:
 lang: fr
 ---
 
+import { Steps } from '@astrojs/starlight/components';
+
 {/* t:main */}
 {/* t:h 62cb531d6b0df6f948c43272fe531bd1056b2fcee8e6f4e1b4f8b24409eaf5eb */}
 
@@ -120,3 +122,66 @@ kanidm person credential create-reset-token <login> --name idm_admin
 
 Voir [Créer un compte utilisateur](/fr/doc/admin-guide/install/hcs/#créer-un-compte-utilisateur)
 et [Réinitialiser un mot de passe](/fr/doc/how-to/admin/reset-user-password/).
+
+## Mettre à jour Kanidm
+
+Kanidm ne maintient qu'une seule version à la fois&nbsp;: une version atteint sa
+fin de vie 30 jours après la sortie de la suivante, et seule une montée **de
+version en version** est supportée. DNF épingle donc explicitement le paquet,
+dans `dnf/modules/service/idm.nix`&nbsp;:
+
+```nix
+services.kanidm.package = pkgs.kanidm_1_11.withSecretProvisioning;
+```
+
+L'évaluation prévient dès que la version épinglée est dépréciée&nbsp;:
+
+```
+kanidm 1.10 is deprecated and will reach end-of-life on 2026-08-31
+```
+
+Passée cette date, nixpkgs marque la version comme non maintenue et
+l'évaluation **échoue**. La montée est donc à planifier avant l'échéance.
+
+:::danger[Aucun retour arrière automatique]
+La base est migrée au premier démarrage de la nouvelle version, sans
+downgrade possible. Sauvegarder avant, et ne jamais sauter une version (une
+montée 1.10 → 1.12 doit passer par 1.11).
+:::
+
+<Steps>
+
+1. Contrôle de compatibilité, sur le HCS, **avant** de toucher à la version&nbsp;:
+
+   ```sh
+   just enter hcs
+   sudo kanidmd domain upgrade-check -c /etc/kanidm/server.toml
+   ```
+
+   Opération en lecture seule. Chaque item doit ressortir `PASS`&nbsp;; un `FAIL`
+   se corrige avant d'aller plus loin.
+
+2. Copie à froid de la base, seul rollback réellement fiable&nbsp;:
+
+   ```sh
+   sudo systemctl stop kanidm
+   sudo cp -a /var/lib/kanidm/kanidm.db /var/lib/kanidm/kanidm.db.bak
+   sudo systemctl start kanidm
+   ```
+
+3. Passer l'épingle à la version suivante, **une seule** à la fois, puis
+   déployer le HCS.
+
+4. Vérifier le service et la cohérence de la base&nbsp;:
+
+   ```sh
+   systemctl status kanidm
+   sudo kanidmd database verify -c /etc/kanidm/server.toml
+   ```
+
+   Terminer par une vraie connexion OIDC sur un service du réseau.
+
+</Steps>
+
+En cas d'échec&nbsp;: remettre l'épingle sur la version précédente, restaurer le
+fichier `.bak` à la place de `kanidm.db` (service arrêté), redéployer.
