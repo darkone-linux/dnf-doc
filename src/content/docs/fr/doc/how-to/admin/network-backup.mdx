@@ -67,13 +67,40 @@ cred -> server: contrôle l'accès {
 Les deux sont générés par `just passwd-restic` (voir plus bas).
 </Aside>
 
-Disposition d'un dépôt, par catégorie :
+Disposition d'un dépôt : un dépôt par catégorie, nommé d'après elle.
 
 ```
-<racine>/<hôte>/system      # catégorie "system" (/ moins les exclusions)
-<racine>/<hôte>/srv/nfs     # catégorie "nfs"    (/srv/nfs/<...>)
-<racine>/<hôte>/srv/medias  # catégorie "medias" (/srv/medias/<...>)
+<racine>/<hôte>/system  # catégorie "system" (/ moins les exclusions)
+<racine>/<hôte>/nfs     # catégorie "nfs"    (/srv/nfs/<...>)
+<racine>/<hôte>/medias  # catégorie "medias" (/srv/medias/<...>)
 ```
+
+<Aside type="caution" title="Le chemin de dépôt fait exactement deux niveaux">
+`rest-server` ne sert que les dépôts situés **deux composants** sous son
+répertoire de données : `<hôte>/medias` répond, `<hôte>/srv/medias` renvoie
+404 — et restic affiche alors le message trompeur `repository does not exist`
+alors que les données sont intactes.
+
+Le sous-chemin est donc le **nom de la catégorie**, jamais le répertoire
+source. Cette disposition étant identique en local et en REST, un dépôt peut
+passer de l'un à l'autre sans être renommé.
+</Aside>
+
+<Aside type="danger" title="Dépôts créés avant cette disposition">
+Les dépôts écrits quand le sous-chemin recopiait le répertoire source se
+trouvent sous `<hôte>/srv/nfs` ou `<hôte>/srv/medias`. Les renommer sur le
+serveur **avant la prochaine exécution** : `initialize` valant `true`, restic
+créerait sinon un dépôt vide au nouveau chemin et repartirait silencieusement
+sur une sauvegarde complète — plusieurs To sur une liaison lente.
+
+```sh
+mv <données>/<hôte>/srv/medias <données>/<hôte>/medias
+rmdir <données>/<hôte>/srv
+```
+
+Renommage au sein du même système de fichiers : instantané, aucune donnée
+déplacée, historique et incrémentalité préservés.
+</Aside>
 
 {/* t:p 0219c306cc42de8e15d2f7cc29f8a344e055cbeead29e06dd6f3112b522737c6 */}
 ## Monter un serveur de sauvegarde
@@ -217,7 +244,7 @@ activer. Une tentative d'accès au dépôt d'un autre hôte renvoie une erreur
 Sur l'hôte concerné, les secrets sont déjà en place. Lister puis restaurer :
 
 ```bash
-# Adapter la zone du dépôt (et la catégorie : system, srv/nfs, srv/medias).
+# Adapter la zone du dépôt (et la catégorie : system, nfs, medias).
 ZONE=home
 
 # Variables d'accès REST (générées par sops) et passphrase de dépôt.
@@ -231,7 +258,7 @@ restic restore latest --target /restore
 
 <Aside type="caution" title="Adapter zone et catégorie">
 Renseigner `ZONE` avec la zone du dépôt et remplacer `system` dans
-`RESTIC_REPOSITORY` par la catégorie (`srv/nfs`, `srv/medias`) à restaurer.
+`RESTIC_REPOSITORY` par la catégorie (`nfs`, `medias`) à restaurer.
 </Aside>
 
 {/* t:p 412d08e5c0d4500d6ea1d3593ed0c459f638c9a4d548b64010b885c7b8f2f83b */}
