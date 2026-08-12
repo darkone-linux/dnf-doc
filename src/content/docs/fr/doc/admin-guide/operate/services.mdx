@@ -125,3 +125,45 @@ Le signal d'une montée à planifier est un `warning` à l'évaluation, émis d�
 la version épinglée est dépréciée. La procédure détaillée de Kanidm, transposable
 aux autres, est décrite dans
 [SSO et identités](/fr/doc/admin-guide/operate/sso/#mettre-à-jour-kanidm).
+
+### Sauvegarder avant de monter
+
+Ces migrations réécrivent le schéma de la base au premier démarrage de la
+nouvelle version, sans retour arrière. La sauvegarde préalable n'est pas une
+précaution de confort.
+
+Kanidm stocke en SQLite, donc **service arrêté**&nbsp;:
+
+```sh
+sudo systemctl stop kanidm
+sudo install -d -o kanidm -g kanidm /var/lib/kanidm/pre-upgrade
+sudo cp -a /var/lib/kanidm/kanidm.db* /var/lib/kanidm/pre-upgrade/
+sudo kanidmd database backup /var/lib/kanidm/pre-upgrade/dump.json -c /etc/kanidm/server.toml
+sudo chown -R kanidm:kanidm /var/lib/kanidm
+sudo systemctl start kanidm
+```
+
+Le `*` est essentiel&nbsp;: le journal d'écriture `kanidm.db-wal` survit à
+l'arrêt du service et porte les dernières transactions.
+
+Nextcloud stocke en PostgreSQL, donc **sans interruption**&nbsp;: `pg_dump -Fc`
+prend un instantané transactionnel cohérent sur une base vive.
+
+```sh
+sudo install -d -o nextcloud -g nextcloud -m 0750 /var/lib/nextcloud/pre-upgrade
+sudo -u postgres pg_dump -Fc nextcloud > /var/lib/nextcloud/pre-upgrade/nextcloud.dump
+sudo cp -a /var/lib/nextcloud/config/config.php /var/lib/nextcloud/pre-upgrade/
+sudo chown -R nextcloud:nextcloud /var/lib/nextcloud/pre-upgrade
+```
+
+Ne pas omettre `config.php`&nbsp;: c'est lui qui porte le numéro de version
+installée, sans lequel une base restaurée ne repart pas.
+
+:::tip[Relire le dump avant de déployer]
+Un dump illisible ne se découvre jamais au bon moment. `pg_restore -l` liste son
+contenu sans rien restaurer&nbsp;:
+
+```sh
+sudo -u nextcloud pg_restore -l /var/lib/nextcloud/pre-upgrade/nextcloud.dump | wc -l
+```
+:::

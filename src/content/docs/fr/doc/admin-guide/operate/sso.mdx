@@ -165,9 +165,22 @@ montée 1.10 → 1.12 doit passer par 1.11).
 
    ```sh
    sudo systemctl stop kanidm
-   sudo cp -a /var/lib/kanidm/kanidm.db /var/lib/kanidm/kanidm.db.bak
+   sudo install -d -o kanidm -g kanidm /var/lib/kanidm/pre-upgrade
+   sudo cp -a /var/lib/kanidm/kanidm.db* /var/lib/kanidm/pre-upgrade/
+   sudo kanidmd database backup /var/lib/kanidm/pre-upgrade/dump.json -c /etc/kanidm/server.toml
+   sudo chown -R kanidm:kanidm /var/lib/kanidm
    sudo systemctl start kanidm
    ```
+
+   **Copier le journal, pas seulement la base.** SQLite ne fusionne pas toujours
+   son journal d'écriture en fermant&nbsp;: un `kanidm.db-wal` de plusieurs Mo
+   survit couramment à l'arrêt du service. Copier `kanidm.db` seul laisserait de
+   côté les dernières transactions. Le `*` prend le triplet `.db`, `.db-wal` et
+   `.db-shm`, qui ne vaut que pris ensemble.
+
+   Le `chown` final n'est pas optionnel&nbsp;: les deux commandes précédentes
+   tournent en root et laisseraient sinon des fichiers que le service ne peut
+   plus écrire.
 
 3. Passer l'épingle à la version suivante, **une seule** à la fois, puis
    déployer le HCS.
