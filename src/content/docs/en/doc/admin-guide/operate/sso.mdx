@@ -6,6 +6,8 @@ sidebar:
 lang: en
 ---
 
+import { Steps } from '@astrojs/starlight/components';
+
 {/* t:translated-from fr */}
 {/* t:h 62cb531d6b0df6f948c43272fe531bd1056b2fcee8e6f4e1b4f8b24409eaf5eb */}
 
@@ -109,3 +111,78 @@ kanidm person credential create-reset-token <login> --name idm_admin
 
 See [Create a user account](/en/doc/admin-guide/install/hcs/#create-a-user-account)
 and [Reset a password](/en/doc/how-to/admin/reset-user-password/).
+
+{/* t:p 3ec5307468ea4efb7dca16dab524a2055a5886286f0ad5e2e23f6d8da7daf33f */}
+## Updating Kanidm
+
+Kanidm only maintains a single version at a time&nbsp;: a version reaches its
+end-of-life 30 days after the release of the next one, and only an **upgrade
+from one version to the next** is supported. DNF therefore pins the package
+explicitly, in `dnf/modules/service/idm.nix`&nbsp;:
+
+```nix
+services.kanidm.package = pkgs.kanidm_1_11.withSecretProvisioning;
+```
+
+The evaluation warns as soon as the pinned version is deprecated&nbsp;:
+
+```
+kanidm 1.10 is deprecated and will reach end-of-life on 2026-08-31
+```
+
+After this date, nixpkgs marks the version as unmaintained and the evaluation
+**fails**. The upgrade must therefore be planned before the deadline.
+
+:::danger[No automatic rollback]
+The database is migrated on the first start of the new version, with no
+downgrade possible. Back up before, and never skip a version (an upgrade
+1.10 → 1.12 must go through 1.11).
+:::
+
+<Steps>
+
+1. Compatibility check, on the HCS, **before** touching the version&nbsp;:
+
+   ```sh
+   just enter hcs
+   sudo kanidmd domain upgrade-check -c /etc/kanidm/server.toml
+   ```
+
+   Read-only operation. Each item must come out as `PASS`&nbsp;; a `FAIL` must
+   be fixed before going any further.
+
+2. Cold copy of the database, the only really reliable rollback&nbsp;:
+
+   ```sh
+   sudo systemctl stop kanidm
+   sudo install -d -o kanidm -g kanidm /var/lib/kanidm/pre-upgrade
+   sudo cp -a /var/lib/kanidm/kanidm.db* /var/lib/kanidm/pre-upgrade/
+   sudo kanidmd database backup /var/lib/kanidm/pre-upgrade/dump.json -c /etc/kanidm/server.toml
+   sudo chown -R kanidm:kanidm /var/lib/kanidm
+   sudo systemctl start kanidm
+   ```
+
+   **Copy the journal, not just the database.** SQLite does not always merge its
+   write journal when closing&nbsp;: a `kanidm.db-wal` of several MB commonly
+   survives the service stop. Copying `kanidm.db` alone would leave the latest
+   transactions aside. The `*` takes the `.db`, `.db-wal` and `.db-shm`
+   triplet, which is only valid taken together.
+
+   The final `chown` is not optional&nbsp;: the two previous commands run as
+   root and would otherwise leave files the service can no longer write.
+
+3. Move the pin to the next version, **one** at a time, then deploy the HCS.
+
+4. Check the service and the database consistency&nbsp;:
+
+   ```sh
+   systemctl status kanidm
+   sudo kanidmd database verify -c /etc/kanidm/server.toml
+   ```
+
+   Finish with a real OIDC login on a network service.
+
+</Steps>
+
+In case of failure&nbsp;: put the pin back on the previous version, restore the
+`.bak` file in place of `kanidm.db` (service stopped), redeploy.

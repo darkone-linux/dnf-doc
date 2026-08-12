@@ -959,7 +959,7 @@ darkone.service.prometheus = {
 
 <hr/>
 
-{/* t:p a4fd815fff1082747914abd9682bdaf88033edd18963a330eef659357ceb9300 */}
+{/* t:p 18b5b138bc2c936d52519bad4bbe8cc835f701feb03373b4cad518eb7e3dc6db */}
 ### &#x2728; darkone.service.restic
 
 Restic backup module: REST server + per-host backup targets.
@@ -989,13 +989,33 @@ darkone.service.restic = {
 };
 ```
 
-Repository layout per target:
+Repository layout per target: one repo per category, named after it.
 
 ```
-<root>/<hostname>/system     <- "system" category (/ minus excludes)
-<root>/<hostname>/srv/nfs    <- "nfs" category    (/srv/nfs/<...>)
-<root>/<hostname>/srv/medias <- "medias" category (/srv/medias/<...>)
+<root>/<hostname>/system  <- "system" category (/ minus excludes)
+<root>/<hostname>/nfs     <- "nfs" category    (/srv/nfs/<...>)
+<root>/<hostname>/medias  <- "medias" category (/srv/medias/<...>)
 ```
+
+:::caution[Repo path is exactly two levels deep]
+rest-server serves repositories at most two components below its `--path`:
+`<hostname>/medias` answers, `<hostname>/srv/medias` returns 404 and restic
+reports a misleading `repository does not exist`. The subpath is therefore
+the bare category name, never the source directory. Identical layout for
+local and REST targets lets a repo move between the two without a rename.
+:::
+
+:::danger[Migrating repos created before this layout]
+Repos written when the subpath mirrored the source directory sit under
+`<hostname>/srv/{nfs,medias}`. Rename them on the server before the next run:
+`initialize = true` would otherwise create an empty repo at the new path and
+silently start a full re-seed.
+
+```sh
+mv <data-dir>/<hostname>/srv/medias <data-dir>/<hostname>/medias
+rmdir <data-dir>/<hostname>/srv
+```
+:::
 
 * **enable** `bool` Enable restic backup client
 * **enableDryRun** `bool` Dry Run mode

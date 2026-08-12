@@ -928,21 +928,21 @@ darkone.service.prometheus = {
 
 <hr/>
 
-{/* t:p a4fd815fff1082747914abd9682bdaf88033edd18963a330eef659357ceb9300 */}
+{/* t:p 18b5b138bc2c936d52519bad4bbe8cc835f701feb03373b4cad518eb7e3dc6db */}
 ### &#x2728; darkone.service.restic
 
 Module de sauvegarde restic : serveur REST + cibles de sauvegarde par hôte.
 
-:::tip[Deux rôles, un module]
-- Serveur : un hôte ayant `restic` dans les services de son config.yaml exécute
-  le serveur REST (`enableServer`) et stocke le dépôt de chaque hôte.
+:::tip[Deux rôles, un seul module]
+- Serveur : un hôte avec `restic` dans ses services config.yaml fait tourner le
+  serveur REST (`enableServer`) et stocke le dépôt de chaque hôte.
 - Client : tout hôte avec `enable = true` déclare des `targets` de sauvegarde
   (chemin local ou `rest:http://restic.<zone>:<port>`).
 :::
 
 :::note[Deux mots de passe, à ne pas confondre]
 - Phrase de passe du dépôt : `restic-password-<zone>`, chiffre le contenu du dépôt.
-- Identifiant REST : par hôte `restic/<hostname>/rest-password`, authentifie
+- Identifiant REST : `restic/<hostname>/rest-password` par hôte, authentifie
   l'hôte auprès du serveur REST. Généré par `just passwd-restic`.
 :::
 
@@ -958,26 +958,47 @@ darkone.service.restic = {
 };
 ```
 
-Disposition du dépôt par cible :
+Plan du dépôt par cible : un dépôt par catégorie, nommé d'après elle.
 
 ```
-<root>/<hostname>/system     <- "system" category (/ minus excludes)
-<root>/<hostname>/srv/nfs    <- "nfs" category    (/srv/nfs/<...>)
-<root>/<hostname>/srv/medias <- "medias" category (/srv/medias/<...>)
+<root>/<hostname>/system  <- "system" category (/ minus excludes)
+<root>/<hostname>/nfs     <- "nfs" category    (/srv/nfs/<...>)
+<root>/<hostname>/medias  <- "medias" category (/srv/medias/<...>)
 ```
 
-* **enable** `bool` Activer le client de sauvegarde restic
-* **enableDryRun** `bool` Mode Dry Run
-* **enableWaitRemoteFs** `bool` Exécuter les sauvegardes seulement après remote-fs.target
-* **enableServer** `bool` Activer le serveur REST restic
-* **serverDataDir** `str` Racine de stockage locale du serveur REST (les dépôts de tous les hôtes)
+:::caution[Le chemin du dépôt est exactement sur deux niveaux]
+rest-server sert les dépôts au plus deux composants en dessous de son `--path` :
+`<hostname>/medias` répond, `<hostname>/srv/medias` renvoie une 404 et restic
+signale le message trompeur « repository does not exist ». Le sous-chemin est
+donc le simple nom de catégorie, jamais le répertoire source. Un plan identique
+pour les cibles locales et REST permet à un dépôt de passer de l'une à l'autre
+sans renommage.
+:::
+
+:::danger[Migration des dépôts créés avant ce plan]
+Les dépôts écrits quand le sous-chemin reflétait le répertoire source se trouvent
+sous `<hostname>/srv/{nfs,medias}`. Renommez-les sur le serveur avant la prochaine
+exécution : `initialize = true` créerait sinon un dépôt vide au nouveau chemin et
+lancerait silencieusement une sauvegarde complète depuis zéro.
+
+```sh
+mv <data-dir>/<hostname>/srv/medias <data-dir>/<hostname>/medias
+rmdir <data-dir>/<hostname>/srv
+```
+:::
+
+* **enable** `bool` Active le client de sauvegarde restic
+* **enableDryRun** `bool` Mode dry run
+* **enableWaitRemoteFs** `bool` Ne lance les sauvegardes qu'après remote-fs.target
+* **enableServer** `bool` Active le serveur REST restic
+* **serverDataDir** `str` Racine de stockage locale du serveur REST (dépôts de tous les hôtes)
 * **targets** `listOf submodule` Destinations de sauvegarde pour cet hôte (chemin local ou URL REST)
-  * **name** `str` Identifiant de cible, utilisé dans les noms de sauvegarde/unité (&lt;category&gt;-&lt;name&gt;)
+  * **name** `str` Identifiant de la cible, utilisé dans les noms de sauvegarde/unités (&lt;category&gt;-&lt;name&gt;)
   * **root** `str` Racine du dépôt : chemin local ou URL REST
-  * **zone** `str` Zone sélectionnant la phrase de passe du dépôt (restic-password-&lt;zone&gt;)
-  * **categories** `listOf ( enum [ "system" "nfs" "medias" ] )` Quoi sauvegarder vers cette cible
-* **nfsPaths** `listOf str` Dossiers NFS (/srv/nfs/&lt;xxx&gt;) inclus dans la catégorie 'nfs'
-* **mediasPaths** `listOf str` Dossiers medias (/srv/medias/&lt;xxx&gt;) inclus dans la catégorie 'medias'
+  * **zone** `str` Zone qui sélectionne la phrase de passe du dépôt (restic-password-&lt;zone&gt;)
+  * **categories** `listOf ( enum [ "system" "nfs" "medias" ] )` Ce qui est sauvegardé sur cette cible
+* **nfsPaths** `listOf str` Répertoires NFS (/srv/nfs/&lt;xxx&gt;) inclus dans la catégorie 'nfs'
+* **mediasPaths** `listOf str` Répertoires medias (/srv/medias/&lt;xxx&gt;) inclus dans la catégorie 'medias'
 
 ```nix
 darkone.service.restic = {

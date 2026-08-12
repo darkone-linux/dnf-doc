@@ -101,3 +101,57 @@ Detailed options for each service in the
 - **Portal**: the `homepage` service provides a services dashboard, per zone.
 - **Single sign-on**: most services go through [SSO Kanidm](/en/doc/admin-guide/operate/sso/).
 - **Local or global**: a service stays in its zone, unless `global: true` exposes it publicly.
+
+{/* t:p 83ad1db1dcf5c83ed4fdbae4d3735258ea074bb7bad2554821c8f564502b0eaa */}
+## Services with pinned versions
+
+Some services cannot follow nixpkgs' default version&nbsp;: their editor forbids skipping a major version. DNF therefore pins the package in the module, and upgrades happen **one major version at a time**.
+
+| Service | Option | Upstream constraint |
+|---|---|---|
+| `idm` (Kanidm) | `services.kanidm.package` | Only one version maintained, end of life 30 days after the release of the next one |
+| `nextcloud` | `services.nextcloud.package` | 33 → 34 possible, 33 → 35 impossible |
+
+:::caution[Check the installed version before upgrading]
+Pinning the next major version while the instance is not ready for it yet causes the migration to fail at startup. First query the service itself&nbsp;: `kanidmd domain upgrade-check` for Kanidm, `nextcloud-occ status` for Nextcloud.
+:::
+
+An upgrade to plan is signaled by a `warning` at evaluation, emitted as soon as the pinned version is deprecated. The detailed Kanidm procedure, transposable to the others, is described at the end of the
+[SSO and identities](/en/doc/admin-guide/operate/sso/) page.
+
+{/* t:p bcea1ed7430dadaade6fadfdc8dfc49af5c67e44a4ade5a633d95b1255ed3195 */}
+### Back up before upgrading
+
+These migrations rewrite the database schema at the first startup of the new version, with no rollback. The prior backup is not a comfort precaution.
+
+Kanidm stores in SQLite, so **service stopped**&nbsp;:
+
+```sh
+sudo systemctl stop kanidm
+sudo install -d -o kanidm -g kanidm /var/lib/kanidm/pre-upgrade
+sudo cp -a /var/lib/kanidm/kanidm.db* /var/lib/kanidm/pre-upgrade/
+sudo kanidmd database backup /var/lib/kanidm/pre-upgrade/dump.json -c /etc/kanidm/server.toml
+sudo chown -R kanidm:kanidm /var/lib/kanidm
+sudo systemctl start kanidm
+```
+
+The `*` is essential&nbsp;: the write-ahead log `kanidm.db-wal` survives the service shutdown and carries the latest transactions.
+
+Nextcloud stores in PostgreSQL, so **without interruption**&nbsp;: `pg_dump -Fc` takes a consistent transactional snapshot on a live database.
+
+```sh
+sudo install -d -o nextcloud -g nextcloud -m 0750 /var/lib/nextcloud/pre-upgrade
+sudo -u postgres pg_dump -Fc nextcloud > /var/lib/nextcloud/pre-upgrade/nextcloud.dump
+sudo cp -a /var/lib/nextcloud/config/config.php /var/lib/nextcloud/pre-upgrade/
+sudo chown -R nextcloud:nextcloud /var/lib/nextcloud/pre-upgrade
+```
+
+Do not omit `config.php`&nbsp;: it carries the installed version number, without which a restored database does not restart.
+
+:::tip[Re-read the dump before deploying]
+An unreadable dump is never discovered at the right time. `pg_restore -l` lists its content without restoring anything&nbsp;:
+
+```sh
+sudo -u nextcloud pg_restore -l /var/lib/nextcloud/pre-upgrade/nextcloud.dump | wc -l
+```
+:::
