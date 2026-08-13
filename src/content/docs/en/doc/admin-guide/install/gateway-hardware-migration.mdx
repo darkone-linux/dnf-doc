@@ -1,0 +1,351 @@
+---
+title: Migrating a gateway's hardware
+sidebar:
+  label: Migration
+  order: 5
+lang: en
+---
+
+import { Steps } from '@astrojs/starlight/components';
+
+{/* t:translated-from fr */}
+{/* t:h c7774b28dd8e0ebdfc6fdd0c5298e8a672ac15b42bc39f6d7c7e5b6244227827 */}
+
+{/* t:p 3e94b8445ee9aa9fd4c9e2b85f78c1bb23f391ac0658fefc3e23df4fee662894 */}
+Replace a [gateway](/en/doc/admin-guide/install/gateway/) computer without
+losing its configuration or data. The difference from a fresh install boils
+down to one sentence&nbsp;: **the machine is new, the state is not**.
+
+That is where almost all the pitfalls on this page come from.
+
+{/* t:p 291aac58fcad314364d67076724c030454e6505aca602686a3a386bc5d9fd4b3 */}
+## What carries over on its own, what does not
+
+| Repris automatiquement | À reprendre à la main |
+|---|---|
+| DNS and DHCP for the zone | Service data |
+| Service registry, portal, reverse proxy | Backup repository |
+| Monitoring targets, deployment tags | VPN identity |
+| sops secret recipients | Owners of restored files |
+| Deployment SSH keys | `system.stateVersion` |
+
+Secrets are not tied to the hostname&nbsp;: the sops rules file only knows the
+administration key and the infrastructure key. Renaming changes nothing here.
+
+{/* t:p 15cff55278b3a0351383cfe400ed96008b880c08922e038b6422dcb57f8d3a88 */}
+## Record the new hardware
+
+Nothing is modified at this stage&nbsp;: you collect what will need to be
+written into the configuration.
+
+<Steps>
+
+1. **Boot from the USB drive** (`just build-iso` image), USB Wi-Fi card plugged
+   into the port that will be its final port.
+
+2. **Record interfaces, MAC addresses and disks**
+
+   ```sh
+   ip -o link
+   lsblk -o NAME,SIZE,MODEL,SERIAL,TYPE
+   ```
+
+   A Wi-Fi card's permanent MAC differs from its current, often random, MAC. The
+   permanent one is what matters, visible in the `permaddr` field.
+
+3. **Physically identify** which port will be the WAN and which the LAN, by
+   unplugging and replugging. Label the sockets.
+
+</Steps>
+
+:::tip[Freezing the USB Wi-Fi card name]
+A USB card is named after the hub chain that carries it
+(`wlp0s20f0u5u1u3`)&nbsp;: moving it to another port renames it, and the
+configuration no longer finds it. Built-in cards, for their part, keep stable
+names (`eno0`, `wlp4s0`) tied to the physical socket.
+
+Freeze the only USB card, using its permanent MAC&nbsp;:
+
+```nix
+# usr/machines/gw/default.nix
+systemd.network.links."10-wl-ext" = {
+  matchConfig.PermanentMACAddress = "00:00:5e:00:53:01";
+  linkConfig.Name = "wl-ext";
+};
+```
+
+Avoid `lan0` (already the bridge) and the `eth`/`wlan` prefixes (kernel
+namespace). NixOS copies the `.link` files into the initrd, so the names are
+identical at disk unlock.
+:::
+
+{/* t:p 899984142e75fac6fb0eae50974244dca107b235c1a17cfc8b9f2e53ee8ab9f5 */}
+## Prepare the configuration
+
+The Wi-Fi interfaces do not need to appear in `gateway.lan.interfaces`&nbsp;:
+`hostapd` places its own interface in the bridge.
+
+```yaml
+# etc/config.yaml
+zones:
+  maison:
+    gateway:
+      wan:
+        interface: "eno0"
+      lan:
+        interfaces: ["eno1", "eno2", "eno3"]
+
+hosts:
+  - hostname: "gw"
+    zone: "maison:1.1"
+    profile: "gateway"
+    mac: "00:00:5e:00:53:00"
+    disko:
+      profile: "luks-btrfs-1-disk"
+      devices:
+        main: "/dev/nvme0n1"
+```
+
+Renaming the host along the way is the right time, since the machine is being
+reinstalled anyway. An **alias carrying the new name must then be removed**&nbsp;:
+the generator refuses a name being both an alias and a hostname.
+
+On the machine folder side, `git mv usr/machines/<ancien> usr/machines/gw`, then
+import `./generated-configuration.nix` and `./disko.nix` in `default.nix`.
+
+:::danger[The `stateVersion` is that of the OLD machine]
+The reflex is to take the value from the fresh install template. That is
+misguided here&nbsp;: the option sets the defaults tied to **persistent data**,
+not the hardware's purchase date. Yet that data is the old machine's.
+
+The PostgreSQL major version depends directly on it. A too-recent
+`stateVersion` selects a more recent major version, which creates an **empty**
+cluster next to the restored one. Symptom&nbsp;: the service starts perfectly and
+answers, but no longer knows any account.
+
+```sh
+ls /var/lib/postgresql     # two majors side by side = alert
+```
+:::
+
+:::caution[A missing mount can lock the machine]
+A mount without `nofail` that fails makes `local-fs.target` fail, which drops
+the boot into emergency mode&nbsp;: no more `multi-user.target`, therefore no more
+SSH. Combined with no root password and a disabled bootloader editor, the
+machine becomes unreachable, console included.
+
+Any mount whose source can be missing at boot (external disk, link to a
+directory created afterwards) must carry `nofail`.
+:::
+
+{/* t:p 5dddd1d08cec31803c16f741b0620c1ca5a9f63c7d17b6d3189515669c4907f4 */}
+## Install
+
+```sh
+just install gw nixos <ip>
+```
+
+The command formats, installs and reboots. On an encrypted disk, the
+installation passphrase is requested during partitioning&nbsp;: note it down,
+`just luks` will need it.
+
+:::caution[No console access before `just configure`]
+On a freshly installed machine, sops has no key&nbsp;: the infrastructure key is
+only pushed by `just configure`, and the SSH host key is not a secret
+recipient. Declared passwords are therefore not decrypted, and no account is
+usable at the keyboard.
+
+The only way in is the **deployment SSH key**. If the network does not answer,
+there is no fallback&nbsp;: plan physical access to the disk before running a
+remote installation.
+:::
+
+Prefer the separate steps to `just full-install`&nbsp;: on an encrypted disk,
+waiting for the machine to come back assumes a boot without intervention,
+which entering the passphrase forbids.
+
+{/* t:p 88ac97b6841edd4566c3fd4639c9047d5e763b7bf1e755fa89972bec0fdba567 */}
+## Switch over
+
+:::danger[Preparing the new gateway behind the old one does not work]
+The idea seems natural&nbsp;: plug the new hardware into the existing network to
+configure it before the switch. It fails if both sides are not on disjoint
+subnets.
+
+The `lan0` bridge carries the zone address in `/16` and therefore claims the
+whole address plan. An address obtained on the WAN side within that same `/16`
+becomes unreachable&nbsp;: replies are routed to a bridge with no cable. The symptom
+is misleading, the machine answers ARP and gets a DHCP lease, yet every port
+looks filtered.
+
+With a simple modem and no intermediate LAN, the condition cannot be met&nbsp;:
+**switch directly**. The old gateway stays re-pluggable within minutes, that is
+the real safety net.
+:::
+
+<Steps>
+
+1. **Back up**, on the old gateway
+
+   ```sh
+   systemctl stop forgejo postgresql
+   systemctl start restic-backups-system-main.service
+   ```
+
+   Do not stop the zone's DNS resolver&nbsp;: the backup target is referred to by
+   name, stopping it makes it unfindable.
+
+2. **Rename the repository**, on the backup server
+
+   ```sh
+   mv /mnt/backup/restic/<ancien> /mnt/backup/restic/gw
+   ```
+
+   A repository's path contains the hostname. Renaming keeps the whole history,
+   whereas a new name would start from an empty repository.
+
+3. **Swap the hardware**: shut down, move the data disks, identical wiring,
+   boot and unlock the disk.
+
+4. **Configure and deploy**
+
+   ```sh
+   just configure gw
+   just apply-verbose gw
+   ```
+
+   `just configure` pushes the infrastructure key&nbsp;: this is the step that
+   unlocks sops, and therefore the emergency console access.
+
+5. **Republish the backup accounts** on the server that hosts them
+
+   ```sh
+   just apply-local
+   ```
+
+</Steps>
+
+:::caution[The new name still points to the old machine]
+Until the switch has happened, the new gateway's name resolves to the zone
+address, hence to the machine still in service. A deployment launched at that
+moment would overwrite its configuration.
+
+Check before any deployment&nbsp;:
+
+```sh
+sudo -u nix ssh -G gw | awk '$1 == "hostname" { print $2 }'
+```
+:::
+
+{/* t:p 043cf503f73148c1e7e8f8e9a06fd477dc2baf3ac00b3b7921c8520deb298c45 */}
+## Restore the data
+
+The backup server isolates repositories per host&nbsp;: the authenticated user must
+equal the path's first segment. The renamed repository therefore stays
+inaccessible until the server has republished the new account.
+
+```sh
+restic-system-main snapshots
+```
+
+This check is the real control&nbsp;: it must list the old machine's history. An
+**empty** repository signals a successful authentication but against the wrong
+path, restore nothing in that case.
+
+<Steps>
+
+1. **Stop the services** whose state is going to be replaced.
+
+2. **Empty the state directories** before restoring.
+
+3. **Restore**, one mode at a time
+
+   ```sh
+   restic-system-main restore latest --target / \
+     --include /var/lib/forgejo --include /var/lib/postgresql
+   ```
+
+4. **Restore the owners**, by name.
+
+5. **Restart the services** and check.
+
+</Steps>
+
+:::danger[Restore merges, it does not replace]
+Between installation and restore, the services ran on the new machine and
+wrote their own state. The restore writes over **without deleting** what
+already exists, and the two generations mix together.
+
+On storage with sequentially numbered files, that is corruption. The time
+series database refuses to start, the segments no longer being consecutive.
+Timestamps separate the two generations unambiguously.
+
+Hence the rule&nbsp;: empty the state directory **before** restoring it, or stop
+the services concerned from the very first boot.
+:::
+
+:::danger[Digital identities do not carry over]
+Restore reinstates **numeric UIDs and GIDs**, not names. Yet system accounts
+without a fixed identifier are numbered in order of creation, which differs
+from one machine to another. A restored directory ends up assigned to an
+unrelated account, or even to none.
+
+The error message never mentions permissions in a readable way&nbsp;:
+
+```
+Failed at step CHDIR ... Permission denied
+```
+
+Restore by name, then sweep what remains&nbsp;:
+
+```sh
+chown -R forgejo:forgejo /var/lib/forgejo
+find /var/lib/forgejo \( -nouser -o -nogroup \)
+```
+:::
+
+:::tip[Keeping the VPN identity]
+Restoring the VPN client's state directory, then restarting its service, makes
+the new gateway take over **the old one's node identity**, and therefore its
+address on the mesh. Nothing to change in `etc/config.yaml`.
+
+Only do this once the old machine is definitively powered off, never with both
+in service. Otherwise, follow [Enregistrer une
+passerelle](/en/doc/admin-guide/operate/vpn/#register-a-gateway) and
+report the new address.
+:::
+
+{/* t:p 1e0eab87c92bcdffc5edf54bf44fe1c65ce899a9dc29733e8ab4225a4bb5d99d */}
+## Verify before concluding
+
+| Contrôle | Attendu |
+|---|---|
+| `systemctl --failed` | no failed units |
+| `ls /var/lib/postgresql` | a single major version |
+| Application accounts and repositories | the ones from before the migration |
+| `restic-system-main snapshots` | full history |
+| Address on the VPN mesh | unchanged |
+| Wi-Fi access points | present, clients served |
+| Cold reboot | the machine comes back on its own |
+
+:::caution[Hardware keys do not enroll by themselves]
+On an encrypted disk, the enrollment service runs at boot, before secrets can
+be decrypted. It does nothing and **exits successfully**, so it is never
+replayed. `just luks` only reruns it if it had to boot a key slot.
+
+Result&nbsp;: no enrolled key, and a manual unlock at every boot. Count the
+tokens after the first deployment, then restart both services if the count is
+zero.
+
+```sh
+cryptsetup luksDump /dev/disk/by-partlabel/disk-main-luks | grep -c systemd-fido2
+```
+
+See [Chiffrement des disques](/en/doc/admin-guide/operate/luks/) and
+[YubiKey](/en/doc/admin-guide/operate/yubikey/).
+:::
+
+The `disko` block in `etc/config.yaml` is only read at install time, comment
+it out once the migration is complete. Recipes detail in
+[Justfile](/en/doc/admin-guide/operate/justfile/) and configuration keys in
+[Le fichier config.yaml](/en/doc/how-to/admin/config/).

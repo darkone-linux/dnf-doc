@@ -1,0 +1,354 @@
+---
+title: Migrer le matériel d'une passerelle
+sidebar:
+  label: Migration
+  order: 5
+lang: fr
+---
+
+import { Steps } from '@astrojs/starlight/components';
+
+{/* t:main */}
+{/* t:h c7774b28dd8e0ebdfc6fdd0c5298e8a672ac15b42bc39f6d7c7e5b6244227827 */}
+
+{/* t:p 3e94b8445ee9aa9fd4c9e2b85f78c1bb23f391ac0658fefc3e23df4fee662894 */}
+Remplacer l'ordinateur d'une [passerelle](/fr/doc/admin-guide/install/gateway/)
+sans perdre sa configuration ni ses données. La différence avec une installation
+neuve tient en une phrase&nbsp;: **la machine est neuve, l'état ne l'est pas**.
+
+C'est de là que viennent presque tous les pièges de cette page.
+
+{/* t:p 291aac58fcad314364d67076724c030454e6505aca602686a3a386bc5d9fd4b3 */}
+## Ce qui suit tout seul, ce qui ne suit pas
+
+| Repris automatiquement | À reprendre à la main |
+|---|---|
+| DNS et DHCP de la zone | Données des services |
+| Registre des services, portail, reverse proxy | Dépôt de sauvegarde |
+| Cibles de supervision, tags de déploiement | Identité VPN |
+| Destinataires des secrets sops | Propriétaires des fichiers restaurés |
+| Clés SSH de déploiement | `system.stateVersion` |
+
+Les secrets ne sont pas liés au nom d'hôte&nbsp;: le fichier de règles sops ne
+connaît que la clé d'administration et la clé d'infrastructure. Un renommage
+n'y change rien.
+
+{/* t:p 15cff55278b3a0351383cfe400ed96008b880c08922e038b6422dcb57f8d3a88 */}
+## Relever le nouveau matériel
+
+Rien n'est modifié à cette étape&nbsp;: on collecte ce qui devra être écrit dans
+la configuration.
+
+<Steps>
+
+1. **Démarrer sur la clé USB** (image `just build-iso`), carte Wi-Fi USB branchée
+   dans le port qui sera son port définitif.
+
+2. **Relever interfaces, adresses MAC et disques**
+
+   ```sh
+   ip -o link
+   lsblk -o NAME,SIZE,MODEL,SERIAL,TYPE
+   ```
+
+   La MAC permanente d'une carte Wi-Fi diffère de sa MAC courante, souvent
+   aléatoire. C'est la permanente qui compte, visible dans le champ `permaddr`.
+
+3. **Identifier physiquement** quel port sera le WAN et lesquels le LAN, en
+   débranchant et rebranchant. Étiqueter les prises.
+
+</Steps>
+
+:::tip[Figer le nom de la carte Wi-Fi USB]
+Une carte USB est nommée d'après la chaîne de concentrateurs qui la porte
+(`wlp0s20f0u5u1u3`)&nbsp;: la déplacer d'un port la renomme, et la
+configuration ne la trouve plus. Les cartes intégrées, elles, gardent des noms
+stables (`eno0`, `wlp4s0`) liés à la prise physique.
+
+Figer la seule carte USB, sur sa MAC permanente&nbsp;:
+
+```nix
+# usr/machines/gw/default.nix
+systemd.network.links."10-wl-ext" = {
+  matchConfig.PermanentMACAddress = "00:00:5e:00:53:01";
+  linkConfig.Name = "wl-ext";
+};
+```
+
+Éviter `lan0` (déjà le pont) et les préfixes `eth`/`wlan` (espace de noms du
+noyau). NixOS recopie les fichiers `.link` dans l'initrd, les noms sont donc
+identiques au déverrouillage du disque.
+:::
+
+{/* t:p 899984142e75fac6fb0eae50974244dca107b235c1a17cfc8b9f2e53ee8ab9f5 */}
+## Préparer la configuration
+
+Les interfaces Wi-Fi n'ont pas à figurer dans `gateway.lan.interfaces`&nbsp;:
+`hostapd` place lui-même son interface dans le pont.
+
+```yaml
+# etc/config.yaml
+zones:
+  maison:
+    gateway:
+      wan:
+        interface: "eno0"
+      lan:
+        interfaces: ["eno1", "eno2", "eno3"]
+
+hosts:
+  - hostname: "gw"
+    zone: "maison:1.1"
+    profile: "gateway"
+    mac: "00:00:5e:00:53:00"
+    disko:
+      profile: "luks-btrfs-1-disk"
+      devices:
+        main: "/dev/nvme0n1"
+```
+
+Renommer l'hôte au passage est le bon moment, la machine étant de toute façon
+réinstallée. Un **alias portant le nouveau nom doit alors être supprimé**&nbsp;:
+le générateur refuse qu'un nom soit à la fois alias et nom d'hôte.
+
+Côté dossier machine, `git mv usr/machines/<ancien> usr/machines/gw`, puis
+importer `./generated-configuration.nix` et `./disko.nix` dans `default.nix`.
+
+:::danger[Le `stateVersion` est celui de l'ANCIENNE machine]
+Le réflexe est de reprendre la valeur du modèle d'installation neuve. C'est un
+contresens ici&nbsp;: l'option fixe les défauts liés aux **données
+persistantes**, pas la date d'achat du matériel. Or ces données sont celles de
+l'ancienne machine.
+
+La majeure PostgreSQL en dépend directement. Un `stateVersion` trop récent
+sélectionne une majeure plus récente, qui crée un cluster **vide** à côté du
+cluster restauré. Symptôme&nbsp;: le service démarre parfaitement et répond,
+mais ne connaît plus aucun compte.
+
+```sh
+ls /var/lib/postgresql     # deux majeures côte à côte = alerte
+```
+:::
+
+:::caution[Un montage absent peut verrouiller la machine]
+Un montage sans `nofail` qui échoue fait échouer `local-fs.target`, qui bascule
+le démarrage en mode urgence&nbsp;: plus de `multi-user.target`, donc plus de
+SSH. Combiné à l'absence de mot de passe root et à l'éditeur du chargeur
+d'amorçage désactivé, la machine devient inaccessible, console comprise.
+
+Tout montage dont la source peut manquer au démarrage (disque externe, lien sur
+un répertoire créé après coup) doit porter `nofail`.
+:::
+
+{/* t:p 5dddd1d08cec31803c16f741b0620c1ca5a9f63c7d17b6d3189515669c4907f4 */}
+## Installer
+
+```sh
+just install gw nixos <ip>
+```
+
+La commande formate, installe et redémarre. Sur un disque chiffré, la
+passphrase d'installation est demandée pendant le partitionnement&nbsp;:
+la noter, `just luks` en aura besoin.
+
+:::caution[Aucun accès console avant `just configure`]
+Sur une machine fraîchement installée, sops ne dispose d'aucune clé&nbsp;: la
+clé d'infrastructure n'est poussée que par `just configure`, et la clé d'hôte
+SSH n'est pas destinataire des secrets. Les mots de passe déclarés ne sont donc
+pas déchiffrés, et aucun compte n'est utilisable au clavier.
+
+La seule voie d'accès est la **clé SSH de déploiement**. Si le réseau ne
+répond pas, il n'existe pas de recours&nbsp;: prévoir un accès physique au
+disque avant de lancer une installation à distance.
+:::
+
+Préférer les étapes séparées à `just full-install`&nbsp;: sur un disque
+chiffré, l'attente du retour de la machine suppose un démarrage sans
+intervention, ce que la saisie de la passphrase interdit.
+
+{/* t:p 88ac97b6841edd4566c3fd4639c9047d5e763b7bf1e755fa89972bec0fdba567 */}
+## Basculer
+
+:::danger[Préparer la nouvelle passerelle derrière l'ancienne ne marche pas]
+L'idée paraît naturelle&nbsp;: brancher le nouveau matériel sur le réseau
+existant pour le configurer avant la bascule. Elle échoue si les deux côtés ne
+sont pas sur des sous-réseaux disjoints.
+
+Le pont `lan0` porte l'adresse de la zone en `/16` et revendique donc tout le
+plan d'adressage. Une adresse obtenue côté WAN dans ce même `/16` devient
+injoignable&nbsp;: les réponses sont routées vers un pont sans câble. Le
+symptôme est trompeur, la machine répond en ARP et obtient un bail DHCP, mais
+tous les ports paraissent filtrés.
+
+Avec un simple modem sans réseau local intermédiaire, la condition ne peut pas
+être remplie&nbsp;: **basculer directement**. L'ancienne passerelle reste
+rebranchable en quelques minutes, c'est le vrai filet de sécurité.
+:::
+
+<Steps>
+
+1. **Sauvegarder**, sur l'ancienne passerelle
+
+   ```sh
+   systemctl stop forgejo postgresql
+   systemctl start restic-backups-system-main.service
+   ```
+
+   Ne pas arrêter le résolveur DNS de la zone&nbsp;: la cible de sauvegarde est
+   désignée par son nom, l'arrêter la rend introuvable.
+
+2. **Renommer le dépôt**, sur le serveur de sauvegarde
+
+   ```sh
+   mv /mnt/backup/restic/<ancien> /mnt/backup/restic/gw
+   ```
+
+   Le chemin d'un dépôt contient le nom d'hôte. Renommer conserve tout
+   l'historique, alors qu'un nouveau nom repartirait d'un dépôt vide.
+
+3. **Échanger le matériel** : extinction, déplacement des disques de données,
+   câblage identique, démarrage et déverrouillage du disque.
+
+4. **Configurer et déployer**
+
+   ```sh
+   just configure gw
+   just apply-verbose gw
+   ```
+
+   `just configure` pousse la clé d'infrastructure&nbsp;: c'est l'étape qui
+   débloque sops, et donc l'accès console de secours.
+
+5. **Republier les comptes de sauvegarde** sur le serveur qui les héberge
+
+   ```sh
+   just apply-local
+   ```
+
+</Steps>
+
+:::caution[Le nouveau nom désigne encore l'ancienne machine]
+Tant que la bascule n'a pas eu lieu, le nom de la nouvelle passerelle résout
+vers l'adresse de la zone, donc vers la machine encore en service. Un
+déploiement lancé à ce moment écraserait sa configuration.
+
+Vérifier avant tout déploiement&nbsp;:
+
+```sh
+sudo -u nix ssh -G gw | awk '$1 == "hostname" { print $2 }'
+```
+:::
+
+{/* t:p 043cf503f73148c1e7e8f8e9a06fd477dc2baf3ac00b3b7921c8520deb298c45 */}
+## Restaurer les données
+
+Le serveur de sauvegarde isole les dépôts par hôte&nbsp;: l'utilisateur
+authentifié doit être égal au premier segment du chemin. Le dépôt renommé reste
+donc inaccessible tant que le serveur n'a pas republié le nouveau compte.
+
+```sh
+restic-system-main snapshots
+```
+
+Cette vérification est le vrai contrôle&nbsp;: elle doit lister l'historique de
+l'ancienne machine. Un dépôt **vide** signale une authentification réussie mais
+sur un mauvais chemin, ne rien restaurer dans ce cas.
+
+<Steps>
+
+1. **Arrêter les services** dont l'état va être remplacé.
+
+2. **Vider les répertoires d'état** avant de restaurer.
+
+3. **Restaurer**, un mode à la fois
+
+   ```sh
+   restic-system-main restore latest --target / \
+     --include /var/lib/forgejo --include /var/lib/postgresql
+   ```
+
+4. **Rétablir les propriétaires**, par nom.
+
+5. **Redémarrer les services** et contrôler.
+
+</Steps>
+
+:::danger[La restauration fusionne, elle ne remplace pas]
+Entre l'installation et la restauration, les services ont tourné sur la
+nouvelle machine et écrit leur propre état. La restauration écrit par-dessus
+**sans supprimer** ce qui existe déjà, et les deux générations se mêlent.
+
+Sur un stockage à fichiers numérotés séquentiellement, c'est une corruption. La
+base de séries temporelles refuse de démarrer, les segments n'étant plus
+consécutifs. Les horodatages séparent les deux générations sans ambiguïté.
+
+D'où la règle&nbsp;: vider le répertoire d'état **avant** de le restaurer, ou
+arrêter les services concernés dès le premier démarrage.
+:::
+
+:::danger[Les identités numériques ne se transposent pas]
+La restauration rétablit les **UID et GID numériques**, pas les noms. Or les
+comptes système sans identifiant fixe sont numérotés dans l'ordre de création,
+qui diffère d'une machine à l'autre. Un répertoire restauré se retrouve
+attribué à un compte sans rapport, voire à aucun.
+
+Le message d'erreur ne mentionne jamais les permissions de façon lisible&nbsp;:
+
+```
+Failed at step CHDIR ... Permission denied
+```
+
+Rétablir par nom, puis balayer ce qui reste&nbsp;:
+
+```sh
+chown -R forgejo:forgejo /var/lib/forgejo
+find /var/lib/forgejo \( -nouser -o -nogroup \)
+```
+:::
+
+:::tip[Conserver l'identité VPN]
+Restaurer le répertoire d'état du client VPN, puis redémarrer son service, fait
+reprendre à la nouvelle passerelle **l'identité de nœud de l'ancienne**, et donc
+son adresse sur le maillage. Rien à changer dans `etc/config.yaml`.
+
+À ne faire qu'une fois l'ancienne machine définitivement éteinte, jamais avec
+les deux en service. À défaut, suivre [Enregistrer une
+passerelle](/fr/doc/admin-guide/operate/vpn/#enregistrer-une-passerelle) et
+reporter la nouvelle adresse.
+:::
+
+{/* t:p 1e0eab87c92bcdffc5edf54bf44fe1c65ce899a9dc29733e8ab4225a4bb5d99d */}
+## Vérifier avant de conclure
+
+| Contrôle | Attendu |
+|---|---|
+| `systemctl --failed` | aucune unité |
+| `ls /var/lib/postgresql` | une seule majeure |
+| Comptes et dépôts applicatifs | ceux d'avant la migration |
+| `restic-system-main snapshots` | historique complet |
+| Adresse sur le maillage VPN | inchangée |
+| Points d'accès Wi-Fi | présents, clients servis |
+| Redémarrage à froid | la machine remonte seule |
+
+:::caution[Les clés matérielles ne s'enrôlent pas toutes seules]
+Sur un disque chiffré, le service d'enrôlement s'exécute au démarrage, avant
+que les secrets ne soient déchiffrables. Il ne fait rien et **se termine en
+succès**, donc n'est jamais rejoué. `just luks` ne le relance que s'il a dû
+amorcer un emplacement de clé.
+
+Résultat&nbsp;: aucune clé enrôlée, et un déverrouillage manuel à chaque
+démarrage. Compter les jetons après le premier déploiement, puis relancer les
+deux services si le compte est nul.
+
+```sh
+cryptsetup luksDump /dev/disk/by-partlabel/disk-main-luks | grep -c systemd-fido2
+```
+
+Voir [Chiffrement des disques](/fr/doc/admin-guide/operate/luks/) et
+[YubiKey](/fr/doc/admin-guide/operate/yubikey/).
+:::
+
+Le bloc `disko` d'`etc/config.yaml` n'est lu qu'à l'installation, le commenter
+une fois la migration terminée. Détail des recettes dans
+[Justfile](/fr/doc/admin-guide/operate/justfile/) et des clés de configuration
+dans [Le fichier config.yaml](/fr/doc/how-to/admin/config/).
