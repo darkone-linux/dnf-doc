@@ -88,3 +88,36 @@ Pour la supervision centralisée (métriques + journaux Caddy), voir
 [Supervision](/fr/doc/admin-guide/maintain/monitoring/). Pour la santé de la
 réplication d'identités : `just idm-fix-replica <hcs> <gateways>`.
 :::
+
+## Services en échec après un redémarrage de passerelle
+
+Symptôme : `systemctl --failed` liste, juste après le boot, des unités qui
+repartent sans broncher une fois relancées à la main (montages NFS,
+provisionnement OIDC, tout ce qui résout un nom).
+
+Cause : sur une passerelle, le résolveur du système est AdGuard Home
+(`nameserver 127.0.0.1`). Son unité est `Type=simple`, donc systemd la déclare
+active dès que le processus démarre — une vingtaine de secondes avant qu'elle
+n'écoute réellement sur le port 53. Tout ce qui résout un nom pendant cette
+fenêtre échoue.
+
+Le framework pose une barrière pour ça : `dns-ready.service` interroge le
+résolveur local jusqu'à obtenir une réponse, et bloque `nss-lookup.target`
+jusque-là.
+
+```sh
+systemctl status dns-ready              # date à laquelle les noms ont résolu
+journalctl -b -u adguardhome | head -30 # moment où le proxy DNS écoute enfin
+```
+
+Une unité qui résout un nom au démarrage doit donc s'ordonner derrière cette
+cible — `after = [ "nss-lookup.target" ]` pour un service, l'option de montage
+`x-systemd.after=nss-lookup.target` pour un point de montage. Sur les hôtes non
+passerelles, la cible est atteinte immédiatement : aucun délai ajouté.
+
+:::note[Un service qui dépend d'un autre hôte]
+L'ordonnancement local ne dit rien de la disponibilité d'une machine distante
+(l'IdM, un serveur NFS, un hôte encore en train de démarrer). Pour ces
+dépendances-là, la seule réponse fiable est de réessayer : `Restart` +
+`RestartSec` sur l'unité, plutôt qu'un échec définitif à chaque redémarrage.
+:::
