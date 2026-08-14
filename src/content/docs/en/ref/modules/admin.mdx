@@ -13,18 +13,65 @@ sidebar:
 **A administration module** deals with system-specific functionalities for administrators.
 :::
 
-{/* t:p b2edea9217c8dc801c7ddfcdeaecb4a01673475ed22712b3c1ff9e2a983c2ebc */}
+{/* t:p 6fc8b36e0ba82ff814ed07be42e47332784603fbd8877465ee30d7d052454bbe */}
 ### &#x1F451; darkone.admin.nix
 
 NixOS configuration for the local LAN administrator computer.
 
+:::tip[Build farm (remote builders)]
+An admin host builds every node closure locally and pushes it (`buildOnTarget`
+empty, see `assets/just/project.just`), so it is the machine that actually
+compiles. Any fleet host flagged `build-farm` in `config.yaml` becomes one of
+its `nix.buildMachines`, reached over SSH as the `nix` deploy user.
+
+Delegation is deliberately narrow. `mandatoryFeatures` (default
+`big-parallel`) means the farm is offered **only** the derivations that
+declare `requiredSystemFeatures = [ "big-parallel" ]` — kernel, chromium,
+firefox, llvm, rustc… ie. the long builds a beefy host is wanted for. Anything
+else stays local, which matters when the farm sits behind a slow uplink: only
+the requested output travels back.
+
+Never drop `big-parallel` from this host's own `nix.settings.system-features`
+to force delegation: keeping it means an unreachable farm makes the build hook
+decline and the derivation is simply built locally instead of failing.
+
+:::caution[Deploy key required]
+`sshKey` points at the shared deploy key `just configure-admin-host` generates
+under the `nix` user's home. Admin hosts hold it by construction; a host that
+enables this module without the key logs SSH failures on every delegated build.
+:::
+
+:::note[Why not a binary cache]
+A `harmonia` on the farm would share its build results, but harmonia serves the
+*whole* `/nix/store` and cannot express "only what I compiled": it captures
+traffic the public cache should answer. Offloading is a build-scheduling
+concern, not a substitution one — hence `buildMachines` here and a last-resort
+substituter priority in `service/nix-cache.nix`.
+:::
+
 * **enable** `bool` Enable NIX configuration builder tools
 * **enableNh** `bool` Enable nix helper (nh) management tool
+* **remoteBuilders.enable** `bool` Offload builds to the fleet hosts flagged `build-farm` in
+  `config.yaml`. Inert while no host carries the flag.
+* **remoteBuilders.maxJobs** `int` Parallel build slots to use on each farm.
+* **remoteBuilders.speedFactor** `int` Relative speed rating of a farm, compared to this host.
+* **remoteBuilders.mandatoryFeatures** `listOf str` Features a derivation MUST require for a farm to be offered it. This
+  is what keeps small derivations off a remote (possibly slow) link.
+  An empty list sends every eligible derivation to the farm.
+* **remoteBuilders.supportedFeatures** `listOf str` System features a farm can provide.
+* **remoteBuilders.systems** `listOf str` Platforms a farm builds for. Explicit rather than derived: `hosts.nix`
+  only carries an architecture when it differs from the default.
 
 ```nix
 darkone.admin.nix = {
   enable = false;
   enableNh = false;
+  remoteBuilders.enable = true;
+  remoteBuilders.maxJobs = 8;
+  remoteBuilders.speedFactor = 2;
+  remoteBuilders.mandatoryFeatures = [ ];
+  remoteBuilders.supportedFeatures = [ ];
+  remoteBuilders.systems = [ ];
 };
 ```
 

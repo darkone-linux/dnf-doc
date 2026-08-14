@@ -231,7 +231,7 @@ darkone.service.geneweb = {
 
 <hr/>
 
-{/* t:p 5f69084db556c36ba25289912cad45c65954431c501d4baff89dc6936b1332f6 */}
+{/* t:p 03c2c3ad6e182a1d1fe673360a2d73c12c9ebafa8d67ce952df66ff87b9fe658 */}
 ### &#x2728; darkone.service.harmonia
 
 Harmonia: local Nix binary cache server (serves this host's /nix/store).
@@ -251,6 +251,13 @@ Each local-zone host's substituters become, in priority order:
 - the harmonia instances of *its own zone* (highest priority, LAN), then
 - any harmonia flagged `global` (typically on the HCS, over the tailnet), then
 - the zone's `nix-cache` proxy (public cache).
+
+That order is pinned client-side with `?priority=` on each substituter URL
+(see `nix-cache.nix`), because the `priority` set below is identical on every
+instance and Nix sorts substituters by advertised priority, not by list order.
+
+A host running harmonia does **not** get its own instance as a substituter: it
+would only ever serve paths its local store already has.
 
 Other zones' non-global harmonia are never used. Harmonia's signature is
 passed through unchanged, so every host trusts the deployment-wide harmonia

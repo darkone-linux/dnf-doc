@@ -490,7 +490,7 @@ darkone.system.testing = {
 
 <hr/>
 
-{/* t:p 5692389295bc3a7aa3a624993f5a5253de1c632eea0be0af09679abc23a4e852 */}
+{/* t:p 642bacfcf51078dd9a64dddd4a9943e3226650fbeb5b7112d09aad835014acc8 */}
 ### &#x2699; darkone.system.yubikey
 
 YubiKey strong authentication: fleet-wide PAM U2F + declarative FIDO2 LUKS.
@@ -526,6 +526,15 @@ LUKS support keys on the LUKS volumes found in the host disko config
 :::caution[No lockout by design]
 The install passphrase keyslot and the sops session passwords are never
 touched: losing a key at worst falls back to passphrase/password.
+:::
+
+:::caution[The boot touch cannot be waived]
+YubiKeys enforce user presence for the `hmac-secret` extension: an assertion
+requesting `up=false` is refused with `FIDO_ERR_UP_REQUIRED` before the
+credential is even matched. The touch is a hardware rule, not a token
+setting, and no header flag can lift it. Unattended unlock (gateways,
+headless hosts) is a TPM2 job (`systemd-cryptenroll --tpm2-device=auto`),
+which coexists with these FIDO2 keyslots in the same LUKS header.
 :::
 
 * **enable** `bool` YubiKey authentication (default: enabled when usr/secrets/yubikeys.json exists)

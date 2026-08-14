@@ -87,3 +87,35 @@ For centralized monitoring (metrics + Caddy logs), see
 [Monitoring](/en/doc/admin-guide/maintain/monitoring/). For identity
 replication health: `just idm-fix-replica <hcs> <gateways>`.
 :::
+
+{/* t:p bfac473f9d908b6e10597ed79fac1318f06c26c61200fc89e789e9842a63e2e5 */}
+## Services failing after a gateway reboot
+
+Symptom: `systemctl --failed` lists, right after boot, units that start back up
+without a hitch once manually restarted (NFS mounts, OIDC provisioning, anything
+that resolves a name).
+
+Cause: on a gateway, the system resolver is AdGuard Home
+(`nameserver 127.0.0.1`). Its unit is `Type=simple`, so systemd declares it
+active as soon as the process starts — about twenty seconds before it actually
+listens on port 53. Anything resolving a name during that window fails.
+
+The framework puts up a barrier for this: `dns-ready.service` queries the local
+resolver until it gets a response, and blocks `nss-lookup.target` until then.
+
+```sh
+systemctl status dns-ready              # when names got resolved
+journalctl -b -u adguardhome | head -30 # when the DNS proxy finally listens
+```
+
+A unit that resolves a name at boot must therefore order itself after this
+target — `after = [ "nss-lookup.target" ]` for a service, the mount option
+`x-systemd.after=nss-lookup.target` for a mount point. On non-gateway hosts,
+the target is reached immediately: no added delay.
+
+:::note[A service that depends on another host]
+Local ordering says nothing about the availability of a remote machine
+(the IdM, an NFS server, a host still booting). For these dependencies, the
+only reliable answer is to retry: `Restart` +
+`RestartSec` on the unit, rather than a definitive failure on every reboot.
+:::

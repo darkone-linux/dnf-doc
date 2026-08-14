@@ -223,55 +223,45 @@ darkone.service.geneweb = {
 
 <hr/>
 
-{/* t:p 5f69084db556c36ba25289912cad45c65954431c501d4baff89dc6936b1332f6 */}
+{/* t:p 03c2c3ad6e182a1d1fe673360a2d73c12c9ebafa8d67ce952df66ff87b9fe658 */}
 ### &#x2728; darkone.service.harmonia
 
 Harmonia&nbsp;: serveur local de cache binaire Nix (sert le /nix/store de cet hôte).
 
-Expose les chemins du store construits / réalisés localement en HTTP brut
-(port 5000), signés avec la clé de cache binaire du déploiement. Activation
-par hôte depuis `usr/config.yaml` (services.harmonia), comme tout autre
-service DNF.
+Expose les chemins du store construits / réalisés localement sur HTTP simple (port 5000), signés avec la clé de cache binaire déployée sur tout le réseau. À activer par hôte depuis `usr/config.yaml` (services.harmonia), comme tout autre service DNF.
 
-:::note[Fonctionnement d'harmonia avec le proxy nix-cache]
-Harmonia est une *source* de paquets, servis **directement** aux clients sur
-le LAN (dans la zone) ou le tailnet (quand le flag `global` est positionné).
-Le proxy `nix-cache` par zone est une préoccupation distincte&nbsp;: il met en
-cache le cache binaire *public* (`cache.nixos.org`), jamais harmonia.
+:::note[Comment harmonia fonctionne avec le proxy nix-cache]
+Harmonia est une *source* de paquets, servis **directement** aux clients sur le LAN (in-zone) ou le tailnet (quand il est marqué `global`). Le proxy `nix-cache` par zone est un sujet séparé&nbsp;: il met en cache le cache binaire *public* (`cache.nixos.org`), jamais harmonia.
 
-Les substituters de chaque hôte local d'une zone deviennent, par ordre de
-priorité&nbsp;:
+Les substituters de chaque hôte de la zone locale deviennent, par ordre de priorité&nbsp;:
 
-- les instances harmonia de *sa propre zone* (priorité la plus haute, LAN),
-- puis toute harmonia marquée `global` (typiquement sur le HCS, via le tailnet),
-- puis le `nix-cache` proxy de la zone (cache public).
+- les instances harmonia de *sa propre zone* (priorité la plus haute, LAN), puis
+- toute harmonia marquée `global` (typiquement sur le HCS, via le tailnet), puis
+- le proxy `nix-cache` de la zone (cache public).
 
-Les harmonia non-globales des autres zones ne sont jamais utilisées. La
-signature d'harmonia est transmise sans modification, donc chaque hôte
-approuve la clé publique harmonia du déploiement
-(`usr/secrets/harmonia.pub`). Le transport est en HTTP brut sur le LAN / VPN
-de confiance&nbsp;: l'intégrité provient de la signature NAR, pas de TLS.
+Cet ordre est figé côté client avec `?priority=` sur chaque URL de substituter (voir `nix-cache.nix`), car la `priority` définie ci-dessous est identique sur chaque instance et Nix trie les substituters par priorité annoncée, pas par ordre de liste.
+
+Un hôte qui exécute harmonia ne reçoit **pas** sa propre instance comme substituter&nbsp;: elle ne servirait que des chemins que son store local possède déjà.
+
+Les harmonia non-globales des autres zones ne sont jamais utilisées. La signature d'harmonia est transmise telle quelle, donc chaque hôte fait confiance à la clé publique harmonia déployée (`usr/secrets/harmonia.pub`). Le transport est en HTTP simple sur le LAN / VPN de confiance&nbsp;: l'intégrité vient de la signature NAR, pas de TLS.
 :::
 
 :::tip[Provisionnement de la clé de signature]
-`just configure-admin-host` génère automatiquement la paire de clés du
-déploiement quand `usr/secrets/harmonia.pub` est absent&nbsp;: la clé publique
-est commitée et la clé privée est injectée dans le secret sops
-`harmonia-secret-key`.
+`just configure-admin-host` génère automatiquement la paire de clés déployée quand `usr/secrets/harmonia.pub` est absent&nbsp;: la clé publique est commitée et la clé privée est injectée dans le secret sops `harmonia-secret-key`.
 :::
 
-:::note[Avertissement bénin au démarrage sur les permissions de la clé de signature]
+:::note[Avertissement de démarrage bénin sur les permissions de la clé de signature]
 `WARN harmonia_cache::tls: /run/credentials/harmonia.service/sign-key-0 has
 insecure permissions 0o440; recommend 0600` est un faux positif&nbsp;: systemd
-expose les fichiers `LoadCredential` comme appartenant à root en mode 0440
-avec une ACL qui accorde l'accès uniquement à l'utilisateur du service
-(systemd/systemd#29435)&nbsp;; harmonia vérifie naïvement les bits chmod.
-À surveiller en amont toutefois&nbsp;: harmonia rejette déjà durement les clés
-*TLS* lisibles par le groupe au démarrage — si cette politique s'étend un
+expose les fichiers `LoadCredential` en mode 0440 appartenant à root, avec une
+ACL qui n'accorde l'accès qu'à l'utilisateur du service
+(systemd/systemd#29435)&nbsp;; harmonia vérifie naïvement les bits de chmod.
+Surveillez quand même l'amont&nbsp;: harmonia rejette déjà fermement les clés
+*TLS* lisibles par le groupe au démarrage&nbsp;; si cette politique s'étend un
 jour aux clés de signature, cette unité cassera à la mise à jour.
 :::
 
-* **enable** `bool` Activer un serveur de cache binaire Nix Harmonia local
+* **enable** `bool` Active un serveur de cache binaire Nix Harmonia local
 
 ```nix
 darkone.service.harmonia.enable = false;

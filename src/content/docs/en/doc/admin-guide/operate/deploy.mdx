@@ -80,25 +80,55 @@ Before a large deployment, validate locally: `just check-flake` (or
 `just check-all`), then `just apply <pilot-host>` on **one** test host.
 :::
 
-{/* t:p 034ad86a008699b83fe5564eda526afb8946a67c29f64519afecadf841766305 */}
+{/* t:p 7fba6574d9772edc82643418791070ada23d13d56e447c3d0b519b767870e521 */}
 ## Binary cache
 
-Two services work together to avoid recompiling or re-downloading
-derivations at every deployment.
+Two services combine to avoid recompiling or re-downloading derivations on each
+deployment.
 
 | Service | Role |
 |---|---|
-| `harmonia` | Serves the local, signed `/nix/store` **directly** to hosts (LAN, or VPN if `global`). |
+| `harmonia` | Serves the local `/nix/store`, signed, **directly** to hosts (LAN, or VPN if `global`). |
 | `nix-cache` | Per-zone `nginx` proxy that caches the public `cache.nixos.org` cache on the gateway. |
 
-A host therefore fetches a derivation in this order: its zone's `harmonia`, any
-`global` `harmonia`, then its zone's `nix-cache` proxy.
-The first fetch from the Internet is thus shared for the entire zone.
+A host queries these sources in the following priority order. The first fetch
+from the Internet is thus shared across the whole zone.
 
-:::tip[Roaming host (multi-zone laptop)]
-A laptop that changes zones must not keep fixed substituters from its declared
-zone: unreachable elsewhere, they cause timeouts on every request. Enable
-*roaming* mode:
+| Priority | Source | Scope |
+|---|---|---|
+| 20 | zone `harmonia` | LAN, what the zone has compiled |
+| 35 | zone `nix-cache` proxy | LAN, shared mirror of the public cache |
+| 40 | `cache.nixos.org` directly | safety net if the gateway is down |
+| 45 | `global` `harmonia` | last resort, over the VPN |
+
+:::note[How the order is guaranteed]
+Nix does not follow the order of the `substituters` list; it sorts caches
+according to the priority each one announces in its `nix-cache-info`. But these
+announced values are equal: all `harmonia` services declare 30, and the proxy
+relaying `cache.nixos.org` as-is declares 40, like direct access to the public
+cache. DNF therefore sets the priority in the substituter URL (`?priority=35`),
+which overrides the announced value and makes the table order explicit.
+
+Two intended consequences. The zone proxy goes **before** direct access to the
+public cache, otherwise zone sharing would never happen. And a `global`
+`harmonia` goes **after** this public cache: `harmonia` serves a whole
+`/nix/store` without being able to tell what it compiled from the rest, so a
+well-stocked host would capture all the traffic the public cache is meant to
+serve. As a last resort, it is only consulted for what `cache.nixos.org` does
+not have, that is, its own builds.
+:::
+
+:::note[A host does not use its own `harmonia`]
+This service serves its own `/nix/store`, so it can only provide paths already
+present locally. On that host, anything missing necessarily comes from another
+source: that is normal, its `harmonia` only benefits the **other** machines in
+the zone.
+:::
+
+:::tip[Roaming host (multi-zone portable)]
+A laptop that moves between zones should not keep substituters frozen to its
+declared zone: unreachable elsewhere, they cost timeouts on every request.
+Enable *roaming* mode:
 
 ```nix
 # usr/machines/<hôte>/default.nix
@@ -108,19 +138,62 @@ darkone.service.nix-cache.roaming = true;
 Its substituters become **neutral** names (`harmonia.dnf.internal`,
 `nix-cache.dnf.internal`) that each zone's DNS resolves to its own caches → the
 cache follows the machine. Outside any zone, immediate NXDOMAIN response →
-direct fallback on `cache.nixos.org`, no delay. Since signing keys are shared
-across the entire network, nothing else to configure.
+direct fallback to `cache.nixos.org`, with no delay. Since signing keys are
+shared across the whole network, nothing else to configure.
 :::
 
 :::note[Activation]
 `harmonia` and `nix-cache` are [services](/en/doc/admin-guide/operate/services/)
-to enable on a network host (`nix-cache` on the zone gateway). harmonia's
+to enable on a network host (`nix-cache` on the zone gateway). The harmonia
 signing key is managed by
 [sops](/en/doc/admin-guide/operate/secrets/) (`just configure-admin-host`).
 :::
 
 :::tip[Why a single-upstream proxy]
-`nix-cache` only relays **one** upstream (`cache.nixos.org`): it caches
-`narinfo` and `nar` as-is, signatures intact. No URL rewriting or database, so
-no HTTP 500 "invalid nar hash" error from the old `ncps` relay.
+`nix-cache` relays only **one** upstream (`cache.nixos.org`): it caches
+`narinfo` and `nar` as-is, signatures intact. No URL rewriting and no database,
+hence no HTTP 500 "invalid nar hash" error from the old `ncps` relay.
+:::
+
+{/* t:p a9f7d5c5485d69cd5a8966004acff0cb3b8dada45e673495d4fb3311fddb46f5 */}
+## Build farm
+
+Fetching a package and building it are two distinct needs. The binary cache
+above covers the first. For the second, a powerful network host can take over
+the long compilations of an administration host.
+
+Declare it with the `build-farm` feature:
+
+```yaml
+# etc/config.yaml
+    features: ["build-farm"]
+```
+
+Each administration host then adds it to its `nix.buildMachines`, connecting
+over SSH with the `nix` deployment account. Nothing else to configure: the key
+and the authorization are already in place across the whole fleet.
+
+:::tip[Only long compilations leave]
+The delegation is deliberately narrow: the farm is only offered derivations
+declaring `requiredSystemFeatures = [ "big-parallel" ]`, i.e. the kernel,
+browsers, `llvm`, `rustc`… Everything else is built locally. This is decisive
+when the farm sits behind a slow link, since only the requested result makes
+the return trip.
+
+Adjust with `darkone.admin.nix.remoteBuilders`: `maxJobs`, `speedFactor`, and
+`mandatoryFeatures` (empty list = everything goes to the farm).
+:::
+
+:::caution[A farm is not a priority cache]
+Do not promote a remote farm to a priority `global` `harmonia` to share its
+results: `harmonia` serves the whole `/nix/store` and would capture the traffic
+the public cache is meant to serve, across the slowest link on the network.
+That is the role of level 45 in the table above: last resort, never the main
+source.
+:::
+
+:::note[Fallback if the farm is unreachable]
+The administration host keeps `big-parallel` in its own `system-features`. When
+the farm does not respond, Nix simply resumes the build locally instead of
+failing. Do not remove this feature to force delegation.
 :::

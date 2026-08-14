@@ -85,7 +85,7 @@ Avant un déploiement large, validez localement : `just check-flake` (ou
 `just check-all`), puis `just apply <hôte-pilote>` sur **un** hôte témoin.
 :::
 
-{/* t:p 034ad86a008699b83fe5564eda526afb8946a67c29f64519afecadf841766305 */}
+{/* t:p 7fba6574d9772edc82643418791070ada23d13d56e447c3d0b519b767870e521 */}
 ## Cache binaire
 
 Deux services se combinent pour éviter de recompiler ou de retélécharger les
@@ -96,9 +96,39 @@ dérivations à chaque déploiement.
 | `harmonia` | Sert le `/nix/store` local, signé, **directement** aux hôtes (LAN, ou VPN s'il est `global`). |
 | `nix-cache` | Proxy `nginx` par zone qui met en cache le cache public `cache.nixos.org` sur la passerelle. |
 
-Un hôte récupère donc une dérivation dans cet ordre&nbsp;: la `harmonia` de sa
-zone, une éventuelle `harmonia` `global`, puis le proxy `nix-cache` de sa zone.
-La première récupération depuis Internet est ainsi mutualisée pour toute la zone.
+Un hôte interroge ces sources dans l'ordre de priorité suivant. La première
+récupération depuis Internet est ainsi mutualisée pour toute la zone.
+
+| Priorité | Source | Portée |
+|---|---|---|
+| 20 | `harmonia` de la zone | LAN, ce que la zone a compilé |
+| 35 | proxy `nix-cache` de la zone | LAN, miroir mutualisé du cache public |
+| 40 | `cache.nixos.org` en direct | filet de sécurité si la passerelle est HS |
+| 45 | `harmonia` `global` | dernier recours, par le VPN |
+
+:::note[Comment l'ordre est garanti]
+Nix ne suit pas l'ordre de la liste `substituters`, il trie les caches selon la
+priorité que chacun annonce dans son `nix-cache-info`. Or ces valeurs annoncées
+sont à égalité&nbsp;: toutes les `harmonia` déclarent 30, et le proxy relayant
+`cache.nixos.org` tel quel déclare 40, comme l'accès direct au cache public.
+DNF fixe donc la priorité dans l'URL du substituter (`?priority=35`), ce qui
+écrase la valeur annoncée et rend l'ordre du tableau explicite.
+
+Deux conséquences voulues. Le proxy de zone passe **devant** l'accès direct au
+cache public, sans quoi la mutualisation de zone ne se ferait jamais. Et une
+`harmonia` `global` passe **derrière** ce cache public&nbsp;: `harmonia` sert un
+`/nix/store` entier, sans pouvoir distinguer ce qu'elle a compilé du reste, donc
+un hôte bien garni capterait tout le trafic que le cache public doit servir. En
+dernier recours, elle n'est consultée que pour ce que `cache.nixos.org` n'a pas,
+c'est-à-dire ses propres constructions.
+:::
+
+:::note[Un hôte ne se sert pas de sa propre `harmonia`]
+Ce service sert son propre `/nix/store`, il ne peut donc fournir que des chemins
+déjà présents localement. Sur cet hôte, tout ce qui manque vient forcément d'une
+autre source&nbsp;: c'est normal, sa `harmonia` ne profite qu'aux **autres**
+machines de la zone.
+:::
 
 :::tip[Hôte nomade (portable multi-zones)]
 Un portable qui change de zone ne doit pas garder des substituters figés sur sa
@@ -129,4 +159,48 @@ de signature de harmonia est gérée par
 en cache `narinfo` et `nar` tels quels, signatures intactes. Pas de réécriture
 d'URL ni de base de données, donc pas l'erreur HTTP 500 « invalid nar hash » de
 l'ancien relais `ncps`.
+:::
+
+{/* t:p a9f7d5c5485d69cd5a8966004acff0cb3b8dada45e673495d4fb3311fddb46f5 */}
+## Ferme de build
+
+Récupérer un paquet et le construire sont deux besoins distincts. Le cache
+binaire ci-dessus couvre le premier. Pour le second, un hôte puissant du réseau
+peut prendre à sa charge les compilations longues d'un hôte d'administration.
+
+Déclarez-le par la fonctionnalité `build-farm`&nbsp;:
+
+```yaml
+# etc/config.yaml
+    features: ["build-farm"]
+```
+
+Chaque hôte d'administration l'ajoute alors à ses `nix.buildMachines`, joint en
+SSH par le compte de déploiement `nix`. Rien d'autre à configurer&nbsp;: la clé
+et l'autorisation sont déjà en place sur tout le parc.
+
+:::tip[Seules les compilations longues partent]
+La délégation est volontairement étroite&nbsp;: la ferme ne se voit proposer que
+les dérivations déclarant `requiredSystemFeatures = [ "big-parallel" ]`, soit le
+noyau, les navigateurs, `llvm`, `rustc`… Tout le reste est construit sur place.
+C'est décisif quand la ferme est derrière une liaison lente, puisque seul le
+résultat demandé fait le trajet retour.
+
+Ajustez avec `darkone.admin.nix.remoteBuilders`&nbsp;: `maxJobs`, `speedFactor`,
+et `mandatoryFeatures` (liste vide = tout part à la ferme).
+:::
+
+:::caution[Une ferme n'est pas un cache prioritaire]
+Ne promouvez pas une ferme distante en `harmonia` `global` prioritaire pour
+partager ses résultats&nbsp;: `harmonia` sert le `/nix/store` entier et
+capturerait le trafic que le cache public doit servir, à travers la liaison la
+plus lente du réseau. C'est le rôle du niveau 45 du tableau plus haut&nbsp;:
+dernier recours, jamais source principale.
+:::
+
+:::note[Repli si la ferme est injoignable]
+L'hôte d'administration conserve `big-parallel` dans ses propres
+`system-features`. Quand la ferme ne répond pas, Nix reprend simplement la
+compilation en local au lieu d'échouer. Ne retirez pas cette fonctionnalité pour
+forcer la délégation.
 :::

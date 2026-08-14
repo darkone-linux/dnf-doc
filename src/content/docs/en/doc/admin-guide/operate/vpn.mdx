@@ -178,6 +178,31 @@ The watchdog runs on every Tailscale client. To disable it on a host:
 `darkone.service.tailscale.selfHeal.enable = false;`.
 :::
 
+{/* t:p 943f6b2028a602409af4c6b87e458b1a94b6b8c8360a9f9632ed6e5222b8f2f2 */}
+## Control plane bootstrap
+
+The Headscale server name normally resolves **through the tailnet**: on a
+gateway, dnsmasq routes the whole network domain to the tailnet's DNS server.
+The client would therefore need the VPN to reach the server that brings up the
+VPN — and at boot, the local resolver is not listening yet.
+
+Each Tailscale client therefore receives the HCS public IP in its `/etc/hosts`,
+deduced from `etc/config.yaml` (the HCS itself is excluded):
+
+```sh
+grep headscale /etc/hosts     # 217.182.207.26 headscale.example.org
+```
+
+The client thus needs no resolver to connect, even when the local DNS is down —
+precisely when the self-repair mechanism above must be able to act.
+
+:::caution[HCS IP change]
+`/etc/hosts` **takes precedence over DNS**. If the coordination VPS changes
+address, update `etc/config.yaml` then **re-deploy the Tailscale clients**: as
+long as they carry the old entry, they will not reconnect, even if the public
+DNS is correct.
+:::
+
 {/* t:p e0299c915299f5fddae3bae5314b854f0cea6de180f96b58b418f6a7892780d8 */}
 ## Access from outside
 
