@@ -36,6 +36,22 @@ Le mot de passe de session (sops) et la passphrase LUKS d'installation ne sont
 **jamais supprimés** : sans clé (perdue, oubliée), tout fonctionne comme avant.
 :::
 
+:::caution[Le toucher au boot n'est pas contournable]
+Le déverrouillage LUKS repose sur l'extension FIDO2 `hmac-secret` : la clé
+**recalcule** le secret du keyslot à chaque démarrage, à partir d'un sel stocké
+en clair dans l'en-tête LUKS.
+
+Les YubiKey **imposent** la présence utilisateur pour cette extension. Une
+demande sans toucher est rejetée (`FIDO_ERR_UP_REQUIRED`) avant même la
+recherche du credential. Règle du firmware, pas réglage : systemd réactive la
+présence de lui-même, à l'enrôlement comme au déverrouillage.
+
+Pour un hôte qui doit redémarrer seul (passerelle, machine sans écran), la voie
+est le **TPM2** (`systemd-cryptenroll --tpm2-device=auto`), qui cohabite avec
+les keyslots FIDO2 dans le même en-tête LUKS. Contrepartie : le disque s'ouvre
+sans humain, donc volé **avec** sa carte mère il reste déchiffrable.
+:::
+
 {/* t:p 69faf7b1a2bcb653da68196a60f99592f1b49ab2266ac784f8365d0d41d1a09c */}
 ## Les quatre moyens de connexion Kanidm
 
@@ -265,6 +281,8 @@ correspondants sont supprimés. Penser aussi à retirer la passkey côté Kanidm
 
 - Le TOTP reste disponible côté web (Kanidm, Vaultwarden), pas au login local.
 - Déverrouillage LUKS **sans code PIN** (touche seule) dans cette version.
+- Déverrouillage LUKS **sans toucher** hors de portée d'une YubiKey (limite
+  matérielle, voir plus haut) ; le TPM2 n'est pas encore intégré au framework.
 - À venir : clés SSH FIDO2 (`ed25519-sk`) et signature git, mode « second
   facteur obligatoire » par hôte, déchiffrement sops admin conditionné à la
   clé (`age-plugin-fido2-hmac`).
