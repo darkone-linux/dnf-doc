@@ -248,9 +248,10 @@ Deux origines de comptes cohabitent sur le même serveur&nbsp;:
 - **Amis**&nbsp;: comptes locaux à mot de passe, ouverts par inscription **sur
   jeton** (`friendRegistration.enable`). Sans jeton, aucune inscription possible.
 
-Les deux types partagent les mêmes droits (ponts inclus). La création d'un jeton
-exige un *server admin* (voir
-[le guide d'exploitation](/fr/doc/admin-guide/operate/matrix/#inscrire-des-amis-comptes-locaux)).
+Les deux types partagent les mêmes droits (ponts inclus). Le jeton se fabrique
+sur l'hôte avec `dnf-mas`, ou via l'API d'administration Synapse quand MAS est
+désactivé (voir
+[le guide d'exploitation](/fr/doc/admin-guide/operate/matrix/#inscrire-des-amis)).
 
 {/* t:p 7713816f602feb9b27df6ef81a2138a8aef01021238a59cc2d1c0b6fc2de528b */}
 ## Authentification nouvelle génération (MAS)
@@ -282,8 +283,10 @@ mas -> idm: SSO amont
 ```
 
 - **Un seul vhost**&nbsp;: MAS partage `matrix.domain.tld`. Caddy lui route la
-  racine (pages de connexion, `/account`, `/oauth2/*`) et les trois endpoints
-  de compatibilité (`login`, `logout`, `refresh`)&nbsp;; Synapse garde
+  racine (pages de connexion, `/account`, `/oauth2/*`) et toute la surface de
+  compatibilité `/_matrix/client/<version>/{login,logout,refresh}`, sous-chemins
+  compris (`logout/all` et l'ancien `login/sso/redirect` des clients pré-OIDC,
+  auxquels Synapse répond `M_UNRECOGNIZED` une fois délégué)&nbsp;; Synapse garde
   `/_matrix/*` et `/_synapse/*`. Aucun sous-domaine ni DNS supplémentaire.
 - **Kanidm reste la source d'identité**&nbsp;: MAS devient le client OIDC à la
   place de Synapse (mêmes identifiant et secret), déclaré comme fournisseur
@@ -301,8 +304,8 @@ mas -> idm: SSO amont
   (`friendRegistration.enable` reste le commutateur)&nbsp;; les comptes à mot
   de passe continuent de fonctionner via la couche de compatibilité.
 
-Activation et limitations&nbsp;: voir
-[le guide d'exploitation](/fr/doc/admin-guide/operate/matrix/#authentification-nouvelle-génération-mas).
+Activation et migration&nbsp;: voir
+[le guide d'exploitation](/fr/doc/admin-guide/operate/matrix/#activer-mas).
 
 {/* t:p 1825668044e3aa12cfff0835ba4915818108282998110b153e0883ee4cfead14 */}
 ## Secrets et ports

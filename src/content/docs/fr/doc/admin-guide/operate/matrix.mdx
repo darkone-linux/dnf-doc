@@ -6,7 +6,7 @@ sidebar:
 lang: fr
 ---
 
-import { Steps, Aside } from '@astrojs/starlight/components';
+import { Steps, Aside, Tabs, TabItem } from '@astrojs/starlight/components';
 
 {/* t:main */}
 {/* t:h cc10345e1675f25a88b635ffac213dce7e7600cf513e46273a90255b91452c87 */}
@@ -65,6 +65,220 @@ aucune création de compte Matrix n'est nécessaire.
 | `turn-secret` | Secret partagé coturn (si `turn` activé) | `openssl rand -hex 32` |
 | `mautrix-doublepuppet-as-token` | Token appservice *double puppeting* (commun aux ponts) | `openssl rand -hex 32` |
 | `mautrix-doublepuppet-hs-token` | Idem, requis par Synapse, jamais utilisé | `openssl rand -hex 32` |
+
+{/* t:p 4d985ff45de254a46df5c163d64d47dcea6f4b33da5b3e6cc58bd19ba39cba9a */}
+## Deux modes d'authentification
+
+Le serveur fonctionne dans **un seul** de ces deux modes, réglé par
+`darkone.service.matrix.mas.enable`. Le mode choisi change les clients
+compatibles, la façon d'inscrire des amis et les outils d'administration.
+
+| | Synapse historique (défaut) | MAS activé (recommandé) |
+|---|---|---|
+| Option | `mas.enable = false` | `mas.enable = true` |
+| Connexion SSO | Synapse est client OIDC de Kanidm | MAS est client OIDC de Kanidm |
+| Element Web / Desktop | oui | oui |
+| **Element X** (Android, iOS) | **non** | **oui** |
+| Connexion par QR code | non | oui |
+| Portail de compte | aucun | `https://matrix.domain.tld/account/` |
+| Jetons d'inscription | API admin Synapse | `dnf-mas` sur l'hôte |
+| Promotion administrateur | SQL dans la base Synapse | `dnf-mas manage promote-admin` |
+
+<Aside type="tip" title="Element X exige MAS">
+L'application mobile nouvelle génération [Element X](https://element.io/app/)
+ne sait se connecter qu'à un serveur piloté par MAS. Sans MAS, elle échoue à
+la connexion&nbsp;; il faut rester sur l'application Element classique.
+</Aside>
+
+{/* t:p 3a8e25f5d597286618ecde21c708f10c789647a68a72ad8662f704ad5ff0119d */}
+### Activer MAS
+
+Le [Matrix Authentication Service](https://element-hq.github.io/matrix-authentication-service/)
+remplace l'authentification interne de Synapse. Pour ce qu'il change et
+comment il s'insère, voir
+[l'architecture](/fr/doc/admin-guide/understand/matrix/#authentification-nouvelle-génération-mas).
+
+<Steps>
+
+1. Générer les trois secrets dédiés (idempotent, n'écrase jamais
+   l'existant)&nbsp;:
+
+   ```sh
+   just passwd-mas
+   ```
+
+   | Clé sops | Rôle |
+   |---|---|
+   | `mas-encryption-secret` | Chiffrement interne MAS |
+   | `mas-synapse-secret` | Secret partagé MAS ↔ Synapse |
+   | `mas-rsa-private-key` | Clé de signature des tokens |
+
+2. Activer l'option dans la config nix de l'hôte&nbsp;:
+
+   ```nix
+   # usr/machines/<host>/default.nix
+   darkone.service.matrix.mas.enable = true;
+   ```
+
+3. Déployer. Sur un serveur **neuf**, c'est terminé. Sur un serveur qui a déjà
+   des comptes, enchaîner sur la [migration](#migrer-un-serveur-déjà-en-production)
+   **sans laisser personne se connecter entre les deux**.
+
+</Steps>
+
+:::danger[Secret immuable]
+`mas-encryption-secret` ne doit **jamais** changer après le premier démarrage
+de MAS&nbsp;: il protège des données chiffrées en base, qui deviendraient
+illisibles. Idem pour l'ULID du fournisseur Kanidm, figé dans le module.
+:::
+
+{/* t:p 3e253e69f2f4d0e5f30daa73eed0b02f49d300c58cba60955d659617e3011794 */}
+### Migrer un serveur déjà en production
+
+MAS devient propriétaire des comptes et des sessions&nbsp;: ils doivent être
+importés avec l'outil officiel `syn2mas`, servi par la commande `dnf-mas` de
+l'hôte. Sans cet import, tous les comptes sont invisibles et tout le monde est
+déconnecté.
+
+<Steps>
+
+1. **Sauvegarder**, dans cet ordre (le dump doit entrer dans l'instantané)&nbsp;:
+
+   ```sh
+   sudo systemctl start postgresqlBackup.service
+   sudo systemctl start restic-backups-system-main.service
+   ```
+
+2. **Déployer** la configuration avec `mas.enable = true` (cf. ci-dessus). La
+   fenêtre de maintenance commence ici.
+
+3. **Arrêter** les deux services&nbsp;: `syn2mas` exige Synapse hors ligne, et
+   MAS ne doit pas provisionner de compte entre-temps.
+
+   ```sh
+   sudo systemctl stop matrix-synapse matrix-authentication-service
+   ```
+
+4. **Vérifier**, puis répéter à blanc, puis migrer&nbsp;:
+
+   ```sh
+   sudo dnf-mas syn2mas check
+   sudo dnf-mas syn2mas migrate --dry-run
+   sudo dnf-mas syn2mas migrate
+   ```
+
+   Le compte-rendu annonce les comptes, liens SSO, jetons d'accès et devices
+   repris. Les centaines d'utilisateurs « ignorés » sont les fantômes des
+   ponts&nbsp;: c'est normal.
+
+5. **Redémarrer**, MAS d'abord&nbsp;:
+
+   ```sh
+   sudo systemctl start matrix-authentication-service
+   sudo systemctl start matrix-synapse
+   ```
+
+</Steps>
+
+<Aside type="note" title="Ce que la migration préserve">
+Les sessions en cours **survivent**&nbsp;: les jetons d'accès existants sont
+convertis en sessions de compatibilité, personne n'a besoin de se
+reconnecter, et le bot d'alertes garde son jeton. Les ponts n'ont **pas**
+besoin d'une régénération de registration&nbsp;: Synapse impose MSC4190 à tous
+les appservices dès que l'authentification est déléguée.
+</Aside>
+
+:::caution[Sens unique]
+La migration n'est pas réversible&nbsp;: revenir en arrière impose de
+restaurer la sauvegarde. Ne pas la lancer sans avoir vérifié l'étape 1.
+:::
+
+{/* t:p ab159511804ed5a826296b329e895cdf509308683f2be8751be74dbb8fa19549 */}
+## Inscrire des amis
+
+En plus des utilisateurs du SSO, on peut ouvrir une inscription **sur jeton**
+pour des comptes locaux à mot de passe (les amis). Sans jeton, aucune
+inscription n'est possible. Le commutateur est le même dans les deux modes,
+seule la fabrication du jeton diffère.
+
+```nix
+# usr/machines/<host>/default.nix
+darkone.service.matrix.friendRegistration.enable = true;
+```
+
+<Tabs>
+<TabItem label="Avec MAS">
+
+<Steps>
+
+1. Créer un jeton sur l'hôte Matrix. Ici valable **une fois** et **7 jours**
+   (sans option, le jeton est à usage unique et sans expiration)&nbsp;:
+
+   ```sh
+   sudo dnf-mas manage issue-user-registration-token --usage-limit 1 --expires-in 604800
+   ```
+
+   La réponse affiche le jeton, par exemple `Created user registration token:
+   9SwPTGIFGQPa`. Le transmettre à l'ami.
+
+2. L'ami ouvre `https://matrix.domain.tld/register` et choisit la création par
+   mot de passe.
+
+3. Il saisit son identifiant et son mot de passe, **puis** le jeton, réclamé à
+   l'étape suivante.
+
+4. Il se connecte ensuite avec ce couple identifiant / mot de passe depuis
+   n'importe quel client, Element X compris.
+
+</Steps>
+
+<Aside type="tip" title="Gérer son compte">
+Un ami change son mot de passe et révoque ses sessions depuis le portail
+`https://matrix.domain.tld/account/`, sans intervention de l'administrateur.
+</Aside>
+
+</TabItem>
+<TabItem label="Sans MAS">
+
+<Steps>
+
+1. Promouvoir le compte `matrix.admin` en *server admin* (une seule fois), sur
+   l'hôte Matrix&nbsp;:
+
+   ```sh
+   sudo -u matrix-synapse psql matrix-synapse \
+     -c "UPDATE users SET admin = 1 WHERE name = '@alice:domain.tld';"
+   ```
+
+2. Récupérer un *access token* du compte promu&nbsp;: dans Element,
+   *Paramètres → Aide & à propos → Avancé*.
+
+3. Créer un jeton d'inscription via l'API d'administration&nbsp;:
+
+   ```sh
+   curl -X POST \
+     -A "Mozilla/5.0" \
+     -H "Authorization: Bearer <ACCESS_TOKEN>" \
+     -H "Content-Type: application/json" \
+     -d '{"uses_allowed": 1, "expiry_time": null}' \
+     https://matrix.domain.tld/_synapse/admin/v1/registration_tokens/new
+   ```
+
+   La réponse contient le `token` à transmettre à l'ami.
+
+4. L'ami s'inscrit dans Element&nbsp;: *Créer un compte* → serveur `domain.tld`
+   → il colle le jeton lorsqu'il est demandé.
+
+</Steps>
+
+<Aside type="caution" title="Le filtre anti-robots">
+Le vhost Matrix renvoie `403` à tout appel dont l'*User-Agent* contient
+`curl`, `wget` ou `bot`. D'où le `-A "Mozilla/5.0"` ci-dessus&nbsp;: sans lui,
+l'appel échoue sans rapport avec le jeton.
+</Aside>
+
+</TabItem>
+</Tabs>
 
 {/* t:p 2b1859ffedc75f4c9914a7b742b39741f19026b8adbf81992496506d36f991fd */}
 ## Gérer les ponts
@@ -164,119 +378,6 @@ Vérifier après déploiement&nbsp;:
 
 </Steps>
 
-{/* t:p ab159511804ed5a826296b329e895cdf509308683f2be8751be74dbb8fa19549 */}
-## Inscrire des amis (comptes locaux)
-
-En plus des utilisateurs du SSO, on peut ouvrir une inscription **sur jeton**
-pour des comptes locaux (amis). Aucune inscription n'est possible sans jeton.
-
-<Steps>
-
-1. Activer l'inscription sur jeton dans la config nix de l'hôte, puis
-   déployer&nbsp;:
-
-   ```nix
-   # usr/machines/<host>/default.nix
-   darkone.service.matrix.friendRegistration.enable = true;
-   ```
-
-2. Promouvoir le compte `matrix.admin` en *server admin* (une seule fois), sur
-   l'hôte Matrix&nbsp;:
-
-   ```sh
-   sudo -u matrix-synapse psql matrix-synapse \
-     -c "UPDATE users SET admin = 1 WHERE name = '@alice:domain.tld';"
-   ```
-
-3. Créer un jeton d'inscription via l'API d'administration (avec un *access
-   token* du compte admin)&nbsp;:
-
-   ```sh
-   curl -X POST \
-     -H "Authorization: Bearer <ACCESS_TOKEN>" \
-     -H "Content-Type: application/json" \
-     -d '{"uses_allowed": 1, "expiry_time": null}' \
-     https://matrix.domain.tld/_synapse/admin/v1/registration_tokens/new
-   ```
-
-   La réponse contient le `token` à transmettre à l'ami.
-
-4. L'ami s'inscrit dans Element&nbsp;: *Créer un compte* → serveur `domain.tld` →
-   il colle le jeton lorsqu'il est demandé.
-
-</Steps>
-
-<Aside type="note" title="L'access token admin">
-Récupérer un *access token* dans Element (*Paramètres → Aide & à propos →
-Avancé*) avec le compte promu, ou par connexion API
-(`POST /_matrix/client/v3/login`). La future interface Synapse-Admin
-simplifiera promotion et jetons.
-</Aside>
-
-{/* t:p 4d985ff45de254a46df5c163d64d47dcea6f4b33da5b3e6cc58bd19ba39cba9a */}
-## Authentification nouvelle génération (MAS)
-
-Le [Matrix Authentication Service](https://element-hq.github.io/matrix-authentication-service/)
-remplace l'authentification interne de Synapse (requis par Element X). Pour ce
-qu'il change et comment il s'insère, voir
-[l'architecture](/fr/doc/admin-guide/understand/matrix/#authentification-nouvelle-génération-mas).
-
-:::danger[En cours de validation]
-Implémenté mais pas encore éprouvé en production&nbsp;: la migration d'un
-serveur existant (`syn2mas`) et l'outillage `mas-cli` sur l'hôte restent à
-valider. En attendant, laisser `mas.enable = false` (défaut)&nbsp;:
-l'authentification OIDC classique reste pleinement fonctionnelle.
-:::
-
-<Steps>
-
-1. Créer les secrets dédiés dans `usr/secrets/secrets.yaml`&nbsp;:
-
-   | Clé sops | Rôle | Génération |
-   |---|---|---|
-   | `mas-encryption-secret` | Chiffrement interne MAS | `openssl rand -hex 32` |
-   | `mas-synapse-secret` | Secret partagé MAS ↔ Synapse | `openssl rand -hex 32` |
-   | `mas-rsa-private-key` | Clé de signature des tokens | `openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:4096` |
-
-2. Activer l'option dans la config nix de l'hôte, puis déployer&nbsp;:
-
-   ```nix
-   # usr/machines/<host>/default.nix
-   darkone.service.matrix.mas.enable = true;
-   ```
-
-</Steps>
-
-:::danger[Secret immuable]
-`mas-encryption-secret` ne doit **jamais** changer après le premier démarrage
-de MAS&nbsp;: il protège des données chiffrées en base, qui deviendraient
-illisibles.
-:::
-
-{/* t:p 3e253e69f2f4d0e5f30daa73eed0b02f49d300c58cba60955d659617e3011794 */}
-### Migrer un serveur déjà en production
-
-Basculer un Synapse existant exige une **fenêtre de maintenance**&nbsp;: MAS
-devient le propriétaire des comptes et sessions, qui doivent être importés
-avec l'outil officiel [syn2mas](https://element-hq.github.io/matrix-authentication-service/setup/migration.html)
-(comptes, mots de passe, sessions, liens OIDC). Sans cette migration, tous
-les utilisateurs sont déconnectés et les comptes amis perdus. Points
-clés&nbsp;:
-
-- sauvegarder PostgreSQL avant (la migration n'est pas réversible)&nbsp;;
-- `syn2mas check` puis `--dry-run` s'exécutent **sans arrêter** Synapse&nbsp;;
-- supprimer les registrations des ponts (`/var/lib/mautrix-*/*-registration.yaml`)
-  pour qu'elles se régénèrent avec le flag MSC4190, puis redémarrer Synapse.
-
-{/* t:p 3a8e25f5d597286618ecde21c708f10c789647a68a72ad8662f704ad5ff0119d */}
-### Inscrire des amis avec MAS
-
-Les jetons d'inscription ne passent plus par l'API admin de Synapse&nbsp;:
-ils se créent sur l'hôte Matrix avec `mas-cli`
-(`manage issue-user-registration-token`), et la promotion d'un compte
-administrateur devient `mas-cli manage promote-admin`. La procédure détaillée
-sera documentée une fois l'outillage validé (voir l'encart ci-dessus).
-
 {/* t:p 652e85dad5e7f42f023bdc7511fc1076c3bc21466cd0d47cab67597fc8299bc1 */}
 ## Salons publics avec validation (knock)
 
@@ -311,6 +412,31 @@ défaut sur les nouveaux salons.
 | État des services | `systemctl status matrix-synapse mautrix-whatsapp mautrix-signal mautrix-telegram mautrix-meta-messenger` |
 | Journaux d'un pont | `journalctl -u mautrix-whatsapp -f` |
 | Journaux Synapse | `journalctl -u matrix-synapse -f` |
+| Journaux MAS | `journalctl -u matrix-authentication-service -f` |
+
+### Administrer les comptes avec MAS
+
+`dnf-mas` enveloppe l'outil officiel `mas-cli` sur l'hôte Matrix&nbsp;: il
+reconstitue la configuration et les secrets du service, et fonctionne donc
+**service arrêté comme démarré**. Toujours en `sudo`.
+
+| Action | Commande |
+|---|---|
+| Créer un jeton d'inscription | `sudo dnf-mas manage issue-user-registration-token` |
+| Promouvoir un administrateur | `sudo dnf-mas manage promote-admin alice` |
+| Lister les administrateurs | `sudo dnf-mas manage list-admin-users` |
+| Créer un compte (bot, service) | `sudo dnf-mas manage register-user` |
+| Changer un mot de passe | `sudo dnf-mas manage set-password alice` |
+| Fermer les sessions d'un compte | `sudo dnf-mas manage kill-sessions alice` |
+| Verrouiller un compte | `sudo dnf-mas manage lock-user alice` |
+| Diagnostic complet | `sudo dnf-mas doctor` |
+
+<Aside type="caution" title="Plus de secret d'inscription partagé">
+Avec MAS, `/_synapse/admin/v1/register` est désactivé. C'est le mécanisme
+qu'utilise [`just configure-alert-bot`](/fr/doc/admin-guide/operate/justfile/)
+pour créer un compte de bot manquant&nbsp;: créer ce compte **avant** de
+migrer, ou le recréer avec `sudo dnf-mas manage register-user`.
+</Aside>
 
 {/* t:p 54aa52c1f59ff607eec0a2fa9ace69a976ed97dc8baebadd36446c5e4fd98df4 */}
 ### Diagnostiquer un bot muet
