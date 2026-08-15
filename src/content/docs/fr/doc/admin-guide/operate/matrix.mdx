@@ -438,6 +438,28 @@ pour créer un compte de bot manquant&nbsp;: créer ce compte **avant** de
 migrer, ou le recréer avec `sudo dnf-mas manage register-user`.
 </Aside>
 
+### Diagnostiquer une connexion SSO refusée
+
+Après une migration, les sessions déjà ouvertes continuent de fonctionner&nbsp;:
+une connexion cassée ne se voit donc **qu'au premier login neuf**. Suivre MAS
+pendant une tentative&nbsp;:
+
+```sh
+journalctl -u matrix-authentication-service -f
+```
+
+| Message | Cause | Correctif |
+|---|---|---|
+| `wrong signature alg` sur `/upstream/callback/…` | MAS attend un `id_token` RS256, Kanidm signe en ES256 | `id_token_signed_response_alg` du fournisseur amont&nbsp;: réglé sur `ES256` par le module |
+| `client registration denied by the policy: invalid redirect_uri` | Le `client_uri` annoncé par le client ne correspond pas à son schéma de redirection | Ne pas forcer `oidc_metadata` dans la config Element&nbsp;; ses valeurs par défaut passent |
+| `M_UNRECOGNIZED` sur `/login/sso/redirect` | Le chemin part vers Synapse au lieu de MAS | Vérifier le matcher `@masCompat` du vhost Caddy |
+
+<Aside type="note" title="Deux symptômes, deux causes">
+Un client qui bascule sur une authentification **dans le navigateur** au lieu
+de son écran natif signale un refus d'enregistrement dynamique&nbsp;; l'erreur
+qui suit éventuellement est un problème distinct. Traiter les deux.
+</Aside>
+
 {/* t:p 54aa52c1f59ff607eec0a2fa9ace69a976ed97dc8baebadd36446c5e4fd98df4 */}
 ### Diagnostiquer un bot muet
 
