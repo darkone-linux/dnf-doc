@@ -362,6 +362,21 @@ s'activent séparément et ne se remplacent pas&nbsp;:
 Garder **les deux** activées&nbsp;: Element Classic ne parle que la première,
 Element X que la seconde.
 
+<Aside type="danger" title="Les deux piles ne se parlent pas">
+Un appel lancé depuis Element X est **invisible** dans Element Classic, et
+réciproquement&nbsp;: les deux signalent par des événements Matrix différents
+(`m.call.*` contre `m.rtc.member`), et l'ancienne application ne contient
+aucun code LiveKit. Aucune configuration serveur ne les réconcilie&nbsp;; côté
+amont, le cas est
+[classé «&nbsp;not planned&nbsp;»](https://github.com/element-hq/element-x-android/issues/3937).
+
+Le seul client qui parle **les deux** est Element Web/Desktop&nbsp;: un
+utilisateur resté sur Element Classic peut donc rejoindre un appel Element X
+en ouvrant `https://element.domain.tld` dans le navigateur de son téléphone.
+Sinon, migrer vers Element X — l'application classique est en maintenance
+seule, sans nouvelle fonctionnalité.
+</Aside>
+
 <Aside type="caution" title="Element X : deux prérequis distincts">
 Element X refuse d'appeler avec *«&nbsp;L'appel n'est pas pris en
 charge&nbsp;»* (code `MISSING_MATRIX_RTC_TRANSPORT`) tant que MatrixRTC est
