@@ -6,7 +6,7 @@ sidebar:
 lang: en
 ---
 
-import { Steps, Aside } from '@astrojs/starlight/components';
+import { Steps, Aside, Tabs, TabItem } from '@astrojs/starlight/components';
 
 {/* t:translated-from fr */}
 {/* t:h cc10345e1675f25a88b635ffac213dce7e7600cf513e46273a90255b91452c87 */}
@@ -434,12 +434,12 @@ to create a missing bot account&nbsp;: create this account **before**
 migrating, or recreate it with `sudo dnf-mas manage register-user`.
 </Aside>
 
-{/* t:p 87a3a88d8150265e30d7d999070d027d30103921cb2183ec27c7f5860e533067 */}
-### Diagnosing a refused SSO sign-in
+{/* t:p 4db448c9873e295f5a67280776324d71b6851a693d15eabf1ed7a86197cc9178 */}
+### Diagnosing a refused SSO connection
 
-After a migration, already-open sessions keep working&nbsp;: a broken sign-in
-is therefore only visible **at the first new login**. Follow MAS during an
-attempt&nbsp;:
+After a migration, sessions that are already open keep working&nbsp;: a broken
+connection therefore only shows **on the first fresh login**. Follow MAS during
+an attempt&nbsp;:
 
 ```sh
 journalctl -u matrix-authentication-service -f
@@ -448,13 +448,25 @@ journalctl -u matrix-authentication-service -f
 | Message | Cause | Fix |
 |---|---|---|
 | `wrong signature alg` on `/upstream/callback/…` | MAS expects an RS256 `id_token`, Kanidm signs with ES256 | `id_token_signed_response_alg` of the upstream provider&nbsp;: set to `ES256` by the module |
-| `client registration denied by the policy: invalid redirect_uri` | The `client_uri` announced by the client does not match its redirect scheme | Don't force `oidc_metadata` in the Element config&nbsp;; its default values pass |
+| `client registration denied by the policy: invalid redirect_uri` | The `client_uri` announced by the client does not match its redirect scheme | Do not force `oidc_metadata` in the Element config&nbsp;; its default values pass |
 | `M_UNRECOGNIZED` on `/login/sso/redirect` | The path goes to Synapse instead of MAS | Check the `@masCompat` matcher of the Caddy vhost |
+| "The QR code is not supported" on the client side | The MSC4108 rendezvous channel is missing | `experimental_features.msc4108_enabled`&nbsp;: enabled by the module with MAS |
+
+Quick checks, without logging in&nbsp;:
+
+```sh
+# org.matrix.msc4108 must be true
+curl -A Mozilla/5.0 https://matrix.domain.tld/_matrix/client/versions
+
+# must respond 201 and a public url
+curl -A Mozilla/5.0 -X POST --data probe \
+  https://matrix.domain.tld/_matrix/client/unstable/org.matrix.msc4108/rendezvous
+```
 
 <Aside type="note" title="Two symptoms, two causes">
-A client that falls back to authentication **in the browser** instead of its
-native screen signals a dynamic registration refusal&nbsp;; the error that
-possibly follows is a distinct problem. Deal with both.
+A client that switches to authentication **in the browser** instead of its
+native screen signals a refused dynamic registration&nbsp;; the error that
+possibly follows is a separate problem. Handle both.
 </Aside>
 
 {/* t:p 54aa52c1f59ff607eec0a2fa9ace69a976ed97dc8baebadd36446c5e4fd98df4 */}

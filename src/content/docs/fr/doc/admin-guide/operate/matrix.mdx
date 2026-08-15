@@ -439,7 +439,7 @@ pour créer un compte de bot manquant&nbsp;: créer ce compte **avant** de
 migrer, ou le recréer avec `sudo dnf-mas manage register-user`.
 </Aside>
 
-{/* t:p 87a3a88d8150265e30d7d999070d027d30103921cb2183ec27c7f5860e533067 */}
+{/* t:p 4db448c9873e295f5a67280776324d71b6851a693d15eabf1ed7a86197cc9178 */}
 ### Diagnostiquer une connexion SSO refusée
 
 Après une migration, les sessions déjà ouvertes continuent de fonctionner&nbsp;:
@@ -455,6 +455,18 @@ journalctl -u matrix-authentication-service -f
 | `wrong signature alg` sur `/upstream/callback/…` | MAS attend un `id_token` RS256, Kanidm signe en ES256 | `id_token_signed_response_alg` du fournisseur amont&nbsp;: réglé sur `ES256` par le module |
 | `client registration denied by the policy: invalid redirect_uri` | Le `client_uri` annoncé par le client ne correspond pas à son schéma de redirection | Ne pas forcer `oidc_metadata` dans la config Element&nbsp;; ses valeurs par défaut passent |
 | `M_UNRECOGNIZED` sur `/login/sso/redirect` | Le chemin part vers Synapse au lieu de MAS | Vérifier le matcher `@masCompat` du vhost Caddy |
+| «&nbsp;Le code QR n'est pas pris en charge&nbsp;» côté client | Le canal de rendez-vous MSC4108 est absent | `experimental_features.msc4108_enabled`&nbsp;: activé par le module avec MAS |
+
+Contrôles rapides, sans se connecter&nbsp;:
+
+```sh
+# org.matrix.msc4108 doit valoir true
+curl -A Mozilla/5.0 https://matrix.domain.tld/_matrix/client/versions
+
+# doit répondre 201 et une url publique
+curl -A Mozilla/5.0 -X POST --data probe \
+  https://matrix.domain.tld/_matrix/client/unstable/org.matrix.msc4108/rendezvous
+```
 
 <Aside type="note" title="Deux symptômes, deux causes">
 Un client qui bascule sur une authentification **dans le navigateur** au lieu
