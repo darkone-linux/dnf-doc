@@ -80,6 +80,7 @@ compatibles, la façon d'inscrire des amis et les outils d'administration.
 | Element Web / Desktop | oui | oui |
 | **Element X** (Android, iOS) | **non** | **oui** |
 | Connexion par QR code | non | oui |
+| Application proposée sur mobile | Element Classic | Element X |
 | Portail de compte | aucun | `https://matrix.domain.tld/account/` |
 | Jetons d'inscription | API admin Synapse | `dnf-mas` sur l'hôte |
 | Promotion administrateur | SQL dans la base Synapse | `dnf-mas manage promote-admin` |
@@ -88,6 +89,10 @@ compatibles, la façon d'inscrire des amis et les outils d'administration.
 L'application mobile nouvelle génération [Element X](https://element.io/app/)
 ne sait se connecter qu'à un serveur piloté par MAS. Sans MAS, elle échoue à
 la connexion&nbsp;; il faut rester sur l'application Element classique.
+
+Le client web s'aligne tout seul&nbsp;: sa page d'accueil mobile propose
+Element X quand l'hôte porte un serveur Matrix avec MAS, Element Classic
+sinon. Rien à régler.
 </Aside>
 
 {/* t:p 15942d02b9d58aeed731714cc62e5ea11a926090c57cc725843b9573c7512657 */}
