@@ -545,8 +545,8 @@ secrets, so resetting a bridge's state dir never invalidates the
 registration synapse has loaded (which would otherwise require a registration
 wipe + synapse restart and produce "as_token was not accepted" errors).
 
-{/* t:p 77da6b221509f356b34f13d2358034d9660d78a669733b8aafb63272ace51de7 */}
-## Federation
+{/* t:p eeea53fa8d6eb0fda10b5c16e01dce796f089d82ef84ff35a97400268ec68909 */}
+#### Federation
 
 Federation is configurable via `darkone.service.matrix.federation`:
 
@@ -568,8 +568,8 @@ local password accounts alongside Kanidm OIDC users. Minting a token needs a
 server admin (Synapse admin API / Synapse-Admin UI); with MAS enabled, mint
 with `mas-cli manage issue-user-registration-token` on the host instead.
 
-{/* t:p b4e5d55ae3ca2a6d272ff13c66f2e86e65d7c1acbcc8f821bc1e543337af25d7 */}
-## Next-gen auth (MAS)
+{/* t:p aa15039d885b8528379fbdd80673e846d8dfb4b01408034b6b92486aaf966227 */}
+#### Next-gen auth (MAS)
 
 `mas.enable` delegates all authentication to Matrix Authentication Service
 (required by Element X, QR login, `/account` self-service portal). Kanidm
