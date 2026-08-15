@@ -545,7 +545,7 @@ secrets, so resetting a bridge's state dir never invalidates the
 registration synapse has loaded (which would otherwise require a registration
 wipe + synapse restart and produce "as_token was not accepted" errors).
 
-{/* t:p 650deb6feea245c7d794b7bc1de5fa9472bd0ea5bc7984440d1d6e3fe7fb005b */}
+{/* t:p ff353801b94ac1fc282cf6ce672fdc79a049f111f00671c5ac098fd143bba110 */}
 #### Federation
 
 Federation is configurable via `darkone.service.matrix.federation`:
@@ -568,6 +568,15 @@ local password accounts alongside Kanidm OIDC users. Without MAS, minting a
 token goes through the Synapse admin API (a server admin is required); with
 MAS, mint it on the host with
 `sudo dnf-mas manage issue-user-registration-token`.
+
+:::caution[One namespace, permanent ids]
+Friends and declared users draw from the same localpart namespace, and a
+matrix id is never freed (unique in MAS's `users`, deactivation keeps it).
+Declaring a user whose localpart a friend already took fails their first SSO
+login: `on_conflict` stays on `fail` below, since anything else hands the
+existing account to whoever registers a matching name upstream. Merge
+procedure in the admin guide (`operate/matrix.mdx`).
+:::
 
 {/* t:p a40748eb781fccc4da58ca71ab300b213dd7a300121c552afc64553ab0e74bd3 */}
 #### Next-gen auth (MAS)

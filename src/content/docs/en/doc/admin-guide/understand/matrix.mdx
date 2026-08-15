@@ -236,22 +236,31 @@ nor outbound. This is the recommended setting for a family network. Delegation
 (`/.well-known/matrix/server` → `matrix.domain.tld:443`) is served by Caddy, so
 no dedicated port 8448 is needed.
 
-{/* t:p 378b545f261196b359b9714b2e11034811297b19d048845ebed61dc68b03bd03 */}
-## Accounts: SSO and friends
+{/* t:p 9d9b814fd225570074d2f231aebb4c5940f14a0c963c62a5d0eb8b758446c5ba */}
+## Accounts&nbsp;: SSO and friends
 
-Two account origins coexist on the same server:
+Two account origins coexist on the same server&nbsp;:
 
-- **Declared users**: authenticated by the Kanidm SSO (OIDC). No Matrix
+- **Declared users**&nbsp;: authenticated by the Kanidm SSO (OIDC). No Matrix
   password, no account creation (see
   [Authentication & IDM](/en/doc/admin-guide/understand/auth-idm/)).
-- **Friends**: local password accounts, opened by registration **on
+- **Friends**&nbsp;: local password accounts, opened by registration **on
   token** (`friendRegistration.enable`). Without a token, no registration is
   possible.
 
-Both types share the same rights (including bridges). The token is generated
-on the host with `dnf-mas`, or via the Synapse admin API when MAS is
-disabled (see
-[the operations guide](/en/doc/admin-guide/operate/matrix/#opening-the-network-to-federation)).
+Both types share the same rights (bridges included). The token is created on the
+host with `dnf-mas`, or via the Synapse administration API when MAS is disabled
+(see
+[the operations guide](/en/doc/admin-guide/operate/matrix/#registering-friends)).
+
+Above all, both origins draw from **the same namespace**, and a Matrix
+identifier is final&nbsp;: MAS's `users` table enforces its uniqueness and a
+deactivation never releases it. Declaring a user whose identifier is already
+taken by a friend therefore makes their first SSO login fail, as MAS refuses to
+attach on its own
+(`claims_imports.localpart.on_conflict` left on `fail`, otherwise any homonym
+would take control of the account). Resolution&nbsp;:
+[identifier collision](/en/doc/admin-guide/operate/matrix/#managing-bridges).
 
 {/* t:p 894bea191a9519a91f28083a2dc2e94494c2c64c0043d0cdc8bef5c80deebcf9 */}
 ## Next-generation authentication (MAS)

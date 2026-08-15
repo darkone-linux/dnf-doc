@@ -284,6 +284,103 @@ the call fails for reasons unrelated to the token.
 </TabItem>
 </Tabs>
 
+{/* t:p 253a0cbbf33cc128fe5e17ad25c5c16671ce7f8490f327d97ce205ac35eabf89 */}
+### Identifier collision with a declared user
+
+Friends and SSO users share **a single namespace**&nbsp;:
+`@bob:domain.tld` belongs to only one account, regardless of its origin. And a
+Matrix identifier is **permanent** — the `users` table of MAS enforces its
+uniqueness, and deactivating an account does not free its identifier. No
+renaming, no recycling.
+
+The typical case&nbsp;: a friend registers as `bob`, then `bob` is declared
+later as a DNF user in `etc/config.yaml`. Their first SSO connection then stops
+on a **`User exists`** error page&nbsp;:
+
+```text
+Upstream account provider returned "bob" as username, which is not linked to
+that upstream account. Your homeserver does not allow linking an upstream
+account to an existing account
+```
+
+Check before declaring a user, on the Matrix host&nbsp;:
+
+```sh
+sudo -u postgres psql matrix-authentication-service \
+  -c "SELECT username FROM users WHERE lower(username) = lower('bob');"
+```
+
+Two outcomes, depending on what you want to keep&nbsp;:
+
+<Tabs>
+<TabItem label="Merge the two accounts">
+
+Links the Kanidm identity to the existing friend account, which **keeps
+everything**&nbsp;: rooms, history, encryption keys, bridges. This is almost
+always what you want, and the person concerned does it themselves.
+
+<Steps>
+
+1. First declare `bob` in `etc/config.yaml` and deploy, so that they get
+   Kanidm credentials.
+
+2. Bob signs in on `https://matrix.domain.tld/account/` with their **friend
+   password**.
+
+3. In the **same browser**, they open the link account of the IDM
+   provider&nbsp;:
+
+   ```text
+   https://matrix.domain.tld/upstream/authorize/01JDNF0000000000000KAN1DM0
+   ```
+
+4. They authenticate on Kanidm&nbsp;; MAS then offers "&nbsp;Link to your
+   existing account&nbsp;", which they confirm.
+
+</Steps>
+
+Bob then signs in through SSO like any declared user. Their friend password
+stays valid&nbsp;: deleting it is done from the account portal.
+
+<Aside type="note" title="The provider's ULID">
+`01JDNF0000000000000KAN1DM0` is set by the framework and identical on every
+DNF deployment (cf. [architecture](/en/doc/admin-guide/understand/matrix/#next-generation-authentication-mas)).
+</Aside>
+
+</TabItem>
+<TabItem label="Give up the identifier">
+
+If the friend account has nothing to save, it is simpler to **declare the DNF
+user under another login**&nbsp;: the `bob` identifier is lost for good,
+deactivating the friend account will not make it available.
+
+Lock the old account to avoid confusion&nbsp;:
+
+```sh
+sudo dnf-mas manage lock-user bob
+```
+
+</TabItem>
+</Tabs>
+
+<Aside type="caution" title="Why the merge is not automatic">
+MAS can link an upstream identity to a same-name account by itself, via
+`claims_imports.localpart.on_conflict`. DNF deliberately leaves it at its
+default value&nbsp;:
+
+| Value | Effect |
+|---|---|
+| `fail` *(DNF default)* | Refuses the upstream connection |
+| `add` | Links to the same-name account, whether a link already exists or not |
+| `replace` | Replaces the existing link of this provider on this account |
+| `set` | Links only if this provider does not already have a link |
+
+Anything other than `fail` means that **the first person whose Kanidm login
+matches a local account takes it over**, without anyone validating anything.
+On a network where logins are assigned by hand, the risk is low but the gain
+is zero&nbsp;: the manual merge above does the same work, once, knowingly.
+</Aside>
+
 {/* t:p 2b1859ffedc75f4c9914a7b742b39741f19026b8adbf81992496506d36f991fd */}
 ## Managing bridges
 
@@ -536,40 +633,42 @@ to create a missing bot account&nbsp;: create this account **before**
 migrating, or recreate it with `sudo dnf-mas manage register-user`.
 </Aside>
 
-{/* t:p 463c332f12057e775be4f3cb560ea52ec0eb74d9b640bc77138a6c1fb42e6953 */}
-### Diagnose a refused SSO login
+{/* t:p d4c1af14062aec558aed67109d86aa176de2ff74845e6b847b6913297360ede2 */}
+### Diagnosing a refused SSO connection
 
-After a migration, already open sessions keep working&nbsp;: a broken login
-only shows **at the first fresh login**. Follow MAS during an attempt&nbsp;:
+After a migration, already open sessions keep working&nbsp;: a broken
+connection is therefore only visible **on the first fresh login**. Follow MAS
+during an attempt&nbsp;:
 
 ```sh
 journalctl -u matrix-authentication-service -f
 ```
 
-| Message | Cause | Correctif |
+| Message | Cause | Fix |
 |---|---|---|
-| `wrong signature alg` sur `/upstream/callback/…` | MAS attend un `id_token` RS256, Kanidm signe en ES256 | `id_token_signed_response_alg` du fournisseur amont&nbsp;: réglé sur `ES256` par le module |
-| `client registration denied by the policy: invalid redirect_uri` | Le `client_uri` annoncé par le client ne correspond pas à son schéma de redirection | Ne pas forcer `oidc_metadata` dans la config Element&nbsp;; ses valeurs par défaut passent |
-| `M_UNRECOGNIZED` sur `/login/sso/redirect` | Le chemin part vers Synapse au lieu de MAS | Vérifier le matcher `@masCompat` du vhost Caddy |
-| «&nbsp;Le code QR n'est pas pris en charge&nbsp;» côté client | Le canal de rendez-vous MSC4108 est absent | `experimental_features.msc4108_enabled`&nbsp;: activé par le module avec MAS |
-| «&nbsp;L'appel n'est pas pris en charge&nbsp;», `MISSING_MATRIX_RTC_TRANSPORT` | Aucun backend MatrixRTC annoncé | Activer `matrixRtc.enable` (cf. [Appels audio et vidéo](#audio-and-video-calls)) |
-| Appel qui sonne mais reste muet, ou coupe au bout de quelques secondes | Les ports média n'atteignent pas l'hôte | Ouvrir 40000-40100/udp et 7881/tcp jusqu'à lui |
+| `wrong signature alg` on `/upstream/callback/…` | MAS expects an RS256 `id_token`, Kanidm signs with ES256 | `id_token_signed_response_alg` of the upstream provider&nbsp;: set to `ES256` by the module |
+| `client registration denied by the policy: invalid redirect_uri` | The `client_uri` advertised by the client does not match its redirect scheme | Do not force `oidc_metadata` in the Element config&nbsp;; its default values pass |
+| `M_UNRECOGNIZED` on `/login/sso/redirect` | The path goes to Synapse instead of MAS | Check the `@masCompat` matcher of the Caddy vhost |
+| `User exists` page : "&nbsp;returned "bob" as username, which is not linked&nbsp;" | A friend account already holds the declared user's identifier | Merge or rename (cf. [identifier collision](#identifier-collision-with-a-declared-user)) |
+| "&nbsp;The QR code is not supported&nbsp;" on the client side | The MSC4108 rendezvous channel is missing | `experimental_features.msc4108_enabled`&nbsp;: enabled by the module with MAS |
+| "&nbsp;The call is not supported&nbsp;", `MISSING_MATRIX_RTC_TRANSPORT` | No MatrixRTC backend announced | Enable `matrixRtc.enable` (cf. [Audio and video calls](#audio-and-video-calls)) |
+| Call rings but stays silent, or drops after a few seconds | The media ports do not reach the host | Open 40000-40100/udp and 7881/tcp up to it |
 
 Quick checks, without signing in&nbsp;:
 
 ```sh
-# org.matrix.msc4108 doit valoir true
+# org.matrix.msc4108 must be true
 curl -A Mozilla/5.0 https://matrix.domain.tld/_matrix/client/versions
 
-# doit répondre 201 et une url publique
+# must answer 201 and a public url
 curl -A Mozilla/5.0 -X POST --data probe \
   https://matrix.domain.tld/_matrix/client/unstable/org.matrix.msc4108/rendezvous
 ```
 
-<Aside type="note" title="Deux symptômes, deux causes">
-Un client qui bascule sur une authentification **dans le navigateur** au lieu
-de son écran natif signale un refus d'enregistrement dynamique&nbsp;; l'erreur
-qui suit éventuellement est un problème distinct. Traiter les deux.
+<Aside type="note" title="Two symptoms, two causes">
+A client that switches to an authentication **in the browser** instead of its
+native screen signals a refused dynamic registration&nbsp;; the error that
+possibly follows is a separate problem. Handle both.
 </Aside>
 
 {/* t:p 54aa52c1f59ff607eec0a2fa9ace69a976ed97dc8baebadd36446c5e4fd98df4 */}

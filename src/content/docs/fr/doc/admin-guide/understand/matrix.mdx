@@ -250,7 +250,7 @@ entrant ni sortant. C'est le réglage recommandé pour un réseau familial. La
 délégation (`/.well-known/matrix/server` → `matrix.domain.tld:443`) étant servie
 par Caddy, aucun port 8448 dédié n'est nécessaire.
 
-{/* t:p 378b545f261196b359b9714b2e11034811297b19d048845ebed61dc68b03bd03 */}
+{/* t:p 9d9b814fd225570074d2f231aebb4c5940f14a0c963c62a5d0eb8b758446c5ba */}
 ## Comptes&nbsp;: SSO et amis
 
 Deux origines de comptes cohabitent sur le même serveur&nbsp;:
@@ -265,6 +265,15 @@ Les deux types partagent les mêmes droits (ponts inclus). Le jeton se fabrique
 sur l'hôte avec `dnf-mas`, ou via l'API d'administration Synapse quand MAS est
 désactivé (voir
 [le guide d'exploitation](/fr/doc/admin-guide/operate/matrix/#inscrire-des-amis)).
+
+Surtout, les deux origines puisent dans **le même espace de noms**, et un
+identifiant Matrix est définitif&nbsp;: la table `users` de MAS impose son
+unicité et une désactivation ne le libère jamais. Déclarer un utilisateur dont
+l'identifiant est déjà pris par un ami fait donc échouer sa première connexion
+SSO — MAS refuse de rattacher tout seul
+(`claims_imports.localpart.on_conflict` laissé sur `fail`, sinon n'importe
+quel homonyme prendrait le contrôle du compte). Résolution&nbsp;:
+[collision d'identifiant](/fr/doc/admin-guide/operate/matrix/#collision-didentifiant-avec-un-utilisateur-déclaré).
 
 {/* t:p 894bea191a9519a91f28083a2dc2e94494c2c64c0043d0cdc8bef5c80deebcf9 */}
 ## Authentification nouvelle génération (MAS)

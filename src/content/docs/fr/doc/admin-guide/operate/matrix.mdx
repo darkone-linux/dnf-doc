@@ -286,6 +286,105 @@ l'appel échoue sans rapport avec le jeton.
 </TabItem>
 </Tabs>
 
+{/* t:p 253a0cbbf33cc128fe5e17ad25c5c16671ce7f8490f327d97ce205ac35eabf89 */}
+### Collision d'identifiant avec un utilisateur déclaré
+
+Amis et utilisateurs SSO partagent **un seul espace de noms**&nbsp;:
+`@bob:domain.tld` n'appartient qu'à un compte, quelle que soit son origine. Et
+un identifiant Matrix est **définitif** — la table `users` de MAS impose son
+unicité, et désactiver un compte ne libère pas son identifiant. On ne renomme
+pas, on ne recycle pas.
+
+Le cas typique&nbsp;: un ami s'inscrit comme `bob`, puis `bob` est déclaré plus
+tard comme utilisateur DNF dans `etc/config.yaml`. Sa première connexion SSO
+s'arrête alors sur une page d'erreur **`User exists`**&nbsp;:
+
+```text
+Upstream account provider returned "bob" as username, which is not linked to
+that upstream account. Your homeserver does not allow linking an upstream
+account to an existing account
+```
+
+Vérifier avant de déclarer un utilisateur, sur l'hôte Matrix&nbsp;:
+
+```sh
+sudo -u postgres psql matrix-authentication-service \
+  -c "SELECT username FROM users WHERE lower(username) = lower('bob');"
+```
+
+Deux issues, selon ce qu'on veut garder&nbsp;:
+
+<Tabs>
+<TabItem label="Fusionner les deux comptes">
+
+Rattache l'identité Kanidm au compte ami existant, qui **conserve tout**&nbsp;:
+salons, historique, clés de chiffrement, ponts. C'est presque toujours ce
+qu'on veut, et l'intéressé le fait lui-même.
+
+<Steps>
+
+1. Déclarer d'abord `bob` dans `etc/config.yaml` et déployer, pour qu'il ait
+   des identifiants Kanidm.
+
+2. Bob se connecte sur `https://matrix.domain.tld/account/` avec son **mot de
+   passe d'ami**.
+
+3. Dans le **même navigateur**, il ouvre le lien de rattachement du
+   fournisseur IDM&nbsp;:
+
+   ```text
+   https://matrix.domain.tld/upstream/authorize/01JDNF0000000000000KAN1DM0
+   ```
+
+4. Il s'identifie sur Kanidm&nbsp;; MAS propose alors «&nbsp;Lier à votre
+   compte existant&nbsp;», qu'il valide.
+
+</Steps>
+
+Bob se connecte ensuite par le SSO comme n'importe quel utilisateur déclaré.
+Son mot de passe d'ami reste valable&nbsp;: le supprimer se fait depuis le
+portail de compte.
+
+<Aside type="note" title="L'ULID du fournisseur">
+`01JDNF0000000000000KAN1DM0` est fixé par le framework et identique sur tout
+déploiement DNF (cf. [architecture](/fr/doc/admin-guide/understand/matrix/#authentification-nouvelle-génération-mas)).
+</Aside>
+
+</TabItem>
+<TabItem label="Renoncer à l'identifiant">
+
+Si le compte ami n'a rien à sauver, il reste plus simple de **déclarer
+l'utilisateur DNF sous un autre login**&nbsp;: l'identifiant `bob` est perdu
+pour de bon, désactiver le compte ami ne le rendra pas disponible.
+
+Verrouiller l'ancien compte pour éviter la confusion&nbsp;:
+
+```sh
+sudo dnf-mas manage lock-user bob
+```
+
+</TabItem>
+</Tabs>
+
+<Aside type="caution" title="Pourquoi la fusion n'est pas automatique">
+MAS sait rattacher tout seul une identité amont à un compte homonyme, via
+`claims_imports.localpart.on_conflict`. DNF le laisse volontairement sur sa
+valeur par défaut&nbsp;:
+
+| Valeur | Effet |
+|---|---|
+| `fail` *(défaut DNF)* | Refuse la connexion amont |
+| `add` | Rattache au compte homonyme, qu'un lien existe déjà ou non |
+| `replace` | Remplace le lien existant de ce fournisseur sur ce compte |
+| `set` | Rattache uniquement si ce fournisseur n'a pas déjà un lien |
+
+Tout sauf `fail` signifie que **le premier venu dont le login Kanidm coïncide
+avec un compte local en prend le contrôle**, sans que personne ne valide rien.
+Sur un réseau où les logins sont attribués à la main, le risque est faible
+mais le gain est nul&nbsp;: la fusion manuelle ci-dessus fait le même travail,
+une fois, en connaissance de cause.
+</Aside>
+
 {/* t:p 2b1859ffedc75f4c9914a7b742b39741f19026b8adbf81992496506d36f991fd */}
 ## Gérer les ponts
 
@@ -542,7 +641,7 @@ pour créer un compte de bot manquant&nbsp;: créer ce compte **avant** de
 migrer, ou le recréer avec `sudo dnf-mas manage register-user`.
 </Aside>
 
-{/* t:p 463c332f12057e775be4f3cb560ea52ec0eb74d9b640bc77138a6c1fb42e6953 */}
+{/* t:p d4c1af14062aec558aed67109d86aa176de2ff74845e6b847b6913297360ede2 */}
 ### Diagnostiquer une connexion SSO refusée
 
 Après une migration, les sessions déjà ouvertes continuent de fonctionner&nbsp;:
@@ -558,6 +657,7 @@ journalctl -u matrix-authentication-service -f
 | `wrong signature alg` sur `/upstream/callback/…` | MAS attend un `id_token` RS256, Kanidm signe en ES256 | `id_token_signed_response_alg` du fournisseur amont&nbsp;: réglé sur `ES256` par le module |
 | `client registration denied by the policy: invalid redirect_uri` | Le `client_uri` annoncé par le client ne correspond pas à son schéma de redirection | Ne pas forcer `oidc_metadata` dans la config Element&nbsp;; ses valeurs par défaut passent |
 | `M_UNRECOGNIZED` sur `/login/sso/redirect` | Le chemin part vers Synapse au lieu de MAS | Vérifier le matcher `@masCompat` du vhost Caddy |
+| Page `User exists` : «&nbsp;returned "bob" as username, which is not linked&nbsp;» | Un compte ami occupe déjà l'identifiant de l'utilisateur déclaré | Fusionner ou renommer (cf. [collision d'identifiant](#collision-didentifiant-avec-un-utilisateur-déclaré)) |
 | «&nbsp;Le code QR n'est pas pris en charge&nbsp;» côté client | Le canal de rendez-vous MSC4108 est absent | `experimental_features.msc4108_enabled`&nbsp;: activé par le module avec MAS |
 | «&nbsp;L'appel n'est pas pris en charge&nbsp;», `MISSING_MATRIX_RTC_TRANSPORT` | Aucun backend MatrixRTC annoncé | Activer `matrixRtc.enable` (cf. [Appels audio et vidéo](#appels-audio-et-vidéo)) |
 | Appel qui sonne mais reste muet, ou coupe au bout de quelques secondes | Les ports média n'atteignent pas l'hôte | Ouvrir 40000-40100/udp et 7881/tcp jusqu'à lui |

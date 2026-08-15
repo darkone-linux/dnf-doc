@@ -671,7 +671,7 @@ just passwd-restic
 {/* t:p f968fedf354e200a2895bc472238eed15687b0539d511dc933f7877b1314f672 */}
 ### ✳️ `passwd-mas`
 
-Generates the three secrets of the [Matrix Authentication Service](/en/doc/admin-guide/operate/matrix/#permissions)&nbsp;: internal encryption key, secret shared with Synapse, and RSA signing key.
+Generates the three secrets of the [Matrix Authentication Service](/en/doc/admin-guide/operate/matrix/#double-puppeting)&nbsp;: internal encryption key, secret shared with Synapse, and RSA signing key.
 
 :::tip[Idempotent]
 Never overwrites an existing secret. Essential&nbsp;: `mas-encryption-secret` makes the data encrypted in the database unreadable if it changes after the first boot.
