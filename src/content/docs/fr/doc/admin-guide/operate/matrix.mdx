@@ -16,7 +16,7 @@ Activer le serveur Matrix (Synapse), son client web Element et les ponts
 mautrix (WhatsApp, Signal, Telegram, Messenger, Discord). Pour l'architecture, voir
 [Matrix dans DNF](/fr/doc/admin-guide/understand/matrix/).
 
-{/* t:p 8026b991054a535675002db4a5475a7412eb9eaaeec602690f5d2a5f48c5ae27 */}
+{/* t:p b46eabd78ea0585babc741e76a3d084cd199326cfaf99bdade250d050a8546d4 */}
 ## Activer Matrix
 
 <Steps>
@@ -53,7 +53,7 @@ L'authentification passe par le [SSO Kanidm](/fr/doc/admin-guide/operate/sso/)
 (OIDC)&nbsp;: tout utilisateur déclaré se connecte avec son compte réseau,
 aucune création de compte Matrix n'est nécessaire.
 
-{/* t:p 612e4b4b4c6fdc9f568eccb61bb4176b608d5b885eb2f88cbbb765f0d7e6f941 */}
+{/* t:p 1939457d19b6eae4e613345f616989a7de00094ba4a79469a346e92bfb1d3b96 */}
 ### Secrets requis
 
 À renseigner dans `usr/secrets/secrets.yaml`&nbsp;:
@@ -67,7 +67,7 @@ aucune création de compte Matrix n'est nécessaire.
 | `mautrix-doublepuppet-as-token` | Token appservice *double puppeting* (commun aux ponts) | `openssl rand -hex 32` |
 | `mautrix-doublepuppet-hs-token` | Idem, requis par Synapse, jamais utilisé | `openssl rand -hex 32` |
 
-{/* t:p 4679a395d55ddf48e848741c557fee52ed85e6553cc04383edf91ba67444cff4 */}
+{/* t:p a50e24a5824fb6987b55e7922f9d5b3706ce421ec74ecf0e6bc11a36c75417d2 */}
 ## Deux modes d'authentification
 
 Le serveur fonctionne dans **un seul** de ces deux modes, réglé par
@@ -343,7 +343,7 @@ téléphone apparaissent dans Matrix comme venant du **vrai compte** de
 l'utilisateur. C'est automatique pour tous les comptes locaux, aucune action
 par utilisateur.
 
-{/* t:p 0f41ac433fa1137ed832a36a6ca0cd7b09466c8c17ef82ceed896991b4fb8656 */}
+{/* t:p 3a40bdbbe2ed0817af96ad3bc44ca7054e29a497b77ff5a5742825f2bae74191 */}
 ## Appels audio et vidéo
 
 Deux piles cohabitent, parce qu'aucune ne couvre tous les clients. Elles
@@ -420,6 +420,7 @@ d'autorisation sont servis sur le vhost Matrix, sous `/livekit/sfu` et
 `/livekit/jwt`. Côté client, rien à régler non plus&nbsp;— Element X et Element
 Web embarquent Element Call et découvrent le transport tout seuls.
 
+{/* t:p 2a76c1856940ccc984bec5140f15dfa7d1633024a5b01081b71ed22c6d28227a */}
 ### Ports média
 
 Le média ne passe **pas** par le proxy inverse&nbsp;: les clients joignent
@@ -438,6 +439,7 @@ mêmes ports et feraient échouer des appels au hasard. DNF déplace donc LiveKi
 sous coturn.
 </Aside>
 
+{/* t:p 0f41ac433fa1137ed832a36a6ca0cd7b09466c8c17ef82ceed896991b4fb8656 */}
 ## Ouvrir le réseau à la fédération
 
 Par défaut, le serveur fédère avec **tous** les serveurs Matrix, tout en restant
@@ -504,7 +506,7 @@ Pour un salon confidentiel&nbsp;: le retirer de l'annuaire **et** le passer en
 défaut sur les nouveaux salons.
 </Aside>
 
-{/* t:p ac8782289be6d3c8dfbdae516d4184ef62477276fafdbb5c73d0a4275b51cf79 */}
+{/* t:p f8e671ed6e0a52d53a62149ac7bd9fcf176447f39e1829a6f978a9712a3ed973 */}
 ## Exploitation
 
 | Action | Commande |
@@ -540,7 +542,7 @@ pour créer un compte de bot manquant&nbsp;: créer ce compte **avant** de
 migrer, ou le recréer avec `sudo dnf-mas manage register-user`.
 </Aside>
 
-{/* t:p 4db448c9873e295f5a67280776324d71b6851a693d15eabf1ed7a86197cc9178 */}
+{/* t:p 463c332f12057e775be4f3cb560ea52ec0eb74d9b640bc77138a6c1fb42e6953 */}
 ### Diagnostiquer une connexion SSO refusée
 
 Après une migration, les sessions déjà ouvertes continuent de fonctionner&nbsp;:

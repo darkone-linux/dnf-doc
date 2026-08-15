@@ -681,6 +681,21 @@ Never overwrites an existing secret. Essential&nbsp;: `mas-encryption-secret` ma
 just passwd-mas
 ```
 
+{/* t:p 4c17266f0c53204a9507071e3334a1974b4b3fdbb68877854683b35f4c64d14b */}
+### ✳️ `passwd-livekit`
+
+Generates the shared secret of the
+[MatrixRTC](/en/doc/admin-guide/operate/matrix/#opening-the-network-to-federation) stack&nbsp;:
+the LiveKit SFU validates with it the tokens that its authorization service signs.
+
+:::tip[Idempotent]
+Never overwrites an existing secret. Regenerating it only cuts ongoing calls.
+:::
+
+```sh
+just passwd-livekit
+```
+
 {/* t:p 492a5aa3b45a9f68964c089348bdb4f0284b5dd11ec4ad7a6c1922473d97cb9d */}
 ### ✳️ `yubikey <user> [key] [action]`
 

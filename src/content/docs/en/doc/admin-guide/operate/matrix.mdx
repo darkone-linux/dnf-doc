@@ -16,7 +16,7 @@ Enable the Matrix server (Synapse), its Element web client and mautrix
 bridges (WhatsApp, Signal, Telegram, Messenger, Discord). For the architecture, see
 [Matrix in DNF](/en/doc/admin-guide/understand/matrix/).
 
-{/* t:p 8026b991054a535675002db4a5475a7412eb9eaaeec602690f5d2a5f48c5ae27 */}
+{/* t:p b46eabd78ea0585babc741e76a3d084cd199326cfaf99bdade250d050a8546d4 */}
 ## Enable Matrix
 
 <Steps>
@@ -30,7 +30,7 @@ bridges (WhatsApp, Signal, Telegram, Messenger, Discord). For the architecture, 
            title: "Matrix"
            description: "Messagerie instantanée"
          element:        # client web
-         turn:           # audio/video relay (recommended)
+         turn:           # relais audio/vidéo des clients historiques
    ```
 
 2. Declare the Matrix administrator (global key, outside hosts)&nbsp;:
@@ -38,10 +38,10 @@ bridges (WhatsApp, Signal, Telegram, Messenger, Discord). For the architecture, 
    ```yaml
    # etc/config.yaml
    matrix:
-     admin: "alice"    # local part of the admin account
+     admin: "alice"    # local part du compte administrateur
    ```
 
-   This account administers the bridges and receives
+   This account manages the bridges and receives the
    [supervision alerts](/en/doc/admin-guide/operate/alerts/).
 
 3. Create the required [secrets](/en/doc/admin-guide/operate/secrets/)
@@ -49,45 +49,51 @@ bridges (WhatsApp, Signal, Telegram, Messenger, Discord). For the architecture, 
 
 </Steps>
 
-Authentication goes through [SSO Kanidm](/en/doc/admin-guide/operate/sso/)
-(OIDC)&nbsp;: every declared user connects with their network account,
+Authentication goes through [Kanidm SSO](/en/doc/admin-guide/operate/sso/)
+(OIDC)&nbsp;: every declared user signs in with their network account,
 no Matrix account creation is needed.
 
-{/* t:p 612e4b4b4c6fdc9f568eccb61bb4176b608d5b885eb2f88cbbb765f0d7e6f941 */}
+{/* t:p 1939457d19b6eae4e613345f616989a7de00094ba4a79469a346e92bfb1d3b96 */}
 ### Required secrets
 
-To fill in `usr/secrets/secrets.yaml`&nbsp;:
+To fill in in `usr/secrets/secrets.yaml`&nbsp;:
 
-| Sops key | Role | Generation |
+| Clé sops | Rôle | Génération |
 |---|---|---|
-| `matrix-rss-password` | Synapse registration shared secret | `openssl rand -hex 32` |
-| `oidc-secret-matrix` | OIDC Kanidm client secret | see [SSO](/en/doc/admin-guide/operate/sso/) |
-| `turn-secret` | coturn shared secret (if `turn` enabled) | `openssl rand -hex 32` |
-| `mautrix-doublepuppet-as-token` | double puppeting appservice token (shared by bridges) | `openssl rand -hex 32` |
-| `mautrix-doublepuppet-hs-token` | Same, required by Synapse, never used | `openssl rand -hex 32` |
+| `matrix-rss-password` | Registration shared secret Synapse | `openssl rand -hex 32` |
+| `oidc-secret-matrix` | Secret du client OIDC Kanidm | cf. [SSO](/en/doc/admin-guide/operate/sso/) |
+| `turn-secret` | Secret partagé coturn (si `turn` activé) | `openssl rand -hex 32` |
+| `livekit-secret` | Secret partagé MatrixRTC (si `matrixRtc` activé) | `just passwd-livekit` |
+| `mautrix-doublepuppet-as-token` | Token appservice *double puppeting* (commun aux ponts) | `openssl rand -hex 32` |
+| `mautrix-doublepuppet-hs-token` | Idem, requis par Synapse, jamais utilisé | `openssl rand -hex 32` |
 
-{/* t:p 4679a395d55ddf48e848741c557fee52ed85e6553cc04383edf91ba67444cff4 */}
+{/* t:p a50e24a5824fb6987b55e7922f9d5b3706ce421ec74ecf0e6bc11a36c75417d2 */}
 ## Two authentication modes
 
-The server runs in **only one** of these two modes, configured by
+The server runs in **one** of these two modes, set by
 `darkone.service.matrix.mas.enable`. The chosen mode changes the compatible
-clients, how to register friends and the administration tools.
+clients, how to invite friends and the administration tools.
 
-| | Legacy Synapse (default) | MAS enabled (recommended) |
+| | Synapse historique (défaut) | MAS activé (recommandé) |
 |---|---|---|
 | Option | `mas.enable = false` | `mas.enable = true` |
-| SSO sign-in | Synapse is Kanidm's OIDC client | MAS is Kanidm's OIDC client |
-| Element Web / Desktop | yes | yes |
-| **Element X** (Android, iOS) | **no** | **yes** |
-| QR code sign-in | no | yes |
-| Account portal | none | `https://matrix.domain.tld/account/` |
-| Registration tokens | Synapse admin API | `dnf-mas` on the host |
-| Administrator promotion | SQL in the Synapse database | `dnf-mas manage promote-admin` |
+| Connexion SSO | Synapse est client OIDC de Kanidm | MAS est client OIDC de Kanidm |
+| Element Web / Desktop | oui | oui |
+| **Element X** (Android, iOS) | **non** | **oui** |
+| Connexion par QR code | non | oui |
+| Application proposée sur mobile | Element Classic | Element X |
+| Portail de compte | aucun | `https://matrix.domain.tld/account/` |
+| Jetons d'inscription | API admin Synapse | `dnf-mas` sur l'hôte |
+| Promotion administrateur | SQL dans la base Synapse | `dnf-mas manage promote-admin` |
 
-<Aside type="tip" title="Element X requires MAS">
-The new-generation mobile app [Element X](https://element.io/app/)
-can only sign in to a server run by MAS. Without MAS, it fails at
-sign-in&nbsp;; you must stay on the classic Element app.
+<Aside type="tip" title="Element X exige MAS">
+L'application mobile nouvelle génération [Element X](https://element.io/app/)
+ne sait se connecter qu'à un serveur piloté par MAS. Sans MAS, elle échoue à
+la connexion&nbsp;; il faut rester sur l'application Element classique.
+
+Le client web s'aligne tout seul&nbsp;: sa page d'accueil mobile propose
+Element X quand l'hôte porte un serveur Matrix avec MAS, Element Classic
+sinon. Rien à régler.
 </Aside>
 
 {/* t:p 15942d02b9d58aeed731714cc62e5ea11a926090c57cc725843b9573c7512657 */}
@@ -335,6 +341,101 @@ phone appear in Matrix as coming from the user's **real account**.
 This is automatic for all local accounts, no action per
 user.
 
+{/* t:p 3a40bdbbe2ed0817af96ad3bc44ca7054e29a497b77ff5a5742825f2bae74191 */}
+## Audio and video calls
+
+Two stacks coexist, because neither covers all clients. They
+activate separately and do not replace each other&nbsp;:
+
+| | WebRTC historique | MatrixRTC |
+|---|---|---|
+| Option | `darkone.service.turn.enable` | `darkone.service.matrix.matrixRtc.enable` |
+| Composants | coturn | LiveKit (SFU) + service d'autorisation |
+| Appels à deux | oui | oui |
+| Appels de groupe | non | oui |
+| Element Classic (Android) | **oui** | non |
+| Element Web / Desktop | oui | oui |
+| **Element X** (Android, iOS) | **non** | **oui** |
+
+Keep **both** enabled&nbsp;: Element Classic only speaks the first,
+Element X only the second.
+
+<Aside type="danger" title="Les deux piles ne se parlent pas">
+Un appel lancé depuis Element X est **invisible** dans Element Classic, et
+réciproquement&nbsp;: les deux signalent par des événements Matrix différents
+(`m.call.*` contre `m.rtc.member`), et l'ancienne application ne contient
+aucun code LiveKit. Aucune configuration serveur ne les réconcilie&nbsp;; côté
+amont, le cas est
+[classé «&nbsp;not planned&nbsp;»](https://github.com/element-hq/element-x-android/issues/3937).
+
+Le seul client qui parle **les deux** est Element Web/Desktop&nbsp;: un
+utilisateur resté sur Element Classic peut donc rejoindre un appel Element X
+en ouvrant `https://element.domain.tld` dans le navigateur de son téléphone.
+Sinon, migrer vers Element X — l'application classique est en maintenance
+seule, sans nouvelle fonctionnalité.
+</Aside>
+
+<Aside type="caution" title="Element X : deux prérequis distincts">
+Element X refuse d'appeler avec *«&nbsp;L'appel n'est pas pris en
+charge&nbsp;»* (code `MISSING_MATRIX_RTC_TRANSPORT`) tant que MatrixRTC est
+absent, **même** si MAS est actif. MAS conditionne la connexion, MatrixRTC les
+appels&nbsp;: activer l'un ne donne pas l'autre.
+</Aside>
+
+<Steps>
+
+1. Enable the MatrixRTC stack in the host's nix config&nbsp;:
+
+   ```nix
+   # usr/machines/<host>/default.nix
+   darkone.service.matrix = {
+     mas.enable = true;         # requis par Element X pour se connecter
+     matrixRtc.enable = true;   # requis par Element X pour appeler
+   };
+   ```
+
+2. Generate the shared secret, then deploy&nbsp;:
+
+   ```sh
+   just passwd-livekit
+   just apply <host> switch
+   ```
+
+3. Check that the server announces a transport&nbsp;:
+
+   ```sh
+   # doit contenir "org.matrix.msc4143.rtc_foci"
+   curl -A Mozilla/5.0 https://domain.tld/.well-known/matrix/client
+
+   # org.matrix.msc4143 doit valoir true
+   curl -A Mozilla/5.0 https://matrix.domain.tld/_matrix/client/versions
+   ```
+
+</Steps>
+
+No extra subdomain or certificate&nbsp;: the SFU and its authorization service
+are served on the Matrix vhost, under `/livekit/sfu` and
+`/livekit/jwt`. Nothing to configure client-side either&nbsp;— Element X and
+Element Web embed Element Call and discover the transport by themselves.
+
+{/* t:p 2a76c1856940ccc984bec5140f15dfa7d1633024a5b01081b71ed22c6d28227a */}
+### Media ports
+
+Media does **not** go through the reverse proxy&nbsp;: clients connect to
+the host directly. These ports must therefore be open up to it, and
+forwarded if it sits behind NAT&nbsp;:
+
+| Port | Usage |
+|---|---|
+| 40000-40100/udp | WebRTC media, one port per participant |
+| 7881/tcp | Fallback for networks that block UDP |
+
+<Aside type="note" title="Pourquoi pas la plage par défaut">
+LiveKit proposes 50000-51000/udp, which falls **inside** coturn's relay
+range (49152-65535). Co-hosted, the two would fight over the same ports and
+randomly fail calls. DNF therefore moves LiveKit under coturn.
+</Aside>
+
 {/* t:p 0f41ac433fa1137ed832a36a6ca0cd7b09466c8c17ef82ceed896991b4fb8656 */}
 ## Opening the network to federation
 
@@ -399,15 +500,16 @@ or invitation only. End-to-end encryption is already active by default on new
 rooms.
 </Aside>
 
-{/* t:p ac8782289be6d3c8dfbdae516d4184ef62477276fafdbb5c73d0a4275b51cf79 */}
+{/* t:p f8e671ed6e0a52d53a62149ac7bd9fcf176447f39e1829a6f978a9712a3ed973 */}
 ## Operations
 
-| Action | Command |
+| Action | Commande |
 |---|---|
-| Service status | `systemctl status matrix-synapse mautrix-whatsapp mautrix-signal mautrix-telegram mautrix-meta-messenger` |
-| A bridge's logs | `journalctl -u mautrix-whatsapp -f` |
-| Synapse logs | `journalctl -u matrix-synapse -f` |
-| MAS logs | `journalctl -u matrix-authentication-service -f` |
+| État des services | `systemctl status matrix-synapse mautrix-whatsapp mautrix-signal mautrix-telegram mautrix-meta-messenger` |
+| Journaux d'un pont | `journalctl -u mautrix-whatsapp -f` |
+| Journaux Synapse | `journalctl -u matrix-synapse -f` |
+| Journaux MAS | `journalctl -u matrix-authentication-service -f` |
+| Journaux MatrixRTC | `journalctl -u livekit -u lk-jwt-service -f` |
 
 {/* t:p d927d4a5335f1306d4d4b41f19790f7e7e4dfe4011d788a9d42b512588431aa5 */}
 ### Administering accounts with MAS
@@ -434,39 +536,40 @@ to create a missing bot account&nbsp;: create this account **before**
 migrating, or recreate it with `sudo dnf-mas manage register-user`.
 </Aside>
 
-{/* t:p 4db448c9873e295f5a67280776324d71b6851a693d15eabf1ed7a86197cc9178 */}
-### Diagnosing a refused SSO connection
+{/* t:p 463c332f12057e775be4f3cb560ea52ec0eb74d9b640bc77138a6c1fb42e6953 */}
+### Diagnose a refused SSO login
 
-After a migration, sessions that are already open keep working&nbsp;: a broken
-connection therefore only shows **on the first fresh login**. Follow MAS during
-an attempt&nbsp;:
+After a migration, already open sessions keep working&nbsp;: a broken login
+only shows **at the first fresh login**. Follow MAS during an attempt&nbsp;:
 
 ```sh
 journalctl -u matrix-authentication-service -f
 ```
 
-| Message | Cause | Fix |
+| Message | Cause | Correctif |
 |---|---|---|
-| `wrong signature alg` on `/upstream/callback/…` | MAS expects an RS256 `id_token`, Kanidm signs with ES256 | `id_token_signed_response_alg` of the upstream provider&nbsp;: set to `ES256` by the module |
-| `client registration denied by the policy: invalid redirect_uri` | The `client_uri` announced by the client does not match its redirect scheme | Do not force `oidc_metadata` in the Element config&nbsp;; its default values pass |
-| `M_UNRECOGNIZED` on `/login/sso/redirect` | The path goes to Synapse instead of MAS | Check the `@masCompat` matcher of the Caddy vhost |
-| "The QR code is not supported" on the client side | The MSC4108 rendezvous channel is missing | `experimental_features.msc4108_enabled`&nbsp;: enabled by the module with MAS |
+| `wrong signature alg` sur `/upstream/callback/…` | MAS attend un `id_token` RS256, Kanidm signe en ES256 | `id_token_signed_response_alg` du fournisseur amont&nbsp;: réglé sur `ES256` par le module |
+| `client registration denied by the policy: invalid redirect_uri` | Le `client_uri` annoncé par le client ne correspond pas à son schéma de redirection | Ne pas forcer `oidc_metadata` dans la config Element&nbsp;; ses valeurs par défaut passent |
+| `M_UNRECOGNIZED` sur `/login/sso/redirect` | Le chemin part vers Synapse au lieu de MAS | Vérifier le matcher `@masCompat` du vhost Caddy |
+| «&nbsp;Le code QR n'est pas pris en charge&nbsp;» côté client | Le canal de rendez-vous MSC4108 est absent | `experimental_features.msc4108_enabled`&nbsp;: activé par le module avec MAS |
+| «&nbsp;L'appel n'est pas pris en charge&nbsp;», `MISSING_MATRIX_RTC_TRANSPORT` | Aucun backend MatrixRTC annoncé | Activer `matrixRtc.enable` (cf. [Appels audio et vidéo](#audio-and-video-calls)) |
+| Appel qui sonne mais reste muet, ou coupe au bout de quelques secondes | Les ports média n'atteignent pas l'hôte | Ouvrir 40000-40100/udp et 7881/tcp jusqu'à lui |
 
-Quick checks, without logging in&nbsp;:
+Quick checks, without signing in&nbsp;:
 
 ```sh
-# org.matrix.msc4108 must be true
+# org.matrix.msc4108 doit valoir true
 curl -A Mozilla/5.0 https://matrix.domain.tld/_matrix/client/versions
 
-# must respond 201 and a public url
+# doit répondre 201 et une url publique
 curl -A Mozilla/5.0 -X POST --data probe \
   https://matrix.domain.tld/_matrix/client/unstable/org.matrix.msc4108/rendezvous
 ```
 
-<Aside type="note" title="Two symptoms, two causes">
-A client that switches to authentication **in the browser** instead of its
-native screen signals a refused dynamic registration&nbsp;; the error that
-possibly follows is a separate problem. Handle both.
+<Aside type="note" title="Deux symptômes, deux causes">
+Un client qui bascule sur une authentification **dans le navigateur** au lieu
+de son écran natif signale un refus d'enregistrement dynamique&nbsp;; l'erreur
+qui suit éventuellement est un problème distinct. Traiter les deux.
 </Aside>
 
 {/* t:p 54aa52c1f59ff607eec0a2fa9ace69a976ed97dc8baebadd36446c5e4fd98df4 */}

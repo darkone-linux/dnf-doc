@@ -16,12 +16,10 @@ How DNF implements the Matrix server (Synapse) and mautrix bridges.
 For day-to-day operation, see
 [Matrix et les ponts](/en/doc/admin-guide/operate/matrix/).
 
-{/* t:p 0b2b60bf2deee753330eff128d4bfa6196323ac0a89a392ed8db957804a5dacf */}
+{/* t:p b28770e46ea00c812b42773942785636e474f91945dffd9013ec80b8cb8083e9 */}
 ## Overview
 
-Everything is handled by `dnf/modules/service/matrix.nix`, with two satellite
-modules&nbsp;: `element.nix` (static web client) and `turn.nix` (coturn relay
-for audio/video).
+Everything is provided by `dnf/modules/service/matrix.nix`, with two satellite modules&nbsp;: `element.nix` (static web client) and `turn.nix` (coturn relay for audio/video).
 
 ```d2
 style.fill: transparent
@@ -39,6 +37,10 @@ pg: PostgreSQL {
 }
 idm: Kanidm\n(OIDC)
 turn: coturn\n(TURN/STUN)
+rtc: MatrixRTC {
+  sfu: LiveKit\n(SFU)
+  jwt: Authorization\nservice
+}
 
 bridges: mautrix bridges {
   wa: whatsapp
@@ -55,18 +57,17 @@ ext: External networks\n(WhatsApp, Telegram...) {
 client -> caddy -> synapse -> pg
 synapse -> idm
 client -> turn
+client -> rtc.sfu: media
+client -> caddy -> rtc.jwt: token
+rtc.jwt -> synapse: validates the OpenID token
 synapse <-> bridges <-> ext
 ```
 
-- **Caddy** routes `/_matrix/*` and `/_synapse/client/*` to Synapse and serves
-  `/.well-known/matrix/{client,server}` files (client discovery and federation).
-- **Synapse** listens on `dnfConfig.network.ports.matrix`, local PostgreSQL
-  database (created with `C` collation by a `matrix-db-init` unit).
-- **Kanidm** provides authentication&nbsp;: OIDC client provisioned via
-  `darkone.service.idm.oauth2.matrix`, *local part* derived from
-  `preferred_username` (see [Authentication & IDM](/en/doc/admin-guide/understand/auth-idm/)).
-- **coturn** is wired automatically if the `turn` service is declared
-  (`turn_uris`, shared secret via sops).
+- **Caddy** routes `/_matrix/*` and `/_synapse/client/*` to Synapse and serves the `/.well-known/matrix/{client,server}` files (client discovery and federation).
+- **Synapse** listens on `dnfConfig.network.ports.matrix`, with a local PostgreSQL base (created with `C` collation by a `matrix-db-init` unit).
+- **Kanidm** provides authentication&nbsp;: OIDC client provisioned via `darkone.service.idm.oauth2.matrix`, *local part* derived from `preferred_username` (see [Authentication & IDM](/en/doc/admin-guide/understand/auth-idm/)).
+- **coturn** is wired up automatically if the `turn` service is declared (`turn_uris`, shared secret via sops). It relays calls for two of the legacy clients, the only stack Element Classic knows how to use.
+- **MatrixRTC** (`matrixRtc.enable`) adds the Element Call stack&nbsp;: a LiveKit SFU and its authorization service, served on the Matrix vhost under `/livekit/sfu` and `/livekit/jwt`. The client exchanges an OpenID token from Synapse for a LiveKit JWT, then sends its media **directly** to the SFU, outside the proxy. Required by Element X, which doesn't know the other stack.
 
 {/* t:p 13c6a2814eee915a3089c2fadfc14cd3e406e01ed88014bc51ae5bf898e7c861 */}
 ## Module anatomy
@@ -252,15 +253,10 @@ on the host with `dnf-mas`, or via the Synapse admin API when MAS is
 disabled (see
 [the operations guide](/en/doc/admin-guide/operate/matrix/#opening-the-network-to-federation)).
 
-{/* t:p 5b2000a79dc467453cffcd7d58d81ed30b02b54495e762740ece72ce8492bc6e */}
+{/* t:p 894bea191a9519a91f28083a2dc2e94494c2c64c0043d0cdc8bef5c80deebcf9 */}
 ## Next-generation authentication (MAS)
 
-Optional (`darkone.service.matrix.mas.enable`), the
-[Matrix Authentication Service](https://element-hq.github.io/matrix-authentication-service/)
-(MAS) offloads **all** authentication from Synapse: login, accounts, sessions,
-the `/account` self-service portal. It is the foundation of
-[Element X](https://element.io/app/) (QR-code login) and the official path,
-since Synapse's built-in authentication is end-of-life.
+Optional (`darkone.service.matrix.mas.enable`), the [Matrix Authentication Service](https://element-hq.github.io/matrix-authentication-service/) (MAS) moves **all** authentication out of Synapse&nbsp;: sign-in, accounts, sessions, the self-service `/account` portal. It is the foundation of [Element X](https://element.io/app/) (QR code sign-in) and the official path, as Synapse's internal authentication is end-of-life.
 
 ```d2
 style.fill: transparent
@@ -278,46 +274,35 @@ client -> caddy
 caddy -> synapse: "/_matrix/*, /_synapse/*"
 caddy -> mas: "/, login, logout, refresh"
 synapse <-> mas: "introspection, provisioning"
-mas -> idm: Upstream SSO
+mas -> idm: upstream SSO
 ```
 
-- **A single vhost**: MAS shares `matrix.domain.tld`. Caddy routes the root
-  (login pages, `/account`, `/oauth2/*`) and the whole compatibility surface
-  `/_matrix/client/<version>/{login,logout,refresh}`, sub-paths included
-  (`logout/all` and the legacy `login/sso/redirect` of pre-OIDC clients, to
-  which Synapse answers `M_UNRECOGNIZED` once delegated); Synapse keeps
-  `/_matrix/*` and `/_synapse/*`. No extra subdomain or DNS.
-- **Kanidm stays the identity source**: MAS becomes the OIDC client instead of
-  Synapse (same client ID and secret), declared as an upstream provider under a
-  fixed ULID. Synapse now only asks MAS to validate each token (shared secret,
-  loopback).
-- **Automatic discovery**: connected to MAS, Synapse serves `auth_metadata`
-  itself ([MSC2965](https://github.com/matrix-org/matrix-spec-proposals/pull/2965)).
-  Clients find MAS without any `.well-known` change.
-- **Bridges unchanged**: registrations and double puppeting work identically.
-  Only adaptation, automatic: bridges manage their e2ee devices via
-  [MSC4190](https://github.com/matrix-org/matrix-spec-proposals/pull/4190),
-  since the appservice `/login` API no longer exists.
-- **Friends**: token-based registration moves from Synapse to MAS
-  (`friendRegistration.enable` remains the switch); password accounts keep
-  working via the compatibility layer.
+- **Single vhost**&nbsp;: MAS shares `matrix.domain.tld`. Caddy routes the root to it (sign-in pages, `/account`, `/oauth2/*`) and the whole compatibility surface `/_matrix/client/<version>/{login,logout,refresh}`, subpaths included (`logout/all` and the legacy `login/sso/redirect` of pre-OIDC clients, to which Synapse answers `M_UNRECOGNIZED` once delegated)&nbsp;; Synapse keeps `/_matrix/*` and `/_synapse/*`. No extra subdomain or DNS — the MatrixRTC backend attaches the same way, under `/livekit/*`.
+- **Kanidm remains the identity source**&nbsp;: MAS becomes the OIDC client instead of Synapse (same identifier and secret), declared as an upstream provider under a fixed ULID. Synapse only asks MAS to validate each token (shared secret, loopback).
+- **Automatic discovery**&nbsp;: connected to MAS, Synapse itself serves `auth_metadata` ([MSC2965](https://github.com/matrix-org/matrix-spec-proposals/pull/2965)). Clients find MAS without modifying the `.well-known`.
+- **Bridges unchanged**&nbsp;: registrations and double puppeting work identically. Only adaptation, automatic&nbsp;: bridges manage their e2ee devices via [MSC4190](https://github.com/matrix-org/matrix-spec-proposals/pull/4190), since the appservice `/login` API no longer exists.
+- **Friends**&nbsp;: token-based registration switches from Synapse to MAS (`friendRegistration.enable` remains the switch)&nbsp;; password accounts keep working through the compatibility layer.
 
-Activation and migration: see
-[the operations guide](/en/doc/admin-guide/operate/matrix/#permissions).
+Activation and migration&nbsp;: see [the operations guide](/en/doc/admin-guide/operate/matrix/#enabling-mas).
 
-{/* t:p 1825668044e3aa12cfff0835ba4915818108282998110b153e0883ee4cfead14 */}
+{/* t:p b6417ed593bca0abe771e7d61447636c779be1dffa5374a8f462fe9d3c517232 */}
 ## Secrets and ports
 
-- **Secrets** : declared by block in `matrix.nix` (`sops.secrets.*`), and
-  assembled into environment files by `sops.templates.*` owned
-  by the bridge's system user. Full list in
+- **Secrets** : declared in blocks in `matrix.nix` (`sops.secrets.*`), and
+  assembled into environment files by `sops.templates.*` owned by the
+  bridge's system user. Complete list in
   [the operations page](/en/doc/admin-guide/operate/matrix/#required-secrets).
-- **Ports** : `matrix`, `matrixTelegram` and `matrixDiscord` are set by the
-  `dnf/config/network.nix` registry&nbsp;; the default appservice ports of
-  other bridges (29318, 29319, 29328) are listed there as `reserved` to prevent
+- **Ports** : `matrix`, `matrixTelegram` and `matrixDiscord` are fixed by the
+  registry `dnf/config/network.nix`&nbsp;; the default appservice ports of the
+  other bridges (29318, 29319, 29328) are listed there as `reserved` to avoid
   any future collision.
+- **MatrixRTC ports** : the registry also carries `livekit`, `livekitJwt` and
+  the media bounds `livekitRtcUdpStart`/`End`. Two upstream default values are
+  deliberately discarded there&nbsp;: the authorization service leaves 8080
+  (taken by headscale) and the media range drops below coturn's, which it
+  overlapped.
 - **WhatsApp statuses** : `network.enable_status_broadcast = false` in the
-  bridge config, otherwise the bridge endlessly recreates the
+  bridge config, otherwise the bridge indefinitely recreates the
   "WhatsApp Status Broadcast" room for each user.
 
 {/* t:p ebc4d3df25421e737099119b56fc77f8147dd8501c459ba274280882d74143ed */}

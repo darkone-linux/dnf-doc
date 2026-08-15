@@ -94,6 +94,36 @@ a recent server option. If the connection fails, ask
 the administrator whether it is enabled.
 </Aside>
 
+{/* t:p 47b4ee13fb911d64e7f4aa8ef8489979b2ea4bf509d08edf6820891ba051dad4 */}
+## Making audio or video calls
+
+In a room, the call button starts an audio or video conversation. Between two
+or more people&nbsp;: other room members see the call in progress and can join
+it with a click, no invitation needed.
+
+It works from Element X, from Element on desktop and from the web client,
+including between different applications.
+
+<Aside type="caution" title="The classic Element app stays out of it">
+The old mobile application can only make **two-person** calls between two old
+applications. It cannot even see calls started from Element X&nbsp;: the two
+applications use different calling technologies, and no server setting
+changes anything about it.
+
+Two ways to work around it&nbsp;:
+
+- **Best**&nbsp;: install Element X, and everyone calls each other.
+- **Troubleshooting**, without installing anything&nbsp;: open
+  `https://element.domain.tld` in the phone browser and sign in. The web
+  client can join Element X calls.
+</Aside>
+
+<Aside type="note" title="If calling is not offered">
+A "&nbsp;Calling is not supported&nbsp;" message means the server does not
+have the group-calling component yet. This is an administration setting&nbsp;:
+report it to the network administrator.
+</Aside>
+
 {/* t:p b8ad02b707c9af8b1d9b4b9504dacc2c3155265b731ecb3f03de95ba1597340d */}
 ## Bridges to WhatsApp, Telegram, and others
 

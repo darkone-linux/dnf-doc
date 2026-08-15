@@ -569,7 +569,7 @@ token goes through the Synapse admin API (a server admin is required); with
 MAS, mint it on the host with
 `sudo dnf-mas manage issue-user-registration-token`.
 
-{/* t:p 66ad296d191781db4dd4a67f9aae6c90a6c9e4ab0a90b1ece8c551944556f802 */}
+{/* t:p a40748eb781fccc4da58ca71ab300b213dd7a300121c552afc64553ab0e74bd3 */}
 #### Next-gen auth (MAS)
 
 `mas.enable` delegates all authentication to Matrix Authentication Service
@@ -616,6 +616,7 @@ create a missing bot account. Create it beforehand, or with
 * **federation.enable** `bool` Allow server-to-server federation. False blocks all federation.
 * **federation.whitelist** `listOf str` Empty = federate with all servers; non-empty = only these domains (inbound + outbound).
 * **mas.enable** `bool` Delegate all authentication to Matrix Authentication Service (Element X support).
+* **matrixRtc.enable** `bool` Enable the MatrixRTC backend (LiveKit SFU) for Element Call group calls.
 * **friendRegistration.enable** `bool` Allow friends to self-register with an invite token (token-gated).
 * **bridges.whatsapp.enable** `bool` Mautrix WhatsApp bridge (login by QR code).
 * **bridges.signal.enable** `bool` Mautrix Signal bridge (login by QR code).
@@ -629,6 +630,7 @@ darkone.service.matrix = {
   federation.enable = false;
   federation.whitelist = [ ];
   mas.enable = false;
+  matrixRtc.enable = false;
   friendRegistration.enable = false;
   bridges.whatsapp.enable = true;
   bridges.signal.enable = true;
