@@ -30,7 +30,7 @@ mautrix (WhatsApp, Signal, Telegram, Messenger, Discord). Pour l'architecture, v
            title: "Matrix"
            description: "Messagerie instantanée"
          element:        # client web
-         turn:           # relais audio/vidéo (recommandé)
+         turn:           # relais audio/vidéo des clients historiques
    ```
 
 2. Déclarer l'administrateur Matrix (clé globale, hors hôtes)&nbsp;:
@@ -63,6 +63,7 @@ aucune création de compte Matrix n'est nécessaire.
 | `matrix-rss-password` | Registration shared secret Synapse | `openssl rand -hex 32` |
 | `oidc-secret-matrix` | Secret du client OIDC Kanidm | cf. [SSO](/fr/doc/admin-guide/operate/sso/) |
 | `turn-secret` | Secret partagé coturn (si `turn` activé) | `openssl rand -hex 32` |
+| `livekit-secret` | Secret partagé MatrixRTC (si `matrixRtc` activé) | `just passwd-livekit` |
 | `mautrix-doublepuppet-as-token` | Token appservice *double puppeting* (commun aux ponts) | `openssl rand -hex 32` |
 | `mautrix-doublepuppet-hs-token` | Idem, requis par Synapse, jamais utilisé | `openssl rand -hex 32` |
 
@@ -343,6 +344,85 @@ l'utilisateur. C'est automatique pour tous les comptes locaux, aucune action
 par utilisateur.
 
 {/* t:p 0f41ac433fa1137ed832a36a6ca0cd7b09466c8c17ef82ceed896991b4fb8656 */}
+## Appels audio et vidéo
+
+Deux piles cohabitent, parce qu'aucune ne couvre tous les clients. Elles
+s'activent séparément et ne se remplacent pas&nbsp;:
+
+| | WebRTC historique | MatrixRTC |
+|---|---|---|
+| Option | `darkone.service.turn.enable` | `darkone.service.matrix.matrixRtc.enable` |
+| Composants | coturn | LiveKit (SFU) + service d'autorisation |
+| Appels à deux | oui | oui |
+| Appels de groupe | non | oui |
+| Element Classic (Android) | **oui** | non |
+| Element Web / Desktop | oui | oui |
+| **Element X** (Android, iOS) | **non** | **oui** |
+
+Garder **les deux** activées&nbsp;: Element Classic ne parle que la première,
+Element X que la seconde.
+
+<Aside type="caution" title="Element X : deux prérequis distincts">
+Element X refuse d'appeler avec *«&nbsp;L'appel n'est pas pris en
+charge&nbsp;»* (code `MISSING_MATRIX_RTC_TRANSPORT`) tant que MatrixRTC est
+absent, **même** si MAS est actif. MAS conditionne la connexion, MatrixRTC les
+appels&nbsp;: activer l'un ne donne pas l'autre.
+</Aside>
+
+<Steps>
+
+1. Activer la pile MatrixRTC dans la config nix de l'hôte&nbsp;:
+
+   ```nix
+   # usr/machines/<host>/default.nix
+   darkone.service.matrix = {
+     mas.enable = true;         # requis par Element X pour se connecter
+     matrixRtc.enable = true;   # requis par Element X pour appeler
+   };
+   ```
+
+2. Générer le secret partagé, puis déployer&nbsp;:
+
+   ```sh
+   just passwd-livekit
+   just apply <host> switch
+   ```
+
+3. Vérifier que le serveur annonce bien un transport&nbsp;:
+
+   ```sh
+   # doit contenir "org.matrix.msc4143.rtc_foci"
+   curl -A Mozilla/5.0 https://domain.tld/.well-known/matrix/client
+
+   # org.matrix.msc4143 doit valoir true
+   curl -A Mozilla/5.0 https://matrix.domain.tld/_matrix/client/versions
+   ```
+
+</Steps>
+
+Aucun sous-domaine ni certificat supplémentaire&nbsp;: le SFU et son service
+d'autorisation sont servis sur le vhost Matrix, sous `/livekit/sfu` et
+`/livekit/jwt`. Côté client, rien à régler non plus&nbsp;— Element X et Element
+Web embarquent Element Call et découvrent le transport tout seuls.
+
+### Ports média
+
+Le média ne passe **pas** par le proxy inverse&nbsp;: les clients joignent
+l'hôte directement. Ces ports doivent donc être ouverts jusqu'à lui, et
+redirigés s'il est derrière un NAT&nbsp;:
+
+| Port | Usage |
+|---|---|
+| 40000-40100/udp | Média WebRTC, un port par participant |
+| 7881/tcp | Repli pour les réseaux qui bloquent l'UDP |
+
+<Aside type="note" title="Pourquoi pas la plage par défaut">
+LiveKit propose 50000-51000/udp, ce qui tombe **à l'intérieur** de la plage de
+relais de coturn (49152-65535). Co-hébergés, les deux se disputeraient les
+mêmes ports et feraient échouer des appels au hasard. DNF déplace donc LiveKit
+sous coturn.
+</Aside>
+
 ## Ouvrir le réseau à la fédération
 
 Par défaut, le serveur fédère avec **tous** les serveurs Matrix, tout en restant
@@ -418,6 +498,7 @@ défaut sur les nouveaux salons.
 | Journaux d'un pont | `journalctl -u mautrix-whatsapp -f` |
 | Journaux Synapse | `journalctl -u matrix-synapse -f` |
 | Journaux MAS | `journalctl -u matrix-authentication-service -f` |
+| Journaux MatrixRTC | `journalctl -u livekit -u lk-jwt-service -f` |
 
 {/* t:p d927d4a5335f1306d4d4b41f19790f7e7e4dfe4011d788a9d42b512588431aa5 */}
 ### Administrer les comptes avec MAS
@@ -461,6 +542,8 @@ journalctl -u matrix-authentication-service -f
 | `client registration denied by the policy: invalid redirect_uri` | Le `client_uri` annoncé par le client ne correspond pas à son schéma de redirection | Ne pas forcer `oidc_metadata` dans la config Element&nbsp;; ses valeurs par défaut passent |
 | `M_UNRECOGNIZED` sur `/login/sso/redirect` | Le chemin part vers Synapse au lieu de MAS | Vérifier le matcher `@masCompat` du vhost Caddy |
 | «&nbsp;Le code QR n'est pas pris en charge&nbsp;» côté client | Le canal de rendez-vous MSC4108 est absent | `experimental_features.msc4108_enabled`&nbsp;: activé par le module avec MAS |
+| «&nbsp;L'appel n'est pas pris en charge&nbsp;», `MISSING_MATRIX_RTC_TRANSPORT` | Aucun backend MatrixRTC annoncé | Activer `matrixRtc.enable` (cf. [Appels audio et vidéo](#appels-audio-et-vidéo)) |
+| Appel qui sonne mais reste muet, ou coupe au bout de quelques secondes | Les ports média n'atteignent pas l'hôte | Ouvrir 40000-40100/udp et 7881/tcp jusqu'à lui |
 
 Contrôles rapides, sans se connecter&nbsp;:
 

@@ -39,6 +39,10 @@ pg: PostgreSQL {
 }
 idm: Kanidm\n(OIDC)
 turn: coturn\n(TURN/STUN)
+rtc: MatrixRTC {
+  sfu: LiveKit\n(SFU)
+  jwt: Service\nd'autorisation
+}
 
 bridges: Ponts mautrix {
   wa: whatsapp
@@ -55,6 +59,9 @@ ext: Réseaux externes\n(WhatsApp, Telegram...) {
 client -> caddy -> synapse -> pg
 synapse -> idm
 client -> turn
+client -> rtc.sfu: média
+client -> caddy -> rtc.jwt: jeton
+rtc.jwt -> synapse: valide le jeton OpenID
 synapse <-> bridges <-> ext
 ```
 
@@ -67,7 +74,13 @@ synapse <-> bridges <-> ext
   `darkone.service.idm.oauth2.matrix`, *local part* dérivée du
   `preferred_username` (voir [Authentification & IDM](/fr/doc/admin-guide/understand/auth-idm/)).
 - **coturn** est branché automatiquement si le service `turn` est déclaré
-  (`turn_uris`, secret partagé via sops).
+  (`turn_uris`, secret partagé via sops). Il relaie les appels à deux des
+  clients historiques, seule pile qu'Element Classic sache utiliser.
+- **MatrixRTC** (`matrixRtc.enable`) ajoute la pile Element Call&nbsp;: un SFU
+  LiveKit et son service d'autorisation, servis sur le vhost Matrix sous
+  `/livekit/sfu` et `/livekit/jwt`. Le client échange un jeton OpenID de
+  Synapse contre un JWT LiveKit, puis envoie son média **directement** au SFU,
+  hors du proxy. Requis par Element X, qui ne connaît pas l'autre pile.
 
 {/* t:p 13c6a2814eee915a3089c2fadfc14cd3e406e01ed88014bc51ae5bf898e7c861 */}
 ## Anatomie du module
@@ -287,7 +300,8 @@ mas -> idm: SSO amont
   compatibilité `/_matrix/client/<version>/{login,logout,refresh}`, sous-chemins
   compris (`logout/all` et l'ancien `login/sso/redirect` des clients pré-OIDC,
   auxquels Synapse répond `M_UNRECOGNIZED` une fois délégué)&nbsp;; Synapse garde
-  `/_matrix/*` et `/_synapse/*`. Aucun sous-domaine ni DNS supplémentaire.
+  `/_matrix/*` et `/_synapse/*`. Aucun sous-domaine ni DNS supplémentaire — le
+  backend MatrixRTC s'y greffe de la même façon, sous `/livekit/*`.
 - **Kanidm reste la source d'identité**&nbsp;: MAS devient le client OIDC à la
   place de Synapse (mêmes identifiant et secret), déclaré comme fournisseur
   amont sous un ULID fixe. Synapse ne fait plus que demander à MAS de valider
@@ -318,6 +332,11 @@ Activation et migration&nbsp;: voir
   registre `dnf/config/network.nix`&nbsp;; les ports appservice par défaut des
   autres ponts (29318, 29319, 29328) y sont listés en `reserved` pour éviter
   toute collision future.
+- **Ports MatrixRTC** : le registre porte aussi `livekit`, `livekitJwt` et les
+  bornes média `livekitRtcUdpStart`/`End`. Deux valeurs par défaut amont y sont
+  écartées volontairement&nbsp;: le service d'autorisation quitte 8080 (pris
+  par headscale) et la plage média passe sous celle de coturn, qu'elle
+  chevauchait.
 - **Statuts WhatsApp** : `network.enable_status_broadcast = false` dans la
   config du pont, sinon le bridge recrée indéfiniment le salon
   « WhatsApp Status Broadcast » pour chaque utilisateur.

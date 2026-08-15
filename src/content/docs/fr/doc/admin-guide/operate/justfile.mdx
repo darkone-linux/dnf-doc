@@ -714,6 +714,21 @@ change après le premier démarrage.
 just passwd-mas
 ```
 
+### ✳️ `passwd-livekit`
+
+Génère le secret partagé de la pile
+[MatrixRTC](/fr/doc/admin-guide/operate/matrix/#appels-audio-et-vidéo)&nbsp;:
+le SFU LiveKit valide avec lui les jetons que son service d'autorisation signe.
+
+:::tip[Idempotent]
+N'écrase jamais un secret existant. Le régénérer ne coupe que les appels en
+cours.
+:::
+
+```sh
+just passwd-livekit
+```
+
 {/* t:p 492a5aa3b45a9f68964c089348bdb4f0284b5dd11ec4ad7a6c1922473d97cb9d */}
 ### ✳️ `yubikey <utilisateur> [clé] [action]`
 
