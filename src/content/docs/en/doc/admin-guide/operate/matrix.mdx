@@ -66,6 +66,218 @@ To fill in `usr/secrets/secrets.yaml`&nbsp;:
 | `mautrix-doublepuppet-as-token` | double puppeting appservice token (shared by bridges) | `openssl rand -hex 32` |
 | `mautrix-doublepuppet-hs-token` | Same, required by Synapse, never used | `openssl rand -hex 32` |
 
+{/* t:p 4679a395d55ddf48e848741c557fee52ed85e6553cc04383edf91ba67444cff4 */}
+## Two authentication modes
+
+The server runs in **only one** of these two modes, configured by
+`darkone.service.matrix.mas.enable`. The chosen mode changes the compatible
+clients, how to register friends and the administration tools.
+
+| | Legacy Synapse (default) | MAS enabled (recommended) |
+|---|---|---|
+| Option | `mas.enable = false` | `mas.enable = true` |
+| SSO sign-in | Synapse is Kanidm's OIDC client | MAS is Kanidm's OIDC client |
+| Element Web / Desktop | yes | yes |
+| **Element X** (Android, iOS) | **no** | **yes** |
+| QR code sign-in | no | yes |
+| Account portal | none | `https://matrix.domain.tld/account/` |
+| Registration tokens | Synapse admin API | `dnf-mas` on the host |
+| Administrator promotion | SQL in the Synapse database | `dnf-mas manage promote-admin` |
+
+<Aside type="tip" title="Element X requires MAS">
+The new-generation mobile app [Element X](https://element.io/app/)
+can only sign in to a server run by MAS. Without MAS, it fails at
+sign-in&nbsp;; you must stay on the classic Element app.
+</Aside>
+
+{/* t:p 15942d02b9d58aeed731714cc62e5ea11a926090c57cc725843b9573c7512657 */}
+### Enabling MAS
+
+The [Matrix Authentication Service](https://element-hq.github.io/matrix-authentication-service/)
+replaces Synapse's internal authentication. For what it changes and how it
+fits in, see
+[the architecture](/en/doc/admin-guide/understand/matrix/#next-generation-authentication-mas).
+
+<Steps>
+
+1. Generate the three dedicated secrets (idempotent, never overwrites
+   existing)&nbsp;:
+
+   ```sh
+   just passwd-mas
+   ```
+
+   | sops key | Role |
+   |---|---|
+   | `mas-encryption-secret` | MAS internal encryption |
+   | `mas-synapse-secret` | Shared secret MAS ↔ Synapse |
+   | `mas-rsa-private-key` | Token signing key |
+
+2. Enable the option in the host's nix config&nbsp;:
+
+   ```nix
+   # usr/machines/<host>/default.nix
+   darkone.service.matrix.mas.enable = true;
+   ```
+
+3. Deploy. On a **new** server, that's done. On a server that already has
+   accounts, continue with the [migration](#migrating-a-server-already-in-production)
+   **without letting anyone sign in in between**.
+
+</Steps>
+
+:::danger[Immutable secret]
+`mas-encryption-secret` must **never** change after MAS's first start&nbsp;: it
+protects data encrypted in the database, which would become unreadable. Same
+for the Kanidm provider's ULID, frozen in the module.
+:::
+
+{/* t:p 505ceb150a5a409fe12d0ec66c4b45604b3cb3a0973064aea39c52071517b88b */}
+### Migrating a server already in production
+
+MAS becomes the owner of accounts and sessions&nbsp;: they must be imported
+with the official `syn2mas` tool, served by the host's `dnf-mas` command.
+Without this import, all accounts are invisible and everyone is signed out.
+
+<Steps>
+
+1. **Back up**, in this order (the dump must make it into the snapshot)&nbsp;:
+
+   ```sh
+   sudo systemctl start postgresqlBackup.service
+   sudo systemctl start restic-backups-system-main.service
+   ```
+
+2. **Deploy** the configuration with `mas.enable = true` (see above). The
+   maintenance window starts here.
+
+3. **Stop** both services&nbsp;: `syn2mas` requires Synapse to be offline, and
+   MAS must not provision accounts in the meantime.
+
+   ```sh
+   sudo systemctl stop matrix-synapse matrix-authentication-service
+   ```
+
+4. **Check**, then run a dry run, then migrate&nbsp;:
+
+   ```sh
+   sudo dnf-mas syn2mas check
+   sudo dnf-mas syn2mas migrate --dry-run
+   sudo dnf-mas syn2mas migrate
+   ```
+
+   The report announces the recovered accounts, SSO links, access tokens and
+   devices. The hundreds of "ignored" users are the bridges' ghosts&nbsp;: that's
+   normal.
+
+5. **Restart**, MAS first&nbsp;:
+
+   ```sh
+   sudo systemctl start matrix-authentication-service
+   sudo systemctl start matrix-synapse
+   ```
+
+</Steps>
+
+<Aside type="note" title="What the migration preserves">
+Current sessions **survive**&nbsp;: existing access tokens are converted into
+compatibility sessions, nobody needs to sign in again, and the alerts bot
+keeps its token. The bridges do **not** need a registration regeneration&nbsp;:
+Synapse enforces MSC4190 on all appservices as soon as authentication is
+delegated.
+</Aside>
+
+:::caution[One-way only]
+The migration is not reversible&nbsp;: going back requires restoring the
+backup. Do not run it without having verified step 1.
+:::
+
+{/* t:p e6b6312e708f99a665ad8010886c03d6a37f76ad8d36bebd481217ddb59f834e */}
+## Registering friends
+
+In addition to SSO users, you can open **token-based** registration for local
+password accounts (the friends). Without a token, no registration is possible.
+The switch is the same in both modes, only how the token is produced differs.
+
+```nix
+# usr/machines/<host>/default.nix
+darkone.service.matrix.friendRegistration.enable = true;
+```
+
+<Tabs>
+<TabItem label="With MAS">
+
+<Steps>
+
+1. Create a token on the Matrix host. Here valid **once** and **7 days**
+   (without options, the token is single-use and without expiry)&nbsp;:
+
+   ```sh
+   sudo dnf-mas manage issue-user-registration-token --usage-limit 1 --expires-in 604800
+   ```
+
+   The response displays the token, for example `Created user registration token:
+   9SwPTGIFGQPa`. Send it to the friend.
+
+2. The friend opens `https://matrix.domain.tld/register` and chooses
+   password-based creation.
+
+3. He enters his username and password, **then** the token, requested at the
+   next step.
+
+4. He then signs in with this username / password pair from any client,
+   Element X included.
+
+</Steps>
+
+<Aside type="tip" title="Managing one's account">
+A friend changes their password and revokes their sessions from the portal
+`https://matrix.domain.tld/account/`, without the administrator's involvement.
+</Aside>
+
+</TabItem>
+<TabItem label="Without MAS">
+
+<Steps>
+
+1. Promote the `matrix.admin` account to *server admin* (only once), on the
+   Matrix host&nbsp;:
+
+   ```sh
+   sudo -u matrix-synapse psql matrix-synapse \
+     -c "UPDATE users SET admin = 1 WHERE name = '@alice:domain.tld';"
+   ```
+
+2. Retrieve an *access token* for the promoted account&nbsp;: in Element,
+   *Settings → Help & About → Advanced*.
+
+3. Create a registration token via the administration API&nbsp;:
+
+   ```sh
+   curl -X POST \
+     -A "Mozilla/5.0" \
+     -H "Authorization: Bearer <ACCESS_TOKEN>" \
+     -H "Content-Type: application/json" \
+     -d '{"uses_allowed": 1, "expiry_time": null}' \
+     https://matrix.domain.tld/_synapse/admin/v1/registration_tokens/new
+   ```
+
+   The response contains the `token` to send to the friend.
+
+4. The friend registers in Element&nbsp;: *Create account* → server `domain.tld`
+   → he pastes the token when it is requested.
+
+</Steps>
+
+<Aside type="caution" title="The anti-bot filter">
+The Matrix vhost returns `403` for any call whose *User-Agent* contains
+`curl`, `wget` or `bot`. Hence the `-A "Mozilla/5.0"` above&nbsp;: without it,
+the call fails for reasons unrelated to the token.
+</Aside>
+
+</TabItem>
+</Tabs>
+
 {/* t:p 2b1859ffedc75f4c9914a7b742b39741f19026b8adbf81992496506d36f991fd */}
 ## Managing bridges
 
@@ -163,117 +375,6 @@ Verify after deployment:
 
 </Steps>
 
-{/* t:p ab159511804ed5a826296b329e895cdf509308683f2be8751be74dbb8fa19549 */}
-## Registering friends (local accounts)
-
-In addition to SSO users, you can enable **token-based** registration for local
-accounts (friends). No registration is possible without a token.
-
-<Steps>
-
-1. Enable token-based registration in the host's nix config, then deploy:
-
-   ```nix
-   # usr/machines/<host>/default.nix
-   darkone.service.matrix.friendRegistration.enable = true;
-   ```
-
-2. Promote the `matrix.admin` account to *server admin* (one time only), on
-   the Matrix host:
-
-   ```sh
-   sudo -u matrix-synapse psql matrix-synapse \
-     -c "UPDATE users SET admin = 1 WHERE name = '@alice:domain.tld';"
-   ```
-
-3. Create a registration token via the admin API (with an *access token* from
-   the admin account):
-
-   ```sh
-   curl -X POST \
-     -H "Authorization: Bearer <ACCESS_TOKEN>" \
-     -H "Content-Type: application/json" \
-     -d '{"uses_allowed": 1, "expiry_time": null}' \
-     https://matrix.domain.tld/_synapse/admin/v1/registration_tokens/new
-   ```
-
-   The response contains the `token` to pass on to the friend.
-
-4. The friend registers in Element: *Create account* → server `domain.tld` →
-   they paste the token when prompted.
-
-</Steps>
-
-<Aside type="note" title="The admin access token">
-Retrieve an *access token* in Element (*Settings → Help & About → Advanced*)
-with the promoted account, or via API login
-(`POST /_matrix/client/v3/login`). The future Synapse-Admin interface will
-simplify promotion and tokens.
-</Aside>
-
-{/* t:p 4d985ff45de254a46df5c163d64d47dcea6f4b33da5b3e6cc58bd19ba39cba9a */}
-## Next-generation authentication (MAS)
-
-The [Matrix Authentication Service](https://element-hq.github.io/matrix-authentication-service/)
-replaces Synapse's internal authentication (required by Element X). For what
-it changes and how it fits in, see
-[architecture](/en/doc/admin-guide/understand/matrix/#next-generation-authentication-mas).
-
-:::danger[Under validation]
-Implemented but not yet proven in production: migration of an
-existing server (`syn2mas`) and the `mas-cli` tooling on the host remain to be
-validated. In the meantime, leave `mas.enable = false` (default):
-classic OIDC authentication remains fully functional.
-:::
-
-<Steps>
-
-1. Create the dedicated secrets in `usr/secrets/secrets.yaml`:
-
-   | SOPS key | Role | Generation |
-   |---|---|---|
-   | `mas-encryption-secret` | MAS internal encryption | `openssl rand -hex 32` |
-   | `mas-synapse-secret` | Shared secret MAS ↔ Synapse | `openssl rand -hex 32` |
-   | `mas-rsa-private-key` | Token signing key | `openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:4096` |
-
-2. Enable the option in the host nix config, then deploy:
-
-   ```nix
-   # usr/machines/<host>/default.nix
-   darkone.service.matrix.mas.enable = true;
-   ```
-
-</Steps>
-
-:::danger[Immutable secret]
-`mas-encryption-secret` must **never** change after the first start
-of MAS: it protects encrypted data in the database, which would become
-unreadable.
-:::
-
-{/* t:p 3e253e69f2f4d0e5f30daa73eed0b02f49d300c58cba60955d659617e3011794 */}
-### Migrating an existing production server
-
-Switching an existing Synapse requires a **maintenance window**&nbsp;: MAS
-becomes the owner of accounts and sessions, which must be imported with the
-official [syn2mas](https://element-hq.github.io/matrix-authentication-service/setup/migration.html)
-tool (accounts, passwords, sessions, OIDC links). Without this migration, all
-users are logged out and buddy accounts are lost. Key points&nbsp;:
-
-- back up PostgreSQL first (migration is not reversible)&nbsp;;
-- `syn2mas check` then `--dry-run` run **without stopping** Synapse&nbsp;;
-- remove bridge registrations (`/var/lib/mautrix-*/*-registration.yaml`)
-  so they regenerate with the MSC4190 flag, then restart Synapse.
-
-{/* t:p 3a8e25f5d597286618ecde21c708f10c789647a68a72ad8662f704ad5ff0119d */}
-### Registering buddies with MAS
-
-Registration tokens are no longer handled through Synapse's admin API&nbsp;:
-they are created on the Matrix host with `mas-cli`
-(`manage issue-user-registration-token`), and promoting an admin account
-becomes `mas-cli manage promote-admin`. The detailed procedure will be
-documented once the tooling is validated (see the box above).
-
 {/* t:p 652e85dad5e7f42f023bdc7511fc1076c3bc21466cd0d47cab67597fc8299bc1 */}
 ## Public rooms with approval (knock)
 
@@ -298,14 +399,63 @@ or invitation only. End-to-end encryption is already active by default on new
 rooms.
 </Aside>
 
-{/* t:p 43e4a74b1b61aaa94acd4dffb65d44a7667e1c5cf3f0d508474f069dbf76a1ed */}
+{/* t:p ac8782289be6d3c8dfbdae516d4184ef62477276fafdbb5c73d0a4275b51cf79 */}
 ## Operations
 
 | Action | Command |
 |---|---|
 | Service status | `systemctl status matrix-synapse mautrix-whatsapp mautrix-signal mautrix-telegram mautrix-meta-messenger` |
-| Bridge logs | `journalctl -u mautrix-whatsapp -f` |
+| A bridge's logs | `journalctl -u mautrix-whatsapp -f` |
 | Synapse logs | `journalctl -u matrix-synapse -f` |
+| MAS logs | `journalctl -u matrix-authentication-service -f` |
+
+{/* t:p d927d4a5335f1306d4d4b41f19790f7e7e4dfe4011d788a9d42b512588431aa5 */}
+### Administering accounts with MAS
+
+`dnf-mas` wraps the official `mas-cli` tool on the Matrix host&nbsp;: it
+reconstructs the service's configuration and secrets, and therefore works
+whether the **service is stopped or started**. Always with `sudo`.
+
+| Action | Command |
+|---|---|
+| Create a registration token | `sudo dnf-mas manage issue-user-registration-token` |
+| Promote an administrator | `sudo dnf-mas manage promote-admin alice` |
+| List administrators | `sudo dnf-mas manage list-admin-users` |
+| Create an account (bot, service) | `sudo dnf-mas manage register-user` |
+| Change a password | `sudo dnf-mas manage set-password alice` |
+| Close an account's sessions | `sudo dnf-mas manage kill-sessions alice` |
+| Lock an account | `sudo dnf-mas manage lock-user alice` |
+| Full diagnostic | `sudo dnf-mas doctor` |
+
+<Aside type="caution" title="No more shared registration secret">
+With MAS, `/_synapse/admin/v1/register` is disabled. This is the mechanism
+used by [`just configure-alert-bot`](/en/doc/admin-guide/operate/justfile/)
+to create a missing bot account&nbsp;: create this account **before**
+migrating, or recreate it with `sudo dnf-mas manage register-user`.
+</Aside>
+
+{/* t:p 87a3a88d8150265e30d7d999070d027d30103921cb2183ec27c7f5860e533067 */}
+### Diagnosing a refused SSO sign-in
+
+After a migration, already-open sessions keep working&nbsp;: a broken sign-in
+is therefore only visible **at the first new login**. Follow MAS during an
+attempt&nbsp;:
+
+```sh
+journalctl -u matrix-authentication-service -f
+```
+
+| Message | Cause | Fix |
+|---|---|---|
+| `wrong signature alg` on `/upstream/callback/…` | MAS expects an RS256 `id_token`, Kanidm signs with ES256 | `id_token_signed_response_alg` of the upstream provider&nbsp;: set to `ES256` by the module |
+| `client registration denied by the policy: invalid redirect_uri` | The `client_uri` announced by the client does not match its redirect scheme | Don't force `oidc_metadata` in the Element config&nbsp;; its default values pass |
+| `M_UNRECOGNIZED` on `/login/sso/redirect` | The path goes to Synapse instead of MAS | Check the `@masCompat` matcher of the Caddy vhost |
+
+<Aside type="note" title="Two symptoms, two causes">
+A client that falls back to authentication **in the browser** instead of its
+native screen signals a dynamic registration refusal&nbsp;; the error that
+possibly follows is a distinct problem. Deal with both.
+</Aside>
 
 {/* t:p 54aa52c1f59ff607eec0a2fa9ace69a976ed97dc8baebadd36446c5e4fd98df4 */}
 ### Diagnosing a silent bot

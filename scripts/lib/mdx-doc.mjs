@@ -36,6 +36,17 @@ function extractPreamble(lines) {
   return { preamble: pre.join('\n').trim(), rest: lines.slice(i) };
 }
 
+// The preamble a translated file must carry: its source's, always.
+//
+// Imports are code, not prose — they are never translated, and the translated
+// body is a structural copy of the source, so the two must declare the same
+// components. Keeping the translated file's own block leaves it stale as soon
+// as the source starts using a new one (e.g. `<Tabs>` / `<TabItem>`), and the
+// build then dies with "Expected component `TabItem` to be defined".
+export function preambleForTranslation(mainDoc) {
+  return mainDoc?.preamble || '';
+}
+
 // Split content lines into paragraph blocks at ATX headings, ignoring headings
 // inside fenced code blocks. Each block is normalized; empty blocks dropped.
 function splitByHeadings(lines) {

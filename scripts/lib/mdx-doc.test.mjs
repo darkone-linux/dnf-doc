@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { hashContent, normalizeForHash } from './hash.mjs';
 import {
-  parseDoc, serializeDoc, computeMainHashes, paragraphHashes,
+  parseDoc, serializeDoc, computeMainHashes, paragraphHashes, preambleForTranslation,
 } from './mdx-doc.mjs';
 
 const MAIN_UNTAGGED = `---
@@ -140,4 +140,17 @@ Done.
   assert.equal(doc.paragraphs.length, 1);
   assert.match(doc.paragraphs[0].content, /# not a heading/);
   assert.match(doc.paragraphs[0].content, /Done\./);
+});
+
+test('a translation always takes its preamble from the source', () => {
+  const WIDER = "import { Steps, Tabs, TabItem } from '@astrojs/starlight/components';";
+  const NARROWER = "import { Steps } from '@astrojs/starlight/components';";
+
+  // The regression: a component newly used by the source must reach the
+  // translation, else its build dies on an undefined component.
+  assert.equal(preambleForTranslation({ preamble: WIDER }, { preamble: NARROWER }), WIDER);
+
+  // ... and imports the source dropped must not survive downstream.
+  assert.equal(preambleForTranslation({ preamble: '' }, { preamble: WIDER }), '');
+  assert.equal(preambleForTranslation(null, null), '');
 });

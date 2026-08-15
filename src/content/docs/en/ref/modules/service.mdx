@@ -545,7 +545,7 @@ secrets, so resetting a bridge's state dir never invalidates the
 registration synapse has loaded (which would otherwise require a registration
 wipe + synapse restart and produce "as_token was not accepted" errors).
 
-{/* t:p eeea53fa8d6eb0fda10b5c16e01dce796f089d82ef84ff35a97400268ec68909 */}
+{/* t:p 650deb6feea245c7d794b7bc1de5fa9472bd0ea5bc7984440d1d6e3fe7fb005b */}
 #### Federation
 
 Federation is configurable via `darkone.service.matrix.federation`:
@@ -564,11 +564,12 @@ family network, fill `whitelist` with trusted servers only.
 :::
 
 Friend self-registration (`friendRegistration.enable`) opens token-gated
-local password accounts alongside Kanidm OIDC users. Minting a token needs a
-server admin (Synapse admin API / Synapse-Admin UI); with MAS enabled, mint
-with `mas-cli manage issue-user-registration-token` on the host instead.
+local password accounts alongside Kanidm OIDC users. Without MAS, minting a
+token goes through the Synapse admin API (a server admin is required); with
+MAS, mint it on the host with
+`sudo dnf-mas manage issue-user-registration-token`.
 
-{/* t:p aa15039d885b8528379fbdd80673e846d8dfb4b01408034b6b92486aaf966227 */}
+{/* t:p 66ad296d191781db4dd4a67f9aae6c90a6c9e4ab0a90b1ece8c551944556f802 */}
 #### Next-gen auth (MAS)
 
 `mas.enable` delegates all authentication to Matrix Authentication Service
@@ -583,16 +584,32 @@ Required sops secrets (`openssl rand -hex 32` unless stated):
 `mas-encryption-secret`, `mas-synapse-secret`, and `mas-rsa-private-key`
 (`openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:4096`).
 
+`dnf-mas` (root) wraps `mas-cli` for host-side administration: registration
+tokens, `promote-admin`, `register-user`, `syn2mas`. MAS runs with
+`DynamicUser` and reads its secrets from systemd credentials, which do not
+exist outside the running unit; the wrapper rebuilds an equivalent
+credentials directory from the sops files, so it works whether the service
+is up or down (syn2mas needs it down).
+
 :::danger[Immutable once started]
 `mas-encryption-secret` and the Kanidm provider ULID must never change
 after MAS's first start (encrypted DB data / upstream account links).
 :::
 
 :::caution[Migrating an existing instance]
-Enabling `mas.enable` on a live homeserver requires the `mas-cli syn2mas`
-migration (accounts, sessions, external ids) and a bridge registration
-regen (the `io.element.msc4190` flag is only written at generation time):
-procedure in `.specs/matrix-authentication-service.md`.
+Enabling `mas.enable` on a live homeserver requires the `syn2mas` migration
+(accounts, passwords, sessions, external ids). Deploy first, then, with both
+services stopped: `sudo dnf-mas syn2mas check`, `... migrate --dry-run`,
+`... migrate`. Bridges need no registration regen: synapse forces MSC4190 on
+every appservice as soon as auth is delegated. Procedure in
+`.specs/matrix-authentication-service.md`.
+:::
+
+:::caution[No shared-secret registration under MAS]
+Synapse's `/_synapse/admin/v1/register` (registration shared secret) is
+disabled in delegated mode, which is what `just configure-alert-bot` uses to
+create a missing bot account. Create it beforehand, or with
+`sudo dnf-mas manage register-user`.
 :::
 
 * **enable** `bool` Enable matrix (synapse) service

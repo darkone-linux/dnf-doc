@@ -505,64 +505,49 @@ jamais l'enregistrement que synapse a chargé (ce qui autrement nécessiterait
 un wipe d'enregistrement + redémarrage de synapse et produirait des erreurs
 «&nbsp;as_token was not accepted&nbsp;»).
 
-{/* t:p eeea53fa8d6eb0fda10b5c16e01dce796f089d82ef84ff35a97400268ec68909 */}
+{/* t:p 650deb6feea245c7d794b7bc1de5fa9472bd0ea5bc7984440d1d6e3fe7fb005b */}
 #### Fédération
 
-La fédération se configure via `darkone.service.matrix.federation`&nbsp;:
+La fédération se configure via `darkone.service.matrix.federation` :
 
-- `enable = false`&nbsp;: bloque toute fédération (liste blanche de domaines vide).
-- `enable = true; whitelist = [ ]`&nbsp;: fédération ouverte avec chaque serveur.
-- `enable = true; whitelist = [ "ami.org" ]`&nbsp;: liste blanche (entrant + sortant).
+- `enable = false` : bloque toute fédération (liste blanche de domaines vide).
+- `enable = true; whitelist = [ ]` : fédération ouverte avec tous les serveurs.
+- `enable = true; whitelist = [ "ami.org" ]` : liste blanche (entrant + sortant).
 
-La découverte reste verrouillée dans tous les cas (salons absents des annuaires
-distants, profils privés sur la fédération), donc le réseau est joignable mais
-pas explorable.
+La découverte reste verrouillée quoi qu'il arrive (salons absents des répertoires distants, profils privés en fédération), donc le réseau est joignable mais pas cherchable.
 
-:::caution[Sans danger pour les enfants]
-La fédération ouverte permet à n'importe quel serveur fédéré d'envoyer des DM
-ou d'inviter des utilisateurs locaux. Pour un réseau familial, remplir
-`whitelist` uniquement avec les serveurs de confiance.
+:::caution[Sûr pour les enfants]
+La fédération ouverte permet à n'importe quel serveur fédéré d'écrire en MP ou d'inviter des utilisateurs locaux. Pour un réseau familial, ne renseignez `whitelist` qu'avec des serveurs de confiance.
 :::
 
-L'auto-inscription des amis (`friendRegistration.enable`) ouvre des comptes
-locaux à mot de passe verrouillés par jeton, en parallèle des utilisateurs
-Kanidm OIDC. Fabriquer un jeton nécessite un administrateur du serveur (API
-admin Synapse / interface Synapse-Admin) ; avec MAS activé, fabriquer le jeton
-avec `mas-cli manage issue-user-registration-token` sur l'hôte à la place.
+L'auto-inscription d'amis (`friendRegistration.enable`) ouvre des comptes locaux à mot de passe, protégés par jeton, à côté des utilisateurs OIDC Kanidm. Sans MAS, la création d'un jeton passe par l'API admin de Synapse (un admin de serveur est requis) ; avec MAS, créez-le sur l'hôte avec `sudo dnf-mas manage issue-user-registration-token`.
 
-{/* t:p aa15039d885b8528379fbdd80673e846d8dfb4b01408034b6b92486aaf966227 */}
+{/* t:p 66ad296d191781db4dd4a67f9aae6c90a6c9e4ab0a90b1ece8c551944556f802 */}
 #### Authentification nouvelle génération (MAS)
 
-`mas.enable` délègue toute l'authentification à Matrix Authentication Service
-(nécessaire pour Element X, le login QR, le portail libre-service `/account`).
-Kanidm reste la source d'identité : MAS devient le client OIDC à la place de
-synapse, et synapse ne fait que demander à MAS d'introspecter les jetons. Servi
-sur le même vhost : MAS possède les endpoints d'auth racine + compat, synapse
-garde `/_matrix/*` et `/_synapse/*` ; la découverte client est automatique
-(synapse sert `auth_metadata` lui-même), donc pas de changement de well-known.
+`mas.enable` délègue toute l'authentification à Matrix Authentication Service (requis par Element X, connexion par QR code, portail libre-service `/account`). Kanidm reste la source d'identité : MAS devient le client OIDC à la place de synapse, et synapse ne demande plus à MAS que d'introspecter les jetons. Servi sur le même vhost : MAS possède la racine et les endpoints d'authentification compat, synapse conserve `/_matrix/*` et `/_synapse/*` ; la découverte de client est automatique (synapse sert `auth_metadata` lui-même), donc aucun changement de well-known.
 
-Secrets sops requis (`openssl rand -hex 32` sauf mention contraire) :
-`mas-encryption-secret`, `mas-synapse-secret`, et `mas-rsa-private-key`
-(`openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:4096`).
+Secrets sops requis (`openssl rand -hex 32` sauf mention contraire) : `mas-encryption-secret`, `mas-synapse-secret` et `mas-rsa-private-key` (`openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:4096`).
+
+`dnf-mas` (root) enveloppe `mas-cli` pour l'administration côté hôte : jetons d'inscription, `promote-admin`, `register-user`, `syn2mas`. MAS tourne avec `DynamicUser` et lit ses secrets depuis les credentials systemd, qui n'existent pas hors de l'unité en cours d'exécution ; l'enveloppe reconstruit un dossier de credentials équivalent depuis les fichiers sops, donc elle fonctionne que le service soit lancé ou non (syn2mas exige qu'il soit arrêté).
 
 :::danger[Immuable une fois démarré]
-`mas-encryption-secret` et l'ULID du provider Kanidm ne doivent jamais changer
-après le premier démarrage de MAS (données chiffrées de la base / liens de
-comptes en amont).
+`mas-encryption-secret` et l'ULID du fournisseur Kanidm ne doivent jamais changer après le premier démarrage de MAS (données chiffrées en base / liens de comptes amont).
 :::
 
-:::caution[Migrer une instance existante]
-Activer `mas.enable` sur un homeserver en production nécessite la migration
-`mas-cli syn2mas` (comptes, sessions, ids externes) et une régénération des
-enregistrements de pont (le flag `io.element.msc4190` n'est écrit qu'à la
-génération) : procédure dans `.specs/matrix-authentication-service.md`.
+:::caution[Migration d'une instance existante]
+Activer `mas.enable` sur un serveur de domicile en production exige la migration `syn2mas` (comptes, mots de passe, sessions, identifiants externes). Déployez d'abord, puis, avec les deux services arrêtés : `sudo dnf-mas syn2mas check`, `... migrate --dry-run`, `... migrate`. Les ponts n'ont pas besoin de régénérer leurs inscriptions : synapse impose MSC4190 à chaque appservice dès que l'authentification est déléguée. Procédure dans `.specs/matrix-authentication-service.md`.
 :::
 
-* **enable** `bool` Active le service matrix (synapse)
+:::caution[Pas d'inscription à secret partagé sous MAS]
+L'endpoint `/_synapse/admin/v1/register` de Synapse (secret partagé d'inscription) est désactivé en mode délégué, or c'est lui qu'utilise `just configure-alert-bot` pour créer un compte bot manquant. Créez-le à l'avance, ou avec `sudo dnf-mas manage register-user`.
+:::
+
+* **enable** `bool` Active le service Matrix (synapse)
 * **federation.enable** `bool` Autorise la fédération serveur à serveur. False bloque toute fédération.
-* **federation.whitelist** `listOf str` Vide = fédérer avec tous les serveurs ; non vide = uniquement ces domaines (entrant + sortant).
+* **federation.whitelist** `listOf str` Vide = fédère avec tous les serveurs ; non vide = uniquement ces domaines (entrant + sortant).
 * **mas.enable** `bool` Délègue toute l'authentification à Matrix Authentication Service (support Element X).
-* **friendRegistration.enable** `bool` Autorise les amis à s'inscrire avec un jeton d'invitation (verrouillé par jeton).
+* **friendRegistration.enable** `bool` Autorise les amis à s'auto-inscrire avec un jeton d'invitation (protégé par jeton).
 * **bridges.whatsapp.enable** `bool` Pont Mautrix WhatsApp (connexion par QR code).
 * **bridges.signal.enable** `bool` Pont Mautrix Signal (connexion par QR code).
 * **bridges.telegram.enable** `bool` Pont Mautrix Telegram (connexion par numéro de téléphone).

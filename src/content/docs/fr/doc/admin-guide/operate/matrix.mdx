@@ -66,7 +66,7 @@ aucune création de compte Matrix n'est nécessaire.
 | `mautrix-doublepuppet-as-token` | Token appservice *double puppeting* (commun aux ponts) | `openssl rand -hex 32` |
 | `mautrix-doublepuppet-hs-token` | Idem, requis par Synapse, jamais utilisé | `openssl rand -hex 32` |
 
-{/* t:p 4d985ff45de254a46df5c163d64d47dcea6f4b33da5b3e6cc58bd19ba39cba9a */}
+{/* t:p 4679a395d55ddf48e848741c557fee52ed85e6553cc04383edf91ba67444cff4 */}
 ## Deux modes d'authentification
 
 Le serveur fonctionne dans **un seul** de ces deux modes, réglé par
@@ -90,7 +90,7 @@ ne sait se connecter qu'à un serveur piloté par MAS. Sans MAS, elle échoue à
 la connexion&nbsp;; il faut rester sur l'application Element classique.
 </Aside>
 
-{/* t:p 3a8e25f5d597286618ecde21c708f10c789647a68a72ad8662f704ad5ff0119d */}
+{/* t:p 15942d02b9d58aeed731714cc62e5ea11a926090c57cc725843b9573c7512657 */}
 ### Activer MAS
 
 Le [Matrix Authentication Service](https://element-hq.github.io/matrix-authentication-service/)
@@ -132,7 +132,7 @@ de MAS&nbsp;: il protège des données chiffrées en base, qui deviendraient
 illisibles. Idem pour l'ULID du fournisseur Kanidm, figé dans le module.
 :::
 
-{/* t:p 3e253e69f2f4d0e5f30daa73eed0b02f49d300c58cba60955d659617e3011794 */}
+{/* t:p 505ceb150a5a409fe12d0ec66c4b45604b3cb3a0973064aea39c52071517b88b */}
 ### Migrer un serveur déjà en production
 
 MAS devient propriétaire des comptes et des sessions&nbsp;: ils doivent être
@@ -193,7 +193,7 @@ La migration n'est pas réversible&nbsp;: revenir en arrière impose de
 restaurer la sauvegarde. Ne pas la lancer sans avoir vérifié l'étape 1.
 :::
 
-{/* t:p ab159511804ed5a826296b329e895cdf509308683f2be8751be74dbb8fa19549 */}
+{/* t:p e6b6312e708f99a665ad8010886c03d6a37f76ad8d36bebd481217ddb59f834e */}
 ## Inscrire des amis
 
 En plus des utilisateurs du SSO, on peut ouvrir une inscription **sur jeton**
@@ -404,7 +404,7 @@ Pour un salon confidentiel&nbsp;: le retirer de l'annuaire **et** le passer en
 défaut sur les nouveaux salons.
 </Aside>
 
-{/* t:p 43e4a74b1b61aaa94acd4dffb65d44a7667e1c5cf3f0d508474f069dbf76a1ed */}
+{/* t:p ac8782289be6d3c8dfbdae516d4184ef62477276fafdbb5c73d0a4275b51cf79 */}
 ## Exploitation
 
 | Action | Commande |
@@ -414,6 +414,7 @@ défaut sur les nouveaux salons.
 | Journaux Synapse | `journalctl -u matrix-synapse -f` |
 | Journaux MAS | `journalctl -u matrix-authentication-service -f` |
 
+{/* t:p d927d4a5335f1306d4d4b41f19790f7e7e4dfe4011d788a9d42b512588431aa5 */}
 ### Administrer les comptes avec MAS
 
 `dnf-mas` enveloppe l'outil officiel `mas-cli` sur l'hôte Matrix&nbsp;: il
@@ -438,6 +439,7 @@ pour créer un compte de bot manquant&nbsp;: créer ce compte **avant** de
 migrer, ou le recréer avec `sudo dnf-mas manage register-user`.
 </Aside>
 
+{/* t:p 87a3a88d8150265e30d7d999070d027d30103921cb2183ec27c7f5860e533067 */}
 ### Diagnostiquer une connexion SSO refusée
 
 Après une migration, les sessions déjà ouvertes continuent de fonctionner&nbsp;:

@@ -16,7 +16,7 @@ import { dirname, join } from 'node:path';
 import config, { LANG_NAMES } from './translate.config.mjs';
 import { resolveDocsDir } from './lib/paths.mjs';
 import { listLangs, buildFileMap, targetPath } from './lib/fsmap.mjs';
-import { parseDoc, serializeDoc, computeMainHashes } from './lib/mdx-doc.mjs';
+import { parseDoc, serializeDoc, computeMainHashes, preambleForTranslation } from './lib/mdx-doc.mjs';
 import { reconcile } from './lib/reconcile.mjs';
 import { runAgent, pMap, commandExists } from './lib/agent.mjs';
 import { headingSlugs, mapAnchor } from './lib/anchors.mjs';
@@ -218,7 +218,7 @@ function writeTranslated(job, got) {
   };
   for (const p of paragraphs) p.content = resolveAnchors(p.content, anchorCtx);
 
-  const preamble = job.tDoc?.preamble || mainDoc.preamble;
+  const preamble = preambleForTranslation(mainDoc);
   const doc = {
     hasFrontmatter: true, frontmatter, role: 'translated', translatedFrom: mainLang,
     headerHash, preamble, paragraphs,
