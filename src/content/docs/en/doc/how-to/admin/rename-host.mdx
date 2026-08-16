@@ -1,0 +1,190 @@
+---
+title: Rename a host
+sidebar:
+  label: Rename a host
+lang: en
+---
+
+import { Steps } from '@astrojs/starlight/components';
+
+{/* t:translated-from fr */}
+{/* t:h 219373280586d16672d3fe09915a69c59dcd44368737ffd2e8efc2d236d204f0 */}
+
+{/* t:p ecf360e07276617a5b7721ce3f42fc0c3cf3afb341532f78c4a2c101d812bc00 */}
+Change the name of a workstation, server or gateway, without touching the
+hardware. The host name acts as a key everywhere&nbsp;: it designates the
+deployment node, the machine folder and the supervision label.
+
+For a machine replacement, see
+[Migrating a gateway's hardware](/en/doc/admin-guide/install/gateway-hardware-migration/).
+
+{/* t:p 4243e8b62e32cbee34a9d5fbb85bcaebee4082d4559e185bb16307f030b85cc2 */}
+## What happens on its own
+
+Regenerated, then propagated at deployment, without intervention.
+
+| Taken care of automatically | Why |
+|---|---|
+| Zone DNS and DHCP | Derived from the declared name |
+| Service registry, portal, reverse proxy | Derived from the declared name |
+| Supervision targets, deployment tags | Derived from the declared name |
+| sops secrets | Linked to the host's SSH key, not its name |
+| Deployment SSH keys | Never pinned to the deployment account |
+
+{/* t:p 45e8225d047dab4051f5bc3717954abcf71f5b2844dcd9e52030633d306425d1 */}
+## Procedure
+
+<Steps>
+
+1. **Rename in the configuration**
+
+   ```yaml
+   # etc/config.yaml
+   - hostname: "srv-maison"   # ancien nom : "srv"
+     zone: "maison:1.2"
+     profile: "server"
+   ```
+
+2. **Move the machine folder**
+
+   ```sh
+   git mv usr/machines/srv usr/machines/srv-maison
+   ```
+
+   :::caution[Mandatory step]
+   This folder is imported by its path, `usr/machines/<nom-d-hôte>`. If
+   forgotten, it is silently ignored&nbsp;: the `hardware-configuration.nix`
+   file and the settings specific to the machine leave the built configuration.
+   :::
+
+3. **Regenerate**
+
+   ```sh
+   just clean
+   ```
+
+4. **Create the backup account**
+
+   ```sh
+   just passwd-restic
+   ```
+
+   :::caution[Otherwise the backup server won't start]
+   A restic server declares one secret per host name in the fleet, whether the
+   host is backed up or not. Without the secret for the new name, sops
+   activation fails on that server. The command is idempotent and reads the
+   generated files, so run it after `just clean`.
+   :::
+
+5. **Validate**
+
+   ```sh
+   just commit "refactor(maison): rename srv to srv-maison"
+   ```
+
+6. **Deploy**
+
+   The node is addressed by its name, which must resolve from the
+   administration machine. The safest option is to redirect ssh to its address
+   during the first deployment.
+
+   ```sh
+   just roaming srv-maison 10.0.1.2
+   just apply srv-maison
+   just roaming-clear srv-maison
+   ```
+
+   Without a redirect, first deploy the gateway of the zone from which you
+   administer&nbsp;: it then publishes the new name in its DNS.
+
+7. **Make the new name effective**
+
+   The deployment writes the static name, but the kernel one only changes at
+   boot&nbsp;: `hostname` still returns the old name until the machine has
+   rebooted.
+
+   ```sh
+   just reboot srv-maison
+   ```
+
+   To avoid the outage, set the name on the fly, then restart the services that
+   read it at startup (the VPN client first).
+
+   ```sh
+   sudo hostname srv-maison
+   sudo systemctl restart tailscaled
+   ```
+
+   :::caution[Do not use hostnamectl]
+   This command rewrites `/etc/hostname`, which is a link to the read-only
+   store. The link would be replaced by an ordinary file and the name would
+   stop following the configuration on subsequent deployments.
+   :::
+
+   :::note[Before a remote reboot]
+   Check that no encrypted disk waits for a passphrase at boot, otherwise the
+   machine stops in initrd, out of network reach.
+   :::
+
+</Steps>
+
+{/* t:p aa3fca80682ca45145d27ca8a9537d49e2213607afab555c3741ba5a349af3e1 */}
+## Keeping the old name
+
+The [`aliases`](/en/doc/how-to/admin/config/) field adds extra DNS names,
+useful for devices that keep the old name in a bookmark.
+
+```yaml
+# etc/config.yaml
+- hostname: "srv-maison"
+  aliases: ["srv"]
+```
+
+:::note[Scope limited to the zone]
+An alias is only published in its host's zone, whereas the host name is
+published in all zones. The old name therefore only resolves from the local
+network of its zone.
+:::
+
+:::caution[Alias set in advance]
+Reserving the future name as an alias is convenient, but this alias must
+disappear in the same edit as the rename&nbsp;: an alias cannot carry the name
+of a host in its zone, the generator refuses the configuration.
+:::
+
+{/* t:p c02e40cf43e5f63f6dd230e6a321792cf003b391176a3163be6c434f91af3fec */}
+## Gateway case
+
+A gateway carries the DNS and binary cache of its zone, hence two ordering
+rules&nbsp;:
+
+- Deploy the gateway before its clients (their binary cache points to its name).
+- Then deploy the gateways of the other zones, which publish the new name.
+
+The VPN node keeps its key, its address and its approved routes. Only the
+displayed name stays frozen, to fix on the coordination server.
+
+```sh
+sudo headscale nodes list
+sudo headscale nodes rename <nouveau-nom> -i <identifiant>
+```
+
+:::danger[Never delete the node]
+Deleting then re-enrolling releases the tailnet's fixed address and clears the
+approved routes. See [VPN](/en/doc/admin-guide/operate/vpn/#administration).
+:::
+
+{/* t:p 28b912b6c39dbcedf5352b3de0e87a56109d71023e56e1e98e1886cb64262115 */}
+## After the rename
+
+- **Supervision** : the host label changes, the graph history is cut.
+- **Silences** : those carrying the old name must be recreated.
+- **Backups** : if the host backs up, rename its repository on the server, otherwise an empty repository is created.
+- **Tooling** : the old node leaves the hive, any script that references it fails loudly.
+
+:::tip[Final check]
+`just apply srv-maison build` confirms that the node exists and that its
+configuration evaluates. After deployment, `just enter srv-maison` then
+`hostname` must return the new name. See [Network backups](/en/doc/how-to/admin/network-backup/) for
+renaming a restic repository.
+:::

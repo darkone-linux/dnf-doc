@@ -1,0 +1,190 @@
+---
+title: Renommer un hôte
+sidebar:
+  label: Renommer un hôte
+lang: fr
+---
+
+import { Steps } from '@astrojs/starlight/components';
+
+{/* t:main */}
+{/* t:h 219373280586d16672d3fe09915a69c59dcd44368737ffd2e8efc2d236d204f0 */}
+
+{/* t:p ecf360e07276617a5b7721ce3f42fc0c3cf3afb341532f78c4a2c101d812bc00 */}
+Changer le nom d'un poste, d'un serveur ou d'une passerelle, sans toucher au
+matériel. Le nom d'hôte sert de clé partout&nbsp;: il désigne le nœud de
+déploiement, le dossier de la machine et l'étiquette de supervision.
+
+Pour un remplacement de machine, voir
+[Migrer le matériel d'une passerelle](/fr/doc/admin-guide/install/gateway-hardware-migration/).
+
+{/* t:p 4243e8b62e32cbee34a9d5fbb85bcaebee4082d4559e185bb16307f030b85cc2 */}
+## Ce qui suit tout seul
+
+Régénéré, puis propagé au déploiement, sans intervention.
+
+| Repris automatiquement | Pourquoi |
+|---|---|
+| DNS et DHCP de la zone | Dérivés du nom déclaré |
+| Registre des services, portail, reverse proxy | Dérivés du nom déclaré |
+| Cibles de supervision, tags de déploiement | Dérivés du nom déclaré |
+| Secrets sops | Liés à la clé SSH de l'hôte, pas à son nom |
+| Clés SSH de déploiement | Jamais épinglées pour le compte de déploiement |
+
+{/* t:p 45e8225d047dab4051f5bc3717954abcf71f5b2844dcd9e52030633d306425d1 */}
+## Procédure
+
+<Steps>
+
+1. **Renommer dans la configuration**
+
+   ```yaml
+   # etc/config.yaml
+   - hostname: "srv-maison"   # ancien nom : "srv"
+     zone: "maison:1.2"
+     profile: "server"
+   ```
+
+2. **Déplacer le dossier de la machine**
+
+   ```sh
+   git mv usr/machines/srv usr/machines/srv-maison
+   ```
+
+   :::caution[Étape obligatoire]
+   Ce dossier est importé par son chemin, `usr/machines/<nom-d-hôte>`. Oublié, il
+   est ignoré en silence&nbsp;: le fichier `hardware-configuration.nix` et les
+   réglages propres à la machine quittent la configuration construite.
+   :::
+
+3. **Régénérer**
+
+   ```sh
+   just clean
+   ```
+
+4. **Créer le compte de sauvegarde**
+
+   ```sh
+   just passwd-restic
+   ```
+
+   :::caution[Sinon le serveur de sauvegarde ne démarre plus]
+   Un serveur restic déclare un secret par nom d'hôte du parc, que l'hôte soit
+   sauvegardé ou non. Sans le secret du nouveau nom, l'activation de sops échoue
+   sur ce serveur. La commande est idempotente et lit les fichiers générés, donc
+   la lancer après `just clean`.
+   :::
+
+5. **Valider**
+
+   ```sh
+   just commit "refactor(maison): rename srv to srv-maison"
+   ```
+
+6. **Déployer**
+
+   Le nœud est adressé par son nom, qui doit résoudre depuis la machine
+   d'administration. Le plus sûr est de rediriger le ssh vers son adresse, le
+   temps du premier déploiement.
+
+   ```sh
+   just roaming srv-maison 10.0.1.2
+   just apply srv-maison
+   just roaming-clear srv-maison
+   ```
+
+   Sans redirection, déployer d'abord la passerelle de la zone depuis laquelle
+   vous administrez&nbsp;: elle publie alors le nouveau nom dans son DNS.
+
+7. **Rendre le nouveau nom effectif**
+
+   Le déploiement écrit le nom statique, mais celui du noyau ne change qu'au
+   démarrage&nbsp;: `hostname` rend encore l'ancien nom tant que la machine n'a
+   pas redémarré.
+
+   ```sh
+   just reboot srv-maison
+   ```
+
+   Pour éviter la coupure, poser le nom à chaud, puis redémarrer les services qui
+   l'ont lu à leur lancement (le client VPN d'abord).
+
+   ```sh
+   sudo hostname srv-maison
+   sudo systemctl restart tailscaled
+   ```
+
+   :::caution[Ne pas passer par hostnamectl]
+   Cette commande réécrit `/etc/hostname`, qui est un lien vers le store en
+   lecture seule. Le lien serait remplacé par un fichier ordinaire et le nom
+   cesserait de suivre la configuration aux déploiements suivants.
+   :::
+
+   :::note[Avant un redémarrage à distance]
+   Vérifier qu'aucun disque chiffré n'attend une passphrase au démarrage, sinon
+   la machine s'arrête en initrd, hors de portée du réseau.
+   :::
+
+</Steps>
+
+{/* t:p aa3fca80682ca45145d27ca8a9537d49e2213607afab555c3741ba5a349af3e1 */}
+## Garder l'ancien nom
+
+Le champ [`aliases`](/fr/doc/how-to/admin/config/) ajoute des noms DNS
+supplémentaires, utile pour les appareils qui gardent l'ancien nom en signet.
+
+```yaml
+# etc/config.yaml
+- hostname: "srv-maison"
+  aliases: ["srv"]
+```
+
+:::note[Portée limitée à la zone]
+Un alias n'est publié que dans la zone de son hôte, alors que le nom d'hôte est
+publié dans toutes les zones. L'ancien nom ne résout donc plus que depuis le
+réseau local de sa zone.
+:::
+
+:::caution[Alias posé à l'avance]
+Réserver le futur nom en alias est commode, mais cet alias doit disparaître dans
+la même édition que le renommage&nbsp;: un alias ne peut pas porter le nom d'un
+hôte de sa zone, le générateur refuse la configuration.
+:::
+
+{/* t:p c02e40cf43e5f63f6dd230e6a321792cf003b391176a3163be6c434f91af3fec */}
+## Cas d'une passerelle
+
+Une passerelle porte le DNS et le cache binaire de sa zone, d'où deux règles
+d'ordre&nbsp;:
+
+- Déployer la passerelle avant ses clients (leur cache binaire vise son nom).
+- Déployer ensuite les passerelles des autres zones, qui publient le nouveau nom.
+
+Le nœud VPN garde sa clé, son adresse et ses routes approuvées. Seul le nom
+affiché reste figé, à corriger sur le serveur de coordination.
+
+```sh
+sudo headscale nodes list
+sudo headscale nodes rename <nouveau-nom> -i <identifiant>
+```
+
+:::danger[Ne jamais supprimer le nœud]
+Supprimer puis ré-enrôler libère l'adresse fixe du tailnet et efface les routes
+approuvées. Voir [VPN](/fr/doc/admin-guide/operate/vpn/#administration).
+:::
+
+{/* t:p 28b912b6c39dbcedf5352b3de0e87a56109d71023e56e1e98e1886cb64262115 */}
+## Après le renommage
+
+- **Supervision** : l'étiquette d'hôte change, l'historique des graphiques est coupé.
+- **Mises en silence** : celles qui portent l'ancien nom sont à recréer.
+- **Sauvegardes** : si l'hôte sauvegarde, renommer son dépôt sur le serveur, sinon un dépôt vide est créé.
+- **Outillage** : l'ancien nœud quitte la ruche, tout script qui le cite échoue bruyamment.
+
+:::tip[Contrôle final]
+`just apply srv-maison build` confirme que le nœud existe et que sa configuration
+évalue. Après déploiement, `just enter srv-maison` puis `hostname` doit rendre le
+nouveau nom. Voir [Sauvegardes réseau](/fr/doc/how-to/admin/network-backup/) pour
+le renommage d'un dépôt restic.
+:::
