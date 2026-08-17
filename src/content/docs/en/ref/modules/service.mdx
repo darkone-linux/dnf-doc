@@ -433,7 +433,7 @@ darkone.service.jitsi-meet.enable = false;
 
 <hr/>
 
-{/* t:p 723081f6bc44c0dce2ab1228fc6a4c047dd9355484a6c8d4eb3888543dada8bb */}
+{/* t:p 763a14d996194632ea98a7bbb0098642988063c7acbbe300ea7f107f92e41f3a */}
 ### &#x2728; darkone.service.loki
 
 Loki + Alloy, http stats with grafana.
@@ -514,7 +514,7 @@ Most common symptoms after a Loki (de)activation or Caddy log format change:
 ```nix
 darkone.service.loki = {
   enable = config.darkone.service.monitoring.enable;
-  isClient = config.services.caddy.enable;
+  isClient = config.services.caddy.enable && hasMonitoringHost;
   retentionTime = "720h";
 };
 ```

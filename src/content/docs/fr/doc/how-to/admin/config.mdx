@@ -356,7 +356,7 @@ zone lui réserve alors une adresse de passage. Voir [Machines hors de leur
 zone](/fr/doc/admin-guide/understand/network/#machines-hors-de-leur-zone).
 :::
 
-{/* t:p 21e31cba3b23bd022f123d21c3673c5a5cf1b0943dbc40aeadd6705fe4fcb4ec */}
+{/* t:p 2211df69776c077b3aa5f365f9a7df548d7171786f80117c30b2e99491742828 */}
 ### Attribuer des fonctionnalités
 
 La clé **`features`** active des comportements ou fonctionnalités spécifiques.
@@ -380,6 +380,14 @@ Fonctionnalités disponibles :
 :::note[Liste évolutive]
 Une fonctionnalité est un simple drapeau lu par un module.
 Le suffixe `:<zone>` permet de viser une zone autre que celle de l'hôte.
+:::
+
+:::caution[`nfs-client` : zone du serveur obligatoire]
+Le suffixe `:<zone>` de `nfs-client` doit désigner la zone du serveur `nfs`,
+c'est-à-dire aujourd'hui celle de l'hôte lui-même : les clients NFS
+inter-zones ne sont pas encore câblés. Un suffixe pointant ailleurs
+n'active plus le montage — auparavant l'hôte montait quand même le serveur de
+sa propre zone, alors que ses liens XDG, eux, n'étaient pas créés.
 :::
 
 {/* t:p b8360df1ecf9cbbb650e8aabc868e1d421c416f0d5c65a7a1157aa216c2303e5 */}

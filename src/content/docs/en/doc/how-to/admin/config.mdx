@@ -345,7 +345,7 @@ reserves a transit address for it. See [Machines outside their
 zone](/en/doc/admin-guide/understand/network/#machines-outside-their-zone).
 :::
 
-{/* t:p 21e31cba3b23bd022f123d21c3673c5a5cf1b0943dbc40aeadd6705fe4fcb4ec */}
+{/* t:p 2211df69776c077b3aa5f365f9a7df548d7171786f80117c30b2e99491742828 */}
 ### Assigning features
 
 The **`features`** key enables specific behaviors or features.
@@ -353,22 +353,30 @@ A `:<zone>` suffix targets a specific zone (otherwise the host's zone is used).
 Examples:
 
 ```yaml
-# Machine under supervision (monitoring-node)
-# and NFS client (a server must exist in the zone)
+# Machine under monitoring (monitoring-node)
+# and NFS client (requires a server in the zone)
 features: ["monitoring-node", "nfs-client"]
 
-# Machine supervised by the "main" zone
+# Machine monitored by the "main" zone
 features: ["monitoring-node:main"]
 ```
 
 Available features:
 
-- `monitoring-node` : the host exposes its metrics (node-exporter) to the zone's [monitoring](/en/doc/admin-guide/maintain/monitoring/).
-- `nfs-client` : the host mounts shares from the zone's `nfs` server (a server must exist in the zone).
+- `monitoring-node`: the host exposes its metrics (node-exporter) to the zone's [monitoring](/en/doc/admin-guide/maintain/monitoring/).
+- `nfs-client`: the host mounts the shares from the zone's `nfs` server (a server must exist in that zone).
 
 :::note[Evolving list]
-A feature is a simple flag read by a module.
-The `:<zone>` suffix targets a zone other than the host's.
+A feature is simply a flag read by a module.
+The `:<zone>` suffix allows targeting a zone other than the host's.
+:::
+
+:::caution[`nfs-client`: server zone required]
+The `nfs-client` `:<zone>` suffix must point to the `nfs` server's zone,
+which currently means the host's own zone: cross-zone NFS clients
+are not yet implemented. A suffix pointing elsewhere
+no longer enables the mount — previously the host would still mount the server in
+its own zone, even though its XDG links were not created.
 :::
 
 {/* t:p b8360df1ecf9cbbb650e8aabc868e1d421c416f0d5c65a7a1157aa216c2303e5 */}

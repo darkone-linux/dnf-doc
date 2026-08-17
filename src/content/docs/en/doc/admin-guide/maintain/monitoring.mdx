@@ -15,8 +15,8 @@ Monitoring relies on [Prometheus](https://prometheus.io/) (metrics),
 (logs). It is **organized by zone**: one host collects, the others
 expose their metrics.
 
-{/* t:p e758d17315b4c6280b72f038b192f1afbc448f15a250caedcca6cdeb1273a26e */}
-## Roles
+{/* t:p 2f09a0273ab3cbe75865475cff44e507243eaf89b7da33b42e81b6385eeb686e */}
+## The roles
 
 ```d2
 style.fill: transparent
@@ -39,12 +39,24 @@ caddy -> grafana
 | Log source | Hosts behind Caddy | Alloy pushes access logs |
 
 `prometheus` (metrics + alerts) and `monitoring` (Grafana) are **two separate
-services** on the same host; Grafana requires Prometheus. Details are in
+services** on the same host; Grafana requires Prometheus. Details on how it
+works are in
 [Monitoring & Alerts](/en/doc/admin-guide/understand/monitoring-alerts/).
 
 :::note[One collector per zone]
-Only one collector is allowed per zone. It monitors nodes whose
-`monitoring-node` tag points to **its** zone.
+Only one collector is allowed per zone. It monitors the nodes whose
+`monitoring-node` tag designates **its** zone.
+:::
+
+:::note[Which Loki receives Caddy logs]
+Alloy pushes to the `monitoring` service of **its own zone**. If the zone does
+not declare one, it falls back to the first one found on the network — a central
+Grafana instance serving all zones therefore remains possible.
+
+With no `monitoring` service in the network at all, Alloy is not deployed:
+it would push to `127.0.0.1` and lose every line without reporting it. Forcing
+`darkone.service.loki.isClient = true` in this case produces an explicit error
+at evaluation time.
 :::
 
 {/* t:p 2acba11e8ca993346960755e6245f6d2fa3a7f0d2858114385911d66c3392603 */}

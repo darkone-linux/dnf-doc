@@ -23,19 +23,19 @@ Zero (W) (armv6, 32-bit) is not supported; Odroid boards and generic
 aarch64 are not (yet) wired in.
 :::
 
-{/* t:p 9cccd22930101c8be988147c2b5f1e1c832faf3d73530ea49eaaf54b654e7d97 */}
-## Declare an aarch64 Host
+{/* t:p 1adfdfda5f5cc8a86b8ac52619bf7c6b1d9f0fcbd465aa57c2b51a9648da70de */}
+## Declare an aarch64 host
 
-A host's architecture is set with the `arch` field, in the
-`cpu[:board]` format. When this field is absent, the host is a standard x86_64.
+The architecture of a host is set with the `arch` field, in the format
+`cpu[:board]`. When this field is absent, the host is a standard x86_64.
 
-| `arch` value        | Machine                    |
-| ------------------- | -------------------------- |
-| `x86_64` (default)  | PC / x86_64 server         |
-| `aarch64:rpi02`     | Raspberry Pi Zero 2 W      |
-| `aarch64:rpi3`      | Raspberry Pi 3             |
-| `aarch64:rpi4`      | Raspberry Pi 4             |
-| `aarch64:rpi5`      | Raspberry Pi 5             |
+| `arch` value       | Machine                    |
+| ------------------ | -------------------------- |
+| `x86_64` (default) | PC / x86_64 server         |
+| `aarch64:rpi02`    | Raspberry Pi Zero 2 W      |
+| `aarch64:rpi3`     | Raspberry Pi 3             |
+| `aarch64:rpi4`     | Raspberry Pi 4             |
+| `aarch64:rpi5`     | Raspberry Pi 5             |
 
 ```yaml
 # etc/config.yaml
@@ -50,9 +50,18 @@ hosts:
       homepage:
 ```
 
-:::caution[Validated Values]
+:::caution[Double-checked values]
 The generator validates `arch` against a whitelist: an unknown value
-(e.g. `aarch64:rpi3`) causes `just generate` to fail with an explicit message.
+(e.g. `aarch64:rpi9`) causes `just generate` to fail with an explicit message.
+
+The framework then re-validates both halves at evaluation time, which also
+covers a `var/generated/hosts.nix` written by hand:
+
+- Unknown CPU (`rpi5` instead of `aarch64:rpi5`) — otherwise the error
+  would only appear much later, deep inside nixpkgs;
+- Unknown board (`aarch64:rpi9`) — otherwise the Pi would be built as
+  generic aarch64, without kernel, firmware or bootloader: an image that
+  won't boot, and no error to say so.
 :::
 
 {/* t:p c21395c81c0ef5a46c4419cbda9d43e472d9b790a4b623318d59d69fb3288acc */}
