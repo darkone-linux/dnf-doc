@@ -122,3 +122,35 @@ L'ordonnancement local ne dit rien de la disponibilité d'une machine distante
 dépendances-là, la seule réponse fiable est de réessayer : `Restart` +
 `RestartSec` sur l'unité, plutôt qu'un échec définitif à chaque redémarrage.
 :::
+
+## Certificats TLS d'une passerelle expirés
+
+Une passerelle ne demande pas ses propres certificats : c'est le HCS qui les
+obtient, et l'unité `sync-caddy-certs` les recopie toutes les dix minutes
+depuis le HCS vers le stockage Caddy local.
+
+```sh
+systemctl status sync-caddy-certs   # dernier passage et son résultat
+journalctl -u sync-caddy-certs -n 50
+systemctl list-timers sync-caddy-certs
+```
+
+Le transfert passe par deux répertoires :
+
+| Chemin | Rôle |
+|---|---|
+| `/var/lib/caddy-cert-sync` | Zone de transit (`StateDirectory` de l'unité) |
+| `/var/lib/caddy/storage` | Stockage Caddy réellement servi |
+
+L'unité tourne en root, tire depuis le HCS avec la clé SSH de l'utilisateur
+`nix`, puis publie vers le stockage Caddy. Elle échoue franchement à la
+première erreur : un `systemctl status` en `failed` est donc le signal à
+surveiller, et un échec répété annonce une expiration de certificat.
+
+:::caution[Zone de transit vide]
+La publication est refusée si la zone de transit ne contient aucun fichier
+(message `empty staging dir, refusing to publish`). Sans ce garde-fou, la
+synchronisation effacerait les certificats en place **et** la clé de compte
+ACME. Si ce message apparaît, le problème est en amont : accès SSH au HCS,
+tailnet, ou stockage Caddy vide côté HCS.
+:::
