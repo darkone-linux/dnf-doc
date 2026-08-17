@@ -50,9 +50,18 @@ hosts:
       homepage:
 ```
 
-:::caution[Valeurs contrôlées]
+:::caution[Valeurs contrôlées deux fois]
 Le générateur valide `arch` contre une liste blanche : une valeur inconnue
-(ex. `aarch64:rpi3`) fait échouer `just generate` avec un message explicite.
+(ex. `aarch64:rpi9`) fait échouer `just generate` avec un message explicite.
+
+Le framework revalide ensuite les deux moitiés à l'évaluation, ce qui couvre
+aussi un `var/generated/hosts.nix` écrit à la main :
+
+- CPU inconnu (`rpi5` au lieu de `aarch64:rpi5`) — sans quoi l'erreur
+  n'apparaissait que bien plus tard, au fond de nixpkgs ;
+- carte inconnue (`aarch64:rpi9`) — sans quoi le Pi était construit en aarch64
+  générique, sans noyau ni firmware ni chargeur d'amorçage : une image qui ne
+  démarre pas, et aucune erreur pour le dire.
 :::
 
 {/* t:p c21395c81c0ef5a46c4419cbda9d43e472d9b790a4b623318d59d69fb3288acc */}
