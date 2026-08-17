@@ -48,6 +48,17 @@ Un seul collecteur est admis par zone. Il supervise les nœuds dont le tag
 `monitoring-node` désigne **sa** zone.
 :::
 
+:::note[Vers quel Loki partent les journaux Caddy]
+Alloy pousse vers le service `monitoring` de **sa propre zone**. Si la zone n'en
+déclare pas, il se rabat sur le premier trouvé dans le réseau — une instance
+Grafana centrale desservant toutes les zones reste donc possible.
+
+Sans aucun service `monitoring` dans le réseau, Alloy n'est pas déployé du tout :
+il pousserait vers `127.0.0.1` et perdrait chaque ligne sans le signaler. Forcer
+`darkone.service.loki.isClient = true` dans ce cas produit une erreur explicite
+à l'évaluation.
+:::
+
 {/* t:p 2acba11e8ca993346960755e6245f6d2fa3a7f0d2858114385911d66c3392603 */}
 ## Activer
 
