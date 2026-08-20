@@ -1,0 +1,163 @@
+---
+title: Introspecter et gérer les disques
+sidebar:
+  label: Disques
+lang: en
+---
+
+import { Steps } from '@astrojs/starlight/components';
+
+{/* t:translated-from fr */}
+
+{/* t:p bbcd68d7d4982d8ad96eb849642aa36ea58f5a12d34d6a67bffe111fcd182660 */}
+Common commands for inventorying, monitoring and driving a host's disks.
+`smartctl` is provided by the administrator profile, the other tools are part
+of the base system.
+
+{/* t:p 8c76dc71845a1f6f9a1f07a92a4ea9d6194dab2f4d3c371501cb6651ed8672d7 */}
+## Inventory
+
+| Command | What it gives |
+|---|---|
+| `lsblk -o NAME,SIZE,MODEL,TRAN,ROTA,MOUNTPOINTS` | Disk tree, transport (`usb`, `nvme`, `sata`), rotating or not |
+| `findmnt /mnt/data` | Source, type and actual options of a mount |
+| `duf` | Free space, readable |
+| `ls -l /dev/disk/by-id/` | Stable identifiers (`wwn-`, `ata-`, `usb-`) |
+
+:::tip[Always designate a disk by its stable identifier]
+`/dev/sda` changes from one boot to the next. In a configuration or a udev
+rule, prefer `/dev/disk/by-id/wwn-0x...`, which follows the physical drive,
+or the UUID of the filesystem, which follows the formatting.
+:::
+
+{/* t:p a2948c522bb614fb508b95286ca8b6ccf722516fb2110d9292147916b01e7c97 */}
+## SMART health
+
+Overall verdict first, detail next&nbsp;:
+
+```bash
+sudo smartctl -H /dev/sda          # PASSED ou FAILED
+sudo smartctl -a /dev/sda          # tous les attributs
+sudo smartctl --scan               # disques vus, avec leur type (-d)
+```
+
+A self-test is triggered on demand and read back later&nbsp;:
+
+```bash
+sudo smartctl -t short /dev/sda    # ~2 min, non bloquant
+sudo smartctl -l selftest /dev/sda # résultats des derniers tests
+```
+
+:::note[USB drives]
+External enclosures go through a SAT layer. If autodetection fails,
+force the type with `-d sat`. `smartctl --scan` shows the type retained.
+:::
+
+{/* t:p b33937ab96e082c68833afd5adb81c503cf89e36d6b09162bc9c70c84f399597 */}
+## Is the disk spinning?
+
+```bash
+sudo smartctl -n standby -i /dev/sda
+```
+
+| Response | State |
+|---|---|
+| `Power mode is: ACTIVE or IDLE` | Platter spinning |
+| `Device is in STANDBY mode, exit(2)` | Motor stopped |
+| `Device is in SLEEP mode, exit(2)` | Motor stopped, one level lower |
+
+:::caution[Never omit `-n standby`]
+Without this option, `smartctl` wakes the disk up to query it&nbsp;: the
+answer will always be "active", and the test will have caused what it was
+measuring.
+:::
+
+{/* t:p 52010bf947bd6eb756878121f62a01901774df3d22b5d43ed1672a12eb64c13a */}
+## Setting or forcing standby
+
+<Steps>
+
+1. **Read the current settings**
+
+   ```bash
+   sudo smartctl -n standby -g all /dev/sda
+   ```
+
+2. **Allow standby, then arm the internal timer**
+
+   ```bash
+   sudo smartctl -d sat -s apm,127 /dev/sda      # niveau APM >= 128 : jamais d'arrêt
+   sudo smartctl -d sat -s standby,240 /dev/sda  # 240 x 5 s = 20 min d'inactivité
+   ```
+
+3. **Or stop the disk right away**
+
+   ```bash
+   sudo smartctl -d sat -s standby,now /dev/sda
+   ```
+
+</Steps>
+
+:::caution[Volatile settings]
+APM and the standby timer are lost every time the disk loses power.
+Replay them from a systemd unit triggered by a udev rule on the disk
+identifier, which also covers host startup.
+:::
+
+:::note[When the internal timer never fires]
+Any command sent to the disk resets its idle counter, including a SMART
+read. An exporter querying the disk every minute is enough to push the
+deadline back indefinitely. The remedy is an active stop&nbsp;: a systemd
+timer compares the I/O counters at regular intervals and sends
+`standby,now` itself when nothing has moved. A disk that is already
+stopped is not woken up for all that, `-n standby` making the command
+exit without emitting anything.
+:::
+
+{/* t:p 9451a67525b9b3bc12939c9eef6cedbf0337d7d26df484ce3cf34d59a86c36a5 */}
+## Measuring actual activity
+
+```bash
+grep " sda " /proc/diskstats
+```
+
+Fields 4 and 8&nbsp;: completed reads and writes. Comparing two readings
+taken apart gives the disk's actual activity. SMART commands do not appear
+there, which makes it the right sensor for judging idleness.
+
+For history rather than a snapshot, the metric
+`node_disk_io_time_seconds_total` is collected on every monitored host, see
+[Supervision](/en/doc/admin-guide/maintain/monitoring/).
+
+{/* t:p 8fc71b474ed266d095bd0a31a50dcf1cbff6723c60f605baccf2ee7c2a3941b8 */}
+## On-demand mounts
+
+An `x-systemd.automount` mount is carried by two units&nbsp;:
+
+```bash
+systemctl status mnt-data.automount   # le déclencheur
+systemctl status mnt-data.mount       # le montage lui-même
+findmnt /mnt/data                     # les deux lignes, autofs puis le vrai FS
+```
+
+:::note[Automatic unmount rarely takes effect]
+`x-systemd.idle-timeout` only unmounts if nobody crosses the mount point
+anymore. On a monitored host, the metrics exporter performs a
+`statfs()` there on every scrape, which resets the counter continuously.
+No consequence for the hardware&nbsp;: a `statfs()` is served from memory and
+does not wake a sleeping disk.
+:::
+
+{/* t:p a9a38e591e80ad3ee35191366209d74d01dcd3e7c20ff2c647df04749e6d7b73 */}
+## btrfs filesystems
+
+```bash
+sudo btrfs filesystem usage /mnt/data  # occupation réelle, données et métadonnées
+sudo btrfs device stats /mnt/data      # compteurs d'erreurs par périphérique
+sudo btrfs scrub start -B /mnt/data    # vérification complète, bloquante
+```
+
+:::tip[Backups]
+For restic repositories and the disks that carry them, see
+[Network backups](/en/doc/how-to/admin/network-backup/).
+:::
