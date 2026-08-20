@@ -403,6 +403,94 @@ Un service jitsi-meet entièrement configuré.
 darkone.service.jitsi-meet.enable = false;
 ```
 
+{/* t:p 763a14d996194632ea98a7bbb0098642988063c7acbbe300ea7f107f92e41f3a */}
+### &#x2728; darkone.service.loki
+
+Loki + Alloy, stats HTTP avec Grafana.
+
+:::note
+Collecte centralisée des journaux d'accès Caddy, consommés par Grafana via
+un datasource Loki provisionné et un tableau de bord dédié.
+
+Double pattern aligné avec monitoring.nix :
+- `enable`   : déploie le serveur Loki + le datasource Grafana sur le
+  même hôte que le service `monitoring` (Grafana).
+- `isClient` : déploie Alloy sur chaque hôte exécutant Caddy. Les
+  journaux Caddy sont attendus en JSON dans `/var/log/caddy/access-*.log`
+  (voir `dnf/modules/system/services.nix`).
+
+Par défaut, `enable` suit `darkone.service.monitoring.enable` et
+`isClient` suit `services.caddy.enable` : la configuration est entièrement
+automatique une fois le monitoring et Caddy actifs.
+:::
+
+:::tip[Débogage et nettoyage manuel]
+Symptômes les plus courants après une (dés)activation de Loki ou un changement
+de format de journal Caddy :
+
+**1. « NO DATA » sur le tableau de bord Caddy malgré des requêtes entrantes.**
+   Vérifier la chaîne d'ingestion de bout en bout :
+   ```sh
+   # Sur l'hôte Caddy : Alloy est-il en cours d'exécution ? lit-il les fichiers ?
+   sudo systemctl status alloy --no-pager
+   sudo journalctl -u alloy -n 100 --no-pager | grep -iE 'error|permission'
+   ls -la /var/log/caddy/access-*.log   # doit appartenir à caddy:caddy
+
+   # Sur l'hôte de supervision : Loki reçoit-il quelque chose ?
+   # (remplacer <IP> par l'adresse interne de l'hôte de supervision, Loki ne se
+   # lie PAS sur 127.0.0.1 — voir http_listen_address = bindAddr)
+   curl -s http://<IP>:3100/loki/api/v1/labels | jq
+   curl -sG http://<IP>:3100/loki/api/v1/query \
+        --data-urlencode 'query={job="caddy"}' | jq '.data.result | length'
+   ```
+
+**2. `alloy.service: mkdir data-alloy/remotecfg: permission denied`.**
+   Propriété orpheline de `/var/lib/alloy` héritée d'un ancien DynamicUser.
+   Le `ExecStartPre` du service corrige normalement le problème, mais en cas
+   de blocage (ex. unité dans `start-limit-hit`) :
+   ```sh
+   sudo systemctl stop alloy
+   sudo chown -R caddy:caddy /var/lib/alloy
+   sudo systemctl reset-failed alloy
+   sudo systemctl start alloy
+   ```
+
+**3. Grafana refuse de démarrer : `Datasource provisioning error: data
+   source not found`.** Conflit d'UID en base SQLite après modification du
+   provisionnement (typiquement passage d'un UID auto-généré à `uid = "loki"`).
+   L'option `deleteDatasources` gère cela en théorie ; sinon nettoyage manuel :
+   ```sh
+   sudo systemctl stop grafana
+   sudo sqlite3 /var/lib/grafana/grafana.db \
+        "DELETE FROM data_source WHERE name='Loki';"
+   sudo systemctl reset-failed grafana
+   sudo systemctl start grafana
+   ```
+
+**4. Fichiers journaux Caddy obsolètes** (ancienne dénomination avec `:` ou schéma, ex.
+   `access-http:__nextcloud.log`). Inoffensifs mais polluent la sortie du tail Alloy.
+   Nettoyage après migration :
+   ```sh
+   sudo rm /var/log/caddy/access-{http,https}:__*.log
+   sudo rm /var/log/caddy/access-:*.log     # variantes `:80`, `:443`
+   sudo systemctl reload caddy              # optionnel
+   ```
+:::
+
+* **enable** `bool` Déploie le serveur Loki + le datasource Grafana (co-localisé avec Grafana).
+* **isClient** `bool` Déploie Alloy pour collecter les journaux d'accès Caddy locaux.
+* **retentionTime** `str` Durée de rétention des journaux dans Loki (30 jours par défaut).
+
+```nix
+darkone.service.loki = {
+  enable = config.darkone.service.monitoring.enable;
+  isClient = config.services.caddy.enable && hasMonitoringHost;
+  retentionTime = "720h";
+};
+```
+
+<hr/>
+
 {/* t:p 5fa91d2fdec3ee058790e0dcd60e5acf0247c642b4fc1ad565aebda00ac945fc */}
 ### &#x2728; darkone.service.matrix
 

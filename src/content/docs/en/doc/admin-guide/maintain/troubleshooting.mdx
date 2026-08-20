@@ -120,7 +120,7 @@ only reliable answer is to retry: `Restart` +
 `RestartSec` on the unit, rather than a definitive failure on every reboot.
 :::
 
-{/* t:p 5a65252204f39acc7e6b3611aad28ee9c31c80308368b15a82088523a287c875 */}
+{/* t:p ad0e1f824d682e9e421e0509b833aa42716cb3aec5360bb783632434a6d70309 */}
 ## Expired TLS certificates on a gateway
 
 A gateway does not request its own certificates: the HCS obtains them, and the `sync-caddy-certs` unit copies them every ten minutes from the HCS to the local Caddy storage.
@@ -138,8 +138,12 @@ The transfer goes through two directories:
 | `/var/lib/caddy-cert-sync` | Staging area (`StateDirectory` of the unit) |
 | `/var/lib/caddy/storage` | Actual Caddy storage being served |
 
-The unit runs as root, pulls from the HCS using the SSH key of the `nix` user, then publishes to the Caddy storage. It fails outright on the first error: a `systemctl status` showing `failed` is therefore the signal to watch for, and repeated failures indicate an upcoming certificate expiration.
+The unit runs as root, pulls from the HCS using the `nix` user's SSH key, then publishes to the Caddy storage. It first waits for the tailnet to be fully mounted (up to five minutes), then retries the transfer three times before giving up. A `systemctl status` in `failed` state is therefore the signal to watch for, and repeated failures indicate an expired certificate.
+
+:::note[Why this wait]
+At a gateway's first boot, `tailscaled` may run without the tailnet being reachable: the WAN link — and the router behind it — can sometimes take several minutes, and the daemon then enters exponential backoff before retrying its connection to the control plane. The timer would fire straight through this window and leave the unit in `failed` state until the next run. Ordering after `tailscaled.service` is not enough: it only proves the daemon has started, hence the explicit wait on `BackendState` and `Self.Online`.
+:::
 
 :::caution[Empty staging area]
-Publishing is refused if the staging area contains no files (`empty staging dir, refusing to publish`). Without this safeguard, synchronization would erase the certificates in place **and** the ACME account key. If this message appears, the issue is upstream: SSH access to the HCS, tailnet, or empty Caddy storage on the HCS side.
+Publishing is refused if the staging area contains no files (`empty staging dir, refusing to publish` message). Without this safeguard, synchronization would overwrite the certificates in place **and** the ACME account key. If this message appears, the issue is upstream: SSH access to the HCS, tailnet, or empty Caddy storage on the HCS side.
 :::

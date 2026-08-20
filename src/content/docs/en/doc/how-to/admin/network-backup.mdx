@@ -102,7 +102,7 @@ Renaming within the same filesystem: instantaneous, no data moved, history and
 incrementality preserved.
 </Aside>
 
-{/* t:p 0219c306cc42de8e15d2f7cc29f8a344e055cbeead29e06dd6f3112b522737c6 */}
+{/* t:p b0547bbd00e557a03435d39664e8a7f7889ed43d20184aed7e10a5a37b4d7376 */}
 ## Setting up a backup server
 
 <Steps>
@@ -114,7 +114,7 @@ incrementality preserved.
      restic:
    ```
 
-2. Attach the backup disk and mount it on `/mnt/backup` in the host
+2. Connect the backup drive and mount it to `/mnt/backup` in the host
    configuration (`usr/machines/<host>/`), with the `nofail` option:
 
    ```nix
@@ -136,9 +136,18 @@ incrementality preserved.
 
 </Steps>
 
-<Aside type="note" title="Server is also a client">
+<Aside type="note" title="Server = client too">
 A server can back up its own data by pointing a `target` to its local disk
 (`root = "/mnt/backup/restic"`).
+</Aside>
+
+<Aside type="caution" title="restic-rest-server.service inactive: that's normal">
+The REST server is socket-activated. `restic-rest-server.service` therefore
+remains `inactive` until a client connects — after each boot, and as long as a
+disk with `x-systemd.automount` stays unused (the `requires` on the mount then
+stops the daemon to unmount). It is `restic-rest-server.socket`, always
+listening, that carries the `ServiceDown` monitoring; a crashing daemon is also
+covered by `SystemdUnitFailed`.
 </Aside>
 
 {/* t:p 9539ab1ebf11ddd0e6f8bc2cced794dc206949e6251fa1fd1166711a0eb1d856 */}

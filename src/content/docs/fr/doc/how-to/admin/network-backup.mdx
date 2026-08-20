@@ -102,7 +102,7 @@ Renommage au sein du même système de fichiers : instantané, aucune donnée
 déplacée, historique et incrémentalité préservés.
 </Aside>
 
-{/* t:p 0219c306cc42de8e15d2f7cc29f8a344e055cbeead29e06dd6f3112b522737c6 */}
+{/* t:p b0547bbd00e557a03435d39664e8a7f7889ed43d20184aed7e10a5a37b4d7376 */}
 ## Monter un serveur de sauvegarde
 
 <Steps>
@@ -139,6 +139,15 @@ déplacée, historique et incrémentalité préservés.
 <Aside type="note" title="Serveur = client aussi">
 Un serveur peut sauvegarder ses propres données en pointant un `target` vers son
 disque local (`root = "/mnt/backup/restic"`).
+</Aside>
+
+<Aside type="caution" title="restic-rest-server.service inactive : c'est normal">
+Le serveur REST est activé par socket. `restic-rest-server.service` reste donc
+`inactive` tant qu'aucun client ne s'est connecté — après chaque démarrage, et
+aussi longtemps qu'un disque en `x-systemd.automount` reste inutilisé (le
+`requires` sur le montage fait alors arrêter le démon pour démonter). C'est
+`restic-rest-server.socket`, toujours à l'écoute, qui porte la surveillance
+`ServiceDown` ; un démon qui plante reste couvert par `SystemdUnitFailed`.
 </Aside>
 
 {/* t:p 9539ab1ebf11ddd0e6f8bc2cced794dc206949e6251fa1fd1166711a0eb1d856 */}
