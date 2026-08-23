@@ -526,17 +526,47 @@ Le média ne passe **pas** par le proxy inverse&nbsp;: les clients joignent
 l'hôte directement. Ces ports doivent donc être ouverts jusqu'à lui, et
 redirigés s'il est derrière un NAT&nbsp;:
 
-| Port | Usage |
-|---|---|
-| 40000-40100/udp | Média WebRTC, un port par participant |
-| 7881/tcp | Repli pour les réseaux qui bloquent l'UDP |
+| Port | Pile | Usage |
+|---|---|---|
+| 40000-40100/udp | MatrixRTC | Média WebRTC, un port par participant |
+| 7881/tcp | MatrixRTC | Repli pour les réseaux qui bloquent l'UDP |
+| 3478/udp, 3478/tcp, 5349/tcp | coturn | STUN et négociation TURN |
+| 61000-65535/udp | coturn | Média relayé |
 
-<Aside type="note" title="Pourquoi pas la plage par défaut">
-LiveKit propose 50000-51000/udp, ce qui tombe **à l'intérieur** de la plage de
-relais de coturn (49152-65535). Co-hébergés, les deux se disputeraient les
-mêmes ports et feraient échouer des appels au hasard. DNF déplace donc LiveKit
-sous coturn.
+<Aside type="note" title="Pourquoi pas les plages par défaut">
+Deux valeurs amont sont écartées. LiveKit propose 50000-51000/udp, que la plage
+de relais par défaut de coturn (49152-65535) contient entièrement&nbsp;:
+co-hébergés, les deux se disputeraient les mêmes ports et feraient échouer des
+appels au hasard. Et cette plage coturn est elle-même à cheval sur la plage
+éphémère du noyau (`net.ipv4.ip_local_port_range`, 32768-60999 par
+défaut)&nbsp;: n'importe quelle connexion sortante des services voisins peut
+lui voler un port de relais. DNF descend donc LiveKit à 40000 et remonte coturn
+à 61000.
 </Aside>
+
+### Appels relayés en permanence
+
+Un client WebRTC découvre son adresse publique avec une requête **STUN
+Binding**, qu'il envoie toujours **sans authentification**, y compris vers le
+serveur TURN. Si coturn la refuse (option `secure-stun`), le client n'obtient
+aucun candidat *server-reflexive*&nbsp;: il ne lui reste que ses adresses
+locales, inutilisables hors du réseau local, et son adresse de relais. Aucun
+chemin direct n'est alors jamais tenté&nbsp;: **tous** les appels traversent
+coturn, plus longs à s'établir et sans repli quand le relais sature.
+
+DNF laisse donc `secure-stun` désactivé. Les allocations TURN, elles, restent
+authentifiées par le secret partagé (`use-auth-secret`)&nbsp;: seul le Binding
+est anonyme.
+
+Contrôler depuis une machine extérieure&nbsp;:
+
+```sh
+nix shell nixpkgs#stuntman --command stunclient turn.domain.tld 3478
+```
+
+`Binding test: success` suivi de l'adresse vue par le serveur&nbsp;: correct.
+`Binding test: fail`&nbsp;: les requêtes anonymes sont refusées, tous les
+appels seront relayés.
 
 {/* t:p 0f41ac433fa1137ed832a36a6ca0cd7b09466c8c17ef82ceed896991b4fb8656 */}
 ## Ouvrir le réseau à la fédération
@@ -661,6 +691,7 @@ journalctl -u matrix-authentication-service -f
 | «&nbsp;Le code QR n'est pas pris en charge&nbsp;» côté client | Le canal de rendez-vous MSC4108 est absent | `experimental_features.msc4108_enabled`&nbsp;: activé par le module avec MAS |
 | «&nbsp;L'appel n'est pas pris en charge&nbsp;», `MISSING_MATRIX_RTC_TRANSPORT` | Aucun backend MatrixRTC annoncé | Activer `matrixRtc.enable` (cf. [Appels audio et vidéo](#appels-audio-et-vidéo)) |
 | Appel qui sonne mais reste muet, ou coupe au bout de quelques secondes | Les ports média n'atteignent pas l'hôte | Ouvrir 40000-40100/udp et 7881/tcp jusqu'à lui |
+| Appel long à s'établir, voire qui échoue, et tout le trafic passe par coturn | Les clients n'obtiennent aucun candidat *server-reflexive*, donc aucun chemin direct | coturn doit répondre aux requêtes STUN Binding **anonymes** (cf. [Appels relayés en permanence](#appels-relayés-en-permanence)) |
 
 Contrôles rapides, sans se connecter&nbsp;:
 
