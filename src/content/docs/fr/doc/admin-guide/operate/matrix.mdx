@@ -528,20 +528,20 @@ redirigés s'il est derrière un NAT&nbsp;:
 
 | Port | Pile | Usage |
 |---|---|---|
-| 40000-40100/udp | MatrixRTC | Média WebRTC, un port par participant |
+| 30000-30100/udp | MatrixRTC | Média WebRTC, un port par participant |
 | 7881/tcp | MatrixRTC | Repli pour les réseaux qui bloquent l'UDP |
 | 3478/udp, 3478/tcp, 5349/tcp | coturn | STUN et négociation TURN |
 | 61000-65535/udp | coturn | Média relayé |
 
 <Aside type="note" title="Pourquoi pas les plages par défaut">
-Deux valeurs amont sont écartées. LiveKit propose 50000-51000/udp, que la plage
-de relais par défaut de coturn (49152-65535) contient entièrement&nbsp;:
-co-hébergés, les deux se disputeraient les mêmes ports et feraient échouer des
-appels au hasard. Et cette plage coturn est elle-même à cheval sur la plage
+Les deux plages amont tombent dans une fenêtre déjà occupée. Celle de LiveKit
+(50000-51000/udp) est contenue dans la plage de relais par défaut de coturn
+(49152-65535)&nbsp;: co-hébergés, les deux se disputeraient les mêmes ports et
+feraient échouer des appels au hasard. Et cette plage coturn chevauche la plage
 éphémère du noyau (`net.ipv4.ip_local_port_range`, 32768-60999 par
-défaut)&nbsp;: n'importe quelle connexion sortante des services voisins peut
-lui voler un port de relais. DNF descend donc LiveKit à 40000 et remonte coturn
-à 61000.
+défaut)&nbsp;: n'importe quelle connexion sortante d'un service voisin peut y
+voler un port média. DNF remonte donc coturn au-dessus de la plage éphémère et
+descend LiveKit en dessous.
 </Aside>
 
 ### Appels relayés en permanence
@@ -690,7 +690,7 @@ journalctl -u matrix-authentication-service -f
 | Page `User exists` : «&nbsp;returned "bob" as username, which is not linked&nbsp;» | Un compte ami occupe déjà l'identifiant de l'utilisateur déclaré | Fusionner ou renommer (cf. [collision d'identifiant](#collision-didentifiant-avec-un-utilisateur-déclaré)) |
 | «&nbsp;Le code QR n'est pas pris en charge&nbsp;» côté client | Le canal de rendez-vous MSC4108 est absent | `experimental_features.msc4108_enabled`&nbsp;: activé par le module avec MAS |
 | «&nbsp;L'appel n'est pas pris en charge&nbsp;», `MISSING_MATRIX_RTC_TRANSPORT` | Aucun backend MatrixRTC annoncé | Activer `matrixRtc.enable` (cf. [Appels audio et vidéo](#appels-audio-et-vidéo)) |
-| Appel qui sonne mais reste muet, ou coupe au bout de quelques secondes | Les ports média n'atteignent pas l'hôte | Ouvrir 40000-40100/udp et 7881/tcp jusqu'à lui |
+| Appel qui sonne mais reste muet, ou coupe au bout de quelques secondes | Les ports média n'atteignent pas l'hôte | Ouvrir 30000-30100/udp et 7881/tcp jusqu'à lui |
 | Appel long à s'établir, voire qui échoue, et tout le trafic passe par coturn | Les clients n'obtiennent aucun candidat *server-reflexive*, donc aucun chemin direct | coturn doit répondre aux requêtes STUN Binding **anonymes** (cf. [Appels relayés en permanence](#appels-relayés-en-permanence)) |
 
 Contrôles rapides, sans se connecter&nbsp;:
