@@ -113,6 +113,14 @@ Les règles sont dérivées de ce que chaque nœud déclare ; rien à lister à 
 | Réseau | passerelle, tailnet (headscale) ou DNS injoignable (sondes blackbox) |
 | Auto-réparation tailnet | client Tailscale décroché ou watchdog qui boucle (`TailscaleUnhealthy`, `TailscaleFlapping`) |
 
+<Aside type="note" title="Montages réseau et lecture seule">
+Les règles disque ignorent les montages **réseau** (NFS, CIFS…)&nbsp;: ils
+remontent l'espace du serveur, qui alerte déjà pour son propre disque. De même,
+un montage volontairement en **lecture seule** (partage exporté `ro`, média
+optique) ne déclenche pas `FilesystemReadOnly`&nbsp;: la règle vise les
+filesystems remontés en lecture seule par le noyau après des erreurs d'E/S.
+</Aside>
+
 {/* t:p d4e3ff350edb205693bfda166ccbb65803e3c6365b08e39ffdf1110cb2ecd97d */}
 ## Silence pendant les rebuilds
 

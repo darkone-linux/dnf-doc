@@ -137,6 +137,8 @@ services.prometheus.rules = [
 | une nouvelle famille de règles | un `mkXRuleGroups` + l'ajouter au `mergeRuleGroups` du module |
 | câbler un exporter de métriques | exporter dans son module (gated `monitoring-node`, bind `preferredIp`) + job de scrape + `mkXRuleGroups` gated dans `prometheus.nix` |
 | changer un seuil par défaut | `defaultThresholds` dans `alerts.nix` |
+| ne plus alerter sur un FS monté `ro` volontairement | `readOnlyByDesignFstypes` (seuils) dans `alerts.nix` |
+| surveiller (ou non) l'espace d'un montage réseau | `remoteFstypes` (seuils) dans `alerts.nix` |
 | changer la classe d'un nœud | feature `alert-*[:zone]` (aucun code) |
 | forcer/exclure un nœud de la surveillance | feature `alert-non-critical` / `alert-disabled` |
 | surveiller une URL + son certificat TLS | `alerting.network.httpProbeUrls` dans la config |
@@ -144,6 +146,21 @@ services.prometheus.rules = [
 | taire une alerte connue et acceptée | `alerting.silences` dans un module consumer (aucun code) |
 | taire une unité systemd cassée sur tout le parc | `ignoredUnits` dans `dnf/config/alerts.nix` |
 | une nouvelle destination | le bloc `alertmanager` de `prometheus.nix` (receiver + route) |
+
+:::note[Exclure plutôt que taire]
+Une condition permanente et voulue ne se met pas sous silence&nbsp;:
+`alerting.silences` coupe la notification mais laisse l'alerte se déclencher,
+donc rougir les UI, pour toujours. Elle doit sortir du **sélecteur** de la règle.
+Deux listes de seuils le font, dans `mkResourceRuleGroups`&nbsp;:
+
+- `remoteFstypes` — retiré de **toutes** les règles FS. Un montage client
+  remonte l'espace du **serveur**&nbsp;: le surveiller transforme un export
+  plein en une même alerte sur chaque machine qui le monte, alors que le serveur
+  alerte déjà tout seul, avec le vrai point de montage.
+- `readOnlyByDesignFstypes` — retiré de `FilesystemReadOnly` seul (médias
+  optiques). La règle ne surveille donc que les montages censés être accessibles
+  en écriture.
+:::
 
 :::tip[Convention DNF]
 Un helper de `lib/` = un test. Toute fonction ajoutée à `alerts.nix` se double
