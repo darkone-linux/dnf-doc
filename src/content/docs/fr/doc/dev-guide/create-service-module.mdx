@@ -218,7 +218,7 @@ Le framework résout `domain`/`global` en `params` (`fqdn`, `href`, `ip`…) via
 {/* t:p ae9debfa23c989de21ed264ff9032d332e282b341c74b9b7e3ca24a9def26c41 */}
 ## Réseau, base de données et secrets
 
-{/* t:p 26765002e9ee8af933ac0511563de3dec5e099583b16273a1c080d7af79f5df3 */}
+{/* t:p b3fe3e7665270a99320e70e26139338f6cb9e28e920cc13cace628dbeee69d92 */}
 ### Ports internes
 
 Tout port interne qu'un module **lie**, **ouvre** au pare-feu ou **proxifie**
@@ -239,16 +239,28 @@ services ne peuvent pas entrer silencieusement en conflit.
    srvPort = dnfConfig.network.ports.oxicloud;
    ```
 
-3. **Port hérité d'un upstream** (`config.services.<x>.port`, non lié par DNF) :
+3. **Plage de ports** (relais média : un port par flux, lié à la demande) :
+   deux clés `<clé>Start` et `<clé>End` (ex. `turnRelayStart`/`turnRelayEnd`,
+   `livekitRtcUdpStart`/`livekitRtcUdpEnd`). Le service possède *tous* les ports
+   entre les deux bornes ; aucune autre entrée du registre ne doit y tomber.
+4. **Port hérité d'un upstream** (`config.services.<x>.port`, non lié par DNF) :
    l'inscrire plutôt dans `ports.reserved` (denylist anti-conflit) ; le module
    continue de lire `config.services.<x>.port`.
 
 </Steps>
 
-<Aside type="note" title="Unicité testée">
-`dnf/tests/unit/config/network_test.nix` vérifie l'unicité globale entre toutes
-les valeurs `ports.*` et la liste `ports.reserved`. Tout conflit fait échouer la
-suite de tests unitaires.
+<Aside type="note" title="Intégrité testée">
+`dnf/tests/unit/config/network_test.nix` valide tout le registre : forme des
+clés, bornes 1024-65535, plages complètes (`Start` **et** `End`) et ordonnées,
+et surtout qu'aucune entrée n'en recouvre une autre — port isolé, plage entière
+ou valeur `ports.reserved`. Tout conflit fait échouer la suite de tests.
+</Aside>
+
+<Aside type="caution" title="Plage éphémère du noyau">
+Un port `ports.*` doit rester **hors** de `net.ipv4.ip_local_port_range`
+(32768-60999 par défaut) : sinon une connexion sortante d'un service voisin peut
+voler le port avant que le service ne le lie. Le test le vérifie aussi (les
+valeurs `ports.reserved`, choisies en amont, en sont exemptées).
 </Aside>
 
 {/* t:p ce5f822760b5b07f5a3ea4233f2d59de88b4f575227356dfa7569b909f348bd0 */}

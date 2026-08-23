@@ -515,23 +515,54 @@ are served on the Matrix vhost, under `/livekit/sfu` and
 `/livekit/jwt`. Nothing to configure client-side either&nbsp;— Element X and
 Element Web embed Element Call and discover the transport by themselves.
 
-{/* t:p 2a76c1856940ccc984bec5140f15dfa7d1633024a5b01081b71ed22c6d28227a */}
+{/* t:p aa8d326eab9a9e5a1f4418e7f153c1f627cb4ab6bdf868611d4da9bf5cc6b11c */}
 ### Media ports
 
-Media does **not** go through the reverse proxy&nbsp;: clients connect to
-the host directly. These ports must therefore be open up to it, and
-forwarded if it sits behind NAT&nbsp;:
+Media does **not** go through the reverse proxy: clients reach the host
+directly. These ports must therefore be opened up to it, and forwarded if it
+sits behind NAT:
 
-| Port | Usage |
-|---|---|
-| 40000-40100/udp | WebRTC media, one port per participant |
-| 7881/tcp | Fallback for networks that block UDP |
+| Port | Stack | Usage |
+|---|---|---|
+| 30000-30100/udp | MatrixRTC | WebRTC media, one port per participant |
+| 7881/tcp | MatrixRTC | Fallback for networks that block UDP |
+| 3478/udp, 3478/tcp, 5349/tcp | coturn | STUN and TURN negotiation |
+| 61000-65535/udp | coturn | Relayed media |
 
-<Aside type="note" title="Pourquoi pas la plage par défaut">
-LiveKit proposes 50000-51000/udp, which falls **inside** coturn's relay
-range (49152-65535). Co-hosted, the two would fight over the same ports and
-randomly fail calls. DNF therefore moves LiveKit under coturn.
+<Aside type="note" title="Why not the default ranges">
+Both upstream ranges fall into an already occupied window. The LiveKit one
+(50000-51000/udp) sits inside coturn's default relay range (49152-65535):
+co-hosted, the two would fight over the same ports and randomly break calls.
+And this coturn range overlaps the kernel's ephemeral range
+(`net.ipv4.ip_local_port_range`, 32768-60999 by default): any outgoing
+connection from a neighboring service can steal a media port from it. DNF
+therefore moves coturn above the ephemeral range and LiveKit below it.
 </Aside>
+
+{/* t:p 8e53db5780635f4b9a1ce0e6e1bb416bdb0c184b020c65aa5ad91365f0a9aa14 */}
+### Permanently relayed calls
+
+A WebRTC client discovers its public address with a **STUN Binding**
+request, which it always sends **without authentication**, including to the
+TURN server. If coturn rejects it (the `secure-stun` option), the client
+gets no *server-reflexive* candidates: all it has left are its local
+addresses, unusable outside the local network, and its relay address. No
+direct path is ever attempted then: **all** calls traverse coturn, slower
+to establish and with no fallback when the relay saturates.
+
+DNF therefore leaves `secure-stun` disabled. TURN allocations, for their
+part, remain authenticated through the shared secret (`use-auth-secret`):
+only the Binding is anonymous.
+
+To check from an external machine:
+
+```sh
+nix shell nixpkgs#stuntman --command stunclient turn.domain.tld 3478
+```
+
+`Binding test: success` followed by the address as seen by the server: correct.
+`Binding test: fail`: anonymous requests are rejected, every call will be
+relayed.
 
 {/* t:p 0f41ac433fa1137ed832a36a6ca0cd7b09466c8c17ef82ceed896991b4fb8656 */}
 ## Opening the network to federation
@@ -633,12 +664,12 @@ to create a missing bot account&nbsp;: create this account **before**
 migrating, or recreate it with `sudo dnf-mas manage register-user`.
 </Aside>
 
-{/* t:p d4c1af14062aec558aed67109d86aa176de2ff74845e6b847b6913297360ede2 */}
+{/* t:p ce89bb11502bc4f4f785a1b01cb78b4cf4d2071907c78521d1f49bbe01f69e87 */}
 ### Diagnosing a refused SSO connection
 
-After a migration, already open sessions keep working&nbsp;: a broken
-connection is therefore only visible **on the first fresh login**. Follow MAS
-during an attempt&nbsp;:
+After a migration, sessions that are already open keep working: a broken
+connection therefore only shows up **on the first fresh login**. Watch MAS
+during an attempt:
 
 ```sh
 journalctl -u matrix-authentication-service -f
@@ -646,29 +677,30 @@ journalctl -u matrix-authentication-service -f
 
 | Message | Cause | Fix |
 |---|---|---|
-| `wrong signature alg` on `/upstream/callback/…` | MAS expects an RS256 `id_token`, Kanidm signs with ES256 | `id_token_signed_response_alg` of the upstream provider&nbsp;: set to `ES256` by the module |
-| `client registration denied by the policy: invalid redirect_uri` | The `client_uri` advertised by the client does not match its redirect scheme | Do not force `oidc_metadata` in the Element config&nbsp;; its default values pass |
+| `wrong signature alg` on `/upstream/callback/…` | MAS expects an RS256 `id_token`, Kanidm signs with ES256 | `id_token_signed_response_alg` of the upstream provider: set to `ES256` by the module |
+| `client registration denied by the policy: invalid redirect_uri` | The `client_uri` advertised by the client does not match its redirect scheme | Do not force `oidc_metadata` in the Element config; its defaults pass |
 | `M_UNRECOGNIZED` on `/login/sso/redirect` | The path goes to Synapse instead of MAS | Check the `@masCompat` matcher of the Caddy vhost |
-| `User exists` page : "&nbsp;returned "bob" as username, which is not linked&nbsp;" | A friend account already holds the declared user's identifier | Merge or rename (cf. [identifier collision](#identifier-collision-with-a-declared-user)) |
-| "&nbsp;The QR code is not supported&nbsp;" on the client side | The MSC4108 rendezvous channel is missing | `experimental_features.msc4108_enabled`&nbsp;: enabled by the module with MAS |
-| "&nbsp;The call is not supported&nbsp;", `MISSING_MATRIX_RTC_TRANSPORT` | No MatrixRTC backend announced | Enable `matrixRtc.enable` (cf. [Audio and video calls](#audio-and-video-calls)) |
-| Call rings but stays silent, or drops after a few seconds | The media ports do not reach the host | Open 40000-40100/udp and 7881/tcp up to it |
+| Page `User exists`: 'returned "bob" as username, which is not linked' | Another account already occupies the declared user's identifier | Merge or rename (see [identifier collision](#identifier-collision-with-a-declared-user)) |
+| "The QR code is not supported" on the client side | The MSC4108 rendezvous channel is missing | `experimental_features.msc4108_enabled`: enabled by the module along with MAS |
+| "The call is not supported", `MISSING_MATRIX_RTC_TRANSPORT` | No MatrixRTC backend advertised | Enable `matrixRtc.enable` (see [Audio and video calls](#audio-and-video-calls)) |
+| Call that rings but stays silent, or drops after a few seconds | Media ports do not reach the host | Open 30000-30100/udp and 7881/tcp up to it |
+| Call slow to establish, or failing outright, with all traffic going through coturn | Clients get no *server-reflexive* candidates, hence no direct path | coturn must answer **anonymous** STUN Binding requests (see [Permanently relayed calls](#permanently-relayed-calls)) |
 
-Quick checks, without signing in&nbsp;:
+Quick checks, without logging in:
 
 ```sh
-# org.matrix.msc4108 must be true
+# org.matrix.msc4108 doit valoir true
 curl -A Mozilla/5.0 https://matrix.domain.tld/_matrix/client/versions
 
-# must answer 201 and a public url
+# doit répondre 201 et une url publique
 curl -A Mozilla/5.0 -X POST --data probe \
   https://matrix.domain.tld/_matrix/client/unstable/org.matrix.msc4108/rendezvous
 ```
 
 <Aside type="note" title="Two symptoms, two causes">
-A client that switches to an authentication **in the browser** instead of its
-native screen signals a refused dynamic registration&nbsp;; the error that
-possibly follows is a separate problem. Handle both.
+A client falling back to authentication **in the browser** instead of its
+native screen signals a dynamic registration refusal; any error that may
+follow is a separate problem. Address both.
 </Aside>
 
 {/* t:p 54aa52c1f59ff607eec0a2fa9ace69a976ed97dc8baebadd36446c5e4fd98df4 */}
