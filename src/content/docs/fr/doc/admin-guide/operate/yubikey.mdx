@@ -222,6 +222,46 @@ YubiKey branchée même quand la passkey visée est logicielle. Contournement
 immédiat&nbsp;: débrancher la clé.
 :::
 
+## Le trousseau GNOME redemande un mot de passe
+
+Sur un poste de bureau, ouvrir la session en touchant la clé fait apparaître
+peu après une fenêtre **« Saisissez le mot de passe pour déverrouiller votre
+trousseau de connexion »**. Le symptôme ne se produit jamais quand la session
+est ouverte au mot de passe.
+
+La cause est structurelle. pam_u2f est déclaré `sufficient`&nbsp;: dès que la
+clé est touchée, la pile d'authentification s'arrête&nbsp;— avant
+`pam_gnome_keyring`, qui ne reçoit donc aucun mot de passe. Le démon démarre
+ensuite verrouillé (`auto_start`), et GNOME Online Accounts comme
+evolution-data-server réclament le service de secrets dès l'ouverture de
+session.
+
+Remède, une fois par poste et par utilisateur&nbsp;: donner au trousseau de
+connexion un mot de passe **vide**.
+
+<Steps>
+
+1. Ouvrir **Mots de passe et clés** (`seahorse`).
+
+2. Clic droit sur le trousseau **Connexion** → *Changer le mot de passe*.
+
+3. Ancien mot de passe&nbsp;: celui de la session. Nouveau&nbsp;: le laisser
+   vide, valider, accepter l'avertissement.
+
+</Steps>
+
+Le trousseau se déverrouille alors seul à chaque session. Les secrets qu'il
+contient passent en clair dans `~/.local/share/keyrings`, sur un disque déjà
+chiffré par LUKS. Rien d'autre ne change&nbsp;: comptes en ligne, agendas et
+secrets Wi-Fi continuent de fonctionner.
+
+:::note[Les alternatives sont moins bonnes]
+Désactiver `gnome-keyring` casse GNOME Online Accounts, evolution-data-server
+et les secrets Wi-Fi par utilisateur. Retirer pam_u2f de `gdm-password` conserve
+le chiffrement du trousseau mais fait perdre l'ouverture de session par simple
+appui sur la clé.
+:::
+
 {/* t:p f3a81a37690c7a0b53b9fff99e04621b5b386bb92666e2115c57a24cbf773bcc */}
 ## Une clé pour plusieurs comptes
 
