@@ -730,6 +730,23 @@ cours.
 just passwd-livekit
 ```
 
+### ✳️ `passwd-nextcloud`
+
+Génère les secrets internes de
+[Nextcloud](/fr/doc/admin-guide/operate/nextcloud/)&nbsp;: mot de passe du
+compte d'administration local, jeton du tableau blanc, et secret du client
+OAuth2 déclaré auprès de Kanidm (un par instance, nommé d'après le
+sous-domaine).
+
+:::tip[Idempotent]
+N'écrase jamais un secret existant. La relancer après avoir déclaré une
+nouvelle instance ne complète que ce qui manque.
+:::
+
+```sh
+just passwd-nextcloud
+```
+
 {/* t:p 492a5aa3b45a9f68964c089348bdb4f0284b5dd11ec4ad7a6c1922473d97cb9d */}
 ### ✳️ `yubikey <utilisateur> [clé] [action]`
 

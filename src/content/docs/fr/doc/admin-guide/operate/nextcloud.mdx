@@ -28,13 +28,28 @@ hosts:
         domain: "cloud"
 ```
 
-Deux [secrets](/fr/doc/admin-guide/operate/secrets/) doivent exister avant le
-premier déploiement.
+Les [secrets](/fr/doc/admin-guide/operate/secrets/) du service se génèrent en
+une commande, à lancer avant le premier déploiement&nbsp;:
+
+```sh
+just passwd-nextcloud
+```
 
 | Secret | Rôle |
 |---|---|
-| `nextcloud-admin-password` | Mot de passe initial du compte d'administration |
+| `nextcloud-admin-password` | Compte d'administration local |
 | `nextcloud-whiteboard-secret` | Jeton partagé avec le tableau blanc |
+| `oidc-secret-nextcloud…` | Client OAuth2 du service auprès de Kanidm |
+
+Aucun de ces trois secrets n'a de sens pour un humain&nbsp;: ils sont tirés au
+hasard. Le nom du dernier suit le sous-domaine déclaré (`oidc-secret-nextcloud`
+si le service répond sur `nextcloud`, `oidc-secret-nextcloud-cloud` s'il répond
+sur `cloud`).
+
+:::tip[Idempotent]
+La commande n'écrase jamais un secret existant. La relancer après avoir ajouté
+une instance ne complète que ce qui manque.
+:::
 
 :::caution[Secret manquant = déploiement en échec]
 `sops-nix` refuse d'activer la configuration si une entrée manque dans
@@ -150,5 +165,5 @@ comprise, est décrite dans
 |---|---|
 | Connexion impossible pour l'administrateur | Passer par `/login?direct=1` |
 | Synchronisation lente sur les postes | `notify_push:self-test` sur le serveur |
-| Le tableau blanc ne répond pas | `whiteboard` absent de `plugins`, ou secret manquant |
+| Le tableau blanc ne répond pas | `whiteboard` absent de `plugins`, ou `just passwd-nextcloud` jamais lancé |
 | Le client redemande son autorisation à chaque session | Trousseau de session non déverrouillé |
