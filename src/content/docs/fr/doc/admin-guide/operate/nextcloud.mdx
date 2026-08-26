@@ -172,8 +172,24 @@ rm -rf ~/.config/Nextcloud
 systemctl --user start nextcloud-client.service
 ```
 
+:::caution[Tuer le bon processus]
+Le binaire s'appelle `nextcloud` mais le processus porte le nom du wrapper
+Nix, `.nextcloud-wrap`&nbsp;: un `pkill -x nextcloud` le manque. L'instance
+survivante réécrit alors l'ancienne configuration que l'on vient d'effacer.
+Vérifier avec `pgrep -af nextcloud-client` avant de supprimer le dossier.
+:::
+
 Le compte en ligne, lui, se réinitialise depuis **Paramètres → Comptes en
 ligne**, ou simplement en relançant l'assistant.
+
+:::note[Le démarrage automatique appartient au framework]
+Le client écrit son propre `~/.config/autostart/Nextcloud.desktop`, qui le
+lance sans l'adresse pré-remplie et double l'unité systemd. Le framework le
+remplace par une entrée `Hidden=true`. Sur un poste qui portait déjà
+l'ancienne, elle est mise de côté en `.dnf-backup` à la première activation.
+Le démarrage à l'ouverture de session reste piloté par
+`enableNextcloudAutoStart`.
+:::
 
 :::note[Identifiants hérités]
 Les comptes créés avant le SSO déclaratif portent un identifiant Nextcloud de
