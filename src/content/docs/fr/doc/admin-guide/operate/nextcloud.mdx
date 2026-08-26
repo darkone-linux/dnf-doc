@@ -1,0 +1,154 @@
+---
+title: Nextcloud (cloud personnel)
+sidebar:
+  label: Nextcloud
+  order: 9.5
+lang: fr
+---
+
+import { Steps } from '@astrojs/starlight/components';
+
+[Nextcloud](https://nextcloud.com/) héberge les fichiers, agendas et contacts du
+réseau. Le service est relié à [Kanidm](/fr/doc/admin-guide/operate/sso/)&nbsp;:
+aucun mot de passe Nextcloud à créer, le compte du réseau suffit.
+
+Sur les postes, le client de bureau est installé et **déjà rattaché au compte**.
+Aucune synchronisation n'est mise en place d'office.
+
+## Activer le service
+
+```yaml
+# etc/config.yaml
+hosts:
+  - hostname: "server1"
+    profile: "server"
+    services:
+      nextcloud:
+        title: "Mon cloud"
+        domain: "cloud"
+```
+
+Deux [secrets](/fr/doc/admin-guide/operate/secrets/) doivent exister avant le
+premier déploiement.
+
+| Secret | Rôle |
+|---|---|
+| `nextcloud-admin-password` | Mot de passe initial du compte d'administration |
+| `nextcloud-whiteboard-secret` | Jeton partagé avec le tableau blanc |
+
+:::caution[Secret manquant = déploiement en échec]
+`sops-nix` refuse d'activer la configuration si une entrée manque dans
+`usr/secrets/`. Le tableau blanc n'est déployé que si `whiteboard` figure dans
+`plugins`, mais son secret reste attendu.
+:::
+
+## Options du service
+
+| Option | Défaut | Effet |
+|---|---|---|
+| `darkone.service.nextcloud.plugins` | `calendar`, `contacts` | Applications activées |
+| `darkone.service.nextcloud.adminUser` | `admin` | Nom du compte d'administration |
+| `darkone.service.nextcloud.enableSsoRedirect` | `true` | Renvoie directement vers Kanidm |
+
+### Redirection SSO
+
+Avec `enableSsoRedirect`, Nextcloud n'affiche plus son formulaire de connexion
+et envoie l'utilisateur vers Kanidm. Un clic de moins à chaque connexion, y
+compris pour le client de bureau.
+
+:::caution[Le formulaire local disparaît]
+Le compte d'administration se connecte alors par
+`https://cloud.domain.tld/login?direct=1`.
+:::
+
+### Notifications instantanées
+
+`notify_push` est activé&nbsp;: les postes reçoivent les changements par
+websocket au lieu d'interroger le serveur toutes les trente secondes. Charge
+serveur nettement réduite, synchronisation quasi immédiate.
+
+Vérification depuis le serveur&nbsp;:
+
+```sh
+sudo -u nextcloud nextcloud-occ notify_push:self-test
+```
+
+Le test réclame l'URL publique du service, donc le reverse proxy de la zone
+doit être joignable. L'unité réessaie pendant quinze minutes après un
+déploiement, le temps que la passerelle finisse de démarrer.
+
+## Sur les postes de travail
+
+Le client est installé dès qu'un service `nextcloud` existe sur le réseau.
+
+| Option | Défaut | Effet |
+|---|---|---|
+| `darkone.home.office.enableNextcloud` | service détecté | Installe le client de bureau |
+| `darkone.home.office.nextcloudServer` | `null` | Force une autre instance |
+| `darkone.home.office.enableNextcloudAutoStart` | `true` | Démarre en arrière-plan à l'ouverture de session |
+| `darkone.home.office.enableNextcloudWebdav` | `true` | Fournit l'assistant d'accès WebDAV |
+| `darkone.home.office.nextcloudSyncDir` | `null` | Dossier proposé dans l'assistant |
+
+`nextcloudServer` accepte n'importe quelle URL, y compris une instance externe
+au réseau.
+
+:::note[Aucune synchronisation imposée]
+`nextcloudSyncDir` vaut `null` volontairement. L'assistant s'arrête sur la page
+de choix du dossier et l'utilisateur décide de ce qu'il veut rapatrier, ou de ne
+rien synchroniser du tout. Renseigner l'option saute cette page, ce qui n'est
+souhaitable que sur un parc aux comptes homogènes et de petite taille.
+:::
+
+### Première connexion
+
+<Steps>
+
+1. À l'ouverture de session, la fenêtre du client s'ouvre, l'adresse du serveur
+   est déjà remplie.
+2. L'utilisateur clique sur **Se connecter**&nbsp;: le navigateur s'ouvre sur
+   Kanidm, où sa session est en général déjà active.
+3. Il autorise l'accès. Aucun mot de passe n'est saisi.
+4. L'assistant propose enfin de choisir un dossier. Il peut tout fermer ici
+   sans rien synchroniser&nbsp;: le compte reste connecté.
+
+</Steps>
+
+### Accès aux fichiers via WebDAV
+
+Pour parcourir ses fichiers depuis le gestionnaire de fichiers sans rien
+synchroniser, l'utilisateur lance **Fichiers Nextcloud (connexion)** depuis le
+menu, ou `nextcloud-webdav-login` dans un terminal.
+
+<Steps>
+
+1. Le navigateur s'ouvre sur Kanidm, l'utilisateur autorise l'accès.
+2. Un marque-page apparaît dans le gestionnaire de fichiers.
+3. Si un mot de passe est demandé à la première ouverture, l'assistant l'a
+   affiché et copié dans le presse-papier. Cocher **Retenir pour toujours**.
+
+</Steps>
+
+:::note[Pourquoi un assistant]
+Nextcloud refuse de créer un mot de passe d'application depuis son interface
+web pour un compte SSO&nbsp;: il réclame la confirmation d'un mot de passe local
+qui n'existe pas ([user_oidc#468](https://github.com/nextcloud/user_oidc/issues/468)).
+L'assistant emprunte le même chemin que le client de bureau, qui lui n'est pas
+concerné.
+:::
+
+## Mettre à jour
+
+Nextcloud refuse de sauter une version majeure. La version est épinglée dans le
+module, à faire évoluer **une majeure à la fois**, après avoir vérifié que
+l'instance annonce bien la précédente. La procédure complète, sauvegarde
+comprise, est décrite dans
+[Services](/fr/doc/admin-guide/operate/services/).
+
+## En cas de problème
+
+| Symptôme | Piste |
+|---|---|
+| Connexion impossible pour l'administrateur | Passer par `/login?direct=1` |
+| Synchronisation lente sur les postes | `notify_push:self-test` sur le serveur |
+| Le tableau blanc ne répond pas | `whiteboard` absent de `plugins`, ou secret manquant |
+| Le client redemande son autorisation à chaque session | Trousseau de session non déverrouillé |
