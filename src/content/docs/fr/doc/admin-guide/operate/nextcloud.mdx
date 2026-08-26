@@ -101,7 +101,7 @@ Le client est installé dès qu'un service `nextcloud` existe sur le réseau.
 | `darkone.home.office.enableNextcloud` | service détecté | Installe le client de bureau |
 | `darkone.home.office.nextcloudServer` | `null` | Force une autre instance |
 | `darkone.home.office.enableNextcloudAutoStart` | `true` | Démarre en arrière-plan à l'ouverture de session |
-| `darkone.home.office.enableNextcloudWebdav` | `true` | Fournit l'assistant d'accès WebDAV |
+| `darkone.home.office.enableNextcloudWebdav` | `true` | Fournit l'assistant de liaison du compte |
 | `darkone.home.office.nextcloudSyncDir` | `null` | Dossier proposé dans l'assistant |
 
 `nextcloudServer` accepte n'importe quelle URL, y compris une instance externe
@@ -128,18 +128,20 @@ souhaitable que sur un parc aux comptes homogènes et de petite taille.
 
 </Steps>
 
-### Accès aux fichiers via WebDAV
+### Accès aux fichiers, à l'agenda et aux contacts
 
 Pour parcourir ses fichiers depuis le gestionnaire de fichiers sans rien
-synchroniser, l'utilisateur lance **Fichiers Nextcloud (connexion)** depuis le
+synchroniser, l'utilisateur lance **Connecter mon compte Nextcloud** depuis le
 menu, ou `nextcloud-webdav-login` dans un terminal.
 
 <Steps>
 
 1. Le navigateur s'ouvre sur Kanidm, l'utilisateur autorise l'accès.
-2. Un marque-page apparaît dans le gestionnaire de fichiers.
-3. Si un mot de passe est demandé à la première ouverture, l'assistant l'a
-   affiché et copié dans le presse-papier. Cocher **Retenir pour toujours**.
+2. L'assistant enregistre un **compte en ligne GNOME**&nbsp;: le partage
+   apparaît dans le gestionnaire de fichiers, l'agenda et les contacts dans
+   Evolution.
+3. Rien d'autre à saisir. L'assistant affiche tout de même le mot de passe
+   d'application, utilisable depuis n'importe quel autre client WebDAV.
 
 </Steps>
 
@@ -149,6 +151,36 @@ web pour un compte SSO&nbsp;: il réclame la confirmation d'un mot de passe loca
 qui n'existe pas ([user_oidc#468](https://github.com/nextcloud/user_oidc/issues/468)).
 L'assistant emprunte le même chemin que le client de bureau, qui lui n'est pas
 concerné.
+:::
+
+:::caution[Relancer l'assistant]
+Une nouvelle exécution **remplace** le compte en ligne au lieu d'en ajouter un
+second, et émet un nouveau mot de passe d'application. Les précédents restent
+listés dans **Paramètres → Sécurité** de Nextcloud, où ils se révoquent.
+:::
+
+### Repartir d'une configuration saine
+
+L'adresse pré-remplie ne vaut que pour la **création** du compte dans
+l'assistant. Un poste qui en porte déjà un — hérité d'une instance antérieure,
+par exemple — le conserve tel quel, avec son ancienne adresse&nbsp;: le client
+s'affiche alors « hors ligne », figé, sans aucune action possible.
+
+```sh
+systemctl --user stop nextcloud-client.service
+rm -rf ~/.config/Nextcloud
+systemctl --user start nextcloud-client.service
+```
+
+Le compte en ligne, lui, se réinitialise depuis **Paramètres → Comptes en
+ligne**, ou simplement en relançant l'assistant.
+
+:::note[Identifiants hérités]
+Les comptes créés avant le SSO déclaratif portent un identifiant Nextcloud de
+la forme `IDM-<uuid>`. `user_oidc` ne renomme jamais un compte existant&nbsp;:
+cet identifiant reste figé, sans conséquence sur l'usage. Seule une migration
+côté serveur pourrait le changer, au prix de la perte du rattachement aux
+données.
 :::
 
 ## Mettre à jour
@@ -167,3 +199,5 @@ comprise, est décrite dans
 | Synchronisation lente sur les postes | `notify_push:self-test` sur le serveur |
 | Le tableau blanc ne répond pas | `whiteboard` absent de `plugins`, ou `just passwd-nextcloud` jamais lancé |
 | Le client redemande son autorisation à chaque session | Trousseau de session non déverrouillé |
+| Le client affiche un compte inconnu, hors ligne | Configuration antérieure&nbsp;: vider `~/.config/Nextcloud` |
+| Le partage demande un mot de passe dans le gestionnaire de fichiers | Assistant jamais lancé, ou trousseau verrouillé |
