@@ -8,6 +8,10 @@ lang: fr
 
 import { Steps } from '@astrojs/starlight/components';
 
+{/* t:main */}
+{/* t:h 846d2fdc5868fd4437d6359e175d0659889dd2c2d8dc2064a28230cda9cb5b26 */}
+
+{/* t:p 5c4b672badce5f3158d33ae6abe20c81626d7eafc24df7275b186ccd799b6d94 */}
 [Nextcloud](https://nextcloud.com/) héberge les fichiers, agendas et contacts du
 réseau. Le service est relié à [Kanidm](/fr/doc/admin-guide/operate/sso/)&nbsp;:
 aucun mot de passe Nextcloud à créer, le compte du réseau suffit.
@@ -15,6 +19,7 @@ aucun mot de passe Nextcloud à créer, le compte du réseau suffit.
 Sur les postes, le client de bureau est installé et **déjà rattaché au compte**.
 Aucune synchronisation n'est mise en place d'office.
 
+{/* t:p 2f84e690596d9ff3c14c3f10d4413840be77c6a8c0aa3be5f2bc4211fa32685f */}
 ## Activer le service
 
 ```yaml
@@ -28,11 +33,11 @@ hosts:
         domain: "cloud"
 ```
 
-Les [secrets](/fr/doc/admin-guide/operate/secrets/) du service se génèrent en
-une commande, à lancer avant le premier déploiement&nbsp;:
+Les [secrets](/fr/doc/admin-guide/operate/secrets/) du service se génèrent avec
+ceux du reste du parc, à lancer avant le premier déploiement&nbsp;:
 
 ```sh
-just passwd-nextcloud
+just configure-admin-host
 ```
 
 | Secret | Rôle |
@@ -57,6 +62,7 @@ une instance ne complète que ce qui manque.
 `plugins`, mais son secret reste attendu.
 :::
 
+{/* t:p 344bc6a5b1cd07a651216ab0294d605b9e052aa802530a69cf0ee455880c4b6c */}
 ## Options du service
 
 | Option | Défaut | Effet |
@@ -65,6 +71,7 @@ une instance ne complète que ce qui manque.
 | `darkone.service.nextcloud.adminUser` | `admin` | Nom du compte d'administration |
 | `darkone.service.nextcloud.enableSsoRedirect` | `true` | Renvoie directement vers Kanidm |
 
+{/* t:p 9beac9661f0a69d8f1a8a49dc24a7317f720e20b65733415f5d7798b928afc77 */}
 ### Redirection SSO
 
 Avec `enableSsoRedirect`, Nextcloud n'affiche plus son formulaire de connexion
@@ -76,6 +83,7 @@ Le compte d'administration se connecte alors par
 `https://cloud.domain.tld/login?direct=1`.
 :::
 
+{/* t:p 47b03383b33b86500a75aa310b28a29158ea438f2516c082ad202935c0b6a580 */}
 ### Notifications instantanées
 
 `notify_push` est activé&nbsp;: les postes reçoivent les changements par
@@ -92,6 +100,7 @@ Le test réclame l'URL publique du service, donc le reverse proxy de la zone
 doit être joignable. L'unité réessaie pendant quinze minutes après un
 déploiement, le temps que la passerelle finisse de démarrer.
 
+{/* t:p 7798ab1fcbf6ab1f3f4c011b4ec84f9a2e5ed24cf34f56c3d666cfda32b3b813 */}
 ## Sur les postes de travail
 
 Le client est installé dès qu'un service `nextcloud` existe sur le réseau.
@@ -114,6 +123,7 @@ rien synchroniser du tout. Renseigner l'option saute cette page, ce qui n'est
 souhaitable que sur un parc aux comptes homogènes et de petite taille.
 :::
 
+{/* t:p 93efeefbb79688dbf545631f9d54139d5e31e92d3a9fcf39268c694ad5f6767a */}
 ### Première connexion
 
 <Steps>
@@ -128,6 +138,7 @@ souhaitable que sur un parc aux comptes homogènes et de petite taille.
 
 </Steps>
 
+{/* t:p 2a4b99bf4afcb9074e9c2dd0ff30d17e8cd34c02142cf7bcb6bec47fd7e9fb09 */}
 ### Accès aux fichiers, à l'agenda et aux contacts
 
 Pour parcourir ses fichiers depuis le gestionnaire de fichiers sans rien
@@ -159,6 +170,7 @@ second, et émet un nouveau mot de passe d'application. Les précédents restent
 listés dans **Paramètres → Sécurité** de Nextcloud, où ils se révoquent.
 :::
 
+{/* t:p 077ad039151ae4bb2db7fd4f3f44b4048a34529a97b3987f8fde36dbe0c755a6 */}
 ### Repartir d'une configuration saine
 
 L'adresse pré-remplie ne vaut que pour la **création** du compte dans
@@ -199,6 +211,7 @@ côté serveur pourrait le changer, au prix de la perte du rattachement aux
 données.
 :::
 
+{/* t:p f578ef047438191329fb5dde22ae52905a0028f9af4408157a38aaa4171a3361 */}
 ## Mettre à jour
 
 Nextcloud refuse de sauter une version majeure. La version est épinglée dans le
@@ -207,13 +220,14 @@ l'instance annonce bien la précédente. La procédure complète, sauvegarde
 comprise, est décrite dans
 [Services](/fr/doc/admin-guide/operate/services/).
 
+{/* t:p aea17bfe5ee675dd93d3bb82048114c2ceb8e59eb637a8db1c00345294d96ae1 */}
 ## En cas de problème
 
 | Symptôme | Piste |
 |---|---|
 | Connexion impossible pour l'administrateur | Passer par `/login?direct=1` |
 | Synchronisation lente sur les postes | `notify_push:self-test` sur le serveur |
-| Le tableau blanc ne répond pas | `whiteboard` absent de `plugins`, ou `just passwd-nextcloud` jamais lancé |
+| Le tableau blanc ne répond pas | `whiteboard` absent de `plugins`, ou `just configure-admin-host` jamais relancé depuis |
 | Le client redemande son autorisation à chaque session | Trousseau de session non déverrouillé |
 | Le client affiche un compte inconnu, hors ligne | Configuration antérieure&nbsp;: vider `~/.config/Nextcloud` |
 | Le partage demande un mot de passe dans le gestionnaire de fichiers | Assistant jamais lancé, ou trousseau verrouillé |

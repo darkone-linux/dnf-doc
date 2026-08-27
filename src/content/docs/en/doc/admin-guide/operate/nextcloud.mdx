@@ -1,0 +1,228 @@
+---
+title: Nextcloud (Personal Cloud)
+sidebar:
+  label: Nextcloud
+  order: 9.5
+lang: en
+---
+
+import { Steps } from '@astrojs/starlight/components';
+
+{/* t:translated-from fr */}
+{/* t:h 846d2fdc5868fd4437d6359e175d0659889dd2c2d8dc2064a28230cda9cb5b26 */}
+
+{/* t:p 5c4b672badce5f3158d33ae6abe20c81626d7eafc24df7275b186ccd799b6d94 */}
+[Nextcloud](https://nextcloud.com/) hosts files, calendars and contacts for the
+network. The service is linked to [Kanidm](/en/doc/admin-guide/operate/sso/)&nbsp;:
+no Nextcloud password to create, the network account is enough.
+
+On workstations, the desktop client is installed and **already linked to the account**.
+No synchronization is set up by default.
+
+{/* t:p 2f84e690596d9ff3c14c3f10d4413840be77c6a8c0aa3be5f2bc4211fa32685f */}
+## Activating the service
+
+```yaml
+# etc/config.yaml
+hosts:
+  - hostname: "server1"
+    profile: "server"
+    services:
+      nextcloud:
+        title: "Mon cloud"
+        domain: "cloud"
+```
+
+The [secrets](/en/doc/admin-guide/operate/secrets/) for the service are generated
+alongside those for the rest of the fleet, to be run before the first deployment&nbsp;:
+
+```sh
+just configure-admin-host
+```
+
+| Secret | Role |
+|---|---|
+| `nextcloud-admin-password` | Local administration account |
+| `nextcloud-whiteboard-secret` | Token shared with the whiteboard |
+| `oidc-secret-nextcloud…` | OAuth2 client for the service in Kanidm |
+
+None of these three secrets is meaningful to a human: they are randomly
+generated. The last one's name follows the declared subdomain (`oidc-secret-nextcloud`
+if the service responds on `nextcloud`, `oidc-secret-nextcloud-cloud` if it responds
+on `cloud`).
+
+:::tip[Idempotent]
+The command never overwrites an existing secret. Running it again after adding
+an instance only fills in what is missing.
+:::
+
+:::caution[Missing secret = failed deployment]
+`sops-nix` refuses to activate the configuration if an entry is missing in
+`usr/secrets/`. The whiteboard is only deployed if `whiteboard` is listed in
+`plugins`, but its secret is still expected.
+:::
+
+{/* t:p 344bc6a5b1cd07a651216ab0294d605b9e052aa802530a69cf0ee455880c4b6c */}
+## Service options
+
+| Option | Default | Effect |
+|---|---|---|
+| `darkone.service.nextcloud.plugins` | `calendar`, `contacts` | Enabled applications |
+| `darkone.service.nextcloud.adminUser` | `admin` | Administration account name |
+| `darkone.service.nextcloud.enableSsoRedirect` | `true` | Redirects directly to Kanidm |
+
+{/* t:p 9beac9661f0a69d8f1a8a49dc24a7317f720e20b65733415f5d7798b928afc77 */}
+### SSO redirection
+
+With `enableSsoRedirect`, Nextcloud no longer displays its login form and
+sends the user to Kanidm. One less click on every login, including for the
+desktop client.
+
+:::caution[The local form disappears]
+The administration account then logs in via
+`https://cloud.domain.tld/login?direct=1`.
+:::
+
+{/* t:p 47b03383b33b86500a75aa310b28a29158ea438f2516c082ad202935c0b6a580 */}
+### Instant notifications
+
+`notify_push` is enabled: workstations receive changes via websocket instead
+of polling the server every thirty seconds. Significantly reduced server load,
+near-instant synchronization.
+
+Verification from the server&nbsp;:
+
+```sh
+sudo -u nextcloud nextcloud-occ notify_push:self-test
+```
+
+The test requires the public URL of the service, so the zone's reverse proxy
+must be reachable. The unit retries for fifteen minutes after a deployment,
+waiting for the gateway to finish starting.
+
+{/* t:p 7798ab1fcbf6ab1f3f4c011b4ec84f9a2e5ed24cf34f56c3d666cfda32b3b813 */}
+## On workstations
+
+The client is installed as soon as a `nextcloud` service exists on the network.
+
+| Option | Default | Effect |
+|---|---|---|
+| `darkone.home.office.enableNextcloud` | service detected | Installs the desktop client |
+| `darkone.home.office.nextcloudServer` | `null` | Forces another instance |
+| `darkone.home.office.enableNextcloudAutoStart` | `true` | Starts in the background at login |
+| `darkone.home.office.enableNextcloudWebdav` | `true` | Provides the account linking wizard |
+| `darkone.home.office.nextcloudSyncDir` | `null` | Folder suggested in the wizard |
+
+`nextcloudServer` accepts any URL, including an instance external to the
+network.
+
+:::note[No forced synchronization]
+`nextcloudSyncDir` is deliberately set to `null`. The wizard stops on the
+folder selection page and the user decides what they want to sync, or to sync
+nothing at all. Setting the option skips this page, which is only desirable
+on a fleet with homogeneous accounts and small size.
+:::
+
+{/* t:p 93efeefbb79688dbf545631f9d54139d5e31e92d3a9fcf39268c694ad5f6767a */}
+### First login
+
+<Steps>
+
+1. At login, the client window opens with the server address already filled in.
+2. The user clicks **Log in**: the browser opens Kanidm, where their session is
+   generally already active.
+3. They grant access. No password is entered.
+4. The wizard then offers to choose a folder. It can be closed here without
+   syncing anything: the account remains connected.
+
+</Steps>
+
+{/* t:p 2a4b99bf4afcb9074e9c2dd0ff30d17e8cd34c02142cf7bcb6bec47fd7e9fb09 */}
+### Accessing files, calendar and contacts
+
+To browse files from the file manager without syncing anything, the user
+launches **Connect my Nextcloud account** from the menu, or
+`nextcloud-webdav-login` in a terminal.
+
+<Steps>
+
+1. The browser opens Kanidm, the user grants access.
+2. The wizard creates a **GNOME online account**: the share appears in the
+   file manager, and the calendar and contacts in Evolution.
+3. Nothing else to enter. The wizard still displays the application password,
+   usable from any other WebDAV client.
+
+</Steps>
+
+:::note[Why a wizard]
+Nextcloud refuses to create an application password from its web interface
+for an SSO account: it requires confirmation of a local password that does
+not exist ([user_oidc#468](https://github.com/nextcloud/user_oidc/issues/468)).
+The wizard uses the same path as the desktop client, which is not affected.
+:::
+
+:::caution[Relaunching the wizard]
+A new run **replaces** the online account instead of adding a second one,
+and issues a new application password. Previous ones remain listed in
+**Settings → Security** in Nextcloud, where they can be revoked.
+:::
+
+{/* t:p 077ad039151ae4bb2db7fd4f3f44b4048a34529a97b3987f8fde36dbe0c755a6 */}
+### Starting from a clean configuration
+
+The pre-filled address only applies to **creating** the account in the
+wizard. A workstation that already has one — inherited from a previous
+instance, for example — keeps it as-is, with its old address: the client
+then shows as "offline", frozen, with no possible action.
+
+```sh
+systemctl --user stop nextcloud-client.service
+rm -rf ~/.config/Nextcloud
+systemctl --user start nextcloud-client.service
+```
+
+:::caution[Kill the right process]
+The binary is called `nextcloud` but the process bears the name of the Nix
+wrapper, `.nextcloud-wrap`: a `pkill -x nextcloud` misses it. The surviving
+instance then rewrites the old configuration you just deleted. Check with
+`pgrep -af nextcloud-client` before removing the directory.
+:::
+
+The online account is reset from **Settings → Online Accounts**, or simply by
+relaunching the wizard.
+
+:::note[Autostart belongs to the framework]
+The client writes its own `~/.config/autostart/Nextcloud.desktop`, which
+launches it without the pre-filled address and duplicates the systemd unit.
+The framework replaces it with a `Hidden=true` entry. On a workstation that
+already had the old one, it is backed up to `.dnf-backup` on first activation.
+Login startup is still controlled by `enableNextcloudAutoStart`.
+:::
+
+:::note[Inherited credentials]
+Accounts created before declarative SSO carry a Nextcloud identifier in the
+form `IDM-<uuid>`. `user_oidc` never renames an existing account: this
+identifier remains fixed, with no impact on usage. Only a server-side
+migration could change it, at the cost of losing the link to data.
+:::
+
+{/* t:p f578ef047438191329fb5dde22ae52905a0028f9af4408157a38aaa4171a3361 */}
+## Updating
+
+Nextcloud refuses to skip a major version. The version is pinned in the
+module and must be advanced **one major version at a time**, after verifying
+that the instance reports the previous one. The full procedure, including
+backup, is described in
+[Services](/en/doc/admin-guide/operate/services/).
+
+{/* t:p aea17bfe5ee675dd93d3bb82048114c2ceb8e59eb637a8db1c00345294d96ae1 */}
+## Troubleshooting
+
+| Symptom | Lead |
+|---|---|
+| Administrator cannot log in | Use `/login?direct=1` |
+| Slow synchronization on workstations | `notify_push:self-test` on the server |
+| Whiteboard not responding | `whiteboard` missing from `plugins`, or `just configure-admin-host` never re-run |
+| Client asks for authorization on every session | Keyring not unlocked |
+| Client shows an unknown, offline account | Previous configuration: clear `~/.config/Nextcloud` |
+| Share asks for a password in the file manager | Wizard never launched, or keyring locked |

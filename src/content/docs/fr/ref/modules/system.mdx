@@ -452,59 +452,76 @@ darkone.system.testing = {
 
 <hr/>
 
-{/* t:p 642bacfcf51078dd9a64dddd4a9943e3226650fbeb5b7112d09aad835014acc8 */}
+{/* t:p cdafe2bacbfcc4b639d7745e59723cf89954e3fbea0a79b78618c4865093ae41 */}
 ### &#x2699; darkone.system.yubikey
 
-Authentification forte YubiKey : PAM U2F à l'échelle du parc + LUKS FIDO2 déclaratif.
+Authentification forte YubiKey&nbsp;: PAM U2F + FIDO2 LUKS déclaratif pour toute la flotte.
 
-Un enrôlement physique par (utilisateur, clé) sur l'hôte admin — `just yubikey
-<user> [key] [action]` — alimente :
+Un enregistrement physique par (utilisateur, clé) sur l'hôte admin — `just yubikey
+<user> [key] [action]` — alimente&nbsp;:
 
-- un registre **public** `usr/secrets/yubikeys.json` dans l'espace de travail
-  consommateur : identifiant pamu2fcfg, identifiant de l'identifiant hmac-secret FIDO2 et sel
-  (tous inutiles sans la clé physique, donc versionnables) ;
-- un secret sops `yubikey/<user>/<key>/luks-secret` (la phrase secrète LUKS dérivée de FIDO2)
-  plus la `luks-passphrase` partagée (la phrase secrète saisie à l'installation de disko, nécessaire pour autoriser de nouveaux keyslots).
+- un registre **public** `usr/secrets/yubikeys.json` dans l'espace de
+  travail consommateur&nbsp;: identifiant pamu2fcfg, credential id et salt
+  FIDO2 hmac-secret (tout est inutilisable sans la clé physique, donc
+  commitable) ;
+- un secret sops `yubikey/<user>/<key>/luks-secret` (la phrase de passe
+  LUKS dérivée de FIDO2) plus le `luks-passphrase` partagé (la phrase de
+  passe tapée à l'installation disko, nécessaire pour autoriser les nouveaux
+  keyslots).
 
-Le module propage ensuite tout de manière déclarative (`just apply`), sans
-jamais brancher la clé sur les hôtes cibles :
+Le module propage ensuite tout de façon déclarative (`just apply`), sans
+jamais brancher la clé sur les hôtes cibles&nbsp;:
 
-- **connexion / sudo / greeter** : pam_u2f comme mot de passe *alternatif*
-  (`sufficient`) : toucher la clé ouvre la session, le mot de passe sops reste le
-  repli automatique. Un identifiant est valable à l'échelle du parc grâce à
-  l'origine fixe (`pam://<network.domain>`).
-- **hôtes chiffrés** : un service oneshot auto-enrôle chaque clé déclarée dans
-  chaque en-tête LUKS2 déclaré par disko (keyslot + jeton `systemd-fido2`, le
-  format exact écrit par `systemd-cryptenroll`) et supprime celles révoquées. La
-  clé physique n'est nécessaire qu'au démarrage pour déverrouiller le disque.
+- **login / sudo / greeter**&nbsp;: pam_u2f en *alternative* au mot de passe
+  (`sufficient`) : toucher la clé connecte, le mot de passe sops reste le
+  repli automatique. Un identifiant est valable pour toute la flotte grâce
+  à l'origine fixe (`pam://<network.domain>`).
+- **hôtes chiffrés**&nbsp;: un service oneshot auto-enregistre chaque clé
+  déclarée dans chaque en-tête LUKS2 déclaré par disko (keyslot +
+  token `systemd-fido2`, le format exact écrit par `systemd-cryptenroll`)
+  et purge celles révoquées. La clé physique n'est nécessaire qu'au
+  démarrage pour déverrouiller le disque.
 
-:::note[Zéro configuration]
-Activé par défaut, mais totalement inerte tant que le fichier de registre
-n'existe pas. Le support LUKS s'appuie sur les volumes LUKS trouvés dans la
-configuration disko de l'hôte (`usr/machines/<host>/disko.nix`, importée à
-l'exécution).
+:::note[Configuration zéro]
+Activé par défaut, mais totalement inerte tant que le fichier registre
+n'existe pas. Le support LUKS cible les volumes LUKS trouvés dans la
+config disko de l'hôte (`usr/machines/<host>/disko.nix`, importée au
+moment de l'exécution).
 :::
 
-:::caution[Aucun verrouillage par conception]
-Le keyslot de la phrase secrète d'installation et les mots de passe de session
-sops ne sont jamais touchés : perdre une clé retombe au pire sur la
-phrase secrète / le mot de passe.
+:::caution[Pas de verrouillage par conception]
+Le keyslot de la phrase de passe d'installation et les mots de passe de
+session sops ne sont jamais modifiés&nbsp;: perdre une clé revient au pire
+à revenir à la phrase de passe / au mot de passe.
 :::
 
-:::caution[Le contact au démarrage ne peut pas être levé]
-Les YubiKeys imposent la présence de l'utilisateur pour l'extension
+:::caution[Le toucher au démarrage ne peut être abandonné]
+Les YubiKeys imposent la présence utilisateur pour l'extension
 `hmac-secret` : une assertion demandant `up=false` est refusée avec
-`FIDO_ERR_UP_REQUIRED` avant même que l'identifiant ne soit mis en
-correspondance. Le contact est une règle matérielle, pas un paramètre de
-jeton, et aucun indicateur d'en-tête ne peut le lever. Le déverrouillage sans
-supervision (passerelles, hôtes headless) relève du TPM2
-(`systemd-cryptenroll --tpm2-device=auto`), qui coexiste avec ces keyslots
-FIDO2 dans le même en-tête LUKS.
+`FIDO_ERR_UP_REQUIRED` avant même que l'identifiant soit comparé. Le
+toucher est une règle matérielle, pas un paramètre du token, et aucun
+drapeau d'en-tête ne peut l'annuler. Le déverrouillage sans intervention
+(passerelles, hôtes sans interface) relève du TPM2
+(`systemd-cryptenroll --tpm2-device=auto`), qui coexiste avec ces
+keyslots FIDO2 dans le même en-tête LUKS.
 :::
 
-* **enable** `bool` Authentification YubiKey (par défaut : activée si usr/secrets/yubikeys.json existe)
-* **origin** `str` Origine/appid pam_u2f fixe : un enrôlement valable à l'échelle du parc
-* **luks.enable** `bool` Déverrouillage FIDO2 des volumes LUKS de l'hôte (inerte sans LUKS disko + clés enrôlées)
+:::caution[Le trousseau GNOME reste verrouillé lors d'une connexion par clé]
+`sufficient` court-circuite la pile d'authentification&nbsp;: toucher la clé
+la termine avant que `pam_gnome_keyring` ne s'exécute, donc le démon
+démarre sans mot de passe et GNOME demande le trousseau une fois au
+démarrage de la session (GNOME Online Accounts et evolution-data-server
+réclament le service de secrets immédiatement). Une connexion par mot de
+ passe n'est pas affectée. Remède sur les postes de bureau concernés&nbsp;: donner
+un mot de passe *vide* au trousseau *login* dans Seahorse — il se
+déverrouille alors tout seul, les secrets tombant en clair sur un disque
+déjà chiffré par LUKS. Voir
+`doc/admin-guide/operate/yubikey`.
+:::
+
+* **enable** `bool` authentification YubiKey (activé par défaut quand usr/secrets/yubikeys.json existe)
+* **origin** `str` origine / appid pam_u2f fixe&nbsp;: un enregistrement est valable pour toute la flotte
+* **luks.enable** `bool` déverrouillage FIDO2 des volumes LUKS de l'hôte (inerte sans disko LUKS + clés enregistrées)
 
 ```nix
 darkone.system.yubikey = {

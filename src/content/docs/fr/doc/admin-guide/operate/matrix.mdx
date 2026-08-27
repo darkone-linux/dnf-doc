@@ -53,19 +53,20 @@ L'authentification passe par le [SSO Kanidm](/fr/doc/admin-guide/operate/sso/)
 (OIDC)&nbsp;: tout utilisateur déclaré se connecte avec son compte réseau,
 aucune création de compte Matrix n'est nécessaire.
 
-{/* t:p 1939457d19b6eae4e613345f616989a7de00094ba4a79469a346e92bfb1d3b96 */}
+{/* t:p 4d4e27862e3ad5b4cef085b32b77fd461c2d5eff23df64fd0158079846a7436d */}
 ### Secrets requis
 
-À renseigner dans `usr/secrets/secrets.yaml`&nbsp;:
+Tous internes&nbsp;: `just configure-admin-host` les crée dans
+`usr/secrets/secrets.yaml`, sans jamais écraser l'existant.
 
-| Clé sops | Rôle | Génération |
-|---|---|---|
-| `matrix-rss-password` | Registration shared secret Synapse | `openssl rand -hex 32` |
-| `oidc-secret-matrix` | Secret du client OIDC Kanidm | cf. [SSO](/fr/doc/admin-guide/operate/sso/) |
-| `turn-secret` | Secret partagé coturn (si `turn` activé) | `openssl rand -hex 32` |
-| `livekit-secret` | Secret partagé MatrixRTC (si `matrixRtc` activé) | `just passwd-livekit` |
-| `mautrix-doublepuppet-as-token` | Token appservice *double puppeting* (commun aux ponts) | `openssl rand -hex 32` |
-| `mautrix-doublepuppet-hs-token` | Idem, requis par Synapse, jamais utilisé | `openssl rand -hex 32` |
+| Clé sops | Rôle |
+|---|---|
+| `matrix-rss-password` | Registration shared secret Synapse |
+| `oidc-secret-matrix` | Secret du client OIDC Kanidm (cf. [SSO](/fr/doc/admin-guide/operate/sso/)) |
+| `turn-secret` | Secret partagé coturn (si `turn` activé) |
+| `livekit-secret` | Secret partagé MatrixRTC (si `matrixRtc` activé) |
+| `mautrix-doublepuppet-as-token` | Token appservice *double puppeting* (commun aux ponts) |
+| `mautrix-doublepuppet-hs-token` | Idem, requis par Synapse, jamais utilisé |
 
 {/* t:p a50e24a5824fb6987b55e7922f9d5b3706ce421ec74ecf0e6bc11a36c75417d2 */}
 ## Deux modes d'authentification
@@ -96,7 +97,7 @@ Element X quand l'hôte porte un serveur Matrix avec MAS, Element Classic
 sinon. Rien à régler.
 </Aside>
 
-{/* t:p 15942d02b9d58aeed731714cc62e5ea11a926090c57cc725843b9573c7512657 */}
+{/* t:p ce75ef3e4410ae9e3c9f58bc642e3d2a9ce4a8a1f6172498267e623bb2b403b8 */}
 ### Activer MAS
 
 Le [Matrix Authentication Service](https://element-hq.github.io/matrix-authentication-service/)
@@ -110,7 +111,7 @@ comment il s'insère, voir
    l'existant)&nbsp;:
 
    ```sh
-   just passwd-mas
+   just configure-admin-host
    ```
 
    | Clé sops | Rôle |
@@ -442,7 +443,7 @@ téléphone apparaissent dans Matrix comme venant du **vrai compte** de
 l'utilisateur. C'est automatique pour tous les comptes locaux, aucune action
 par utilisateur.
 
-{/* t:p 3a40bdbbe2ed0817af96ad3bc44ca7054e29a497b77ff5a5742825f2bae74191 */}
+{/* t:p 56ddcf55b72b4a23bf2627b384161f348b306c106862d550a086969eaec749d5 */}
 ## Appels audio et vidéo
 
 Deux piles cohabitent, parce qu'aucune ne couvre tous les clients. Elles
@@ -498,7 +499,7 @@ appels&nbsp;: activer l'un ne donne pas l'autre.
 2. Générer le secret partagé, puis déployer&nbsp;:
 
    ```sh
-   just passwd-livekit
+   just configure-admin-host
    just apply <host> switch
    ```
 

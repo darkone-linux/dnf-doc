@@ -326,25 +326,34 @@ darkone.service.homepage = {
 
 <hr/>
 
-{/* t:p 130e1fea9fa4fe702f9537e7740b826eeb8e2aa49d7454a8eb044384adee0ed0 */}
+{/* t:p 046d3aed6844038d902ecc7e1bd0f65285c684628a546b9d465e460840c40cd0 */}
 ### &#x2728; darkone.service.idm
 
 Service DNF Kanidm (gestionnaire d'identités).
 
+:::note[Les secrets sont générés, pas saisis]
+`just configure-admin-host` crée chaque entrée lue par ce module :
+les mots de passe du compte de secours (`kanidm-admin-password`,
+`kanidm-idm-admin-password`), le couple auto-signé de l'écouteur HTTPS
+interne (`kanidm-tls-chain` / `kanidm-tls-key`, 10 ans, CN=127.0.0.1) et
+un `oidc-secret-<client>` par client OAuth2 provisionné. Relisez-les avec
+`just sops` lorsqu'un administrateur en a besoin, ce qui est rare.
+:::
+
 * **enable** `bool` Activer le SSO local avec Kanidm
-* **oauth2** `attrs` Modèles de clients OAuth2/OIDC fournis par les modules de service.
+* **oauth2** `attrs` Modèles de clients OAuth2/OIDC fournis par les modules de services.
   Kanidm provisionne un client pour chaque entrée correspondante dans `network.services`,
   avec `clientId = dnfLib.oauth2ClientName`.
-  * **enable** `bool` Indique s'il faut provisionner des clients OAuth2 pour ce modèle.
-  * **clientName** `nullOr str` Remplacer le nom du client kanidm. Par défaut, dnfLib.oauth2ClientName.
-  * **displayName** `str` Nom lisible affiché sur l'écran de consentement kanidm.
-  * **imageFile** `path` Icône de l'application. Réimportée à chaque exécution de kanidm-provision.
-  * **redirectPaths** `listOf str` Chemins de redirection OAuth2 (un par URL de callback acceptée).
-  * **landingPath** `str` Chemin du point d'entrée de connexion automatique sur le service.
-  * **enableLegacyCrypto** `bool` Autoriser les anciens algorithmes de signature JWT (ex. RS256).
-  * **allowInsecureClientDisablePkce** `bool` Désactiver PKCE sur le client (uniquement pour les clients qui ne l'implémentent pas).
-  * **preferShortUsername** `nullOr bool` Utiliser le nom d'utilisateur court (sans domaine) dans la revendication `preferred_username`.
-  * **extra** `attrs` Attributs supplémentaires fusionnés dans le client provisionné (claimMaps, etc).
+  * **enable** `bool` Whether to provision OAuth2 clients for this template.
+  * **clientName** `nullOr str` Override the kanidm client name. Defaults to dnfLib.oauth2ClientName.
+  * **displayName** `str` Human-readable name shown on the kanidm consent screen.
+  * **imageFile** `path` Application icon. Re-uploaded on every kanidm-provision run.
+  * **redirectPaths** `listOf str` OAuth2 redirect paths (one per accepted callback URL).
+  * **landingPath** `str` Auto-connect entry point path on the service.
+  * **enableLegacyCrypto** `bool` Allow legacy JWT signing algorithms (eg. RS256).
+  * **allowInsecureClientDisablePkce** `bool` Disable PKCE on the client (only for clients that do not implement it).
+  * **preferShortUsername** `nullOr bool` Use the short username (no domain) in the `preferred_username` claim.
+  * **extra** `attrs` Extra attributes merged into the provisioned client (claimMaps, etc).
 
 ```nix
 darkone.service.idm = {
@@ -552,57 +561,58 @@ correspondant en amont. Procédure de fusion dans le guide admin
 (`operate/matrix.mdx`).
 :::
 
-{/* t:p a40748eb781fccc4da58ca71ab300b213dd7a300121c552afc64553ab0e74bd3 */}
+{/* t:p a162b20e5b9fd71bc500b26856a72f84338ed44a8fae4478a7a68851cd2df3ce */}
 #### Authentification nouvelle génération (MAS)
 
-`mas.enable` délègue toute l'authentification à Matrix Authentication Service
-(requis par Element X, le login par QR, le portail libre-service `/account`).
-Kanidm reste la source d'identité : MAS devient le client OIDC à la place de
-synapse, et synapse ne demande plus qu'à MAS d'introspecter les jetons. Servi
-sur le même vhost : MAS possède les endpoints racine + compat auth, synapse
-garde `/_matrix/*` et `/_synapse/*` ; la découverte client est automatique
-(synapse sert `auth_metadata` lui-même), donc aucun changement de well-known.
+`mas.enable` délègue toute l'authentification au Matrix Authentication Service
+(requis par Element X, la connexion par QR code, le portail self-service
+`/account`). Kanidm reste la source d'identité : MAS devient le client OIDC
+à la place de synapse, et synapse se contente de demander à MAS d'inspecter
+les jetons. Servi sur le même vhost : MAS possède la racine + les points
+d'entrée d'auth compat, synapse conserve `/_matrix/*` et
+`/_synapse/*` ; la découverte client est automatique (synapse sert
+lui-même `auth_metadata`), donc pas de changement well-known.
 
-Secrets sops requis (`openssl rand -hex 32` sauf mention contraire) :
-`mas-encryption-secret`, `mas-synapse-secret` et `mas-rsa-private-key`
-(`openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:4096`).
+Secrets sops requis, tous créés par `just configure-admin-host` :
+`mas-encryption-secret`, `mas-synapse-secret` et `mas-rsa-private-key`.
 
-`dnf-mas` (root) enveloppe `mas-cli` pour l'administration côté hôte : jetons
-d'enregistrement, `promote-admin`, `register-user`, `syn2mas`. MAS tourne avec
-`DynamicUser` et lit ses secrets depuis les credentials systemd, qui n'existent
-pas en dehors de l'unité en cours d'exécution ; l'enveloppe reconstruit un
-répertoire de credentials équivalent depuis les fichiers sops, elle fonctionne
-donc que le service soit démarré ou arrêté (syn2mas en a besoin arrêté).
+`dnf-mas` (racine) encapsule `mas-cli` pour l'administration côté hôte : jetons
+d'inscription, `promote-admin`, `register-user`, `syn2mas`. MAS tourne avec
+`DynamicUser` et lit ses secrets depuis les credentials systemd, qui
+n'existent pas en dehors de l'unité en cours ; le wrapper reconstitue un
+répertoire de credentials équivalent à partir des fichiers sops, ce qui
+fonctionne que le service soit en marche ou non (syn2mas nécessite qu'il
+soit arrêté).
 
 :::danger[Immuable une fois démarré]
-`mas-encryption-secret` et l'ULID du provider Kanidm ne doivent jamais changer
-après le premier démarrage de MAS (données chiffrées de la base / liens de
-comptes en amont).
+`mas-encryption-secret` et l'ULID du fournisseur Kanidm ne doivent jamais
+changer après le premier démarrage de MAS (données chiffrées de la BDD /
+liens de compte amont).
 :::
 
-:::caution[Migration d'une instance existante]
-Activer `mas.enable` sur un homeserver en production requiert la migration
-`syn2mas` (comptes, mots de passe, sessions, identifiants externes). Déployez
-d'abord, puis, avec les deux services arrêtés : `sudo dnf-mas syn2mas check`,
-`... migrate --dry-run`, `... migrate`. Les bridges n'ont pas besoin de
-régénérer leur enregistrement : synapse impose MSC4190 sur chaque appservice
-dès que l'authentification est déléguée. Procédure dans
+:::caution[Migrer une instance existante]
+Activer `mas.enable` sur un homeserver en service nécessite la migration
+`syn2mas` (comptes, mots de passe, sessions, identifiants externes).
+Déployez d'abord, puis, avec les deux services arrêtés : `sudo dnf-mas syn2mas check`,
+`... migrate --dry-run`, `... migrate`. Les bridges n'ont pas besoin d'un
+réenregistrement : synapse force MSC4190 sur chaque appservice dès que
+l'auth est déléguée. Procédure dans
 `.specs/matrix-authentication-service.md`.
 :::
 
 :::caution[Pas d'enregistrement par secret partagé sous MAS]
-`/_synapse/admin/v1/register` de Synapse (secret partagé d'enregistrement) est
-désactivé en mode délégué, et c'est ce que `just configure-alert-bot` utilise
-pour créer un compte bot manquant. Créez-le à l'avance, ou avec
+`/_synapse/admin/v1/register` de synapse (enregistrement par secret partagé)
+est désactivé en mode délégué, ce dont se sert `just configure-alert-bot`
+pour créer un compte bot manquant. Créez-le au préalable, ou avec
 `sudo dnf-mas manage register-user`.
 :::
 
-* **enable** `bool` Active le service matrix (synapse)
-* **federation.enable** `bool` Autorise la fédération entre serveurs. False bloque toute la fédération.
-* **federation.whitelist** `listOf str` Vide = fédération avec tous les serveurs ; non vide = uniquement ces domaines (entrant + sortant).
-* **mas.enable** `bool` Délègue toute l'authentification à Matrix Authentication Service (support Element X).
-* **matrixRtc.enable** `bool` Active le backend MatrixRTC (LiveKit SFU) pour les appels de groupe Element Call.
-* **friendRegistration.enable** `bool` Autorise les amis à s'auto-enregistrer avec un jeton d'invitation (contrôlé par jeton).
+* **enable** `bool` Activer le service matrix (synapse)
+* **federation.enable** `bool` Autoriser la fédération serveur-à-serveur. Faux bloque toute la fédération.
+* **federation.whitelist** `listOf str` Vide = fédérer avec tous les serveurs ; non vide = uniquement ces domaines (entrant + sortant).
+* **mas.enable** `bool` Déléguer toute l'authentification au Matrix Authentication Service (support Element X).
+* **matrixRtc.enable** `bool` Activer le backend MatrixRTC (LiveKit SFU) pour les appels de groupe Element Call.
+* **friendRegistration.enable** `bool` Autoriser les amis à s'auto-inscrire avec un jeton d'invitation (contrôlé par jeton).
 * **bridges.whatsapp.enable** `bool` Bridge Mautrix WhatsApp (connexion par QR code).
 * **bridges.signal.enable** `bool` Bridge Mautrix Signal (connexion par QR code).
 * **bridges.telegram.enable** `bool` Bridge Mautrix Telegram (connexion par numéro de téléphone).
@@ -688,23 +698,40 @@ darkone.service.monitoring = {
 
 <hr/>
 
-{/* t:p ce920a23a0983060b06be107bf123f60c5296f0c69ed7aca84a2c7bfe2c4fc8f */}
+{/* t:p 286916049b2fade03561250f9b306b1e59ba28cf15f271ab1ae134c708d8578a */}
 ### &#x2728; darkone.service.nextcloud
 
 Service Nextcloud entièrement configuré.
 
-:::caution[Secret sops requis]
-Lorsqu'il est activé, ce module lit le mot de passe administrateur Nextcloud
-depuis le secret sops `nextcloud-admin-password`. Ajouter l'entrée à
-`usr/secrets/` avant de reconstruire, sinon l'activation sops-nix échouera.
+:::caution[Secrets sops requis]
+Lorsqu'il est activé, ce module lit :
+
+- `nextcloud-admin-password` : mot de passe initial du compte administrateur ;
+- `nextcloud-whiteboard-secret` : JWT partagé avec le backend tableau blanc
+  (lu uniquement quand `whiteboard` figure dans `plugins`) ;
+- `oidc-secret-<client>` : secret client OAuth2 de Kanidm, déclaré par le
+  module idm et re-chiffré ici pour l'unité de provisionnement `occ`.
+
+`just configure-admin-host` les génère tous, de manière idempotente, et ne
+jamais écrase un secret existant. Exécutez-le avant de reconstruire :
+l'activation sops-nix échoue sur une entrée manquante.
 :::
 
 * **enable** `bool` Activer le service nextcloud local
 * **adminUser** `str` Nom d'utilisateur administrateur pour Nextcloud
-* **plugins** `listOf (enum (appstoreApps ++ shippedToggleableApps))` Applications Nextcloud à activer. Seuls `calendar` et `contacts` sont activés par
-  défaut ; Talk (`spreed`), le tableau de bord, le flux d'activités, les photos,
-  et toutes les autres applications restent désactivés jusqu'à ce qu'ils soient
-  listés ici.
+* **enableSsoRedirect** `bool` Envoyer les utilisateurs directement à Kanidm au lieu d'afficher le formulaire
+  de connexion Nextcloud (`user_oidc` `allow_multiple_user_backends`). Économise un clic
+  à chaque connexion, y compris le Login Flow v2 du client desktop.
+
+  :::caution[Formulaire de connexion local]
+  Ceci masque le formulaire de mot de passe, compte administrateur inclus. Accédez-y avec
+  `/login?direct=1`.
+  :::
+
+  Sans effet lorsque Kanidm est absent du réseau.
+* **plugins** `listOf (enum (appstoreApps ++ shippedToggleableApps))` Applications Nextcloud à activer. Seuls `calendar` et `contacts` sont
+  activés par défaut ; Talk (`spreed`), le tableau de bord, le flux d'activité, les photos et
+  toutes les autres applications restent désactivés tant qu'ils ne figurent pas ici.
 
   `user_oidc` est requis pour le SSO Kanidm et est inclus de force
   indépendamment de cette liste.
@@ -713,6 +740,7 @@ depuis le secret sops `nextcloud-admin-password`. Ajouter l'entrée à
 darkone.service.nextcloud = {
   enable = false;
   adminUser = "admin";
+  enableSsoRedirect = true;
   plugins = [ ];
 };
 ```
@@ -960,22 +988,25 @@ darkone.service.prometheus = {
 
 <hr/>
 
-{/* t:p 18b5b138bc2c936d52519bad4bbe8cc835f701feb03373b4cad518eb7e3dc6db */}
+{/* t:p 603837defc312957f5758e26e67841c5e4b7c5e0925b66fc8328b67ef6e50406 */}
 ### &#x2728; darkone.service.restic
 
-Module de sauvegarde restic : serveur REST + cibles de sauvegarde par hôte.
+Module de sauvegarde Restic : serveur REST + cibles de sauvegarde par hôte.
 
-:::tip[Deux rôles, un seul module]
-- Serveur : un hôte avec `restic` dans ses services config.yaml fait tourner le
+:::tip[Deux rôles, un module]
+- Serveur : un hôte avec `restic` dans ses services config.yaml lance le
   serveur REST (`enableServer`) et stocke le dépôt de chaque hôte.
 - Client : tout hôte avec `enable = true` déclare des `targets` de sauvegarde
   (chemin local ou `rest:http://restic.<zone>:<port>`).
 :::
 
-:::note[Deux mots de passe, à ne pas confondre]
-- Phrase de passe du dépôt : `restic-password-<zone>`, chiffre le contenu du dépôt.
-- Identifiant REST : `restic/<hostname>/rest-password` par hôte, authentifie
-  l'hôte auprès du serveur REST. Généré par `just passwd-restic`.
+:::note[Deux mots de passe, ne pas confondre]
+- Passphrase du dépôt : `restic-password-<zone>`, chiffre le contenu du dépôt.
+- Identifiant REST : par hôte `restic/<hostname>/rest-password`, authentifie
+  l'hôte auprès du serveur REST.
+
+Les deux sont créés par `just configure-admin-host` (idempotent), qui lit
+les hôtes et zones déclarés dans la flotte.
 :::
 
 Exemple (configuration machine) :
@@ -990,28 +1021,28 @@ darkone.service.restic = {
 };
 ```
 
-Plan du dépôt par cible : un dépôt par catégorie, nommé d'après elle.
+Disposition du dépôt par cible : un dépôt par catégorie, nommé d'après celle-ci.
 
 ```
-<root>/<hostname>/system  <- "system" category (/ minus excludes)
-<root>/<hostname>/nfs     <- "nfs" category    (/srv/nfs/<...>)
-<root>/<hostname>/medias  <- "medias" category (/srv/medias/<...>)
+<root>/<hostname>/system  <- catégorie "system" (/ moins les exclusions)
+<root>/<hostname>/nfs     <- catégorie "nfs"    (/srv/nfs/<...>)
+<root>/<hostname>/medias  <- catégorie "medias" (/srv/medias/<...>)
 ```
 
-:::caution[Le chemin du dépôt est exactement sur deux niveaux]
-rest-server sert les dépôts au plus deux composants en dessous de son `--path` :
-`<hostname>/medias` répond, `<hostname>/srv/medias` renvoie une 404 et restic
-signale le message trompeur « repository does not exist ». Le sous-chemin est
-donc le simple nom de catégorie, jamais le répertoire source. Un plan identique
-pour les cibles locales et REST permet à un dépôt de passer de l'une à l'autre
-sans renommage.
+:::caution[Le chemin du dépôt fait exactement deux niveaux]
+rest-server sert les dépôts à au maximum deux composantes sous son `--path` :
+`<hostname>/medias` répond, `<hostname>/srv/medias` retourne 404 et restic
+signale une erreur trompeuse `repository does not exist`. Le sous-chemin est
+donc le nom brut de la catégorie, jamais le répertoire source. La disposition
+identique pour les cibles locales et REST permet de déplacer un dépôt de
+l'une à l'autre sans renommage.
 :::
 
-:::danger[Migration des dépôts créés avant ce plan]
-Les dépôts écrits quand le sous-chemin reflétait le répertoire source se trouvent
-sous `<hostname>/srv/{nfs,medias}`. Renommez-les sur le serveur avant la prochaine
-exécution : `initialize = true` créerait sinon un dépôt vide au nouveau chemin et
-lancerait silencieusement une sauvegarde complète depuis zéro.
+:::danger[Migrer des dépôts créés avant cette disposition]
+Les dépôts écrits lorsque le sous-chemin reflétait le répertoire source se
+trouvent sous `<hostname>/srv/{nfs,medias}`. Renommez-les sur le serveur
+avant la prochaine exécution : `initialize = true` créerait sinon un dépôt
+vide au nouveau chemin et lancerait silencieusement un re-semis complet.
 
 ```sh
 mv <data-dir>/<hostname>/srv/medias <data-dir>/<hostname>/medias
@@ -1019,18 +1050,18 @@ rmdir <data-dir>/<hostname>/srv
 ```
 :::
 
-* **enable** `bool` Active le client de sauvegarde restic
-* **enableDryRun** `bool` Mode dry run
-* **enableWaitRemoteFs** `bool` Ne lance les sauvegardes qu'après remote-fs.target
-* **enableServer** `bool` Active le serveur REST restic
-* **serverDataDir** `str` Racine de stockage locale du serveur REST (dépôts de tous les hôtes)
+* **enable** `bool` Activer le client de sauvegarde restic
+* **enableDryRun** `bool` Mode Simulation
+* **enableWaitRemoteFs** `bool` Lancer les sauvegardes uniquement après remote-fs.target
+* **enableServer** `bool` Activer le serveur REST restic
+* **serverDataDir** `str` Racine de stockage local du serveur REST (dépôts de tous les hôtes)
 * **targets** `listOf submodule` Destinations de sauvegarde pour cet hôte (chemin local ou URL REST)
-  * **name** `str` Identifiant de la cible, utilisé dans les noms de sauvegarde/unités (&lt;category&gt;-&lt;name&gt;)
+  * **name** `str` Identifiant de cible, utilisé dans les noms de sauvegarde/unité (&lt;category&gt;-&lt;name&gt;)
   * **root** `str` Racine du dépôt : chemin local ou URL REST
-  * **zone** `str` Zone qui sélectionne la phrase de passe du dépôt (restic-password-&lt;zone&gt;)
-  * **categories** `listOf ( enum [ "system" "nfs" "medias" ] )` Ce qui est sauvegardé sur cette cible
+  * **zone** `str` Zone sélectionnant la passphrase du dépôt (restic-password-&lt;zone&gt;)
+  * **categories** `listOf ( enum [ "system" "nfs" "medias" ] )` Ce qui est sauvegardé vers cette cible
 * **nfsPaths** `listOf str` Répertoires NFS (/srv/nfs/&lt;xxx&gt;) inclus dans la catégorie 'nfs'
-* **mediasPaths** `listOf str` Répertoires medias (/srv/medias/&lt;xxx&gt;) inclus dans la catégorie 'medias'
+* **mediasPaths** `listOf str` Répertoires Medias (/srv/medias/&lt;xxx&gt;) inclus dans la catégorie 'medias'
 
 ```nix
 darkone.service.restic = {

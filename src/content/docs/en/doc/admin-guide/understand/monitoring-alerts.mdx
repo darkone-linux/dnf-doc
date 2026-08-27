@@ -97,19 +97,27 @@ Like `monitoring-node:<zone>`, these features accept an owner zone :
 `alert-critical:main` makes a node (typically the HCS) monitored by the
 `main` zone.
 
-{/* t:p 3a477cc8a84650c465c0e2cf8f48cea74c8320fcd1d84d399f37b68c822ca8c6 */}
-## What is monitored
+{/* t:p 0d1fcdbc5c7ee5318f54cf5ecce57959d3d946aaa6754d982fc5375c6a8c0ca0 */}
+## What Is Monitored
 
 Rules are derived from what each node declares; nothing to list manually.
 
 | Family | Trigger |
 |---|---|
-| Node unreachable | `node-exporter` silent (`NodeDown`) |
-| Active but broken service | expected systemd unit not `active` (`ServiceDown`) |
-| Unit in failure | a systemd unit `failed` (`SystemdUnitFailed`) |
-| Resources | disk, RAM, load, inodes, OOM (overridable thresholds) |
+| Unreachable node | `node-exporter` silent (`NodeDown`) |
+| Active but failing service | expected systemd unit not `active` (`ServiceDown`) |
+| Failed unit | a systemd unit `failed` (`SystemdUnitFailed`) |
+| Resources | disk, RAM, load, inodes, OOM (thresholds overridable) |
 | Network | gateway, tailnet (headscale) or DNS unreachable (blackbox probes) |
-| Tailnet self-healing | Tailscale client disconnected or watchdog looping (`TailscaleUnhealthy`, `TailscaleFlapping`) |
+| Tailnet self-healing | Tailscale client dropped or looping watchdog (`TailscaleUnhealthy`, `TailscaleFlapping`) |
+
+<Aside type="note" title="Network mounts and read-only">
+Disk rules ignore **network** mounts (NFS, CIFS…): they
+report the server's own space, which already alerts on its local disk. Likewise,
+a deliberately **read-only** mount (exported share `ro`, optical media) does not
+trigger `FilesystemReadOnly`: the rule targets filesystems remounted read-only by
+the kernel after I/O errors.
+</Aside>
 
 {/* t:p d4e3ff350edb205693bfda166ccbb65803e3c6365b08e39ffdf1110cb2ecd97d */}
 ## Silence during rebuilds

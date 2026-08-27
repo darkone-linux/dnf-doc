@@ -53,19 +53,20 @@ Authentication goes through [Kanidm SSO](/en/doc/admin-guide/operate/sso/)
 (OIDC)&nbsp;: every declared user signs in with their network account,
 no Matrix account creation is needed.
 
-{/* t:p 1939457d19b6eae4e613345f616989a7de00094ba4a79469a346e92bfb1d3b96 */}
+{/* t:p 4d4e27862e3ad5b4cef085b32b77fd461c2d5eff23df64fd0158079846a7436d */}
 ### Required secrets
 
-To fill in in `usr/secrets/secrets.yaml`&nbsp;:
+All internal&nbsp;: `just configure-admin-host` creates them in
+`usr/secrets/secrets.yaml`, without overwriting existing entries.
 
-| Clé sops | Rôle | Génération |
-|---|---|---|
-| `matrix-rss-password` | Registration shared secret Synapse | `openssl rand -hex 32` |
-| `oidc-secret-matrix` | Secret du client OIDC Kanidm | cf. [SSO](/en/doc/admin-guide/operate/sso/) |
-| `turn-secret` | Secret partagé coturn (si `turn` activé) | `openssl rand -hex 32` |
-| `livekit-secret` | Secret partagé MatrixRTC (si `matrixRtc` activé) | `just passwd-livekit` |
-| `mautrix-doublepuppet-as-token` | Token appservice *double puppeting* (commun aux ponts) | `openssl rand -hex 32` |
-| `mautrix-doublepuppet-hs-token` | Idem, requis par Synapse, jamais utilisé | `openssl rand -hex 32` |
+| Sops key | Role |
+|---|---|
+| `matrix-rss-password` | Synapse registration shared secret |
+| `oidc-secret-matrix` | Kanidm OIDC client secret (see [SSO](/en/doc/admin-guide/operate/sso/)) |
+| `turn-secret` | coturn shared secret (if `turn` enabled) |
+| `livekit-secret` | MatrixRTC shared secret (if `matrixRtc` enabled) |
+| `mautrix-doublepuppet-as-token` | *double puppeting* appservice token (shared across bridges) |
+| `mautrix-doublepuppet-hs-token` | Same, required by Synapse, never used |
 
 {/* t:p a50e24a5824fb6987b55e7922f9d5b3706ce421ec74ecf0e6bc11a36c75417d2 */}
 ## Two authentication modes
@@ -96,46 +97,46 @@ Element X quand l'hôte porte un serveur Matrix avec MAS, Element Classic
 sinon. Rien à régler.
 </Aside>
 
-{/* t:p 15942d02b9d58aeed731714cc62e5ea11a926090c57cc725843b9573c7512657 */}
-### Enabling MAS
+{/* t:p ce75ef3e4410ae9e3c9f58bc642e3d2a9ce4a8a1f6172498267e623bb2b403b8 */}
+### Enable MAS
 
 The [Matrix Authentication Service](https://element-hq.github.io/matrix-authentication-service/)
-replaces Synapse's internal authentication. For what it changes and how it
-fits in, see
-[the architecture](/en/doc/admin-guide/understand/matrix/#next-generation-authentication-mas).
+replaces Synapse's built-in authentication. For what it changes and
+how it fits in, see
+[architecture](/en/doc/admin-guide/understand/matrix/#next-generation-authentication-mas).
 
 <Steps>
 
 1. Generate the three dedicated secrets (idempotent, never overwrites
-   existing)&nbsp;:
+   existing entries)&nbsp;:
 
    ```sh
-   just passwd-mas
+   just configure-admin-host
    ```
 
-   | sops key | Role |
+   | Sops key | Role |
    |---|---|
    | `mas-encryption-secret` | MAS internal encryption |
-   | `mas-synapse-secret` | Shared secret MAS ↔ Synapse |
+   | `mas-synapse-secret` | MAS ↔ Synapse shared secret |
    | `mas-rsa-private-key` | Token signing key |
 
-2. Enable the option in the host's nix config&nbsp;:
+2. Enable the option in the host's Nix config&nbsp;:
 
    ```nix
    # usr/machines/<host>/default.nix
    darkone.service.matrix.mas.enable = true;
    ```
 
-3. Deploy. On a **new** server, that's done. On a server that already has
-   accounts, continue with the [migration](#migrating-a-server-already-in-production)
-   **without letting anyone sign in in between**.
+3. Deploy. On a **fresh** server, that's it. On a server that already has
+   accounts, proceed to the [migration](#migrating-a-server-already-in-production)
+   **without letting anyone log in between the two**.
 
 </Steps>
 
 :::danger[Immutable secret]
-`mas-encryption-secret` must **never** change after MAS's first start&nbsp;: it
-protects data encrypted in the database, which would become unreadable. Same
-for the Kanidm provider's ULID, frozen in the module.
+`mas-encryption-secret` must **never** change after MAS's first startup&nbsp;:
+it protects encrypted data in the database that would become unreadable.
+Same for the Kanidm provider ULID, frozen in the module.
 :::
 
 {/* t:p 505ceb150a5a409fe12d0ec66c4b45604b3cb3a0973064aea39c52071517b88b */}
@@ -438,82 +439,82 @@ phone appear in Matrix as coming from the user's **real account**.
 This is automatic for all local accounts, no action per
 user.
 
-{/* t:p 3a40bdbbe2ed0817af96ad3bc44ca7054e29a497b77ff5a5742825f2bae74191 */}
+{/* t:p 56ddcf55b72b4a23bf2627b384161f348b306c106862d550a086969eaec749d5 */}
 ## Audio and video calls
 
-Two stacks coexist, because neither covers all clients. They
-activate separately and do not replace each other&nbsp;:
+Two stacks coexist, because neither covers all clients. They are
+enabled separately and do not replace each other&nbsp;:
 
-| | WebRTC historique | MatrixRTC |
+| | Legacy WebRTC | MatrixRTC |
 |---|---|---|
 | Option | `darkone.service.turn.enable` | `darkone.service.matrix.matrixRtc.enable` |
-| Composants | coturn | LiveKit (SFU) + service d'autorisation |
-| Appels à deux | oui | oui |
-| Appels de groupe | non | oui |
-| Element Classic (Android) | **oui** | non |
-| Element Web / Desktop | oui | oui |
-| **Element X** (Android, iOS) | **non** | **oui** |
+| Components | coturn | LiveKit (SFU) + authorization service |
+| One-on-one calls | yes | yes |
+| Group calls | no | yes |
+| Element Classic (Android) | **yes** | no |
+| Element Web / Desktop | yes | yes |
+| **Element X** (Android, iOS) | **no** | **yes** |
 
 Keep **both** enabled&nbsp;: Element Classic only speaks the first,
 Element X only the second.
 
-<Aside type="danger" title="Les deux piles ne se parlent pas">
-Un appel lancé depuis Element X est **invisible** dans Element Classic, et
-réciproquement&nbsp;: les deux signalent par des événements Matrix différents
-(`m.call.*` contre `m.rtc.member`), et l'ancienne application ne contient
-aucun code LiveKit. Aucune configuration serveur ne les réconcilie&nbsp;; côté
-amont, le cas est
-[classé «&nbsp;not planned&nbsp;»](https://github.com/element-hq/element-x-android/issues/3937).
+<Aside type="danger" title="The two stacks cannot talk to each other">
+A call started from Element X is **invisible** in Element Classic, and
+vice versa&nbsp;: the two report via different Matrix events (`m.call.*`
+vs. `m.rtc.member`), and the legacy app contains no LiveKit code. No server
+configuration reconciles them&nbsp;; upstream, the issue is
+[classified "not planned"](https://github.com/element-hq/element-x-android/issues/3937).
 
-Le seul client qui parle **les deux** est Element Web/Desktop&nbsp;: un
-utilisateur resté sur Element Classic peut donc rejoindre un appel Element X
-en ouvrant `https://element.domain.tld` dans le navigateur de son téléphone.
-Sinon, migrer vers Element X — l'application classique est en maintenance
-seule, sans nouvelle fonctionnalité.
+The only client that speaks **both** is Element Web/Desktop&nbsp;: a user
+who stayed on Element Classic can join an Element X call by opening
+`https://element.domain.tld` in their phone's browser.
+Otherwise, migrate to Element X — the classic app is in maintenance
+only, with no new features.
 </Aside>
 
-<Aside type="caution" title="Element X : deux prérequis distincts">
-Element X refuse d'appeler avec *«&nbsp;L'appel n'est pas pris en
-charge&nbsp;»* (code `MISSING_MATRIX_RTC_TRANSPORT`) tant que MatrixRTC est
-absent, **même** si MAS est actif. MAS conditionne la connexion, MatrixRTC les
-appels&nbsp;: activer l'un ne donne pas l'autre.
+<Aside type="caution" title="Element X: two separate prerequisites">
+Element X refuses to call with *"Call not supported"* (code
+`MISSING_MATRIX_RTC_TRANSPORT`) as long as MatrixRTC is absent, **even**
+if MAS is active. MAS gates login, MatrixRTC gates calls&nbsp;: enabling
+one does not give you the other.
 </Aside>
 
 <Steps>
 
-1. Enable the MatrixRTC stack in the host's nix config&nbsp;:
+1. Enable the MatrixRTC stack in the host's Nix config&nbsp;:
 
    ```nix
    # usr/machines/<host>/default.nix
    darkone.service.matrix = {
-     mas.enable = true;         # requis par Element X pour se connecter
-     matrixRtc.enable = true;   # requis par Element X pour appeler
+     mas.enable = true;         # required by Element X to log in
+     matrixRtc.enable = true;   # required by Element X to call
    };
    ```
 
 2. Generate the shared secret, then deploy&nbsp;:
 
    ```sh
-   just passwd-livekit
+   just configure-admin-host
    just apply <host> switch
    ```
 
-3. Check that the server announces a transport&nbsp;:
+3. Verify the server advertises a transport&nbsp;:
 
    ```sh
-   # doit contenir "org.matrix.msc4143.rtc_foci"
+   # must contain "org.matrix.msc4143.rtc_foci"
    curl -A Mozilla/5.0 https://domain.tld/.well-known/matrix/client
 
-   # org.matrix.msc4143 doit valoir true
+   # org.matrix.msc4143 must be true
    curl -A Mozilla/5.0 https://matrix.domain.tld/_matrix/client/versions
    ```
 
 </Steps>
 
-No extra subdomain or certificate&nbsp;: the SFU and its authorization service
-are served on the Matrix vhost, under `/livekit/sfu` and
-`/livekit/jwt`. Nothing to configure client-side either&nbsp;— Element X and
-Element Web embed Element Call and discover the transport by themselves.
+No extra subdomain or certificate&nbsp;: the SFU and its authorization
+service are served on the Matrix vhost, under `/livekit/sfu` and
+`/livekit/jwt`. On the client side, nothing to configure either&nbsp;—
+Element X and Element Web ship Element Call and discover the transport
+on their own.
 
 {/* t:p aa8d326eab9a9e5a1f4418e7f153c1f627cb4ab6bdf868611d4da9bf5cc6b11c */}
 ### Media ports

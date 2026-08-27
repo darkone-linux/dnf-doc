@@ -218,6 +218,44 @@ the PIN of the plugged YubiKey even when the targeted passkey is software.
 Workaround: unplug the key.
 :::
 
+{/* t:p 69251f7d2b072e8a8f2caf8986f223a387bd28a22680c880d306c1efe2b100a9 */}
+## GNOME keyring asks for a password again
+
+On a desktop, logging in by touching the key shortly brings up
+a window **"Enter password to unlock your login keyring"**. This symptom never
+occurs when the session is opened with a password.
+
+The cause is structural. pam_u2f is declared `sufficient`: as soon as the
+key is touched, the authentication stack stops — before
+`pam_gnome_keyring`, which therefore receives no password. The daemon then
+starts locked (`auto_start`), and GNOME Online Accounts as well as
+evolution-data-server require the secrets service at login.
+
+Remedy, once per machine and per user: set an **empty** password on the
+login keyring.
+
+<Steps>
+
+1. Open **Passwords and Keys** (`seahorse`).
+
+2. Right-click the **Login** keyring → *Change Password*.
+
+3. Current password: the session password. New password: leave it
+   empty, confirm, accept the warning.
+
+</Steps>
+
+The keyring then unlocks itself at each session. The secrets it contains
+are stored in plain text in `~/.local/share/keyrings`, on a disk already
+encrypted with LUKS. Nothing else changes: online accounts, calendars and
+Wi-Fi secrets continue to work.
+
+:::note[The alternatives are worse]
+Disabling `gnome-keyring` breaks GNOME Online Accounts, evolution-data-server
+and per-user Wi-Fi secrets. Removing pam_u2f from `gdm-password` preserves
+keyring encryption but loses single-touch login.
+:::
+
 {/* t:p f3a81a37690c7a0b53b9fff99e04621b5b386bb92666e2115c57a24cbf773bcc */}
 ## One key for multiple accounts
 

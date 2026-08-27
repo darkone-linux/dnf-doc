@@ -490,7 +490,7 @@ darkone.system.testing = {
 
 <hr/>
 
-{/* t:p 642bacfcf51078dd9a64dddd4a9943e3226650fbeb5b7112d09aad835014acc8 */}
+{/* t:p cdafe2bacbfcc4b639d7745e59723cf89954e3fbea0a79b78618c4865093ae41 */}
 ### &#x2699; darkone.system.yubikey
 
 YubiKey strong authentication: fleet-wide PAM U2F + declarative FIDO2 LUKS.
@@ -535,6 +535,17 @@ credential is even matched. The touch is a hardware rule, not a token
 setting, and no header flag can lift it. Unattended unlock (gateways,
 headless hosts) is a TPM2 job (`systemd-cryptenroll --tpm2-device=auto`),
 which coexists with these FIDO2 keyslots in the same LUKS header.
+:::
+
+:::caution[GNOME keyring stays locked on a key login]
+`sufficient` short-circuits the auth stack: touching the key ends it before
+`pam_gnome_keyring` runs, so the daemon starts with no password and GNOME
+asks for the keyring one at session start (GNOME Online Accounts and
+evolution-data-server request the secret service immediately). A password
+login is unaffected. Remedy on the desktop hosts concerned: give the *login*
+keyring an empty password in Seahorse — it then unlocks by itself, secrets
+landing in clear text on an already LUKS-encrypted disk. See
+`doc/admin-guide/operate/yubikey`.
 :::
 
 * **enable** `bool` YubiKey authentication (default: enabled when usr/secrets/yubikeys.json exists)

@@ -90,24 +90,23 @@ Each module exposes an `enable` (often `mkEnableOption`) and keeps its `config`
 under `lib.mkIf cfg.enable` : an inactive module has **no** effect.
 :::
 
-{/* t:p 18259557b7d04c0a1e3634f3eb9022d948ff77eb5e4511188e38322a51f5933c */}
-## Helpers (`dnfLib`)
+{/* t:p e668cd5e44bf68da9bbf250beab088544927ca601e47a3593fc9c13e4e62cb8e */}
+## The helpers (`dnfLib`)
 
-`dnfLib` (defined in `dnf/lib/`) provides cross-cutting functions, injected
-into each module. The most useful ones:
+`dnfLib` (defined in `dnf/lib/`) provides cross-cutting functions, injected into each module. The most useful ones:
 
 | Helper | Role |
 |---|---|
-| `extractServiceParams` / `buildServiceParams` | Read service parameters (domain, title, icon…). |
-| `mkOidcContext` / `mkKanidmEndpoints` | Connect a service to Kanidm SSO (OIDC). |
+| `extractServiceParams` / `buildServiceParams` | Read a service's parameters (domain, title, icon…). |
+| `serviceHref` | Resolve the public URL of a service declared elsewhere on the network. |
+| `mkOidcContext` / `mkKanidmEndpoints` | Connect a service to the Kanidm SSO (OIDC). |
 | `mkInternalFirewall` | Open ports on the internal interface only. |
-| `findHost` / `findService` / `isGateway` / `isHcs` | Query network topology. |
+| `findHost` / `findService` / `isGateway` / `isHcs` | Query the network topology. |
 | `mkHomepageSection` | Declare the portal entry. |
-| `mkIsActive` | Activate a security rule based on level/category. |
+| `mkIsActive` | Enable a security rule based on level/category. |
 
 :::note[Before writing a helper]
-Check `dnf/lib/default.nix`: the function might already exist. Reuse
-rather than duplicate.
+Check `dnf/lib/default.nix`: the function may already exist. Reuse rather than duplicate.
 :::
 
 {/* t:p a907db1ae5ae01cd173c0a512e3e8d5dbb864a39b7e6ff38af65486e1410ede9 */}

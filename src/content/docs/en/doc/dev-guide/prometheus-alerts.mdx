@@ -127,40 +127,58 @@ services.prometheus.rules = [
 ];
 ```
 
-{/* t:p 97c1f486cf7857b104bd4a84f6cbae530541aa913a4c7e490fcb69b16928eb5f */}
+{/* t:p 88ff53b7779494d1dd698278dcd71a6112d90df6cf793f107e4dd5a3bab1222f */}
 ## Where to add what
 
 | I want to… | I touch… |
 |---|---|
 | monitor a new service | `serviceUnits` in `alerts.nix` |
-| add a new rule family | a `mkXRuleGroups` + add it to the module's `mergeRuleGroups` |
-| wire up a metrics exporter | exporter in its module (gated `monitoring-node`, bind `preferredIp`) + scrape job + `mkXRuleGroups` gated in `prometheus.nix` |
+| a new rule family | a `mkXRuleGroups` + add it to the module's `mergeRuleGroups` |
+| wire up a metrics exporter | exporter in its own module (gated `monitoring-node`, bind `preferredIp`) + scrape job + `mkXRuleGroups` gated in `prometheus.nix` |
 | change a default threshold | `defaultThresholds` in `alerts.nix` |
-| change a node's class | `alert-*[:zone]` feature (no code) |
-| force/exclude a node from monitoring | `alert-non-critical` / `alert-disabled` feature |
+| stop alerting on a read-only-mounted filesystem | `readOnlyByDesignFstypes` (thresholds) in `alerts.nix` |
+| monitor (or not) the space of a network mount | `remoteFstypes` (thresholds) in `alerts.nix` |
+| change a node's class | feature `alert-*[:zone]` (no code) |
+| force/exclude a node from monitoring | feature `alert-non-critical` / `alert-disabled` |
 | monitor a URL + its TLS certificate | `alerting.network.httpProbeUrls` in the config |
-| tune internet outage detection | `alerting.network.internetProbeTargets` |
-| silence a known, accepted alert | `alerting.silences` in a consumer module (no code) |
+| adjust internet-down detection | `alerting.network.internetProbeTargets` |
+| silence a known and accepted alert | `alerting.silences` in a consumer module (no code) |
 | silence a broken systemd unit across the whole fleet | `ignoredUnits` in `dnf/config/alerts.nix` |
-| add a new destination | the `alertmanager` block of `prometheus.nix` (receiver + route) |
+| a new destination | the `alertmanager` block in `prometheus.nix` (receiver + route) |
+
+:::note[Exclude rather than silence]
+A permanent, intentional condition should not be silenced: `alerting.silences`
+stops the notification but lets the alert keep firing, so it keeps turning UIs
+red, forever. It must be removed from the rule's **selector**. Two threshold
+lists do this in `mkResourceRuleGroups`:
+
+- `remoteFstypes` — removed from **all** filesystem rules. A client mount
+  reports the **server's** space: monitoring it turns a full export into the same
+  alert on every machine that mounts it, while the server already alerts on its
+  own, with the actual mount point.
+- `readOnlyByDesignFstypes` — removed from `FilesystemReadOnly` only (optical
+  media). The rule therefore only monitors mounts that are expected to be
+  writable.
+:::
 
 :::tip[DNF convention]
-A `lib/` helper = a test. Any function added to `alerts.nix` comes with a case
-in `dnf/tests/unit/lib/alerts_test.nix` (`nix-unit`).
+A helper in `lib/` equals a test. Any function added to `alerts.nix` must be
+paired with a case in `dnf/tests/unit/lib/alerts_test.nix` (`nix-unit`).
 :::
 
-:::caution[Alertmanager route order]
-`continue` is `false` by default&nbsp;: the first matching child route wins. The
-routes of `mkSilenceRoutes` must therefore be inserted **before** the routes by
-severity, otherwise they are never reached and the alert notifies anyway. The
-`null` receiver is shared with the maintenance route, hence its guard
-`silenceOnRebuild || silences != []`&nbsp;: referencing a missing receiver
-prevents Alertmanager from starting.
+:::caution[Alertmanager route ordering]
+`continue` defaults to `false`: the first matching child route wins. Routes from
+`mkSilenceRoutes` must therefore be inserted **before** severity routes,
+otherwise they are never reached and the alert notifies anyway. The `null`
+receiver is shared with the maintenance route, hence its guard
+`silenceOnRebuild || silences != []`: referencing a missing receiver prevents
+Alertmanager from starting.
 :::
 
-:::caution[Textfile metric : permissions]
+:::caution[Textfile metric: permissions]
 A `.prom` file from the textfile collector must be readable by `node-exporter`
-(non-root user). `mktemp` creates with `0600` : set a `chmod 0644` **before**
-the atomic `mv`, otherwise the file is ignored (`node_textfile_scrape_error 1`)
-and the metric is never exposed, so the alert stays blind.
+(non-root user). `mktemp` creates it as `0600`: run a `chmod 0644` **before**
+the atomic `mv`, otherwise the file is silently ignored
+(`node_textfile_scrape_error 1`) and the metric is never exposed, leaving the
+alert blind.
 :::

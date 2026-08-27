@@ -35,7 +35,7 @@ c2 -> srv
 | Serveur REST | Hôte avec le service `restic` | Stocke les dépôts de la zone |
 | Client | Hôte avec `enable = true` | Pousse ses `targets` (sauvegardes) |
 
-{/* t:p fae4d928dfebf38d4353028451cf637120f05cec2421a987f0f9b6c2877bfd58 */}
+{/* t:p f962290f6daff0c65ba0a3831cd45fd5babb8deb126605d2333ddc1e3fd3064e */}
 ## Catégories sauvegardées
 
 Une cible sauvegarde une ou plusieurs **catégories** dans des sous-dépôts :
@@ -50,7 +50,7 @@ Une cible sauvegarde une ou plusieurs **catégories** dans des sous-dépôts :
 - **Passphrase de dépôt** (`restic-password-<zone>`) : chiffre le contenu.
 - **Credential REST** (`restic/<hôte>/rest-password`) : authentifie l'hôte.
 
-Les deux sont générés par `just passwd-restic`. Voir
+Les deux sont générés par `just configure-admin-host`. Voir
 [Secrets](/fr/doc/admin-guide/operate/secrets/).
 :::
 

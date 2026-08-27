@@ -472,14 +472,19 @@ just roaming-clear myserver
 just roaming-clear
 ```
 
-{/* t:p 1d7625ca4b5468c8c5ff9610a5f8b1838f3633c930ef8f3ac52bb58c17360814 */}
+{/* t:p 85e0cb7cb36935cd94477dd21a189ba0f4396f16ff26983db66404d5bbe49858 */}
 ### ✳️ `configure-admin-host` ⭐
 
-Configures the administration machine: SSH keys, SOPS age keys,
-`.sops.yaml`, default secrets, Harmonia signing key.
+Configure the administration machine: SSH keys, age SOPS keys,
+`.sops.yaml`, default secrets, Harmonia signing key, and **all
+internal secrets** required by declared services (OAuth2
+clients, backups, service tokens, etc.).
 
 :::tip[Idempotent]
-Can be re-run safely: each step checks if already done.
+Can be safely re-run: each step checks whether it has already been completed, and
+no existing secret is overwritten. Re-run after enabling a service,
+adding a host or a zone. See
+[Secrets](/en/doc/admin-guide/operate/secrets/#managing-passwords).
 :::
 
 ```sh
@@ -653,47 +658,6 @@ Updates the password for a specific user.
 
 ```sh
 just passwd darkone
-```
-
-{/* t:p 4ef084503f7899fdbc3781dcc76c9307f478f9a7d6e519f37192e40ec854ffd5 */}
-### ✳️ `passwd-restic`
-
-Generates a REST password per host and a repository password per zone.
-
-:::tip[Idempotent]
-Never overwrites an existing password.
-:::
-
-```sh
-just passwd-restic
-```
-
-{/* t:p f968fedf354e200a2895bc472238eed15687b0539d511dc933f7877b1314f672 */}
-### ✳️ `passwd-mas`
-
-Generates the three secrets of the [Matrix Authentication Service](/en/doc/admin-guide/operate/matrix/#double-puppeting)&nbsp;: internal encryption key, secret shared with Synapse, and RSA signing key.
-
-:::tip[Idempotent]
-Never overwrites an existing secret. Essential&nbsp;: `mas-encryption-secret` makes the data encrypted in the database unreadable if it changes after the first boot.
-:::
-
-```sh
-just passwd-mas
-```
-
-{/* t:p 4c17266f0c53204a9507071e3334a1974b4b3fdbb68877854683b35f4c64d14b */}
-### ✳️ `passwd-livekit`
-
-Generates the shared secret of the
-[MatrixRTC](/en/doc/admin-guide/operate/matrix/#opening-the-network-to-federation) stack&nbsp;:
-the LiveKit SFU validates with it the tokens that its authorization service signs.
-
-:::tip[Idempotent]
-Never overwrites an existing secret. Regenerating it only cuts ongoing calls.
-:::
-
-```sh
-just passwd-livekit
 ```
 
 {/* t:p 492a5aa3b45a9f68964c089348bdb4f0284b5dd11ec4ad7a6c1922473d97cb9d */}

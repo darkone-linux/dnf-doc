@@ -31,7 +31,7 @@ Regenerated, then propagated at deployment, without intervention.
 | sops secrets | Linked to the host's SSH key, not its name |
 | Deployment SSH keys | Never pinned to the deployment account |
 
-{/* t:p 45e8225d047dab4051f5bc3717954abcf71f5b2844dcd9e52030633d306425d1 */}
+{/* t:p aaa696c2fd563d7b58b9d83063c765726ca2ef999b81e28fac185b1a6ef95fd7 */}
 ## Procedure
 
 <Steps>
@@ -40,7 +40,7 @@ Regenerated, then propagated at deployment, without intervention.
 
    ```yaml
    # etc/config.yaml
-   - hostname: "srv-maison"   # ancien nom : "srv"
+   - hostname: "srv-maison"   # old name: "srv"
      zone: "maison:1.2"
      profile: "server"
    ```
@@ -52,9 +52,9 @@ Regenerated, then propagated at deployment, without intervention.
    ```
 
    :::caution[Mandatory step]
-   This folder is imported by its path, `usr/machines/<nom-d-hôte>`. If
-   forgotten, it is silently ignored&nbsp;: the `hardware-configuration.nix`
-   file and the settings specific to the machine leave the built configuration.
+   This folder is imported by its path, `usr/machines/<hostname>`. If forgotten, it
+   is silently ignored: the `hardware-configuration.nix` file and machine-specific
+   settings are dropped from the built configuration.
    :::
 
 3. **Regenerate**
@@ -66,17 +66,17 @@ Regenerated, then propagated at deployment, without intervention.
 4. **Create the backup account**
 
    ```sh
-   just passwd-restic
+   just configure-admin-host
    ```
 
    :::caution[Otherwise the backup server won't start]
-   A restic server declares one secret per host name in the fleet, whether the
-   host is backed up or not. Without the secret for the new name, sops
-   activation fails on that server. The command is idempotent and reads the
-   generated files, so run it after `just clean`.
+   A restic server declares a secret per host name in the fleet, whether the host
+   is backed up or not. Without the secret for the new name, sops activation fails
+   on that server. The command is idempotent and reads the generated files, so run
+   it after `just clean`.
    :::
 
-5. **Validate**
+5. **Commit**
 
    ```sh
    just commit "refactor(maison): rename srv to srv-maison"
@@ -84,9 +84,9 @@ Regenerated, then propagated at deployment, without intervention.
 
 6. **Deploy**
 
-   The node is addressed by its name, which must resolve from the
-   administration machine. The safest option is to redirect ssh to its address
-   during the first deployment.
+   The node is addressed by its name, which must resolve from the administration
+   machine. The safest approach is to redirect SSH to its address for the first
+   deployment.
 
    ```sh
    just roaming srv-maison 10.0.1.2
@@ -94,21 +94,21 @@ Regenerated, then propagated at deployment, without intervention.
    just roaming-clear srv-maison
    ```
 
-   Without a redirect, first deploy the gateway of the zone from which you
-   administer&nbsp;: it then publishes the new name in its DNS.
+   Without redirection, first deploy the zone gateway from which you are
+   administering: it then publishes the new name in its DNS.
 
 7. **Make the new name effective**
 
-   The deployment writes the static name, but the kernel one only changes at
-   boot&nbsp;: `hostname` still returns the old name until the machine has
+   The deployment writes the static name, but the kernel name only changes at
+   boot: `hostname` still returns the old name until the machine has been
    rebooted.
 
    ```sh
    just reboot srv-maison
    ```
 
-   To avoid the outage, set the name on the fly, then restart the services that
-   read it at startup (the VPN client first).
+   To avoid downtime, set the name live, then restart the services that read it at
+   startup (the VPN client first).
 
    ```sh
    sudo hostname srv-maison
@@ -116,14 +116,14 @@ Regenerated, then propagated at deployment, without intervention.
    ```
 
    :::caution[Do not use hostnamectl]
-   This command rewrites `/etc/hostname`, which is a link to the read-only
-   store. The link would be replaced by an ordinary file and the name would
-   stop following the configuration on subsequent deployments.
+   This command rewrites `/etc/hostname`, which is a symlink to the read-only
+   store. The symlink would be replaced by an ordinary file, and the name would
+   stop following the configuration in subsequent deployments.
    :::
 
    :::note[Before a remote reboot]
-   Check that no encrypted disk waits for a passphrase at boot, otherwise the
-   machine stops in initrd, out of network reach.
+   Verify that no encrypted disk is waiting for a passphrase at boot, otherwise
+   the machine stops in initrd, out of reach of the network.
    :::
 
 </Steps>

@@ -217,6 +217,38 @@ The framework resolves `domain`/`global` into `params` (`fqdn`, `href`, `ip`…)
 {/* t:p ae9debfa23c989de21ed264ff9032d332e282b341c74b9b7e3ca24a9def26c41 */}
 ## Network, database and secrets
 
+{/* t:p b3fe3e7665270a99320e70e26139338f6cb9e28e920cc13cace628dbeee69d92 */}
+### Internal ports
+
+Any internal port that a module **binds**, **opens** in the firewall, or **proxies** must come from the central registry `dnf/config/network.nix`, read via `dnfConfig.network.ports.<key>` — never a hardcoded literal in the module. This is the single source of truth: a given number is never written twice and two services cannot silently conflict.
+
+<Steps>
+
+1. **Name the key** `<service>[Usage]`: the `ports.` prefix already says "port", so the key specifies *what it is used for* (`kanidmReplication`, `garageRpc`). A bare `<service>` designates the main port. Keep `network.nix` sorted by value.
+2. **Add the value** in `ports.<key>` when DNF binds the port itself, then read it in the module:
+
+   ```nix
+   srvPort = dnfConfig.network.ports.oxicloud;
+   ```
+
+3. **Port range** (media relay: one port per stream, bound on demand):
+   two keys `<key>Start` and `<key>End` (e.g. `turnRelayStart`/`turnRelayEnd`,
+   `livekitRtcUdpStart`/`livekitRtcUdpEnd`). The service owns *all* ports
+   between the two bounds; no other registry entry may fall within that range.
+4. **Upstream-inherited port** (`config.services.<x>.port`, not bound by DNF):
+   register it in `ports.reserved` instead (conflict denylist); the module
+   continues to read `config.services.<x>.port`.
+
+</Steps>
+
+<Aside type="note" title="Tested integrity">
+`dnf/tests/unit/config/network_test.nix` validates the entire registry: key format, bounds 1024–65535, complete ranges (`Start` **and** `End`) and sorted, and above all that no entry overlaps another — isolated port, full range, or `ports.reserved` value. Any conflict causes the test suite to fail.
+</Aside>
+
+<Aside type="caution" title="Kernel ephemeral range">
+A `ports.*` port must stay **outside** `net.ipv4.ip_local_port_range` (32768–60999 by default): otherwise an outgoing connection from a neighboring service can steal the port before the service binds it. The test also checks this (the `ports.reserved` values, chosen upstream, are exempted).
+</Aside>
+
 {/* t:p ce5f822760b5b07f5a3ea4233f2d59de88b4f575227356dfa7569b909f348bd0 */}
 ### Internal firewall
 
