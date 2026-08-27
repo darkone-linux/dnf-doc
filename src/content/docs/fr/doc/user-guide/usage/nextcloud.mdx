@@ -1,0 +1,184 @@
+---
+title: Mon cloud de fichiers Nextcloud
+sidebar:
+  label: Cloud Nextcloud
+  order: 4
+lang: fr
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+{/* t:main */}
+{/* t:h 8a4263293ff1f4dacc20855e21c7b834c34658db4e81e4d55b7ef8d178ab5967 */}
+
+{/* t:p 56932ae326f04ee6ca7508cf5c2eb47f5fe45789afc5bc4e34880f90c2dc7b87 */}
+Le réseau héberge son propre cloud, basé sur
+[Nextcloud](https://nextcloud.com). Mes fichiers, mon agenda et mes contacts
+sont réunis au même endroit, accessibles depuis mon navigateur, mon ordinateur
+et mon téléphone. Et tout reste **chez nous**, sur notre serveur.
+
+{/* t:p 4c9986396e70c97327c428260133ca32eddc5b9a0a21240747d3049db16ca3b0 */}
+## Nextcloud, c'est quoi ?
+
+Nextcloud est un espace de stockage comparable à Dropbox ou Google Drive, avec
+trois différences qui changent tout&nbsp;:
+
+- **Privé** : mes fichiers sont sur le serveur de la maison, pas chez un géant du web.
+- **Complet** : fichiers, agenda, contacts, photos, notes, partage de liens.
+- **Ouvert** : navigateur, gestionnaire de fichiers ou application mobile, au choix.
+
+Je m'y connecte avec mon compte habituel du réseau, sans nouveau mot de passe
+à retenir (voir [Gérer mon compte](/fr/doc/user-guide/usage/account/)).
+
+{/* t:p 7d5b2c93e79e76f92e00dfbe2e69a26daf407ebc4df9e261688f669900a315a9 */}
+## Trois façons d'y accéder
+
+```d2
+style.fill: transparent
+direction: right
+
+me: Moi {
+  shape: person
+}
+browser: Navigateur
+webdav: Gestionnaire\nde fichiers {
+  shape: hexagon
+}
+sync: Dossier local\nsynchronisé {
+  shape: hexagon
+}
+cloud: Nextcloud\n(serveur maison) {
+  shape: cylinder
+}
+
+me -> browser -> cloud
+me -> webdav -> cloud
+me -> sync <-> cloud
+```
+
+| Accès | Ce que ça fait | Quand l'utiliser |
+| --- | --- | --- |
+| **Navigateur** | Tout le cloud, y compris partages et agenda | Depuis n'importe quel ordinateur |
+| **Gestionnaire de fichiers** | Les fichiers restent sur le serveur, ouverts comme un disque réseau | Consulter, déposer, sans occuper mon disque |
+| **Dossier synchronisé** | Une copie sur mon disque, tenue à jour dans les deux sens | Travailler hors connexion, usage quotidien |
+
+<Aside type="tip" title="Les deux accès se cumulent">
+Rien n'oblige à choisir. Le plus confortable&nbsp;: brancher mon compte pour
+tout voir, et ne synchroniser que les dossiers dont j'ai vraiment besoin en
+local.
+</Aside>
+
+{/* t:p a1a6c8d41086bfd9691a164e55f9a03400d91888c543e22ea0d38d309f9be121 */}
+## Depuis mon navigateur
+
+J'ouvre `https://cloud.domain.tld` et je m'identifie avec mon compte du
+réseau. C'est la vue complète&nbsp;: fichiers, agenda, contacts, photos,
+partages, corbeille et versions précédentes de mes documents.
+
+<Aside type="tip" title="Le nom de domaine de la maison">
+Dans toute cette page, `domain.tld` désigne le nom de domaine du réseau. Mon
+administrateur me donne l'adresse exacte.
+</Aside>
+
+{/* t:p 66316fbba4554713acf452e3a4f05252d7c36864ac1e8ed81ce24d04e7302609 */}
+## Brancher mon ordinateur sur mon compte
+
+Sur un poste Linux du réseau, deux icônes Nextcloud sont installées&nbsp;:
+
+| Icône | Rôle |
+| --- | --- |
+| **Compte Nextcloud** | Relie fichiers, agenda et contacts à mon ordinateur. Une seule fois. |
+| **Client de synchronisation Nextcloud** | Recopie un dossier du cloud sur mon disque. |
+
+Je commence par la première.
+
+<Steps>
+
+1. J'ouvre **Compte Nextcloud** depuis la liste des applications. Une petite
+   fenêtre de terminal s'affiche.
+
+2. Mon navigateur s'ouvre sur la page de connexion du cloud. Je m'identifie
+   avec mon compte du réseau, puis je clique sur **Accorder l'accès**.
+
+3. Je reviens à la fenêtre de terminal. Elle affiche mon compte, le serveur,
+   et un **mot de passe d'application**.
+
+</Steps>
+
+C'est terminé. Trois choses arrivent d'un coup&nbsp;:
+
+- Une entrée **Nextcloud (cloud.domain.tld)** apparaît dans mon gestionnaire de
+  fichiers. Elle donne accès à tout mon cloud, sans rien copier sur le disque.
+- Mon **agenda** du cloud apparaît dans l'application Agenda.
+- Mes **contacts** du cloud apparaissent dans l'application Contacts.
+
+<Aside type="note" title="Le mot de passe d'application">
+Ce mot de passe ne remplace pas le mien&nbsp;: il n'ouvre que l'accès aux
+fichiers, et je peux le révoquer à tout moment depuis le cloud. Je le range
+dans mon coffre-fort. Il me servira pour brancher un autre appareil ou un
+autre logiciel sur mon compte.
+</Aside>
+
+{/* t:p df2dcd406dedd66999bac232e8254920ad6929e90b48e826e103c078386f5908 */}
+## Synchroniser un dossier sur mon disque
+
+Le client de synchronisation garde une copie locale de mes fichiers. Je peux
+donc travailler sans connexion&nbsp;: tout se remet à jour au retour du
+réseau.
+
+<Steps>
+
+1. À l'ouverture de session, la fenêtre **Nextcloud** propose de basculer vers
+   le navigateur web. Je clique sur **Ouvrir**.
+
+2. Mon navigateur s'ouvre sur la page du cloud. Je m'identifie, puis je clique
+   sur **Accorder l'accès**.
+
+3. Le client me demande le **dossier local**. Il propose `Nextcloud` dans mon
+   dossier personnel, ce qui convient très bien.
+
+4. Sur la même page, je choisis **les dossiers à synchroniser**. Inutile de
+   tout descendre&nbsp;: je coche ce dont je me sers, je pourrai en ajouter
+   plus tard.
+
+</Steps>
+
+Une petite icône de nuage s'installe alors dans la barre du haut. Elle indique
+l'avancement et donne accès aux réglages.
+
+<Aside type="caution" title="Le lien de connexion expire">
+La page d'autorisation n'est valable que quelques minutes. Si la fenêtre est
+restée ouverte toute la matinée, l'autorisation échouera. Je ferme la fenêtre,
+je relance **Client de synchronisation Nextcloud**, et je recommence&nbsp;:
+c'est immédiat.
+</Aside>
+
+{/* t:p 829f4056e945da720f8a083dca92496f5fbf377e2dfcc7e1e19fb284a9ebe0cd */}
+## Retrouver mon cloud dans le gestionnaire de fichiers
+
+Après ces deux étapes, mon cloud apparaît à deux endroits, et ce n'est pas un
+doublon&nbsp;:
+
+- **Nextcloud (cloud.domain.tld)**, dans la barre latérale&nbsp;: la totalité
+  de mon cloud, en direct. Rien n'est stocké sur mon ordinateur, il faut donc
+  être connecté au réseau.
+- **Nextcloud**, dans mon dossier personnel&nbsp;: les dossiers que j'ai
+  choisi de synchroniser. Ils sont sur mon disque et restent lisibles hors
+  connexion.
+
+Un fichier déposé dans le dossier synchronisé remonte tout seul vers le
+serveur, et réapparaît sur mes autres appareils.
+
+<Aside type="caution" title="Supprimer, c'est supprimer partout">
+Un fichier effacé du dossier synchronisé est aussi effacé du cloud, donc de
+mes autres appareils. En cas d'erreur, je le récupère dans la **corbeille** du
+cloud, depuis le navigateur.
+</Aside>
+
+{/* t:p 4ee47f565a925d1a539d51ceabe3d43e954e157732928944ae385da94c2591b5 */}
+## Sur mon téléphone
+
+J'installe l'application **Nextcloud** (Android ou iPhone), j'indique
+l'adresse `https://cloud.domain.tld`, et je m'identifie avec mon compte du
+réseau. L'application sauvegarde aussi mes photos automatiquement, si je le
+souhaite.

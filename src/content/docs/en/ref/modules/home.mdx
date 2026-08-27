@@ -303,7 +303,7 @@ darkone.home.music = {
 
 <hr/>
 
-{/* t:p b25824e111ae941fb46610eee12a50520c4e74b2fbbe97ae05c0affff2f6dc90 */}
+{/* t:p fd6d1f2d551335bdea41eed6b4bc0457dfa401b4b03c69fda83dc5eb272f20a1 */}
 ### &#x1F3E0; darkone.home.office
 
 Common tools for office desktop.
@@ -327,12 +327,12 @@ Common tools for office desktop.
 * **huntspellLang** `str` [Huntspell Lang](https://mynixos.com/nixpkgs/packages/hunspellDicts)
 * **enableElementAutoStart** `bool` Auto-start Element Desktop on login when a local Matrix server is present
 * **enableFractalAutoStart** `bool` Auto-start Fractal on login when a local Matrix server is present (opt-in, see caveats below)
-* **enableNextcloud** `bool` Install the Nextcloud desktop client, pre-bound to the network instance
-* **nextcloudServer** `nullOr str` Nextcloud instance the client binds to. `null` picks the one declared
+* **nextcloud.enable** `bool` Install the Nextcloud desktop client, pre-bound to the network instance
+* **nextcloud.server** `nullOr str` Nextcloud instance the client binds to. `null` picks the one declared
   on the network (this zone first). Set it to target a local or external
   instance instead.
-* **enableNextcloudAutoStart** `bool` Start the Nextcloud client in the background on login
-* **enableNextcloudWebdav** `bool` Ship `nextcloud-webdav-login`, a one-shot helper that authenticates
+* **nextcloud.enableAutoStart** `bool` Start the Nextcloud client in the background on login
+* **nextcloud.enableWebdav** `bool` Ship `nextcloud-webdav-login`, a one-shot helper that authenticates
   through the browser (Kanidm SSO) and registers the result as a GNOME
   Online Account: files over WebDAV in the file manager, plus calendar
   and contacts in Evolution. Needed because Nextcloud refuses to create
@@ -347,12 +347,12 @@ Common tools for office desktop.
   carries a cloud. On another desktop the printed password stays usable.
   :::
 
-  Ignored when `enableNextcloud` is off.
-* **nextcloudSyncDir** `nullOr str` Local folder pre-filled in the setup wizard, relative to `$HOME`.
+  Ignored when `darkone.home.office.nextcloud.enable` is off.
+* **nextcloud.syncDir** `nullOr str` Local folder pre-filled in the setup wizard, relative to `$HOME`.
 
   :::caution[No sync by default]
   Left `null` on purpose. The wizard then stops on its folder page and
-  the user decides what — if anything — to synchronise. Setting it skips
+  the user decides what, if anything, to synchronise. Setting it skips
   that page.
   :::
 
@@ -377,11 +377,11 @@ darkone.home.office = {
   huntspellLang = "en-us";
   enableElementAutoStart = true;
   enableFractalAutoStart = false;
-  enableNextcloud = detectedNextcloud != null;
-  nextcloudServer = "https://cloud.example.com";
-  enableNextcloudAutoStart = true;
-  enableNextcloudWebdav = true;
-  nextcloudSyncDir = "Nextcloud";
+  nextcloud.enable = detectedNextcloud != null;
+  nextcloud.server = "https://cloud.example.com";
+  nextcloud.enableAutoStart = true;
+  nextcloud.enableWebdav = true;
+  nextcloud.syncDir = "Nextcloud";
 };
 ```
 
