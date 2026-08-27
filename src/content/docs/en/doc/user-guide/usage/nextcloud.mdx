@@ -1,7 +1,7 @@
 ---
-title: Mon cloud de fichiers Nextcloud
+title: My Nextcloud file cloud
 sidebar:
-  label: Cloud Nextcloud
+  label: Nextcloud Cloud
   order: 4
 lang: en
 ---
@@ -9,3 +9,168 @@ lang: en
 import { Steps, Aside } from '@astrojs/starlight/components';
 
 {/* t:translated-from fr */}
+{/* t:h 8a4263293ff1f4dacc20855e21c7b834c34658db4e81e4d55b7ef8d178ab5967 */}
+
+{/* t:p 56932ae326f04ee6ca7508cf5c2eb47f5fe45789afc5bc4e34880f90c2dc7b87 */}
+The network hosts its own cloud, based on [Nextcloud](https://nextcloud.com).
+My files, my calendar and my contacts are all in one place, reachable from my
+browser, my computer and my phone. And everything stays **at home**, on our
+server.
+
+{/* t:p 4c9986396e70c97327c428260133ca32eddc5b9a0a21240747d3049db16ca3b0 */}
+## What is Nextcloud?
+
+Nextcloud is a storage space comparable to Dropbox or Google Drive, with three
+differences that change everything&nbsp;:
+
+- **Private**: my files are on the server at home, not with a web giant.
+- **Complete**: files, calendar, contacts, photos, notes, link sharing.
+- **Open**: browser, file manager or mobile app, my choice.
+
+I sign in with my usual network account, without a new password to remember
+(see [Manage my account](/en/doc/user-guide/usage/account/)).
+
+{/* t:p 7d5b2c93e79e76f92e00dfbe2e69a26daf407ebc4df9e261688f669900a315a9 */}
+## Three ways to access it
+
+```d2
+style.fill: transparent
+direction: right
+
+me: Me {
+  shape: person
+}
+browser: Browser
+webdav: File\nmanager {
+  shape: hexagon
+}
+sync: Synchronized\nlocal folder {
+  shape: hexagon
+}
+cloud: Nextcloud\n(home server) {
+  shape: cylinder
+}
+
+me -> browser -> cloud
+me -> webdav -> cloud
+me -> sync <-> cloud
+```
+
+| Access | What it does | When to use it |
+| --- | --- | --- |
+| **Browser** | The entire cloud, including shares and calendar | From any computer |
+| **File manager** | Files stay on the server, opened like a network drive | View, drop off, without using my disk |
+| **Synchronized folder** | A copy on my disk, kept up to date in both directions | Work offline, daily use |
+
+<Aside type="tip" title="The two access methods add up">
+There's no need to choose. The most comfortable way: link my account to see
+everything, and only synchronize the folders I really need locally.
+</Aside>
+
+{/* t:p a1a6c8d41086bfd9691a164e55f9a03400d91888c543e22ea0d38d309f9be121 */}
+## From my browser
+
+I open `https://cloud.domain.tld` and sign in with my network account. This is
+the complete view&nbsp;: files, calendar, contacts, photos, shares, trash and
+previous versions of my documents.
+
+<Aside type="tip" title="The home domain name">
+Throughout this page, `domain.tld` is the network's domain name. My
+administrator gives me the exact address.
+</Aside>
+
+{/* t:p 66316fbba4554713acf452e3a4f05252d7c36864ac1e8ed81ce24d04e7302609 */}
+## Connect my computer to my account
+
+On a Linux machine on the network, two Nextcloud icons are installed&nbsp;:
+
+| Icon | Role |
+| --- | --- |
+| **Nextcloud Account** | Connects files, calendar and contacts to my computer. Just once. |
+| **Nextcloud Sync Client** | Copies a cloud folder to my disk. |
+
+I start with the first one.
+
+<Steps>
+
+1. I open **Nextcloud Account** from the app list. A small terminal window
+   appears.
+
+2. My browser opens on the cloud's sign-in page. I sign in with my network
+   account, then click **Grant access**.
+
+3. I go back to the terminal window. It shows my account, the server, and an
+   **app password**.
+
+</Steps>
+
+That's it. Three things happen at once&nbsp;:
+
+- A **Nextcloud (cloud.domain.tld)** entry appears in my file manager. It
+  gives access to my whole cloud without copying anything to the disk.
+- My **calendar** from the cloud appears in the Calendar app.
+- My **contacts** from the cloud appear in the Contacts app.
+
+<Aside type="note" title="The app password">
+This password does not replace mine&nbsp;: it only opens access to the files,
+and I can revoke it at any time from the cloud. I store it in my vault. It
+will help me connect another device or another app to my account.
+</Aside>
+
+{/* t:p df2dcd406dedd66999bac232e8254920ad6929e90b48e826e103c078386f5908 */}
+## Sync a folder to my disk
+
+The sync client keeps a local copy of my files. So I can work offline&nbsp;:
+everything updates again when the network is back.
+
+<Steps>
+
+1. At session start, the **Nextcloud** window offers to switch to the web
+   browser. I click **Open**.
+
+2. My browser opens on the cloud page. I sign in, then click **Grant access**.
+
+3. The client asks for the **local folder**. It suggests `Nextcloud` in my
+   home folder, which works very well.
+
+4. On the same page, I choose **the folders to sync**. No need to download
+   everything&nbsp;: I select what I use, and I can add more later.
+
+</Steps>
+
+A small cloud icon then appears in the top bar. It shows progress and gives
+access to the settings.
+
+<Aside type="caution" title="The connection link expires">
+The authorization page is only valid for a few minutes. If the window has
+stayed open all morning, the authorization will fail. I close the window,
+restart **Nextcloud Sync Client**, and start over&nbsp;: it's immediate.
+</Aside>
+
+{/* t:p 829f4056e945da720f8a083dca92496f5fbf377e2dfcc7e1e19fb284a9ebe0cd */}
+## Find my cloud in the file manager
+
+After these two steps, my cloud appears in two places, and it's not a
+duplicate&nbsp;:
+
+- **Nextcloud (cloud.domain.tld)**, in the sidebar&nbsp;: my whole cloud,
+  live. Nothing is stored on my computer, so I need to be connected to the
+  network.
+- **Nextcloud**, in my home folder&nbsp;: the folders I chose to sync. They
+  are on my disk and remain readable offline.
+
+A file dropped in the synced folder uploads by itself to the server, and
+reappears on my other devices.
+
+<Aside type="caution" title="Deleting means deleting everywhere">
+A file deleted from the synced folder is also deleted from the cloud, and
+therefore from my other devices. In case of a mistake, I recover it from the
+cloud's **trash**, in the browser.
+</Aside>
+
+{/* t:p 4ee47f565a925d1a539d51ceabe3d43e954e157732928944ae385da94c2591b5 */}
+## On my phone
+
+I install the **Nextcloud** app (Android or iPhone), enter the address
+`https://cloud.domain.tld`, and sign in with my network account. The app can
+also back up my photos automatically, if I want.
