@@ -570,6 +570,45 @@ nix shell nixpkgs#stuntman --command stunclient turn.domain.tld 3478
 `Binding test: fail`&nbsp;: les requêtes anonymes sont refusées, tous les
 appels seront relayés.
 
+{/* t:p e759997c2b96db307498bd0fc00ec9005d1802112296a2adbb4e8d4eae89f725 */}
+### Pairs privés refusés par le relais
+
+Pendant un appel, coturn journalise des erreurs de cette forme&nbsp;:
+
+```text
+ERROR session 000000000000000138: A peer IP 192.168.0.42 denied in the range:
+192.168.0.0-192.168.255.255 in server 0
+```
+
+Ce n'est pas une panne. `denied-peer-ip` filtre la **destination** d'une
+allocation (CreatePermission et ChannelBind), pas les clients autorisés à se
+connecter. Le client a proposé un candidat en adresse privée, coturn a refusé
+de relayer vers là, ICE écarte la paire et poursuit avec les candidats
+publics.
+
+DNF refuse donc toutes les plages privées et n'autorise que l'adresse publique
+de l'hôte, parce que coturn est un relais **public uniquement**&nbsp;: les
+clients le joignent sur cette adresse, et `relay-ip` est la même. Deux raisons
+de ne pas rouvrir `10.0.0.0/8` ni `100.64.0.0/10`.
+
+**Chemin asymétrique.** Le média relayé sort par le `relay-ip` public alors
+qu'un pair du tailnet ou du réseau local n'est joignable que par l'autre
+interface. L'appel s'établit, puis meurt quand l'entrée de suivi de connexion
+expire&nbsp;: c'est la signature des appels longs qui coupent sans raison.
+L'option `mobility` aggrave le cas, un téléphone qui change de réseau conserve
+une permission pointant l'adresse qu'il vient de quitter.
+
+**Pivot vers le réseau privé.** Un relais qui retransmet vers du RFC1918 ou du
+CGNAT devient un point d'entrée pour quiconque détient des identifiants TURN,
+c'est-à-dire tout compte du serveur Matrix puisque Synapse les distribue
+(`use-auth-secret`).
+
+<Aside type="tip" title="Si le relais intra-VPN devient nécessaire">
+Ne pas élargir la liste du relais public&nbsp;: déclarer une seconde instance
+coturn liée à l'interface du tailnet, avec son propre `relay-ip`. Les deux
+chemins restent alors symétriques.
+</Aside>
+
 {/* t:p 0f41ac433fa1137ed832a36a6ca0cd7b09466c8c17ef82ceed896991b4fb8656 */}
 ## Ouvrir le réseau à la fédération
 

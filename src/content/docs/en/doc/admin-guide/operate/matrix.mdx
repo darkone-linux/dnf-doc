@@ -565,6 +565,45 @@ nix shell nixpkgs#stuntman --command stunclient turn.domain.tld 3478
 `Binding test: fail`: anonymous requests are rejected, every call will be
 relayed.
 
+{/* t:p e759997c2b96db307498bd0fc00ec9005d1802112296a2adbb4e8d4eae89f725 */}
+### Private peers rejected by the relay
+
+During a call, coturn logs errors of this form&nbsp;:
+
+```text
+ERROR session 000000000000000138: A peer IP 192.168.0.42 denied in the range:
+192.168.0.0-192.168.255.255 in server 0
+```
+
+This is not a failure. `denied-peer-ip` filters the **destination** of an
+allocation (CreatePermission and ChannelBind), not the clients allowed to
+connect. The client proposed a candidate with a private address, coturn
+refused to relay to it, ICE discards the pair and continues with the public
+candidates.
+
+DNF therefore refuses all private ranges and only allows the host's public
+address, because coturn is a **public-only** relay&nbsp;: clients reach it on
+this address, and `relay-ip` is the same. Two reasons not to reopen
+`10.0.0.0/8` or `100.64.0.0/10`.
+
+**Asymmetric path.** The relayed media leaves through the public `relay-ip`
+while a peer on the tailnet or local network is only reachable through the
+other interface. The call establishes, then dies when the connection tracking
+entry expires&nbsp;: this is the signature of long calls that cut off without
+reason. The `mobility` option makes the case worse, a phone that changes
+network keeps a permission pointing to the address it just left.
+
+**Pivot toward the private network.** A relay that forwards to RFC1918 or
+CGNAT becomes an entry point for anyone holding TURN credentials, that is any
+account of the Matrix server since Synapse distributes them
+(`use-auth-secret`).
+
+<Aside type="tip" title="If the intra-VPN relay becomes necessary">
+Do not widen the public relay list&nbsp;: declare a second coturn instance
+bound to the tailnet interface, with its own `relay-ip`. Both paths then stay
+symmetric.
+</Aside>
+
 {/* t:p 0f41ac433fa1137ed832a36a6ca0cd7b09466c8c17ef82ceed896991b4fb8656 */}
 ## Opening the network to federation
 

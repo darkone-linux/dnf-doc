@@ -308,6 +308,93 @@ Send to the bridge's bot, in its direct conversation&nbsp;:
 | `login` | Connect my account |
 | `logout` | Disconnect my account from the bridge |
 
+{/* t:p 86b81978f4747aaec5796e9013f15d23d6be9967c6b4e901393b826b27b740d0 */}
+## Troubleshooting
+
+Almost every email problem comes from the **phone**, not the server. Android
+puts apps to sleep to save battery, and a sleeping app does not ring.
+
+{/* t:p 5695a7a58f859997caa2383a77794ab3ec9128d84c1e31ae02aae3b25fd43ecf */}
+### The phone does not ring, or rings too late
+
+This is the number one cause. The server notifies the phone within one or two
+seconds; it is the phone that processes the alert late, sometimes after about
+thirty seconds, sometimes never.
+
+<Steps>
+
+1. **Lift the battery restriction** : Settings → Apps → Element → Battery →
+   **Unrestricted**. The "Optimized" mode is not enough.
+
+2. **Remove Element from apps that are put to sleep** : on Samsung phones,
+   Settings → Battery → **Background usage limits**. Remove Element from the
+   "Sleeping apps" and "Deep sleeping apps" lists, then disable "Put unused
+   apps to sleep".
+
+3. **Allow full-screen notifications** : Settings → Apps → Element →
+   Notifications → **Full-screen notifications**. Without this permission,
+   Android 14 and later replace the incoming-call screen with a silent
+   notification.
+
+4. **Check the "Calls" channel** : still in Element's notifications, this
+   channel must have a sound and the right to **ignore Do Not Disturb mode**.
+
+</Steps>
+
+<Aside type="tip" title="The only test that counts">
+Lock the phone, leave it aside for a quarter of an hour, then get called. A
+test done on a phone that is on and active proves nothing&nbsp;: it is at rest
+that Android delays everything.
+</Aside>
+
+{/* t:p b261335631bf626b808408fc90f19d94aba9780cff629920dee0eb1b901bd0e3 */}
+### No notification arrives
+
+If even ordinary messages go unnoticed, check in this order&nbsp;:
+
+| Check | How to do it |
+|---|---|
+| The app has been opened at least once | It only announces itself to the server at its first launch, after installation just as after reinstallation |
+| The room is not muted | Long press on the room, then Notifications |
+| "Do Not Disturb" mode is off | Android settings |
+| The session is still open | `https://matrix.domain.tld/account` lists my connected devices |
+
+As a last resort, log out and then log back in in the app&nbsp;: it announces
+itself to the server again at the next start.
+
+{/* t:p 8d90855587a8fa0bfe143ff96218a238fcf2475d468a372b00d70a14bf4a3c94 */}
+### Which app to install?
+
+The two mobile apps do not handle calls the same way.
+
+| | Element X | Classic Element |
+|---|---|---|
+| Messages and bridges | Yes | Yes |
+| Two-person calls | With Element X and the web client | Between classic apps |
+| Group calls | Yes | No |
+| QR-code login | Yes | No |
+
+For everyone to call each other without asking questions, the simplest thing
+remains to **install Element X everywhere**. The detail of the incompatibility
+and troubleshooting without installing anything are described above, in
+[Call in audio or video](#making-audio-or-video-calls).
+
+{/* t:p d125bdda24298ef7c9313660d83c78f6240c0a8a936439c74b73917432ecca37 */}
+### What to report to the administrator
+
+If nothing works, these four pieces of information save them a lot of time&nbsp;:
+
+- The exact time of the missed message or call, **with the time zone**.
+- The name of the person at the other end.
+- The app used on each side (Element X or Classic Element).
+- The state of the phone&nbsp;: locked or in hand, wifi or mobile data.
+
+<Aside type="note" title="Why specify the time zone?">
+The server may be hosted in a country other than mine. A time given without
+its time zone sends the administrator looking in the wrong place in the
+server logs.
+</Aside>
+
 {/* t:p 5a796618386dd710ac0719adcedbe89105f159722e6fce1eaa70faf89989e752 */}
 ## See also
 
