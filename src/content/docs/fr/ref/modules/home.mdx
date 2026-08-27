@@ -285,6 +285,90 @@ darkone.home.music = {
 };
 ```
 
+{/* t:p fd6d1f2d551335bdea41eed6b4bc0457dfa401b4b03c69fda83dc5eb272f20a1 */}
+### &#x1F3E0; darkone.home.office
+
+Outils courants pour le bureau de travail.
+
+* **enable** `bool` Paquets utiles par défaut
+* **enableMore** `bool` Plus de paquets alternatifs
+* **enableUnsafeFeatures** `bool` Fonctionnalités pour utilisateurs avancés non enfants
+* **enableUBlock** `bool` Active le plugin ublock
+* **enableTools** `bool` Petits outils (gnome) (iotas, dialect, etc.)
+* **enableProductivity** `bool` Applications de productivité (obsidian, gestion du temps, projets, etc.)
+* **enableCommunication** `bool` Outils de communication
+* **enableOffice** `bool` Paquets bureautiques (libreoffice, huntspell, polices...)
+* **enableFirefox** `bool` Active firefox
+* **enableLibreWolf** `bool` Active LibreWolf (alternative à firefox)
+* **enableChromium** `bool` Active chromium
+* **enableBrave** `bool` Active le navigateur Brave
+* **enableEmail** `bool` Paquets de gestion d'e-mails (thunderbird)
+* **enableSecurity** `bool` Outils de sécurité (keepass)
+* **enableCalendarContacts** `bool` Calendrier GNOME, contacts et applications associées
+* **enableEssentials** `bool` Outils essentiels
+* **huntspellLang** `str` [Langue Huntspell](https://mynixos.com/nixpkgs/packages/hunspellDicts)
+* **enableElementAutoStart** `bool` Démarre automatiquement Element Desktop à la connexion lorsqu'un serveur Matrix local est présent
+* **enableFractalAutoStart** `bool` Démarre automatiquement Fractal à la connexion lorsqu'un serveur Matrix local est présent (sur option, voir les mises en garde ci-dessous)
+* **nextcloud.enable** `bool` Installe le client de bureau Nextcloud, pré-lié à l'instance du réseau
+* **nextcloud.server** `nullOr str` Instance Nextcloud à laquelle le client se lie. `null` choisit celle déclarée
+  sur le réseau (cette zone en premier). À définir pour cibler une instance locale ou
+  externe à la place.
+* **nextcloud.enableAutoStart** `bool` Démarre le client Nextcloud en arrière-plan à la connexion
+* **nextcloud.enableWebdav** `bool` Livre `nextcloud-webdav-login`, un assistant à usage unique qui authentifie
+  via le navigateur (SSO Kanidm) et enregistre le résultat comme compte en ligne
+  GNOME&nbsp;: fichiers via WebDAV dans le gestionnaire de fichiers, plus calendrier
+  et contacts dans Evolution. Nécessaire car Nextcloud refuse de créer
+  un mot de passe d'application depuis son interface web pour un utilisateur OIDC.
+
+  L'assistant affiche aussi le mot de passe d'application, afin que tout autre
+  client WebDAV puisse être pointé vers le même compte.
+
+  :::note[GNOME uniquement]
+  Le compte est écrit là où GNOME Online Accounts le lit, ce que
+  `darkone.graphic.gnome` active de lui-même dès que le réseau
+  porte un cloud. Sur un autre bureau, le mot de passe affiché reste utilisable.
+  :::
+
+  Ignoré lorsque `darkone.home.office.nextcloud.enable` est désactivé.
+* **nextcloud.syncDir** `nullOr str` Dossier local pré-rempli dans l'assistant de configuration, relatif à `$HOME`.
+
+  :::caution[Aucune synchronisation par défaut]
+  Laissé à `null` exprès. L'assistant s'arrête alors sur sa page de dossier et
+  l'utilisateur décide quoi, le cas échéant, synchroniser. Le définir ignore
+  cette page.
+  :::
+
+```nix
+darkone.home.office = {
+  enable = false;
+  enableMore = false;
+  enableUnsafeFeatures = false;
+  enableUBlock = false;
+  enableTools = false;
+  enableProductivity = false;
+  enableCommunication = false;
+  enableOffice = false;
+  enableFirefox = false;
+  enableLibreWolf = false;
+  enableChromium = false;
+  enableBrave = false;
+  enableEmail = false;
+  enableSecurity = false;
+  enableCalendarContacts = false;
+  enableEssentials = true;
+  huntspellLang = "en-us";
+  enableElementAutoStart = true;
+  enableFractalAutoStart = false;
+  nextcloud.enable = detectedNextcloud != null;
+  nextcloud.server = "https://cloud.example.com";
+  nextcloud.enableAutoStart = true;
+  nextcloud.enableWebdav = true;
+  nextcloud.syncDir = "Nextcloud";
+};
+```
+
+<hr/>
+
 {/* t:p 547ee4daed2acde13003ad986f960568575e0bc22291ee241f854bd57a1cc21c */}
 ### &#x1F3E0; darkone.home.video
 
