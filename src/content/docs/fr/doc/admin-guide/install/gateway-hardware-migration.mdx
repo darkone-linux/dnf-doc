@@ -84,7 +84,10 @@ identiques au déverrouillage du disque.
 ## Préparer la configuration
 
 Les interfaces Wi-Fi n'ont pas à figurer dans `gateway.lan.interfaces`&nbsp;:
-`hostapd` place lui-même son interface dans le pont.
+`hostapd` place lui-même son interface dans le pont. En listant une quand
+même, le framework l'écarte du pont `networkd` — sans quoi `networkd` tenterait
+de l'y rattacher avant que `hostapd` ne l'ait passée en mode AP, échouerait en
+boucle, puis renoncerait à gérer le lien.
 
 ```yaml
 # etc/config.yaml
