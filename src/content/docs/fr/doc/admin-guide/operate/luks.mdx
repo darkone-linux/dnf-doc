@@ -110,15 +110,27 @@ local (`/var/lib/luks-passphrase/ledger`) : une valeur sops modifiée tue
 l'ancien slot et enrôle la nouvelle, sans jamais toucher au keyslot
 d'installation.
 
-{/* t:p 0dbd0d693f7ba0020ca5d8bae4b6126ac03c3bea783ed6a1ddd17165b97a51b5 */}
+{/* t:p 9c246200be804eaa7798a5f7d23fcfdfe9ad48ce6446b601c56c96c6d679607a */}
 ## Déverrouiller au démarrage
 
 Sur place, deux gestes possibles devant la console :
 
-- **YubiKey enrôlée branchée** : toucher la clé quand la diode clignote
-  (`fido2-device=auto`), rien à taper ;
+- **YubiKey enrôlée branchée** : toucher la clé quand la diode clignote, rien
+  à taper. La CID est lue dans les métadonnées du token LUKS2, aucune option
+  `crypttab` n'est nécessaire ;
 - **au clavier** : taper la passphrase par hôte, la partagée, ou celle
   d'installation.
+
+:::caution[Ne jamais écrire `fido2-device=` dans crypttab]
+Avec cette option, une clé **branchée mais non touchée** fait sortir
+`systemd-cryptsetup` en erreur au lieu de proposer la passphrase : aucun prompt,
+ni sur la console ni sur le port 2222, et l'initrd bascule en `emergency`. Une
+coupure de courant sur un hôte sans personne devant suffit alors à l'immobiliser.
+
+Sans l'option, la clé est essayée exactement pareil — puis, si personne ne
+touche, le démarrage retombe sur la passphrase après une trentaine de secondes.
+Le framework ne l'écrit donc jamais.
+:::
 
 À distance, l'initrd démarre un **sshd dédié sur le port 2222**, avec sa
 propre clé d'hôte persistante, accessible uniquement avec la clé de

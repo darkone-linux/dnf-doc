@@ -110,42 +110,54 @@ The sync service detects changes thanks to a local registry
 old slot and enrolls the new one, without ever touching the
 installation keyslot.
 
-{/* t:p 0dbd0d693f7ba0020ca5d8bae4b6126ac03c3bea783ed6a1ddd17165b97a51b5 */}
+{/* t:p 9c246200be804eaa7798a5f7d23fcfdfe9ad48ce6446b601c56c96c6d679607a */}
 ## Unlocking at boot
 
-On site, two possible actions at the console:
+On site, two gestures are possible in front of the console:
 
-- **Enrolled YubiKey plugged in**: touch the key when the LED blinks
-  (`fido2-device=auto`), nothing to type;
-- **at the keyboard**: type the per-host, shared, or installation
-  passphrase.
+- **Enrolled YubiKey plugged in**: touch the key when the LED blinks, nothing
+  to type. The CID is read from the LUKS2 token metadata, no `crypttab` option
+  is needed;
+- **on the keyboard**: type the per-host passphrase, the shared one, or the
+  installation one.
 
-Remotely, the initrd starts a **dedicated sshd on port 2222**, with its
-own persistent host key, accessible only with the deployment key `nix`.
-The entry point stays the same as in normal times:
+:::caution[Never write `fido2-device=` in crypttab]
+With this option, a **plugged-in but untouched** key makes
+`systemd-cryptsetup` exit with an error instead of offering the passphrase: no
+prompt, neither on the console nor on port 2222, and the initrd drops to
+`emergency`. A power outage on a host with nobody in front of it is then enough
+to immobilize it.
+
+Without the option, the key is tried exactly the same way — then, if nobody
+touches it, boot falls back to the passphrase after about thirty seconds.
+The framework therefore never writes it.
+:::
+
+Remotely, the initrd starts a **dedicated sshd on port 2222**, with its own
+persistent host key, accessible only with the `nix` deployment key. The entry
+point stays the same as usual:
 
 ```sh
-just reboot <host>     # or any other cause of restart
-just enter <host>      # detects the initrd wait and presents the prompt
+just reboot <hôte>     # ou toute autre cause de redémarrage
+just enter <hôte>      # détecte l'attente en initrd et présente le prompt
 ```
 
-When port 22 does not answer, `just enter` probes port 2222 on the explicit
-IP (if provided), the host name, then the **WAN IP recorded in the
-manifest**, and answers the LUKS prompt via `systemd-tty-ask-password-agent`.
-Once the passphrase is typed, the boot continues and port 22 comes back.
+When port 22 does not answer, `just enter` probes port 2222 on the explicit IP
+(if provided), the host name, then the **WAN IP recorded in the manifest**, and
+answers the LUKS prompt via `systemd-tty-ask-password-agent`. Once the
+passphrase is entered, boot resumes and port 22 comes back.
 
 :::note[Why the WAN IP?]
-The VPN of a zone dies with its gateway: when the latter waits for its
-passphrase, only its WAN side is reachable. Its initrd also replicates
-the production addressing (static IP on the `lan0` bridge, DHCP on the WAN
-side), since it is itself the DHCP server its initrd would otherwise wait
-for. The other hosts simply do DHCP on their wired interfaces.
+A zone's VPN dies with its gateway: when the gateway is waiting for its
+passphrase, only its WAN side is reachable. Its initrd also replicates the
+production addressing (static IP on the `lan0` bridge, DHCP on the WAN side),
+since it is itself the DHCP server that its initrd would otherwise wait for.
+The other hosts simply use DHCP on their wired interfaces.
 :::
 
 :::note[Laptops on Wi-Fi]
 No network in initrd without a cable: an encrypted laptop unlocks at the
-console (passphrase or YubiKey), remote unlocking does not
-apply.
+console (passphrase or YubiKey), remote unlocking does not apply.
 :::
 
 {/* t:p b2e48a2ef1e330c748b75cd9143d12c276cde06e38d46b7033372022b534e739 */}

@@ -277,20 +277,20 @@ The reservation requires a `mac` key in `etc/config.yaml`. Without it, the
 machine stays reachable at home, but not elsewhere.
 </Aside>
 
-{/* t:p aac999ab348f678ee23942259fe310677c3dfc03e4ca688282841d6622aa8d90 */}
+{/* t:p 8a509beaeff143cb3d23a5a54e7a9a9790b92cd43b7862e8b8a496bc4f86f4cb */}
 ### What the tooling does
 
-The installation recipes compute the address by themselves. They first identify
-the zone where the administration machine is located, from its **real default
-gateway** and not from its declared zone (an administration laptop is precisely
-what moves around), then deduce the address of the target.
+The installation recipes compute the address on their own. They first identify the zone where the admin machine is located, based on its **actual default gateway** rather than its declared zone (an admin laptop is precisely the thing that moves around), then deduce the target's address.
 
-What remains is deployment&nbsp;: [Colmena](https://colmena.cli.rs/) addresses a
-node by its name, which designates the original address. For a visiting host,
-`just configure` therefore sets up a temporary SSH redirect, removed at the end
-of the installation or by hand&nbsp;:
+This address is then **verified before being used**&nbsp;: a reservation says where the machine *would* be if it were plugged in here, which is correct during installation and wrong as soon as it is back home. If nothing answers at the reserved address, the tooling falls back to the hostname when the latter answers — port 22, or 2222 for an encrypted machine waiting in its initrd. If nothing answers anywhere, the reserved address is kept&nbsp;: it is the one on which the installer will appear.
+
+<Aside type="caution" title="Out-of-zone management recipes">
+Before this check, `just enter` and `just luks` targeted the reserved address even for a host that stayed home, reached through the VPN. `just enter` gave up&nbsp;; `just luks` warned and then exited with 0, while Colmena — which addresses nodes by their name — deployed without noticing anything. A `just apply` run right after therefore installed a boot loader without the initrd's host key, and therefore without remote LUKS unlocking.
+</Aside>
+
+What remains is deployment&nbsp;: [Colmena](https://colmena.cli.rs/) addresses a node by its name, which refers to the origin address. For a visiting host, `just configure` therefore sets up a temporary SSH redirect, removed at the end of installation or by hand&nbsp;:
 
 ```sh
-just roaming             # show the current redirects
-just roaming-clear       # remove them all
+just roaming             # afficher les redirections en cours
+just roaming-clear       # toutes les retirer
 ```

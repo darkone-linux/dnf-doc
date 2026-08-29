@@ -490,7 +490,7 @@ darkone.system.testing = {
 
 <hr/>
 
-{/* t:p cdafe2bacbfcc4b639d7745e59723cf89954e3fbea0a79b78618c4865093ae41 */}
+{/* t:p 9ef4c114881447d060fd56fb9b66dba5578dc3cf3048d0e41b5700b6566172dd */}
 ### &#x2699; darkone.system.yubikey
 
 YubiKey strong authentication: fleet-wide PAM U2F + declarative FIDO2 LUKS.
@@ -525,7 +525,9 @@ LUKS support keys on the LUKS volumes found in the host disko config
 
 :::caution[No lockout by design]
 The install passphrase keyslot and the sops session passwords are never
-touched: losing a key at worst falls back to passphrase/password.
+touched: losing a key at worst falls back to passphrase/password. This holds
+at boot too, which is why no `fido2-device=` option is written to crypttab —
+see the comment on the initrd block below.
 :::
 
 :::caution[The boot touch cannot be waived]
