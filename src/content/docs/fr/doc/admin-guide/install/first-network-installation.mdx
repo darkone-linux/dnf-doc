@@ -27,7 +27,7 @@ Tous les nœuds sont décrits dans **une** configuration NixOS, sur la machine d
 l'administrateur. De là, on déploie et fait évoluer tout le réseau.
 :::
 
-{/* t:p 6a371df9a6aa3f25514dd9690f40b724eb8268ad07c1f669a9fcabf17227dd52 */}
+{/* t:p 3113fe9208908a96657f9f442be378501d1993b180a728d64d31220f759a56a9 */}
 ## Créer le projet
 
 Le projet part du template `dnf-boilerplate` : une structure prête et un
@@ -48,8 +48,13 @@ Le projet part du template `dnf-boilerplate` : une structure prête et un
    ```
 
    :::note[Que fait `#init` ?]
-   Il crée le lien `.dnf/` vers les recettes du framework. Ensuite,
+   Il crée le lien `dnf/` vers l'arbre du framework dans le store nix : c'est
+   lui qui donne ses recettes à `just` et ses profils au générateur. Ensuite,
    `just --list` affiche toutes les commandes disponibles.
+
+   Une fois le projet doté de son propre `flake.lock`, on rafraîchit ce lien
+   avec `nix run .#init` : cette forme suit la révision épinglée par le
+   projet, l'outillage ne diverge donc jamais du système construit.
    :::
 
 3. **Initialiser les secrets**
@@ -67,14 +72,20 @@ Le projet part du template `dnf-boilerplate` : une structure prête et un
 
 </Steps>
 
-{/* t:p d0331301fb65c96b3d36e9943cda23fd2783181bd3ca8bd2482eb962e87d9cb1 */}
+{/* t:p 5091c5cb7b19263fb67f1e5a0e1beaad51409801c4700b8dc904791ebfa65ab3 */}
 ## Décrire la configuration
 
 Tout se déclare dans `etc/config.yaml` (réseau, zones, utilisateurs, hôtes).
-Pour un premier poste, un utilisateur et un hôte suffisent :
+Pour un premier poste, une zone, un utilisateur et un hôte suffisent : tout
+hôte appartient à une zone (ou porte une adresse publique `ipv4`).
 
 ```yaml
 # etc/config.yaml
+zones:
+  main:
+    description: "Réseau principal"
+    ipPrefix: "10.0"          # cette zone utilise 10.0.0.0/16
+
 users:
   alice:
     uid: 1000
@@ -85,6 +96,7 @@ users:
 hosts:
   - hostname: "poste"
     name: "Poste de l'administrateur"
+    zone: "main:1.10"         # IP fixe 10.0.1.10 ("main" seul = DHCP)
     profile: "desktop"
     users: ["alice"]
     disko:
@@ -93,16 +105,25 @@ hosts:
         main: "/dev/nvme0n1"
 ```
 
-Puis régénérer et vérifier :
+Puis régénérer, vérifier et commiter :
 
 ```sh
 just generate      # produit var/generated/*.nix depuis etc/config.yaml
 just check-flake   # nix flake check
+git add . && git commit -m "Premier hôte"
 ```
 
 :::caution[Fichiers générés]
 `var/generated/` est produit par l'outil : on ne l'édite jamais à la main.
-On édite `etc/config.yaml`, puis on régénère.
+On édite `etc/config.yaml`, puis on régénère. `just generate` sème aussi les
+fichiers que le framework attend : `usr/users/<login>/` pour chaque compte et
+`usr/machines/<hôte>/` pour chaque hôte doté d'un bloc `disko`.
+:::
+
+:::danger[Commiter avant de construire]
+Les flakes nix ne voient que les fichiers suivis par git. Un
+`var/generated/hosts.nix` ou un `usr/machines/<hôte>/` non commité fait
+échouer toutes les constructions.
 :::
 
 {/* t:p 983c8000652e98c82729d3bbeed6110557bece8b6e50c3f26a0043b7adcb0ee3 */}

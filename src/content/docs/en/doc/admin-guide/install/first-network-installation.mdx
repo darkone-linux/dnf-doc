@@ -26,18 +26,16 @@ All nodes are described in **one** NixOS configuration, on the administrator's
 machine. From there, the entire network is deployed and evolved.
 :::
 
-{/* t:p 6a371df9a6aa3f25514dd9690f40b724eb8268ad07c1f669a9fcabf17227dd52 */}
-## Creating the project
+{/* t:p 3113fe9208908a96657f9f442be378501d1993b180a728d64d31220f759a56a9 */}
+## Create the project
 
-The project starts from the `dnf-boilerplate` template: a ready-made structure and a
-commented `etc/config.yaml` to fill in.
+The project starts from the `dnf-boilerplate` template: a ready-made structure and a commented `etc/config.yaml` to fill in.
 
 <Steps>
 
 1. **Create the repository**
 
-   From the [dnf-boilerplate](https://github.com/darkone-linux/dnf-boilerplate) template
-   ("Use this template" button), or by cloning.
+   From the [dnf-boilerplate](https://github.com/darkone-linux/dnf-boilerplate) template (the "Use this template" button), or by cloning.
 
 2. **Bootstrap the framework**
 
@@ -47,32 +45,44 @@ commented `etc/config.yaml` to fill in.
    ```
 
    :::note[What does `#init` do?]
-   It creates the `.dnf/` symlink pointing to the framework recipes. Then,
-   `just --list` displays all available commands.
+   It creates the `dnf/` link to the framework tree in the nix store: this is
+   what gives `just` its recipes and the generator its profiles. Then
+   `just --list` shows all the available commands.
+
+   Once the project has its own `flake.lock`, you refresh this link with
+   `nix run .#init`: this form follows the revision pinned by the project, so
+   the tooling never diverges from the built system.
    :::
 
-3. **Initialize secrets**
+3. **Initialize the secrets**
 
    ```sh
    just configure-admin-host
    ```
 
    :::tip[Idempotent]
-   Creates the age keys, the `.sops.yaml` file, a default password, and the
-   [internal secrets](/en/doc/admin-guide/operate/secrets/#managing-passwords)
-   of declared services. It never recreates what already exists: re-run it
-   after each new service, host, or zone.
+   Creates the age keys, the `.sops.yaml` file, a default password and the
+   [internal secrets](/en/doc/admin-guide/operate/secrets/#internal-secrets-and-external-secrets)
+   of the declared services. It never recreates what already exists: rerun it
+   after every new service, host or zone.
    :::
 
 </Steps>
 
-{/* t:p d0331301fb65c96b3d36e9943cda23fd2783181bd3ca8bd2482eb962e87d9cb1 */}
+{/* t:p 5091c5cb7b19263fb67f1e5a0e1beaad51409801c4700b8dc904791ebfa65ab3 */}
 ## Describe the configuration
 
-Everything is declared in `etc/config.yaml` (network, zones, users, hosts). For a first workstation, one user and one host are enough:
+Everything is declared in `etc/config.yaml` (network, zones, users, hosts).
+For a first machine, one zone, one user and one host are enough: every host
+belongs to a zone (or carries a public `ipv4` address).
 
 ```yaml
 # etc/config.yaml
+zones:
+  main:
+    description: "Réseau principal"
+    ipPrefix: "10.0"          # cette zone utilise 10.0.0.0/16
+
 users:
   alice:
     uid: 1000
@@ -83,6 +93,7 @@ users:
 hosts:
   - hostname: "poste"
     name: "Poste de l'administrateur"
+    zone: "main:1.10"         # IP fixe 10.0.1.10 ("main" seul = DHCP)
     profile: "desktop"
     users: ["alice"]
     disko:
@@ -91,15 +102,24 @@ hosts:
         main: "/dev/nvme0n1"
 ```
 
-Then regenerate and verify:
+Then regenerate, verify and commit:
 
 ```sh
-just generate      # produces var/generated/*.nix from etc/config.yaml
+just generate      # produit var/generated/*.nix depuis etc/config.yaml
 just check-flake   # nix flake check
+git add . && git commit -m "Premier hôte"
 ```
 
 :::caution[Generated files]
-`var/generated/` is produced by the tool: it should never be edited manually. Edit `etc/config.yaml`, then regenerate.
+`var/generated/` is produced by the tool: never edit it by hand. You edit
+`etc/config.yaml`, then regenerate. `just generate` also seeds the files the
+framework expects: `usr/users/<login>/` for each account and
+`usr/machines/<host>/` for each host with a `disko` block.
+:::
+
+:::danger[Commit before building]
+nix flakes only see files tracked by git. An uncommitted
+`var/generated/hosts.nix` or `usr/machines/<host>/` makes all builds fail.
 :::
 
 {/* t:p 983c8000652e98c82729d3bbeed6110557bece8b6e50c3f26a0043b7adcb0ee3 */}

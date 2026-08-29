@@ -79,11 +79,14 @@ namespace). NixOS copies the `.link` files into the initrd, so the names are
 identical at disk unlock.
 :::
 
-{/* t:p 899984142e75fac6fb0eae50974244dca107b235c1a17cfc8b9f2e53ee8ab9f5 */}
-## Prepare the configuration
+{/* t:p 09802bcc8b11d9282c8b8e771d34bc8f6ebc36e5885aa0cd03bd890a72d1b4b8 */}
+## Preparing the configuration
 
-The Wi-Fi interfaces do not need to appear in `gateway.lan.interfaces`&nbsp;:
-`hostapd` places its own interface in the bridge.
+Wi-Fi interfaces don't need to appear in `gateway.lan.interfaces`&nbsp;:
+`hostapd` places its own interface in the bridge. If you list one anyway, the
+framework removes it from the `networkd` bridge — otherwise `networkd` would try
+to attach it before `hostapd` had put it in AP mode, fail in a loop, then give
+up managing the link.
 
 ```yaml
 # etc/config.yaml
@@ -106,22 +109,23 @@ hosts:
         main: "/dev/nvme0n1"
 ```
 
-Renaming the host along the way is the right time, since the machine is being
-reinstalled anyway. An **alias carrying the new name must then be removed**&nbsp;:
-the generator refuses a name being both an alias and a hostname.
+Renaming the host along the way is the right moment, since the machine is being
+reinstalled anyway. Any **alias carrying the new name must then be deleted**&nbsp;:
+the generator refuses to let a name be both an alias and a host name.
 
-On the machine folder side, `git mv usr/machines/<ancien> usr/machines/gw`, then
-import `./generated-configuration.nix` and `./disko.nix` in `default.nix`.
+On the machine folder side, `git mv usr/machines/<old> usr/machines/gw`, then
+import `./generated-configuration.nix` and `./disko.nix` into `default.nix`.
 
-:::danger[The `stateVersion` is that of the OLD machine]
-The reflex is to take the value from the fresh install template. That is
-misguided here&nbsp;: the option sets the defaults tied to **persistent data**,
-not the hardware's purchase date. Yet that data is the old machine's.
+:::danger[`stateVersion` is that of the OLD machine]
+The reflex is to take the value from the fresh installation template. That's
+the wrong move here&nbsp;: the option sets the defaults related to the
+**persistent data**, not the hardware purchase date. Yet this data comes from
+the old machine.
 
-The PostgreSQL major version depends directly on it. A too-recent
-`stateVersion` selects a more recent major version, which creates an **empty**
-cluster next to the restored one. Symptom&nbsp;: the service starts perfectly and
-answers, but no longer knows any account.
+The PostgreSQL major version depends on it directly. A `stateVersion` that's too
+recent selects a newer major, which creates an **empty** cluster next to the
+restored one. Symptom&nbsp;: the service starts perfectly and responds, but no
+longer knows any account.
 
 ```sh
 ls /var/lib/postgresql     # two majors side by side = alert
@@ -129,10 +133,10 @@ ls /var/lib/postgresql     # two majors side by side = alert
 :::
 
 :::caution[A missing mount can lock the machine]
-A mount without `nofail` that fails makes `local-fs.target` fail, which drops
-the boot into emergency mode&nbsp;: no more `multi-user.target`, therefore no more
-SSH. Combined with no root password and a disabled bootloader editor, the
-machine becomes unreachable, console included.
+A mount without `nofail` that fails makes `local-fs.target` fail, which switches
+the boot to emergency mode&nbsp;: no more `multi-user.target`, therefore no more
+SSH. Combined with the absence of a root password and the disabled bootloader
+editor, the machine becomes inaccessible, console included.
 
 Any mount whose source can be missing at boot (external disk, link to a
 directory created afterwards) must carry `nofail`.
