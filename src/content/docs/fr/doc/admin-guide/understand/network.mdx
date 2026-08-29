@@ -288,6 +288,23 @@ d'abord la zone où se trouve la machine d'administration, à partir de sa
 d'administration est précisément ce qui se déplace), puis en déduisent l'adresse
 de la cible.
 
+Cette adresse est ensuite **vérifiée avant d'être utilisée**&nbsp;: une
+réservation dit où la machine *serait* si elle était branchée ici, ce qui est
+juste pendant l'installation et faux dès qu'elle est rentrée chez elle. Si rien
+ne répond à l'adresse réservée, l'outillage retombe sur le nom de l'hôte
+lorsque celui-ci répond — port 22, ou 2222 pour une machine chiffrée en attente
+dans son initrd. Si rien ne répond nulle part, l'adresse réservée est conservée&nbsp;:
+c'est celle sur laquelle l'installateur apparaîtra.
+
+<Aside type="caution" title="Recettes de gestion hors zone">
+Avant cette vérification, `just enter` et `just luks` visaient l'adresse
+réservée même pour un hôte resté chez lui, joint par le VPN. `just enter`
+abandonnait&nbsp;; `just luks` avertissait puis sortait avec 0, alors que
+Colmena — qui s'adresse aux nœuds par leur nom — déployait sans rien remarquer.
+Un `just apply` lancé derrière installait donc un chargeur de démarrage sans la
+clé d'hôte de l'initrd, et donc sans déverrouillage LUKS à distance.
+</Aside>
+
 Reste le déploiement&nbsp;: [Colmena](https://colmena.cli.rs/) s'adresse à un
 nœud par son nom, qui désigne l'adresse d'origine. Pour un hôte en visite,
 `just configure` pose donc une redirection SSH temporaire, retirée en fin
