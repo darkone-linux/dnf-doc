@@ -64,6 +64,30 @@ Réservez l'activation aux postes dont c'est l'usage assumé.
 Le filtrage est fait **côté hôte**, pas par le client : un client bricolé ne
 peut pas transformer un `ro` en `rw`.
 
+## Raccourcis de la fenêtre
+
+Le client est `sdl-freerdp`. Ses raccourcis utilisent **Maj droite** comme
+modificateur — et non `Ctrl+Alt` comme l'ancien client X11 :
+
+| Raccourci | Effet |
+|---|---|
+| `Maj droite` + `Entrée` | Plein écran (et retour) |
+| `Maj droite` + `G` | Capture clavier/souris. Capturé, `Alt+Tab` et les autres raccourcis partent vers le poste distant ; relâché, ils reviennent au vôtre |
+| `Maj droite` + `R` | Autoriser / bloquer le redimensionnement de la fenêtre |
+| `Maj droite` + `M` | Réduire la fenêtre |
+| `Maj droite` + `D` | Se déconnecter proprement |
+
+:::tip[Revenir sur son poste]
+En plein écran avec la capture clavier active, `Maj droite` reste toujours
+interceptée localement : `Maj droite` + `Entrée` vous ramène, quoi qu'il
+arrive. Fermer la fenêtre désarme la session sur l'hôte.
+:::
+
+La fenêtre s'ouvre à 80 % de la taille de l'écran distant, donc à ses
+proportions exactes. La redimensionner met le bureau distant à l'échelle,
+sans respecter le ratio : pour un affichage sans déformation, utilisez le
+plein écran ou revenez à la taille d'origine.
+
 ## Ce qui se passe réellement
 
 1. La commande joint l'hôte en SSH sous l'identité `nix`, comme toutes les
@@ -114,6 +138,31 @@ Dans les deux cas : même protocole RDP, même client, mêmes modes `ro`/`rw`.
   pas et s'arrête. C'est volontaire — une configuration posée à la main ne doit
   pas être écrasée puis « restaurée » de travers.
 - Pas de son, pas de presse-papier partagé, pas de transfert de fichiers.
+- **Le redimensionnement manuel de la fenêtre ne respecte pas les proportions.**
+  La taille d'ouverture, elle, est correcte.
+- **`gnome-remote-desktop` est reconstruit** sur les hôtes concernés (cf. la
+  section suivante). Le build est mis en cache, mais un `just update` qui fait
+  bouger GNOME peut faire échouer le patch, bruyamment.
+
+## Le pointeur de l'utilisateur
+
+Tel qu'il est livré, `gnome-remote-desktop` transmet la *forme* du curseur mais
+jamais sa *position* quand il reflète un écran physique : le client dessine donc
+le curseur distant à l'emplacement de **votre** souris. En `rw` cela ne se voit
+pas puisque c'est vous qui le pilotez, mais en `ro` vous ne voyez pas du tout où
+l'utilisateur pointe — ce qui vide l'observation de son intérêt.
+
+DNF corrige cela en patchant le serveur pour qu'il demande à mutter d'incruster
+le pointeur dans l'image (mode de curseur *embedded*, déjà utilisé en amont pour
+les moniteurs virtuels). Une ligne de code, et les métadonnées de curseur
+cessent d'être émises — donc aucun second curseur parasite.
+
+Le prix est une recompilation locale de `gnome-remote-desktop` sur chaque hôte
+dépannable. Pour s'en passer :
+
+```nix
+darkone.graphic.remote-desktop.embedCursor = false;
+```
 
 ## En cas de problème
 
