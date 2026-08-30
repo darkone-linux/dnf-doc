@@ -1,0 +1,134 @@
+---
+title: Bureau à distance
+sidebar:
+  label: Bureau à distance
+  order: 15
+lang: fr
+---
+
+Prendre la main sur un poste graphique du parc pour dépanner son utilisateur,
+sans rien installer de permanent et sans mot de passe à saisir.
+
+```sh
+just rd clemence            # observation seule (défaut)
+just rd clemence rw         # prise en main
+```
+
+La commande se rattache à la session **déjà ouverte** sur l'hôte. Elle n'en
+crée pas : si personne n'est connecté, elle le dit et s'arrête.
+
+## Activer un hôte
+
+Le bureau à distance est un opt-in explicite. Il s'active par la **feature**
+`remote-desktop` dans `etc/config.yaml` :
+
+```yaml
+  - hostname: "clemence"
+    profile: "umi"
+    features: ["remote-desktop", "nfs-client"]
+```
+
+Puis `just generate` et `just apply clemence`. Un hôte sans cette feature ne
+peut pas être dépanné, et la configuration dit noir sur blanc lesquels le
+peuvent.
+
+:::tip[Groupes d'hôtes templatés]
+Une feature est héritée par tous les hôtes d'un groupe `range:` ou `hosts:`,
+ce qui couvre une famille entière de postes identiques en une ligne :
+
+```yaml
+  - hostname: "fd-%'02s"
+    profile: "desktop"
+    range: [1, 2]
+    features: ["monitoring-node", "nfs-client", "remote-desktop"]
+```
+
+C'est la raison du choix de `features` plutôt que de `services` : le bloc
+`services:` d'un groupe templaté n'est **pas** propagé aux hôtes générés.
+:::
+
+:::caution[Ce n'est pas anodin]
+Se rattacher à une session, c'est voir — et en `rw`, piloter — l'écran de
+quelqu'un qui est probablement assis devant. GNOME affiche un indicateur de
+partage pendant toute la durée, mais **rien ne demande son consentement**.
+Réservez l'activation aux postes dont c'est l'usage assumé.
+:::
+
+## `ro` et `rw`
+
+| Mode | Effet | Appliqué par |
+|---|---|---|
+| `ro` (défaut) | Vous voyez l'écran, vos entrées sont ignorées | Le serveur distant |
+| `rw` | Clavier et souris sont transmis | Le serveur distant |
+
+Le filtrage est fait **côté hôte**, pas par le client : un client bricolé ne
+peut pas transformer un `ro` en `rw`.
+
+## Ce qui se passe réellement
+
+1. La commande joint l'hôte en SSH sous l'identité `nix`, comme toutes les
+   commandes d'administration du parc.
+2. Elle y arme la session : configuration du serveur RDP, certificat TLS
+   éphémère, identifiants aléatoires à usage unique.
+3. Elle monte un **tunnel SSH** vers le port RDP, resté fermé au réseau.
+4. Elle lance le client FreeRDP sous votre propre compte, sur `127.0.0.1`.
+5. À la fermeture de la fenêtre, tout est désarmé et la configuration d'origine
+   de l'hôte est restaurée.
+
+Rien n'est jamais exposé sur le réseau : le pare-feu du parc reste en
+deny-by-default, aucune règle n'est ajoutée, même temporairement. Le serveur
+RDP n'écoute que le temps de la session, et le seul chemin pour l'atteindre
+est le tunnel.
+
+Le certificat est auto-signé et régénéré à chaque session, dans la mémoire
+volatile de la session cible. Son empreinte est relevée à travers SSH et
+épinglée dans le client : l'identité de la machine est donc garantie par le
+canal SSH lui-même, ce qui la lie plus étroitement qu'un nom de domaine
+certifié ne le ferait.
+
+## Fermeture automatique
+
+L'hôte se désarme tout seul au bout de **60 minutes** (réglable avec
+`darkone.graphic.remote-desktop.timeout`). Ce garde-fou couvre le cas où votre
+poste s'éteint, où le réseau tombe, ou où la commande est tuée brutalement :
+l'accès ne peut pas rester ouvert par accident.
+
+## Deux types de session
+
+La commande détecte seule le type de session et choisit son moteur.
+
+| Session | Moteur | Encodage matériel |
+|---|---|---|
+| GNOME Wayland | `gnome-remote-desktop`, déjà présent sur tout hôte GNOME | Oui (Vulkan / VA-API) |
+| Cinnamon X11 (postes UMI) | `freerdp-shadow-cli` sur l'affichage existant | Non, logiciel |
+
+Dans les deux cas : même protocole RDP, même client, mêmes modes `ro`/`rw`.
+
+## Limites connues
+
+- **Une session à la fois** par hôte. Une seconde tentative est refusée tant
+  que la première n'est pas fermée.
+- **Plusieurs sessions graphiques ouvertes** sur le même hôte : la commande
+  refuse de deviner et liste ce qu'elle a trouvé.
+- **Partage d'écran déjà activé** sur la session cible : la commande n'y touche
+  pas et s'arrête. C'est volontaire — une configuration posée à la main ne doit
+  pas être écrasée puis « restaurée » de travers.
+- Pas de son, pas de presse-papier partagé, pas de transfert de fichiers.
+
+## En cas de problème
+
+| Symptôme | Cause probable |
+|---|---|
+| `no open graphical session on this host` | Personne n'est connecté, ou la session n'est pas encore active |
+| `could not arm a session` | La feature `remote-desktop` n'est pas déclarée sur cet hôte, ou l'hôte n'a pas été redéployé |
+| `screen sharing is already enabled` | Le partage GNOME a été activé à la main sur cette session |
+| `several active graphical sessions` | Plusieurs comptes ont une session active sur le même poste |
+| La fenêtre s'ouvre puis se ferme aussitôt | Vérifier que l'hôte est joignable et que le tunnel a pu se monter |
+
+Pour inspecter l'état côté hôte :
+
+```sh
+just enter clemence
+sudo dnf-remote-desktop probe    # quelle session serait choisie
+sudo dnf-remote-desktop stop     # désarmer manuellement
+```

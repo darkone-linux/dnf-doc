@@ -604,6 +604,18 @@ et présente la demande de passphrase. Voir
 just enter myserver
 ```
 
+### ✳️ `remote-desktop <hôte> [ro|rw]` / `rd` ⭐
+
+Ouvre le bureau à distance de la session graphique **déjà ouverte** sur l'hôte.
+`ro` (défaut) observe, `rw` prend la main. Aucun port n'est ouvert sur l'hôte :
+le flux passe par un tunnel SSH monté par `nix`. Voir
+[Bureau à distance](/fr/doc/admin-guide/operate/remote-desktop/).
+
+```sh
+just rd clemence            # observation
+just rd clemence rw         # prise en main
+```
+
 {/* t:p 9b7b4e97dc24da8d0af1bcb9ff36b375c3556753bead84315fd0c1df5f548041 */}
 ### ✳️ `reboot <hôte>`
 
@@ -789,3 +801,4 @@ just idm-fix-replica hcs agate,gw
 | `pull` | `git-pull` |
 | `push` | `git-push` |
 | `status` | `git-status` |
+| `rd` | `remote-desktop` |
