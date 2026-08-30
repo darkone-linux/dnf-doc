@@ -575,6 +575,22 @@ Opens an interactive SSH session as `nix@<host>`. If the host is waiting for its
 just enter myserver
 ```
 
+{/* t:p 019d407a935850d914ee2feec96f9932ac460bf20b29db1615e7cd87d2968988 */}
+### ✳️ `remote-desktop <hôte> [ro|rw|login]` / `rd` ⭐
+
+Opens the remote desktop of a host. `ro` (default) observes the graphical
+session **already open**, `rw` takes control of it; both fail if no one is
+connected. `login` instead opens **your own session** behind a GDM login
+screen. No port is opened on the host: the stream goes through an SSH tunnel
+mounted by `nix`. See
+[Remote desktop](/en/doc/admin-guide/operate/remote-desktop/).
+
+```sh
+just rd clemence            # observe
+just rd clemence rw         # take control
+just rd clemence login      # your own session, via GDM
+```
+
 {/* t:p 9b7b4e97dc24da8d0af1bcb9ff36b375c3556753bead84315fd0c1df5f548041 */}
 ### ✳️ `reboot <host>`
 
@@ -742,7 +758,7 @@ just idm-fix-replica hcs agate,gw
 
 ---
 
-{/* t:p c275f69268e2ac2ca99720d8f8aac121ad898c46abfccb9cfd92a9f4f5636b55 */}
+{/* t:p 63d6c44a190565519c998dc8cd9d40ba52d57d60e353c6e6c79afe1aaa34583a */}
 ## Alias summary
 
 | Alias | Command |
@@ -760,3 +776,4 @@ just idm-fix-replica hcs agate,gw
 | `pull` | `git-pull` |
 | `push` | `git-push` |
 | `status` | `git-status` |
+| `rd` | `remote-desktop` |

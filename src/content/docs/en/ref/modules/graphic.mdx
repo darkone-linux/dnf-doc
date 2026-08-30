@@ -42,6 +42,71 @@ darkone.graphic.gnome = {
 
 <hr/>
 
+{/* t:p 4ef986f4cd55b23412ac2700c3436cf10b5636902401cffd7cbe36b3e46de6a3 */}
+### &#x1F5BC; darkone.graphic.remote-desktop
+
+Admin remote desktop: attach to an open graphical session, or open one, over RDP.
+
+:::note[Nothing is installed, nothing is exposed]
+`gnome-remote-desktop` already ships and runs on every GNOME host (the
+nixpkgs GNOME module enables it by default); it simply sits idle until its
+RDP backend is turned on. This module adds no daemon and opens no port: it
+installs `dnf-remote-desktop`, a helper the `just remote-desktop` recipe
+calls over ssh to arm a session, then disarm it. The RDP listener binds only
+while a support session runs and is reached exclusively through an ssh
+tunnel — the firewall stays shut.
+:::
+
+:::tip[Three modes]
+`ro` mirrors the screen read-only, `rw` mirrors it and takes control. Both
+need somebody logged in and fail otherwise, rather than quietly handing out
+a private session an admin who asked to *watch* a user would not expect.
+`login` is that private session, asked for explicitly: a GDM login screen
+served by the system daemon, whoever is in front of the machine.
+:::
+
+:::tip[Three backends, one protocol]
+A GNOME Wayland session is served by `gnome-remote-desktop`, driven through
+`grdctl` inside the session owner's own bus. A Cinnamon X11 session — the
+gaze-driven UMI workstation, since GNOME 50 dropped its Xorg session — is
+served by `freerdp-shadow-cli` on the existing display. A `login` session is
+served by the same `gnome-remote-desktop`, in its system runtime mode, which
+hands the client over to GDM. Same protocol, same client, `ro`/`rw`
+enforced server-side.
+:::
+
+:::caution[Attaching is taking over someone's screen]
+The target session belongs to a user who is very likely sitting in front of
+it. GNOME shows a sharing indicator, but nothing asks for consent: this is a
+support tool for machines you administer, and enabling it on a host is a
+deliberate, auditable declaration in `config.yaml`. `login` is the discreet
+one: it never touches the screen on the monitor.
+:::
+
+:::tip[Activation]
+A host opts in through its `features` list in `config.yaml`:
+`features: [ "remote-desktop", ... ]`. Unlike `services:`, features are
+inherited by templated host groups (`range:` / `hosts:`), so a whole family
+of identical desktops is covered by one line.
+:::
+
+* **enable** `bool` Remote desktop support access (driven by the host feature, avoid enabling manually).
+* **timeout** `ints.positive` Minutes before an armed support session closes itself.
+* **embedCursor** `bool` Patch gnome-remote-desktop so the pointer is composited into the
+  video. Without it the observer cannot see where the user points,
+  which defeats the read-only mode. Costs a local rebuild of
+  gnome-remote-desktop.
+
+```nix
+darkone.graphic.remote-desktop = {
+  enable = hasFeature;
+  timeout = 60;
+  embedCursor = true;
+};
+```
+
+<hr/>
+
 {/* t:p 6e4cc84dcdeb4ebf552369f1565ee7cdcab57891db479be1a7a208fcb30ff40e */}
 ### &#x1F5BC; darkone.graphic.supertuxkart
 

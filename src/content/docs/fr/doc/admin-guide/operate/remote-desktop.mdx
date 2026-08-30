@@ -6,19 +6,26 @@ sidebar:
 lang: fr
 ---
 
+{/* t:main */}
+{/* t:h 150e59b8ac8f7c4963b3c3ffddc29b63f462d42b90330b5e87ef8dfb709d0d99 */}
+
+{/* t:p 1b1f354f9b8a544ad946d1fc079dd53a451793b19f0944306e5dd5a51b1562a9 */}
 Prendre la main sur un poste graphique du parc pour dépanner son utilisateur,
 sans rien installer de permanent et sans mot de passe à saisir.
 
 ```sh
 just rd clemence            # observation seule (défaut)
 just rd clemence rw         # prise en main
+just rd clemence login      # votre propre session, via GDM
 ```
 
-La commande se rattache à la session **déjà ouverte** sur l'hôte. Si personne
-n'est connecté, elle bascule d'elle-même sur un **écran de login GDM** : vous
-ouvrez alors votre propre session à distance. Voir
-[Quand personne n'est connecté](#quand-personne-nest-connecté).
+`ro` et `rw` se rattachent à la session **déjà ouverte** sur l'hôte : si
+personne n'est connecté, la commande s'arrête en erreur. `login` fait l'inverse
+et ouvre **votre propre session** derrière un écran de login GDM, que quelqu'un
+soit devant la machine ou non. Voir [Ouvrir sa propre session
+(`login`)](#ouvrir-sa-propre-session-login).
 
+{/* t:p 5a23c75ab57617fcee5882484ffaf218e15525c2969fc4574d2d6951887fc347 */}
 ## Activer un hôte
 
 Le bureau à distance est un opt-in explicite. Il s'active par la **feature**
@@ -56,16 +63,26 @@ partage pendant toute la durée, mais **rien ne demande son consentement**.
 Réservez l'activation aux postes dont c'est l'usage assumé.
 :::
 
-## `ro` et `rw`
+{/* t:p df1b4b8e842d35df65aa2115e1fa2bc8fa019579f3e256a65181fef1a75b539c */}
+## Les trois modes
 
 | Mode | Effet | Appliqué par |
 |---|---|---|
-| `ro` (défaut) | Vous voyez l'écran, vos entrées sont ignorées | Le serveur distant |
-| `rw` | Clavier et souris sont transmis | Le serveur distant |
+| `ro` (défaut) | Vous voyez l'écran de l'utilisateur, vos entrées sont ignorées | Le serveur distant |
+| `rw` | Le même écran, clavier et souris transmis | Le serveur distant |
+| `login` | Un écran de login GDM, puis une session à vous | — |
 
-Le filtrage est fait **côté hôte**, pas par le client : un client bricolé ne
-peut pas transformer un `ro` en `rw`.
+Le filtrage `ro`/`rw` est fait **côté hôte**, pas par le client : un client
+bricolé ne peut pas transformer un `ro` en `rw`.
 
+:::caution[`ro` et `rw` n'ouvrent jamais de session]
+Sans personne de connecté, ils n'ont aucun écran à refléter et échouent
+franchement. Demander à observer un utilisateur ne doit pas vous déposer
+ailleurs sans le dire — c'est `login`, et seulement `login`, qui ouvre une
+session neuve.
+:::
+
+{/* t:p a5b5130509b19084ce3965d17ab42dc32d4d70336a06932ab2497f56389485ff */}
 ## Raccourcis de la fenêtre
 
 Le client est `sdl-freerdp`. Ses raccourcis utilisent **Maj droite** comme
@@ -85,6 +102,7 @@ interceptée localement : `Maj droite` + `Entrée` vous ramène, quoi qu'il
 arrive. Fermer la fenêtre désarme la session sur l'hôte.
 :::
 
+{/* t:p df96b85876ae7c59bdd2c33625d4c7aa22c8cf44fd42bf040e484c4d925a6aae */}
 ## Résolution et netteté
 
 La fenêtre s'ouvre à la **résolution native de l'écran distant** : un pixel
@@ -101,11 +119,14 @@ Si l'écran distant est plus grand que le vôtre, la fenêtre dépasse et votre
 gestionnaire de fenêtres la contraint : l'image est alors réduite, donc adoucie.
 Le plein écran reste le meilleur compromis dans ce cas.
 
-## Quand personne n'est connecté
+{/* t:p ffae261fd21f34f53f4d1175688a2f9a9ec6e98de19a8c2cdcf513c08cf3bfb2 */}
+## Ouvrir sa propre session (`login`)
 
-La commande ne s'arrête pas : elle arme le **démon système** de
-`gnome-remote-desktop` et vous présente l'écran de login GDM. Vous vous
-authentifiez avec votre compte habituel, et GDM ouvre une session pour vous.
+`just rd <hôte> login` arme le **démon système** de `gnome-remote-desktop` et
+vous présente l'écran de login GDM. Vous vous authentifiez avec votre compte
+habituel, et GDM ouvre une session pour vous. C'est le mode à utiliser quand
+personne n'est connecté sur le poste — mais il fonctionne aussi bien quand
+quelqu'un l'est, sans rien changer à ce qui est affiché sur le moniteur.
 
 Le démon système est déjà installé et inerte sur chaque hôte GNOME, exactement
 comme le démon utilisateur : rien de nouveau n'est ajouté, on l'arme puis on le
@@ -114,8 +135,9 @@ ce qu'une machine où personne n'est connecté ne peut évidemment pas fournir.
 
 :::caution[Ce n'est pas l'écran de la machine]
 GDM ouvre une session **neuve et sans écran**, à côté de ce qui est affiché sur
-le moniteur. Vous ne voyez donc pas l'écran physique, et le mode `ro`/`rw` n'a
-aucun sens ici — vous êtes chez vous, pas chez quelqu'un d'autre.
+le moniteur. Vous ne voyez donc pas l'écran physique : vous êtes chez vous, pas
+chez quelqu'un d'autre. Pour dépanner un utilisateur, c'est `ro` ou `rw` qu'il
+faut.
 
 Refléter le greeter GDM lui-même n'est pas possible : le démon utilisateur
 n'accepte ses identifiants que depuis un trousseau, et la session du greeter
@@ -126,6 +148,7 @@ Bon à savoir : cette session-là est un moniteur *virtuel*, que le serveur peut
 redimensionner. C'est donc votre client qui impose la résolution, et l'affichage
 est net à 100 % sans réglage.
 
+{/* t:p 1c09dc5061d758c69528dfaf932a2f2032a23e5f578e0d75d447a5f21dec6f42 */}
 ## Ce qui se passe réellement
 
 1. La commande joint l'hôte en SSH sous l'identité `nix`, comme toutes les
@@ -153,6 +176,7 @@ la main à la session de login, qui présente un certificat qui lui est propre �
 épingler le premier casserait la seconde étape. C'est alors le tunnel, et lui
 seul, qui porte la confiance.
 
+{/* t:p f55837e8f930415225c2a30df1e8502feff0cb61d03ac62c40c3a2c1ce8bd60d */}
 ## Fermeture automatique
 
 L'hôte se désarme tout seul au bout de **60 minutes** (réglable avec
@@ -160,25 +184,27 @@ L'hôte se désarme tout seul au bout de **60 minutes** (réglable avec
 poste s'éteint, où le réseau tombe, ou où la commande est tuée brutalement :
 l'accès ne peut pas rester ouvert par accident.
 
-## Les trois cas
+{/* t:p dd5f8a2930231aafade2ec0d5b10f7d1623139b48e03d38b780a78de7ecba804 */}
+## Les trois moteurs
 
-La commande détecte seule dans quel cas elle se trouve et choisit son moteur.
+Le mode demandé et le type de la session ouverte déterminent le moteur.
 
 | Situation | Moteur | Ce que vous voyez |
 |---|---|---|
-| Session GNOME Wayland ouverte | `gnome-remote-desktop`, démon utilisateur | L'écran de l'utilisateur |
-| Session Cinnamon X11 ouverte (postes UMI) | `freerdp-shadow-cli` sur l'affichage existant | L'écran de l'utilisateur |
-| Personne de connecté | `gnome-remote-desktop`, démon système | GDM, puis votre propre session |
+| `ro`/`rw`, session GNOME Wayland ouverte | `gnome-remote-desktop`, démon utilisateur | L'écran de l'utilisateur |
+| `ro`/`rw`, session Cinnamon X11 ouverte (postes UMI) | `freerdp-shadow-cli` sur l'affichage existant | L'écran de l'utilisateur |
+| `login` | `gnome-remote-desktop`, démon système | GDM, puis votre propre session |
 
 Dans les trois cas : même protocole RDP, même client, même tunnel, même port.
-Les modes `ro`/`rw` ne s'appliquent qu'aux deux premiers.
 
+{/* t:p a20685459dcbacbdb051f4434fb530f6ee9f3ea1aeeafd3d5aaf084248ab6fcf */}
 ## Limites connues
 
 - **Une session à la fois** par hôte. Une seconde tentative est refusée tant
   que la première n'est pas fermée.
-- **Plusieurs sessions graphiques ouvertes** sur le même hôte : la commande
-  refuse de deviner et liste ce qu'elle a trouvé.
+- **Plusieurs sessions graphiques ouvertes** sur le même hôte : en `ro`/`rw`, la
+  commande refuse de deviner et liste ce qu'elle a trouvé. `login` n'est pas
+  concerné, il ne regarde pas les sessions existantes.
 - **Partage d'écran déjà activé** sur la session cible : la commande n'y touche
   pas et s'arrête. C'est volontaire — une configuration posée à la main ne doit
   pas être écrasée puis « restaurée » de travers.
@@ -189,6 +215,7 @@ Les modes `ro`/`rw` ne s'appliquent qu'aux deux premiers.
   section suivante). Le build est mis en cache, mais un `just update` qui fait
   bouger GNOME peut faire échouer le patch, bruyamment.
 
+{/* t:p d57082b282f7a20f561cf617466f82fbd02c41db1b0debbaad3976993aba4f27 */}
 ## Le pointeur de l'utilisateur
 
 Tel qu'il est livré, `gnome-remote-desktop` transmet la *forme* du curseur mais
@@ -209,12 +236,14 @@ dépannable. Pour s'en passer :
 darkone.graphic.remote-desktop.embedCursor = false;
 ```
 
+{/* t:p 57072137bd879eb3a4d208e60a077bc9b3ad84a267c5dfbd1bf91f95de3b6e19 */}
 ## En cas de problème
 
 | Symptôme | Cause probable |
 |---|---|
-| `no open graphical session on this host` | Plus émis : la commande bascule sur l'écran de login |
-| `could not arm a session` | La feature `remote-desktop` n'est pas déclarée sur cet hôte, ou l'hôte n'a pas été redéployé |
+| `nobody is logged in` | Personne n'est connecté : `ro`/`rw` n'ont rien à refléter, utiliser `login` |
+| `could not arm a … session` | La feature `remote-desktop` n'est pas déclarée sur cet hôte, ou l'hôte n'a pas été redéployé |
+| `Failed to enable service: … EROFS` | Hôte pas redéployé depuis l'ajout du mode `login` : `just apply <hôte>` |
 | `screen sharing is already enabled` | Le partage GNOME a été activé à la main sur cette session |
 | `several active graphical sessions` | Plusieurs comptes ont une session active sur le même poste |
 | La fenêtre s'ouvre puis se ferme aussitôt | Vérifier que l'hôte est joignable et que le tunnel a pu se monter |

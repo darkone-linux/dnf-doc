@@ -1,0 +1,254 @@
+---
+title: Remote desktop
+sidebar:
+  label: Remote desktop
+  order: 15
+lang: en
+---
+
+{/* t:translated-from fr */}
+{/* t:h 150e59b8ac8f7c4963b3c3ffddc29b63f462d42b90330b5e87ef8dfb709d0d99 */}
+
+{/* t:p 1b1f354f9b8a544ad946d1fc079dd53a451793b19f0944306e5dd5a51b1562a9 */}
+Take control of a graphical workstation in the fleet to help its user, without
+installing anything permanently and without entering a password.
+
+```sh
+just rd clemence            # observation only (default)
+just rd clemence rw         # take control
+just rd clemence login      # your own session, via GDM
+```
+
+`ro` and `rw` attach to the session **already open** on the host: if no one is
+logged in, the command stops with an error. `login` does the opposite and opens
+**your own session** behind a GDM login screen, whether or not someone is at
+the machine. See [Open your own session
+(`login`)](#opening-your-own-session-login).
+
+{/* t:p 5a23c75ab57617fcee5882484ffaf218e15525c2969fc4574d2d6951887fc347 */}
+## Enabling a host
+
+Remote desktop is an explicit opt-in. It is enabled through the `remote-desktop`
+**feature** in `etc/config.yaml`:
+
+```yaml
+  - hostname: "clemence"
+    profile: "umi"
+    features: ["remote-desktop", "nfs-client"]
+```
+
+Then `just generate` and `just apply clemence`. A host without this feature
+cannot be troubleshooted, and the configuration states in black and white which
+ones can.
+
+:::tip[Templated host groups]
+A feature is inherited by all hosts in a `range:` or `hosts:` group, which
+covers an entire family of identical workstations in one line:
+
+```yaml
+  - hostname: "fd-%'02s"
+    profile: "desktop"
+    range: [1, 2]
+    features: ["monitoring-node", "nfs-client", "remote-desktop"]
+```
+
+This is why `features` is chosen over `services`: the `services:` block of a
+templated group is **not** propagated to generated hosts.
+:::
+
+:::caution[This is not trivial]
+Attaching to a session means seeing — and in `rw`, driving — the screen of
+someone who is likely sitting in front of it. GNOME shows a sharing indicator
+for the whole duration, but **nothing asks for their consent**.
+Reserve this activation for workstations where this is the intended use.
+:::
+
+{/* t:p df1b4b8e842d35df65aa2115e1fa2bc8fa019579f3e256a65181fef1a75b539c */}
+## The three modes
+
+| Mode | Effect | Applied by |
+|---|---|---|
+| `ro` (default) | You see the user's screen, your inputs are ignored | The remote server |
+| `rw` | The same screen, keyboard and mouse forwarded | The remote server |
+| `login` | A GDM login screen, then a session of your own | — |
+
+The `ro`/`rw` filtering is done **host-side**, not by the client: a hacked
+client cannot turn a `ro` into a `rw`.
+
+:::caution[`ro` and `rw` never open a session]
+Without anyone logged in, they have no screen to mirror and fail outright.
+Asking to observe a user must not drop you off somewhere else without saying
+so — it is `login`, and only `login`, that opens a new session.
+:::
+
+{/* t:p a5b5130509b19084ce3965d17ab42dc32d4d70336a06932ab2497f56389485ff */}
+## Window shortcuts
+
+The client is `sdl-freerdp`. Its shortcuts use **Right Shift** as the modifier
+— not `Ctrl+Alt` like the old X11 client:
+
+| Shortcut | Effect |
+|---|---|
+| `Right Shift` + `Enter` | Fullscreen (and back) |
+| `Right Shift` + `G` | Capture keyboard/mouse. When captured, `Alt+Tab` and the other shortcuts go to the remote workstation; when released, they come back to yours |
+| `Right Shift` + `R` | Allow / block window resizing |
+| `Right Shift` + `M` | Minimize the window |
+| `Right Shift` + `D` | Disconnect cleanly |
+
+:::tip[Getting back to your machine]
+In fullscreen with keyboard capture active, `Right Shift` always stays
+intercepted locally: `Right Shift` + `Enter` brings you back, no matter what.
+Closing the window disarms the session on the host.
+:::
+
+{/* t:p df96b85876ae7c59bdd2c33625d4c7aa22c8cf44fd42bf040e484c4d925a6aae */}
+## Resolution and sharpness
+
+The window opens at the **native resolution of the remote screen**: one remote
+pixel for one local pixel, so no resampling and no blur.
+
+Any other size goes through scaling, which softens the image — that is the
+price of free resizing. To get back to 1:1:
+
+- `Right Shift` + `Enter`: fullscreen is exact if your screen has the same
+  resolution as the one in front of you;
+- otherwise, bring the window back to its opening size.
+
+If the remote screen is larger than yours, the window overflows and your window
+manager constrains it: the image is then reduced, so softened.
+Fullscreen remains the best compromise in this case.
+
+{/* t:p ffae261fd21f34f53f4d1175688a2f9a9ec6e98de19a8c2cdcf513c08cf3bfb2 */}
+## Opening your own session (`login`)
+
+`just rd <host> login` arms the **system daemon** of `gnome-remote-desktop` and
+shows you the GDM login screen. You authenticate with your usual account, and
+GDM opens a session for you. This is the mode to use when no one is logged in
+on the workstation — but it also works equally well when someone is, without
+changing anything displayed on the monitor.
+
+The system daemon is already installed and idle on every GNOME host, exactly
+like the user daemon: nothing new is added, you arm it then you disarm it. It
+is also the only one able to work without an unlocked keyring, which a machine
+where no one is logged in obviously cannot provide.
+
+:::caution[This is not the machine's screen]
+GDM opens a **new and screenless session**, alongside what is displayed on the
+monitor. So you do not see the physical screen: you are on your own, not on
+someone else's. To troubleshoot a user, it is `ro` or `rw` that you need.
+
+Mirroring the GDM greeter itself is not possible: the user daemon only accepts
+its credentials from a keyring, and the greeter's session does not have one.
+:::
+
+Good to know: that session is a *virtual* monitor, which the server can resize.
+So it is your client that sets the resolution, and the display is sharp at 100%
+without any adjustment.
+
+{/* t:p 1c09dc5061d758c69528dfaf932a2f2032a23e5f578e0d75d447a5f21dec6f42 */}
+## What actually happens
+
+1. The command connects to the host over SSH under the `nix` identity, like all
+   of the fleet's administration commands.
+2. It arms the session there: RDP server configuration, ephemeral TLS
+   certificate, random single-use credentials.
+3. It mounts an **SSH tunnel** to the RDP port, which remains closed to the
+   network.
+4. It launches the FreeRDP client under your own account, on `127.0.0.1`.
+5. When the window closes, everything is disarmed and the host's original
+   configuration is restored.
+
+Nothing is ever exposed on the network: the fleet's firewall stays
+deny-by-default, no rule is added, even temporarily. The RDP server only
+listens for the duration of the session, and the only path to reach it is the
+tunnel.
+
+The certificate is self-signed and regenerated at every session, in the
+machine's volatile memory. Its fingerprint is captured over SSH and pinned in
+the client: the machine's identity is therefore guaranteed by the SSH channel
+itself, which binds it more tightly than a certified domain name would.
+
+On the login screen, the fingerprint is not pinned: the system daemon hands
+over to the login session, which presents a certificate of its own — pinning
+the first one would break the second step. It is then the tunnel, and it
+alone, that carries the trust.
+
+{/* t:p f55837e8f930415225c2a30df1e8502feff0cb61d03ac62c40c3a2c1ce8bd60d */}
+## Automatic shutdown
+
+The host disarms itself after **60 minutes** (adjustable with
+`darkone.graphic.remote-desktop.timeout`). This safeguard covers the case where
+your machine shuts down, the network goes down, or the command is killed
+brutally: access cannot stay open by accident.
+
+{/* t:p dd5f8a2930231aafade2ec0d5b10f7d1623139b48e03d38b780a78de7ecba804 */}
+## The three engines
+
+The requested mode and the type of the open session determine the engine.
+
+| Situation | Engine | What you see |
+|---|---|---|
+| `ro`/`rw`, open GNOME Wayland session | `gnome-remote-desktop`, user daemon | The user's screen |
+| `ro`/`rw`, open Cinnamon X11 session (UMI workstations) | `freerdp-shadow-cli` on the existing display | The user's screen |
+| `login` | `gnome-remote-desktop`, system daemon | GDM, then your own session |
+
+In all three cases: same RDP protocol, same client, same tunnel, same port.
+
+{/* t:p a20685459dcbacbdb051f4434fb530f6ee9f3ea1aeeafd3d5aaf084248ab6fcf */}
+## Known limitations
+
+- **One session at a time** per host. A second attempt is refused as long as
+  the first one is not closed.
+- **Several graphical sessions open** on the same host: in `ro`/`rw`, the
+  command refuses to guess and lists what it found. `login` is not affected, it
+  does not look at existing sessions.
+- **Screen sharing already enabled** on the target session: the command does
+  not touch it and stops. This is intentional — a configuration set by hand
+  must not be overwritten then "restored" the wrong way.
+- No sound, no shared clipboard, no file transfer.
+- **Manual resizing of the window does not respect the proportions.**
+  The opening size, on the other hand, is correct.
+- **`gnome-remote-desktop` is rebuilt** on the affected hosts (see the
+  following section). The build is cached, but a `just update` that moves
+  GNOME can make the patch fail, noisily.
+
+{/* t:p d57082b282f7a20f561cf617466f82fbd02c41db1b0debbaad3976993aba4f27 */}
+## The user's pointer
+
+As shipped, `gnome-remote-desktop` forwards the *shape* of the cursor but never
+its *position* when it mirrors a physical screen: the client therefore draws
+the remote cursor at the location of **your** mouse. In `rw` this is not
+noticeable since you are the one driving it, but in `ro` you do not see at all
+where the user is pointing — which empties the observation of its value.
+
+DNF fixes this by patching the server so that it asks mutter to embed the
+pointer in the image (*embedded* cursor mode, already used upstream for
+virtual monitors). One line of code, and cursor metadata stops being emitted —
+so no second stray cursor.
+
+The price is a local recompilation of `gnome-remote-desktop` on each
+troubleshootable host. To do without it:
+
+```nix
+darkone.graphic.remote-desktop.embedCursor = false;
+```
+
+{/* t:p 57072137bd879eb3a4d208e60a077bc9b3ad84a267c5dfbd1bf91f95de3b6e19 */}
+## In case of a problem
+
+| Symptom | Likely cause |
+|---|---|
+| `nobody is logged in` | No one is logged in: `ro`/`rw` have nothing to mirror, use `login` |
+| `could not arm a … session` | The `remote-desktop` feature is not declared on this host, or the host has not been redeployed |
+| `Failed to enable service: … EROFS` | Host not redeployed since the `login` mode was added: `just apply <host>` |
+| `screen sharing is already enabled` | GNOME sharing was enabled manually on this session |
+| `several active graphical sessions` | Several accounts have an active session on the same workstation |
+| The window opens then closes immediately | Check that the host is reachable and that the tunnel was able to be set up |
+
+To inspect the state host-side:
+
+```sh
+just enter clemence
+sudo dnf-remote-desktop probe    # which session would be chosen
+sudo dnf-remote-desktop stop     # disarm manually
+```

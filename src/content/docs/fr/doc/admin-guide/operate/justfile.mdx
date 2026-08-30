@@ -604,16 +604,20 @@ et présente la demande de passphrase. Voir
 just enter myserver
 ```
 
-### ✳️ `remote-desktop <hôte> [ro|rw]` / `rd` ⭐
+{/* t:p 019d407a935850d914ee2feec96f9932ac460bf20b29db1615e7cd87d2968988 */}
+### ✳️ `remote-desktop <hôte> [ro|rw|login]` / `rd` ⭐
 
-Ouvre le bureau à distance de la session graphique **déjà ouverte** sur l'hôte.
-`ro` (défaut) observe, `rw` prend la main. Aucun port n'est ouvert sur l'hôte :
-le flux passe par un tunnel SSH monté par `nix`. Voir
+Ouvre le bureau à distance d'un hôte. `ro` (défaut) observe la session
+graphique **déjà ouverte**, `rw` y prend la main ; les deux échouent si
+personne n'est connecté. `login` ouvre à la place **votre propre session**
+derrière un écran de login GDM. Aucun port n'est ouvert sur l'hôte : le flux
+passe par un tunnel SSH monté par `nix`. Voir
 [Bureau à distance](/fr/doc/admin-guide/operate/remote-desktop/).
 
 ```sh
 just rd clemence            # observation
 just rd clemence rw         # prise en main
+just rd clemence login      # session à soi, via GDM
 ```
 
 {/* t:p 9b7b4e97dc24da8d0af1bcb9ff36b375c3556753bead84315fd0c1df5f548041 */}
@@ -783,7 +787,7 @@ just idm-fix-replica hcs agate,gw
 
 ---
 
-{/* t:p c275f69268e2ac2ca99720d8f8aac121ad898c46abfccb9cfd92a9f4f5636b55 */}
+{/* t:p 63d6c44a190565519c998dc8cd9d40ba52d57d60e353c6e6c79afe1aaa34583a */}
 ## Récapitulatif des alias
 
 | Alias | Commande |
