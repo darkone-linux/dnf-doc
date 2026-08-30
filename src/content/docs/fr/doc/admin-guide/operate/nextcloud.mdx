@@ -107,20 +107,34 @@ Le client est installé dès qu'un service `nextcloud` existe sur le réseau.
 
 | Option | Défaut | Effet |
 |---|---|---|
-| `darkone.home.office.enableNextcloud` | service détecté | Installe le client de bureau |
-| `darkone.home.office.nextcloudServer` | `null` | Force une autre instance |
-| `darkone.home.office.enableNextcloudAutoStart` | `true` | Démarre en arrière-plan à l'ouverture de session |
-| `darkone.home.office.enableNextcloudWebdav` | `true` | Fournit l'assistant de liaison du compte |
-| `darkone.home.office.nextcloudSyncDir` | `null` | Dossier proposé dans l'assistant |
+| `darkone.home.office.nextcloud.enable` | service détecté | Installe le client de bureau |
+| `darkone.home.office.nextcloud.server` | `null` | Force une autre instance |
+| `darkone.home.office.nextcloud.enableAutoStart` | `true` | Démarre en arrière-plan à l'ouverture de session |
+| `darkone.home.office.nextcloud.enableWebdav` | `true` | Fournit l'assistant de liaison du compte |
+| `darkone.home.office.nextcloud.syncDir` | `null` | Dossier proposé dans l'assistant |
 
-`nextcloudServer` accepte n'importe quelle URL, y compris une instance externe
+`nextcloud.server` accepte n'importe quelle URL, y compris une instance externe
 au réseau.
 
 :::note[Aucune synchronisation imposée]
-`nextcloudSyncDir` vaut `null` volontairement. L'assistant s'arrête sur la page
+`nextcloud.syncDir` vaut `null` volontairement. L'assistant s'arrête sur la page
 de choix du dossier et l'utilisateur décide de ce qu'il veut rapatrier, ou de ne
 rien synchroniser du tout. Renseigner l'option saute cette page, ce qui n'est
 souhaitable que sur un parc aux comptes homogènes et de petite taille.
+:::
+
+:::caution[Le tray conditionne l'accès aux réglages]
+Depuis la version 34, le client ne met plus aucune action dans sa fenêtre&nbsp;:
+celle-ci n'affiche que le flux d'activité. Compte, pause et **Paramètres** ne
+vivent plus que dans le menu de l'icône de barre d'état.
+
+Or `qt.platformTheme = "gnome"` charge QGnomePlatform, dont
+`createPlatformSystemTrayIcon()` retourne toujours `nullptr`&nbsp;: Qt annonce
+alors qu'aucune barre d'état n'existe et le client renonce à son icône. L'unité
+`nextcloud-client` neutralise donc `QT_QPA_PLATFORMTHEME` pour elle seule.
+
+Le défaut vaut pour **toute** application Qt du parc. En dernier recours, la
+commande `nextcloud-settings` ouvre le dialogue sans passer par le tray.
 :::
 
 {/* t:p 93efeefbb79688dbf545631f9d54139d5e31e92d3a9fcf39268c694ad5f6767a */}
@@ -200,7 +214,7 @@ lance sans l'adresse pré-remplie et double l'unité systemd. Le framework le
 remplace par une entrée `Hidden=true`. Sur un poste qui portait déjà
 l'ancienne, elle est mise de côté en `.dnf-backup` à la première activation.
 Le démarrage à l'ouverture de session reste piloté par
-`enableNextcloudAutoStart`.
+`nextcloud.enableAutoStart`.
 :::
 
 :::note[Identifiants hérités]
@@ -231,3 +245,4 @@ comprise, est décrite dans
 | Le client redemande son autorisation à chaque session | Trousseau de session non déverrouillé |
 | Le client affiche un compte inconnu, hors ligne | Configuration antérieure&nbsp;: vider `~/.config/Nextcloud` |
 | Le partage demande un mot de passe dans le gestionnaire de fichiers | Assistant jamais lancé, ou trousseau verrouillé |
+| Aucune icône dans la barre d'état, donc aucun accès aux réglages | `QT_QPA_PLATFORMTHEME` non neutralisée pour le client&nbsp;; secours&nbsp;: `nextcloud-settings` |
