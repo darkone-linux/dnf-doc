@@ -14,8 +14,10 @@ just rd clemence            # observation seule (défaut)
 just rd clemence rw         # prise en main
 ```
 
-La commande se rattache à la session **déjà ouverte** sur l'hôte. Elle n'en
-crée pas : si personne n'est connecté, elle le dit et s'arrête.
+La commande se rattache à la session **déjà ouverte** sur l'hôte. Si personne
+n'est connecté, elle bascule d'elle-même sur un **écran de login GDM** : vous
+ouvrez alors votre propre session à distance. Voir
+[Quand personne n'est connecté](#quand-personne-nest-connecté).
 
 ## Activer un hôte
 
@@ -99,6 +101,31 @@ Si l'écran distant est plus grand que le vôtre, la fenêtre dépasse et votre
 gestionnaire de fenêtres la contraint : l'image est alors réduite, donc adoucie.
 Le plein écran reste le meilleur compromis dans ce cas.
 
+## Quand personne n'est connecté
+
+La commande ne s'arrête pas : elle arme le **démon système** de
+`gnome-remote-desktop` et vous présente l'écran de login GDM. Vous vous
+authentifiez avec votre compte habituel, et GDM ouvre une session pour vous.
+
+Le démon système est déjà installé et inerte sur chaque hôte GNOME, exactement
+comme le démon utilisateur : rien de nouveau n'est ajouté, on l'arme puis on le
+désarme. Il est en outre le seul à savoir se passer d'un trousseau déverrouillé,
+ce qu'une machine où personne n'est connecté ne peut évidemment pas fournir.
+
+:::caution[Ce n'est pas l'écran de la machine]
+GDM ouvre une session **neuve et sans écran**, à côté de ce qui est affiché sur
+le moniteur. Vous ne voyez donc pas l'écran physique, et le mode `ro`/`rw` n'a
+aucun sens ici — vous êtes chez vous, pas chez quelqu'un d'autre.
+
+Refléter le greeter GDM lui-même n'est pas possible : le démon utilisateur
+n'accepte ses identifiants que depuis un trousseau, et la session du greeter
+n'en a pas.
+:::
+
+Bon à savoir : cette session-là est un moniteur *virtuel*, que le serveur peut
+redimensionner. C'est donc votre client qui impose la résolution, et l'affichage
+est net à 100 % sans réglage.
+
 ## Ce qui se passe réellement
 
 1. La commande joint l'hôte en SSH sous l'identité `nix`, comme toutes les
@@ -116,10 +143,15 @@ RDP n'écoute que le temps de la session, et le seul chemin pour l'atteindre
 est le tunnel.
 
 Le certificat est auto-signé et régénéré à chaque session, dans la mémoire
-volatile de la session cible. Son empreinte est relevée à travers SSH et
-épinglée dans le client : l'identité de la machine est donc garantie par le
-canal SSH lui-même, ce qui la lie plus étroitement qu'un nom de domaine
-certifié ne le ferait.
+volatile de la machine. Son empreinte est relevée à travers SSH et épinglée
+dans le client : l'identité de la machine est donc garantie par le canal SSH
+lui-même, ce qui la lie plus étroitement qu'un nom de domaine certifié ne le
+ferait.
+
+Sur l'écran de login, l'empreinte n'est pas épinglée : le démon système passe
+la main à la session de login, qui présente un certificat qui lui est propre —
+épingler le premier casserait la seconde étape. C'est alors le tunnel, et lui
+seul, qui porte la confiance.
 
 ## Fermeture automatique
 
@@ -128,16 +160,18 @@ L'hôte se désarme tout seul au bout de **60 minutes** (réglable avec
 poste s'éteint, où le réseau tombe, ou où la commande est tuée brutalement :
 l'accès ne peut pas rester ouvert par accident.
 
-## Deux types de session
+## Les trois cas
 
-La commande détecte seule le type de session et choisit son moteur.
+La commande détecte seule dans quel cas elle se trouve et choisit son moteur.
 
-| Session | Moteur | Encodage matériel |
+| Situation | Moteur | Ce que vous voyez |
 |---|---|---|
-| GNOME Wayland | `gnome-remote-desktop`, déjà présent sur tout hôte GNOME | Oui (Vulkan / VA-API) |
-| Cinnamon X11 (postes UMI) | `freerdp-shadow-cli` sur l'affichage existant | Non, logiciel |
+| Session GNOME Wayland ouverte | `gnome-remote-desktop`, démon utilisateur | L'écran de l'utilisateur |
+| Session Cinnamon X11 ouverte (postes UMI) | `freerdp-shadow-cli` sur l'affichage existant | L'écran de l'utilisateur |
+| Personne de connecté | `gnome-remote-desktop`, démon système | GDM, puis votre propre session |
 
-Dans les deux cas : même protocole RDP, même client, mêmes modes `ro`/`rw`.
+Dans les trois cas : même protocole RDP, même client, même tunnel, même port.
+Les modes `ro`/`rw` ne s'appliquent qu'aux deux premiers.
 
 ## Limites connues
 
@@ -179,7 +213,7 @@ darkone.graphic.remote-desktop.embedCursor = false;
 
 | Symptôme | Cause probable |
 |---|---|
-| `no open graphical session on this host` | Personne n'est connecté, ou la session n'est pas encore active |
+| `no open graphical session on this host` | Plus émis : la commande bascule sur l'écran de login |
 | `could not arm a session` | La feature `remote-desktop` n'est pas déclarée sur cet hôte, ou l'hôte n'a pas été redéployé |
 | `screen sharing is already enabled` | Le partage GNOME a été activé à la main sur cette session |
 | `several active graphical sessions` | Plusieurs comptes ont une session active sur le même poste |
