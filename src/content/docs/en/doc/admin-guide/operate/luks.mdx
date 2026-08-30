@@ -110,54 +110,42 @@ The sync service detects changes thanks to a local registry
 old slot and enrolls the new one, without ever touching the
 installation keyslot.
 
-{/* t:p 9c246200be804eaa7798a5f7d23fcfdfe9ad48ce6446b601c56c96c6d679607a */}
-## Unlocking at boot
+{/* t:p 279014f484ff79e95e7ed795c00ede1f46858003c4f3ca8ba9ae3cd0cf7705b7 */}
+## Unlock at boot
 
-On site, two gestures are possible in front of the console:
+Every encrypted host follows the same sequence, with nothing to configure:
 
-- **Enrolled YubiKey plugged in**: touch the key when the LED blinks, nothing
-  to type. The CID is read from the LUKS2 token metadata, no `crypttab` option
-  is needed;
-- **on the keyboard**: type the per-host passphrase, the shared one, or the
-  installation one.
+1. **YubiKey** — an enrolled and plugged-in key blinks its LED: touching it opens the volume, nothing to type. No key plugged in, the step lasts ~6 s; a key nobody touches, ~30 s (firmware limit).
+2. **Passphrase** — a prompt is then displayed, **with no time limit**. It accepts the per-host passphrase, the shared one, or the installation one.
 
-:::caution[Never write `fido2-device=` in crypttab]
-With this option, a **plugged-in but untouched** key makes
-`systemd-cryptsetup` exit with an error instead of offering the passphrase: no
-prompt, neither on the console nor on port 2222, and the initrd drops to
-`emergency`. A power outage on a host with nobody in front of it is then enough
-to immobilize it.
+The step 2 prompt is a **single request**, served in parallel on the physical console (`/dev/tty1`) and via ssh on port 2222. Nothing to choose, no window to miss: the first response opens the volume.
 
-Without the option, the key is tried exactly the same way — then, if nobody
-touches it, boot falls back to the passphrase after about thirty seconds.
-The framework therefore never writes it.
+:::note[How the key is tried]
+`fido2-device=` is not written in the `crypttab` entry but in a **separate initrd unit**, `yubikey-luks-unlock-<volume>`, ordered before `systemd-cryptsetup@<volume>` and only linked to it via a `Wants=`: it is allowed to fail, and its failure changes nothing about boot.
+
+This separation avoids two contradictory pitfalls:
+
+- **the option in `crypttab` kills boot** when a key is plugged in but nobody touches it: `systemd-cryptsetup` exits with an error instead of offering the passphrase, no prompt is displayed — neither on the console nor on port 2222 — and the initrd drops into `emergency`. A power outage on a host with nobody in front of it was enough to brick it;
+- **without the option, the token is only tried if it is already enumerated**. But `hidraw0` appears about one second after `systemd-cryptsetup` starts: never in time. The key then stops unlocking anything, silently, and with nothing in the journal.
+
+What the option actually provides is **waiting** for the device (`token-timeout=`, set to 5 s).
 :::
 
-Remotely, the initrd starts a **dedicated sshd on port 2222**, with its own
-persistent host key, accessible only with the `nix` deployment key. The entry
-point stays the same as usual:
+Remotely, the initrd starts a **dedicated sshd on port 2222**, with its own persistent host key, accessible only with the `nix` deployment key. The entry point remains the same as in normal times:
 
 ```sh
-just reboot <hôte>     # ou toute autre cause de redémarrage
-just enter <hôte>      # détecte l'attente en initrd et présente le prompt
+just reboot <host>     # or any other reason for a reboot
+just enter <host>      # detects the initrd wait and presents the prompt
 ```
 
-When port 22 does not answer, `just enter` probes port 2222 on the explicit IP
-(if provided), the host name, then the **WAN IP recorded in the manifest**, and
-answers the LUKS prompt via `systemd-tty-ask-password-agent`. Once the
-passphrase is entered, boot resumes and port 22 comes back.
+When port 22 is not responding, `just enter` probes port 2222 on the explicit IP (if provided), the hostname, then the **WAN IP registered in the manifest**, and responds to the LUKS prompt via `systemd-tty-ask-password-agent`. Once the passphrase is entered, boot continues and port 22 comes back.
 
 :::note[Why the WAN IP?]
-A zone's VPN dies with its gateway: when the gateway is waiting for its
-passphrase, only its WAN side is reachable. Its initrd also replicates the
-production addressing (static IP on the `lan0` bridge, DHCP on the WAN side),
-since it is itself the DHCP server that its initrd would otherwise wait for.
-The other hosts simply use DHCP on their wired interfaces.
+A zone's VPN dies with its gateway: when the gateway is waiting for its passphrase, only its WAN interface is reachable. Its initrd also replicates the production addressing (static IP on the `lan0` bridge, DHCP on the WAN side), since it is itself the DHCP server its initrd would otherwise wait for. The other hosts use plain DHCP on their wired interfaces.
 :::
 
-:::note[Laptops on Wi-Fi]
-No network in initrd without a cable: an encrypted laptop unlocks at the
-console (passphrase or YubiKey), remote unlocking does not apply.
+:::note[Wi-Fi laptops]
+No network in initrd without a cable: an encrypted laptop unlocks at the console (passphrase or YubiKey); remote unlocking does not apply.
 :::
 
 {/* t:p b2e48a2ef1e330c748b75cd9143d12c276cde06e38d46b7033372022b534e739 */}

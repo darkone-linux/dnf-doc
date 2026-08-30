@@ -20,35 +20,40 @@ The key principle: **one single enrollment** per key, on the administration
 machine. Everything else propagates declaratively with `just apply` — the key
 is never plugged into the fleet hosts, only when it needs to be used.
 
-{/* t:p 2efced0fa944f89c84e26d3a5f710c7902a91d3577d37df1964512fc4759acba */}
+{/* t:p 8208d90bb646603180b48a2641d720551293cdc44a06d807e5541fff40f7c422 */}
 ## What a key covers
 
 | Usage | Mechanism | Effect |
 |---|---|---|
 | **Session, sudo, login screen** | pam_u2f (`sufficient`) | Touching the key replaces the password |
-| **Encrypted disks (LUKS)** | FIDO2 `hmac-secret` | Unlock at boot by touching the key |
+| **Encrypted disks (LUKS)** | FIDO2 `hmac-secret` | Boot unlock by touching the key |
 | **SSO (Kanidm)** | Passkey WebAuthn | Passwordless login to services |
 | **Vaultwarden** | WebAuthn (2FA) | Second factor for the vault |
 
-:::note[No risk of being locked out]
+:::note[No risk of lockout]
 The session password (sops) and the installation LUKS passphrase are
 **never removed**: without a key (lost, forgotten), everything works as before.
+At boot, a plugged-in key that nobody touches also blocks nothing —
+the passphrase prompt appears after about thirty seconds, on the console
+as well as remotely (see
+[Unlock at boot](/en/doc/admin-guide/operate/luks/#unlock-at-boot)).
 :::
 
-:::caution[Boot touching cannot be bypassed]
+:::caution[Boot touch cannot be bypassed]
 LUKS unlock relies on the FIDO2 `hmac-secret` extension: the key
-**recomputes** the keyslot secret at each boot, from a salt stored in
-cleartext in the LUKS header.
+**recalculates** the keyslot secret at each boot, from a salt stored
+in plaintext in the LUKS header.
 
-YubiKeys **require** user presence for this extension. A request without
-touching is rejected (`FIDO_ERR_UP_REQUIRED`) before the credential is even
-looked up. Firmware rule, not a setting: systemd re-enables presence on its
-own, both at enrollment and at unlock.
+YubiKeys **enforce** user presence for this extension. A
+request without a touch is rejected (`FIDO_ERR_UP_REQUIRED`) before even
+looking up the credential. Firmware rule, not a setting: systemd re-enables
+user presence by itself, both at enrollment and at unlock.
 
-For a host that must reboot unattended (gateway, headless machine), the way is
-the **TPM2** (`systemd-cryptenroll --tpm2-device=auto`), which coexists with
-the FIDO2 keyslots in the same LUKS header. Trade-off: the disk opens without
-a human, so stolen **with** its motherboard it remains decryptable.
+For a host that must reboot unattended (gateway, headless machine), the
+path is **TPM2** (`systemd-cryptenroll --tpm2-device=auto`), which coexists with
+FIDO2 keyslots in the same LUKS header. Trade-off: the disk opens
+without a human, so stolen **with** its motherboard it remains
+decryptable.
 :::
 
 {/* t:p 69faf7b1a2bcb653da68196a60f99592f1b49ab2266ac784f8365d0d41d1a09c */}

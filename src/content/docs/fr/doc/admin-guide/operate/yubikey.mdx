@@ -21,7 +21,7 @@ d'administration. Tout le reste se propage déclarativement avec `just apply` �
 la clé n'est jamais branchée sur les hôtes du parc, seulement au moment de s'en
 servir.
 
-{/* t:p 2efced0fa944f89c84e26d3a5f710c7902a91d3577d37df1964512fc4759acba */}
+{/* t:p 8208d90bb646603180b48a2641d720551293cdc44a06d807e5541fff40f7c422 */}
 ## Ce que couvre une clé
 
 | Usage | Mécanisme | Effet |
@@ -34,6 +34,10 @@ servir.
 :::note[Aucun risque de verrouillage]
 Le mot de passe de session (sops) et la passphrase LUKS d'installation ne sont
 **jamais supprimés** : sans clé (perdue, oubliée), tout fonctionne comme avant.
+Au démarrage, une clé branchée que personne ne touche ne bloque rien non plus —
+l'invite de passphrase arrive après une trentaine de secondes, sur la console
+comme à distance (voir
+[Déverrouiller au démarrage](/fr/doc/admin-guide/operate/luks/#déverrouiller-au-démarrage)).
 :::
 
 :::caution[Le toucher au boot n'est pas contournable]

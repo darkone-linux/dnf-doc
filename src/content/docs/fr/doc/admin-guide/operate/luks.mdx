@@ -110,26 +110,41 @@ local (`/var/lib/luks-passphrase/ledger`) : une valeur sops modifiée tue
 l'ancien slot et enrôle la nouvelle, sans jamais toucher au keyslot
 d'installation.
 
-{/* t:p 9c246200be804eaa7798a5f7d23fcfdfe9ad48ce6446b601c56c96c6d679607a */}
+{/* t:p 279014f484ff79e95e7ed795c00ede1f46858003c4f3ca8ba9ae3cd0cf7705b7 */}
 ## Déverrouiller au démarrage
 
-Sur place, deux gestes possibles devant la console :
+Tout hôte chiffré suit la même séquence, sans rien à régler :
 
-- **YubiKey enrôlée branchée** : toucher la clé quand la diode clignote, rien
-  à taper. La CID est lue dans les métadonnées du token LUKS2, aucune option
-  `crypttab` n'est nécessaire ;
-- **au clavier** : taper la passphrase par hôte, la partagée, ou celle
-  d'installation.
+1. **YubiKey** — une clé enrôlée et branchée fait clignoter sa diode : la
+   toucher ouvre le volume, rien à taper. Aucune clé branchée, l'étape dure
+   ~6 s ; une clé que personne ne touche, ~30 s (limite du firmware).
+2. **Passphrase** — une invite est ensuite posée, **sans limite de temps**.
+   Elle accepte la passphrase par hôte, la partagée ou celle d'installation.
 
-:::caution[Ne jamais écrire `fido2-device=` dans crypttab]
-Avec cette option, une clé **branchée mais non touchée** fait sortir
-`systemd-cryptsetup` en erreur au lieu de proposer la passphrase : aucun prompt,
-ni sur la console ni sur le port 2222, et l'initrd bascule en `emergency`. Une
-coupure de courant sur un hôte sans personne devant suffit alors à l'immobiliser.
+L'invite de l'étape 2 est **une seule et même demande**, servie en parallèle
+sur la console physique (`/dev/tty1`) et par ssh sur le port 2222. Rien à
+choisir, aucune fenêtre à rater : le premier qui répond ouvre le volume.
 
-Sans l'option, la clé est essayée exactement pareil — puis, si personne ne
-touche, le démarrage retombe sur la passphrase après une trentaine de secondes.
-Le framework ne l'écrit donc jamais.
+:::note[Comment la clé est essayée]
+`fido2-device=` n'est pas écrit dans l'entrée `crypttab` mais dans une **unité
+initrd séparée**, `yubikey-luks-unlock-<volume>`, ordonnée avant
+`systemd-cryptsetup@<volume>` et seulement reliée à elle par un `Wants=` :
+elle a le droit d'échouer, et son échec ne change rien au démarrage.
+
+Cette séparation évite deux défauts qui se contredisent :
+
+- **l'option dans le `crypttab` tue le démarrage** quand une clé est branchée
+  sans que personne la touche : `systemd-cryptsetup` sort en erreur au lieu de
+  proposer la passphrase, aucun prompt n'est posé — ni console, ni port 2222 —
+  et l'initrd bascule en `emergency`. Une coupure de courant sur un hôte sans
+  personne devant suffisait à l'immobiliser ;
+- **sans l'option, le token n'est essayé que s'il est déjà énuméré**. Or
+  `hidraw0` apparaît environ une seconde après le lancement de
+  `systemd-cryptsetup` : jamais à temps. La clé cesse alors de déverrouiller
+  quoi que ce soit, en silence, et sans rien dans le journal.
+
+Ce que l'option apporte réellement, c'est l'**attente** du périphérique
+(`token-timeout=`, réglé à 5 s).
 :::
 
 À distance, l'initrd démarre un **sshd dédié sur le port 2222**, avec sa
