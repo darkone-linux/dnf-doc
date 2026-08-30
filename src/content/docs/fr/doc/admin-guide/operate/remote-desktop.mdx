@@ -83,10 +83,21 @@ interceptée localement : `Maj droite` + `Entrée` vous ramène, quoi qu'il
 arrive. Fermer la fenêtre désarme la session sur l'hôte.
 :::
 
-La fenêtre s'ouvre à 80 % de la taille de l'écran distant, donc à ses
-proportions exactes. La redimensionner met le bureau distant à l'échelle,
-sans respecter le ratio : pour un affichage sans déformation, utilisez le
-plein écran ou revenez à la taille d'origine.
+## Résolution et netteté
+
+La fenêtre s'ouvre à la **résolution native de l'écran distant** : un pixel
+distant pour un pixel local, donc aucun rééchantillonnage et aucun flou.
+
+Toute autre taille passe par une mise à l'échelle, qui adoucit l'image — c'est
+le prix du redimensionnement libre. Pour retrouver le 1:1 :
+
+- `Maj droite` + `Entrée` : le plein écran est exact si votre écran a la même
+  résolution que celui d'en face ;
+- sinon, ramenez la fenêtre à sa taille d'ouverture.
+
+Si l'écran distant est plus grand que le vôtre, la fenêtre dépasse et votre
+gestionnaire de fenêtres la contraint : l'image est alors réduite, donc adoucie.
+Le plein écran reste le meilleur compromis dans ce cas.
 
 ## Ce qui se passe réellement
 
