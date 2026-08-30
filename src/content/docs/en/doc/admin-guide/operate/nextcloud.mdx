@@ -100,27 +100,31 @@ The test requires the public URL of the service, so the zone's reverse proxy
 must be reachable. The unit retries for fifteen minutes after a deployment,
 waiting for the gateway to finish starting.
 
-{/* t:p 7798ab1fcbf6ab1f3f4c011b4ec84f9a2e5ed24cf34f56c3d666cfda32b3b813 */}
+{/* t:p acacdd57c5a1d997359e9179a9cfa0324ffd84724f263c5adacf77f9cff18400 */}
 ## On workstations
 
 The client is installed as soon as a `nextcloud` service exists on the network.
 
 | Option | Default | Effect |
 |---|---|---|
-| `darkone.home.office.enableNextcloud` | service detected | Installs the desktop client |
-| `darkone.home.office.nextcloudServer` | `null` | Forces another instance |
-| `darkone.home.office.enableNextcloudAutoStart` | `true` | Starts in the background at login |
-| `darkone.home.office.enableNextcloudWebdav` | `true` | Provides the account linking wizard |
-| `darkone.home.office.nextcloudSyncDir` | `null` | Folder suggested in the wizard |
+| `darkone.home.office.nextcloud.enable` | service detected | Installs the desktop client |
+| `darkone.home.office.nextcloud.server` | `null` | Forces another instance |
+| `darkone.home.office.nextcloud.enableAutoStart` | `true` | Starts in the background at session login |
+| `darkone.home.office.nextcloud.enableWebdav` | `true` | Provides the account binding wizard |
+| `darkone.home.office.nextcloud.syncDir` | `null` | Folder suggested in the wizard |
 
-`nextcloudServer` accepts any URL, including an instance external to the
-network.
+`nextcloud.server` accepts any URL, including an instance outside the network.
 
-:::note[No forced synchronization]
-`nextcloudSyncDir` is deliberately set to `null`. The wizard stops on the
-folder selection page and the user decides what they want to sync, or to sync
-nothing at all. Setting the option skips this page, which is only desirable
-on a fleet with homogeneous accounts and small size.
+:::note[No synchronization imposed]
+`nextcloud.syncDir` is intentionally set to `null`. The wizard stops at the folder selection page, and the user decides what they want to bring back, or to synchronize nothing at all. Setting the option skips this page, which is only desirable on a small fleet with homogeneous accounts.
+:::
+
+:::caution[The tray controls access to settings]
+Since version 34, the client no longer places any action in its window: it only displays the activity feed. Account, pause and **Settings** now only live in the status bar icon menu.
+
+Yet `qt.platformTheme = "gnome"` loads QGnomePlatform, whose `createPlatformSystemTrayIcon()` always returns `nullptr`: Qt then reports that no status bar exists, and **every** Qt application on the fleet gives up its icon. The GNOME module therefore leaves `qt.platformTheme` at `null`, and the `nextcloud-client` unit additionally neutralizes `QT_QPA_PLATFORMTHEME` for its own account, in case a profile re-enables it.
+
+As a last resort, the `nextcloud-settings` command opens the dialog without going through the tray.
 :::
 
 {/* t:p 93efeefbb79688dbf545631f9d54139d5e31e92d3a9fcf39268c694ad5f6767a */}
@@ -167,13 +171,10 @@ and issues a new application password. Previous ones remain listed in
 **Settings → Security** in Nextcloud, where they can be revoked.
 :::
 
-{/* t:p 077ad039151ae4bb2db7fd4f3f44b4048a34529a97b3987f8fde36dbe0c755a6 */}
-### Starting from a clean configuration
+{/* t:p df0105db9edff5c01e4da913050b56d2463349327e274258fa6e70d6d908c374 */}
+### Starting again from a healthy configuration
 
-The pre-filled address only applies to **creating** the account in the
-wizard. A workstation that already has one — inherited from a previous
-instance, for example — keeps it as-is, with its old address: the client
-then shows as "offline", frozen, with no possible action.
+The pre-filled address only matters for **creating** the account in the wizard. A machine that already carries one (inherited from a previous instance, for example) keeps it as is, with its old address: the client then shows as "offline", frozen, with no possible action.
 
 ```sh
 systemctl --user stop nextcloud-client.service
@@ -182,28 +183,17 @@ systemctl --user start nextcloud-client.service
 ```
 
 :::caution[Kill the right process]
-The binary is called `nextcloud` but the process bears the name of the Nix
-wrapper, `.nextcloud-wrap`: a `pkill -x nextcloud` misses it. The surviving
-instance then rewrites the old configuration you just deleted. Check with
-`pgrep -af nextcloud-client` before removing the directory.
+The binary is named `nextcloud` but the process bears the name of the Nix wrapper, `.nextcloud-wrap`: a `pkill -x nextcloud` misses it. The surviving instance then rewrites the old configuration that was just erased. Check with `pgrep -af nextcloud-client` before deleting the folder.
 :::
 
-The online account is reset from **Settings → Online Accounts**, or simply by
-relaunching the wizard.
+The online account itself is reset from **Settings → Online accounts**, or simply by relaunching the wizard.
 
 :::note[Autostart belongs to the framework]
-The client writes its own `~/.config/autostart/Nextcloud.desktop`, which
-launches it without the pre-filled address and duplicates the systemd unit.
-The framework replaces it with a `Hidden=true` entry. On a workstation that
-already had the old one, it is backed up to `.dnf-backup` on first activation.
-Login startup is still controlled by `enableNextcloudAutoStart`.
+The client writes its own `~/.config/autostart/Nextcloud.desktop`, which launches it without the pre-filled address and duplicates the systemd unit. The framework replaces it with a `Hidden=true` entry. On a machine that already carried the old one, it is set aside as `.dnf-backup` at first activation. Starting at session login remains driven by `nextcloud.enableAutoStart`.
 :::
 
-:::note[Inherited credentials]
-Accounts created before declarative SSO carry a Nextcloud identifier in the
-form `IDM-<uuid>`. `user_oidc` never renames an existing account: this
-identifier remains fixed, with no impact on usage. Only a server-side
-migration could change it, at the cost of losing the link to data.
+:::note[Legacy credentials]
+Accounts created before declarative SSO bear a Nextcloud identifier of the form `IDM-<uuid>`. `user_oidc` never renames an existing account: this identifier stays frozen, with no consequence on usage. Only a server-side migration could change it, at the cost of losing the link to the data.
 :::
 
 {/* t:p f578ef047438191329fb5dde22ae52905a0028f9af4408157a38aaa4171a3361 */}
@@ -215,14 +205,15 @@ that the instance reports the previous one. The full procedure, including
 backup, is described in
 [Services](/en/doc/admin-guide/operate/services/).
 
-{/* t:p aea17bfe5ee675dd93d3bb82048114c2ceb8e59eb637a8db1c00345294d96ae1 */}
+{/* t:p 5b51daa779691e70b2bf7fc9b53aea62b39158e1996345695d03634d0ca1542b */}
 ## Troubleshooting
 
-| Symptom | Lead |
+| Symptom | Fix |
 |---|---|
 | Administrator cannot log in | Use `/login?direct=1` |
-| Slow synchronization on workstations | `notify_push:self-test` on the server |
-| Whiteboard not responding | `whiteboard` missing from `plugins`, or `just configure-admin-host` never re-run |
-| Client asks for authorization on every session | Keyring not unlocked |
-| Client shows an unknown, offline account | Previous configuration: clear `~/.config/Nextcloud` |
-| Share asks for a password in the file manager | Wizard never launched, or keyring locked |
+| Slow synchronization on machines | `notify_push:self-test` on the server |
+| The whiteboard is unresponsive | `whiteboard` missing from `plugins`, or `just configure-admin-host` not rerun since |
+| The client asks for authorization again at every session | Session keyring not unlocked |
+| The client shows an unknown, offline account | Previous configuration: clear `~/.config/Nextcloud` |
+| Sharing asks for a password in the file manager | Wizard never launched, or keyring locked |
+| No icon in the status bar, hence no access to settings | `QT_QPA_PLATFORMTHEME` set back to `gnome` by a profile; fallback: `nextcloud-settings` |

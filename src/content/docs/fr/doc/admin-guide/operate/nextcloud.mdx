@@ -100,7 +100,7 @@ Le test réclame l'URL publique du service, donc le reverse proxy de la zone
 doit être joignable. L'unité réessaie pendant quinze minutes après un
 déploiement, le temps que la passerelle finisse de démarrer.
 
-{/* t:p 7798ab1fcbf6ab1f3f4c011b4ec84f9a2e5ed24cf34f56c3d666cfda32b3b813 */}
+{/* t:p acacdd57c5a1d997359e9179a9cfa0324ffd84724f263c5adacf77f9cff18400 */}
 ## Sur les postes de travail
 
 Le client est installé dès qu'un service `nextcloud` existe sur le réseau.
@@ -130,11 +130,13 @@ vivent plus que dans le menu de l'icône de barre d'état.
 
 Or `qt.platformTheme = "gnome"` charge QGnomePlatform, dont
 `createPlatformSystemTrayIcon()` retourne toujours `nullptr`&nbsp;: Qt annonce
-alors qu'aucune barre d'état n'existe et le client renonce à son icône. L'unité
-`nextcloud-client` neutralise donc `QT_QPA_PLATFORMTHEME` pour elle seule.
+alors qu'aucune barre d'état n'existe et **toute** application Qt du parc
+renonce à son icône. Le module GNOME laisse donc `qt.platformTheme` à `null`,
+et l'unité `nextcloud-client` neutralise en plus `QT_QPA_PLATFORMTHEME` pour
+son propre compte, au cas où un profil la remettrait.
 
-Le défaut vaut pour **toute** application Qt du parc. En dernier recours, la
-commande `nextcloud-settings` ouvre le dialogue sans passer par le tray.
+En dernier recours, la commande `nextcloud-settings` ouvre le dialogue sans
+passer par le tray.
 :::
 
 {/* t:p 93efeefbb79688dbf545631f9d54139d5e31e92d3a9fcf39268c694ad5f6767a */}
@@ -184,7 +186,7 @@ second, et émet un nouveau mot de passe d'application. Les précédents restent
 listés dans **Paramètres → Sécurité** de Nextcloud, où ils se révoquent.
 :::
 
-{/* t:p 077ad039151ae4bb2db7fd4f3f44b4048a34529a97b3987f8fde36dbe0c755a6 */}
+{/* t:p df0105db9edff5c01e4da913050b56d2463349327e274258fa6e70d6d908c374 */}
 ### Repartir d'une configuration saine
 
 L'adresse pré-remplie ne vaut que pour la **création** du compte dans
@@ -234,7 +236,7 @@ l'instance annonce bien la précédente. La procédure complète, sauvegarde
 comprise, est décrite dans
 [Services](/fr/doc/admin-guide/operate/services/).
 
-{/* t:p aea17bfe5ee675dd93d3bb82048114c2ceb8e59eb637a8db1c00345294d96ae1 */}
+{/* t:p 5b51daa779691e70b2bf7fc9b53aea62b39158e1996345695d03634d0ca1542b */}
 ## En cas de problème
 
 | Symptôme | Piste |
@@ -245,4 +247,4 @@ comprise, est décrite dans
 | Le client redemande son autorisation à chaque session | Trousseau de session non déverrouillé |
 | Le client affiche un compte inconnu, hors ligne | Configuration antérieure&nbsp;: vider `~/.config/Nextcloud` |
 | Le partage demande un mot de passe dans le gestionnaire de fichiers | Assistant jamais lancé, ou trousseau verrouillé |
-| Aucune icône dans la barre d'état, donc aucun accès aux réglages | `QT_QPA_PLATFORMTHEME` non neutralisée pour le client&nbsp;; secours&nbsp;: `nextcloud-settings` |
+| Aucune icône dans la barre d'état, donc aucun accès aux réglages | `QT_QPA_PLATFORMTHEME` remise à `gnome` par un profil&nbsp;; secours&nbsp;: `nextcloud-settings` |
