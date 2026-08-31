@@ -246,6 +246,9 @@ darkone.graphic.remote-desktop.embedCursor = false;
 | `Failed to enable service: … EROFS` | Hôte pas redéployé depuis l'ajout du mode `login` : `just apply <hôte>` |
 | `screen sharing is already enabled` | Le partage GNOME a été activé à la main sur cette session |
 | `several active graphical sessions` | Plusieurs comptes ont une session active sur le même poste |
+| `a support session is already open` | Une session est réellement encore armée sur l'hôte : la fermer d'abord |
+| `no DISPLAY among the processes of session …` | Session X11 dont le serveur X a disparu (session en cours de fermeture) : réessayer |
+| `the shadow server did not get port …` | Le port RDP est déjà occupé sur l'hôte par autre chose |
 | La fenêtre s'ouvre puis se ferme aussitôt | Vérifier que l'hôte est joignable et que le tunnel a pu se monter |
 
 Pour inspecter l'état côté hôte :
