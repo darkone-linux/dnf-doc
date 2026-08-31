@@ -31,6 +31,7 @@ gateway: gateway
 hcs: hcs
 vm: vm
 laptop: laptop
+umi: umi
 
 minimal -> server
 minimal -> desktop
@@ -39,6 +40,7 @@ server -> gateway
 server -> hcs
 server -> vm
 desktop -> laptop
+desktop -> umi
 ```
 
 {/* t:p d8e727a17d2179cfdcabf129c38130aaa06eb639c41cd9f3aed2ede41d78623a */}
@@ -50,6 +52,7 @@ desktop -> laptop
 | `server` | Serveur sans écran | `minimal` | Pas de veille, watchdog, boot limité |
 | `desktop` | Poste de travail | `minimal` | GNOME, multimédia, bureautique |
 | `laptop` | Ordinateur portable | `desktop` | Batterie/veille, capteurs, thermald |
+| `umi` | Poste piloté au regard | `desktop` | Session X11 Cinnamon, autologin, uinput, udev Tobii |
 | `portable` | Clé USB bootable | `minimal` | Pilotes matériels étendus |
 | `gateway` | Passerelle de zone | `server` | Routeur, pare-feu, DNS/DHCP, VPN |
 | `hcs` | Coordination du VPN | `server` | Headscale + services partagés |
@@ -68,6 +71,12 @@ hosts:
 :::tip[Les services sont indépendants du profil]
 Un service (Immich, Nextcloud, Forgejo…) se déclare par hôte **quel que soit**
 son profil. Voir [Services](/fr/doc/admin-guide/operate/services/).
+:::
+
+:::tip[Le profil `umi` demande du matériel]
+Un poste piloté au regard suppose un traqueur oculaire et une mise en service
+particulière, décrites dans
+[Accessibilité](/fr/doc/admin-guide/operate/accessibility/).
 :::
 
 :::note[Référence complète]

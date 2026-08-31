@@ -1,0 +1,206 @@
+---
+title: "Accessibilité : le poste piloté au regard"
+sidebar:
+  label: Accessibilité
+  order: 16
+lang: fr
+---
+
+import { Steps } from '@astrojs/starlight/components';
+
+Le profil `umi` transforme un poste de travail en machine utilisable **sans
+clavier ni souris**, pilotée au regard et à la voix. Il s'adresse aux personnes
+en situation de handicap moteur sévère.
+
+Il se compose de deux moitiés indissociables&nbsp;: un [profil
+d'hôte](/fr/doc/admin-guide/understand/host-profiles/) `umi` qui prépare le
+matériel et la session, et un [profil
+d'utilisateur](/fr/doc/admin-guide/understand/user-profiles/) `umi` qui règle
+l'environnement du compte.
+
+## Le principe
+
+Le regard remplace la souris, la voix remplace le clavier, et le clavier visuel
+prend le relais pour tout ce qui se tape caractère par caractère.
+
+```d2
+style.fill: transparent
+direction: down
+
+user: Utilisateur { shape: person }
+tracker: Tobii Eye Tracker 5
+talon: Talon
+uinput: /dev/uinput
+session: Session Cinnamon (X11)
+onboard: Clavier visuel Onboard
+
+user -> tracker: Regard
+user -> talon: Voix
+tracker -> talon
+talon -> uinput
+uinput -> session
+onboard -> session
+```
+
+## Le matériel
+
+| Élément | Exigence |
+|---|---|
+| Traqueur oculaire | Tobii Eye Tracker 5 (USB, identifiant fabricant `2104`) |
+| Architecture | `x86_64-linux` uniquement (Talon ne fournit pas d'autre binaire) |
+| Micro | Nécessaire pour les commandes vocales |
+| Haut-parleurs | Retour sonore des frappes du clavier visuel |
+
+:::caution[Premier démarrage sous Windows]
+Le micrologiciel du Tobii 5 doit être initialisé **une fois** sur une machine
+Windows, avec l'application Tobii Experience. Sans cette étape, le traqueur
+reste muet sous Linux.
+:::
+
+## Mettre en place un poste
+
+<Steps>
+
+1. **Déclarer l'hôte et son utilisateur** dans `etc/config.yaml`, tous deux avec
+   le profil `umi`&nbsp;:
+
+   ```yaml
+   # etc/config.yaml
+   users:
+     alice:
+       uid: 1010
+       name: "Alice"
+       profile: "umi"
+       groups: ["global"]
+
+   hosts:
+     - hostname: "poste-regard"
+       name: "Poste piloté au regard"
+       zone: "maison:2.3"
+       profile: "umi"
+       users: ["alice"]
+   ```
+
+   Le profil d'utilisateur ajoute le compte aux groupes `input` et `uinput`,
+   sans lesquels Talon ne peut pas injecter d'événements.
+
+2. **Activer l'ouverture de session automatique** dans la configuration de la
+   machine. Une invite de mot de passe est un cul-de-sac sans clavier&nbsp;:
+
+   ```nix
+   # usr/machines/poste-regard/default.nix
+   darkone.host.umi.autoLoginUser = "alice";
+   ```
+
+3. **Générer et déployer**&nbsp;:
+
+   ```sh
+   just generate
+   just apply poste-regard
+   ```
+
+4. **Calibrer au premier lancement**. Débrancher puis rebrancher le traqueur
+   (les règles udev ne s'appliquent qu'au branchement), relancer Talon, puis
+   lancer la calibration depuis son menu.
+
+</Steps>
+
+:::tip[Plusieurs utilisateurs sur la même machine]
+Seul le compte listé dans `autoLoginUser` ouvre sa session tout seul. Les
+autres comptes pilotés au regard se déclarent dans `gazeUsers` pour hériter de
+la session Cinnamon&nbsp;; les comptes ordinaires gardent leur session GNOME
+Wayland habituelle.
+:::
+
+## Régler l'hôte
+
+Options de `darkone.host.umi`, à poser dans `usr/machines/<hôte>/default.nix`.
+
+| Option | Défaut | Rôle |
+|---|---|---|
+| `enable` | activé par le profil | Active le profil d'hôte |
+| `autoLoginUser` | `null` | Compte ouvert automatiquement au démarrage |
+| `gazeUsers` | `[ ]` | Autres comptes dont la session GDM est Cinnamon/X11 |
+| `package` | `pkgs.talon` | Paquet Talon, ou `null` pour l'installer à la main |
+
+:::note[Talon absent ou non souhaité]
+Avec `package = null`, tout le reste est configuré (udev, uinput,
+accessibilité) et Talon peut être lancé manuellement depuis l'archive amont,
+ce qui préserve sa mise à jour automatique.
+:::
+
+## Régler l'utilisateur
+
+Options de `darkone.home.umi`, à poser dans `usr/users/<login>/default.nix`.
+
+| Option | Défaut | Rôle |
+|---|---|---|
+| `enable` | activé par le profil | Active le profil d'utilisateur |
+| `enableTalonAutostart` | `true` | Lance Talon à l'ouverture de session |
+| `communityScripts` | `null` | Arbre `talonhub/community` déployé dans `~/.talon/user/community` |
+| `enableDwell` | `false` | Clic par temporisation du pointeur |
+| `dwellTime` | `1.2` | Délai du clic par temporisation, en secondes |
+
+:::caution[Le clic par temporisation reste optionnel]
+`enableDwell` déclenche un clic dès que le pointeur reste immobile. C'est
+indispensable au regard, mais **inutilisable à la souris**&nbsp;: le pointeur
+abandonné sur le menu d'accessibilité ou sur le clavier visuel clique tout seul.
+Ne l'activer que sur un poste réellement équipé d'un traqueur.
+:::
+
+:::tip[Contrôle complet à la souris du regard]
+Les scripts communautaires `talonhub/community` apportent le zoom mouse et le
+clic par claquement de langue. Ils se déclarent de façon reproductible&nbsp;:
+
+```nix
+# usr/users/alice/default.nix
+{ pkgs, ... }:
+{
+  darkone.home.umi.communityScripts = pkgs.fetchFromGitHub {
+    owner = "talonhub";
+    repo = "community";
+    rev = "…";
+    hash = "…";
+  };
+}
+```
+:::
+
+## Ce que le profil change
+
+Le poste est volontairement dépouillé de tout ce qui suppose un clavier ou une
+souris.
+
+| Changement | Raison |
+|---|---|
+| Session Cinnamon en X11 | Talon ne fonctionne pas sous Wayland |
+| Ouverture de session automatique | Aucun mot de passe saisissable |
+| Verrouillage et veille désactivés | Un écran verrouillé est un cul-de-sac |
+| Trousseau de clés sans mot de passe | Évite une invite impossible à satisfaire |
+| Curseur et texte agrandis | Précision du regard limitée à quelques dizaines de pixels |
+| Clavier visuel ancré en bas | Toujours disponible, grandes cibles, prédiction de mots |
+| Panneaux de configuration masqués | Extensions et actions Cinnamon, gestionnaire de trousseaux |
+
+:::danger[Le poste n'est pas protégé au démarrage]
+Ouverture de session automatique, aucun verrouillage d'écran, trousseau en
+clair&nbsp;: quiconque allume la machine est dans la session. Le seul rempart
+utile est le [chiffrement du disque](/fr/doc/admin-guide/operate/luks/), à
+prévoir dès l'installation si le poste est mobile.
+:::
+
+## Diagnostic
+
+| Symptôme | Piste |
+|---|---|
+| Talon ne voit pas le traqueur | Rebrancher le traqueur, puis relancer Talon (règle udev appliquée au branchement) |
+| Micrologiciel non initialisé | Repasser une fois par Tobii Experience sous Windows |
+| Session ouverte sous GNOME | Vérifier que le compte figure dans `gazeUsers` ou dans `autoLoginUser` |
+| Le pointeur clique tout seul | `enableDwell` activé sans traqueur, le désactiver |
+
+:::note[Messages du noyau attendus]
+Le traqueur expose deux interfaces vidéo que `uvcvideo` ne sait pas gérer, d'où
+des messages `Unknown video format`, `No supported video formats found` et
+`probe with driver uvcvideo failed with error -22`. Ils sont **normaux et
+souhaitables**&nbsp;: aucun pilote noyau ne réclame les interfaces, ce qui les
+laisse libres pour Talon.
+:::

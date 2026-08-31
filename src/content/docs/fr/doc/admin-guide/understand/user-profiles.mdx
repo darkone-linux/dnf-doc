@@ -31,6 +31,7 @@ teenager: teenager
 gamer: gamer
 child: child
 baby: baby
+umi: umi
 
 minimal -> normal
 minimal -> teenager
@@ -38,6 +39,7 @@ minimal -> gamer
 minimal -> child
 minimal -> baby
 normal -> advanced
+normal -> umi
 advanced -> admin
 advanced -> student
 admin -> nixadmin
@@ -51,6 +53,7 @@ admin -> nixadmin
 | `minimal` | Base de tout profil | |
 | `normal` | Utilisateur standard (bureau) | `minimal` |
 | `advanced` | Développeurs, informaticiens | `normal` |
+| `umi` | Utilisateur pilotant au regard | `normal` |
 | `admin` | Administrateur réseau | `advanced` |
 | `nix-admin` | Administrateur du parc (outils Nix) | `admin` |
 | `student` | Étudiant | `advanced` |
@@ -58,6 +61,12 @@ admin -> nixadmin
 | `gamer` | Joueur | `minimal` |
 | `child` | Enfant (icônes techniques masquées) | `minimal` |
 | `baby` | Très jeune enfant | `minimal` |
+
+:::tip[Le profil `umi` va par paire]
+Il n'a de sens que sur un hôte en profil `umi`, qui fournit le traqueur
+oculaire et la session X11. Voir
+[Accessibilité](/fr/doc/admin-guide/operate/accessibility/).
+:::
 
 :::tip[Côté utilisateur]
 Une présentation orientée usage figure dans le
