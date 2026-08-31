@@ -14,7 +14,7 @@ Un **profil d'hôte** est un gabarit qui définit le rôle d'une machine. On le
 choisit avec `profile:` dans `etc/config.yaml`. Les profils s'héritent : chacun
 part d'un autre et ajoute ses spécificités.
 
-{/* t:p aee29ff52873c91f1c0c64c2dafd1631587e473ffd84730e563a3635c4e2f75b */}
+{/* t:p 703d240860edd11b73aeaf7e73be9683cd351d5afc1cec7c7e65b950debcf62d */}
 ## L'héritage
 
 ```d2
@@ -25,7 +25,7 @@ minimal: minimal
 
 server: server
 desktop: desktop
-portable: portable
+portable: portable (clé usb)
 
 gateway: gateway
 hcs: hcs
@@ -43,7 +43,7 @@ desktop -> laptop
 desktop -> umi
 ```
 
-{/* t:p efb28cc0066fc02307f3ac07a26a0fe0711c53aec43a153ab494c0fa041bf0af */}
+{/* t:p 53118090f9eec30c680f29130824b5dedf5b18f6c2fe8381c62e361fb88e9026 */}
 ## Les profils
 
 | Profil | Pour quoi | Hérite de | Apporte |
@@ -52,13 +52,13 @@ desktop -> umi
 | `server` | Serveur sans écran | `minimal` | Pas de veille, watchdog, boot limité |
 | `desktop` | Poste de travail | `minimal` | GNOME, multimédia, bureautique |
 | `laptop` | Ordinateur portable | `desktop` | Batterie/veille, capteurs, thermald |
-| `umi` | Poste piloté au regard | `desktop` | Session X11 Cinnamon, autologin, uinput, udev Tobii |
+| `umi` | Poste accessible | `desktop` | Autologin, uinput, udev Tobii |
 | `portable` | Clé USB bootable | `minimal` | Pilotes matériels étendus |
 | `gateway` | Passerelle de zone | `server` | Routeur, pare-feu, DNS/DHCP, VPN |
 | `hcs` | Coordination du VPN | `server` | Headscale + services partagés |
 | `vm` | Machine virtuelle | `server` | Outils invité (VirtualBox/QEMU/Xen) |
 
-{/* t:p aeb345cd8dee28e6002902f22a28832b321740eac7b79067b5cc093982b01f89 */}
+{/* t:p 0073c62356053c34aaa5f1fa1e235488f994cae2d4c044146ba20089c1cd4bae */}
 ## Choisir un profil
 
 ```yaml
@@ -69,11 +69,11 @@ hosts:
 ```
 
 :::tip[Les services sont indépendants du profil]
-Un service (Immich, Nextcloud, Forgejo…) se déclare par hôte **quel que soit**
-son profil. Voir [Services](/fr/doc/admin-guide/operate/services/).
+Un [service](/fr/doc/admin-guide/operate/services/) (Immich, Nextcloud, Forgejo…) se déclare par hôte **quel que soit**
+son profil.
 :::
 
-:::tip[Le profil `umi` demande du matériel]
+:::tip[Le profil `umi` peut demander du matériel]
 Un poste piloté au regard suppose un traqueur oculaire et une mise en service
 particulière, décrites dans
 [Accessibilité](/fr/doc/admin-guide/operate/accessibility/).

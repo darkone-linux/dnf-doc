@@ -14,7 +14,7 @@ A **host profile** is a template that defines the role of a machine. It is
 chosen with `profile:` in `etc/config.yaml`. Profiles are inherited: each
 starts from another and adds its specifics.
 
-{/* t:p aee29ff52873c91f1c0c64c2dafd1631587e473ffd84730e563a3635c4e2f75b */}
+{/* t:p 703d240860edd11b73aeaf7e73be9683cd351d5afc1cec7c7e65b950debcf62d */}
 ## Inheritance
 
 ```d2
@@ -25,7 +25,7 @@ minimal: minimal
 
 server: server
 desktop: desktop
-portable: portable
+portable: portable (usb stick)
 
 gateway: gateway
 hcs: hcs
@@ -43,22 +43,22 @@ desktop -> laptop
 desktop -> umi
 ```
 
-{/* t:p efb28cc0066fc02307f3ac07a26a0fe0711c53aec43a153ab494c0fa041bf0af */}
-## Profiles
+{/* t:p 53118090f9eec30c680f29130824b5dedf5b18f6c2fe8381c62e361fb88e9026 */}
+## The profiles
 
-| Profile | Purpose | Inherits from | Provides |
+| Profile | For what | Inherits from | Provides |
 |---|---|---|---|
-| `minimal` | Base for every host | | Hardware, firewall, i18n, zsh, sudo |
-| `server` | Headless server | `minimal` | No sleep, watchdog, limited boot |
+| `minimal` | Base of every host | | Hardware, firewall, i18n, zsh, sudo |
+| `server` | Headless server | `minimal` | No standby, watchdog, limited boot |
 | `desktop` | Workstation | `minimal` | GNOME, multimedia, office suite |
-| `laptop` | Laptop | `desktop` | Battery/sleep, sensors, thermald |
-| `umi` | Gaze-controlled workstation | `desktop` | X11 Cinnamon session, autologin, uinput, Tobii udev |
-| `portable` | Bootable USB drive | `minimal` | Extended hardware drivers |
+| `laptop` | Laptop | `desktop` | Battery/standby, sensors, thermald |
+| `umi` | Accessible station | `desktop` | Autologin, uinput, Tobii udev |
+| `portable` | Bootable USB stick | `minimal` | Extended hardware drivers |
 | `gateway` | Zone gateway | `server` | Router, firewall, DNS/DHCP, VPN |
 | `hcs` | VPN coordination | `server` | Headscale + shared services |
 | `vm` | Virtual machine | `server` | Guest tools (VirtualBox/QEMU/Xen) |
 
-{/* t:p aeb345cd8dee28e6002902f22a28832b321740eac7b79067b5cc093982b01f89 */}
+{/* t:p 0073c62356053c34aaa5f1fa1e235488f994cae2d4c044146ba20089c1cd4bae */}
 ## Choosing a profile
 
 ```yaml
@@ -69,17 +69,17 @@ hosts:
 ```
 
 :::tip[Services are independent of the profile]
-A service (Immich, Nextcloud, Forgejo…) is declared per host **regardless of**
-its profile. See [Services](/en/doc/admin-guide/operate/services/).
+A [service](/en/doc/admin-guide/operate/services/) (Immich, Nextcloud, Forgejo…) is declared per host **regardless of**
+its profile.
 :::
 
-:::tip[The `umi` profile requires specific hardware]
-A gaze-controlled workstation requires an eye tracker and a specific setup,
+:::tip[The `umi` profile may require hardware]
+An eye-tracking station requires an eye tracker and a specific setup,
 described in
 [Accessibility](/en/doc/admin-guide/operate/accessibility/).
 :::
 
 :::note[Full reference]
-Each profile's options are listed in the
+The options of each profile are in the
 [module reference](/en/ref/modules/mixin/).
 :::

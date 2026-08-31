@@ -1,5 +1,5 @@
 ---
-title: "Accessibilité : le poste piloté au regard"
+title: "Profils d'accessibilité"
 sidebar:
   label: Accessibilité
   order: 16
@@ -9,24 +9,25 @@ lang: fr
 import { Steps } from '@astrojs/starlight/components';
 
 {/* t:main */}
-{/* t:h 59e9d7e2feafa661d587504f0a312ca7af52efbc113f742631909a877e253cec */}
+{/* t:h ab21fc5e1af366b7e3f79bd928157c81dd1860790dcffd6160283197cf31bab3 */}
 
-{/* t:p 1477a148d7c5b95ce72827cbf9e0ff3b4779c77e30f19ca8ad116ddebdde5689 */}
-Le profil `umi` transforme un poste de travail en machine utilisable **sans
-clavier ni souris**, pilotée au regard et à la voix. Il s'adresse aux personnes
-en situation de handicap moteur sévère.
+{/* t:p dcc21f57a02e5b1e3e9423dcd27db15a8b4cc60632ce6db2c241351d2db3f6d9 */}
+Les profils `umi` génèrent un poste de travail en machine utilisable **sans
+clavier ni souris**, pilotée au regard, à la voix ou au toucher.
+Il s'adresse aux personnes en situation de handicap moteur.
 
-Il se compose de deux moitiés indissociables&nbsp;: un [profil
-d'hôte](/fr/doc/admin-guide/understand/host-profiles/) `umi` qui prépare le
-matériel et la session, et un [profil
-d'utilisateur](/fr/doc/admin-guide/understand/user-profiles/) `umi` qui règle
-l'environnement du compte.
+Ils se composent de deux parties&nbsp;: un
+[profil d'hôte](/fr/doc/admin-guide/understand/host-profiles/) `umi` qui
+déclare le matériel et la session, et un
+[profil d'utilisateur](/fr/doc/admin-guide/understand/user-profiles/) `umi`
+qui fixe l'environnement de l'utilisateur.
 
-{/* t:p 9e285175a5b07f1b355ffd3379de8d9009e6f5a78cc5fd39ff6c99abdae0169e */}
+{/* t:p 9852bb25719698ffaaddd5016c4dfb05d813b67d7bae1bb233e0ec6b8d5da960 */}
 ## Le principe
 
-Le regard remplace la souris, la voix remplace le clavier, et le clavier visuel
-prend le relais pour tout ce qui se tape caractère par caractère.
+Les périphériques courants (clavier, souris) peuvent être remplacés par la voix,
+le regard ou le tactile. Des outils d'accessibilité peuvent être paramétrés en
+fonction des caractéristiques de l'utilisateur.
 
 ```d2
 style.fill: transparent
@@ -47,7 +48,7 @@ uinput -> session
 onboard -> session
 ```
 
-{/* t:p 6f821358731c8b709f413716cad57a9f901da1e945275c39f0a8e6c0c54fc76d */}
+{/* t:p 212d7a2e3f7ff6b66cc62a87923573e27aacfe7f8e8aec6c4dc477350a9852d1 */}
 ## Le matériel
 
 | Élément | Exigence |
@@ -56,6 +57,7 @@ onboard -> session
 | Architecture | `x86_64-linux` uniquement (Talon ne fournit pas d'autre binaire) |
 | Micro | Nécessaire pour les commandes vocales |
 | Haut-parleurs | Retour sonore des frappes du clavier visuel |
+| Écran | Un bon écran tactile pour le contrôle du bureau et des applications |
 
 :::caution[Premier démarrage sous Windows]
 Le micrologiciel du Tobii 5 doit être initialisé **une fois** sur une machine
@@ -63,7 +65,7 @@ Windows, avec l'application Tobii Experience. Sans cette étape, le traqueur
 reste muet sous Linux.
 :::
 
-{/* t:p 897f3ca57af7857f8e9ec7a49086545b3f00a0aa7b793d6a56dc3a0151c8352c */}
+{/* t:p f248b8b380dadbb88d4853b4033272b60f0ec98a0505a09d13f87c2c4586ee71 */}
 ## Mettre en place un poste
 
 <Steps>
@@ -81,8 +83,8 @@ reste muet sous Linux.
        groups: ["global"]
 
    hosts:
-     - hostname: "poste-regard"
-       name: "Poste piloté au regard"
+     - hostname: "umi-desktop"
+       name: "Poste accessible"
        zone: "maison:2.3"
        profile: "umi"
        users: ["alice"]
@@ -92,7 +94,7 @@ reste muet sous Linux.
    sans lesquels Talon ne peut pas injecter d'événements.
 
 2. **Activer l'ouverture de session automatique** dans la configuration de la
-   machine. Une invite de mot de passe est un cul-de-sac sans clavier&nbsp;:
+   machine, si l'utilisateur ne peut pas utiliser de clavier pour s'identifier&nbsp;:
 
    ```nix
    # usr/machines/poste-regard/default.nix
@@ -103,24 +105,27 @@ reste muet sous Linux.
 
    ```sh
    just generate
-   just apply poste-regard
+   just apply umi-desktop
    ```
 
-4. **Calibrer au premier lancement**. Débrancher puis rebrancher le traqueur
-   (les règles udev ne s'appliquent qu'au branchement), relancer Talon, puis
-   lancer la calibration depuis son menu.
+4. **Tester et configurer**
+
+   :::caution[Eye tracker : calibrer au premier lancement]
+   Débrancher puis rebrancher le traqueur (les règles udev ne s'appliquent qu'au
+   branchement), relancer Talon, puis lancer la calibration depuis son menu.
+   :::
 
 </Steps>
 
 :::tip[Plusieurs utilisateurs sur la même machine]
 Seul le compte listé dans `autoLoginUser` ouvre sa session tout seul. Les
-autres comptes pilotés au regard se déclarent dans `gazeUsers` pour hériter de
-la session Cinnamon&nbsp;; les comptes ordinaires gardent leur session GNOME
+autres comptes UMI se déclarent dans `gazeUsers` pour hériter de
+la session Cinnamon. Les comptes ordinaires gardent leur session GNOME
 Wayland habituelle.
 :::
 
-{/* t:p 75a408814888d83e67f46230d8b710d2c7fd7bf5ff3f9c1f09f4cb45baa7fcf5 */}
-## Régler l'hôte
+{/* t:p 0edad830c1621af0cd9b10d4be0ca43ea35fb1e4c03de2c43d580093037abfb2 */}
+## Configurer l'hôte
 
 Options de `darkone.host.umi`, à poser dans `usr/machines/<hôte>/default.nix`.
 
@@ -137,8 +142,8 @@ accessibilité) et Talon peut être lancé manuellement depuis l'archive amont,
 ce qui préserve sa mise à jour automatique.
 :::
 
-{/* t:p 06b6ae90ff18ba40f1bf228bb5b548f26be2a85ed196e7284eefe17da0791f1f */}
-## Régler l'utilisateur
+{/* t:p 709e9bc89795b7865cbf37293e4ceb74278f0810e2eae35831824159682f5e89 */}
+## Paramétrer l'utilisateur
 
 Options de `darkone.home.umi`, à poser dans `usr/users/<login>/default.nix`.
 
@@ -152,12 +157,12 @@ Options de `darkone.home.umi`, à poser dans `usr/users/<login>/default.nix`.
 
 :::caution[Le clic par temporisation reste optionnel]
 `enableDwell` déclenche un clic dès que le pointeur reste immobile. C'est
-indispensable au regard, mais **inutilisable à la souris**&nbsp;: le pointeur
+indispensable au regard, mais **déstabilisant à la souris**&nbsp;: le pointeur
 abandonné sur le menu d'accessibilité ou sur le clavier visuel clique tout seul.
-Ne l'activer que sur un poste réellement équipé d'un traqueur.
+Ne l'activer que sur un poste équipé d'un traqueur.
 :::
 
-:::tip[Contrôle complet à la souris du regard]
+:::tip[Apports communautaires]
 Les scripts communautaires `talonhub/community` apportent le zoom mouse et le
 clic par claquement de langue. Ils se déclarent de façon reproductible&nbsp;:
 
@@ -175,7 +180,7 @@ clic par claquement de langue. Ils se déclarent de façon reproductible&nbsp;:
 ```
 :::
 
-{/* t:p a1b1298aa93a875c5d7a8ae846751b7b3e8f78869a1bf0091963d9ae35a7d7af */}
+{/* t:p 2d1b6c6b650f761687bc08cb0a7239a240638b8ac8d20757f48415d5b7e4572b */}
 ## Ce que le profil change
 
 Le poste est volontairement dépouillé de tout ce qui suppose un clavier ou une
@@ -183,19 +188,20 @@ souris.
 
 | Changement | Raison |
 |---|---|
-| Session Cinnamon en X11 | Talon ne fonctionne pas sous Wayland |
+| Session Cinnamon en X11 | Talon ne fonctionne (malheureusement) pas sous Wayland |
 | Ouverture de session automatique | Aucun mot de passe saisissable |
 | Verrouillage et veille désactivés | Un écran verrouillé est un cul-de-sac |
 | Trousseau de clés sans mot de passe | Évite une invite impossible à satisfaire |
 | Curseur et texte agrandis | Précision du regard limitée à quelques dizaines de pixels |
 | Clavier visuel ancré en bas | Toujours disponible, grandes cibles, prédiction de mots |
-| Panneaux de configuration masqués | Extensions et actions Cinnamon, gestionnaire de trousseaux |
 
 :::danger[Le poste n'est pas protégé au démarrage]
 Ouverture de session automatique, aucun verrouillage d'écran, trousseau en
 clair&nbsp;: quiconque allume la machine est dans la session. Le seul rempart
 utile est le [chiffrement du disque](/fr/doc/admin-guide/operate/luks/), à
 prévoir dès l'installation si le poste est mobile.
+
+L'ouverture de session par reconnaissance faciale est dans la liste TODO.
 :::
 
 {/* t:p 0d6884836da7cb7f47cd1adf7ac95f0476333b18b3c52557168d7f034641bbba */}

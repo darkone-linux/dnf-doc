@@ -1,5 +1,5 @@
 ---
-title: "Accessibility: the eye-controlled workstation"
+title: "Accessibility profiles"
 sidebar:
   label: Accessibility
   order: 16
@@ -9,66 +9,68 @@ lang: en
 import { Steps } from '@astrojs/starlight/components';
 
 {/* t:translated-from fr */}
-{/* t:h 59e9d7e2feafa661d587504f0a312ca7af52efbc113f742631909a877e253cec */}
+{/* t:h ab21fc5e1af366b7e3f79bd928157c81dd1860790dcffd6160283197cf31bab3 */}
 
-{/* t:p 1477a148d7c5b95ce72827cbf9e0ff3b4779c77e30f19ca8ad116ddebdde5689 */}
-The `umi` profile turns a workstation into a machine usable **without a
-keyboard or mouse**, driven by eye gaze and voice. It is intended for people
-with severe motor disabilities.
+{/* t:p dcc21f57a02e5b1e3e9423dcd27db15a8b4cc60632ce6db2c241351d2db3f6d9 */}
+The `umi` profiles generate a workstation usable **without a keyboard or
+mouse**, controlled by gaze, voice or touch.
+It is intended for people with motor disabilities.
 
-It consists of two inseparable halves: an `umi`
-[host profile](/en/doc/admin-guide/understand/host-profiles/) that prepares the
-hardware and the session, and an `umi`
-[user profile](/en/doc/admin-guide/understand/user-profiles/) that sets up the
-account environment.
+They consist of two parts: an `umi`
+[host profile](/en/doc/admin-guide/understand/host-profiles/) that
+declares the hardware and the session, and a `umi`
+[user profile](/en/doc/admin-guide/understand/user-profiles/)
+that sets up the user's environment.
 
-{/* t:p 9e285175a5b07f1b355ffd3379de8d9009e6f5a78cc5fd39ff6c99abdae0169e */}
+{/* t:p 9852bb25719698ffaaddd5016c4dfb05d813b67d7bae1bb233e0ec6b8d5da960 */}
 ## The principle
 
-The gaze replaces the mouse, the voice replaces the keyboard, and the on-screen keyboard takes over for everything typed character by character.
+Common peripherals (keyboard, mouse) can be replaced by voice, gaze or touch.
+Accessibility tools can be configured according to the user's characteristics.
 
 ```d2
 style.fill: transparent
 direction: down
 
-user: User { shape: person }
+user: Utilisateur { shape: person }
 tracker: Tobii Eye Tracker 5
 talon: Talon
 uinput: /dev/uinput
-session: Cinnamon Session (X11)
-onboard: Onboard Virtual Keyboard
+session: Session Cinnamon (X11)
+onboard: Clavier visuel Onboard
 
-user -> tracker: Gaze
-user -> talon: Voice
+user -> tracker: Regard
+user -> talon: Voix
 tracker -> talon
 talon -> uinput
 uinput -> session
 onboard -> session
 ```
 
-{/* t:p 6f821358731c8b709f413716cad57a9f901da1e945275c39f0a8e6c0c54fc76d */}
-## Hardware
+{/* t:p 212d7a2e3f7ff6b66cc62a87923573e27aacfe7f8e8aec6c4dc477350a9852d1 */}
+## The hardware
 
-| Element | Requirement |
+| Item | Requirement |
 |---|---|
 | Eye tracker | Tobii Eye Tracker 5 (USB, manufacturer ID `2104`) |
-| Architecture | `x86_64-linux` only (Talon provides no other binary) |
-| Microphone | Required for voice commands |
-| Speakers | Audio feedback for on-screen keyboard keystrokes |
+| Architecture | `x86_64-linux` only (Talon does not provide another binary) |
+| Microphone | Needed for voice commands |
+| Speakers | Sound feedback for visual keyboard keystrokes |
+| Screen | A good touchscreen for controlling the desktop and applications |
 
 :::caution[First boot under Windows]
-The Tobii 5 firmware must be initialized **once** on a Windows machine, using
-the Tobii Experience application. Without this step, the tracker stays silent
-under Linux.
+The Tobii 5 firmware must be initialized **once** on a Windows
+machine, with the Tobii Experience app. Without this step, the tracker
+stays silent under Linux.
 :::
 
-{/* t:p 897f3ca57af7857f8e9ec7a49086545b3f00a0aa7b793d6a56dc3a0151c8352c */}
+{/* t:p f248b8b380dadbb88d4853b4033272b60f0ec98a0505a09d13f87c2c4586ee71 */}
 ## Setting up a workstation
 
 <Steps>
 
-1. **Declare the host and its user** in `etc/config.yaml`, both with the `umi`
-   profile:
+1. **Declare the host and its user** in `etc/config.yaml`, both with
+   the `umi` profile:
 
    ```yaml
    # etc/config.yaml
@@ -80,8 +82,8 @@ under Linux.
        groups: ["global"]
 
    hosts:
-     - hostname: "poste-regard"
-       name: "Poste piloté au regard"
+     - hostname: "umi-desktop"
+       name: "Poste accessible"
        zone: "maison:2.3"
        profile: "umi"
        users: ["alice"]
@@ -90,8 +92,8 @@ under Linux.
    The user profile adds the account to the `input` and `uinput` groups,
    without which Talon cannot inject events.
 
-2. **Enable automatic login** in the machine configuration. A password prompt
-   is a dead end without a keyboard:
+2. **Enable automatic login** in the machine configuration,
+   if the user cannot use a keyboard to identify themselves:
 
    ```nix
    # usr/machines/poste-regard/default.nix
@@ -102,62 +104,66 @@ under Linux.
 
    ```sh
    just generate
-   just apply poste-regard
+   just apply umi-desktop
    ```
 
-4. **Calibrate on first launch**. Unplug then replug the tracker (the udev
-   rules only apply on connection), relaunch Talon, then run the calibration
-   from its menu.
+4. **Test and configure**
+
+   :::caution[Eye tracker: calibrate on first launch]
+   Unplug then replug the tracker (the udev rules only apply at
+   plug-in), relaunch Talon, then run the calibration from its menu.
+   :::
 
 </Steps>
 
 :::tip[Multiple users on the same machine]
 Only the account listed in `autoLoginUser` opens its session on its own. The
-other eye-controlled accounts declare themselves in `gazeUsers` to inherit the
-Cinnamon session; ordinary accounts keep their usual GNOME Wayland session.
+other UMI accounts declare themselves in `gazeUsers` to inherit
+the Cinnamon session. Regular accounts keep their usual GNOME Wayland
+session.
 :::
 
-{/* t:p 75a408814888d83e67f46230d8b710d2c7fd7bf5ff3f9c1f09f4cb45baa7fcf5 */}
+{/* t:p 0edad830c1621af0cd9b10d4be0ca43ea35fb1e4c03de2c43d580093037abfb2 */}
 ## Configuring the host
 
-`darkone.host.umi` options, to be set in `usr/machines/<host>/default.nix`.
+`darkone.host.umi` options, to set in `usr/machines/<host>/default.nix`.
 
 | Option | Default | Role |
 |---|---|---|
 | `enable` | enabled by the profile | Enables the host profile |
-| `autoLoginUser` | `null` | Account opened automatically at boot |
+| `autoLoginUser` | `null` | Account opened automatically at startup |
 | `gazeUsers` | `[ ]` | Other accounts whose GDM session is Cinnamon/X11 |
 | `package` | `pkgs.talon` | Talon package, or `null` to install it manually |
 
 :::note[Talon absent or not wanted]
 With `package = null`, everything else is configured (udev, uinput,
 accessibility) and Talon can be launched manually from the upstream archive,
-which preserves its automatic updates.
+which preserves its automatic update.
 :::
 
-{/* t:p 06b6ae90ff18ba40f1bf228bb5b548f26be2a85ed196e7284eefe17da0791f1f */}
+{/* t:p 709e9bc89795b7865cbf37293e4ceb74278f0810e2eae35831824159682f5e89 */}
 ## Configuring the user
 
-`darkone.home.umi` options, to be set in `usr/users/<login>/default.nix`.
+`darkone.home.umi` options, to set in `usr/users/<login>/default.nix`.
 
 | Option | Default | Role |
 |---|---|---|
 | `enable` | enabled by the profile | Enables the user profile |
-| `enableTalonAutostart` | `true` | Launches Talon at login |
+| `enableTalonAutostart` | `true` | Launches Talon at session start |
 | `communityScripts` | `null` | `talonhub/community` tree deployed in `~/.talon/user/community` |
 | `enableDwell` | `false` | Click by pointer dwell |
 | `dwellTime` | `1.2` | Dwell click delay, in seconds |
 
 :::caution[Dwell click remains optional]
 `enableDwell` triggers a click as soon as the pointer stays still. It is
-essential for eye gaze, but **unusable with a mouse**: the pointer left on the
-accessibility menu or on the on-screen keyboard clicks on its own. Only enable
-it on a machine actually equipped with a tracker.
+essential for gaze, but **unsettling for the mouse**: a pointer
+left on the accessibility menu or on the visual keyboard clicks on its own.
+Only enable it on a workstation equipped with a tracker.
 :::
 
-:::tip[Full mouse control with eye gaze]
-The `talonhub/community` community scripts provide the mouse zoom and click by
-tongue clucking. They are declared reproducibly:
+:::tip[Community contributions]
+The `talonhub/community` community scripts bring mouse zoom and
+click by tongue click. They are declared reproducibly:
 
 ```nix
 # usr/users/alice/default.nix
@@ -173,27 +179,28 @@ tongue clucking. They are declared reproducibly:
 ```
 :::
 
-{/* t:p a1b1298aa93a875c5d7a8ae846751b7b3e8f78869a1bf0091963d9ae35a7d7af */}
+{/* t:p 2d1b6c6b650f761687bc08cb0a7239a240638b8ac8d20757f48415d5b7e4572b */}
 ## What the profile changes
 
-The workstation is deliberately stripped of anything that requires a keyboard
+The workstation is deliberately stripped of everything that requires a keyboard
 or a mouse.
 
 | Change | Reason |
 |---|---|
-| Cinnamon session on X11 | Talon does not work under Wayland |
-| Automatic login | No password can be entered |
+| Cinnamon session in X11 | Talon does not work (unfortunately) under Wayland |
+| Automatic login | No password can be typed |
 | Locking and sleep disabled | A locked screen is a dead end |
-| Passwordless keyring | Avoids an impossible-to-fill prompt |
-| Cursor and text enlarged | Gaze accuracy limited to a few dozen pixels |
-| On-screen keyboard docked at the bottom | Always available, large targets, word prediction |
-| Configuration panels hidden | Cinnamon extensions and actions, keyring manager |
+| Passwordless keyring | Avoids a prompt that is impossible to satisfy |
+| Enlarged cursor and text | Gaze precision limited to a few dozen pixels |
+| Visual keyboard anchored at the bottom | Always available, large targets, word prediction |
 
-:::danger[The workstation is not protected at boot]
-Automatic login, no screen lock, plaintext keyring: anyone who turns on the
-machine is in the session. The only useful safeguard is
-[disk encryption](/en/doc/admin-guide/operate/luks/), to plan from installation
-if the workstation is portable.
+:::danger[The workstation is not protected at startup]
+Automatic login, no screen lock, plaintext keyring: anyone who turns on
+the machine is in the session. The only useful barrier is
+disk encryption](/en/doc/admin-guide/operate/luks/), to be
+planned from installation if the workstation is mobile.
+
+Face recognition login is on the TODO list.
 :::
 
 {/* t:p 0d6884836da7cb7f47cd1adf7ac95f0476333b18b3c52557168d7f034641bbba */}
