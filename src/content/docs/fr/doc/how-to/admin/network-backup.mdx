@@ -134,6 +134,18 @@ déplacée, historique et incrémentalité préservés.
 3. Le dépôt est stocké sous `serverDataDir` (défaut `/mnt/backup/restic`).
    Le pare-feu ouvre le port REST sur l'interface interne automatiquement.
 
+4. Si des clients d'**autres zones** doivent y accéder par le tailnet, ajouter
+   `listenAll` : le serveur n'écoute par défaut que sur l'adresse LAN de
+   l'hôte, invisible depuis le VPN.
+
+   ```nix
+   darkone.service.restic = {
+     enable = true;
+     enableServer = true;
+     listenAll = true;
+   };
+   ```
+
 </Steps>
 
 <Aside type="note" title="Serveur = client aussi">
@@ -181,6 +193,39 @@ Champs d'un `target` :
 <Aside type="tip" title="Plusieurs destinations">
 Ajouter un second `target` (autre `name`, autre `root`/`zone`) pour répliquer la
 sauvegarde, par exemple vers le serveur REST d'une autre zone.
+</Aside>
+
+## Sauvegarder hors-site
+
+Une seconde `target` vers le serveur REST d'une autre zone donne le « 1 » de la
+règle 3-2-1. Deux précautions propres au hors-site.
+
+**Adresser le serveur par son IP tailnet**, jamais par son nom de zone :
+
+```nix
+{
+  name = "offsite";
+  root = "rest:http://100.64.0.20:8888";
+  zone = "home";
+  categories = [ "system" ];
+}
+```
+
+Un nom comme `restic.<zone-distante>.example.net` n'est résolu que par la
+passerelle de cette zone. Si le site distant tombe, le résolveur tombe avec lui
+et la panne se présente comme une **erreur de résolution de noms**, ce qui
+égare le diagnostic. L'IP tailnet supprime cette indirection, ainsi que la
+dépendance à la route de sous-réseau du site distant. Elle exige `listenAll`
+côté serveur (voir plus haut).
+
+<Aside type="note" title="Un serveur hors-site absent ne met pas l'unité en échec">
+Chaque cible `rest:` porte une sonde de joignabilité (`ExecCondition`). Serveur
+injoignable&nbsp;: l'unité est **sautée**, pas mise en échec — aucune alerte
+`SystemdUnitFailed` nocturne, pas de quart d'heure de tentatives restic, et
+aucune création de dépôt vide contre une adresse morte. La sauvegarde manquante
+reste signalée par `ResticBackupStale` (36&nbsp;h) puis `ResticBackupCritical`
+(7&nbsp;jours), qui surveillent la date du dernier succès. Le journal indique
+alors `Skipped due to ExecCondition=`.
 </Aside>
 
 {/* t:p 857b90e6265488cd7606a6a98345e6bc02ace2599ca7beae576dc2665957007e */}

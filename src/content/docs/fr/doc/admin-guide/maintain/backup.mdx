@@ -62,6 +62,14 @@ rétention, restauration) est détaillée dans le guide pratique :
 
 - [Sauvegardes du réseau (restic)](/fr/doc/how-to/admin/network-backup/)
 
+:::caution[Une sauvegarde hors-site absente ne crie pas tout de suite]
+Une cible `rest:` dont le serveur est injoignable est **sautée**, pas mise en
+échec&nbsp;: pas d'alerte immédiate. C'est `ResticBackupStale` (36&nbsp;h) puis
+`ResticBackupCritical` (7&nbsp;jours) qui signalent l'absence de sauvegarde. Un
+site distant éteint se voit donc au bout d'une journée, et non à la première
+nuit manquée.
+:::
+
 :::tip[Politique de rétention]
 Par défaut : 24 dernières + 24 horaires + 7 quotidiennes + 8 hebdomadaires + 24
 mensuelles. Intégrité vérifiée à chaque sauvegarde.
