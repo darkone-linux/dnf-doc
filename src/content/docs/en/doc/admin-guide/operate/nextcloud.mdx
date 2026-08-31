@@ -100,7 +100,7 @@ The test requires the public URL of the service, so the zone's reverse proxy
 must be reachable. The unit retries for fifteen minutes after a deployment,
 waiting for the gateway to finish starting.
 
-{/* t:p acacdd57c5a1d997359e9179a9cfa0324ffd84724f263c5adacf77f9cff18400 */}
+{/* t:p abb8dc0b7d0d387d3b697b32b38183201edc1ca2bb43f71b80ea96a5bbc00a4a */}
 ## On workstations
 
 The client is installed as soon as a `nextcloud` service exists on the network.
@@ -108,23 +108,52 @@ The client is installed as soon as a `nextcloud` service exists on the network.
 | Option | Default | Effect |
 |---|---|---|
 | `darkone.home.office.nextcloud.enable` | service detected | Installs the desktop client |
-| `darkone.home.office.nextcloud.server` | `null` | Forces another instance |
-| `darkone.home.office.nextcloud.enableAutoStart` | `true` | Starts in the background at session login |
-| `darkone.home.office.nextcloud.enableWebdav` | `true` | Provides the account binding wizard |
+| `darkone.home.office.nextcloud.server` | `null` | Forces a different instance |
+| `darkone.home.office.nextcloud.enableAutoStart` | `true` | Starts in the background at login |
+| `darkone.home.office.nextcloud.enableWebdav` | `true` | Provides the account linking wizard |
 | `darkone.home.office.nextcloud.syncDir` | `null` | Folder suggested in the wizard |
 
-`nextcloud.server` accepts any URL, including an instance outside the network.
+`nextcloud.server` accepts any URL, including an instance outside the
+network.
 
-:::note[No synchronization imposed]
-`nextcloud.syncDir` is intentionally set to `null`. The wizard stops at the folder selection page, and the user decides what they want to bring back, or to synchronize nothing at all. Setting the option skips this page, which is only desirable on a small fleet with homogeneous accounts.
+Only two launchers appear in the applications menu&nbsp;:
+
+| Launcher | Origin | Role |
+|---|---|---|
+| **Nextcloud sync client** | `nextcloud-client` package | Synchronizes a local folder |
+| **Webdav Login** | framework, if `enableWebdav` | Links the account to the desktop (files, calendar, contacts) |
+
+Everything else (account, folders, pause) is managed from the system tray
+icon&nbsp;: the framework no longer adds a settings launcher.
+
+:::note[No forced synchronization]
+`nextcloud.syncDir` intentionally defaults to `null`. The wizard stops at the
+folder selection page and the user decides what they want to sync, or nothing
+at all. Setting this option skips that page, which is only desirable on a fleet
+with homogeneous accounts and small size.
 :::
 
-:::caution[The tray controls access to settings]
-Since version 34, the client no longer places any action in its window: it only displays the activity feed. Account, pause and **Settings** now only live in the status bar icon menu.
+{/* t:p 7f50e44a1560a39cbbc84ab776e80ec9a3a4fc7d5fb48efba21c1e00b18d5150 */}
+### The system tray icon
 
-Yet `qt.platformTheme = "gnome"` loads QGnomePlatform, whose `createPlatformSystemTrayIcon()` always returns `nullptr`: Qt then reports that no status bar exists, and **every** Qt application on the fleet gives up its icon. The GNOME module therefore leaves `qt.platformTheme` at `null`, and the `nextcloud-client` unit additionally neutralizes `QT_QPA_PLATFORMTHEME` for its own account, in case a profile re-enables it.
+:::caution[Without tray, no settings]
+Since version 34, the client no longer places any action in its window&nbsp;:
+it only displays the activity feed. Account, pause and **Settings** now only
+live in the system tray icon menu. Losing this icon means losing all access to
+synchronization settings.
+:::
 
-As a last resort, the `nextcloud-settings` command opens the dialog without going through the tray.
+Two GNOME module settings make it visible. A workstation running a different
+desktop must provide the equivalent.
+
+| Setting | Value | Why |
+|---|---|---|
+| GNOME Extension | [`status-tray`](https://extensions.gnome.org/extension/9164/status-tray/) | `appindicator`, the old one, no longer shows the client icon |
+| `qt.platformTheme` | `qt5ct` | `gnome` deprives **all** Qt applications of the system tray |
+
+:::note[Why not `qt6ct`]
+`qt6ct` would be the natural choice for a Qt 6 client, but the package is not
+available. `qt5ct` works in the meantime.
 :::
 
 {/* t:p 93efeefbb79688dbf545631f9d54139d5e31e92d3a9fcf39268c694ad5f6767a */}
@@ -141,20 +170,20 @@ As a last resort, the `nextcloud-settings` command opens the dialog without goin
 
 </Steps>
 
-{/* t:p 2a4b99bf4afcb9074e9c2dd0ff30d17e8cd34c02142cf7bcb6bec47fd7e9fb09 */}
+{/* t:p 87d42a422fedc0af1ca989d6d6d7fa16dd83f43f787f1b161b9ffbd93fccf11b */}
 ### Accessing files, calendar and contacts
 
 To browse files from the file manager without syncing anything, the user
-launches **Connect my Nextcloud account** from the menu, or
+launches **Webdav Login** from the applications menu, or
 `nextcloud-webdav-login` in a terminal.
 
 <Steps>
 
-1. The browser opens Kanidm, the user grants access.
-2. The wizard creates a **GNOME online account**: the share appears in the
-   file manager, and the calendar and contacts in Evolution.
-3. Nothing else to enter. The wizard still displays the application password,
-   usable from any other WebDAV client.
+1. The browser opens on Kanidm, the user grants access.
+2. The wizard saves a **GNOME online account**&nbsp;: the share appears in
+   the file manager, the calendar and contacts in Evolution.
+3. Nothing else to enter. The wizard nonetheless displays the application
+   password, usable from any other WebDAV client.
 
 </Steps>
 
@@ -165,10 +194,10 @@ not exist ([user_oidc#468](https://github.com/nextcloud/user_oidc/issues/468)).
 The wizard uses the same path as the desktop client, which is not affected.
 :::
 
-:::caution[Relaunching the wizard]
-A new run **replaces** the online account instead of adding a second one,
-and issues a new application password. Previous ones remain listed in
-**Settings → Security** in Nextcloud, where they can be revoked.
+:::caution[Re-running the wizard]
+A new execution **replaces** the online account instead of adding a second
+one, and issues a new application password. Previous ones remain listed in
+Nextcloud's **Settings → Security**, where they can be revoked.
 :::
 
 {/* t:p df0105db9edff5c01e4da913050b56d2463349327e274258fa6e70d6d908c374 */}
@@ -205,15 +234,15 @@ that the instance reports the previous one. The full procedure, including
 backup, is described in
 [Services](/en/doc/admin-guide/operate/services/).
 
-{/* t:p 5b51daa779691e70b2bf7fc9b53aea62b39158e1996345695d03634d0ca1542b */}
+{/* t:p 01637fa38e673bca5bed14a42f5dc9196020085dca4849592357c56fdf84a3a3 */}
 ## Troubleshooting
 
-| Symptom | Fix |
+| Symptom | Tip |
 |---|---|
 | Administrator cannot log in | Use `/login?direct=1` |
-| Slow synchronization on machines | `notify_push:self-test` on the server |
-| The whiteboard is unresponsive | `whiteboard` missing from `plugins`, or `just configure-admin-host` not rerun since |
-| The client asks for authorization again at every session | Session keyring not unlocked |
-| The client shows an unknown, offline account | Previous configuration: clear `~/.config/Nextcloud` |
-| Sharing asks for a password in the file manager | Wizard never launched, or keyring locked |
-| No icon in the status bar, hence no access to settings | `QT_QPA_PLATFORMTHEME` set back to `gnome` by a profile; fallback: `nextcloud-settings` |
+| Slow synchronization on workstations | Run `notify_push:self-test` on the server |
+| Whiteboard not responding | `whiteboard` missing from `plugins`, or `just configure-admin-host` never re-run since |
+| Client re-requests authorization each session | Session keyring not unlocked |
+| Client shows unknown account, offline | Previous configuration: clear `~/.config/Nextcloud` |
+| Share asks for password in file manager | Wizard never run, or keyring locked |
+| No icon in system tray, therefore no access to settings | `status-tray` extension disabled, or `qt.platformTheme` reset to `gnome` |

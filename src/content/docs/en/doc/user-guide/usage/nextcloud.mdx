@@ -79,49 +79,55 @@ Throughout this page, `domain.tld` is the network's domain name. My
 administrator gives me the exact address.
 </Aside>
 
-{/* t:p 66316fbba4554713acf452e3a4f05252d7c36864ac1e8ed81ce24d04e7302609 */}
+{/* t:p d8fde93c3cb35b073d27bb95400c27c97ebeaf2d096c9288f942858bb6505672 */}
 ## Connect my computer to my account
 
-On a Linux machine on the network, two Nextcloud icons are installed&nbsp;:
+On a Linux workstation on the network, two Nextcloud icons are installed:
 
-| Icon | Role |
+| Icon | Purpose |
 | --- | --- |
-| **Nextcloud Account** | Connects files, calendar and contacts to my computer. Just once. |
+| **Webdav Login** | Links files, calendar and contacts to my computer. One-time operation. |
 | **Nextcloud Sync Client** | Copies a cloud folder to my disk. |
 
 I start with the first one.
 
+<Aside type="note" title="Why 'Webdav'?">
+WebDAV is the language that lets my file manager talk to the cloud like a
+network drive. This icon does nothing more than present my account to my
+computer: once launched, I can forget about it.
+</Aside>
+
 <Steps>
 
-1. I open **Nextcloud Account** from the app list. A small terminal window
+1. I open **Webdav Login** from the applications list. A small terminal window
    appears.
 
-2. My browser opens on the cloud's sign-in page. I sign in with my network
-   account, then click **Grant access**.
+2. My browser opens on the cloud login page. I sign in with my network account,
+   then click **Grant access**.
 
-3. I go back to the terminal window. It shows my account, the server, and an
-   **app password**.
+3. I go back to the terminal window. It displays my account, the server, and an
+   **application password**.
 
 </Steps>
 
-That's it. Three things happen at once&nbsp;:
+Done. Three things happen at once:
 
-- A **Nextcloud (cloud.domain.tld)** entry appears in my file manager. It
-  gives access to my whole cloud without copying anything to the disk.
-- My **calendar** from the cloud appears in the Calendar app.
-- My **contacts** from the cloud appear in the Contacts app.
+- A **Nextcloud (cloud.domain.tld)** entry appears in my file manager. It gives
+  access to my entire cloud without copying anything to disk.
+- My cloud **calendar** appears in the Calendar app.
+- My cloud **contacts** appear in the Contacts app.
 
-<Aside type="note" title="The app password">
-This password does not replace mine&nbsp;: it only opens access to the files,
-and I can revoke it at any time from the cloud. I store it in my vault. It
-will help me connect another device or another app to my account.
+<Aside type="note" title="The application password">
+This password does not replace mine: it only grants access to files, and I can
+revoke it at any time from the cloud. I store it in my password vault. It will
+let me connect another device or another application to my account.
 </Aside>
 
-{/* t:p a1f94307e1540dc4904e966d3029c7c8604ef8ae73c3574175eed79f7969be52 */}
+{/* t:p 7b267da41518529bba6a8ea35d48a491c3c056941e77a0f872be2794fcb14882 */}
 ## Sync a folder to my disk
 
-The sync client keeps a local copy of my files. I can therefore work
-without a connection&nbsp;: everything syncs back when the network returns.
+The sync client keeps a local copy of my files. I can therefore work offline:
+everything syncs back when the network is available.
 
 <Steps>
 
@@ -133,33 +139,45 @@ without a connection&nbsp;: everything syncs back when the network returns.
 3. The client asks for a **local folder**. It suggests `Nextcloud` in my home
    directory, which works perfectly.
 
-4. On the same page, I choose **which folders to sync**. No need to download
-   everything&nbsp;: I check what I use, and I can add more later.
+4. On the same page, I choose **which folders to sync**. There is no need to
+   download everything: I check what I use and can add more later.
 
 </Steps>
 
-A small cloud icon then appears in the top bar&nbsp;: it shows sync progress.
+A small Nextcloud icon then appears in the top bar: it shows sync progress.
 
 <Aside type="caution" title="The login link expires">
-The authorization page is only valid for a few minutes. If the window has
-been left open all morning, authorization will fail. I close the window,
-reopen **Nextcloud Sync Client**, and try again&nbsp;: it's instant.
+The authorization page is only valid for a few minutes. If the window has been
+open all morning, authorization will fail. I close the window, relaunch
+**Nextcloud Sync Client**, and start over: it is instant.
 </Aside>
 
-{/* t:p 8683f26b5ee3894ec07386444c02d0834a2c42f725a15af49f85176cf87d58bd */}
-## Go back to my synced folders
+{/* t:p 7ba05239aca076ff56bd46549db747fa6df66a2adbe9734edd4ebe4a0f50ab28 */}
+## Everything is managed from the Nextcloud icon
 
-The **Nextcloud** window only shows recent activity&nbsp;: it offers no
-buttons, so I can't change anything there. Everything happens through the
-cloud icon in the top bar&nbsp;: I click it, then **Settings**. The real
-settings window opens, with my account and the **Add folder to sync** button.
+The **Nextcloud** window only shows recent activity: it provides no buttons, so
+I cannot change anything there. The real control panel is the Nextcloud icon in
+the top bar.
 
-This same menu also lets me open my local folder, pause syncing during a
-shared connection, or quit the client.
+| From the icon menu | What I can do |
+| --- | --- |
+| **Settings** | Edit my sync settings |
+| **Add account** | Connect a second Nextcloud account |
+| **Pause sync** | Take a break while sharing a connection |
+| **Quit** | Stop the client until the next session |
 
-<Aside type="tip" title="Answering later doesn't block anything">
-If I skipped the folder step at first login, nothing is lost. The icon menu
-takes me right back there whenever I want.
+Click the icon, then **Settings**: the real settings window opens, showing my
+account and the **Add sync folder** button.
+
+<Aside type="tip" title="Answering 'later' blocks nothing">
+If I skipped the folder selection step at first login, nothing is lost. The
+icon menu takes me back there whenever I want.
+</Aside>
+
+<Aside type="caution" title="No icon in the top bar?">
+The icon depends on a desktop extension that is installed by default on
+workstations on the network. If it is missing, I need to log out and log back
+in; if it still does not appear, I contact my administrator.
 </Aside>
 
 {/* t:p 829f4056e945da720f8a083dca92496f5fbf377e2dfcc7e1e19fb284a9ebe0cd */}

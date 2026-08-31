@@ -100,7 +100,7 @@ Le test réclame l'URL publique du service, donc le reverse proxy de la zone
 doit être joignable. L'unité réessaie pendant quinze minutes après un
 déploiement, le temps que la passerelle finisse de démarrer.
 
-{/* t:p acacdd57c5a1d997359e9179a9cfa0324ffd84724f263c5adacf77f9cff18400 */}
+{/* t:p abb8dc0b7d0d387d3b697b32b38183201edc1ca2bb43f71b80ea96a5bbc00a4a */}
 ## Sur les postes de travail
 
 Le client est installé dès qu'un service `nextcloud` existe sur le réseau.
@@ -116,6 +116,16 @@ Le client est installé dès qu'un service `nextcloud` existe sur le réseau.
 `nextcloud.server` accepte n'importe quelle URL, y compris une instance externe
 au réseau.
 
+Deux lanceurs seulement apparaissent dans le menu des applications&nbsp;:
+
+| Lanceur | Origine | Rôle |
+|---|---|---|
+| **Client de synchronisation Nextcloud** | paquet `nextcloud-client` | Synchronise un dossier local |
+| **Webdav Login** | framework, si `enableWebdav` | Rattache le compte au bureau (fichiers, agenda, contacts) |
+
+Tout le reste (compte, dossiers, pause) se règle depuis l'icône de barre
+d'état&nbsp;: le framework n'ajoute plus de lanceur de réglages.
+
 :::note[Aucune synchronisation imposée]
 `nextcloud.syncDir` vaut `null` volontairement. L'assistant s'arrête sur la page
 de choix du dossier et l'utilisateur décide de ce qu'il veut rapatrier, ou de ne
@@ -123,20 +133,27 @@ rien synchroniser du tout. Renseigner l'option saute cette page, ce qui n'est
 souhaitable que sur un parc aux comptes homogènes et de petite taille.
 :::
 
-:::caution[Le tray conditionne l'accès aux réglages]
+{/* t:p 7f50e44a1560a39cbbc84ab776e80ec9a3a4fc7d5fb48efba21c1e00b18d5150 */}
+### L'icône de barre d'état
+
+:::caution[Sans tray, pas de réglages]
 Depuis la version 34, le client ne met plus aucune action dans sa fenêtre&nbsp;:
 celle-ci n'affiche que le flux d'activité. Compte, pause et **Paramètres** ne
-vivent plus que dans le menu de l'icône de barre d'état.
+vivent plus que dans le menu de l'icône de barre d'état. Perdre cette icône,
+c'est perdre tout accès aux réglages de synchronisation.
+:::
 
-Or `qt.platformTheme = "gnome"` charge QGnomePlatform, dont
-`createPlatformSystemTrayIcon()` retourne toujours `nullptr`&nbsp;: Qt annonce
-alors qu'aucune barre d'état n'existe et **toute** application Qt du parc
-renonce à son icône. Le module GNOME laisse donc `qt.platformTheme` à `null`,
-et l'unité `nextcloud-client` neutralise en plus `QT_QPA_PLATFORMTHEME` pour
-son propre compte, au cas où un profil la remettrait.
+Deux réglages du module GNOME la rendent visible. Un poste sous un autre
+bureau doit fournir l'équivalent.
 
-En dernier recours, la commande `nextcloud-settings` ouvre le dialogue sans
-passer par le tray.
+| Réglage | Valeur | Pourquoi |
+|---|---|---|
+| Extension GNOME | [`status-tray`](https://extensions.gnome.org/extension/9164/status-tray/) | `appindicator`, l'ancienne, n'affiche plus l'icône du client |
+| `qt.platformTheme` | `qt5ct` | `gnome` prive **toutes** les applications Qt de barre d'état |
+
+:::note[Pourquoi pas `qt6ct`]
+`qt6ct` serait le choix naturel pour un client Qt&nbsp;6, mais le paquet n'est
+pas disponible. `qt5ct` convient en attendant.
 :::
 
 {/* t:p 93efeefbb79688dbf545631f9d54139d5e31e92d3a9fcf39268c694ad5f6767a */}
@@ -154,12 +171,12 @@ passer par le tray.
 
 </Steps>
 
-{/* t:p 2a4b99bf4afcb9074e9c2dd0ff30d17e8cd34c02142cf7bcb6bec47fd7e9fb09 */}
+{/* t:p 87d42a422fedc0af1ca989d6d6d7fa16dd83f43f787f1b161b9ffbd93fccf11b */}
 ### Accès aux fichiers, à l'agenda et aux contacts
 
 Pour parcourir ses fichiers depuis le gestionnaire de fichiers sans rien
-synchroniser, l'utilisateur lance **Connecter mon compte Nextcloud** depuis le
-menu, ou `nextcloud-webdav-login` dans un terminal.
+synchroniser, l'utilisateur lance **Webdav Login** depuis le menu des
+applications, ou `nextcloud-webdav-login` dans un terminal.
 
 <Steps>
 
@@ -236,7 +253,7 @@ l'instance annonce bien la précédente. La procédure complète, sauvegarde
 comprise, est décrite dans
 [Services](/fr/doc/admin-guide/operate/services/).
 
-{/* t:p 5b51daa779691e70b2bf7fc9b53aea62b39158e1996345695d03634d0ca1542b */}
+{/* t:p 01637fa38e673bca5bed14a42f5dc9196020085dca4849592357c56fdf84a3a3 */}
 ## En cas de problème
 
 | Symptôme | Piste |
@@ -247,4 +264,4 @@ comprise, est décrite dans
 | Le client redemande son autorisation à chaque session | Trousseau de session non déverrouillé |
 | Le client affiche un compte inconnu, hors ligne | Configuration antérieure&nbsp;: vider `~/.config/Nextcloud` |
 | Le partage demande un mot de passe dans le gestionnaire de fichiers | Assistant jamais lancé, ou trousseau verrouillé |
-| Aucune icône dans la barre d'état, donc aucun accès aux réglages | `QT_QPA_PLATFORMTHEME` remise à `gnome` par un profil&nbsp;; secours&nbsp;: `nextcloud-settings` |
+| Aucune icône dans la barre d'état, donc aucun accès aux réglages | Extension `status-tray` désactivée, ou `qt.platformTheme` remise à `gnome` |

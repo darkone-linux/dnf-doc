@@ -80,21 +80,27 @@ Dans toute cette page, `domain.tld` désigne le nom de domaine du réseau. Mon
 administrateur me donne l'adresse exacte.
 </Aside>
 
-{/* t:p 66316fbba4554713acf452e3a4f05252d7c36864ac1e8ed81ce24d04e7302609 */}
+{/* t:p d8fde93c3cb35b073d27bb95400c27c97ebeaf2d096c9288f942858bb6505672 */}
 ## Brancher mon ordinateur sur mon compte
 
 Sur un poste Linux du réseau, deux icônes Nextcloud sont installées&nbsp;:
 
 | Icône | Rôle |
 | --- | --- |
-| **Compte Nextcloud** | Relie fichiers, agenda et contacts à mon ordinateur. Une seule fois. |
+| **Webdav Login** | Relie fichiers, agenda et contacts à mon ordinateur. Une seule fois. |
 | **Client de synchronisation Nextcloud** | Recopie un dossier du cloud sur mon disque. |
 
 Je commence par la première.
 
+<Aside type="note" title="Pourquoi « Webdav » ?">
+WebDAV est le langage qui permet à mon gestionnaire de fichiers de parler au
+cloud comme à un disque réseau. Cette icône ne fait rien d'autre que présenter
+mon compte à mon ordinateur&nbsp;: une fois lancée, je peux l'oublier.
+</Aside>
+
 <Steps>
 
-1. J'ouvre **Compte Nextcloud** depuis la liste des applications. Une petite
+1. J'ouvre **Webdav Login** depuis la liste des applications. Une petite
    fenêtre de terminal s'affiche.
 
 2. Mon navigateur s'ouvre sur la page de connexion du cloud. Je m'identifie
@@ -119,7 +125,7 @@ dans mon coffre-fort. Il me servira pour brancher un autre appareil ou un
 autre logiciel sur mon compte.
 </Aside>
 
-{/* t:p a1f94307e1540dc4904e966d3029c7c8604ef8ae73c3574175eed79f7969be52 */}
+{/* t:p 7b267da41518529bba6a8ea35d48a491c3c056941e77a0f872be2794fcb14882 */}
 ## Synchroniser un dossier sur mon disque
 
 Le client de synchronisation garde une copie locale de mes fichiers. Je peux
@@ -143,7 +149,7 @@ réseau.
 
 </Steps>
 
-Une petite icône de nuage s'installe alors dans la barre du haut&nbsp;: elle
+Une petite icône Nextcloud s'installe alors dans la barre du haut&nbsp;: elle
 indique l'avancement de la synchronisation.
 
 <Aside type="caution" title="Le lien de connexion expire">
@@ -153,21 +159,33 @@ je relance **Client de synchronisation Nextcloud**, et je recommence&nbsp;:
 c'est immédiat.
 </Aside>
 
-{/* t:p 8683f26b5ee3894ec07386444c02d0834a2c42f725a15af49f85176cf87d58bd */}
-## Revenir sur mes dossiers synchronisés
+{/* t:p 7ba05239aca076ff56bd46549db747fa6df66a2adbe9734edd4ebe4a0f50ab28 */}
+## Tout se pilote depuis l'icône Nextcloud
 
 La fenêtre **Nextcloud** ne montre que l'activité récente&nbsp;: elle n'offre
-aucun bouton, et je ne peux donc rien y changer. Tout se joue sur l'icône de
-nuage de la barre du haut&nbsp;: je clique dessus, puis sur **Paramètres**. La
-vraie fenêtre de réglages s'ouvre, avec mon compte et le bouton **Ajouter un
-dossier de synchronisation**.
+aucun bouton, et je ne peux donc rien y changer. Le vrai tableau de bord est
+l'icône Nextcloud de la barre du haut.
 
-Ce même menu me sert aussi à ouvrir mon dossier local, à suspendre la
-synchronisation le temps d'un partage de connexion, ou à quitter le client.
+| Depuis le menu de l'icône | Ce que j'y fais |
+| --- | --- |
+| **Paramètres** | Éditer mes réglages de synchronisation |
+| **Ajouter un compte** | Brancher un second compte Nextcloud |
+| **Suspendre la synchronisation** | Souffler pendant un partage de connexion |
+| **Quitter** | Arrêter le client jusqu'à la prochaine session |
+
+Un clic sur l'icône, puis sur **Paramètres**&nbsp;: la vraie fenêtre de
+réglages s'ouvre, avec mon compte et le bouton **Ajouter un dossier de
+synchronisation**.
 
 <Aside type="tip" title="Répondre « plus tard » ne bloque rien">
 Si j'ai passé l'étape des dossiers à la première connexion, rien n'est perdu.
 Le menu de l'icône m'y ramène exactement, quand je veux.
+</Aside>
+
+<Aside type="caution" title="Pas d'icône dans la barre du haut ?">
+L'icône dépend d'une extension du bureau, installée d'office sur les postes du
+réseau. Si elle manque, il faut fermer puis rouvrir ma session&nbsp;; si elle
+manque toujours, j'en parle à mon administrateur.
 </Aside>
 
 {/* t:p 829f4056e945da720f8a083dca92496f5fbf377e2dfcc7e1e19fb284a9ebe0cd */}
