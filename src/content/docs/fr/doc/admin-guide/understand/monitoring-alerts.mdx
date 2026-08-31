@@ -111,7 +111,21 @@ Les règles sont dérivées de ce que chaque nœud déclare ; rien à lister à 
 | Unité en échec | une unité systemd `failed` (`SystemdUnitFailed`) |
 | Ressources | disque, RAM, charge, inodes, OOM (seuils surchargeables) |
 | Réseau | passerelle, tailnet (headscale) ou DNS injoignable (sondes blackbox) |
+| Site distant éteint | passerelle d'une autre zone injoignable (`PeerGatewayDown`) |
 | Auto-réparation tailnet | client Tailscale décroché ou watchdog qui boucle (`TailscaleUnhealthy`, `TailscaleFlapping`) |
+
+<Aside type="caution" title="Une zone ne peut pas signaler sa propre mort">
+Le Prometheus d'une zone tourne **sur sa passerelle** et ne scrute que les nœuds
+de cette zone. Passerelle éteinte, l'observateur s'éteint avec elle&nbsp;: aucune
+alerte ne part, et le site devient invisible sans que rien ne le dise.
+
+Chaque zone sonde donc les passerelles des **autres** zones et lève
+`PeerGatewayDown` (critique, après 5&nbsp;min) quand l'une d'elles ne répond
+plus. Avec trois zones, une panne est vue par deux témoins&nbsp;: perdre un
+observateur ne masque jamais l'incident. L'alerte porte `reach="wan"`, donc une
+coupure Internet **locale** déclenche `ZoneInternetDown` seule, sans volée de
+fausses alertes sur les pairs.
+</Aside>
 
 <Aside type="note" title="Montages réseau et lecture seule">
 Les règles disque ignorent les montages **réseau** (NFS, CIFS…)&nbsp;: ils
