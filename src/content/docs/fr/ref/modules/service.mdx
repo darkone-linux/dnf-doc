@@ -902,65 +902,69 @@ darkone.service.printing = {
 };
 ```
 
-{/* t:p aa03ca0f6bff647650439d5ffd0997d660d7bf3517393fb71923fadde102d2c7 */}
+{/* t:p 83cbffc4d21845ada64963444ceb5f61c64679bdce89c97bcdfffcb9a33edd12 */}
 ### &#x2728; darkone.service.prometheus
 
-Serveur de monitoring Prometheus avec escalade Alertmanager déclarative.
+Serveur de supervision Prometheus avec escalation déclarative via Alertmanager.
 
 :::tip[Prometheus & Grafana]
-Service autonome de métriques + alerting, indépendant de Grafana :
+Service autonome de métriques et d'alertes, indépendant de Grafana&nbsp;:
 
-- Scrape chaque nœud de zone portant la fonctionnalité `monitoring-node:<zone>`.
-- Alertmanager route par sévérité : warning -> Matrix #warnings,
-  critical -> Matrix #incidents + mail (relais Postfix local).
-- blackbox_exporter sonde la joignabilité de la passerelle / du tailnet / du DNS.
-- Les classes de nœuds (critical/non-critical/disabled) proviennent des
-  fonctionnalités `alert-*` ou du profil hôte (voir `dnf/lib/alerts.nix`).
+- Scrape chaque nœud de zone portant la feature `monitoring-node:<zone>`.
+- Alertmanager route par sévérité&nbsp;: warning → Matrix #warnings,
+  critical → Matrix #incidents + mail (relais Postfix local).
+- blackbox_exporter sonde l'atteignabilité de la passerelle, du tailnet et du DNS,
+  ainsi que les passerelles des autres zones&nbsp;: le Prometheus d'une zone réside
+  sur sa propre passerelle, seuls les pairs peuvent donc signaler qu'un site
+  entier est hors ligne.
+- Les classes de nœuds (critical/non-critical/disabled) proviennent des features
+  `alert-*` ou du profil d'hôte (voir `dnf/lib/alerts.nix`).
 
-`monitoring` (Grafana) requiert un `prometheus` sur le même hôte
-(imposé par le `require` du générateur). L'interface web est exposée sur
+`monitoring` (Grafana) nécessite un `prometheus` sur le même hôte
+(imposé par le générateur `require`). L'interface web est exposée à
 `https://prometheus.<zone>.<domain>` derrière oauth2-proxy (groupe `admins`),
-ce qui corrige aussi les liens d'alerte pointant vers Prometheus.
+ce qui corrige également les liens d'alertes pointant vers Prometheus.
 :::
 
-* **enable** `bool` Active le serveur de métriques + alerting Prometheus
+* **enable** `bool` Activer le serveur de métriques + alertes Prometheus
 * **retentionTime** `str` Durée de rétention des métriques Prometheus
-* **alerting.enable** `bool` Active Alertmanager (activé par défaut une fois les salons d'alerte Matrix provisionnés)
-* **alerting.matrix.enable** `bool` Livre les alertes dans les salons Matrix via le bot matrix-alertmanager
-* **alerting.matrix.userId** `str` ID utilisateur Matrix du bot d'alerte (par défaut depuis network.matrix.bot)
-* **alerting.matrix.warningsRoom** `str` ID du salon Matrix pour les warnings (par défaut depuis network.matrix.warningsRoom)
-* **alerting.matrix.incidentsRoom** `str` ID du salon Matrix pour les incidents (par défaut depuis network.matrix.incidentsRoom)
-* **alerting.email.enable** `bool` Envoie aussi les alertes critiques par mail (via le relais Postfix local)
-* **alerting.email.to** `str` Destinataire des mails d'alerte critique
-* **alerting.network.enable** `bool` Sonde la joignabilité réseau (gateway/tailnet/DNS) avec blackbox_exporter
-* **alerting.network.internetProbeTargets** `listOf str` Adresses IP externes que la passerelle de zone ping pour détecter une coupure WAN. Quand toutes
-  échouent, `ZoneInternetDown` se déclenche et inhibe les (fausses) alertes down des
-  hôtes joignables uniquement via le WAN (ex. le HCS). Vide pour désactiver.
-* **alerting.network.httpProbeUrls** `listOf str` URLs HTTP(S) sondées pour la vivacité (`ServiceEndpointDown`) et l'expiration des certificats TLS
-  (`CertificateExpiringSoon`/`Critical`). Vide par défaut : listez les endpoints
-  web publics à surveiller. Les redirections vers une connexion SSO (3xx) comptent
-  comme up ; l'expiration du certificat est lue à partir de la poignée de main TLS,
-  indépendamment du statut HTTP.
-* **alerting.silenceOnRebuild** `bool` Livre le flag dnf-maintenance (collecteur textfile) pour que les rebuilds inhibent les alertes d'un nœud
-* **alerting.thresholds** `attrs` Remplace les seuils d'alerte des ressources (voir les défauts de dnf/lib/alerts.nix)
-* **alerting.silences** `listOf submodule` Alertes connues et acceptées qui ne doivent jamais notifier. Chaque entrée devient une
-  route Alertmanager vers le récepteur `null` : l'alerte se déclenche toujours et
-  reste visible dans les UIs Prometheus/Alertmanager/Grafana, elle cesse juste
-  d'atteindre Matrix et le mail.
+* **alerting.enable** `bool` Activer Alertmanager (activé par défaut dès que les salons Matrix d'alertes sont provisionnés)
+* **alerting.matrix.enable** `bool` Transmettre les alertes aux salons Matrix via le bot matrix-alertmanager
+* **alerting.matrix.userId** `str` Identifiant Matrix du bot d'alertes (valeur par défaut depuis network.matrix.bot)
+* **alerting.matrix.warningsRoom** `str` Identifiant du salon Matrix pour les warnings (valeur par défaut depuis network.matrix.warningsRoom)
+* **alerting.matrix.incidentsRoom** `str` Identifiant du salon Matrix pour les incidents (valeur par défaut depuis network.matrix.incidentsRoom)
+* **alerting.email.enable** `bool` Envoyer également les alertes critiques par mail (via le relais Postfix local)
+* **alerting.email.to** `str` Destinataire des mails d'alertes critiques
+* **alerting.network.enable** `bool` Sonder l'atteignabilité réseau (passerelle/tailnet/DNS) avec blackbox_exporter
+* **alerting.network.internetProbeTargets** `listOf str` Adresses IP externes que la passerelle de zone ping pour détecter une coupure WAN. Lorsque toutes
+  échouent, `ZoneInternetDown` se déclenche et inhibe les alertes de défaillance (erronées)
+  des hôtes accessibles uniquement via le WAN (p. ex. le HCS). Vide désactive cette fonctionnalité.
+* **alerting.network.httpProbeUrls** `listOf str` URLs HTTP(S) sondées pour la disponibilité (`ServiceEndpointDown`) et l'expiration
+  du certificat TLS (`CertificateExpiringSoon`/`Critical`). Vide par
+  défaut&nbsp;: lister les endpoints web publics à surveiller. Les redirections vers
+  une connexion SSO (3xx) comptent comme opérationnel&nbsp;; l'expiration du certificat
+  est lue depuis la poignée de main TLS quel que soit le code HTTP.
+* **alerting.silenceOnRebuild** `bool` Émettre le signal dnf-maintenance (collecteur de fichiers texte) afin que les reconstructions inhibent les alertes d'un nœud
+* **alerting.thresholds** `attrs` Remplacer les seuils d'alerte de ressources (voir les valeurs par défaut dans dnf/lib/alerts.nix)
+* **alerting.silences** `listOf submodule` Alertes connues et acceptées qui ne doivent jamais notifier. Chaque entrée devient
+  une route Alertmanager vers le récepteur `null`&nbsp;: l'alerte se déclenche toujours et
+  reste visible dans les interfaces Prometheus/Alertmanager/Grafana, elle cesse simplement
+  d'atteindre Matrix et les mails.
 
-  Déclarées sur l'hôte exécutant Prometheus, car c'est là que les règles et routes
-  de la zone sont générées. Un module consommateur à l'échelle de la flotte
-  (`usr/modules/alerts.nix`) est l'endroit pratique : il est importé partout et ne
-  prend effet que là où Prometheus tourne.
+  Déclaré sur l'hôte hébergeant Prometheus, car c'est là que les
+  règles et routes de la zone sont générées. Un module consommateur
+  à l'échelle de la flotte (`usr/modules/alerts.nix`) est l'endroit
+  pratique&nbsp;: il est importé partout et ne prend effet que là où
+  Prometheus tourne.
 
-  :::caution[En dernier recours]
-  Corrigez ou reconfigurez d'abord la condition sous-jacente. Un silence masque un
-  vrai signal, donc `reason` est obligatoire et la liste reste auditable.
+  :::caution[Dernier recours]
+  Résoudre ou reconfigurer le problème sous-jacent en premier lieu. Un silence masque un
+  signal réel, donc `reason` est obligatoire et la liste reste auditable.
   :::
-  * **alert** `str` Nom de l'alerte à mettre en sourdine (label `alertname`). Toujours contraint, pour que les sévérités voisines restent armées.
-  * **host** `nullOr str` Restreint le silence à un seul hôte. Null met l'alerte en sourdine sur toute la flotte.
-  * **matchers** `attrs` Matchers de labels exacts supplémentaires, combinés en ET avec les autres (ex. le montage ou le périphérique concerné par l'alerte).
-  * **reason** `str` Pourquoi cette alerte est acceptée, et ce qui rendrait le silence retirable.
+  * **alert** `str` Nom de l'alerte à mettre en sourdine (libellé `alertname`). Toujours restreint, afin que les sévérités sœurs restent armées.
+  * **host** `nullOr str` Restreindre le silence à un seul hôte. Null met l'alerte en sourdine pour toute la flotte.
+  * **matchers** `attrs` Filtres de libellés exacts supplémentaires, combinés en ET avec les autres (p. ex. le point de montage ou le périphérique concerné par l'alerte).
+  * **reason** `str` Justification de l'acceptation de cette alerte, et ce qui rendrait le silence supprimable.
 
 ```nix
 darkone.service.prometheus = {
@@ -988,28 +992,28 @@ darkone.service.prometheus = {
 
 <hr/>
 
-{/* t:p 603837defc312957f5758e26e67841c5e4b7c5e0925b66fc8328b67ef6e50406 */}
+{/* t:p 0c169a4135c7ba141019560a62bdb09ac6a016bb1112c3cc717b6048bc645e05 */}
 ### &#x2728; darkone.service.restic
 
-Module de sauvegarde Restic : serveur REST + cibles de sauvegarde par hôte.
+Module de sauvegarde Restic&nbsp;: serveur REST + cibles de sauvegarde par hôte.
 
 :::tip[Deux rôles, un module]
-- Serveur : un hôte avec `restic` dans ses services config.yaml lance le
-  serveur REST (`enableServer`) et stocke le dépôt de chaque hôte.
-- Client : tout hôte avec `enable = true` déclare des `targets` de sauvegarde
+- Serveur&nbsp;: un hôte disposant de `restic` dans ses services config.yaml lance le serveur
+  REST (`enableServer`) et stocke le dépôt de chaque hôte.
+- Client&nbsp;: tout hôte avec `enable = true` déclare des `targets` de sauvegarde
   (chemin local ou `rest:http://restic.<zone>:<port>`).
 :::
 
-:::note[Deux mots de passe, ne pas confondre]
-- Passphrase du dépôt : `restic-password-<zone>`, chiffre le contenu du dépôt.
-- Identifiant REST : par hôte `restic/<hostname>/rest-password`, authentifie
+:::note[Deux mots de passe, ne pas les confondre]
+- Phrase de passe du dépôt&nbsp;: `restic-password-<zone>`, chiffre le contenu du dépôt.
+- Identifiant REST&nbsp;: `restic/<hostname>/rest-password` par hôte, authentifie
   l'hôte auprès du serveur REST.
 
 Les deux sont créés par `just configure-admin-host` (idempotent), qui lit
 les hôtes et zones déclarés dans la flotte.
 :::
 
-Exemple (configuration machine) :
+Exemple (configuration machine)&nbsp;:
 
 ```nix
 darkone.service.restic = {
@@ -1021,7 +1025,7 @@ darkone.service.restic = {
 };
 ```
 
-Disposition du dépôt par cible : un dépôt par catégorie, nommé d'après celle-ci.
+Structure du dépôt par cible&nbsp;: un dépôt par catégorie, nommé d'après celle-ci.
 
 ```
 <root>/<hostname>/system  <- catégorie "system" (/ moins les exclusions)
@@ -1029,20 +1033,36 @@ Disposition du dépôt par cible : un dépôt par catégorie, nommé d'après ce
 <root>/<hostname>/medias  <- catégorie "medias" (/srv/medias/<...>)
 ```
 
-:::caution[Le chemin du dépôt fait exactement deux niveaux]
-rest-server sert les dépôts à au maximum deux composantes sous son `--path` :
-`<hostname>/medias` répond, `<hostname>/srv/medias` retourne 404 et restic
-signale une erreur trompeuse `repository does not exist`. Le sous-chemin est
-donc le nom brut de la catégorie, jamais le répertoire source. La disposition
-identique pour les cibles locales et REST permet de déplacer un dépôt de
-l'une à l'autre sans renommage.
+:::caution[Le chemin du dépôt fait exactement deux niveaux de profondeur]
+Le serveur REST sert des dépôts à au maximum deux composantes sous son `--path`&nbsp;:
+`<hostname>/medias` répond, `<hostname>/srv/medias` renvoie 404 et restic
+affiche un message trompeur `repository does not exist`. Le sous-chemin est donc
+le nom nu de la catégorie, jamais le répertoire source. Une structure identique pour
+les cibles locales et REST permet de déplacer un dépôt de l'un vers l'autre sans renommage.
 :::
 
-:::danger[Migrer des dépôts créés avant cette disposition]
-Les dépôts écrits lorsque le sous-chemin reflétait le répertoire source se
-trouvent sous `<hostname>/srv/{nfs,medias}`. Renommez-les sur le serveur
-avant la prochaine exécution : `initialize = true` créerait sinon un dépôt
-vide au nouveau chemin et lancerait silencieusement un re-semis complet.
+:::note[Un serveur REST inaccessible ignore l'exécution]
+Chaque cible `rest:` porte une sonde d'atteignabilité `ExecCondition`. Une sauvegarde
+dont le serveur est arrêtée est *ignorée*, jamais en échec&nbsp;: pas de
+SystemdUnitFailed nocturne, pas de quart d'heure de tentatives restic, et pas de `initialize`
+créant un dépôt vide contre un endpoint mort. La sauvegarde manquante apparaît
+néanmoins via ResticBackupStale / ResticBackupCritical, qui surveillent la
+dernière exécution réussie.
+:::
+
+:::caution[`listenAll` élargit la liaison, pas le pare-feu]
+Le serveur lie `params.ip`, c.-à-d. l'adresse LAN sur une passerelle. Les clients
+l'atteignant depuis une autre zone via le tailnet nécessitent `listenAll = true`
+(liaison sur `0.0.0.0`). Le pare-feu reste la frontière&nbsp;: `lan0` reçoit le port via
+`getInternalInterfaceFwPath`, `tailscale0` est déjà une interface de confiance sur
+une passerelle, et le WAN ne l'ouvre jamais.
+:::
+
+:::danger[Migrer les dépôts créés avant cette structure]
+Les dépôts écrits lorsque le sous-chemin reflétait le répertoire source se trouvent sous
+`<hostname>/srv/{nfs,medias}`. Renommez-les sur le serveur avant la prochaine exécution&nbsp;:
+`initialize = true` créerait sinon un dépôt vide au nouveau chemin et
+lancerait silencieusement un re-semis complet.
 
 ```sh
 mv <data-dir>/<hostname>/srv/medias <data-dir>/<hostname>/medias
@@ -1051,17 +1071,18 @@ rmdir <data-dir>/<hostname>/srv
 :::
 
 * **enable** `bool` Activer le client de sauvegarde restic
-* **enableDryRun** `bool` Mode Simulation
+* **enableDryRun** `bool` Mode simulation
 * **enableWaitRemoteFs** `bool` Lancer les sauvegardes uniquement après remote-fs.target
 * **enableServer** `bool` Activer le serveur REST restic
-* **serverDataDir** `str` Racine de stockage local du serveur REST (dépôts de tous les hôtes)
+* **listenAll** `bool` Lier le serveur REST sur 0.0.0.0 (clients hors site)
+* **serverDataDir** `str` Racine de stockage locale du serveur REST (dépôts de tous les hôtes)
 * **targets** `listOf submodule` Destinations de sauvegarde pour cet hôte (chemin local ou URL REST)
-  * **name** `str` Identifiant de cible, utilisé dans les noms de sauvegarde/unité (&lt;category&gt;-&lt;name&gt;)
-  * **root** `str` Racine du dépôt : chemin local ou URL REST
-  * **zone** `str` Zone sélectionnant la passphrase du dépôt (restic-password-&lt;zone&gt;)
-  * **categories** `listOf ( enum [ "system" "nfs" "medias" ] )` Ce qui est sauvegardé vers cette cible
+  * **name** `str` Identifiant de cible, utilisé dans les noms de sauvegarde/unités (&lt;category&gt;-&lt;name&gt;)
+  * **root** `str` Racine du dépôt&nbsp;: chemin local ou URL REST
+  * **zone** `str` Zone sélectionnant la phrase de passe du dépôt (restic-password-&lt;zone&gt;)
+  * **categories** `listOf ( enum [ "system" "nfs" "medias" ] )` Contenu à sauvegarder vers cette cible
 * **nfsPaths** `listOf str` Répertoires NFS (/srv/nfs/&lt;xxx&gt;) inclus dans la catégorie 'nfs'
-* **mediasPaths** `listOf str` Répertoires Medias (/srv/medias/&lt;xxx&gt;) inclus dans la catégorie 'medias'
+* **mediasPaths** `listOf str` Répertoires Médias (/srv/medias/&lt;xxx&gt;) inclus dans la catégorie 'medias'
 
 ```nix
 darkone.service.restic = {
@@ -1069,6 +1090,7 @@ darkone.service.restic = {
   enableDryRun = false;
   enableWaitRemoteFs = false;
   enableServer = false;
+  listenAll = false;
   serverDataDir = "/mnt/backup/restic";
   targets = [ ];
   targets.name = "main";

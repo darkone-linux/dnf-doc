@@ -935,7 +935,7 @@ darkone.service.printing = {
 
 <hr/>
 
-{/* t:p aa03ca0f6bff647650439d5ffd0997d660d7bf3517393fb71923fadde102d2c7 */}
+{/* t:p 83cbffc4d21845ada64963444ceb5f61c64679bdce89c97bcdfffcb9a33edd12 */}
 ### &#x2728; darkone.service.prometheus
 
 Prometheus monitoring server with declarative Alertmanager escalation.
@@ -946,7 +946,9 @@ Standalone metrics + alerting service, independent from Grafana:
 - Scrapes every zone node carrying the `monitoring-node:<zone>` feature.
 - Alertmanager routes by severity: warning -> Matrix #warnings,
   critical -> Matrix #incidents + mail (local Postfix relay).
-- blackbox_exporter probes gateway / tailnet / DNS reachability.
+- blackbox_exporter probes gateway / tailnet / DNS reachability, plus the
+  other zones' gateways: a zone's Prometheus lives on its own gateway, so
+  only the peers can report that a whole site went dark.
 - Node classes (critical/non-critical/disabled) come from the `alert-*`
   features or the host profile (see `dnf/lib/alerts.nix`).
 
@@ -1021,7 +1023,7 @@ darkone.service.prometheus = {
 
 <hr/>
 
-{/* t:p 603837defc312957f5758e26e67841c5e4b7c5e0925b66fc8328b67ef6e50406 */}
+{/* t:p 0c169a4135c7ba141019560a62bdb09ac6a016bb1112c3cc717b6048bc645e05 */}
 ### &#x2728; darkone.service.restic
 
 Restic backup module: REST server + per-host backup targets.
@@ -1070,6 +1072,23 @@ the bare category name, never the source directory. Identical layout for
 local and REST targets lets a repo move between the two without a rename.
 :::
 
+:::note[An unreachable REST server skips the run]
+Every `rest:` target carries an `ExecCondition` reachability probe. A backup
+whose server is down is *skipped*, never failed: no nightly
+SystemdUnitFailed, no quarter-hour of restic retries, and no `initialize`
+creating an empty repo against a dead endpoint. The missing backup still
+surfaces, through ResticBackupStale / ResticBackupCritical, which watch the
+last successful run.
+:::
+
+:::caution[`listenAll` widens the bind, not the firewall]
+The server binds `params.ip`, i.e. the LAN address on a gateway. Clients
+reaching it from another zone over the tailnet need `listenAll = true`
+(bind `0.0.0.0`). The firewall stays the boundary: `lan0` gets the port from
+`getInternalInterfaceFwPath`, `tailscale0` is already a trusted interface on
+a gateway, and the WAN never opens it.
+:::
+
 :::danger[Migrating repos created before this layout]
 Repos written when the subpath mirrored the source directory sit under
 `<hostname>/srv/{nfs,medias}`. Rename them on the server before the next run:
@@ -1086,6 +1105,7 @@ rmdir <data-dir>/<hostname>/srv
 * **enableDryRun** `bool` Dry Run mode
 * **enableWaitRemoteFs** `bool` Run backups only after remote-fs.target
 * **enableServer** `bool` Enable restic REST server
+* **listenAll** `bool` Bind the REST server on 0.0.0.0 (off-site clients)
 * **serverDataDir** `str` Local storage root of the REST server (all hosts' repos)
 * **targets** `listOf submodule` Backup destinations for this host (local path or REST URL)
   * **name** `str` Target id, used in backup/unit names (&lt;category&gt;-&lt;name&gt;)
@@ -1101,6 +1121,7 @@ darkone.service.restic = {
   enableDryRun = false;
   enableWaitRemoteFs = false;
   enableServer = false;
+  listenAll = false;
   serverDataDir = "/mnt/backup/restic";
   targets = [ ];
   targets.name = "main";

@@ -97,26 +97,40 @@ Like `monitoring-node:<zone>`, these features accept an owner zone :
 `alert-critical:main` makes a node (typically the HCS) monitored by the
 `main` zone.
 
-{/* t:p 0d1fcdbc5c7ee5318f54cf5ecce57959d3d946aaa6754d982fc5375c6a8c0ca0 */}
-## What Is Monitored
+{/* t:p 3eebc12b5e8c2970659ebb0926b3a4cb9c78007de7572c0fc270ac5fdc2a0abb */}
+## What is monitored
 
 Rules are derived from what each node declares; nothing to list manually.
 
 | Family | Trigger |
 |---|---|
 | Unreachable node | `node-exporter` silent (`NodeDown`) |
-| Active but failing service | expected systemd unit not `active` (`ServiceDown`) |
+| Active service but down | expected systemd unit not `active` (`ServiceDown`) |
 | Failed unit | a systemd unit `failed` (`SystemdUnitFailed`) |
-| Resources | disk, RAM, load, inodes, OOM (thresholds overridable) |
+| Resources | disk, RAM, load, inodes, OOM (overridable thresholds) |
 | Network | gateway, tailnet (headscale) or DNS unreachable (blackbox probes) |
-| Tailnet self-healing | Tailscale client dropped or looping watchdog (`TailscaleUnhealthy`, `TailscaleFlapping`) |
+| Remote site down | gateway of another zone unreachable (`PeerGatewayDown`) |
+| tailnet self-healing | Tailscale client disconnected or watchdog looping (`TailscaleUnhealthy`, `TailscaleFlapping`) |
+
+<Aside type="caution" title="A zone cannot report its own death">
+A zone's Prometheus runs **on its gateway** and only scrapes nodes
+in that zone. Gateway down, the observer goes down with it&nbsp;: no
+alert fires, and the site becomes invisible without anyone knowing.
+
+Each zone therefore probes the gateways of **other** zones and raises
+`PeerGatewayDown` (critical, after 5&nbsp;min) when one of them stops
+responding. With three zones, an outage is seen by two witnesses&nbsp;: losing
+an observer never hides the incident. The alert carries `reach="wan"`, so a
+**local** Internet outage triggers `ZoneInternetDown` only, without a barrage of
+false alerts on peers.
+</Aside>
 
 <Aside type="note" title="Network mounts and read-only">
-Disk rules ignore **network** mounts (NFS, CIFS…): they
-report the server's own space, which already alerts on its local disk. Likewise,
-a deliberately **read-only** mount (exported share `ro`, optical media) does not
-trigger `FilesystemReadOnly`: the rule targets filesystems remounted read-only by
-the kernel after I/O errors.
+Disk rules ignore **network** mounts (NFS, CIFS…)&nbsp;: they
+report the server's space, which already alerts on its own disk. Likewise, a
+deliberately **read-only** mount (exported share `ro`, optical media) does not
+trigger `FilesystemReadOnly`&nbsp;: the rule targets filesystems remounted
+read-only by the kernel after I/O errors.
 </Aside>
 
 {/* t:p d4e3ff350edb205693bfda166ccbb65803e3c6365b08e39ffdf1110cb2ecd97d */}

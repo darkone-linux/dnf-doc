@@ -102,7 +102,7 @@ Renaming within the same filesystem is instant, moves no data, and
 preserves history and incrementality.
 </Aside>
 
-{/* t:p b0547bbd00e557a03435d39664e8a7f7889ed43d20184aed7e10a5a37b4d7376 */}
+{/* t:p 6be2ed671644e9e2d079bb5dbba36767dcf608f4453e2cbc83669b8702024c87 */}
 ## Setting up a backup server
 
 <Steps>
@@ -114,7 +114,7 @@ preserves history and incrementality.
      restic:
    ```
 
-2. Connect the backup drive and mount it to `/mnt/backup` in the host
+2. Plug in the backup disk and mount it on `/mnt/backup` in the host
    configuration (`usr/machines/<host>/`), with the `nofail` option:
 
    ```nix
@@ -134,6 +134,18 @@ preserves history and incrementality.
 3. The repository is stored under `serverDataDir` (default `/mnt/backup/restic`).
    The firewall opens the REST port on the internal interface automatically.
 
+4. If **other zone** clients need to access it via the tailnet, add
+   `listenAll`: by default the server only listens on the host's LAN address,
+   invisible from the VPN.
+
+   ```nix
+   darkone.service.restic = {
+     enable = true;
+     enableServer = true;
+     listenAll = true;
+   };
+   ```
+
 </Steps>
 
 <Aside type="note" title="Server = client too">
@@ -141,13 +153,13 @@ A server can back up its own data by pointing a `target` to its local disk
 (`root = "/mnt/backup/restic"`).
 </Aside>
 
-<Aside type="caution" title="restic-rest-server.service inactive: that's normal">
+<Aside type="caution" title="restic-rest-server.service inactive: it's normal">
 The REST server is socket-activated. `restic-rest-server.service` therefore
-remains `inactive` until a client connects — after each boot, and as long as a
-disk with `x-systemd.automount` stays unused (the `requires` on the mount then
-stops the daemon to unmount). It is `restic-rest-server.socket`, always
-listening, that carries the `ServiceDown` monitoring; a crashing daemon is also
-covered by `SystemdUnitFailed`.
+remains `inactive` until a client connects — after every boot, and as long as
+a disk using `x-systemd.automount` stays unused (the `requires` on the mount
+then stops the daemon so it can be unmounted). It is `restic-rest-server.socket`,
+always listening, that carries the `ServiceDown` monitoring; a crashed daemon
+is still covered by `SystemdUnitFailed`.
 </Aside>
 
 {/* t:p 9539ab1ebf11ddd0e6f8bc2cced794dc206949e6251fa1fd1166711a0eb1d856 */}
@@ -181,6 +193,39 @@ darkone.service.restic = {
 <Aside type="tip" title="Multiple destinations">
 Add a second `target` (different `name`, different `root`/`zone`) to replicate
 the backup, for example to the REST server of another zone.
+</Aside>
+
+{/* t:p 0d8ab56fb53bfd5cf7dbace422cb305894294dcf6e4a71a10b2e37e21b1ca6d4 */}
+## Off-site backup
+
+A second `target` pointing to another zone's REST server provides the "1" in the
+3-2-1 rule. Two precautions specific to off-site backups.
+
+**Address the server by its tailnet IP**, never by its zone name:
+
+```nix
+{
+  name = "offsite";
+  root = "rest:http://100.64.0.20:8888";
+  zone = "home";
+  categories = [ "system" ];
+}
+```
+
+A name like `restic.<remote-zone>.example.net` is only resolved by that zone's
+gateway. If the remote site goes down, the resolver goes down with it and the
+failure appears as a **DNS resolution error**, which misleads diagnostics. The
+tailnet IP removes this indirection, along with the dependency on the remote
+site's subnet route. It requires `listenAll` on the server side (see above).
+
+<Aside type="note" title="An absent off-site server does not fail the unit">
+Each `rest:` target carries a reachability probe (`ExecCondition`). Server
+unreachable: the unit is **skipped**, not failed — no `SystemdUnitFailed`
+alert at night, no quarter-hour of restic retries, and no empty repository
+created against a dead address. The missed backup is still reported by
+`ResticBackupStale` (36 h) then `ResticBackupCritical` (7 days), which
+monitor the date of the last success. The journal then shows
+`Skipped due to ExecCondition=`.
 </Aside>
 
 {/* t:p 857b90e6265488cd7606a6a98345e6bc02ace2599ca7beae576dc2665957007e */}
