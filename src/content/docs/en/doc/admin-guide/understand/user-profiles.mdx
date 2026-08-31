@@ -14,7 +14,7 @@ A **user profile** defines the [Home Manager](https://github.com/nix-community/h
 environment of an account: applications, desktop, settings. It is chosen via `profile:` in
 `etc/config.yaml`. Like hosts, profiles can inherit from one another.
 
-{/* t:p db84ff8778f40e2ffa93a7284af12c9d36028897b38c3d926d16f3319a64f265 */}
+{/* t:p 8f33ee343397f6c613277e5c89ae8a372fd7bded177c9fde260419c3274f4217 */}
 ## Inheritance
 
 ```d2
@@ -31,6 +31,7 @@ teenager: teenager
 gamer: gamer
 child: child
 baby: baby
+umi: umi
 
 minimal -> normal
 minimal -> teenager
@@ -38,29 +39,37 @@ minimal -> gamer
 minimal -> child
 minimal -> baby
 normal -> advanced
+normal -> umi
 advanced -> admin
 advanced -> student
 admin -> nixadmin
 ```
 
-{/* t:p ab7cb2d44f4543a6592ce29d5aa8a0d5547e795687eaae6602911e359726ccd9 */}
+{/* t:p e3513dcb87ab9e7192bba8871559078ecd45b02a919644d193bba5f860aa8cd0 */}
 ## Profiles
 
 | Profile | For whom | Inherits from |
 |---|---|---|
-| `minimal` | Base of every profile | |
+| `minimal` | Base for every profile | |
 | `normal` | Standard user (desktop) | `minimal` |
 | `advanced` | Developers, IT professionals | `normal` |
+| `umi` | User driven by gaze | `normal` |
 | `admin` | Network administrator | `advanced` |
 | `nix-admin` | Fleet administrator (Nix tools) | `admin` |
 | `student` | Student | `advanced` |
 | `teenager` | Teenager | `minimal` |
 | `gamer` | Gamer | `minimal` |
 | `child` | Child (technical icons hidden) | `minimal` |
-| `baby` | Toddler | `minimal` |
+| `baby` | Very young child | `minimal` |
 
-:::tip[User perspective]
-A usage-oriented overview is available in the
+:::tip[The `umi` profile goes hand in hand]
+It only makes sense on a host running the `umi` profile, which provides the
+eye tracker and the X11 session. See
+[Accessibility](/en/doc/admin-guide/operate/accessibility/).
+:::
+
+:::tip[User side]
+A usage-oriented presentation can be found in the
 [user guide](/en/doc/user-guide/understand/profiles/).
 :::
 

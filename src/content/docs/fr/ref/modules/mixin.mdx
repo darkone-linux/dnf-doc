@@ -129,6 +129,64 @@ darkone.host.server = {
 };
 ```
 
+{/* t:p 1a62b10e93d8f895788b714397adc74a9d3ba2dd1366fac86a694a99f48699ed */}
+### &#x1F4E6; darkone.host.umi
+
+Profil hôte&nbsp;: poste de travail piloté au regard (Tobii Eye Tracker 5 + Talon), utilisable sans clavier ni souris.
+
+:::note[Étend le poste de bureau]
+Hérite du profil poste de bureau complet (GNOME, multimédia, bureautique) et ajoute les
+prérequis du contrôle au regard&nbsp;: une session Cinnamon X11 pour les utilisateurs concernés, la
+connexion automatique, l'injection d'événements uinput et les règles udev Tobii.
+:::
+
+:::tip[Coexistence X11 / Wayland]
+Talon exige X11 (Wayland non pris en charge en amont, pas prévu) et
+GNOME 50 a abandonné sa session Xorg, donc les sessions de contrôle au regard tournent sous Cinnamon (X11,
+UX proche de GNOME, tray natif) tandis que les autres utilisateurs gardent GNOME Wayland. Les
+utilisateurs listés dans `gazeUsers` (plus `autoLoginUser`) voient leur session GDM enregistrée
+initialisée à «&nbsp;cinnamon&nbsp;» via AccountsService&nbsp;; GDM continue de gérer
+le fichier ensuite.
+:::
+
+:::caution[Paquet Talon]
+`pkgs.talon` provient de l'input `talon-nix` câblé dans le flake DNF
+(x86_64-linux uniquement, tarball amont non libre). Avec `package = null`,
+udev/uinput/a11y restent configurés et Talon peut être lancé manuellement
+(steam-run sur le tarball amont, ce qui conserve la mise à jour automatique).
+:::
+
+:::tip[Premier lancement]
+Le firmware du Tobii 5 doit être initialisé une fois sur une machine Windows
+(Tobii Experience). Au premier lancement de Talon, rebranchez le tracker puis
+redémarrez Talon (udev), et lancez la calibration depuis le menu Talon.
+:::
+
+:::note[Bruit noyau attendu]
+Le tracker déclare deux interfaces de classe vidéo (caméras oculaires IR brutes) que
+uvcvideo ne peut pas gérer&nbsp;: `Unknown video format`, `No supported video formats
+found`, `probe with driver uvcvideo failed with error -22`. Sans danger et
+souhaité&nbsp;: aucun pilote noyau ne réclame les interfaces, donc libusb les obtient librement.
+Le tracker est atteint via l'interface 0 (spécifique au fournisseur, endpoints
+bulk), jamais via /dev/video*.
+:::
+
+* **enable** `bool` Configuration hôte optimisée pour le contrôle au regard (Tobii + Talon)
+* **autoLoginUser** `nullOr str` Utilisateur de connexion automatique (obligatoire pour une session sans clavier).
+* **gazeUsers** `listOf str` Utilisateurs dont la session GDM est initialisée en Cinnamon/X11 (autoLoginUser est toujours inclus).
+* **package** `nullOr package` Paquet Talon (par défaut `pkgs.talon` de l'overlay talon-nix lorsque disponible).
+
+```nix
+darkone.host.umi = {
+  enable = false;
+  autoLoginUser = null;
+  gazeUsers = [ ];
+  package = pkgs.talon or null;
+};
+```
+
+<hr/>
+
 {/* t:p b189fc09f35044bf9ca18ab46292465743027c95c7e4fb1740115fbac06e0eaf */}
 ### &#x1F4E6; darkone.host.vm
 

@@ -369,6 +369,58 @@ darkone.home.office = {
 
 <hr/>
 
+{/* t:p 018d0660fd74bb3f3527468f903e3b0a2dbf8ebf55530b201c1cb81c8060a435 */}
+### &#x1F3E0; darkone.home.umi
+
+Module domestique : saisie pilotée par le regard (autostart Talon + Onboard réglé pour le suivi oculaire).
+
+:::note[À associer au profil hôte umi]
+L'hôte doit fournir udev/uinput et la session X11 Cinnamon (voir
+`darkone.host.umi`). Ce module configure le côté utilisateur : clic par
+maintien opt-in (`enableDwell`), clavier Onboard ancré et toujours visible
+avec prédiction de mots et modificateurs non bloquants, et autostart de la
+session Talon.
+:::
+
+:::tip[Scripts communautaires]
+Définissez `communityScripts` sur un arbre github:talonhub/community
+récupéré pour obtenir un contrôle complet de la souris par le regard
+(zoom de la souris, clic pop) de façon déclarative.
+:::
+
+:::note[Double schéma]
+La session de regard est Cinnamon (org/cinnamon/*) mais les clés GNOME
+(org/gnome/*) sont maintenues en synchronisation : mousetweaks lit le schéma
+a11y de GNOME, et elles servent de repli si l'utilisateur arrive un jour dans
+une session GNOME. Exception : les clés verrouillées par le module GNOME de
+DNF ne sont jamais répliquées ici, une écriture sur une clé verrouillée
+interrompt tout le `dconf load` de home-manager. Le verrouillage d'écran
+reste activé côté GNOME (verrouillé par le module GNOME de DNF) ;
+`idle-delay = 0` évite de le déclencher, et la session Cinnamon a son
+propre verrou entièrement désactivé.
+:::
+
+* **enable** `bool` Configuration de la saisie pilotée par le regard (Talon + Onboard)
+* **enableTalonAutostart** `bool` Démarrer Talon à la connexion de session (talon doit être dans le PATH).
+* **communityScripts** `nullOr package` Arbre talonhub/community déployé dans ~/.talon/user/community.
+* **enableDwell** `bool` Clic par maintien : cliquer en laissant le pointeur immobile. Désactivé par défaut — il
+  n'est utilisable qu'avec un eye tracker, et avec une souris il se déclenche sur ce
+  sur lequel le pointeur a été laissé (le menu a11y basculant le zoom ou le clavier
+  à l'écran, typiquement)
+* **dwellTime** `float` Délai du clic par maintien, en secondes.
+
+```nix
+darkone.home.umi = {
+  enable = false;
+  enableTalonAutostart = true;
+  communityScripts = null;
+  enableDwell = false;
+  dwellTime = 1.2;
+};
+```
+
+<hr/>
+
 {/* t:p 547ee4daed2acde13003ad986f960568575e0bc22291ee241f854bd57a1cc21c */}
 ### &#x1F3E0; darkone.home.video
 

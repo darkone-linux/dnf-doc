@@ -387,6 +387,55 @@ darkone.home.office = {
 
 <hr/>
 
+{/* t:p 018d0660fd74bb3f3527468f903e3b0a2dbf8ebf55530b201c1cb81c8060a435 */}
+### &#x1F3E0; darkone.home.umi
+
+Home module: gaze-driven input (Talon autostart + Onboard tuned for eye tracking).
+
+:::note[Pairs with the umi host profile]
+The host must provide udev/uinput and the Cinnamon X11 session (see
+`darkone.host.umi`). This module configures the user side: opt-in dwell
+click (`enableDwell`), always-visible docked Onboard keyboard with word
+prediction and sticky modifiers, and Talon session autostart.
+:::
+
+:::tip[Community scripts]
+Set `communityScripts` to a fetched github:talonhub/community tree to get
+full gaze mouse control (zoom mouse, pop click) declaratively.
+:::
+
+:::note[Dual schemas]
+The gaze session is Cinnamon (org/cinnamon/*) but the GNOME keys
+(org/gnome/*) are kept in sync: mousetweaks reads the GNOME a11y schema,
+and they serve as fallback if the user ever lands in a GNOME session.
+Exception: keys locked by the DNF gnome module are never mirrored here,
+a write to a locked key aborts the whole home-manager `dconf load`.
+Screen locking stays enabled GNOME-side (locked by the DNF gnome module);
+`idle-delay = 0` avoids triggering it, and the Cinnamon session has its
+own lock fully disabled.
+:::
+
+* **enable** `bool` Gaze-driven input configuration (Talon + Onboard)
+* **enableTalonAutostart** `bool` Start Talon on session login (talon must be in PATH).
+* **communityScripts** `nullOr package` talonhub/community tree deployed to ~/.talon/user/community.
+* **enableDwell** `bool` dwell click: clicking by resting the pointer. Off by default — it is
+  only usable with an eye tracker, and with a mouse it fires on whatever
+  the pointer was left over (the a11y menu toggling zoom or the on-screen
+  keyboard, typically)
+* **dwellTime** `float` Dwell click delay in seconds.
+
+```nix
+darkone.home.umi = {
+  enable = false;
+  enableTalonAutostart = true;
+  communityScripts = null;
+  enableDwell = false;
+  dwellTime = 1.2;
+};
+```
+
+<hr/>
+
 {/* t:p 547ee4daed2acde13003ad986f960568575e0bc22291ee241f854bd57a1cc21c */}
 ### &#x1F3E0; darkone.home.video
 

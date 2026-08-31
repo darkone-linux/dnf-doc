@@ -233,22 +233,25 @@ troubleshootable host. To do without it:
 darkone.graphic.remote-desktop.embedCursor = false;
 ```
 
-{/* t:p 57072137bd879eb3a4d208e60a077bc9b3ad84a267c5dfbd1bf91f95de3b6e19 */}
-## In case of a problem
+{/* t:p a809db27ff44b07a0f1e97c736e10b41a10327a450fb22085297ff837fdc778d */}
+## Troubleshooting
 
 | Symptom | Likely cause |
 |---|---|
-| `nobody is logged in` | No one is logged in: `ro`/`rw` have nothing to mirror, use `login` |
+| `nobody is logged in` | No one is logged in: `ro`/`rw` have nothing to reflect, use `login` |
 | `could not arm a … session` | The `remote-desktop` feature is not declared on this host, or the host has not been redeployed |
 | `Failed to enable service: … EROFS` | Host not redeployed since the `login` mode was added: `just apply <host>` |
-| `screen sharing is already enabled` | GNOME sharing was enabled manually on this session |
-| `several active graphical sessions` | Several accounts have an active session on the same workstation |
-| The window opens then closes immediately | Check that the host is reachable and that the tunnel was able to be set up |
+| `screen sharing is already enabled` | GNOME sharing was manually enabled on this session |
+| `several active graphical sessions` | Multiple accounts have an active session on the same workstation |
+| `a support session is already open` | A session is still actually armed on the host: close it first |
+| `no DISPLAY among the processes of session …` | X11 session whose X server has disappeared (session closing): try again |
+| `the shadow server did not get port …` | The RDP port is already occupied on the host by something else |
+| The window opens then immediately closes | Verify that the host is reachable and that the tunnel could be established |
 
-To inspect the state host-side:
+To inspect host-side state:
 
 ```sh
 just enter clemence
 sudo dnf-remote-desktop probe    # which session would be chosen
-sudo dnf-remote-desktop stop     # disarm manually
+sudo dnf-remote-desktop stop     # manually disarm
 ```

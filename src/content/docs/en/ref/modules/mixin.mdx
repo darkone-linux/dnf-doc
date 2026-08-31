@@ -144,6 +144,64 @@ darkone.host.server = {
 
 <hr/>
 
+{/* t:p 1a62b10e93d8f895788b714397adc74a9d3ba2dd1366fac86a694a99f48699ed */}
+### &#x1F4E6; darkone.host.umi
+
+Host profile: gaze-driven workstation (Tobii Eye Tracker 5 + Talon), usable without keyboard/mouse.
+
+:::note[Extends desktop]
+Inherits the full desktop profile (GNOME, multimedia, office) and adds the
+gaze prerequisites: a Cinnamon X11 session for gaze users, auto-login,
+uinput event injection and Tobii udev rules.
+:::
+
+:::tip[X11 / Wayland coexistence]
+Talon requires X11 (Wayland unsupported upstream, not planned) and
+GNOME 50 dropped its Xorg session, so gaze sessions run Cinnamon (X11,
+GNOME-like UX, native tray) while other users keep GNOME Wayland. The
+users listed in `gazeUsers` (plus `autoLoginUser`) get their saved GDM
+session seeded to "cinnamon" through AccountsService; GDM keeps managing
+the file afterwards.
+:::
+
+:::caution[Talon package]
+`pkgs.talon` comes from the `talon-nix` input wired in the DNF flake
+(x86_64-linux only, unfree upstream tarball). With `package = null`,
+udev/uinput/a11y are still configured and Talon can be run manually
+(steam-run on the upstream tarball, which keeps auto-update working).
+:::
+
+:::tip[First run]
+The Tobii 5 firmware must be initialized once on a Windows machine
+(Tobii Experience). On first Talon start, replug the tracker then
+restart Talon (udev), and run the calibration from the Talon menu.
+:::
+
+:::note[Expected kernel noise]
+The tracker declares two video-class interfaces (raw IR eye cameras) that
+uvcvideo cannot handle: `Unknown video format`, `No supported video formats
+found`, `probe with driver uvcvideo failed with error -22`. Harmless and
+wanted: no kernel driver claims the interfaces, so libusb gets them free.
+The tracker is reached through interface 0 (vendor-specific, bulk
+endpoints), never through /dev/video*.
+:::
+
+* **enable** `bool` Eye-tracking optimized host configuration (Tobii + Talon)
+* **autoLoginUser** `nullOr str` Auto-login user (mandatory for a keyboard-free session).
+* **gazeUsers** `listOf str` Gaze users whose GDM session is seeded to Cinnamon/X11 (autoLoginUser is always included).
+* **package** `nullOr package` Talon package (defaults to `pkgs.talon` from the talon-nix overlay when available).
+
+```nix
+darkone.host.umi = {
+  enable = false;
+  autoLoginUser = null;
+  gazeUsers = [ ];
+  package = pkgs.talon or null;
+};
+```
+
+<hr/>
+
 {/* t:p b189fc09f35044bf9ca18ab46292465743027c95c7e4fb1740115fbac06e0eaf */}
 ### &#x1F4E6; darkone.host.vm
 

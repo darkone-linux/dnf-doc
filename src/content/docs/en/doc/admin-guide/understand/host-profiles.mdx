@@ -14,7 +14,7 @@ A **host profile** is a template that defines the role of a machine. It is
 chosen with `profile:` in `etc/config.yaml`. Profiles are inherited: each
 starts from another and adds its specifics.
 
-{/* t:p a3a2c805ce00c4f3bb8c1d8d0697ee3eb01508e32651337d6e8d01bfab6f56d9 */}
+{/* t:p aee29ff52873c91f1c0c64c2dafd1631587e473ffd84730e563a3635c4e2f75b */}
 ## Inheritance
 
 ```d2
@@ -31,6 +31,7 @@ gateway: gateway
 hcs: hcs
 vm: vm
 laptop: laptop
+umi: umi
 
 minimal -> server
 minimal -> desktop
@@ -39,23 +40,25 @@ server -> gateway
 server -> hcs
 server -> vm
 desktop -> laptop
+desktop -> umi
 ```
 
-{/* t:p d8e727a17d2179cfdcabf129c38130aaa06eb639c41cd9f3aed2ede41d78623a */}
+{/* t:p efb28cc0066fc02307f3ac07a26a0fe0711c53aec43a153ab494c0fa041bf0af */}
 ## Profiles
 
 | Profile | Purpose | Inherits from | Provides |
 |---|---|---|---|
 | `minimal` | Base for every host | | Hardware, firewall, i18n, zsh, sudo |
-| `server` | Server without display | `minimal` | No suspend, watchdog, limited boot |
-| `desktop` | Workstation | `minimal` | GNOME, multimedia, office |
-| `laptop` | Laptop computer | `desktop` | Battery/suspend, sensors, thermald |
+| `server` | Headless server | `minimal` | No sleep, watchdog, limited boot |
+| `desktop` | Workstation | `minimal` | GNOME, multimedia, office suite |
+| `laptop` | Laptop | `desktop` | Battery/sleep, sensors, thermald |
+| `umi` | Gaze-controlled workstation | `desktop` | X11 Cinnamon session, autologin, uinput, Tobii udev |
 | `portable` | Bootable USB drive | `minimal` | Extended hardware drivers |
 | `gateway` | Zone gateway | `server` | Router, firewall, DNS/DHCP, VPN |
-| `hcs` | VPN orchestration | `server` | Headscale + shared services |
+| `hcs` | VPN coordination | `server` | Headscale + shared services |
 | `vm` | Virtual machine | `server` | Guest tools (VirtualBox/QEMU/Xen) |
 
-{/* t:p 75269fb3fafa1ca4b385b89e5db4e05f3a4afd043866ccba4d93cb00a7f8e537 */}
+{/* t:p aeb345cd8dee28e6002902f22a28832b321740eac7b79067b5cc093982b01f89 */}
 ## Choosing a profile
 
 ```yaml
@@ -66,11 +69,17 @@ hosts:
 ```
 
 :::tip[Services are independent of the profile]
-A service (Immich, Nextcloud, Forgejo…) is declared per host **regardless** of
+A service (Immich, Nextcloud, Forgejo…) is declared per host **regardless of**
 its profile. See [Services](/en/doc/admin-guide/operate/services/).
 :::
 
+:::tip[The `umi` profile requires specific hardware]
+A gaze-controlled workstation requires an eye tracker and a specific setup,
+described in
+[Accessibility](/en/doc/admin-guide/operate/accessibility/).
+:::
+
 :::note[Full reference]
-The options for each profile are in the
+Each profile's options are listed in the
 [module reference](/en/ref/modules/mixin/).
 :::
