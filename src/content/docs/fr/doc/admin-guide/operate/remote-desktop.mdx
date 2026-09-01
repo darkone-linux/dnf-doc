@@ -25,11 +25,11 @@ et ouvre **votre propre session** derrière un écran de login GDM, que quelqu'u
 soit devant la machine ou non. Voir [Ouvrir sa propre session
 (`login`)](#ouvrir-sa-propre-session-login).
 
-{/* t:p 5a23c75ab57617fcee5882484ffaf218e15525c2969fc4574d2d6951887fc347 */}
+{/* t:p a4b6838ccdbc9ecccde2fc912eec4c8ca0edf5a660bb8e64b1bb8525f49b6d4c */}
 ## Activer un hôte
 
 Le bureau à distance est un opt-in explicite. Il s'active par la **feature**
-`remote-desktop` dans `etc/config.yaml` :
+`remote-desktop` dans `etc/config.yaml`&nbsp;:
 
 ```yaml
   - hostname: "clemence"
@@ -57,20 +57,20 @@ C'est la raison du choix de `features` plutôt que de `services` : le bloc
 :::
 
 :::caution[Ce n'est pas anodin]
-Se rattacher à une session, c'est voir — et en `rw`, piloter — l'écran de
+Se rattacher à une session, c'est voir (et en `rw` piloter) l'écran de
 quelqu'un qui est probablement assis devant. GNOME affiche un indicateur de
 partage pendant toute la durée, mais **rien ne demande son consentement**.
 Réservez l'activation aux postes dont c'est l'usage assumé.
 :::
 
-{/* t:p df1b4b8e842d35df65aa2115e1fa2bc8fa019579f3e256a65181fef1a75b539c */}
+{/* t:p 05ca0c4cc70cef45be07c749ec0c346d9c186cc08b537a5d31e070dc94aa0069 */}
 ## Les trois modes
 
 | Mode | Effet | Appliqué par |
 |---|---|---|
 | `ro` (défaut) | Vous voyez l'écran de l'utilisateur, vos entrées sont ignorées | Le serveur distant |
 | `rw` | Le même écran, clavier et souris transmis | Le serveur distant |
-| `login` | Un écran de login GDM, puis une session à vous | — |
+| `login` | Un écran de login GDM, puis une session à vous | |
 
 Le filtrage `ro`/`rw` est fait **côté hôte**, pas par le client : un client
 bricolé ne peut pas transformer un `ro` en `rw`.
@@ -78,15 +78,15 @@ bricolé ne peut pas transformer un `ro` en `rw`.
 :::caution[`ro` et `rw` n'ouvrent jamais de session]
 Sans personne de connecté, ils n'ont aucun écran à refléter et échouent
 franchement. Demander à observer un utilisateur ne doit pas vous déposer
-ailleurs sans le dire — c'est `login`, et seulement `login`, qui ouvre une
+ailleurs sans le dire, c'est `login`, et seulement `login`, qui ouvre une
 session neuve.
 :::
 
-{/* t:p a5b5130509b19084ce3965d17ab42dc32d4d70336a06932ab2497f56389485ff */}
+{/* t:p ea3d66c2ec7134e22bf77b65f5b0632d6cf6c13664f1e5c56bb8ba39bc86c885 */}
 ## Raccourcis de la fenêtre
 
 Le client est `sdl-freerdp`. Ses raccourcis utilisent **Maj droite** comme
-modificateur — et non `Ctrl+Alt` comme l'ancien client X11 :
+modificateur, et non `Ctrl+Alt` comme l'ancien client X11&nbsp;:
 
 | Raccourci | Effet |
 |---|---|
@@ -102,13 +102,13 @@ interceptée localement : `Maj droite` + `Entrée` vous ramène, quoi qu'il
 arrive. Fermer la fenêtre désarme la session sur l'hôte.
 :::
 
-{/* t:p df96b85876ae7c59bdd2c33625d4c7aa22c8cf44fd42bf040e484c4d925a6aae */}
+{/* t:p cc43d098edcabf9e95b95f9bbbc0518ef85d6afaa076d7972d9e50f6f3127a47 */}
 ## Résolution et netteté
 
 La fenêtre s'ouvre à la **résolution native de l'écran distant** : un pixel
 distant pour un pixel local, donc aucun rééchantillonnage et aucun flou.
 
-Toute autre taille passe par une mise à l'échelle, qui adoucit l'image — c'est
+Toute autre taille passe par une mise à l'échelle, qui adoucit l'image, c'est
 le prix du redimensionnement libre. Pour retrouver le 1:1 :
 
 - `Maj droite` + `Entrée` : le plein écran est exact si votre écran a la même
@@ -119,13 +119,13 @@ Si l'écran distant est plus grand que le vôtre, la fenêtre dépasse et votre
 gestionnaire de fenêtres la contraint : l'image est alors réduite, donc adoucie.
 Le plein écran reste le meilleur compromis dans ce cas.
 
-{/* t:p ffae261fd21f34f53f4d1175688a2f9a9ec6e98de19a8c2cdcf513c08cf3bfb2 */}
+{/* t:p b2c47100fc3113ec22ae6d0c00ac63e08b5b1a238c8e13d0033cc0351bf06c86 */}
 ## Ouvrir sa propre session (`login`)
 
 `just rd <hôte> login` arme le **démon système** de `gnome-remote-desktop` et
 vous présente l'écran de login GDM. Vous vous authentifiez avec votre compte
 habituel, et GDM ouvre une session pour vous. C'est le mode à utiliser quand
-personne n'est connecté sur le poste — mais il fonctionne aussi bien quand
+personne n'est connecté sur le poste, mais il fonctionne aussi bien quand
 quelqu'un l'est, sans rien changer à ce qui est affiché sur le moniteur.
 
 Le démon système est déjà installé et inerte sur chaque hôte GNOME, exactement
@@ -148,7 +148,7 @@ Bon à savoir : cette session-là est un moniteur *virtuel*, que le serveur peut
 redimensionner. C'est donc votre client qui impose la résolution, et l'affichage
 est net à 100 % sans réglage.
 
-{/* t:p 1c09dc5061d758c69528dfaf932a2f2032a23e5f578e0d75d447a5f21dec6f42 */}
+{/* t:p e1480a9cb56aa39c61191a439914c481f27bf7f951ea9d2a8e50621d7bb827e3 */}
 ## Ce qui se passe réellement
 
 1. La commande joint l'hôte en SSH sous l'identité `nix`, comme toutes les
@@ -172,8 +172,8 @@ lui-même, ce qui la lie plus étroitement qu'un nom de domaine certifié ne le
 ferait.
 
 Sur l'écran de login, l'empreinte n'est pas épinglée : le démon système passe
-la main à la session de login, qui présente un certificat qui lui est propre —
-épingler le premier casserait la seconde étape. C'est alors le tunnel, et lui
+la main à la session de login, qui présente un certificat qui lui est propre.
+Épingler le premier casserait la seconde étape. C'est alors le tunnel, et lui
 seul, qui porte la confiance.
 
 {/* t:p f55837e8f930415225c2a30df1e8502feff0cb61d03ac62c40c3a2c1ce8bd60d */}
@@ -197,7 +197,7 @@ Le mode demandé et le type de la session ouverte déterminent le moteur.
 
 Dans les trois cas : même protocole RDP, même client, même tunnel, même port.
 
-{/* t:p a20685459dcbacbdb051f4434fb530f6ee9f3ea1aeeafd3d5aaf084248ab6fcf */}
+{/* t:p 3e9d47d4edba28b83eb4d504d3db8722e56e80ce307651310d62de5a16752120 */}
 ## Limites connues
 
 - **Une session à la fois** par hôte. Une seconde tentative est refusée tant
@@ -206,7 +206,7 @@ Dans les trois cas : même protocole RDP, même client, même tunnel, même port
   commande refuse de deviner et liste ce qu'elle a trouvé. `login` n'est pas
   concerné, il ne regarde pas les sessions existantes.
 - **Partage d'écran déjà activé** sur la session cible : la commande n'y touche
-  pas et s'arrête. C'est volontaire — une configuration posée à la main ne doit
+  pas et s'arrête. C'est volontaire, une configuration posée à la main ne doit
   pas être écrasée puis « restaurée » de travers.
 - Pas de son, pas de presse-papier partagé, pas de transfert de fichiers.
 - **Le redimensionnement manuel de la fenêtre ne respecte pas les proportions.**
@@ -215,19 +215,19 @@ Dans les trois cas : même protocole RDP, même client, même tunnel, même port
   section suivante). Le build est mis en cache, mais un `just update` qui fait
   bouger GNOME peut faire échouer le patch, bruyamment.
 
-{/* t:p d57082b282f7a20f561cf617466f82fbd02c41db1b0debbaad3976993aba4f27 */}
+{/* t:p ade4a5f7f18a702af10d325dc1aa87d12893f8b94cc93593e1323ff0d0e11dd0 */}
 ## Le pointeur de l'utilisateur
 
 Tel qu'il est livré, `gnome-remote-desktop` transmet la *forme* du curseur mais
 jamais sa *position* quand il reflète un écran physique : le client dessine donc
 le curseur distant à l'emplacement de **votre** souris. En `rw` cela ne se voit
 pas puisque c'est vous qui le pilotez, mais en `ro` vous ne voyez pas du tout où
-l'utilisateur pointe — ce qui vide l'observation de son intérêt.
+l'utilisateur pointe, ce qui vide l'observation de son intérêt.
 
 DNF corrige cela en patchant le serveur pour qu'il demande à mutter d'incruster
 le pointeur dans l'image (mode de curseur *embedded*, déjà utilisé en amont pour
 les moniteurs virtuels). Une ligne de code, et les métadonnées de curseur
-cessent d'être émises — donc aucun second curseur parasite.
+cessent d'être émises, donc aucun second curseur parasite.
 
 Le prix est une recompilation locale de `gnome-remote-desktop` sur chaque hôte
 dépannable. Pour s'en passer :

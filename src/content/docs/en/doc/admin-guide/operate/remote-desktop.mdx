@@ -25,11 +25,11 @@ logged in, the command stops with an error. `login` does the opposite and opens
 the machine. See [Open your own session
 (`login`)](#opening-your-own-session-login).
 
-{/* t:p 5a23c75ab57617fcee5882484ffaf218e15525c2969fc4574d2d6951887fc347 */}
+{/* t:p a4b6838ccdbc9ecccde2fc912eec4c8ca0edf5a660bb8e64b1bb8525f49b6d4c */}
 ## Enabling a host
 
-Remote desktop is an explicit opt-in. It is enabled through the `remote-desktop`
-**feature** in `etc/config.yaml`:
+Remote desktop is an explicit opt-in. It is enabled via the **feature**
+`remote-desktop` in `etc/config.yaml`&nbsp;:
 
 ```yaml
   - hostname: "clemence"
@@ -38,12 +38,12 @@ Remote desktop is an explicit opt-in. It is enabled through the `remote-desktop`
 ```
 
 Then `just generate` and `just apply clemence`. A host without this feature
-cannot be troubleshooted, and the configuration states in black and white which
-ones can.
+cannot be troubleshooted, and the configuration explicitly lists which ones
+can.
 
 :::tip[Templated host groups]
 A feature is inherited by all hosts in a `range:` or `hosts:` group, which
-covers an entire family of identical workstations in one line:
+covers an entire family of identical machines in a single line:
 
 ```yaml
   - hostname: "fd-%'02s"
@@ -52,125 +52,125 @@ covers an entire family of identical workstations in one line:
     features: ["monitoring-node", "nfs-client", "remote-desktop"]
 ```
 
-This is why `features` is chosen over `services`: the `services:` block of a
-templated group is **not** propagated to generated hosts.
+This is why `features` was chosen over `services`: the `services:` block of a
+templated group is **not** propagated to the generated hosts.
 :::
 
 :::caution[This is not trivial]
-Attaching to a session means seeing — and in `rw`, driving — the screen of
-someone who is likely sitting in front of it. GNOME shows a sharing indicator
-for the whole duration, but **nothing asks for their consent**.
-Reserve this activation for workstations where this is the intended use.
+Connecting to a session means seeing (and controlling in `rw`) the screen of
+someone who is most likely sitting right in front of it. GNOME displays a
+sharing indicator for the entire duration, but **nothing asks for the user's
+consent**. Reserve activation for machines where this is the intended use.
 :::
 
-{/* t:p df1b4b8e842d35df65aa2115e1fa2bc8fa019579f3e256a65181fef1a75b539c */}
+{/* t:p 05ca0c4cc70cef45be07c749ec0c346d9c186cc08b537a5d31e070dc94aa0069 */}
 ## The three modes
 
 | Mode | Effect | Applied by |
 |---|---|---|
 | `ro` (default) | You see the user's screen, your inputs are ignored | The remote server |
-| `rw` | The same screen, keyboard and mouse forwarded | The remote server |
-| `login` | A GDM login screen, then a session of your own | — |
+| `rw` | Same screen, keyboard and mouse forwarded | The remote server |
+| `login` | A GDM login screen, then a session of your own | |
 
-The `ro`/`rw` filtering is done **host-side**, not by the client: a hacked
-client cannot turn a `ro` into a `rw`.
+The `ro`/`rw` filtering is done **on the host side**, not by the client: a
+modified client cannot turn `ro` into `rw`.
 
 :::caution[`ro` and `rw` never open a session]
-Without anyone logged in, they have no screen to mirror and fail outright.
-Asking to observe a user must not drop you off somewhere else without saying
-so — it is `login`, and only `login`, that opens a new session.
+With no one connected, they have no screen to reflect and fail outright.
+Asking to observe a user must not silently drop you elsewhere without telling
+you: it is `login`, and only `login`, that opens a new session.
 :::
 
-{/* t:p a5b5130509b19084ce3965d17ab42dc32d4d70336a06932ab2497f56389485ff */}
+{/* t:p ea3d66c2ec7134e22bf77b65f5b0632d6cf6c13664f1e5c56bb8ba39bc86c885 */}
 ## Window shortcuts
 
-The client is `sdl-freerdp`. Its shortcuts use **Right Shift** as the modifier
-— not `Ctrl+Alt` like the old X11 client:
+The client is `sdl-freerdp`. Its shortcuts use **Right Shift** as the
+modifier, unlike the old X11 client which used `Ctrl+Alt`&nbsp;:
 
 | Shortcut | Effect |
 |---|---|
-| `Right Shift` + `Enter` | Fullscreen (and back) |
-| `Right Shift` + `G` | Capture keyboard/mouse. When captured, `Alt+Tab` and the other shortcuts go to the remote workstation; when released, they come back to yours |
+| `Right Shift` + `Enter` | Full screen (and back) |
+| `Right Shift` + `G` | Keyboard/mouse capture. When captured, `Alt+Tab` and other shortcuts are sent to the remote machine; when released, they return to yours |
 | `Right Shift` + `R` | Allow / block window resizing |
 | `Right Shift` + `M` | Minimize the window |
 | `Right Shift` + `D` | Disconnect cleanly |
 
 :::tip[Getting back to your machine]
-In fullscreen with keyboard capture active, `Right Shift` always stays
+In full screen with keyboard capture active, `Right Shift` is always
 intercepted locally: `Right Shift` + `Enter` brings you back, no matter what.
 Closing the window disarms the session on the host.
 :::
 
-{/* t:p df96b85876ae7c59bdd2c33625d4c7aa22c8cf44fd42bf040e484c4d925a6aae */}
+{/* t:p cc43d098edcabf9e95b95f9bbbc0518ef85d6afaa076d7972d9e50f6f3127a47 */}
 ## Resolution and sharpness
 
 The window opens at the **native resolution of the remote screen**: one remote
-pixel for one local pixel, so no resampling and no blur.
+pixel per local pixel, so no resampling and no blurring.
 
-Any other size goes through scaling, which softens the image — that is the
-price of free resizing. To get back to 1:1:
+Any other size goes through scaling, which softens the image; this is the price
+of free resizing. To restore 1:1:
 
-- `Right Shift` + `Enter`: fullscreen is exact if your screen has the same
-  resolution as the one in front of you;
-- otherwise, bring the window back to its opening size.
+- `Right Shift` + `Enter`: full screen is exact if your monitor has the same
+  resolution as the remote one;
+- otherwise, bring the window back to its original size.
 
 If the remote screen is larger than yours, the window overflows and your window
-manager constrains it: the image is then reduced, so softened.
-Fullscreen remains the best compromise in this case.
+manager constrains it: the image is then downscaled and therefore softened.
+Full screen remains the best compromise in this case.
 
-{/* t:p ffae261fd21f34f53f4d1175688a2f9a9ec6e98de19a8c2cdcf513c08cf3bfb2 */}
+{/* t:p b2c47100fc3113ec22ae6d0c00ac63e08b5b1a238c8e13d0033cc0351bf06c86 */}
 ## Opening your own session (`login`)
 
-`just rd <host> login` arms the **system daemon** of `gnome-remote-desktop` and
-shows you the GDM login screen. You authenticate with your usual account, and
-GDM opens a session for you. This is the mode to use when no one is logged in
-on the workstation — but it also works equally well when someone is, without
-changing anything displayed on the monitor.
+`just rd <host> login` arms the **system daemon** of `gnome-remote-desktop`
+and presents you with the GDM login screen. You authenticate with your usual
+account, and GDM opens a session for you. This is the mode to use when no one
+is logged in on the machine, but it also works just as well when someone is,
+without changing anything displayed on the monitor.
 
-The system daemon is already installed and idle on every GNOME host, exactly
-like the user daemon: nothing new is added, you arm it then you disarm it. It
-is also the only one able to work without an unlocked keyring, which a machine
-where no one is logged in obviously cannot provide.
+The system daemon is already installed and inert on every GNOME host, exactly
+like the user daemon: nothing new is added, it is armed then disarmed. It is
+also the only one that can work without an unlocked keyring, which a machine
+with no one logged in obviously cannot provide.
 
 :::caution[This is not the machine's screen]
-GDM opens a **new and screenless session**, alongside what is displayed on the
-monitor. So you do not see the physical screen: you are on your own, not on
-someone else's. To troubleshoot a user, it is `ro` or `rw` that you need.
+GDM opens a **new, screenless session** alongside whatever is displayed on the
+monitor. You are therefore not seeing the physical screen: you are on your own
+machine, not on someone else's. To troubleshoot a user, you need `ro` or `rw`.
 
-Mirroring the GDM greeter itself is not possible: the user daemon only accepts
-its credentials from a keyring, and the greeter's session does not have one.
+Reflecting the GDM greeter itself is not possible: the user daemon only
+accepts credentials from a keyring, and the greeter session does not have one.
 :::
 
-Good to know: that session is a *virtual* monitor, which the server can resize.
-So it is your client that sets the resolution, and the display is sharp at 100%
-without any adjustment.
+Worth knowing: that session uses a *virtual monitor* that the server can
+resize. So it is your client that imposes the resolution, and the display is
+100 % sharp without any adjustment.
 
-{/* t:p 1c09dc5061d758c69528dfaf932a2f2032a23e5f578e0d75d447a5f21dec6f42 */}
+{/* t:p e1480a9cb56aa39c61191a439914c481f27bf7f951ea9d2a8e50621d7bb827e3 */}
 ## What actually happens
 
-1. The command connects to the host over SSH under the `nix` identity, like all
-   of the fleet's administration commands.
-2. It arms the session there: RDP server configuration, ephemeral TLS
-   certificate, random single-use credentials.
-3. It mounts an **SSH tunnel** to the RDP port, which remains closed to the
+1. The command connects to the host via SSH as the `nix` identity, like all
+   fleet administration commands.
+2. It arms the session on the host: RDP server configuration, ephemeral TLS
+   certificate, random one-time credentials.
+3. It sets up an **SSH tunnel** to the RDP port, which remained closed to the
    network.
 4. It launches the FreeRDP client under your own account, on `127.0.0.1`.
-5. When the window closes, everything is disarmed and the host's original
+5. On window close, everything is disarmed and the host's original
    configuration is restored.
 
-Nothing is ever exposed on the network: the fleet's firewall stays
-deny-by-default, no rule is added, even temporarily. The RDP server only
-listens for the duration of the session, and the only path to reach it is the
-tunnel.
+Nothing is ever exposed on the network: the fleet firewall remains
+deny-by-default, no rule is added, not even temporarily. The RDP server only
+listens for the duration of the session, and the only way to reach it is
+through the tunnel.
 
-The certificate is self-signed and regenerated at every session, in the
+The certificate is self-signed and regenerated on every session, in the
 machine's volatile memory. Its fingerprint is captured over SSH and pinned in
 the client: the machine's identity is therefore guaranteed by the SSH channel
-itself, which binds it more tightly than a certified domain name would.
+itself, binding it more tightly than a certified domain name ever could.
 
 On the login screen, the fingerprint is not pinned: the system daemon hands
-over to the login session, which presents a certificate of its own — pinning
-the first one would break the second step. It is then the tunnel, and it
+off to the login session, which presents its own certificate. Pinning the
+first one would break the second step. It is then the tunnel, and the tunnel
 alone, that carries the trust.
 
 {/* t:p f55837e8f930415225c2a30df1e8502feff0cb61d03ac62c40c3a2c1ce8bd60d */}
@@ -194,40 +194,40 @@ The requested mode and the type of the open session determine the engine.
 
 In all three cases: same RDP protocol, same client, same tunnel, same port.
 
-{/* t:p a20685459dcbacbdb051f4434fb530f6ee9f3ea1aeeafd3d5aaf084248ab6fcf */}
+{/* t:p 3e9d47d4edba28b83eb4d504d3db8722e56e80ce307651310d62de5a16752120 */}
 ## Known limitations
 
-- **One session at a time** per host. A second attempt is refused as long as
-  the first one is not closed.
-- **Several graphical sessions open** on the same host: in `ro`/`rw`, the
+- **One session at a time** per host. A second attempt is refused until the
+  first one is closed.
+- **Multiple graphical sessions open** on the same host: in `ro`/`rw`, the
   command refuses to guess and lists what it found. `login` is not affected, it
   does not look at existing sessions.
-- **Screen sharing already enabled** on the target session: the command does
-  not touch it and stops. This is intentional — a configuration set by hand
-  must not be overwritten then "restored" the wrong way.
+- **Screen sharing already active** on the target session: the command does not
+  touch it and stops. This is intentional: a manually applied configuration
+  must not be overwritten then "restored" incorrectly.
 - No sound, no shared clipboard, no file transfer.
-- **Manual resizing of the window does not respect the proportions.**
-  The opening size, on the other hand, is correct.
-- **`gnome-remote-desktop` is rebuilt** on the affected hosts (see the
-  following section). The build is cached, but a `just update` that moves
-  GNOME can make the patch fail, noisily.
+- **Manual window resizing does not preserve proportions.** The opening size,
+  however, is correct.
+- **`gnome-remote-desktop` is rebuilt** on the affected hosts (see next
+  section). The build is cached, but a `just update` that bumps GNOME may
+  cause the patch to fail, noisily.
 
-{/* t:p d57082b282f7a20f561cf617466f82fbd02c41db1b0debbaad3976993aba4f27 */}
+{/* t:p ade4a5f7f18a702af10d325dc1aa87d12893f8b94cc93593e1323ff0d0e11dd0 */}
 ## The user's pointer
 
-As shipped, `gnome-remote-desktop` forwards the *shape* of the cursor but never
-its *position* when it mirrors a physical screen: the client therefore draws
-the remote cursor at the location of **your** mouse. In `rw` this is not
-noticeable since you are the one driving it, but in `ro` you do not see at all
-where the user is pointing — which empties the observation of its value.
+As shipped, `gnome-remote-desktop` transmits the *shape* of the cursor but
+never its *position* when reflecting a physical screen: the client therefore
+draws the remote cursor at the location of **your** mouse. In `rw` this is
+not visible since you are driving it, but in `ro` you cannot see at all where
+the user is pointing, which defeats the purpose of observing.
 
-DNF fixes this by patching the server so that it asks mutter to embed the
-pointer in the image (*embedded* cursor mode, already used upstream for
-virtual monitors). One line of code, and cursor metadata stops being emitted —
-so no second stray cursor.
+DNF fixes this by patching the server to ask mutter to embed the pointer in
+the image (*embedded* cursor mode, already used upstream for virtual monitors).
+A single line of code, and cursor metadata stops being emitted, so no spurious
+second cursor.
 
-The price is a local recompilation of `gnome-remote-desktop` on each
-troubleshootable host. To do without it:
+The trade-off is a local rebuild of `gnome-remote-desktop` on each host that
+can be troubleshooted. To opt out:
 
 ```nix
 darkone.graphic.remote-desktop.embedCursor = false;

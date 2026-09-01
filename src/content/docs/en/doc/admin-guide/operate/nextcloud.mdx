@@ -200,10 +200,13 @@ one, and issues a new application password. Previous ones remain listed in
 Nextcloud's **Settings → Security**, where they can be revoked.
 :::
 
-{/* t:p df0105db9edff5c01e4da913050b56d2463349327e274258fa6e70d6d908c374 */}
-### Starting again from a healthy configuration
+{/* t:p 9798af9299cde4ca7abe1f6e3860e006c91244ce199187b1b9000d955946c90a */}
+### Start from a healthy configuration
 
-The pre-filled address only matters for **creating** the account in the wizard. A machine that already carries one (inherited from a previous instance, for example) keeps it as is, with its old address: the client then shows as "offline", frozen, with no possible action.
+The pre-filled address is only valid for **account creation** in
+the wizard. A machine that already carries one (inherited from a previous
+instance, for example) keeps it as-is, with its former address: the client
+then displays as "offline", frozen, with no possible action.
 
 ```sh
 systemctl --user stop nextcloud-client.service
@@ -212,17 +215,29 @@ systemctl --user start nextcloud-client.service
 ```
 
 :::caution[Kill the right process]
-The binary is named `nextcloud` but the process bears the name of the Nix wrapper, `.nextcloud-wrap`: a `pkill -x nextcloud` misses it. The surviving instance then rewrites the old configuration that was just erased. Check with `pgrep -af nextcloud-client` before deleting the folder.
+The binary is called `nextcloud` but the process carries the Nix wrapper
+name, `.nextcloud-wrap`: a `pkill -x nextcloud` misses it. The surviving
+instance then overwrites the old configuration you just deleted.
+Check with `pgrep -af nextcloud-client` before removing the directory.
 :::
 
-The online account itself is reset from **Settings → Online accounts**, or simply by relaunching the wizard.
+The online account itself is reset from **Settings → Online accounts**, or
+simply by relaunching the wizard.
 
 :::note[Autostart belongs to the framework]
-The client writes its own `~/.config/autostart/Nextcloud.desktop`, which launches it without the pre-filled address and duplicates the systemd unit. The framework replaces it with a `Hidden=true` entry. On a machine that already carried the old one, it is set aside as `.dnf-backup` at first activation. Starting at session login remains driven by `nextcloud.enableAutoStart`.
+The client writes its own `~/.config/autostart/Nextcloud.desktop`, which
+launches it without the pre-filled address and duplicates the systemd unit.
+The framework replaces it with a `Hidden=true` entry. On a machine that
+already had the old one, it is moved to `.dnf-backup` on first activation.
+Session-start automation remains driven by
+`nextcloud.enableAutoStart`.
 :::
 
-:::note[Legacy credentials]
-Accounts created before declarative SSO bear a Nextcloud identifier of the form `IDM-<uuid>`. `user_oidc` never renames an existing account: this identifier stays frozen, with no consequence on usage. Only a server-side migration could change it, at the cost of losing the link to the data.
+:::note[Inherited credentials]
+Accounts created before declarative SSO carry a Nextcloud identifier of
+the form `IDM-<uuid>`. `user_oidc` never renames an existing account:
+this identifier stays frozen, with no impact on usage. Only a server-side
+migration could change it, at the cost of losing the link to the data.
 :::
 
 {/* t:p f578ef047438191329fb5dde22ae52905a0028f9af4408157a38aaa4171a3361 */}
