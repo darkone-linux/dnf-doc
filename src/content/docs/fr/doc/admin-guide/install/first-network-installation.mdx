@@ -142,10 +142,46 @@ système complet.
 
 2. **Démarrer la machine**
 
-   Graver l'image sur une clé USB, brancher l'ordinateur au réseau, démarrer
-   sur la clé, puis noter son adresse IP.
+   Graver l'image sur une clé USB, brancher l'ordinateur au réseau **en
+   filaire**, démarrer sur la clé, puis noter son adresse IP.
 
-3. **Appliquer le système**
+3. **Fixer son adresse** (dès qu'une zone existe)
+
+   L'installation se termine par un redémarrage, et la suite doit retrouver la
+   machine. Deux cas&nbsp;:
+
+   - **adresse MAC déjà déclarée** : rien à faire, la passerelle sert la même
+     adresse fixe à la clé USB et au système installé ;
+   - **adresse MAC inconnue** : la relever, puis la déclarer.
+
+   ```sh
+   # just host-info <hôte> <ip-actuelle>
+   just host-info poste 10.0.0.50
+   ```
+
+   Reporter la valeur dans `etc/config.yaml`, avec une **adresse fixe**, puis
+   redéployer la passerelle de chaque zone concernée&nbsp;:
+
+   ```yaml
+   # etc/config.yaml
+   - hostname: "poste"
+     zone: "maison:2.1"
+     mac: "aa:bb:cc:dd:ee:ff"
+   ```
+
+   ```sh
+   just apply gw
+   ```
+
+   :::caution[Hors de la plage DHCP dynamique]
+   L'adresse fixe doit être **en dehors** de la plage `dhcp-range` de la zone
+   (par défaut `<préfixe>.3.200` à `<préfixe>.3.249`). Dans la plage, la
+   réservation n'est honorée que tant que l'adresse n'a pas déjà été prêtée à
+   quelqu'un d'autre&nbsp;: la machine change alors d'adresse à son premier
+   démarrage, en silence. Le générateur refuse ce cas de figure.
+   :::
+
+4. **Appliquer le système**
 
    ```sh
    # just full-install <hôte> <utilisateur> <ip>
@@ -154,10 +190,14 @@ système complet.
 
    :::tip[En quelques minutes]
    `full-install` installe le système, les programmes, les configurations et les
-   utilisateurs. En cas d'échec, les étapes détaillées sont dans le `Justfile`.
+   utilisateurs. Après le redémarrage, il sonde **toutes** les adresses connues
+   de la machine (celle de l'installation, celle de sa zone, celle de passage,
+   son nom) et poursuit sur celle qui répond. Sur un hôte chiffré, il répond
+   aussi tout seul au prompt LUKS. En cas d'échec, les étapes détaillées sont
+   dans le `Justfile`.
    :::
 
-4. **Redémarrer** sans la clé.
+5. **Redémarrer** sans la clé.
 
 </Steps>
 

@@ -371,12 +371,22 @@ demandée avant d'exécuter.
 :::
 
 :::note[Configuration requise]
-L'hôte doit avoir une configuration disko dans `etc/config.yaml` et un
-dossier `usr/machines/<hôte>/default.nix`.
+L'hôte doit avoir une configuration disko dans `etc/config.yaml`, un dossier
+`usr/machines/<hôte>/default.nix`, une clé `mac` et une adresse fixe
+(`zone: "<zone>:<x.y>"`). Les deux derniers points sont vérifiés avant tout
+formatage&nbsp;: sans eux, la machine change d'adresse au redémarrage qui suit
+l'installation. Voir [Installation
+initiale](/fr/doc/admin-guide/install/first-network-installation/#installer-le-premier-poste).
 :::
 
 L'argument `ip` vaut `auto` par défaut&nbsp;: l'adresse est calculée comme pour
 `full-install`, inutile de la relever.
+
+La recette dépose aussi sur la cible, **avant** l'installation du système, la
+clé age `/etc/sops/age/infra.key` et, sur un hôte chiffré, la clé d'hôte SSH de
+son initrd&nbsp;: sops fonctionne dès la première activation et le tout premier
+démarrage écoute déjà sur le port 2222. Le volume est formaté avec la
+passphrase partagée du parc, il n'y a donc rien à saisir.
 
 ```sh
 just install myserver
@@ -384,14 +394,26 @@ just install myserver nixos 10.0.0.5     # IP personnalisée
 just install myserver do=test             # VM test uniquement
 ```
 
+:::caution[LUKS et `do=test`]
+`nixos-anywhere` refuse `--vm-test` en même temps que les options qui déposent
+des fichiers et la clé de formatage&nbsp;: le mode test ne peut donc pas
+formater un volume chiffré. La recette le signale.
+:::
+
 {/* t:p 32db8998f99d6b1f4c88d9067e206ecf74a13a0c749b6cbef30e4ac80c9d51ac */}
 ### ✳️ `full-install <hôte> [user] [ip]` ⭐
 
-Chaîne complète : `install` + attente reboot + `configure` + `apply` + `gc` + reboot.
+Chaîne complète&nbsp;: `install` + attente reboot + `unlock` + `configure` +
+`apply` + `gc` + reboot.
 
-L'adresse est calculée toute seule&nbsp;: nom de l'hôte dans sa propre zone,
-adresse de passage réservée s'il est branché ailleurs. Voir [Machines hors de
-leur zone](/fr/doc/admin-guide/understand/network/#machines-hors-de-leur-zone).
+L'adresse de départ est calculée toute seule&nbsp;: nom de l'hôte dans sa propre
+zone, adresse de passage réservée s'il est branché ailleurs. Voir [Machines hors
+de leur zone](/fr/doc/admin-guide/understand/network/#machines-hors-de-leur-zone).
+
+Après le redémarrage, la machine n'est pas forcément revenue au même
+endroit&nbsp;: la recette sonde **toutes** ses adresses connues, sur les ports
+22 et 2222, et poursuit sur celle qui répond. Un hôte chiffré est déverrouillé
+au passage par `just unlock`.
 
 ```sh
 just full-install myserver
@@ -454,21 +476,41 @@ Transfère la clé age `/etc/sops/age/infra.key` vers l'hôte cible.
 just push-key myserver
 ```
 
+### ✳️ `host-info <hôte> [ip]`
+
+Affiche l'adresse MAC de la première interface active d'une machine, pour la
+déclarer dans `etc/config.yaml` avant de l'installer. Utile quand l'hôte n'a
+pas encore de réservation DHCP et n'est donc joignable que par l'adresse
+dynamique relevée sur son écran.
+
+```sh
+just host-info myserver 10.0.0.50
+```
+
 {/* t:p e2077d65cbf0b2b4af3bcfcb2e76080b031c99761e15c7ab0ecb3e27b693f552 */}
 ### ✳️ `luks <hôte> [action] [ip]`
 
-Provisionne le chiffrement d'un hôte : passphrases partagée et par hôte dans
-sops, manifeste `usr/secrets/luks.json`, clé SSH de l'initrd sur la cible,
-IP WAN des passerelles. `action=passwd` fait tourner la passphrase par hôte.
-Voir [Chiffrement des disques (LUKS)](/fr/doc/admin-guide/operate/luks/).
+Provisionne le chiffrement d'un hôte&nbsp;: passphrases partagée et par hôte
+dans sops, clé SSH de l'initrd dans sops puis sur la cible, manifeste
+`usr/secrets/luks.json`, IP WAN des passerelles. Voir
+[Chiffrement des disques (LUKS)](/fr/doc/admin-guide/operate/luks/).
+
+| Action | Effet |
+|---|---|
+| (défaut) | Prépare les secrets, puis converge la machine |
+| `pre` | Moitié hors ligne seulement, sans toucher à la machine |
+| `passwd` | Fait tourner la passphrase par hôte, puis converge |
+| `show` | Audit en lecture seule&nbsp;: keyslots et déverrouillage distant |
 
 :::tip[Idempotent]
-Appelée par `just configure` ; sans volume LUKS dans le disko de l'hôte,
-c'est un no-op journalisé.
+`pre` est appelée par `just install` avant la construction, la version par
+défaut par `just configure`. Sans volume LUKS dans le disko de l'hôte, c'est un
+no-op journalisé.
 :::
 
 ```sh
 just luks myserver
+just luks myserver show
 just luks myserver passwd
 ```
 
@@ -602,6 +644,19 @@ et présente la demande de passphrase. Voir
 
 ```sh
 just enter myserver
+```
+
+### ✳️ `unlock <hôte> [ip] [délai]`
+
+Répond au prompt LUKS d'un hôte resté dans son initrd, **sans humain**&nbsp;:
+la passphrase est lue dans sops et poussée par le sshd du port 2222. Attend que
+l'hôte apparaisse (un point par tentative), ce qui permet de l'enchaîner juste
+après un redémarrage. Appelée automatiquement par `just full-install`.
+
+Sur un hôte sans volume LUKS, c'est un no-op journalisé.
+
+```sh
+just unlock myserver
 ```
 
 {/* t:p 019d407a935850d914ee2feec96f9932ac460bf20b29db1615e7cd87d2968988 */}

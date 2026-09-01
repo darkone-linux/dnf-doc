@@ -276,7 +276,17 @@ premier démarrage réel.
 
 <Aside type="note" title="Machines sans adresse MAC déclarée">
 La réservation exige une clé `mac` dans `etc/config.yaml`. Sans elle, la machine
-reste joignable chez elle, mais pas ailleurs.
+reste joignable chez elle, mais pas ailleurs. `just install` la réclame avant
+tout formatage&nbsp;; `just host-info <hôte> <ip>` la relève sur une machine
+démarrée.
+</Aside>
+
+<Aside type="caution" title="L'adresse fixe reste hors de la plage dynamique">
+Une réservation `dhcp-host` posée **dans** la plage `dhcp-range` n'est honorée
+que tant que l'adresse n'a pas déjà été prêtée à quelqu'un d'autre. Sinon la
+machine en reçoit une autre, en silence, au pire moment&nbsp;: le premier
+démarrage après une installation. Le générateur refuse désormais une adresse
+fixe qui tombe dans la plage dynamique de sa zone.
 </Aside>
 
 {/* t:p 8a509beaeff143cb3d23a5a54e7a9a9790b92cd43b7862e8b8a496bc4f86f4cb */}
@@ -304,6 +314,25 @@ Colmena — qui s'adresse aux nœuds par leur nom — déployait sans rien remar
 Un `just apply` lancé derrière installait donc un chargeur de démarrage sans la
 clé d'hôte de l'initrd, et donc sans déverrouillage LUKS à distance.
 </Aside>
+
+### Retrouver une machine après un redémarrage
+
+Le calcul ci-dessus donne **une** adresse pour démarrer. Après le redémarrage
+qui clôt une installation, ce n'est plus suffisant&nbsp;: la machine peut
+réapparaître ailleurs, ou n'être pas encore vraiment démarrée.
+
+`just full-install` sonde donc **toutes** les adresses connues de l'hôte, dans
+cet ordre, sur les ports 22 **et** 2222, et poursuit sur la première qui
+répond&nbsp;:
+
+1. l'adresse utilisée pour l'installation ;
+2. l'adresse fixe de sa zone d'origine, celle que le DNS publie partout ;
+3. l'adresse de passage que réserve la zone locale ;
+4. son nom, résolu par la passerelle locale.
+
+Une réponse sur le port 2222 signifie que l'hôte attend sa passphrase LUKS dans
+son initrd&nbsp;: `just unlock` y répond sans intervention. Voir [Chiffrement
+des disques](/fr/doc/admin-guide/operate/luks/).
 
 Reste le déploiement&nbsp;: [Colmena](https://colmena.cli.rs/) s'adresse à un
 nœud par son nom, qui désigne l'adresse d'origine. Pour un hôte en visite,

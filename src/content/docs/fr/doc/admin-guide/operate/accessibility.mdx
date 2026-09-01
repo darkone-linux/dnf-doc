@@ -191,17 +191,32 @@ souris.
 | Session Cinnamon en X11 | Talon ne fonctionne (malheureusement) pas sous Wayland |
 | Ouverture de session automatique | Aucun mot de passe saisissable |
 | Verrouillage et veille désactivés | Un écran verrouillé est un cul-de-sac |
-| Trousseau de clés sans mot de passe | Évite une invite impossible à satisfaire |
+| Trousseau de clés sans mot de passe | Évite une invite impossible à satisfaire (hôte non chiffré uniquement) |
 | Curseur et texte agrandis | Précision du regard limitée à quelques dizaines de pixels |
 | Clavier visuel ancré en bas | Toujours disponible, grandes cibles, prédiction de mots |
 
 :::danger[Le poste n'est pas protégé au démarrage]
-Ouverture de session automatique, aucun verrouillage d'écran, trousseau en
-clair&nbsp;: quiconque allume la machine est dans la session. Le seul rempart
-utile est le [chiffrement du disque](/fr/doc/admin-guide/operate/luks/), à
-prévoir dès l'installation si le poste est mobile.
+Ouverture de session automatique, aucun verrouillage d'écran&nbsp;: quiconque
+allume la machine est dans la session. Le seul rempart utile est le
+[chiffrement du disque](/fr/doc/admin-guide/operate/luks/), à prévoir dès
+l'installation si le poste est mobile.
 
 L'ouverture de session par reconnaissance faciale est dans la liste TODO.
+:::
+
+:::note[Le trousseau suit le chiffrement du disque]
+Le traitement du trousseau de session dépend de l'hôte&nbsp;:
+
+- **poste non chiffré** : le trousseau est créé sans mot de passe, sinon la
+  session s'ouvrirait sur une invite que personne ne peut satisfaire ;
+- **poste chiffré (LUKS)** : la passphrase saisie au démarrage est transmise au
+  trousseau par la pile PAM de l'ouverture de session automatique. Le trousseau
+  reste protégé, et rien n'est demandé.
+
+Conséquence sur un poste chiffré&nbsp;: changer la passphrase LUKS sans changer
+celle du trousseau provoque le message « le mot de passe de connexion ne
+correspond plus à celui de votre trousseau ». Supprimer alors
+`~/.local/share/keyrings/login.keyring` et rouvrir la session.
 :::
 
 {/* t:p 0d6884836da7cb7f47cd1adf7ac95f0476333b18b3c52557168d7f034641bbba */}

@@ -51,7 +51,7 @@ desktop -> umi
 | `minimal` | Base de tout hôte | | Matériel, pare-feu, i18n, zsh, sudo |
 | `server` | Serveur sans écran | `minimal` | Pas de veille, watchdog, boot limité |
 | `desktop` | Poste de travail | `minimal` | GNOME, multimédia, bureautique |
-| `laptop` | Ordinateur portable | `desktop` | Batterie/veille, capteurs, thermald |
+| `laptop` | Ordinateur portable | `desktop` | Batterie, capteurs, thermald |
 | `umi` | Poste accessible | `desktop` | Autologin, uinput, udev Tobii |
 | `portable` | Clé USB bootable | `minimal` | Pilotes matériels étendus |
 | `gateway` | Passerelle de zone | `server` | Routeur, pare-feu, DNS/DHCP, VPN |
@@ -67,6 +67,25 @@ hosts:
   - hostname: "poste"
     profile: "desktop"
 ```
+
+:::caution[Aucun profil ne se met en veille tout seul]
+Une machine du parc doit rester joignable&nbsp;: une mise en veille automatique
+la sort du réseau, et seule une intervention physique l'en fait revenir. Aucun
+profil, portable compris, n'active donc la veille par inactivité, ni sur le
+bureau ni sur l'écran de connexion. Pour la rétablir sur une machine
+précise&nbsp;:
+
+```yaml
+# etc/config.yaml
+hosts:
+  - hostname: "portable"
+    profile: "laptop"
+    features: ["auto-suspend"]
+```
+
+L'écran s'éteint toujours après un délai d'inactivité, sans suspendre la
+machine.
+:::
 
 :::tip[Les services sont indépendants du profil]
 Un [service](/fr/doc/admin-guide/operate/services/) (Immich, Nextcloud, Forgejo…) se déclare par hôte **quel que soit**
