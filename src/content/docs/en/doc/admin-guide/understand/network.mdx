@@ -260,37 +260,85 @@ its part, keeps its meaning.
 | `portable` | its original address, everywhere on the network |
 | `portable.atelier.domain.tld` | its address in the `atelier` zone |
 
-{/* t:p 08057d344c865d9f05bf2bb704bee382cd9cde2e400fffaa206fc6bf7a6a7fcb */}
-### A lease that never changes
+{/* t:p 206c5ce188914a01ac28aefee8b299d9e06cdb50646a4d5cb50005337e65830d */}
+### A lease that does not change anymore
 
-`dnsmasq` indexes leases on the **MAC address** alone, and not on the DHCP client
+`dnsmasq` indexes leases on the sole **MAC address**, not on the DHCP client
 identifier.
 
-The reason&nbsp;: the same device does not advertise the same identifier
-depending on the system running on it. An installation image and the installed
-system pass for two different machines, and receive two addresses. By relying on
-the MAC, the address no longer changes between installation and the first real
-boot.
+The reason&nbsp;: the same device does not advertise the same identifier depending on the
+system running on it. An installation image and the installed system
+pass for two different machines, and get two addresses. By
+relying on the MAC, the address no longer changes between the installation and the
+first real boot.
 
 <Aside type="note" title="Machines without a declared MAC address">
-The reservation requires a `mac` key in `etc/config.yaml`. Without it, the
-machine stays reachable at home, but not elsewhere.
+The reservation requires a `mac` key in `etc/config.yaml`. Without it, the machine
+remains reachable at home, but not elsewhere. `just install` requires it before
+any formatting&nbsp;; `just host-info <hôte> <ip>` picks it up on a running
+machine.
 </Aside>
 
-{/* t:p 8a509beaeff143cb3d23a5a54e7a9a9790b92cd43b7862e8b8a496bc4f86f4cb */}
+<Aside type="caution" title="The fixed address stays outside the dynamic range">
+A `dhcp-host` reservation placed **inside** the `dhcp-range` range is honored
+only as long as the address has not already been lent to someone else. Otherwise the
+machine gets another one, silently, at the worst moment&nbsp;: the
+first boot after an installation. The generator now refuses a fixed
+address that falls within the dynamic range of its zone.
+</Aside>
+
+{/* t:p f4e685c0b76d9d967020dfe697effcf500fad1689bf2ae6baf6a69b1ef4bb099 */}
 ### What the tooling does
 
-The installation recipes compute the address on their own. They first identify the zone where the admin machine is located, based on its **actual default gateway** rather than its declared zone (an admin laptop is precisely the thing that moves around), then deduce the target's address.
+The installation recipes compute the address all by themselves. They first
+identify the zone where the administration machine is located, based on its
+**real default gateway** and not on its declared zone (an administration
+laptop is precisely what moves around), then deduce the address
+of the target.
 
-This address is then **verified before being used**&nbsp;: a reservation says where the machine *would* be if it were plugged in here, which is correct during installation and wrong as soon as it is back home. If nothing answers at the reserved address, the tooling falls back to the hostname when the latter answers — port 22, or 2222 for an encrypted machine waiting in its initrd. If nothing answers anywhere, the reserved address is kept&nbsp;: it is the one on which the installer will appear.
+This address is then **checked before being used**&nbsp;: a
+reservation says where the machine *would be* if it were plugged in here, which is
+correct during the installation and wrong as soon as it is back home. If nothing
+responds at the reserved address, the tooling falls back to the host name
+when the latter responds — port 22, or 2222 for an encrypted machine waiting
+in its initrd. If nothing responds anywhere, the reserved address is kept&nbsp;:
+it is the one on which the installer will appear.
 
-<Aside type="caution" title="Out-of-zone management recipes">
-Before this check, `just enter` and `just luks` targeted the reserved address even for a host that stayed home, reached through the VPN. `just enter` gave up&nbsp;; `just luks` warned and then exited with 0, while Colmena — which addresses nodes by their name — deployed without noticing anything. A `just apply` run right after therefore installed a boot loader without the initrd's host key, and therefore without remote LUKS unlocking.
+<Aside type="caution" title="Management recipes out-of-zone">
+Before this check, `just enter` and `just luks` targeted the reserved
+address even for a host that stayed at home, joined through the VPN. `just enter`
+gave up&nbsp;; `just luks` warned then exited with 0, while
+Colmena — which addresses nodes by their name — deployed without noticing anything.
+A `just apply` launched afterwards therefore installed a bootloader without the
+initrd host key, and therefore without remote LUKS unlocking.
 </Aside>
 
-What remains is deployment&nbsp;: [Colmena](https://colmena.cli.rs/) addresses a node by its name, which refers to the origin address. For a visiting host, `just configure` therefore sets up a temporary SSH redirect, removed at the end of installation or by hand&nbsp;:
+{/* t:p 783d023ece503d2713b4d9a417d43a82baa2d279065ec17a0ba045b3e42997b0 */}
+### Finding a machine again after a reboot
+
+The calculation above provides **one** address to start with. After the reboot
+that closes an installation, that is no longer enough&nbsp;: the machine can
+reappear elsewhere, or not be truly up yet.
+
+`just full-install` therefore probes **all** known addresses of the host, in
+that order, on ports 22 **and** 2222, and continues on the first one
+that responds&nbsp;:
+
+1. the address used for the installation ;
+2. the fixed address of its zone of origin, the one the DNS publishes everywhere ;
+3. the passing address reserved by the local zone ;
+4. its name, resolved by the local gateway.
+
+A response on port 2222 means the host is waiting for its LUKS passphrase in
+its initrd&nbsp;: `just unlock` answers it without intervention. See [Disk
+encryption](/en/doc/admin-guide/operate/luks/).
+
+What remains is deployment&nbsp;: [Colmena](https://colmena.cli.rs/) addresses a
+node by its name, which designates the address of origin. For a visiting host,
+`just configure` therefore sets up a temporary SSH redirect, removed at the end
+of the installation or manually&nbsp;:
 
 ```sh
-just roaming             # afficher les redirections en cours
-just roaming-clear       # toutes les retirer
+just roaming             # display current redirects
+just roaming-clear       # remove them all
 ```

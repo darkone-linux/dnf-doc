@@ -122,10 +122,11 @@ nix flakes only see files tracked by git. An uncommitted
 `var/generated/hosts.nix` or `usr/machines/<host>/` makes all builds fail.
 :::
 
-{/* t:p 983c8000652e98c82729d3bbeed6110557bece8b6e50c3f26a0043b7adcb0ee3 */}
-## Install the first workstation
+{/* t:p caeb5a6e857c1280628eaa244363eaf40a684ea80b9a96805b65f80907413af0 */}
+## Installing the first machine
 
-The installation burns an image, boots the machine from it, then applies the complete system.
+Installation burns an image, boots the machine from it, then applies the full
+system.
 
 <Steps>
 
@@ -137,23 +138,74 @@ The installation burns an image, boots the machine from it, then applies the com
 
 2. **Boot the machine**
 
-   Burn the image to a USB drive, connect the computer to the network, boot from the drive, then note its IP address.
+   Burn the image to a USB drive, connect the computer to the network **over
+   Ethernet**, boot from the drive, then note the IP address and MAC address
+   provided by the local gateway (or your router) - `ip a`.
 
-3. **Apply the system**
+3. **Assign the addresses** (as soon as a zone exists)
+
+   Installation ends with a reboot, and the next step has to find the machine
+   again. Two cases&nbsp;:
+
+   - **MAC address already declared** : nothing to do, the gateway serves the
+     same fixed address to the USB drive and to the installed system&nbsp;;
+   - **unknown MAC address** : note it down, then declare it.
 
    ```sh
-   # just full-install <host> <user> <ip>
-   just full-install poste nix 10.0.0.50
+   # just host-info <hôte> <ip-actuelle>
+   just host-info poste 10.0.0.50
    ```
 
-   :::tip[In just minutes]
-   `full-install` installs the system, programs, configurations and users. If it fails, the detailed steps are in the `Justfile`.
+   Report the value in `etc/config.yaml`, with a **fixed address**, then
+   redeploy the gateway of each zone concerned&nbsp;:
+
+   ```yaml
+   # etc/config.yaml
+   - hostname: "poste"
+     zone: "maison:2.1"
+     mac: "aa:bb:cc:dd:ee:ff"
+   ```
+
+   ```sh
+   # Redeploy the local gateway
+   just apply gw
+   ```
+
+   :::caution[Outside the dynamic DHCP range]
+   The fixed address must be **outside** the `dhcp-range` pool of the zone
+   (by default `<prefix>.3.200` to `<prefix>.3.249`). Inside the pool, the
+   reservation is only honored as long as the address has not already been
+   leased to someone else&nbsp;: the machine then changes address on its first
+   boot, silently. The generator refuses this case.
    :::
 
-4. **Reboot** without the drive.
+4. **Install the system**
+
+   :::caution[Before launching the installation]
+   Make sure the machine boots by default on the disk that will support the
+   system and not on the installation USB drive.
+   :::
+
+   ```sh
+   # just full-install <hôte> <utilisateur> <ip>
+   just full-install poste nixos 10.0.0.50
+   ```
+
+   :::tip[In a few minutes]
+   `full-install` installs the system, the programs, the configurations and the
+   users. When it reboots automatically, it probes **all** the machine's known
+   addresses (the installation one, its zone's, the pass-through one, its name)
+   and continues on the one that responds. On an encrypted host, it also answers
+   the LUKS prompt by itself. On failure, the detailed steps are in the
+   `Justfile`.
+   :::
+
+5. The system is installed and up to date.
 
 </Steps>
 
 :::note[You can stop here]
-A standalone workstation is already fully usable. The [gateway](/en/doc/admin-guide/install/gateway/) is only needed to create a zone (shared local network).
+A standalone machine is already fully usable. The
+[gateway](/en/doc/admin-guide/install/gateway/) is only needed to create a
+zone (a shared local network).
 :::

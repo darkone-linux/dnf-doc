@@ -179,28 +179,42 @@ click by tongue click. They are declared reproducibly:
 ```
 :::
 
-{/* t:p 2d1b6c6b650f761687bc08cb0a7239a240638b8ac8d20757f48415d5b7e4572b */}
+{/* t:p 1ac1f13c7b21ac7b5f667ab845ea7af7ce1cc9540fbc39ff37ea09aba445349e */}
 ## What the profile changes
 
-The workstation is deliberately stripped of everything that requires a keyboard
-or a mouse.
+The workstation is deliberately stripped of anything that requires a keyboard or a
+mouse.
 
 | Change | Reason |
 |---|---|
-| Cinnamon session in X11 | Talon does not work (unfortunately) under Wayland |
-| Automatic login | No password can be typed |
+| Cinnamon session on X11 | Talon (unfortunately) does not work under Wayland |
+| Automatic sign-in | No password that could be typed |
 | Locking and sleep disabled | A locked screen is a dead end |
-| Passwordless keyring | Avoids a prompt that is impossible to satisfy |
-| Enlarged cursor and text | Gaze precision limited to a few dozen pixels |
-| Visual keyboard anchored at the bottom | Always available, large targets, word prediction |
+| Keyring without password | Avoids a prompt that cannot be satisfied (unencrypted host only) |
+| Enlarged cursor and text | Eye-tracking accuracy limited to a few dozen pixels |
+| On-screen keyboard anchored at the bottom | Always available, large targets, word prediction |
 
 :::danger[The workstation is not protected at startup]
-Automatic login, no screen lock, plaintext keyring: anyone who turns on
-the machine is in the session. The only useful barrier is
-disk encryption](/en/doc/admin-guide/operate/luks/), to be
-planned from installation if the workstation is mobile.
+Automatic sign-in, no screen locking&nbsp;: anyone turning on the machine is in
+the session. The only useful barrier is [disk encryption](/en/doc/admin-guide/operate/luks/),
+to plan from installation if the workstation is mobile.
 
-Face recognition login is on the TODO list.
+Face recognition sign-in is on the TODO list.
+:::
+
+:::note[The keyring follows disk encryption]
+Session keyring handling depends on the host&nbsp;:
+
+- **unencrypted workstation**&nbsp;: the keyring is created without a password,
+  otherwise the session would open on a prompt that no one can satisfy ;
+- **encrypted workstation (LUKS)**&nbsp;: the passphrase entered at startup is
+  passed to the keyring by the PAM stack of automatic sign-in. The keyring stays
+  protected, and nothing is requested.
+
+Consequence on an encrypted workstation&nbsp;: changing the LUKS passphrase
+without changing the keyring one triggers the message "the login password no
+longer matches your keyring's". Then delete
+`~/.local/share/keyrings/login.keyring` and open the session again.
 :::
 
 {/* t:p 0d6884836da7cb7f47cd1adf7ac95f0476333b18b3c52557168d7f034641bbba */}

@@ -360,7 +360,7 @@ just fixtures check
 
 L'installation d'un nouvel hôte suit un enchaînement précis.
 
-{/* t:p 6fe6c77be19f614937a9263e242ac5f8bbfec11c34aa9d2ea7b130bbbcc6da7a */}
+{/* t:p 95668d49cfd1753825002207c93d8c5177c928fbbceb14641d67314fffbf3128 */}
 ### ✳️ `install <hôte> [user] [ip]`
 
 Formate les disques via **disko** et installe NixOS via **nixos-anywhere**.
@@ -400,7 +400,7 @@ des fichiers et la clé de formatage&nbsp;: le mode test ne peut donc pas
 formater un volume chiffré. La recette le signale.
 :::
 
-{/* t:p 32db8998f99d6b1f4c88d9067e206ecf74a13a0c749b6cbef30e4ac80c9d51ac */}
+{/* t:p 22a7e703f312dbac312d1d018019e17fd1d489f5790608eef7f352659a298389 */}
 ### ✳️ `full-install <hôte> [user] [ip]` ⭐
 
 Chaîne complète&nbsp;: `install` + attente reboot + `unlock` + `configure` +
@@ -476,6 +476,7 @@ Transfère la clé age `/etc/sops/age/infra.key` vers l'hôte cible.
 just push-key myserver
 ```
 
+{/* t:p 8a8a21c89dcfaeeae99ea8d55fc6d33d08aa710633cea16ca6ac8ca918eb8865 */}
 ### ✳️ `host-info <hôte> [ip]`
 
 Affiche l'adresse MAC de la première interface active d'une machine, pour la
@@ -487,7 +488,7 @@ dynamique relevée sur son écran.
 just host-info myserver 10.0.0.50
 ```
 
-{/* t:p e2077d65cbf0b2b4af3bcfcb2e76080b031c99761e15c7ab0ecb3e27b693f552 */}
+{/* t:p ee689c0e9bae99379c06bca18a6ce3f940095f7d52c6a39480ebfd7c131bd167 */}
 ### ✳️ `luks <hôte> [action] [ip]`
 
 Provisionne le chiffrement d'un hôte&nbsp;: passphrases partagée et par hôte
@@ -646,6 +647,7 @@ et présente la demande de passphrase. Voir
 just enter myserver
 ```
 
+{/* t:p 9f400b7be7d3bc1a8e6bc34f3cdb28a586672c31447cf4e5309adcab3094c35e */}
 ### ✳️ `unlock <hôte> [ip] [délai]`
 
 Répond au prompt LUKS d'un hôte resté dans son initrd, **sans humain**&nbsp;:

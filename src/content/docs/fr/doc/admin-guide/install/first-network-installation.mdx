@@ -126,7 +126,7 @@ Les flakes nix ne voient que les fichiers suivis par git. Un
 échouer toutes les constructions.
 :::
 
-{/* t:p 983c8000652e98c82729d3bbeed6110557bece8b6e50c3f26a0043b7adcb0ee3 */}
+{/* t:p caeb5a6e857c1280628eaa244363eaf40a684ea80b9a96805b65f80907413af0 */}
 ## Installer le premier poste
 
 L'installation grave une image, démarre la machine dessus, puis applique le
@@ -143,9 +143,10 @@ système complet.
 2. **Démarrer la machine**
 
    Graver l'image sur une clé USB, brancher l'ordinateur au réseau **en
-   filaire**, démarrer sur la clé, puis noter son adresse IP.
+   filaire**, démarrer sur la clé, puis noter l'adresse IP et l'adresse MAC
+   fournie par la passerelle locale (ou votre routeur) - `ip a`.
 
-3. **Fixer son adresse** (dès qu'une zone existe)
+3. **Fixer les adresses** (dès qu'une zone existe)
 
    L'installation se termine par un redémarrage, et la suite doit retrouver la
    machine. Deux cas&nbsp;:
@@ -170,6 +171,7 @@ système complet.
    ```
 
    ```sh
+   # Redéployer la passerelle locale
    just apply gw
    ```
 
@@ -181,23 +183,28 @@ système complet.
    démarrage, en silence. Le générateur refuse ce cas de figure.
    :::
 
-4. **Appliquer le système**
+4. **Installer le système**
+
+   :::caution[Avant de lancer l'installation]
+   Veiller à ce que la machine redémarre par défaut sur le disque qui supportera
+   le système et non sur la clé usb d'installation.
+   :::
 
    ```sh
    # just full-install <hôte> <utilisateur> <ip>
-   just full-install poste nix 10.0.0.50
+   just full-install poste nixos 10.0.0.50
    ```
 
    :::tip[En quelques minutes]
    `full-install` installe le système, les programmes, les configurations et les
-   utilisateurs. Après le redémarrage, il sonde **toutes** les adresses connues
-   de la machine (celle de l'installation, celle de sa zone, celle de passage,
-   son nom) et poursuit sur celle qui répond. Sur un hôte chiffré, il répond
-   aussi tout seul au prompt LUKS. En cas d'échec, les étapes détaillées sont
-   dans le `Justfile`.
+   utilisateurs. Quand il redémarrera automatiquement, sondera **toutes** les
+   adresses connues de la machine (celle de l'installation, celle de sa zone,
+   celle de passage, son nom) et poursuit sur celle qui répond. Sur un hôte
+   chiffré, il répond aussi tout seul au prompt LUKS. En cas d'échec, les étapes
+   détaillées sont dans le `Justfile`.
    :::
 
-5. **Redémarrer** sans la clé.
+5. Le système est installé et à jour.
 
 </Steps>
 

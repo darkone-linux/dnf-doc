@@ -387,7 +387,7 @@ darkone.home.office = {
 
 <hr/>
 
-{/* t:p 018d0660fd74bb3f3527468f903e3b0a2dbf8ebf55530b201c1cb81c8060a435 */}
+{/* t:p 861048e03cf39e9011659c740d8a8ed90cf3436527b42d689d0c7e881c8d8b40 */}
 ### &#x1F3E0; darkone.home.umi
 
 Home module: gaze-driven input (Talon autostart + Onboard tuned for eye tracking).
@@ -413,6 +413,29 @@ a write to a locked key aborts the whole home-manager `dconf load`.
 Screen locking stays enabled GNOME-side (locked by the DNF gnome module);
 `idle-delay = 0` avoids triggering it, and the Cinnamon session has its
 own lock fully disabled.
+:::
+
+:::caution[Login keyring: two modes, decided by the host]
+An autologin session types no password, so PAM has nothing to hand to
+gnome-keyring and every secret-using app pops a gcr prompt the gaze user
+cannot answer. How that is avoided depends on the host:
+
+- **Unencrypted host**: the login keyring is seeded with an empty password,
+  which gnome-keyring stores in plain text and unlocks on its own (it tries
+  an empty password before prompting). Any pre-existing password-protected
+  keyring is deleted — its passphrase is untypable here, so it can only
+  produce the prompt forever. Autologin already grants the whole session to
+  whoever boots the machine, so this costs no real confidentiality.
+- **Encrypted host** (`darkone.system.luks.volumes` non-empty): nothing is
+  seeded. The passphrase typed at boot is cached in the kernel keyring and
+  handed to gnome-keyring by `pam_gdm`, so the keyring stays encrypted with
+  it. This is the only mode that protects the secrets at rest.
+
+Gotcha, encrypted hosts only: rotating the LUKS passphrase (sops value
+changed, `luks-passphrase-sync`) leaves the keyring on the old one — GNOME
+then reports "The password you use to log in to your computer no longer
+matches that of your login keyring". Delete
+`~/.local/share/keyrings/login.keyring` and log in again.
 :::
 
 * **enable** `bool` Gaze-driven input configuration (Talon + Onboard)

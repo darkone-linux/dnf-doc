@@ -369,45 +369,72 @@ darkone.home.office = {
 
 <hr/>
 
-{/* t:p 018d0660fd74bb3f3527468f903e3b0a2dbf8ebf55530b201c1cb81c8060a435 */}
+{/* t:p 861048e03cf39e9011659c740d8a8ed90cf3436527b42d689d0c7e881c8d8b40 */}
 ### &#x1F3E0; darkone.home.umi
 
-Module domestique : saisie pilotée par le regard (autostart Talon + Onboard réglé pour le suivi oculaire).
+Module home : saisie pilotée par le regard (autostart Talon + Onboard réglé pour le suivi oculaire).
 
-:::note[À associer au profil hôte umi]
+:::note[Fonctionne avec le profil hôte umi]
 L'hôte doit fournir udev/uinput et la session X11 Cinnamon (voir
 `darkone.host.umi`). Ce module configure le côté utilisateur : clic par
-maintien opt-in (`enableDwell`), clavier Onboard ancré et toujours visible
-avec prédiction de mots et modificateurs non bloquants, et autostart de la
+maintien opt-in (`enableDwell`), clavier Onboard ancré toujours visible
+avec prédiction de mots et modificateurs collants, et autostart de la
 session Talon.
 :::
 
 :::tip[Scripts communautaires]
-Définissez `communityScripts` sur un arbre github:talonhub/community
+Réglez `communityScripts` sur un arbre github:talonhub/community
 récupéré pour obtenir un contrôle complet de la souris par le regard
-(zoom de la souris, clic pop) de façon déclarative.
+(souris zoom, pop click) de manière déclarative.
 :::
 
-:::note[Double schéma]
-La session de regard est Cinnamon (org/cinnamon/*) mais les clés GNOME
-(org/gnome/*) sont maintenues en synchronisation : mousetweaks lit le schéma
-a11y de GNOME, et elles servent de repli si l'utilisateur arrive un jour dans
-une session GNOME. Exception : les clés verrouillées par le module GNOME de
-DNF ne sont jamais répliquées ici, une écriture sur une clé verrouillée
-interrompt tout le `dconf load` de home-manager. Le verrouillage d'écran
-reste activé côté GNOME (verrouillé par le module GNOME de DNF) ;
+:::note[Deux schémas]
+La session oculométrée est Cinnamon (org/cinnamon/*) mais les clés GNOME
+(org/gnome/*) sont maintenues synchronisées : mousetweaks lit le schéma
+a11y GNOME, et elles servent de repli si l'utilisateur aboutit un jour
+dans une session GNOME. Exception : les clés verrouillées par le module
+gnome de DNF ne sont jamais reflétées ici, une écriture sur une clé
+verrouillée avorte tout le `dconf load` de home-manager. Le verrouillage
+d'écran reste activé côté GNOME (verrouillé par le module gnome de DNF) ;
 `idle-delay = 0` évite de le déclencher, et la session Cinnamon a son
-propre verrou entièrement désactivé.
+propre verrouillage entièrement désactivé.
+:::
+
+:::caution[Trousseau de connexion : deux modes, décidés par l'hôte]
+Une session à autologin ne saisit aucun mot de passe, donc PAM n'a rien à
+transmettre à gnome-keyring et chaque application utilisant des secrets
+affiche une invite gcr à laquelle l'utilisateur de l'oculométrie ne peut
+pas répondre. Pour éviter cela, tout dépend de l'hôte :
+
+- **Hôte non chiffré** : le trousseau de connexion est amorcé avec un mot
+  de passe vide, que gnome-keyring stocke en clair et déverrouille tout
+  seul (il essaie un mot de passe vide avant l'invite). Tout trousseau
+  existant protégé par mot de passe est supprimé, sa phrase secrète
+  n'étant pas saisissable ici, il ne pourrait que produire l'invite
+  éternellement. L'autologin octroie déjà toute la session à quiconque
+  démarre la machine, donc cela ne coûte pas de confidentialité réelle.
+- **Hôte chiffré** (`darkone.system.luks.volumes` non vide) : rien n'est
+  amorcé. La phrase secrète saisie au démarrage est mise en cache dans le
+  trousseau du noyau puis transmise à gnome-keyring par `pam_gdm`, si bien
+  que le trousseau reste chiffré avec elle. C'est le seul mode qui protège
+  les secrets au repos.
+
+Piège, hôtes chiffrés uniquement : la rotation de la phrase secrète LUKS
+(valeur sops modifiée, `luks-passphrase-sync`) laisse le trousseau sur
+l'ancienne, GNOME signale alors que « le mot de passe utilisé pour vous
+connecter à votre ordinateur ne correspond plus à celui de votre trousseau
+de connexion ». Supprimez `~/.local/share/keyrings/login.keyring` puis
+reconnectez-vous.
 :::
 
 * **enable** `bool` Configuration de la saisie pilotée par le regard (Talon + Onboard)
-* **enableTalonAutostart** `bool` Démarrer Talon à la connexion de session (talon doit être dans le PATH).
+* **enableTalonAutostart** `bool` Démarre Talon à la connexion à la session (talon doit être dans le PATH).
 * **communityScripts** `nullOr package` Arbre talonhub/community déployé dans ~/.talon/user/community.
-* **enableDwell** `bool` Clic par maintien : cliquer en laissant le pointeur immobile. Désactivé par défaut — il
-  n'est utilisable qu'avec un eye tracker, et avec une souris il se déclenche sur ce
-  sur lequel le pointeur a été laissé (le menu a11y basculant le zoom ou le clavier
-  à l'écran, typiquement)
-* **dwellTime** `float` Délai du clic par maintien, en secondes.
+* **enableDwell** `bool` Clic par maintien : cliquer en laissant reposer le
+  pointeur. Désactivé par défaut (utilisable uniquement avec un oculomètre) ;
+  avec une souris, il se déclenche sur ce que recouvre le pointeur (le menu
+  a11y activant le zoom ou le clavier à l'écran, typiquement)
+* **dwellTime** `float` Délai du clic par maintien en secondes.
 
 ```nix
 darkone.home.umi = {

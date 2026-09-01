@@ -9,7 +9,7 @@ lang: fr
 {/* t:main */}
 {/* t:h 254e857338e9595c03a7667fac194bc95e30f99e6371ec6670586678427032f6 */}
 
-{/* t:p af783705169f6a4bc72b07e7fb250335108742038a247c22e6eb804ab281f74e */}
+{/* t:p a5485be3abd7f6b20c2f761155ca3d85056aa91a4880fe27ea0a9b196e63e9f5 */}
 Un hôte chiffré (volume LUKS2 déclaré dans sa configuration disko) protège ses
 données en cas de vol ou de mise au rebut, mais réclame une passphrase à chaque
 démarrage. DNF industrialise ce point de friction avec deux garanties :
@@ -20,7 +20,7 @@ démarrage. DNF industrialise ce point de friction avec deux garanties :
   d'administration, sans écran ni clavier branchés sur l'hôte, et cela dès le
   **tout premier démarrage** qui suit l'installation.
 
-{/* t:p edd729de32f9e8fb828be810f1268c4594886c1436b1d4695863408a30b84661 */}
+{/* t:p 1434fdb9746b96fef619b8a0830b9735a836e82e4646e214d53362a76e1337c1 */}
 ## Les moyens de déverrouillage
 
 Chaque moyen occupe son propre keyslot dans l'en-tête LUKS2. Tous sont valables
@@ -56,7 +56,7 @@ ne déclare pas de volume LUKS dans son disko. Les hôtes chiffrés existants ne
 bougent pas tant que `just luks <hôte>` n'a pas été lancé.
 :::
 
-{/* t:p 5469bdbe1ad7616c7b3e8e25a6dffb29a16ba52dfb6eb7c27e19841bfcc9d8d4 */}
+{/* t:p 6c02f2c091e7aacae12a47763a913a0bc186f01376a39ad28accd862b6530576 */}
 ## Provisionner un hôte
 
 ```sh
@@ -127,7 +127,7 @@ un hôte à `luks.json` à la main, et ne jamais déployer avant que la clé ne 
 sur la cible. En cas de doute, `just luks <hôte> show` le vérifie.
 :::
 
-{/* t:p 0d4399f24cf21c90398100bb7d0dfd5dedfac86467e4dc46cd2c5bf96ee18b6a */}
+{/* t:p 16e9cd0c08aff5bc972154684e2d9f6e1b96d39c78d7f5eb2c0a2499ba80fea1 */}
 ## Rotation des passphrases
 
 - **Par hôte** : `just luks <hôte> passwd`, puis commit et apply. L'ancien
@@ -140,7 +140,7 @@ local (`/var/lib/luks-passphrase/ledger`)&nbsp;: une valeur sops modifiée
 enrôle la nouvelle passphrase **puis** tue l'ancien slot. Les slots absents du
 registre (FIDO2, enrôlements manuels) ne sont jamais touchés.
 
-{/* t:p 279014f484ff79e95e7ed795c00ede1f46858003c4f3ca8ba9ae3cd0cf7705b7 */}
+{/* t:p 56db6339b3bbbbb76dbc989fe0b4afdf1c1987e44b56d315d0fa0152bf624d34 */}
 ## Déverrouiller au démarrage
 
 Tout hôte chiffré suit la même séquence, sans rien à régler :
@@ -218,6 +218,7 @@ console (passphrase ou YubiKey), le déverrouillage à distance ne s'applique
 pas.
 :::
 
+{/* t:p 88b9961337edef21a9ecd6c477f771735007fd579c637caa4dd42a0029e0d144 */}
 ## Vérifier un hôte
 
 `just luks <hôte> show` n'écrit rien&nbsp;: il interroge la machine et rend
@@ -256,7 +257,7 @@ Un second bloc audite le **déverrouillage distant**, point par point&nbsp;:
 | Système démarré = configuration auditée | Un apply en attente rendrait l'audit trompeur |
 | IP WAN relevée (passerelles) | Injoignable en initrd une fois le VPN tombé |
 
-{/* t:p b2e48a2ef1e330c748b75cd9143d12c276cde06e38d46b7033372022b534e739 */}
+{/* t:p 018691bf21721672315d60b94b99d685b47b750bf369738c69b4e480c9e4aa59 */}
 ## Sous le capot
 
 | Emplacement | Contenu | Statut |

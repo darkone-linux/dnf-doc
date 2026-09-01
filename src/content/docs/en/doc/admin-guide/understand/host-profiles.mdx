@@ -43,22 +43,22 @@ desktop -> laptop
 desktop -> umi
 ```
 
-{/* t:p 53118090f9eec30c680f29130824b5dedf5b18f6c2fe8381c62e361fb88e9026 */}
+{/* t:p b3b7940308e58ff97e4ac5d3bd551991dbc10de041b9750efccd25c9ac9504a5 */}
 ## The profiles
 
 | Profile | For what | Inherits from | Provides |
 |---|---|---|---|
 | `minimal` | Base of every host | | Hardware, firewall, i18n, zsh, sudo |
-| `server` | Headless server | `minimal` | No standby, watchdog, limited boot |
+| `server` | Headless server | `minimal` | No suspend, watchdog, limited boot |
 | `desktop` | Workstation | `minimal` | GNOME, multimedia, office suite |
-| `laptop` | Laptop | `desktop` | Battery/standby, sensors, thermald |
-| `umi` | Accessible station | `desktop` | Autologin, uinput, Tobii udev |
-| `portable` | Bootable USB stick | `minimal` | Extended hardware drivers |
+| `laptop` | Laptop | `desktop` | Battery, sensors, thermald |
+| `umi` | Accessible workstation | `desktop` | Autologin, uinput, Tobii udev |
+| `portable` | Bootable USB drive | `minimal` | Extended hardware drivers |
 | `gateway` | Zone gateway | `server` | Router, firewall, DNS/DHCP, VPN |
 | `hcs` | VPN coordination | `server` | Headscale + shared services |
 | `vm` | Virtual machine | `server` | Guest tools (VirtualBox/QEMU/Xen) |
 
-{/* t:p 0073c62356053c34aaa5f1fa1e235488f994cae2d4c044146ba20089c1cd4bae */}
+{/* t:p a253eff7cb711f930d39f7c8d63204def6e841b3e824ffb496271420ef57a6af */}
 ## Choosing a profile
 
 ```yaml
@@ -68,14 +68,32 @@ hosts:
     profile: "desktop"
 ```
 
+:::caution[No profile suspends on its own]
+A machine in the fleet must stay reachable&nbsp;: automatic suspension would take
+it off the network, and only a physical intervention would bring it back. No
+profile, laptop included, therefore enables suspension on inactivity, neither on
+the desktop nor on the login screen. To restore it on a specific machine&nbsp;:
+
+```yaml
+# etc/config.yaml
+hosts:
+  - hostname: "portable"
+    profile: "laptop"
+    features: ["auto-suspend"]
+```
+
+The screen always turns off after an inactivity delay, without suspending the
+machine.
+:::
+
 :::tip[Services are independent of the profile]
 A [service](/en/doc/admin-guide/operate/services/) (Immich, Nextcloud, Forgejo…) is declared per host **regardless of**
 its profile.
 :::
 
 :::tip[The `umi` profile may require hardware]
-An eye-tracking station requires an eye tracker and a specific setup,
-described in
+An eye-tracking workstation assumes a gaze tracker and a special commissioning
+process, described in
 [Accessibility](/en/doc/admin-guide/operate/accessibility/).
 :::
 

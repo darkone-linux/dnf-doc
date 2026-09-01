@@ -127,35 +127,88 @@ darkone.system.i18n = {
 };
 ```
 
-{/* t:p be667fadc828f0b2bad3c7b1cde691d0ccabb234c4cd7c48443d4c3e2a42daaf */}
+{/* t:p 0ef0b1ebc66a2d641352460a6d5078d99eb33f4a720303144fc0fefdfdea4c8e */}
 ### &#x2699; darkone.system.luks
 
-Politique de passphrase LUKS et déverrouillage distant : passphrases partagées et par hôte, SSH en initrd.
+Politique de passphrase LUKS & déverrouillage distant : passphrases partagées et par hôte, SSH initrd.
 
-Complète `modules/system/yubikey.nix` (keyslots FIDO2) avec le volet passphrase de la politique LUKS de la flotte. `just luks <host>` provisionne un hôte (idempotent, appelé aussi par `just configure`) : il l'enregistre dans le manifeste **public** `usr/secrets/luks.json` (commité), stocke la passphrase par hôte dans sops (`luks/<host>/passphrase`), garantit l'existence de `luks-passphrase` partagée, pré-génère la clé hôte SSH de l'initrd sur la cible et, quand aucune passphrase gérée ne déverrouille encore le volume, initialise le keyslot partagé avec la passphrase d'installation. Le module maintient ensuite tout convergé à chaque apply :
+Complète `modules/system/yubikey.nix` (keyslots FIDO2) avec le volet passphrase
+de la politique LUKS de la flotte. Chaque volume chiffré porte exactement deux
+passphrases gérées, plus un keyslot par YubiKey enrôlée :
 
-- **keyslots** : un service oneshot synchronise les passphrases partagée et par hôte dans chaque en-tête LUKS2 déclaré par disko. Une valeur sops modifiée fait tourner le keyslot correspondant (ancien slot supprimé, nouveau ajouté). Les opérations de keyslot sont autorisées par n'importe quelle passphrase gérée qui déverrouille encore le volume, donc l'une d'elles doit rester valide : le keyslot d'installation disko n'est jamais touché et reste le recours de dernière instance.
-- **déverrouillage distant** : sshd en initrd sur un port dédié (2222), clé hôte persistante propre (`/var/lib/luks-initrd/`), connexion root avec la clé de déploiement `nix` (`usr/secrets/nix.pub`). `just enter <host>` détecte un hôte en attente dans l'initrd et répond à l'invite de passphrase via `systemd-tty-ask-password-agent`, en repli sur l'IP WAN enregistrée dans le manifeste quand le tunnel VPN est mort avec l'hôte. Les hôtes ordinaires passent par DHCP sur interfaces filaires (un portable en Wi-Fi n'a pas de réseau en initrd et retombe sur le déverrouillage console) ; les passerelles de zone répliquent leur layout de production à la place : IP LAN statique sur le bridge lan0, DHCP côté WAN, puisqu'elles sont elles-mêmes le serveur DHCP que leur initrd attendrait sinon.
+| Keyslot | Secret | Audience |
+|---|---|---|
+| partagée | sops `luks-passphrase` | l'admin de la flotte. **Autorise** aussi les opérations de keyslot (`luksAddKey` / `luksKillSlot`) pour les unités ci-dessous, et c'est la clé avec laquelle disko formate le disque. |
+| par-hôte | sops `luks/<host>/passphrase` | l'utilisateur de la machine en question, sans remettre la flotte en jeu. |
+| FIDO2 | registry `usr/secrets/yubikeys.json` | un slot par clé, sur chaque hôte chiffré. |
 
-:::note[Zéro configuration]
-Activé par défaut mais totalement inerte tant que l'hôte n'apparaît pas dans `usr/secrets/luks.json` ET ne déclare pas de volume LUKS dans sa config disko. Les hôtes chiffrés existants ne sont pas affectés tant que `just luks <host>` n'a pas été exécuté.
+Deux passphrases gérées et non une seule, car elles servent des personnes
+différentes — et parce qu'une rotation de l'une reste autorisée par l'autre : l'unité
+de synchronisation n'est jamais privée d'autoriseur (elle ajoute le nouveau slot
+avant de tuer l'ancien).
+
+Il n'existe pas de « passphrase d'installation » distincte : `just install` formate
+le volume via `nixos-anywhere --disk-encryption-keys` avec la passphrase partagée,
+donc le keyslot de formatage *est* le keyslot partagé.
+
+`just luks <host>` provisionne un hôte (idempotent, aussi appelé par `just configure`) ;
+sa phase `pre` s'exécute hors ligne et est appelée par `just install` avant la
+compilation. Il enregistre l'hôte dans le manifeste **public**
+`usr/secrets/luks.json` (commité), stocke la passphrase par-hôte et la clé d'hôte
+SSH de l'initrd dans sops, et garantit l'existence de la `luks-passphrase` partagée.
+`just luks <host> show` affiche le tableau des keyslots et audite le déverrouillage
+distant. Le module maintient ensuite tout converge à chaque apply :
+
+- **keyslots** : un service oneshot synchronise les passphrases partagées et
+  par-hôte dans chaque en-tête LUKS2 déclaré par disko. Une valeur sops modifiée
+  fait tourner le keyslot correspondant (ancien slot tué, nouveau ajouté). Les
+  opérations de keyslot sont autorisées par la passphrase gérée qui déverrouille
+  encore le volume : l'une d'elles doit donc rester valide. Les slots hors de sa
+  comptabilité (FIDO2, enrôlements manuels) ne sont jamais touchés.
+- **déverrouillage distant** : sshd de l'initrd sur un port dédié (2222), propre
+  clé d'hôte persistante (`/var/lib/luks-initrd/`), connexion root avec la clé de
+  déploiement `nix` (`usr/secrets/nix.pub`). `just unlock <host>` répond à
+  l'invite de passphrase sans humain (via l'aide `dnf-unlock` embarquée dans
+  l'initrd) ; `just enter <host>` est le chemin interactif. Les deux basculent
+  sur l'IP WAN enregistrée dans le manifeste quand la route VPN est morte avec
+  l'hôte. Les hôtes classiques utilisent DHCP sur les interfaces filaires (un
+  portable en Wi-Fi n'a pas de réseau initrd et bascule sur le déverrouillage
+  console) ; les passerelles de zone répliquent leur layout de production — IP
+  LAN statique sur le bridge lan0, DHCP côté WAN — puisqu'elles sont elles-mêmes
+  le serveur DHCP que leur initrd attendrait sinon.
+
+:::note[Configuration zéro]
+Activé par défaut mais totalement inerte jusqu'à ce que l'hôte apparaisse dans
+`usr/secrets/luks.json` ET déclare un volume LUKS dans sa config disko.
+Les hôtes chiffrés existants ne sont pas affectés tant que `just luks <host>`
+n'a pas été exécuté.
 :::
 
-:::caution[Provisionnez avant d'appliquer]
-La clé hôte de l'initrd doit exister sur la cible quand le bootloader est installé (les secrets de l'initrd sont ajoutés à ce moment-là, *avant* l'activation). `just luks <host>` la crée par SSH : n'ajoutez jamais un hôte à `luks.json` à la main. Réinstaller un hôte provisionné avec nixos-anywhere nécessite de placer la clé sous `/mnt` (`--extra-files`) ou de retirer d'abord l'hôte du manifeste.
+:::caution[La clé de l'initrd doit précéder le bootloader]
+Les secrets de l'initrd sont ajoutés lors de l'installation du bootloader,
+*avant* l'activation. Une installation neuve est couverte : `just install`
+staging la clé sous `/mnt` (`nixos-anywhere --extra-files`), donc le tout premier
+boot écoute déjà sur 2222. Sur un hôte déjà en service, `just luks <host>` la met
+en place via SSH — n'ajoutez jamais un hôte à `luks.json` à la main, et n'appliquez
+jamais avant que la clé existe sur la cible.
 :::
 
 :::danger[Budget de keyslots]
-Les en-têtes LUKS2 contiennent au plus 32 keyslots. Chaque YubiKey inscrite consomme un slot sur chaque hôte chiffré (politique à l'échelle de la flotte), plus les passphrases d'installation, partagée et par hôte : le module avertit quand le total projeté approche de la limite.
+Les en-têtes LUKS2 contiennent au maximum 32 keyslots. Chaque YubiKey enrôlée
+consomme un slot sur chaque hôte chiffré (politique de flotte), plus les
+passphrases partagées et par-hôte : le module avertit quand le total projeté se
+rapproche de la limite.
 :::
 
-* **enable** `bool` Politique de passphrase LUKS de la flotte (inerte tant que `just luks &lt;host&gt;` ne provisionne pas l'hôte)
-* **sshPort** `port` Port sshd de l'initrd ; distinct de 22 pour que la clé hôte de l'initrd ne rentre jamais en conflit avec celle du système
+* **enable** `bool` Politique de passphrase LUKS de la flotte (inerte jusqu'à ce que `just luks &lt;host&gt;` provisionne l'hôte)
+* **sshPort** `port` Port sshd de l'initrd ; distinct de 22 pour que la clé d'hôte de l'initrd n'entre jamais en conflit avec celle du système
+* **volumes** `listOf str` Volumes LUKS déclarés par le layout disko de l'hôte.
 
 ```nix
 darkone.system.luks = {
   enable = true;
   sshPort = 2222;
+  volumes = [ ];
 };
 ```
 

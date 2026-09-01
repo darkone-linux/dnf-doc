@@ -351,37 +351,63 @@ just fixtures check
 
 Installing a new host follows a precise sequence.
 
-{/* t:p 6fe6c77be19f614937a9263e242ac5f8bbfec11c34aa9d2ea7b130bbbcc6da7a */}
-### ✳️ `install <host> [user] [ip]`
+{/* t:p 95668d49cfd1753825002207c93d8c5177c928fbbceb14641d67314fffbf3128 */}
+### ✳️ `install <hôte> [user] [ip]`
 
 Formats the disks via **disko** and installs NixOS via **nixos-anywhere**.
 
 :::danger[Destructive]
-All data on the target host is erased. Confirmation is required before running.
+All data on the target host is erased. Confirmation is requested before running.
 :::
 
 :::note[Required configuration]
-The host must have a disko configuration in `etc/config.yaml` and a `usr/machines/<host>/default.nix` folder.
+The host must have a disko configuration in `etc/config.yaml`, a
+`usr/machines/<hôte>/default.nix` directory, a `mac` key and a fixed address
+(`zone: "<zone>:<x.y>"`). The last two points are checked before any
+formatting&nbsp;: without them, the machine changes address at the reboot that
+follows the installation. See [Initial
+installation](/en/doc/admin-guide/install/first-network-installation/#installing-the-first-machine).
 :::
 
-The `ip` argument defaults to `auto`: the address is computed the same way as for `full-install`, no need to read it off.
+The `ip` argument defaults to `auto`&nbsp;: the address is computed as for
+`full-install`, no need to look it up.
+
+The recipe also drops on the target, **before** the system installation, the
+age key `/etc/sops/age/infra.key` and, on an encrypted host, the SSH host key
+of its initrd&nbsp;: sops works from the first activation and the very first
+boot already listens on port 2222. The volume is formatted with the fleet's
+shared passphrase, so there is nothing to enter.
 
 ```sh
 just install myserver
-just install myserver nixos 10.0.0.5     # custom IP
-just install myserver do=test             # test VM only
+just install myserver nixos 10.0.0.5     # IP personnalisée
+just install myserver do=test             # VM test uniquement
 ```
 
-{/* t:p 32db8998f99d6b1f4c88d9067e206ecf74a13a0c749b6cbef30e4ac80c9d51ac */}
-### ✳️ `full-install <host> [user] [ip]` ⭐
+:::caution[LUKS and `do=test`]
+`nixos-anywhere` refuses `--vm-test` together with the options that drop
+files and the formatting key&nbsp;: the test mode therefore cannot format an
+encrypted volume. The recipe reports it.
+:::
 
-Full chain: `install` + wait for reboot + `configure` + `apply` + `gc` + reboot.
+{/* t:p 22a7e703f312dbac312d1d018019e17fd1d489f5790608eef7f352659a298389 */}
+### ✳️ `full-install <hôte> [user] [ip]` ⭐
 
-The address is computed automatically: the host name in its own zone, or the reserved roaming address if it is connected elsewhere. See [Machines outside their zone](/en/doc/admin-guide/understand/network/#machines-outside-their-zone).
+Full chain&nbsp;: `install` + reboot wait + `unlock` + `configure` +
+`apply` + `gc` + reboot.
+
+The starting address is computed automatically&nbsp;: host name in its own
+zone, reserved transit address if plugged in elsewhere. See [Machines out of
+their zone](/en/doc/admin-guide/understand/network/#machines-outside-their-zone).
+
+After the reboot, the machine may not be back at the same spot&nbsp;: the
+recipe probes **all** its known addresses, on ports 22 and 2222, and proceeds
+on the one that answers. An encrypted host is unlocked along the way by
+`just unlock`.
 
 ```sh
 just full-install myserver
-just full-install myserver nixos 10.0.3.42   # forced address
+just full-install myserver nixos 10.0.3.42   # adresse forcée
 ```
 
 {/* t:p c35851dd84a1ba4918b713d16e21603553a1b6ba8b087a32612bc98d8c64de97 */}
@@ -436,17 +462,42 @@ Transfers the age key `/etc/sops/age/infra.key` to the target host.
 just push-key myserver
 ```
 
-{/* t:p e2077d65cbf0b2b4af3bcfcb2e76080b031c99761e15c7ab0ecb3e27b693f552 */}
-### ✳️ `luks <host> [action] [ip]`
+{/* t:p 8a8a21c89dcfaeeae99ea8d55fc6d33d08aa710633cea16ca6ac8ca918eb8865 */}
+### ✳️ `host-info <hôte> [ip]`
 
-Provisions a host's encryption: shared and per-host passphrases in sops, `usr/secrets/luks.json` manifest, initrd SSH key on the target, WAN IP of the gateways. `action=passwd` rotates the per-host passphrase. See [Disk encryption (LUKS)](/en/doc/admin-guide/operate/luks/).
+Displays the MAC address of a machine's first active interface, to declare it
+in `etc/config.yaml` before installing it. Useful when the host does not yet
+have a DHCP reservation and can only be reached via the dynamic address shown
+on its screen.
+
+```sh
+just host-info myserver 10.0.0.50
+```
+
+{/* t:p ee689c0e9bae99379c06bca18a6ce3f940095f7d52c6a39480ebfd7c131bd167 */}
+### ✳️ `luks <hôte> [action] [ip]`
+
+Provisions a host's encryption&nbsp;: shared and per-host passphrases in sops,
+initrd SSH key in sops then on the target, `usr/secrets/luks.json` manifest,
+gateways' WAN IP. See
+[Disk encryption (LUKS)](/en/doc/admin-guide/operate/luks/).
+
+| Action | Effect |
+|---|---|
+| (default) | Prepares the secrets, then converges the machine |
+| `pre` | Offline half only, without touching the machine |
+| `passwd` | Rotates the per-host passphrase, then converges |
+| `show` | Read-only audit&nbsp;: keyslots and remote unlocking |
 
 :::tip[Idempotent]
-Called by `just configure`; without a LUKS volume in the host's disko config, it's a logged no-op.
+`pre` is called by `just install` before the build, the default version by
+`just configure`. Without a LUKS volume in the host's disko, it is a logged
+no-op.
 :::
 
 ```sh
 just luks myserver
+just luks myserver show
 just luks myserver passwd
 ```
 
@@ -573,6 +624,20 @@ Opens an interactive SSH session as `nix@<host>`. If the host is waiting for its
 
 ```sh
 just enter myserver
+```
+
+{/* t:p 9f400b7be7d3bc1a8e6bc34f3cdb28a586672c31447cf4e5309adcab3094c35e */}
+### ✳️ `unlock <hôte> [ip] [délai]`
+
+Answers the LUKS prompt of a host stuck in its initrd, **with no human**&nbsp;:
+the passphrase is read from sops and pushed via the sshd on port 2222. Waits
+for the host to appear (one dot per attempt), which allows chaining it right
+after a reboot. Called automatically by `just full-install`.
+
+On a host without a LUKS volume, it is a logged no-op.
+
+```sh
+just unlock myserver
 ```
 
 {/* t:p 019d407a935850d914ee2feec96f9932ac460bf20b29db1615e7cd87d2968988 */}
