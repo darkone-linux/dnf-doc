@@ -245,20 +245,20 @@ No network in initrd without a cable: an encrypted laptop unlocks at the
 console (passphrase or YubiKey), remote unlocking does not apply.
 :::
 
-{/* t:p 88b9961337edef21a9ecd6c477f771735007fd579c637caa4dd42a0029e0d144 */}
-## Verifying a host
+{/* t:p 578ded9bbb8ef7f0071213f215718c195144746346bc5d4ea1654aa246c4835e */}
+## Checking a host
 
-`just luks <host> show` writes nothing: it queries the machine and reports. It
-exits with an error as soon as a check fails, so it can also be used in a
-script.
+`just luks <hôte> show` writes nothing: it queries the machine and reports
+back. It exits with an error as soon as a check fails, so it can also be used
+in a script.
 
 ```sh
-just luks <host> show
+just luks <hôte> show
 ```
 
-A first block draws up the **keyslot table** of each volume. Nothing there is
-assumed: every managed passphrase is really tried against the header, so the
-"Check" column says what the volume accepts today, not what a registry has
+A first block draws up the **keyslots table** of each volume. Nothing is
+assumed: every managed passphrase is actually tried against the header, so the
+"Check" column tells what the volume accepts today, not what a register
 remembered.
 
 ```
@@ -272,17 +272,28 @@ remembered.
   Slots in use: 4/32
 ```
 
-A second block audits the **remote unlocking**, point by point:
+:::note[An "Unknown" slot]
+No managed passphrase opens it and no FIDO2 token claims it. Most often it is
+an interrupted YubiKey enrollment between the creation of the keyslot and the
+writing of its token - typically during an installation, where passphrase
+convergence restarts the enrollment service. The service now repairs this case
+itself at the next `just apply`: it adopts the keyslot if it belongs to a
+declared key, and deletes it if it is a duplicate. A slot that persists after
+an apply therefore comes from elsewhere: a manual `systemd-cryptenroll`, for
+example - DNF never touches it, as it cannot prove who it belongs to.
+:::
+
+A second block audits **remote unlocking**, point by point:
 
 | Check | What it catches |
 |---|---|
-| Host present in `luks.json` | The module would stay inert |
-| Initrd key on the target (+ fingerprint) | Next apply without remote unlocking |
-| sops backup with the same fingerprint | A reinstall would lose remote access |
-| initrd sshd enabled in the configuration | `nix.pub` missing, or host outside the manifest |
-| Bootloader newer than the key | **The** trap: key absent from the booting initrd |
+| Host present in `luks.json` | The module would remain inert |
+| initrd key on the target (+ fingerprint) | Next apply without remote unlocking |
+| sops backup with same fingerprint | A reinstall would lose remote access |
+| initrd sshd enabled in the configuration | `nix.pub` missing, or host not in the manifest |
+| Boot loader newer than the key | **The** pitfall: key missing from the initrd that boots |
 | Booted system = audited configuration | A pending apply would make the audit misleading |
-| WAN IP recorded (gateways) | Unreachable in the initrd once the VPN is down |
+| WAN IP detected (gateways) | Unreachable in initrd once the VPN is down |
 
 {/* t:p 018691bf21721672315d60b94b99d685b47b750bf369738c69b4e480c9e4aa59 */}
 ## Under the hood

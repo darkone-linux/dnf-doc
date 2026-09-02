@@ -245,7 +245,7 @@ console (passphrase ou YubiKey), le déverrouillage à distance ne s'applique
 pas.
 :::
 
-{/* t:p 88b9961337edef21a9ecd6c477f771735007fd579c637caa4dd42a0029e0d144 */}
+{/* t:p 578ded9bbb8ef7f0071213f215718c195144746346bc5d4ea1654aa246c4835e */}
 ## Vérifier un hôte
 
 `just luks <hôte> show` n'écrit rien&nbsp;: il interroge la machine et rend
@@ -271,6 +271,18 @@ qu'un registre a mémorisé.
   7     Unknown              -                            not managed by DNF
   Slots in use: 4/32
 ```
+
+:::note[Un slot « Unknown »]
+Aucune passphrase gérée ne l'ouvre et aucun token FIDO2 ne le revendique. Le
+plus souvent c'est un enrôlement YubiKey interrompu entre la création du
+keyslot et l'écriture de son token — typiquement pendant une installation, où
+la convergence de la passphrase redémarre le service d'enrôlement. Le service
+répare désormais lui-même ce cas au `just apply` suivant&nbsp;: il adopte le
+keyslot s'il appartient à une clé déclarée, le supprime s'il fait doublon. Un
+slot qui persiste après un apply vient donc d'ailleurs&nbsp;: un
+`systemd-cryptenroll` manuel, par exemple — DNF n'y touche jamais, faute de
+pouvoir prouver à qui il appartient.
+:::
 
 Un second bloc audite le **déverrouillage distant**, point par point&nbsp;:
 

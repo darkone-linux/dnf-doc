@@ -351,28 +351,46 @@ just fixtures check
 
 Installing a new host follows a precise sequence.
 
-{/* t:p bfed6e6e0ca7ce234e72344ef9f4bffaeb2e8f4105a9107830631353b5a8c481 */}
+{/* t:p 5daaa4837cad73164248e564960b82676e4767a7030f1a5a8c0c898e07ef1077 */}
 ### ✳️ `install <host> [user] [ip]`
 
-Formats the drives via **disko** and installs NixOS via **nixos-anywhere**.
+Formats the disks via **disko** and installs NixOS via **nixos-anywhere**.
 
 :::danger[Destructive]
-All data on the target host is erased. Confirmation is requested before running.
+All data on the target host is erased. Confirmation is
+requested before running.
 :::
 
 :::note[Required configuration]
-The host must have a disko configuration in `etc/config.yaml`, a `usr/machines/<host>/default.nix` directory, a `mac` key and a fixed address (`zone: "<zone>:<x.y>"`). The last two points are checked before any formatting: without them, the machine changes address at the reboot following the installation. See [Initial installation](/en/doc/admin-guide/install/first-network-installation/#installing-a-machine).
+The host must have a disko configuration in `etc/config.yaml`, a
+`usr/machines/<host>/default.nix` folder, a `mac` key and a fixed address
+(`zone: "<zone>:<x.y>"`). The last two points are checked before any
+formatting&nbsp;: without them, the machine changes address at the reboot that
+follows installation. See [Initial
+installation](/en/doc/admin-guide/install/first-network-installation/#installing-a-machine).
 :::
 
-The `ip` argument defaults to `auto`: the address is computed as for `full-install`, no need to look it up.
+The `ip` argument defaults to `auto`&nbsp;: the address is computed as for
+`full-install`, no need to read it off.
 
 :::caution[The address must be the one the machine keeps]
-`nixos-anywhere` pins its target address for the entire duration of the run and cannot follow a renumbering. Yet the installer runs DHCP again: if the machine was running until then on a dynamic lease older than its reservation — the typical case of an installation **over another system** — it switches to its reserved address mid-installation and the run talks into the void.
+`nixos-anywhere` pins its target address for the whole run and cannot
+follow a renumbering. Yet the installer does a fresh DHCP&nbsp;: if the
+machine so far ran on a dynamic lease older than its reservation
+— the typical case of an installation **over another system** — it
+switches to its reserved address mid-installation and the run talks into thin
+air.
 
-The recipe therefore refuses to start on an address the host does not keep, and displays the ones it accepts. Before installing over an existing OS, reboot the machine so it picks up its reserved address.
+The recipe therefore refuses to start on an address the host does not keep, and
+shows the ones it accepts. Before installing over an existing OS,
+reboot the machine so it takes its reserved address.
 :::
 
-The recipe also drops onto the target, **before** the system installation, the age key `/etc/sops/age/infra.key` and, on an encrypted host, the SSH host key of its initrd: sops works from the very first activation and the very first boot already listens on port 2222. The volume is formatted with the shared fleet passphrase, so there is nothing to enter.
+The recipe also drops on the target, **before** the system installation, the
+age key `/etc/sops/age/infra.key` and, on an encrypted host, the SSH host key of
+its initrd&nbsp;: sops works from the first activation and the very first
+boot already listens on port 2222. The volume is formatted with the
+shared fleet passphrase, so there is nothing to type.
 
 ```sh
 just install myserver
@@ -381,7 +399,9 @@ just install myserver do=test             # test VM only
 ```
 
 :::caution[LUKS and `do=test`]
-`nixos-anywhere` refuses `--vm-test` together with the options that drop files and the formatting key: the test mode therefore cannot format an encrypted volume. The recipe reports this.
+`nixos-anywhere` refuses `--vm-test` at the same time as the options that drop
+files and the formatting key&nbsp;: test mode therefore cannot
+format an encrypted volume. The recipe reports it.
 :::
 
 {/* t:p 0d60d66b6c653daae5ddc439e39dd1a67cc5736d5e4d9d9a803d72cd689cfead */}
