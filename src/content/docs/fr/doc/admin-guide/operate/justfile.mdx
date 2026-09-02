@@ -415,6 +415,13 @@ endroit&nbsp;: la recette sonde **toutes** ses adresses connues, sur les ports
 22 et 2222, et poursuit sur celle qui répond. Un hôte chiffré est déverrouillé
 au passage par `just unlock`.
 
+Le redémarrage final n'est pas décoratif&nbsp;: `apply` active l'espace
+utilisateur mais pas le noyau ni l'initrd, et ce reboot est la seule preuve
+automatique que la machine repart **toute seule**. Sur un hôte chiffré, il
+prouve du même coup que le déverrouillage à distance fonctionne — pendant que
+vous êtes encore devant, et non à la première coupure de courant. `unlock` est
+donc rappelé juste après.
+
 ```sh
 just full-install myserver
 just full-install myserver nixos 10.0.3.42   # adresse forcée
@@ -439,6 +446,13 @@ L'adresse est résolue une fois et transmise à toute la chaîne. Si l'hôte est
 branché hors de sa zone, la redirection SSH est posée dans la foulée, pour que
 l'`apply` qui suit l'atteigne&nbsp;: `just roaming-clear <hôte>` une fois la
 machine revenue chez elle.
+
+:::caution[Uniquement pour un hôte réellement ailleurs]
+La redirection désactive la vérification de la clé d'hôte, **et elle le reste
+tant qu'on ne la retire pas**. Elle n'est donc posée que si l'adresse utilisée
+n'est ni le nom de l'hôte ni l'adresse fixe de sa zone. `just install` retire au
+passage celle qu'aurait pu laisser une installation interrompue.
+:::
 
 ```sh
 just configure myserver
