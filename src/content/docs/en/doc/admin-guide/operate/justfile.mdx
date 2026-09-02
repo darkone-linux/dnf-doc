@@ -351,63 +351,53 @@ just fixtures check
 
 Installing a new host follows a precise sequence.
 
-{/* t:p 95668d49cfd1753825002207c93d8c5177c928fbbceb14641d67314fffbf3128 */}
-### ✳️ `install <hôte> [user] [ip]`
+{/* t:p bfed6e6e0ca7ce234e72344ef9f4bffaeb2e8f4105a9107830631353b5a8c481 */}
+### ✳️ `install <host> [user] [ip]`
 
-Formats the disks via **disko** and installs NixOS via **nixos-anywhere**.
+Formats the drives via **disko** and installs NixOS via **nixos-anywhere**.
 
 :::danger[Destructive]
 All data on the target host is erased. Confirmation is requested before running.
 :::
 
 :::note[Required configuration]
-The host must have a disko configuration in `etc/config.yaml`, a
-`usr/machines/<hôte>/default.nix` directory, a `mac` key and a fixed address
-(`zone: "<zone>:<x.y>"`). The last two points are checked before any
-formatting&nbsp;: without them, the machine changes address at the reboot that
-follows the installation. See [Initial
-installation](/en/doc/admin-guide/install/first-network-installation/#installing-the-first-machine).
+The host must have a disko configuration in `etc/config.yaml`, a `usr/machines/<host>/default.nix` directory, a `mac` key and a fixed address (`zone: "<zone>:<x.y>"`). The last two points are checked before any formatting: without them, the machine changes address at the reboot following the installation. See [Initial installation](/en/doc/admin-guide/install/first-network-installation/#installing-a-machine).
 :::
 
-The `ip` argument defaults to `auto`&nbsp;: the address is computed as for
-`full-install`, no need to look it up.
+The `ip` argument defaults to `auto`: the address is computed as for `full-install`, no need to look it up.
 
-The recipe also drops on the target, **before** the system installation, the
-age key `/etc/sops/age/infra.key` and, on an encrypted host, the SSH host key
-of its initrd&nbsp;: sops works from the first activation and the very first
-boot already listens on port 2222. The volume is formatted with the fleet's
-shared passphrase, so there is nothing to enter.
+:::caution[The address must be the one the machine keeps]
+`nixos-anywhere` pins its target address for the entire duration of the run and cannot follow a renumbering. Yet the installer runs DHCP again: if the machine was running until then on a dynamic lease older than its reservation — the typical case of an installation **over another system** — it switches to its reserved address mid-installation and the run talks into the void.
+
+The recipe therefore refuses to start on an address the host does not keep, and displays the ones it accepts. Before installing over an existing OS, reboot the machine so it picks up its reserved address.
+:::
+
+The recipe also drops onto the target, **before** the system installation, the age key `/etc/sops/age/infra.key` and, on an encrypted host, the SSH host key of its initrd: sops works from the very first activation and the very first boot already listens on port 2222. The volume is formatted with the shared fleet passphrase, so there is nothing to enter.
 
 ```sh
 just install myserver
-just install myserver nixos 10.0.0.5     # IP personnalisée
-just install myserver do=test             # VM test uniquement
+just install myserver nixos 10.0.0.5     # custom IP
+just install myserver do=test             # test VM only
 ```
 
 :::caution[LUKS and `do=test`]
-`nixos-anywhere` refuses `--vm-test` together with the options that drop
-files and the formatting key&nbsp;: the test mode therefore cannot format an
-encrypted volume. The recipe reports it.
+`nixos-anywhere` refuses `--vm-test` together with the options that drop files and the formatting key: the test mode therefore cannot format an encrypted volume. The recipe reports this.
 :::
 
-{/* t:p 22a7e703f312dbac312d1d018019e17fd1d489f5790608eef7f352659a298389 */}
-### ✳️ `full-install <hôte> [user] [ip]` ⭐
+{/* t:p 0d60d66b6c653daae5ddc439e39dd1a67cc5736d5e4d9d9a803d72cd689cfead */}
+### ✳️ `full-install <host> [user] [ip]` ⭐
 
-Full chain&nbsp;: `install` + reboot wait + `unlock` + `configure` +
-`apply` + `gc` + reboot.
+Complete chain: `install` + reboot wait + `unlock` + `configure` + `apply` + `gc` + reboot.
 
-The starting address is computed automatically&nbsp;: host name in its own
-zone, reserved transit address if plugged in elsewhere. See [Machines out of
-their zone](/en/doc/admin-guide/understand/network/#machines-outside-their-zone).
+The starting address is computed on its own: the host name in its own zone, a reserved transit address if it is plugged in elsewhere. See [Machines outside their zone](/en/doc/admin-guide/understand/network/#machines-outside-their-zone).
 
-After the reboot, the machine may not be back at the same spot&nbsp;: the
-recipe probes **all** its known addresses, on ports 22 and 2222, and proceeds
-on the one that answers. An encrypted host is unlocked along the way by
-`just unlock`.
+After the reboot, the machine has not necessarily come back to the same place: the recipe probes **all** its known addresses, on ports 22 and 2222, and continues on the one that responds. An encrypted host is unlocked along the way by `just unlock`.
+
+The final reboot is not decorative: `apply` activates the userspace but not the kernel or the initrd, and this reboot is the only automatic proof that the machine starts back up **on its own**. On an encrypted host, it proves at the same time that remote unlocking works — while you are still in front of it, and not at the first power outage. `unlock` is therefore recalled right after.
 
 ```sh
 just full-install myserver
-just full-install myserver nixos 10.0.3.42   # adresse forcée
+just full-install myserver nixos 10.0.3.42   # forced address
 ```
 
 {/* t:p c35851dd84a1ba4918b713d16e21603553a1b6ba8b087a32612bc98d8c64de97 */}
@@ -419,12 +409,16 @@ Formats a USB device with disko and installs NixOS on it.
 just install-key myusbhost
 ```
 
-{/* t:p f2604796613946cc8f0264ada1a3c717f8f01e8d335c9d12922d88de0e7fd415 */}
+{/* t:p 865f0750feeb2e5de985ac71cf4c03c9686ede99e3c74b45939a00ab19a05b91 */}
 ### ✳️ `configure <host> [ip]`
 
-Chains `copy-id` → `copy-hw` → `push-key` → `luks` (the last one does nothing on an unencrypted host).
+Chains `copy-id` → `copy-hw` → `push-key` → `luks` (the last one does nothing on a non-encrypted host).
 
-The address is resolved once and passed to the whole chain. If the host is connected outside its zone, the SSH redirect is set up on the fly so that the following `apply` can reach it: run `just roaming-clear <host>` once the machine is back home.
+The address is resolved once and passed to the whole chain. If the host is plugged outside its zone, the SSH redirection is set up in the process, so that the following `apply` reaches it: `just roaming-clear <host>` once the machine is back home.
+
+:::caution[Only for a host genuinely elsewhere]
+The redirection disables host key verification, **and it stays that way until it is removed**. It is therefore only set if the used address is neither the host name nor the fixed address of its zone. `just install` removes, along the way, any one an interrupted installation might have left.
+:::
 
 ```sh
 just configure myserver

@@ -360,7 +360,7 @@ just fixtures check
 
 L'installation d'un nouvel hôte suit un enchaînement précis.
 
-{/* t:p 95668d49cfd1753825002207c93d8c5177c928fbbceb14641d67314fffbf3128 */}
+{/* t:p bfed6e6e0ca7ce234e72344ef9f4bffaeb2e8f4105a9107830631353b5a8c481 */}
 ### ✳️ `install <hôte> [user] [ip]`
 
 Formate les disques via **disko** et installe NixOS via **nixos-anywhere**.
@@ -376,7 +376,7 @@ L'hôte doit avoir une configuration disko dans `etc/config.yaml`, un dossier
 (`zone: "<zone>:<x.y>"`). Les deux derniers points sont vérifiés avant tout
 formatage&nbsp;: sans eux, la machine change d'adresse au redémarrage qui suit
 l'installation. Voir [Installation
-initiale](/fr/doc/admin-guide/install/first-network-installation/#installer-le-premier-poste).
+initiale](/fr/doc/admin-guide/install/first-network-installation/#installer-un-poste).
 :::
 
 L'argument `ip` vaut `auto` par défaut&nbsp;: l'adresse est calculée comme pour
@@ -413,7 +413,7 @@ des fichiers et la clé de formatage&nbsp;: le mode test ne peut donc pas
 formater un volume chiffré. La recette le signale.
 :::
 
-{/* t:p 22a7e703f312dbac312d1d018019e17fd1d489f5790608eef7f352659a298389 */}
+{/* t:p 0d60d66b6c653daae5ddc439e39dd1a67cc5736d5e4d9d9a803d72cd689cfead */}
 ### ✳️ `full-install <hôte> [user] [ip]` ⭐
 
 Chaîne complète&nbsp;: `install` + attente reboot + `unlock` + `configure` +
@@ -449,7 +449,7 @@ Formate un périphérique USB avec disko et installe NixOS dessus.
 just install-key myusbhost
 ```
 
-{/* t:p f2604796613946cc8f0264ada1a3c717f8f01e8d335c9d12922d88de0e7fd415 */}
+{/* t:p 865f0750feeb2e5de985ac71cf4c03c9686ede99e3c74b45939a00ab19a05b91 */}
 ### ✳️ `configure <hôte> [ip]`
 
 Enchaîne `copy-id` → `copy-hw` → `push-key` → `luks` (ce dernier ne fait rien

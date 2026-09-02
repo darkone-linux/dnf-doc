@@ -56,53 +56,66 @@ does not declare a LUKS volume in its disko. Existing encrypted hosts do not
 change until `just luks <host>` has been run.
 :::
 
-{/* t:p 6c02f2c091e7aacae12a47763a913a0bc186f01376a39ad28accd862b6530576 */}
+{/* t:p 8b1d0322647e139c105987f1f78759c3b61ecf4327baf619a13cd3e381c804f4 */}
 ## Provisioning a host
 
 ```sh
 just luks <host>            # provisions (or converges) the encryption
 just luks <host> pre        # offline half, without touching the machine
-just luks <host> passwd     # rotates the per-host passphrase
+just luks <host> passwd     # rotates the passphrase per host
 just luks <host> show       # audit: keyslot table + compliance
-just luks <host> '' <ip>    # targets an explicit IP (host not resolved yet)
+just luks <host> '' <ip>    # targets an explicit IP (host not yet resolved)
 ```
 
-The recipe is **idempotent**: each run converges and only asks for what is
-missing. It is called automatically at two moments, and it is rare to have to
-run it yourself:
+The recipe is **idempotent**: each run converges and only requests what is
+missing. It is called automatically at two moments, and you rarely have to run
+it yourself:
 
 | Called by | Action | What it does |
 |---|---|---|
-| `just install <host>` | `pre` | Before the build, hence before the installation |
+| `just install <host>` | `pre` | Before the build, therefore before installation |
 | `just configure <host>` | (default) | After the first boot |
 
-Without a LUKS volume in the disko, it is a logged no-op.
+Without a LUKS volume in disko, this is a logged no-op.
 
 The **`pre`** phase never touches the machine. It prepares what must exist
 *before* the system is built:
 
-1. the **shared passphrase** in sops if missing (asked only once for the whole
+1. the **shared passphrase** in sops if absent (asked only once for the whole
    fleet);
-2. the **host passphrase** in sops if missing (empty entry = strong random
-   value, the host stays unlockable by the shared passphrase and the
-   YubiKeys);
+2. the **per-host passphrase** in sops if absent, **generated at random and
+   without asking anything** (see the box below);
 3. the **SSH host key of the initrd**, generated locally and stored in sops
    (`luks/<host>/initrd-key`, base64 encoded);
-4. the registration of the host in the **public manifest**
-   `usr/secrets/luks.json` (versioned in clear text, it contains no
-   secret): it is this entry that activates the module.
+4. the host's entry in the **public manifest** `usr/secrets/luks.json`
+   (versioned in clear, it contains no secret): it is this entry that
+   activates the module.
 
-The default phase adds what requires the machine:
+:::note[Why the per-host passphrase is never asked at installation]
+It is used to entrust a station's unlocking to its user without giving them
+the key to the whole fleet. But at formatting time we still do not know who
+will use the machine: the answer was always "empty". And an interactive
+question in the middle of an installation is exactly what breaks a remote
+installation.
 
-5. re-deploys the **initrd key** from sops if missing on the target (it never
-   regenerates a new one, that would invalidate the one the installation
-   placed);
-6. on a **gateway**, records the current **WAN IP** in the manifest (fallback
-   for `just enter` and `just unlock`, see below), to be re-run if the
-   provider renumbers;
+It is therefore drawn at random and kept in sops alone. The slot keeps its
+purpose — it is a second way to open the volume, and the fallback of
+`just unlock`. The day someone really has to type a passphrase on that
+machine, `just luks <host> passwd` gives them a chosen one, and
+`luks-passphrase-sync` swaps the slot at the next `apply`.
+:::
+
+The default phase adds what needs the machine:
+
+5. re-lays the **initrd key** from sops if it is missing on the target (it
+   never regenerates a new one, that would invalidate the one laid by the
+   installation);
+6. on a **gateway**, records the current **WAN IP** in the manifest
+   (fallback of `just enter` and `just unlock`, see below), to re-run if the
+   access provider renumbers;
 7. if **no managed passphrase** unlocks the volume (host installed before the
-   switch to the shared formatting), asks for its installation passphrase one
-   last time and enrolls the shared one with it.
+   switch to shared formatting), asks its installation passphrase one last
+   time and enrolls the shared one with it.
 
 Then commit and deploy:
 
@@ -112,18 +125,19 @@ just commit "system(luks): <host>"
 just apply <host>
 ```
 
-At deployment, two idempotent services converge the LUKS header at every
+At deployment, two idempotent services converge the LUKS header at each
 apply: `luks-passphrase-sync` (shared and per-host passphrases) and
 `yubikey-luks-enroll` (one FIDO2 entry per YubiKey enrolled on the fleet, see
 [Strong authentication](/en/doc/admin-guide/operate/yubikey/)).
 
-:::caution[The initrd key must precede the bootloader]
-The initrd secrets are embedded **at the bootloader installation time**: a key
-created afterwards simply is not in the initrd that boots. A fresh
+:::caution[The initrd key must precede the boot loader]
+The initrd secrets are embedded **at boot loader installation**: a key created
+after the fact is simply not in the initrd that boots. A brand-new
 installation is covered, `just install` drops the key under `/mnt` before
-`nixos-install`. On a machine already in service, it is `just luks <host>` that
-places it over SSH: never add a host to `luks.json` by hand, and never deploy
-before the key is on the target. In doubt, `just luks <host> show` verifies it.
+`nixos-install`. On a machine already in service, it is `just luks <host>`
+that lays it over SSH: never add a host to `luks.json` by hand, and never
+deploy before the key is on the target. When in doubt, `just luks <host> show`
+checks it.
 :::
 
 {/* t:p 16e9cd0c08aff5bc972154684e2d9f6e1b96d39c78d7f5eb2c0a2499ba80fea1 */}
@@ -139,81 +153,96 @@ The synchronization service detects changes thanks to a local registry
 passphrase **then** kills the old slot. Slots absent from the registry (FIDO2,
 manual enrollments) are never touched.
 
-{/* t:p 56db6339b3bbbbb76dbc989fe0b4afdf1c1987e44b56d315d0fa0152bf624d34 */}
+{/* t:p 2504120e32ed955fb3988e8f6e82c7e89df9774e6ba3faf0f01dabeb50613062 */}
 ## Unlocking at boot
 
 Every encrypted host follows the same sequence, with nothing to configure:
 
-1. **YubiKey** — an enrolled key plugged in makes its diode blink: touching it
-   opens the volume, nothing to type. No key plugged in, the step lasts ~6 s; a
-   key nobody touches, ~30 s (firmware limit).
-2. **Passphrase** — a prompt is then shown, **with no time limit**. It accepts
-   the per-host passphrase, the shared one or the installation one.
+1. **YubiKey** — an enrolled and plugged-in key blinks its diode: touching it
+   opens the volume, nothing to type. No key plugged in, the step lasts
+   ~6 s; a key that nobody touches, ~30 s (firmware limit).
+2. **Passphrase** — a prompt is then raised, **without any time limit**. It
+   accepts the per-host passphrase, the shared one, or the installation one.
 
-The step 2 prompt is **one single request**, served in parallel on the
-physical console (`/dev/tty1`) and over SSH on port 2222. Nothing to choose, no
-window to miss: the first one to answer opens the volume.
+The step 2 prompt is **a single, identical request**, served in parallel on
+the physical console (`/dev/tty1`) and over ssh on port 2222. Nothing to
+choose, no window to miss: the first one to respond opens the volume.
 
 :::note[How the key is tried]
 `fido2-device=` is not written in the `crypttab` entry but in a **separate
 initrd unit**, `yubikey-luks-unlock-<volume>`, ordered before
 `systemd-cryptsetup@<volume>` and only linked to it by a `Wants=`: it is
-allowed to fail, and its failure changes nothing to the boot.
+allowed to fail, and its failure changes nothing at boot.
 
 This separation avoids two defects that contradict each other:
 
 - **the option in the `crypttab` kills the boot** when a key is plugged in
-  without anyone touching it: `systemd-cryptsetup` exits with an error instead
-  of offering the passphrase, no prompt is shown — neither console nor port
-  2222 — and the initrd drops into `emergency`. A power cut on a host with
+  without anyone touching it: `systemd-cryptsetup` exits in error instead of
+  offering the passphrase, no prompt is raised — neither console nor port
+  2222 — and the initrd falls back to `emergency`. A power cut on a host with
   nobody in front of it was enough to immobilize it;
 - **without the option, the token is only tried if it is already enumerated**.
-  Yet `hidraw0` appears about one second after `systemd-cryptsetup` starts:
-  never in time. The key then stops unlocking anything, silently, and with
-  nothing in the journal.
+  But `hidraw0` appears about a second after `systemd-cryptsetup` starts: never
+  in time. The key then stops unlocking anything, silently, and with nothing
+  in the journal.
 
-What the option really brings is waiting for the device
+What the option really brings is the **wait** for the device
 (`token-timeout=`, set to 5 s).
 :::
 
-Remotely, the initrd starts a **dedicated sshd on port 2222** with its own
+Remotely, the initrd starts a **dedicated sshd on port 2222**, with its own
 persistent host key, reachable only with the `nix` deployment key. Two ways to
-answer the prompt:
+respond:
 
 ```sh
 just unlock <host>     # without a human: the passphrase is read from sops
 just enter <host>      # interactive: the prompt is presented to the terminal
 ```
 
-`just unlock` waits until port 2222 appears (a dot per attempt), reads the
-per-host passphrase from sops (falling back on the shared one) and pushes it
-into the initrd. That is what `just full-install` calls on its own after the
-first reboot. On a non-encrypted host, it is a logged no-op.
+`just unlock` waits for port 2222 to appear (a dot per attempt), reads the
+**shared** passphrase from sops and pushes it into the initrd, then checks
+that the machine has really left its initrd before announcing success. If it
+is refused, it retries with the per-host passphrase. This is what
+`just full-install` calls by itself after the first reboot. On a non-encrypted
+host, it is a logged no-op.
+
+:::note[Why the shared one first]
+At the very first boot, the per-host slot does not exist yet: disko formats
+with the shared passphrase, and `luks-passphrase-sync` only adds the per-host
+slot from the booted system, therefore *after* unlocking. The shared one is
+the only way in at that moment.
+
+Besides, `dnf-unlock` only knows that it **replied** to the request, never
+whether the passphrase was accepted: systemd simply asks again. The only
+reliable witness is therefore the machine leaving its initrd and answering on
+port 22, and that is what `just unlock` observes from the administration
+station.
+:::
 
 `just enter` does the same thing in interactive mode: when port 22 does not
 answer, it probes 2222 on the explicit IP (if provided), the hostname, then
-the **WAN IP recorded in the manifest**, and presents the LUKS prompt via
+the **WAN IP registered in the manifest**, and presents the LUKS prompt via
 `systemd-tty-ask-password-agent`. In both cases, once the passphrase is
-accepted, the boot continues and port 22 comes back.
+accepted, boot continues and port 22 returns.
 
 :::note[Why two paths]
 `systemd-tty-ask-password-agent` only talks to a terminal: no script can
 drive it. The initrd therefore embeds a small utility `dnf-unlock` that takes
-the passphrase from a pipe and answers all pending requests. It is what
+the passphrase on a pipe and answers all pending requests. It is the one
 `just unlock` calls.
 :::
 
 :::note[Why the WAN IP?]
-A zone's VPN dies with its gateway: when the latter waits for its passphrase,
-only its WAN link is reachable. Its initrd moreover replicates the production
-addressing (static IP on the `lan0` bridge, DHCP on the WAN side), since it is
-itself the DHCP server that its initrd would otherwise wait for. The other
-hosts simply do DHCP on their wired interfaces.
+The VPN of a zone dies with its gateway: when the latter waits for its
+passphrase, only its WAN side is reachable. Its initrd moreover replicates
+the production addressing (static IP on the `lan0` bridge, DHCP on the WAN
+side), since it is itself the DHCP server its initrd would otherwise wait
+for. The other hosts do simple DHCP on their wired interfaces.
 :::
 
 :::note[Laptops on Wi-Fi]
-No network in the initrd without a cable: an encrypted laptop is unlocked at
-the console (passphrase or YubiKey), remote unlocking does not apply.
+No network in initrd without a cable: an encrypted laptop unlocks at the
+console (passphrase or YubiKey), remote unlocking does not apply.
 :::
 
 {/* t:p 88b9961337edef21a9ecd6c477f771735007fd579c637caa4dd42a0029e0d144 */}
