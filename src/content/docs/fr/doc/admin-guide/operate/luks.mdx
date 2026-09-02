@@ -83,14 +83,27 @@ exister *avant* que le système ne soit construit&nbsp;:
 
 1. la **passphrase partagée** dans sops si absente (demandée une seule fois
    pour tout le parc) ;
-2. la **passphrase par hôte** dans sops si absente (saisie vide = valeur
-   aléatoire forte, l'hôte reste déverrouillable par la partagée et les
-   YubiKeys) ;
+2. la **passphrase par hôte** dans sops si absente, **générée au hasard et sans
+   rien demander** (voir l'encadré ci-dessous) ;
 3. la **clé d'hôte SSH de l'initrd**, générée localement et rangée dans sops
    (`luks/<hôte>/initrd-key`, encodée en base64) ;
 4. l'inscription de l'hôte dans le **manifeste public** `usr/secrets/luks.json`
    (versionné en clair, il ne contient aucun secret)&nbsp;: c'est cette entrée
    qui active le module.
+
+:::note[Pourquoi la passphrase par hôte n'est jamais demandée à l'installation]
+Elle sert à confier le déverrouillage d'une station à son utilisateur sans lui
+donner la clé de tout le parc. Mais au moment du formatage on ignore encore qui
+utilisera la machine&nbsp;: la réponse était toujours «&nbsp;vide&nbsp;». Et une
+question interactive au milieu d'une installation est exactement ce qui casse
+une installation à distance.
+
+Elle est donc tirée au hasard et gardée dans sops seule. Le slot garde son
+utilité — c'est un second moyen d'ouvrir le volume, et le repli de
+`just unlock`. Le jour où quelqu'un doit vraiment taper une passphrase sur cette
+machine, `just luks <hôte> passwd` lui en donne une choisie, et
+`luks-passphrase-sync` échange le slot au prochain `apply`.
+:::
 
 La phase par défaut ajoute ce qui demande la machine&nbsp;:
 
