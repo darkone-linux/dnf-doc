@@ -187,9 +187,23 @@ just enter <hôte>      # interactif : le prompt est présenté au terminal
 ```
 
 `just unlock` attend que le port 2222 apparaisse (un point par tentative), lit
-la passphrase par hôte dans sops (repli sur la partagée) et la pousse dans
-l'initrd. C'est ce que `just full-install` appelle tout seul après le premier
-redémarrage. Sur un hôte non chiffré, c'est un no-op journalisé.
+la passphrase **partagée** dans sops et la pousse dans l'initrd, puis vérifie
+que la machine a bien quitté son initrd avant d'annoncer un succès. Si elle est
+refusée, il réessaie avec la passphrase par hôte. C'est ce que
+`just full-install` appelle tout seul après le premier redémarrage. Sur un hôte
+non chiffré, c'est un no-op journalisé.
+
+:::note[Pourquoi la partagée d'abord]
+Au tout premier démarrage, le slot par hôte n'existe pas encore : disko formate
+avec la passphrase partagée, et `luks-passphrase-sync` n'ajoute le slot par hôte
+que depuis le système démarré, donc *après* le déverrouillage. La partagée est
+le seul moyen d'entrer à ce moment-là.
+
+Par ailleurs `dnf-unlock` sait seulement qu'il a **répondu** à la demande, jamais
+si la passphrase a été acceptée : systemd se contente de redemander. Le seul
+témoin fiable est donc la machine qui quitte son initrd et répond sur le port 22,
+et c'est ce que `just unlock` observe depuis le poste d'administration.
+:::
 
 `just enter` fait la même chose en mode interactif&nbsp;: quand le port 22 ne
 répond pas, il sonde le 2222 sur l'IP explicite (si fournie), le nom d'hôte,

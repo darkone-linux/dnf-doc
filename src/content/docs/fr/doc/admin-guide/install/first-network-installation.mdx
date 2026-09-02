@@ -127,7 +127,7 @@ Les flakes nix ne voient que les fichiers suivis par git. Un
 :::
 
 {/* t:p caeb5a6e857c1280628eaa244363eaf40a684ea80b9a96805b65f80907413af0 */}
-## Installer le premier poste
+## Installer un poste
 
 L'installation grave une image, démarre la machine dessus, puis applique le
 système complet.
@@ -170,11 +170,6 @@ système complet.
      mac: "aa:bb:cc:dd:ee:ff"
    ```
 
-   ```sh
-   # Redéployer la passerelle locale
-   just apply gw
-   ```
-
    :::caution[Hors de la plage DHCP dynamique]
    L'adresse fixe doit être **en dehors** de la plage `dhcp-range` de la zone
    (par défaut `<préfixe>.3.200` à `<préfixe>.3.249`). Dans la plage, la
@@ -182,6 +177,13 @@ système complet.
    quelqu'un d'autre&nbsp;: la machine change alors d'adresse à son premier
    démarrage, en silence. Le générateur refuse ce cas de figure.
    :::
+
+   ```sh
+   # Redéployer la passerelle locale
+   just clean
+   git add . && git commit -m "host(poste): installation"
+   just apply gw
+   ```
 
 4. **Installer le système**
 
