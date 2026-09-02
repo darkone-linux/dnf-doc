@@ -206,6 +206,26 @@ système complet.
    détaillées sont dans le `Justfile`.
    :::
 
+   :::note[Installer par-dessus un système existant]
+   Une machine qui tourne déjà peut détenir un bail dynamique plus ancien que sa
+   réservation. `nixos-anywhere` fige son adresse cible pour tout le run&nbsp;:
+   dès que son installeur refait un DHCP, la machine bascule sur son adresse
+   réservée et le run parle dans le vide.
+
+   La recette refuse maintenant de démarrer sur une adresse que l'hôte ne garde
+   pas. Le plus simple est de redémarrer la machine avant d'installer, pour
+   qu'elle prenne son adresse réservée.
+
+   Si le cas se produit quand même, **rien n'est perdu**&nbsp;: l'installeur est
+   déjà chargé en mémoire sur la machine, à la bonne adresse cette fois. Il
+   suffit de relancer dessus, la phase de chargement est sautée
+   automatiquement&nbsp;:
+
+   ```sh
+   just full-install poste root 10.0.2.1
+   ```
+   :::
+
 5. Le système est installé et à jour.
 
 </Steps>
