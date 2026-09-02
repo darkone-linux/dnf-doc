@@ -382,6 +382,19 @@ initiale](/fr/doc/admin-guide/install/first-network-installation/#installer-le-p
 L'argument `ip` vaut `auto` par défaut&nbsp;: l'adresse est calculée comme pour
 `full-install`, inutile de la relever.
 
+:::caution[L'adresse doit être celle que la machine garde]
+`nixos-anywhere` fige son adresse cible pour toute la durée du run et ne sait
+pas suivre une renumérotation. Or l'installeur refait un DHCP&nbsp;: si la
+machine tournait jusque-là sur un bail dynamique plus ancien que sa réservation
+— le cas typique d'une installation **par-dessus un autre système** — elle
+bascule sur son adresse réservée en pleine installation et le run parle dans le
+vide.
+
+La recette refuse donc de démarrer sur une adresse que l'hôte ne garde pas, et
+affiche celles qu'il accepte. Avant d'installer par-dessus un OS existant,
+redémarrez la machine pour qu'elle prenne son adresse réservée.
+:::
+
 La recette dépose aussi sur la cible, **avant** l'installation du système, la
 clé age `/etc/sops/age/infra.key` et, sur un hôte chiffré, la clé d'hôte SSH de
 son initrd&nbsp;: sops fonctionne dès la première activation et le tout premier
