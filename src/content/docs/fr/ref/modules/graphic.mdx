@@ -110,17 +110,21 @@ darkone.graphic.remote-desktop = {
 
 <hr/>
 
-{/* t:p 6e4cc84dcdeb4ebf552369f1565ee7cdcab57891db479be1a7a208fcb30ff40e */}
+{/* t:p 2594ab2e1f71f7bd3b6d358b9d380ba6488c93918896b315542034209850811c */}
 ### &#x1F5BC; darkone.graphic.supertuxkart
 
-SuperTuxKart avec les configurations pour jouer sur le réseau local.
+SuperTuxKart configuré pour jouer en réseau local.
 
 :::tip
-À utiliser avec le module jeux homemanager !
+À utiliser en complément du module games du home manager&nbsp;!
 :::
 
-* **enable** `bool` SuperTuxKart + config pare-feu + partage de pistes
-* **isNfsServer** `bool` Serveur NFS (partage de pistes), par défaut le serveur NFS principal. (en cours, activer sur le serveur principal)
+:::caution[Pare-feu limité à la zone]
+Les ports de jeu et de découverte ne sont acceptés que depuis le préfixe de la zone. Un hôte STK disposant également d'une adresse WAN ou tailnet ne publie pas le jeu sur celle-ci.
+:::
+
+* **enable** `bool` SuperTuxKart + config pare-feu + partage des pistes
+* **isNfsServer** `bool` Serveur NFS (partage des pistes), par défaut le serveur NFS principal. (wip, activer sur le serveur principal)
 
 ```nix
 darkone.graphic.supertuxkart = {
@@ -128,6 +132,8 @@ darkone.graphic.supertuxkart = {
   isNfsServer = isMainNfsServer;
 };
 ```
+
+<hr/>
 
 {/* t:p fffe1fdfa4aaec2bc441ba05d90b16e423cdca26c3c524b703bec621f05fbd95 */}
 ### &#x1F5BC; darkone.graphic.virt-manager

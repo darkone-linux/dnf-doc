@@ -15,7 +15,7 @@ La supervision repose sur [Prometheus](https://prometheus.io/) (métriques),
 (journaux). Elle est **organisée par zone** : un hôte collecte, les autres
 exposent leurs métriques.
 
-{/* t:p 2f09a0273ab3cbe75865475cff44e507243eaf89b7da33b42e81b6385eeb686e */}
+{/* t:p 6059b0f7d9971a507150b8b6a19d7d7db43a1290670e58767404d2473f7405bb */}
 ## Les rôles
 
 ```d2
@@ -57,6 +57,14 @@ Sans aucun service `monitoring` dans le réseau, Alloy n'est pas déployé du to
 il pousserait vers `127.0.0.1` et perdrait chaque ligne sans le signaler. Forcer
 `darkone.service.loki.isClient = true` dans ce cas produit une erreur explicite
 à l'évaluation.
+:::
+
+:::caution[Loki n'est joignable que depuis le tailnet]
+Loki n'authentifie pas ses clients&nbsp;: lecture et écriture sont ouvertes à
+qui l'atteint. Son port n'est donc ouvert que sur `tailscale0`. Grafana et
+l'Alloy local passent par la boucle locale, les producteurs distants par le
+tailnet. Depuis un poste du réseau local, un `curl` de diagnostic est refusé,
+c'est le comportement attendu.
 :::
 
 {/* t:p 2acba11e8ca993346960755e6245f6d2fa3a7f0d2858114385911d66c3392603 */}

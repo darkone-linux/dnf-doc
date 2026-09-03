@@ -15,7 +15,7 @@ Monitoring relies on [Prometheus](https://prometheus.io/) (metrics),
 (logs). It is **organized by zone**: one host collects, the others
 expose their metrics.
 
-{/* t:p 2f09a0273ab3cbe75865475cff44e507243eaf89b7da33b42e81b6385eeb686e */}
+{/* t:p 6059b0f7d9971a507150b8b6a19d7d7db43a1290670e58767404d2473f7405bb */}
 ## The roles
 
 ```d2
@@ -39,24 +39,32 @@ caddy -> grafana
 | Log source | Hosts behind Caddy | Alloy pushes access logs |
 
 `prometheus` (metrics + alerts) and `monitoring` (Grafana) are **two separate
-services** on the same host; Grafana requires Prometheus. Details on how it
+services** on the same host; Grafana requires Prometheus. The details of how it
 works are in
 [Monitoring & Alerts](/en/doc/admin-guide/understand/monitoring-alerts/).
 
 :::note[One collector per zone]
-Only one collector is allowed per zone. It monitors the nodes whose
+Only one collector is allowed per zone. It supervises the nodes whose
 `monitoring-node` tag designates **its** zone.
 :::
 
-:::note[Which Loki receives Caddy logs]
-Alloy pushes to the `monitoring` service of **its own zone**. If the zone does
-not declare one, it falls back to the first one found on the network — a central
+:::note[Which Loki do Caddy logs go to]
+Alloy pushes to the `monitoring` service of **its own zone**. If the zone doesn't
+declare one, it falls back to the first one found on the network — a central
 Grafana instance serving all zones therefore remains possible.
 
-With no `monitoring` service in the network at all, Alloy is not deployed:
+With no `monitoring` service on the network at all, Alloy isn't deployed at all:
 it would push to `127.0.0.1` and lose every line without reporting it. Forcing
 `darkone.service.loki.isClient = true` in this case produces an explicit error
 at evaluation time.
+:::
+
+:::caution[Loki is only reachable from the tailnet]
+Loki doesn't authenticate its clients: read and write access are open to
+anyone who can reach it. Its port is therefore only open on `tailscale0`.
+Grafana and the local Alloy go through the loopback interface, while remote
+producers go through the tailnet. From a machine on the local network, a
+diagnostic `curl` will be refused — this is the expected behavior.
 :::
 
 {/* t:p 2acba11e8ca993346960755e6245f6d2fa3a7f0d2858114385911d66c3392603 */}

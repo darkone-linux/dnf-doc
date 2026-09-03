@@ -356,7 +356,7 @@ zone lui réserve alors une adresse de passage. Voir [Machines hors de leur
 zone](/fr/doc/admin-guide/understand/network/#machines-hors-de-leur-zone).
 :::
 
-{/* t:p 2211df69776c077b3aa5f365f9a7df548d7171786f80117c30b2e99491742828 */}
+{/* t:p 7cb597a237344008211e7bfe85842c52b398fd708ded3f8e9d9871ceb82ac0f2 */}
 ### Attribuer des fonctionnalités
 
 La clé **`features`** active des comportements ou fonctionnalités spécifiques.
@@ -388,6 +388,15 @@ c'est-à-dire aujourd'hui celle de l'hôte lui-même : les clients NFS
 inter-zones ne sont pas encore câblés. Un suffixe pointant ailleurs
 n'active plus le montage — auparavant l'hôte montait quand même le serveur de
 sa propre zone, alors que ses liens XDG, eux, n'étaient pas créés.
+:::
+
+:::caution[Partages réservés aux clients déclarés]
+Le serveur NFS exporte une ligne par adresse de client déclaré, jamais le
+préfixe de la zone&nbsp;: une machine absente de `etc/config.yaml` n'obtient
+aucun montage. Le compte root d'un client est écrasé sur les trois partages
+(`root_squash`), il n'a donc pas plus de droits qu'un utilisateur ordinaire.
+Ajouter un poste demande de le déclarer, puis de réappliquer la configuration
+du serveur.
 :::
 
 {/* t:p b8360df1ecf9cbbb650e8aabc868e1d421c416f0d5c65a7a1157aa216c2303e5 */}

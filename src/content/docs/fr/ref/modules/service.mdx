@@ -412,51 +412,64 @@ Un service jitsi-meet entièrement configuré.
 darkone.service.jitsi-meet.enable = false;
 ```
 
-{/* t:p 763a14d996194632ea98a7bbb0098642988063c7acbbe300ea7f107f92e41f3a */}
+{/* t:p d211a688ff75be551305389b18d68c9fbcff52f35f372652488dd76a5ac6d824 */}
 ### &#x2728; darkone.service.loki
 
-Loki + Alloy, stats HTTP avec Grafana.
+Loki + Alloy, statistiques HTTP avec Grafana.
 
 :::note
-Collecte centralisée des journaux d'accès Caddy, consommés par Grafana via
+Collecte centralisée des logs d'accès Caddy, consommés par Grafana via
 un datasource Loki provisionné et un tableau de bord dédié.
 
-Double pattern aligné avec monitoring.nix :
-- `enable`   : déploie le serveur Loki + le datasource Grafana sur le
-  même hôte que le service `monitoring` (Grafana).
-- `isClient` : déploie Alloy sur chaque hôte exécutant Caddy. Les
-  journaux Caddy sont attendus en JSON dans `/var/log/caddy/access-*.log`
+Double schéma aligné avec monitoring.nix :
+- `enable`   : déploie le serveur Loki + le datasource Grafana sur
+  le même hôte que le service `monitoring` (Grafana).
+- `isClient` : déploie Alloy sur chaque hôte exécutant Caddy. Les logs
+  Caddy sont attendus en JSON dans `/var/log/caddy/access-*.log`
   (voir `dnf/modules/system/services.nix`).
 
 Par défaut, `enable` suit `darkone.service.monitoring.enable` et
-`isClient` suit `services.caddy.enable` : la configuration est entièrement
-automatique une fois le monitoring et Caddy actifs.
+`isClient` suit `services.caddy.enable` : la configuration est
+entièrement automatique une fois le monitoring et Caddy actifs.
+:::
+
+:::caution[Pas d'authentification, tailnet uniquement]
+Loki accepte les lectures et écritures de toute personne pouvant
+l'atteindre. Le port 3100 est donc ouvert uniquement sur `tailscale0` ;
+`auth_enabled` est le commutateur multi-tenancy de Loki, pas une
+connexion, et reste `false`.
 :::
 
 :::tip[Débogage et nettoyage manuel]
-Symptômes les plus courants après une (dés)activation de Loki ou un changement
-de format de journal Caddy :
+Symptômes les plus courants après une (dés)activation de Loki ou un
+changement de format de log Caddy :
 
 **1. « NO DATA » sur le tableau de bord Caddy malgré des requêtes entrantes.**
    Vérifier la chaîne d'ingestion de bout en bout :
    ```sh
-   # Sur l'hôte Caddy : Alloy est-il en cours d'exécution ? lit-il les fichiers ?
+   # Sur l'hôte Caddy : Alloy fonctionne-t-il ? lit-il les fichiers ?
    sudo systemctl status alloy --no-pager
    sudo journalctl -u alloy -n 100 --no-pager | grep -iE 'error|permission'
-   ls -la /var/log/caddy/access-*.log   # doit appartenir à caddy:caddy
+   ls -la /var/log/caddy/access-*.log   # doit être caddy:caddy
 
-   # Sur l'hôte de supervision : Loki reçoit-il quelque chose ?
-   # (remplacer <IP> par l'adresse interne de l'hôte de supervision, Loki ne se
-   # lie PAS sur 127.0.0.1 — voir http_listen_address = bindAddr)
+   # Sur l'hôte de monitoring lui-même, ou depuis le tailnet : Loki reçoit-il ?
+   # (remplacer <IP> par l'adresse interne de l'hôte de monitoring, Loki ne se
+   # lie PAS sur 127.0.0.1 — voir http_listen_address = bindAddr. Depuis un
+   # client LAN simple, la connexion est refusée, par conception.)
    curl -s http://<IP>:3100/loki/api/v1/labels | jq
    curl -sG http://<IP>:3100/loki/api/v1/query \
         --data-urlencode 'query={job="caddy"}' | jq '.data.result | length'
    ```
 
+   Une réponse vide sur `/loki/api/v1/*` alors que `/ready` répond 200
+   indique que le frontend annonce la mauvaise adresse (voir
+   `common.instance_addr`) ; `journalctl -u loki | grep frontend=` l'affiche.
+   Redémarrer Loki après correction.
+
 **2. `alloy.service: mkdir data-alloy/remotecfg: permission denied`.**
    Propriété orpheline de `/var/lib/alloy` héritée d'un ancien DynamicUser.
-   Le `ExecStartPre` du service corrige normalement le problème, mais en cas
-   de blocage (ex. unité dans `start-limit-hit`) :
+   Le `ExecStartPre` du service la corrige normalement, mais si bloqué
+   (ex. unité en `start-limit-hit`) :
    ```sh
    sudo systemctl stop alloy
    sudo chown -R caddy:caddy /var/lib/alloy
@@ -465,9 +478,11 @@ de format de journal Caddy :
    ```
 
 **3. Grafana refuse de démarrer : `Datasource provisioning error: data
-   source not found`.** Conflit d'UID en base SQLite après modification du
-   provisionnement (typiquement passage d'un UID auto-généré à `uid = "loki"`).
-   L'option `deleteDatasources` gère cela en théorie ; sinon nettoyage manuel :
+   source not found`.** Conflit d'UID en base SQLite après modification
+   du provisionnement (typiquement passage d'un UID auto-généré à
+   `uid = "loki"`).
+   L'option `deleteDatasources` gère cela en théorie ; sinon nettoyage
+   manuel :
    ```sh
    sudo systemctl stop grafana
    sudo sqlite3 /var/lib/grafana/grafana.db \
@@ -476,9 +491,9 @@ de format de journal Caddy :
    sudo systemctl start grafana
    ```
 
-**4. Fichiers journaux Caddy obsolètes** (ancienne dénomination avec `:` ou schéma, ex.
-   `access-http:__nextcloud.log`). Inoffensifs mais polluent la sortie du tail Alloy.
-   Nettoyage après migration :
+**4. Fichiers de log Caddy obsolètes** (ancien nommage avec `:` ou schéma,
+   par ex. `access-http:__nextcloud.log`). Inoffensifs mais encombrants
+   dans la sortie de la queue Alloy. Nettoyage après migration :
    ```sh
    sudo rm /var/log/caddy/access-{http,https}:__*.log
    sudo rm /var/log/caddy/access-:*.log     # variantes `:80`, `:443`
@@ -487,8 +502,8 @@ de format de journal Caddy :
 :::
 
 * **enable** `bool` Déploie le serveur Loki + le datasource Grafana (co-localisé avec Grafana).
-* **isClient** `bool` Déploie Alloy pour collecter les journaux d'accès Caddy locaux.
-* **retentionTime** `str` Durée de rétention des journaux dans Loki (30 jours par défaut).
+* **isClient** `bool` Déploie Alloy pour collecter les logs d'accès Caddy locaux.
+* **retentionTime** `str` Durée de rétention des logs dans Loki (30 jours par défaut).
 
 ```nix
 darkone.service.loki = {
@@ -747,25 +762,31 @@ darkone.service.nextcloud = {
 
 <hr/>
 
-{/* t:p f5c1a3bbc132e8d12d2b7cb4528d0dc501a736ba23dcb03ae5beea479308efde */}
+{/* t:p 31d8b11f1a3f1ac7ee59f83c8e49a9ac968022214f7658aab743e42451d89b19 */}
 ### &#x2728; darkone.service.nfs
 
-Serveur NFS + client pour les partages résidentiels.
+Serveur + client NFS pour les partages domestiques.
 
 :::note
-Ce module est activé si un serveur nfs est déclaré dans le réseau local. Il crée :
+Ce module est activé si un serveur NFS est déclaré dans le réseau local. Il crée :
 
 - Un partage (srv-dirs.homes) sur le serveur.
 - Des répertoires de montage (/mnt/nfs/homes/[user]) sur les clients.
 
-Le script du gestionnaire de domicile nfs relie les répertoires xdg aux répertoires de montage.
-Dans le fichier config.yaml (hôtes) :
+Le script nfs home manager lie les répertoires xdg aux répertoires de montage.
+Dans le fichier config.yaml (hosts) :
 
-- Un seul hôte dispose d'un service `service.nfs`.
-- Les clients ont besoin de `features = [ "nfs-client" ]`.
+- Un seul hôte possède le service `service.nfs`.
+- Les clients nécessitent `features = [ "nfs-client" ]`.
 :::
 
-* **enable** `bool` Activer le serveur NFS DNF (éviter d'activer manuellement)
+:::caution[Les exports sont par IP client]
+Seuls les hôtes `nfs-client` déclarés de la zone apparaissent dans `/etc/exports` ;
+une machine absente de `config.yaml` n'obtient pas de montage. Root est squashé
+sur chaque partage : un root client est `nobody` sur le serveur.
+:::
+
+* **enable** `bool` Active le serveur NFS DNF (éviter l'activation manuelle)
 * **serverDomain** `str` FQDN du serveur NFS
 
 ```nix
@@ -774,6 +795,8 @@ darkone.service.nfs = {
   serverDomain = "nfs";
 };
 ```
+
+<hr/>
 
 {/* t:p 636e9c56d6d9cd6bd903ed9d145a5a4398e258dafa574b71ead00f7164734bef */}
 ### &#x2728; darkone.service.nix-cache

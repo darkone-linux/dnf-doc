@@ -107,13 +107,18 @@ darkone.graphic.remote-desktop = {
 
 <hr/>
 
-{/* t:p 6e4cc84dcdeb4ebf552369f1565ee7cdcab57891db479be1a7a208fcb30ff40e */}
+{/* t:p 2594ab2e1f71f7bd3b6d358b9d380ba6488c93918896b315542034209850811c */}
 ### &#x1F5BC; darkone.graphic.supertuxkart
 
 SuperTuxKart with configurations to play in local network.
 
 :::tip
 To use in conjonction with homemanager games module!
+:::
+
+:::caution[Zone-scoped firewall]
+Game and discovery ports are accepted from the zone prefix only. A STK host
+that also holds a WAN or tailnet address does not publish the game there.
 :::
 
 * **enable** `bool` SuperTuxKart + firewall config + tracks share

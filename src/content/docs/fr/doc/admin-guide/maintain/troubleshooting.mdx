@@ -123,7 +123,7 @@ dépendances-là, la seule réponse fiable est de réessayer : `Restart` +
 `RestartSec` sur l'unité, plutôt qu'un échec définitif à chaque redémarrage.
 :::
 
-{/* t:p ad0e1f824d682e9e421e0509b833aa42716cb3aec5360bb783632434a6d70309 */}
+{/* t:p f44cab5105e5e4db17528d95686c8f8b3903a7e9f1a51ca3f40f7557448b88f4 */}
 ## Certificats TLS d'une passerelle expirés
 
 Une passerelle ne demande pas ses propres certificats : c'est le HCS qui les
@@ -165,4 +165,11 @@ La publication est refusée si la zone de transit ne contient aucun fichier
 synchronisation effacerait les certificats en place **et** la clé de compte
 ACME. Si ce message apparaît, le problème est en amont : accès SSH au HCS,
 tailnet, ou stockage Caddy vide côté HCS.
+:::
+
+:::caution[Effet sur les services exposés]
+Le HCS vérifie le certificat de la passerelle vers laquelle il relaie. Une
+passerelle dont la synchronisation n'a jamais abouti répond donc `502` sur ses
+services exposés, au lieu de relayer vers un certificat non vérifiable. Premier
+réflexe&nbsp;: `systemctl start sync-caddy-certs` sur la passerelle.
 :::

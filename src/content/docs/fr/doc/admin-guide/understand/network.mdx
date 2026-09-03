@@ -170,6 +170,29 @@ d'interface. Un service de passerelle se déclare sur `lan0` (la zone) ou
 WAN, explicitement.
 </Aside>
 
+{/* t:p 4c9c847e4181a0db4db22f208947d0bace7ffc7e35605ec263b280d99bbdb558 */}
+## Périmètre des services internes
+
+Un service interne s'ouvre sur l'interface qui correspond à son périmètre réel,
+jamais sur toutes. Trois périmètres coexistent&nbsp;:
+
+| Périmètre | Ouverture | Exemples |
+|---|---|---|
+| Tailnet | `tailscale0` | Loki (journaux), relais des services exposés |
+| Réseau local | `lan0` sur une passerelle, l'interface unique ailleurs | DNS, DHCP, page d'accueil, cache Nix |
+| Liste d'adresses | règle `ip saddr`, ou liste de clients côté service | partages NFS, jeux en réseau local |
+
+Le troisième cas existe parce qu'un préfixe de zone n'est pas une
+identité&nbsp;: toute machine qui obtient une adresse locale en fait partie,
+invité Wi-Fi compris. Là où le service le permet, la liste des hôtes déclarés
+remplace le préfixe.
+
+<Aside type="caution" title="Loki n'authentifie personne">
+`auth_enabled` est l'option multi-tenant de Loki, pas une authentification.
+Quiconque atteint le port 3100 lit **et** écrit les journaux&nbsp;: il n'est
+ouvert que sur le tailnet.
+</Aside>
+
 {/* t:p 0674a51f1e6ebc08cb3d2aac04dad67d13c8723bf425eb6bd5060e18888274a2 */}
 ## Noms et résolution DNS
 

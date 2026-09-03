@@ -160,6 +160,29 @@ just enter gw
 The `gateway` profile refuses to build if a port is opened without an interface name. A gateway service declares itself on `lan0` (the zone) or `tailscale0` (the VPN); a truly public port is placed on the WAN interface, explicitly.
 </Aside>
 
+{/* t:p 4c9c847e4181a0db4db22f208947d0bace7ffc7e35605ec263b280d99bbdb558 */}
+## Scope of internal services
+
+An internal service opens on the interface that matches its actual scope,
+never on all of them. Three scopes coexist:
+
+| Scope | Opening | Examples |
+|---|---|---|
+| Tailnet | `tailscale0` | Loki (logs), relay for exposed services |
+| Local network | `lan0` on a gateway, the single interface elsewhere | DNS, DHCP, homepage, Nix cache |
+| Address list | `ip saddr` rule, or client-side service list | NFS shares, LAN games |
+
+The third case exists because a zone prefix is not an
+identity: any machine that obtains a local address is part of it,
+Wi-Fi guests included. Where the service allows it, the declared host
+list replaces the prefix.
+
+<Aside type="caution" title="Loki does not authenticate anyone">
+`auth_enabled` is Loki's multi-tenant option, not an authentication mechanism.
+Anyone who reaches port 3100 can read **and** write logs: it is
+only open on the tailnet.
+</Aside>
+
 {/* t:p 0674a51f1e6ebc08cb3d2aac04dad67d13c8723bf425eb6bd5060e18888274a2 */}
 ## DNS names and resolution
 
