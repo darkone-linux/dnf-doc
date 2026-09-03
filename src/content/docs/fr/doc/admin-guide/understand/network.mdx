@@ -116,6 +116,58 @@ Le maillage n'est activé que si `network.coordination.enable` est vrai dans
 `etc/config.yaml`. Sans lui, les zones restent locales et indépendantes.
 </Aside>
 
+## Ce qui traverse une passerelle
+
+Une passerelle route, et un paquet routé ne passe **jamais** par les règles
+d'ouverture de ports&nbsp;: celles-ci ne concernent que ce qui lui est adressé à
+elle. Les deux filtrages sont indépendants.
+
+Trois flux seulement traversent une passerelle&nbsp;:
+
+| Flux | Usage |
+|---|---|
+| Zone → WAN | Partage d'Internet (NAT) |
+| Zone ↔ VPN | Les autres zones, les machines distantes |
+| Réponses et redirections de ports | Retour du trafic sortant, `forwardPorts` |
+
+Tout le reste est jeté. En particulier, une machine d'Internet qui poserait une
+route statique vers le sous-réseau d'une zone n'atteint rien&nbsp;: sans ce
+filtrage, une passerelle à adresse publique laisserait passer.
+
+Un besoin de routage supplémentaire s'ajoute dans le fichier de l'hôte&nbsp;:
+
+```nix
+networking.firewall.extraForwardRules = ''
+  iifname "lan0" oifname "wg0" accept
+'';
+```
+
+## Accès SSH selon le rôle
+
+Le port 22 n'est jamais ouvert « partout ». Une règle sans nom d'interface
+s'applique à **toutes** les interfaces, WAN compris&nbsp;: sur une passerelle,
+cela publierait le SSH sur Internet.
+
+| Hôte | SSH joignable depuis |
+|---|---|
+| Passerelle de zone | son réseau local et le VPN |
+| Hôte de la zone globale (HCS) | Internet — décision assumée, il porte le VPN |
+| Machine de zone (poste, serveur) | sa seule interface, donc le réseau local |
+
+Conséquence pratique&nbsp;: **une passerelle ne répond pas au SSH depuis
+Internet.** L'accès distant passe par le VPN&nbsp;:
+
+```sh
+just enter gw
+```
+
+<Aside type="caution" title="Une passerelle n'ouvre aucun port sans interface">
+Le profil `gateway` refuse de construire si un port est ouvert sans nom
+d'interface. Un service de passerelle se déclare sur `lan0` (la zone) ou
+`tailscale0` (le VPN)&nbsp;; un port réellement public se pose sur l'interface
+WAN, explicitement.
+</Aside>
+
 {/* t:p 0674a51f1e6ebc08cb3d2aac04dad67d13c8723bf425eb6bd5060e18888274a2 */}
 ## Noms et résolution DNS
 

@@ -85,8 +85,12 @@ machine, l'administrateur installe par SSH.
 
    :::note[Pourquoi rediriger le port 22 ?]
    Il permet l'accès SSH le temps de l'installation. La clé USB n'accepte que les
-   clés d'authentification (pas de mot de passe). La redirection peut être retirée
-   ensuite.
+   clés d'authentification (pas de mot de passe).
+
+   **Retirez la redirection une fois l'installation finie**&nbsp;: la passerelle
+   installée ne répond plus au SSH depuis Internet, l'accès distant passe par le
+   VPN (`just enter gw`). Voir [Accès SSH selon le
+   rôle](/fr/doc/admin-guide/understand/network/).
    :::
 
 2. **Installer** (administrateur)
