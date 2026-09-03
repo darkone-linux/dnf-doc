@@ -64,38 +64,49 @@ VPN client. Declared services (homepage, adguardhome…) are configured
 automatically. See [Network](/en/doc/admin-guide/understand/network/).
 :::
 
-{/* t:p 2c59fff36d0188b311cc880b8a2547c299427d9c917f010c8e84cf844166fcd0 */}
-## Install the gateway
+{/* t:p 1d165317914e3e8c08a28c2cbf73859d95db13fdcffe6b05e4722a4e51c20b12 */}
+## Installing the gateway
 
-Installation is often done **remotely**: someone on site prepares the machine, the administrator installs over SSH.
+Installation is often done **remotely**: someone on site prepares the
+machine, and the administrator installs it via SSH.
 
 <Steps>
 
 1. **Prepare the gateway** (on site)
 
-   1. Plug the gateway into the box.
-   2. Boot from the USB stick (image `just build-iso`).
-   3. Note the gateway's IP address.
-   4. Forward port 22 of the box to the gateway.
+   1. Plug the gateway into the router.
+   2. Boot from the USB key (image `just build-iso`).
+   3. Note down the gateway's IP address.
+   4. Forward port 22 from the router to the gateway.
 
    :::note[Why forward port 22?]
-   It provides SSH access during the installation. The USB stick only accepts authentication keys (no password). The forwarding can be removed afterwards.
+   It allows SSH access during installation. The USB key only accepts
+   authentication keys (no password).
+
+   **Remove the forwarding once installation is complete**&nbsp;: the installed
+   gateway no longer responds to SSH from the Internet; remote access goes
+   through the VPN (`just enter gw`). See [SSH access by
+   role](/en/doc/admin-guide/understand/network/).
    :::
 
 2. **Install** (administrator)
 
-   A single command chains disk formatting, hardware configuration, deployment, and cleanup&nbsp;:
+   A single command chains disk formatting, hardware configuration,
+   deployment, and cleanup&nbsp;:
 
    ```sh
    just full-install gw nixos <ip>
    ```
 
-   - `gw`: host name declared in `etc/config.yaml`.
-   - `nixos`: user of the live USB stick (DNF image).
-   - `<ip>`: address noted at the previous step.
+   - `gw`: hostname declared in `etc/config.yaml`.
+   - `nixos`: USB live key user (DNF image).
+   - `<ip>`: address noted in the previous step.
 
    :::tip[Do without the address]
-   If the gateway's `mac` key is listed in `etc/config.yaml`, its address is reserved in advance and does not change between the USB stick and the installed system. `just full-install gw` is then enough, without reading or entering anything.
+   If the gateway's `mac` key appears in `etc/config.yaml`, its address
+   is reserved in advance and does not change between the USB key and the
+   installed system. `just full-install gw` is then enough, with nothing
+   to read or enter.
    :::
 
 </Steps>

@@ -935,7 +935,7 @@ darkone.service.printing = {
 
 <hr/>
 
-{/* t:p 83cbffc4d21845ada64963444ceb5f61c64679bdce89c97bcdfffcb9a33edd12 */}
+{/* t:p 12f39e3a1bc4f7cd456c5be0351d226bddeae487eacdba75105de86f70cef382 */}
 ### &#x2728; darkone.service.prometheus
 
 Prometheus monitoring server with declarative Alertmanager escalation.
@@ -944,8 +944,8 @@ Prometheus monitoring server with declarative Alertmanager escalation.
 Standalone metrics + alerting service, independent from Grafana:
 
 - Scrapes every zone node carrying the `monitoring-node:<zone>` feature.
-- Alertmanager routes by severity: warning -> Matrix #warnings,
-  critical -> Matrix #incidents + mail (local Postfix relay).
+- Alertmanager routes by severity: warning -&gt; Matrix #warnings,
+  critical -&gt; Matrix #incidents + mail (local Postfix relay).
 - blackbox_exporter probes gateway / tailnet / DNS reachability, plus the
   other zones' gateways: a zone's Prometheus lives on its own gateway, so
   only the peers can report that a whole site went dark.

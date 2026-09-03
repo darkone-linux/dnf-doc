@@ -13,45 +13,51 @@ sidebar:
 **Un module système** gère les configurations communes, importantes et générales.
 :::
 
-{/* t:p 022340be29c9749763365e1bcb1941918be15358e9f86c033d2bb6fe44588273 */}
+{/* t:p 074baedb365b0c93771ae0174ee1e95efe7f52f0f1aad54173d56fdb139ab6e4 */}
 ### &#x2699; darkone.system.core
 
-Module DNF de base.
+Le module principal de DNF.
 
-:::danger[Module requis]
+:::danger[Module obligatoire]
 Ce module est activé par défaut (requis par la configuration DNF).
-Il est nécessaire au bon fonctionnement de chaque ordinateur NixOS du réseau local.
+Il est nécessaire au bon fonctionnement de tout ordinateur NixOS sur le réseau local.
 :::
 
-Configure le chargeur systemd-boot, le noyau LTS (ou la dernière version mainline via
-`enableLatestKernel`), la police JetBrains Mono Nerd
-(avec `kmscon` pour le TTY), l'optimisation nocturne du store Nix et la
-collecte hebdomadaire des déchets (rétention de 30 j, ou conservation des N dernières
-générations via `gcKeepGenerations` sur les hôtes à partition réduite), le pare-feu, la
-politique de mise en veille (les serveurs peuvent la désactiver complètement via
-`disableSuspend`), les règles polkit
-permettant au groupe `wheel` de couper l'alimentation/redémarrer, ainsi qu'un groupe/utilisateur
-`common-files` partagé pour les dossiers multimédia transversaux aux services.
+Configure le chargeur systemd-boot, le noyau LTS (ou le dernier noyau via
+`enableLatestKernel`), JetBrains Mono Nerd
+Font (avec `kmscon` pour le TTY), l'optimisation nocturne du magasin Nix et
+le ramasse-miettes hebdomadaire (conservation de 30&nbsp;jours, ou garder-N
+dernières générations via `gcKeepGenerations` sur les hôtes à espace
+limité), le pare-feu, la politique de veille (les serveurs peuvent la
+désactiver complètement via `disableSuspend`), les règles polkit
+autorisant le groupe `wheel` à arrêter/redémarrer, et un groupe/utilisateur
+partagé `common-files` pour les dossiers multimédias inter-services.
 
 :::note[Point d'entrée du mixin]
 Active le mixin de profil de l'hôte (`darkone.host.${host.profile}.enable`)
-et propage `enableSops` vers le module sops.
+et propage `enableSops` au module sops.
 :::
 
-* **enable** `bool` Module système de base du framework Darkone (activé par défaut)
+:::caution[SSH ouvert par interface]
+Le port 22 n'est global que sur les hôtes sans accès WAN. Une passerelle l'obtient
+sur le pont LAN et le tailnet&nbsp;; un hôte de zone globale uniquement sur le
+tailnet — un SSH public sur celui-ci est décidé dans le profil de l'hôte.
+:::
+
+* **enable** `bool` Système principal du framework Darkone (activé par défaut)
 * **enableSystemdBoot** `bool` Activer le chargeur de démarrage par défaut
-* **enableLatestKernel** `bool` Utiliser le noyau mainline le plus récent (linuxPackages_latest) au lieu du noyau LTS
+* **enableLatestKernel** `bool` Utiliser le dernier noyau stable (linuxPackages_latest) au lieu du LTS
 * **enableFstrim** `bool` Optimisation SSD avec fstrim
-* **enableFirewall** `bool` Activer le pare-feu (true par défaut)
-* **enableSops** `bool` Activer le module DNF sops (true par défaut)
+* **enableFirewall** `bool` Activer le pare-feu (vrai par défaut)
+* **enableSops** `bool` Activer le module sops de DNF (vrai par défaut)
 * **enableFlatpak** `bool` Activer la configuration DNF flatpak (uniquement pour les environnements graphiques)
 * **enableKmscon** `bool` Activer la police nerd pour le TTY
-* **gcKeepGenerations** `int` Quand &gt; 0, réduit le profil système aux N dernières générations avant
-  chaque collecte des déchets, et collecte quotidiennement sans rétention par
-  âge. Pour les hôtes à partition racine restreinte (passerelles).
+* **gcKeepGenerations** `int` Lorsque &gt; 0, tronquer le profil système aux N dernières générations avant
+  chaque ramasse-miettes, et collecter quotidiennement sans rétention basée
+  sur l'âge. Pour les hôtes avec une partition racine serrée (passerelles).
 * **enableBoost** `bool` Activer l'overclocking, corectl
-* **enableAutoSuspend** `bool` Activer la mise en veille automatique (pour les portables, ignoré si disableSuspend est true)
-* **disableSuspend** `bool` Désactivation complète de la mise en veille (pour les serveurs)
+* **enableAutoSuspend** `bool` Activer la veille automatique (pour les portables, ignoré si disableSuspend est vrai)
+* **disableSuspend** `bool` Désactivation complète de la veille (pour les serveurs)
 * **enableCommonFilesUser** `bool` Activer l'utilisateur common-files utilisé par plusieurs services
 
 ```nix

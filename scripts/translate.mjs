@@ -94,6 +94,21 @@ function resolveAnchors(text, ctx) {
   });
 }
 
+// Replace <-> with ↔ in prose text. The translation agent often renders the
+// Unicode bidirectional arrow as <->, which MDX interprets as an opening JSX
+// tag and breaks the build.  Only applied outside ```d2 fences.
+function fixArrows(text) {
+  let out = '';
+  let inD2 = false;
+  for (const line of text.split('\n')) {
+    if (/^```d2\b/.test(line)) inD2 = true;
+    else if (/^```\s*$/.test(line) && inD2) inD2 = false;
+    if (!inD2) out += line.replace(/<->/g, '↔') + '\n';
+    else out += line + '\n';
+  }
+  return out.slice(0, -1); // trim trailing \n
+}
+
 function parseAgentOutput(text) {
   const out = { header: null, paras: {} };
   const h = text.match(/<<<HEADER>>>\n?([\s\S]*?)\n?<<<EHEADER>>>/);
@@ -223,7 +238,11 @@ function writeTranslated(job, got) {
     hasFrontmatter: true, frontmatter, role: 'translated', translatedFrom: mainLang,
     headerHash, preamble, paragraphs,
   };
-  const text = serializeDoc(doc);
+  let text = serializeDoc(doc);
+  // Post-process: replace <-> with ↔ in prose (outside D2 fences). The
+  // translation agent often renders the Unicode bidirectional arrow as <->,
+  // which MDX interprets as an opening JSX tag and breaks the build.
+  text = fixArrows(text);
   const changed = !existsSync(job.tPath) || readFileSync(job.tPath, 'utf8') !== text;
   if (changed && !DRY) { mkdirSync(dirname(job.tPath), { recursive: true }); writeFileSync(job.tPath, text); }
   return changed;

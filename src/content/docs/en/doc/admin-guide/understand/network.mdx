@@ -116,6 +116,50 @@ The mesh is only enabled if `network.coordination.enable` is true in
 `etc/config.yaml`. Without it, zones remain local and independent.
 </Aside>
 
+{/* t:p a7e441217d0e188582dc5d20715621986179ee7fd3dad299038feb1cf36ebd74 */}
+## What traverses a gateway
+
+A gateway routes, and a routed packet **never** goes through port opening rules: those only apply to traffic addressed to the gateway itself. The two filtering mechanisms are independent.
+
+Only three flows traverse a gateway:
+
+| Flow | Usage |
+|---|---|
+| Zone → WAN | Internet sharing (NAT) |
+| Zone ↔ VPN | Other zones, remote machines |
+| Responses and port forwards | Return traffic for outbound flows, `forwardPorts` |
+
+Everything else is dropped. In particular, a machine on the Internet that would set a static route toward a zone's subnet reaches nothing: without this filtering, a gateway with a public address would let the traffic through.
+
+Additional routing needs are added in the host's configuration file:
+
+```nix
+networking.firewall.extraForwardRules = ''
+  iifname "lan0" oifname "wg0" accept
+'';
+```
+
+{/* t:p cd47e55798a067ab5021c5ac2ec3d7ed130cadd17cc162cf42aeb09d363b5337 */}
+## SSH access by role
+
+Port 22 is never open "everywhere". A rule without an interface name applies to **all** interfaces, WAN included: on a gateway, this would expose SSH to the Internet.
+
+| Host | SSH reachable from |
+|---|---|
+| Zone gateway | Its local network and the VPN |
+| Global zone host (HCS) | The Internet — an intentional decision, since it hosts the VPN |
+| Zone machine (workstation, server) | Its own interface only, i.e. the local network |
+
+Practical consequence: **a gateway does not respond to SSH from the Internet.** Remote access goes through the VPN:
+
+```sh
+just enter gw
+```
+
+<Aside type="caution" title="A gateway does not open any port without an interface">
+The `gateway` profile refuses to build if a port is opened without an interface name. A gateway service declares itself on `lan0` (the zone) or `tailscale0` (the VPN); a truly public port is placed on the WAN interface, explicitly.
+</Aside>
+
 {/* t:p 0674a51f1e6ebc08cb3d2aac04dad67d13c8723bf425eb6bd5060e18888274a2 */}
 ## DNS names and resolution
 

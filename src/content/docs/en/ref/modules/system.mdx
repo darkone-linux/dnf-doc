@@ -13,7 +13,7 @@ sidebar:
 **A system module** manages common, important, and general configurations.
 :::
 
-{/* t:p 022340be29c9749763365e1bcb1941918be15358e9f86c033d2bb6fe44588273 */}
+{/* t:p 074baedb365b0c93771ae0174ee1e95efe7f52f0f1aad54173d56fdb139ab6e4 */}
 ### &#x2699; darkone.system.core
 
 The core DNF module.
@@ -35,6 +35,12 @@ group/user for cross-service media folders.
 :::note[Mixin entry point]
 Activates the host's profile mixin (`darkone.host.${host.profile}.enable`)
 and propagates `enableSops` to the sops module.
+:::
+
+:::caution[SSH is opened per interface]
+Port 22 is global only on hosts with no WAN leg. A gateway gets it on the LAN
+bridge and the tailnet; a global-zone host on the tailnet only — a public SSH
+there is decided in the host profile.
 :::
 
 * **enable** `bool` Darkone framework core system (activated by default)

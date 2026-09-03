@@ -24,16 +24,24 @@ Une configuration de bureau complète avec gnome, outils multimédias et outils 
 darkone.host.desktop.enable = false;
 ```
 
-{/* t:p 33a59e2f5527f24669f8a48491c1addaab696474e038cfafe8276abd9097971c */}
+{/* t:p a05ca5d098fcc8e815855a6859b90b7417a4b5e4d55e9eabdbfba6edf3671369 */}
 ### &#x1F4E6; darkone.host.gateway
 
-La passerelle / routeur principal d'une zone de réseau local.
+Passerelle / routeur principal d'une zone de réseau local.
 
-:::tip[Une passerelle prête à l'emploi !]
-La passerelle est configurée dans le fichier `usr/config.yaml`. Les services supplémentaires activés (homepage, adguardhome, forgejo, nix-cache...) sont automatiquement configurés avec un réseau homogène sur la passerelle et toutes les machines du réseau local.
+:::tip[Une passerelle prête à l'emploi&nbsp;!]
+La passerelle est configurée dans le fichier `usr/config.yaml`.
+Les services supplémentaires activés (homepage, adguardhome, forgejo, nix-cache...)
+sont automatiquement configurés avec une connectivité réseau cohérente sur
+la passerelle et toutes les machines du réseau local.
 :::
 
-* **enable** `bool` Active les fonctionnalités de passerelle pour la machine courante (dhcp, dns, proxy, etc.)
+:::caution[Le trafic routé est filtré]
+`filterForward = true`&nbsp;: seuls les échanges LAN &lt;-&gt; WAN et LAN &lt;-&gt; tailnet sont autorisés.
+Tout le reste est abandonné — à ajouter dans `networking.firewall.extraForwardRules`.
+:::
+
+* **enable** `bool` Activer les fonctionnalités de passerelle pour l'hôte courant (dhcp, dns, proxy, etc.)
 
 ```nix
 darkone.host.gateway.enable = false;
@@ -41,18 +49,24 @@ darkone.host.gateway.enable = false;
 
 <hr/>
 
-{/* t:p a25a6447424b89248f28dcf40734e88a9127f7c2bf9701f162dfce61c4f6bcf9 */}
+{/* t:p ce0850823911bfdcf2cfd22c4a5115a5286f40eb706131fd0024c6fc80c63e59 */}
 ### &#x1F4E6; darkone.host.hcs
 
-Le serveur de coordination headscale principal.
+Serveur de coordination headscale principal.
 
-:::tip[Un serveur headscale prêt à l'emploi!]
+:::tip[Un serveur headscale prêt à l'emploi&nbsp;!]
 Le réseau est configuré dans le fichier `usr/config.yaml`.
 Les services supplémentaires activés (authentification, etc.)
-sont automatiquement configurés avec une infrastructure réseau cohérente sur votre
-réseau global.
+sont automatiquement configurés avec une connectivité réseau cohérente sur
+votre réseau global.
 
-Alias Zsh "h" pour "headscale".
+Alias Zsh «&nbsp;h&nbsp;» pour «&nbsp;headscale&nbsp;».
+:::
+
+:::caution[SSH public]
+Le port 22 est ouvert sur toutes les interfaces, Internet compris — unique
+hôte de la flotte dans ce cas&nbsp;: il héberge le plan de contrôle du tailnet,
+l'y accéder ne doit donc pas nécessiter le tailnet.
 :::
 
 * **enable** `bool` Activer le serveur de coordination headscale
@@ -64,6 +78,8 @@ darkone.host.hcs = {
   enableClient = true;
 };
 ```
+
+<hr/>
 
 {/* t:p 0662b6df00a7e5b58de9f45a665ce2c822463ee58a4c415a7d07063cc713b0a3 */}
 ### &#x1F4E6; darkone.host.laptop
