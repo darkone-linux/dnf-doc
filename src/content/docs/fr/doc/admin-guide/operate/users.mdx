@@ -132,6 +132,14 @@ la flotte :
   n'est plus lu ;
 - un compte sans clé déclarée ouvre sa session locale, jamais SSH.
 
+:::note[La forge fait exception]
+Le compte `forgejo` sert le `git push` de tous les dépôts : ses clés sont
+celles que chaque utilisateur dépose dans l'interface web de la forge, pas
+celles de la configuration NixOS. `sshd` les lui demande par
+`AuthorizedKeysCommand`, et non par un fichier. Une clé s'ajoute donc dans
+Forgejo (**Paramètres → Clés SSH / GPG**), jamais dans `config.yaml`.
+:::
+
 :::caution[Plus d'amorçage par ssh-copy-id]
 Sans canal mot de passe ni fichier `~/.ssh/authorized_keys`, `ssh-copy-id` n'a
 plus ni porte d'entrée ni cible. Toute clé passe par la configuration puis
