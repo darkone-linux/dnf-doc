@@ -124,16 +124,24 @@ Module fail2ban spécifique à DNF.
 darkone.service.fail2ban.enable = false;
 ```
 
-{/* t:p 0554940103e41473bb1ffb6ff52aa6485e55b8a579e3129e05011d05d7a5c4fb */}
+{/* t:p a70c3304d48e5ed20b07149b7fe3ecab5235bb3c7ffabcf2b0c3f6ee09f60d83 */}
 ### &#x2728; darkone.service.forgejo
 
 Une forge git forgejo entièrement configurée.
 
-* **enable** `bool` Activer le service forgejo local
+:::note[Accès SSH]
+Push/pull par SSH passe par `AuthorizedKeysCommand` et non par le fichier
+`authorized_keys` que Forgejo écrit dans son répertoire personnel : `core.nix`
+définit `authorizedKeysInHomedir = false`, donc sshd ne lit jamais ce fichier.
+:::
+
+* **enable** `bool` Active le service forgejo local
 
 ```nix
 darkone.service.forgejo.enable = false;
 ```
+
+<hr/>
 
 {/* t:p 881a8b411b10022df50c94fe313500947f69275f1df66d439ca9399175d7483e */}
 ### &#x2728; darkone.service.garage

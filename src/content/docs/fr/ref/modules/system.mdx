@@ -421,29 +421,35 @@ darkone.system.services = {
 
 <hr/>
 
-{/* t:p a9d97ecd52b40078237beb75df5e43b0d614201545254f6afe0b70d31463a052 */}
+{/* t:p 85d0d6ce5c9e942e2a09a264d8077616e67c4d522474e74c424f1b53c4645d90 */}
 ### &#x2699; darkone.system.sops
 
-Gestion des mots de passe et secrets DNF sops.
+Gestion DNF de sops, mots de passe et secrets.
 
 :::danger[Module critique]
 Ce module est activé par défaut dans le module core.
-Il est recommandé de le conserver activé et de le configurer (commandes `just passwd*`).
+Il est recommandé de le laisser activé et de le configurer (commandes `just passwd*`).
 :::
 
-Connecte sops-nix à `usr/secrets/secrets.yaml` et le déverrouille avec la
-clé SSH de l'hôte (`ssh_host_ed25519_key`) plus la clé d'infrastructure dédiée
-age (`/etc/sops/age/infra.key`). Pré-déclare un groupe `sops` partagé,
-les secrets `default-password` / `default-password-hash` (lisible par le groupe
-`sops`), et un secret `user/<login>/password-hash` par utilisateur d'hôte
-(avec `neededForUsers = true` pour que le hash soit disponible avant la
-création des comptes utilisateur).
+Branche sops-nix sur `usr/secrets/secrets.yaml` et le déverrouille avec la clé
+SSH de l'hôte (`ssh_host_ed25519_key`) ainsi que la clé age d'infrastructure
+dédiée (`/etc/sops/age/infra.key`). Déclare un
+secret `user/<login>/password-hash` par utilisateur d'hôte, avec
+`neededForUsers = true` afin que le hash soit disponible avant la création des
+comptes utilisateurs.
 
-* **enable** `bool` Activer la configuration automatique sops pour DNF
+Rien d'autre n'est matérialisé ici : un secret appartient aux hôtes qui le
+consomment, déclaré par le module qui le lit. `default-password-hash`
+reste dans le fichier chiffré, illisible par aucun hôte&nbsp;: il enregistre le
+mot de passe par défaut de la flotte pour `just passwd <login>`.
+
+* **enable** `bool` Active la configuration automatisée de sops pour DNF
 
 ```nix
 darkone.system.sops.enable = false;
 ```
+
+<hr/>
 
 {/* t:p b67e83ac82c077c96344539057ac4c5cb759ab44f974218097feee55c1e3b7b0 */}
 ### &#x2699; darkone.system.srv-dirs

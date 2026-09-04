@@ -423,7 +423,7 @@ darkone.system.services = {
 
 <hr/>
 
-{/* t:p a9d97ecd52b40078237beb75df5e43b0d614201545254f6afe0b70d31463a052 */}
+{/* t:p 85d0d6ce5c9e942e2a09a264d8077616e67c4d522474e74c424f1b53c4645d90 */}
 ### &#x2699; darkone.system.sops
 
 DNF sops, passwords and secrets management.
@@ -435,11 +435,15 @@ It is recommended to keep it enabled and configure it (`just passwd*` commands).
 
 Wires sops-nix to `usr/secrets/secrets.yaml` and unlocks it with the
 host SSH key (`ssh_host_ed25519_key`) plus the dedicated infrastructure
-age key (`/etc/sops/age/infra.key`). Pre-declares a shared `sops` group,
-the `default-password` / `default-password-hash` secrets (group-readable
-by `sops`), and one `user/<login>/password-hash` secret per host user
-(with `neededForUsers = true` so the hash is available before the user
-accounts are created).
+age key (`/etc/sops/age/infra.key`). Declares one
+`user/<login>/password-hash` secret per host user, with
+`neededForUsers = true` so the hash is available before the user accounts
+are created.
+
+Nothing else is materialised here: a secret belongs on the hosts that
+consume it, declared by the module that reads it. `default-password-hash`
+stays in the encrypted file, unread by any host — it records the fleet
+default password for `just passwd <login>`.
 
 * **enable** `bool` Enable sops automated configuration for DNF
 

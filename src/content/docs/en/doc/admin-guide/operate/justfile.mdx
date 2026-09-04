@@ -554,7 +554,7 @@ clients, backups, service tokens, etc.).
 Can be safely re-run: each step checks whether it has already been completed, and
 no existing secret is overwritten. Re-run after enabling a service,
 adding a host or a zone. See
-[Secrets](/en/doc/admin-guide/operate/secrets/#managing-passwords).
+[Secrets](/en/doc/admin-guide/operate/secrets/#manage-passwords).
 :::
 
 ```sh
@@ -742,10 +742,11 @@ Opens `usr/secrets/secrets.yaml` in vim (as user `nix`).
 just sops
 ```
 
-{/* t:p f5f62b1bff747275760bb42bd53bd96917e2e8df27d6078b71917c019ac1b5a0 */}
+{/* t:p 69245d1df6a76baa409e908bab2818947b89d962cd041c354fffc0780a336cd4 */}
 ### ✳️ `passwd-default`
 
-Sets the default password for DNF workstations (SOPS-encrypted, bcrypt-hashed).
+Records the fleet's reference password (bcrypt hash in sops).
+Does not configure any account: `just passwd <utilisateur>` takes care of it.
 
 ```sh
 just passwd-default

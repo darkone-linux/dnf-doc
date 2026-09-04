@@ -87,18 +87,18 @@ regenerate, commit to git, then deploy.
 deployment starts from an inconsistent or unversioned state.
 :::
 
-{/* t:p 44c9fe85ad0404bc38da7b7b064804c2190e9dc5711d10b961879586a3152dbe */}
+{/* t:p 4a84a4a9e649f66c1e590cb87258cf52edfbef66b71bf0284a2fba03f788cac0 */}
 ## Setting the password
 
 <Steps>
 
-1. **Set the hash**
+1. **Define the fingerprint**
 
    ```sh
    just passwd alice
    ```
 
-2. **Commit to git**
+2. **Commit in git**
 
    ```sh
    just commit "user(passwd): alice"
@@ -112,27 +112,37 @@ deployment starts from an inconsistent or unversioned state.
 
 </Steps>
 
-:::tip[Default password]
-On creation, an account uses the fleet's default password
-(`just passwd-default`). See [Secrets](/en/doc/admin-guide/operate/secrets/).
+:::tip[An account has no password until one is set]
+`just passwd <login>` is what opens the session; `just passwd-default`
+only records the park's reference password. See
+[Secrets](/en/doc/admin-guide/operate/secrets/).
 :::
 
-{/* t:p f1c0d6b17bd9880e987b2ce08c847cffb3d56e6c7b88567d37dfea5fe2db92ce */}
-## SSH Access
+{/* t:p 933885347c28a0e97bb028dbb55fad18f18efa9daf282a64ef33790217809ce9 */}
+## SSH access
 
-SSH access is **key-only** and **entirely declarative**, across the entire fleet:
+SSH access is **key-only** and **fully declarative**, across the entire
+fleet:
 
-- password and interactive keyboard input are disabled (`darkone.system.core`) ;
-- only declared keys are accepted
-  (`users.users.<login>.openssh.authorizedKeys`): `~/.ssh/authorized_keys`
-  is no longer read ;
-- an account with no declared key opens a local session, never SSH.
+- password and keyboard-interactive disabled (`darkone.system.core`);
+- only declared keys count
+  (`users.users.<login>.openssh.authorizedKeys`) : `~/.ssh/authorized_keys`
+  is no longer read;
+- an account without a declared key opens its local session, never SSH.
 
-:::caution[No more bootstrapping via ssh-copy-id]
-Without a password channel or `~/.ssh/authorized_keys` file, `ssh-copy-id`
-has neither an entry point nor a target. All keys must go through configuration
-and `just apply`. Keep a backup access method (console, or LUKS initrd sshd
-on port 2222) before deploying to a remote host.
+:::note[The forge is the exception]
+The `forgejo` account serves the `git push` of all repositories: its keys are
+those each user deposits in the forge's web interface, not
+those of the NixOS configuration. `sshd` fetches them via
+`AuthorizedKeysCommand`, not from a file. A key is therefore added in
+Forgejo (**Settings → SSH / GPG keys**), never in `config.yaml`.
+:::
+
+:::caution[No more ssh-copy-id bootstrap]
+Without a password channel or a `~/.ssh/authorized_keys` file, `ssh-copy-id` has
+no door in or target either. Every key goes through the configuration then
+`just apply`. Keep a fallback access (console, or the LUKS initrd sshd on
+port 2222) before deploying to a remote host.
 :::
 
 {/* t:p d5b50329c05599139e966e6f3e3280df40356023c90d591921e3462adfa308b4 */}

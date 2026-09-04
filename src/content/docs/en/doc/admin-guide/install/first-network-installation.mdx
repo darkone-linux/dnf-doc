@@ -26,16 +26,18 @@ All nodes are described in **one** NixOS configuration, on the administrator's
 machine. From there, the entire network is deployed and evolved.
 :::
 
-{/* t:p 3113fe9208908a96657f9f442be378501d1993b180a728d64d31220f759a56a9 */}
+{/* t:p 46c17b8025062545b579cc343eb69183d8a881a6eafd602a97a9040fc0925da6 */}
 ## Create the project
 
-The project starts from the `dnf-boilerplate` template: a ready-made structure and a commented `etc/config.yaml` to fill in.
+The project starts from the `dnf-boilerplate` template: a ready-made structure
+and a commented `etc/config.yaml` to fill in.
 
 <Steps>
 
 1. **Create the repository**
 
-   From the [dnf-boilerplate](https://github.com/darkone-linux/dnf-boilerplate) template (the "Use this template" button), or by cloning.
+   From the [dnf-boilerplate](https://github.com/darkone-linux/dnf-boilerplate)
+   template ("Use this template" button), or by cloning.
 
 2. **Bootstrap the framework**
 
@@ -61,10 +63,10 @@ The project starts from the `dnf-boilerplate` template: a ready-made structure a
    ```
 
    :::tip[Idempotent]
-   Creates the age keys, the `.sops.yaml` file, a default password and the
-   [internal secrets](/en/doc/admin-guide/operate/secrets/#internal-secrets-and-external-secrets)
-   of the declared services. It never recreates what already exists: rerun it
-   after every new service, host or zone.
+   Creates the age keys, the `.sops.yaml` file, the reference password and the
+   [internal secrets](/en/doc/admin-guide/operate/secrets/#internal-and-external-secrets)
+   of the declared services. Never recreates what already exists: re-run it
+   after each new service, host or zone.
    :::
 
 </Steps>

@@ -133,10 +133,16 @@ darkone.service.fail2ban.enable = false;
 
 <hr/>
 
-{/* t:p 0554940103e41473bb1ffb6ff52aa6485e55b8a579e3129e05011d05d7a5c4fb */}
+{/* t:p a70c3304d48e5ed20b07149b7fe3ecab5235bb3c7ffabcf2b0c3f6ee09f60d83 */}
 ### &#x2728; darkone.service.forgejo
 
 A full-configured forgejo git forge.
+
+:::note[SSH access]
+Push/pull over SSH goes through `AuthorizedKeysCommand`, not through the
+`authorized_keys` file Forgejo writes in its home: `core.nix` sets
+`authorizedKeysInHomedir = false`, so sshd never reads that file.
+:::
 
 * **enable** `bool` Enable local forgejo service
 
