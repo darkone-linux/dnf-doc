@@ -117,6 +117,36 @@ On creation, an account uses the fleet's default password
 (`just passwd-default`). See [Secrets](/en/doc/admin-guide/operate/secrets/).
 :::
 
+{/* t:p f1c0d6b17bd9880e987b2ce08c847cffb3d56e6c7b88567d37dfea5fe2db92ce */}
+## SSH Access
+
+SSH access is **key-only** and **entirely declarative**, across the entire fleet:
+
+- password and interactive keyboard input are disabled (`darkone.system.core`) ;
+- only declared keys are accepted
+  (`users.users.<login>.openssh.authorizedKeys`): `~/.ssh/authorized_keys`
+  is no longer read ;
+- an account with no declared key opens a local session, never SSH.
+
+:::caution[No more bootstrapping via ssh-copy-id]
+Without a password channel or `~/.ssh/authorized_keys` file, `ssh-copy-id`
+has neither an entry point nor a target. All keys must go through configuration
+and `just apply`. Keep a backup access method (console, or LUKS initrd sshd
+on port 2222) before deploying to a remote host.
+:::
+
+{/* t:p d5b50329c05599139e966e6f3e3280df40356023c90d591921e3462adfa308b4 */}
+### Denying SSH to a group
+
+The `groups` in `config.yaml` are **logical**: they do not become Unix
+groups, so `DenyGroups` would see nothing. DNF translates them into `DenyUsers`,
+on a per-host basis:
+
+```nix
+# Default: guest accounts keep their local session, no SSH.
+darkone.user.build.sshDeniedGroups = [ "guests" ];
+```
+
 {/* t:p 3da66ab20a71d06366f967c011a7dace6d7caa26e6632758009b1adb57cd3c09 */}
 ## Identities and SSO
 

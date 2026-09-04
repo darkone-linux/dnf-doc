@@ -13,7 +13,7 @@ sidebar:
 **A system module** manages common, important, and general configurations.
 :::
 
-{/* t:p 074baedb365b0c93771ae0174ee1e95efe7f52f0f1aad54173d56fdb139ab6e4 */}
+{/* t:p 4489346fc53d9ccb14e05aad53b4c4b3aa217cbaf81466526b9d235b7f92347a */}
 ### &#x2699; darkone.system.core
 
 The core DNF module.
@@ -41,6 +41,12 @@ and propagates `enableSops` to the sops module.
 Port 22 is global only on hosts with no WAN leg. A gateway gets it on the LAN
 bridge and the tailnet; a global-zone host on the tailnet only — a public SSH
 there is decided in the host profile.
+:::
+
+:::danger[SSH is key-only]
+Passwords and keyboard-interactive are off fleet-wide, and only
+`/etc/ssh/authorized_keys.d/%u` is read: an account without a declared key
+has no SSH access at all, and `ssh-copy-id` has no bootstrap channel left.
 :::
 
 * **enable** `bool` Darkone framework core system (activated by default)

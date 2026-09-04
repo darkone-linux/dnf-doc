@@ -13,48 +13,54 @@ sidebar:
 **Un module système** gère les configurations communes, importantes et générales.
 :::
 
-{/* t:p 074baedb365b0c93771ae0174ee1e95efe7f52f0f1aad54173d56fdb139ab6e4 */}
+{/* t:p 4489346fc53d9ccb14e05aad53b4c4b3aa217cbaf81466526b9d235b7f92347a */}
 ### &#x2699; darkone.system.core
 
-Le module principal de DNF.
+Module principal de DNF.
 
 :::danger[Module obligatoire]
 Ce module est activé par défaut (requis par la configuration DNF).
-Il est nécessaire au bon fonctionnement de tout ordinateur NixOS sur le réseau local.
+Il est nécessaire au bon fonctionnement de chaque ordinateur NixOS du réseau local.
 :::
 
-Configure le chargeur systemd-boot, le noyau LTS (ou le dernier noyau via
-`enableLatestKernel`), JetBrains Mono Nerd
+Configure le chargeur systemd-boot, le noyau LTS (ou le dernier noyau stable via
+`enableLatestKernel`), la JetBrains Mono Nerd
 Font (avec `kmscon` pour le TTY), l'optimisation nocturne du magasin Nix et
-le ramasse-miettes hebdomadaire (conservation de 30&nbsp;jours, ou garder-N
-dernières générations via `gcKeepGenerations` sur les hôtes à espace
-limité), le pare-feu, la politique de veille (les serveurs peuvent la
-désactiver complètement via `disableSuspend`), les règles polkit
+la collecte hebdomadaire des ordures (rétention de 30 jours, ou keep-last-N via
+`gcKeepGenerations` sur les hôtes à espace disque limité), le pare-feu, la
+politique de veille (les serveurs peuvent la désactiver complètement via
+`disableSuspend`), les règles polkit
 autorisant le groupe `wheel` à arrêter/redémarrer, et un groupe/utilisateur
-partagé `common-files` pour les dossiers multimédias inter-services.
+`common-files` partagé pour les dossiers médias inter-services.
 
-:::note[Point d'entrée du mixin]
+:::note[Point d'entrée mixin]
 Active le mixin de profil de l'hôte (`darkone.host.${host.profile}.enable`)
-et propage `enableSops` au module sops.
+et propage `enableSops` vers le module sops.
 :::
 
-:::caution[SSH ouvert par interface]
+:::caution[SSH est ouvert par interface]
 Le port 22 n'est global que sur les hôtes sans accès WAN. Une passerelle l'obtient
-sur le pont LAN et le tailnet&nbsp;; un hôte de zone globale uniquement sur le
-tailnet — un SSH public sur celui-ci est décidé dans le profil de l'hôte.
+sur le bridge LAN et le tailnet ; un hôte de zone globale l'obtient uniquement
+sur le tailnet — un SSH public sur celui-ci est décidé dans le profil de l'hôte.
+:::
+
+:::danger[SSH est clé uniquement]
+Les mots de passe et l'authentification interactive sont désactivés sur l'ensemble
+de la flotte, et seul `/etc/ssh/authorized_keys.d/%u` est lu : un compte sans
+clé déclarée n'a aucun accès SSH, et `ssh-copy-id` n'a plus de canal d'amorçage.
 :::
 
 * **enable** `bool` Système principal du framework Darkone (activé par défaut)
 * **enableSystemdBoot** `bool` Activer le chargeur de démarrage par défaut
-* **enableLatestKernel** `bool` Utiliser le dernier noyau stable (linuxPackages_latest) au lieu du LTS
+* **enableLatestKernel** `bool` Utiliser le dernier noyau stable (linuxPackages_latest) au lieu du noyau LTS
 * **enableFstrim** `bool` Optimisation SSD avec fstrim
 * **enableFirewall** `bool` Activer le pare-feu (vrai par défaut)
-* **enableSops** `bool` Activer le module sops de DNF (vrai par défaut)
-* **enableFlatpak** `bool` Activer la configuration DNF flatpak (uniquement pour les environnements graphiques)
-* **enableKmscon** `bool` Activer la police nerd pour le TTY
+* **enableSops** `bool` Activer le module sops dnf (vrai par défaut)
+* **enableFlatpak** `bool` Activer la configuration flatpak DNF (uniquement pour les environnements graphiques)
+* **enableKmscon** `bool` Activer la nerd font pour le TTY
 * **gcKeepGenerations** `int` Lorsque &gt; 0, tronquer le profil système aux N dernières générations avant
-  chaque ramasse-miettes, et collecter quotidiennement sans rétention basée
-  sur l'âge. Pour les hôtes avec une partition racine serrée (passerelles).
+  chaque collecte des ordures, et collecter quotidiennement sans rétention
+  basée sur l'âge. Pour les hôtes avec une partition racine serrée (passerelles).
 * **enableBoost** `bool` Activer l'overclocking, corectl
 * **enableAutoSuspend** `bool` Activer la veille automatique (pour les portables, ignoré si disableSuspend est vrai)
 * **disableSuspend** `bool` Désactivation complète de la veille (pour les serveurs)

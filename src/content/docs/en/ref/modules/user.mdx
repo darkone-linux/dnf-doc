@@ -13,7 +13,7 @@ sidebar:
 **A users management module** manage user-related processing or special user settings.
 :::
 
-{/* t:p 40bf7a6befd9216cddbaadb09d04bc3999d516a2c5977d7028ffdc9f388c5ae6 */}
+{/* t:p 974c75c457ae4a6bb977b8c7e7b9805bea19078793b91b6e2b2e33379e705708 */}
 ### &#x1F464; darkone.user.build
 
 Build users NixOS (not home-manager) configuration.
@@ -22,10 +22,20 @@ Build users NixOS (not home-manager) configuration.
 This module is enabled by default (required by DNF configuration).
 :::
 
+:::note[SSH denial by logical group]
+`sshDeniedGroups` (default `guests`) expands to `DenyUsers` on each host: a
+member keeps its local session and loses SSH.
+:::
+
 * **enable** `bool` Users common builder (enabled by default)
+* **sshDeniedGroups** `listOf str` Logical groups (`config.yaml`) whose members must never open an SSH
+  session. Expanded per host into `services.openssh.settings.DenyUsers`.
 
 ```nix
-darkone.user.build.enable = true;
+darkone.user.build = {
+  enable = true;
+  sshDeniedGroups = [ ];
+};
 ```
 
 <hr/>

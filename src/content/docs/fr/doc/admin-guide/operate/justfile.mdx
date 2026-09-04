@@ -471,13 +471,19 @@ passage celle qu'aurait pu laisser une installation interrompue.
 just configure myserver
 ```
 
-{/* t:p f7c9dbdab785c9be75eb576043c6d53f4b6eaa98758a3932b2150f46bdd6d350 */}
+{/* t:p dd3f2f07c7d5a8f393df3542fbf46928a844826687c9ed08f13e5e7a370a02a7 */}
 ### ✳️ `copy-id <hôte>`
 
-Copie la clé publique de l'utilisateur `nix` vers l'hôte cible.
+Vérifie que la clé de déploiement `nix` ouvre bien l'hôte cible, et pousse la
+clé **privée** partagée sur les passerelles (synchronisation des certificats
+TLS depuis le HCS).
 
-:::tip[Idempotent]
-Ne fait rien si la clé est déjà présente.
+:::caution[Ne dépose plus de clé]
+SSH est par clé uniquement et `~/.ssh/authorized_keys` n'est plus lu :
+`ssh-copy-id` n'a plus de canal d'amorçage. La clé de déploiement est
+déclarative (`usr/secrets/nix.pub`). Si la recette échoue, corrigez la
+configuration puis appliquez depuis un canal encore ouvert (console, sshd
+d'initrd LUKS sur le port 2222).
 :::
 
 ```sh

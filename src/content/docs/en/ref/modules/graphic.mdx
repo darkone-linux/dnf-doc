@@ -13,7 +13,7 @@ sidebar:
 **A GUI application module** installs graphical applications and their configuration optimized for DNF.
 :::
 
-{/* t:p c6444be5817a3c9e022e12c0ca22a68fdea9b3ef90df02f0581053ed09e0ff01 */}
+{/* t:p d05670fbf85609883d168e1e582e4a2ae08851f227ad2451765a8e25094643c1 */}
 ### &#x1F5BC; darkone.graphic.gnome
 
 Pre-configured gnome environment with dependences.
@@ -26,6 +26,7 @@ Pre-configured gnome environment with dependences.
 * **enableOnlineServices** `bool` Online Accounts, CalDAV, CardDAV...
 * **xkbVariant** `str` Keyboard variant. Layout is extracted from console keymap.
 * **screenBlankDelay** `ints.unsigned` Screen-blank delay in seconds (0 = never). Laptops override it to 900 (15 min).
+* **cursorSize** `ints.positive` Pointer size in pixels, locked host-wide. Gaze hosts (`darkone.host.umi`) raise it to 48.
 
 ```nix
 darkone.graphic.gnome = {
@@ -37,6 +38,7 @@ darkone.graphic.gnome = {
   enableOnlineServices = false;
   xkbVariant = "oss";
   screenBlankDelay = 1800;
+  cursorSize = 24;
 };
 ```
 

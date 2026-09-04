@@ -444,13 +444,18 @@ The redirection disables host key verification, **and it stays that way until it
 just configure myserver
 ```
 
-{/* t:p f7c9dbdab785c9be75eb576043c6d53f4b6eaa98758a3932b2150f46bdd6d350 */}
-### ✳️ `copy-id <host>`
+{/* t:p dd3f2f07c7d5a8f393df3542fbf46928a844826687c9ed08f13e5e7a370a02a7 */}
+### ✳️ `copy-id <hôte>`
 
-Copies the `nix` user's public key to the target host.
+Checks that the `nix` deployment key can open the target host, and pushes the
+shared **private** key to gateways (TLS certificate synchronization from the HCS).
 
-:::tip[Idempotent]
-Does nothing if the key is already present.
+:::caution[No more key drops]
+SSH is key-only and `~/.ssh/authorized_keys` is no longer read:
+`ssh-copy-id` has no bootstrap channel. The deployment key is
+declarative (`usr/secrets/nix.pub`). If the recipe fails, fix the
+configuration then apply from an still-open channel (console, sshd
+initrd LUKS on port 2222).
 :::
 
 ```sh

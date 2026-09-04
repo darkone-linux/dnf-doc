@@ -119,6 +119,37 @@ déploiement part d'un état incohérent ou non versionné.
 (`just passwd-default`). Voir [Secrets](/fr/doc/admin-guide/operate/secrets/).
 :::
 
+{/* t:p f1c0d6b17bd9880e987b2ce08c847cffb3d56e6c7b88567d37dfea5fe2db92ce */}
+## Accès SSH
+
+L'accès SSH est **par clé uniquement** et **entièrement déclaratif**, sur toute
+la flotte :
+
+- mot de passe et clavier-interactif désactivés (`darkone.system.core`) ;
+- seules les clés déclarées comptent
+  (`users.users.<login>.openssh.authorizedKeys`) : `~/.ssh/authorized_keys`
+  n'est plus lu ;
+- un compte sans clé déclarée ouvre sa session locale, jamais SSH.
+
+:::caution[Plus d'amorçage par ssh-copy-id]
+Sans canal mot de passe ni fichier `~/.ssh/authorized_keys`, `ssh-copy-id` n'a
+plus ni porte d'entrée ni cible. Toute clé passe par la configuration puis
+`just apply`. Gardez un accès de secours (console, ou sshd d'initrd LUKS sur le
+port 2222) avant de déployer sur un hôte distant.
+:::
+
+{/* t:p d5b50329c05599139e966e6f3e3280df40356023c90d591921e3462adfa308b4 */}
+### Interdire SSH à un groupe
+
+Les `groups` de `config.yaml` sont **logiques** : ils ne deviennent pas des
+groupes Unix, `DenyGroups` ne verrait donc rien. DNF les traduit en `DenyUsers`,
+hôte par hôte :
+
+```nix
+# Défaut : les comptes invités gardent leur session locale, pas SSH.
+darkone.user.build.sshDeniedGroups = [ "guests" ];
+```
+
 {/* t:p 3da66ab20a71d06366f967c011a7dace6d7caa26e6632758009b1adb57cd3c09 */}
 ## Identités et SSO
 
