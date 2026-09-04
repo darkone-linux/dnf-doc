@@ -780,7 +780,8 @@ just sops
 {/* t:p f5f62b1bff747275760bb42bd53bd96917e2e8df27d6078b71917c019ac1b5a0 */}
 ### ✳️ `passwd-default`
 
-Définit le mot de passe par défaut des postes DNF (chiffré SOPS, hashé bcrypt).
+Enregistre le mot de passe de référence du parc (empreinte bcrypt dans sops).
+Ne configure aucun compte : `just passwd <utilisateur>` s'en charge.
 
 ```sh
 just passwd-default
