@@ -46,6 +46,13 @@ Une cible sauvegarde une ou plusieurs **catégories** dans des sous-dépôts :
 | `nfs` | Partages `/srv/nfs/...` |
 | `medias` | Médias `/srv/medias/...` |
 
+:::note[Les dossiers de synchro cloud ne sont jamais sauvegardés]
+Un dossier `~/Nextcloud` (variantes numérotées comprises) réplique un original
+déjà sauvegardé côté serveur, et restic ne dédoublonne pas entre dépôts&nbsp;:
+chaque réplica coûterait une copie pleine. L'exclusion se fait par chemin et
+par marqueur de journal, sur toutes les catégories.
+:::
+
 :::note[Deux secrets, à ne pas confondre]
 - **Passphrase de dépôt** (`restic-password-<zone>`) : chiffre le contenu.
 - **Credential REST** (`restic/<hôte>/rest-password`) : authentifie l'hôte.
