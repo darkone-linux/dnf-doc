@@ -1171,6 +1171,42 @@ darkone.service.searx.enable = false;
 
 <hr/>
 
+{/* t:p 771c3781e0f9aedfc4156a49a4b458fb319bc1fad1ad3530f862455daf81dd7e */}
+### &#x2728; darkone.service.stk
+
+SuperTuxKart shared tracks, served over NFS.
+
+:::note
+Declare `services: stk:` on one host of the zone (`config.yaml`): it exports
+`srv-dirs.stkTracks` read-only. Any host wanting the tracks sets
+`darkone.graphic.supertuxkart.enableNfsClient`, which wires `enableClient`
+below; clients address the server by its own hostname, always resolvable.
+:::
+
+:::tip[The server needs no mount]
+`enableClient` on the serving host is a no-op: the tracks are already local,
+and `home/modules/games.nix` links the addons directory straight to them.
+:::
+
+:::caution[Exported to the whole zone prefix]
+Read-only, `all_squash` game data — the same scope as the game's own firewall
+rules, and one less per-client IP list to keep in step with `config.yaml`.
+:::
+
+* **enable** `bool` Export the shared SuperTuxKart tracks (avoid enable manually)
+* **enableClient** `bool` Mount the shared SuperTuxKart tracks of the zone
+* **serverName** `nullOr str` Hostname serving the tracks, default is the zone's `stk` service host
+
+```nix
+darkone.service.stk = {
+  enable = stk.isServer;
+  enableClient = false;
+  serverName = stk.server;
+};
+```
+
+<hr/>
+
 {/* t:p 4905a9139054d20bc5aff8a08be0a65e71b480c72521af5d1567e3a11febfb29 */}
 ### &#x2728; darkone.service.tailscale
 

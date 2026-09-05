@@ -149,7 +149,7 @@ darkone.home.education = {
 
 <hr/>
 
-{/* t:p 228c112b0740af9d49c325a767b74cd358568d9fc9fb26c4999b947a0930f50c */}
+{/* t:p e202c2e0e406911619242d888e19e0712c66acc344372d279c687929053926fc */}
 ### &#x1F3E0; darkone.home.games
 
 Several graphical game packages.
@@ -162,7 +162,6 @@ Several graphical game packages.
 * **enableCli** `bool` Cli Games
 * **enableStk** `bool` SuperTuxKart (only)
 * **enableMore** `bool` More (secondary) games in each categories
-* **stkServer** `str` STK server domain name
 
 ```nix
 darkone.home.games = {
@@ -174,13 +173,12 @@ darkone.home.games = {
   enableCli = false;
   enableStk = false;
   enableMore = false;
-  stkServer = osConfig.darkone.service.nfs.serverDomain;
 };
 ```
 
 <hr/>
 
-{/* t:p 44aab82d8bb43fd64eb3b91ed5a7359d83d4e84b8ccb09a544716c43e07b0d21 */}
+{/* t:p 8cc86b72cc50ff00f8cfc4576fb69487d652391b82246e554ecb33446336cdec */}
 ### &#x1F3E0; darkone.home.gnome
 
 Gnome tweaks for home-manager.
@@ -192,8 +190,8 @@ is set) hides Settings, Extensions, Printers and File Roller icons for
 beginner / child profiles.
 
 :::caution[NFS bookmarks]
-Do not declare `gtk.gtk3.bookmarks` from this module — the NFS module
-(`service/nfs.nix`) owns this file and will overwrite it.
+Do not declare `gtk.gtk3.bookmarks` from this module — while NFS home shares
+are on, `home/profiles/minimal/nfs.nix` owns this file and overwrites it.
 :::
 
 * **enable** `bool` Enable gnome settings for home manager

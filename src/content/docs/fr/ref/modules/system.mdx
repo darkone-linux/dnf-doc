@@ -451,38 +451,42 @@ darkone.system.sops.enable = false;
 
 <hr/>
 
-{/* t:p b67e83ac82c077c96344539057ac4c5cb759ab44f974218097feee55c1e3b7b0 */}
+{/* t:p 63f8b4c173fd3e32fac04258895bdee9faaedd0e1e1fd663ab35ef49c2d6f56d */}
 ### &#x2699; darkone.system.srv-dirs
 
 Service de gestion des répertoires partagés.
 
-:::caution[Activation automatique]
-Ce service est automatiquement activé par les services qui utilisent NFS ou le stockage médias partagé.
+:::caution[Auto-activation]
+Ce service est automatiquement activé par les services qui utilisent NFS ou le stockage média partagé.
 :::
 
-* **enable** `bool` Activer les répertoires srv, créer le répertoire racine (par défaut /srv)
-* **enableNfs** `bool` Activer les chemins de service nfs (nfs/common, nfs/homes)
-* **enableMedias** `bool` Activer les chemins des services médias (medias/[videos|music|incomming/...])
-* **root** `str` Répertoire racine pour les données persistantes (/srv)
+* **enable** `bool` Activer les répertoires partagés, créer le répertoire racine (défaut /srv)
+* **enableNfs** `bool` Activer les chemins du service NFS (nfs/common, nfs/homes)
+* **enableMedias** `bool` Activer les chemins des services média (medias/[videos|music|incomming/...])
+* **enableStk** `bool` Activer le chemin de partage des pistes SuperTuxKart (nfs/stk-tracks)
+* **root** `str` Répertoire racine des données persistantes (/srv)
 * **nfs** `str` Répertoire racine NFS (/srv/nfs)
-* **homes** `str` Répertoire pour les domiciles partagés (/srv/nfs/homes)
+* **homes** `str` Répertoire des domiciles partagés (/srv/nfs/homes)
 * **common** `str` Répertoire commun partagé (/srv/nfs/common lié à ~/Public)
+* **stkTracks** `str` Répertoire des pistes SuperTuxKart partagées (/srv/nfs/stk-tracks)
 * **medias** `str` Répertoire racine des médias (/srv/medias)
-* **music** `str` Répertoire partagé des fichiers musicaux (/srv/medias/music)
-* **videos** `str` Répertoire partagé des fichiers vidéo (/srv/medias/videos)
-* **incoming** `str` Répertoire partagé entrant (/srv/medias/incoming accès écriture)
-* **incomingMusic** `str` Répertoire partagé entrant (/srv/medias/incoming/music accès écriture)
-* **incomingVideos** `str` Répertoire partagé entrant (/srv/medias/incoming/videos accès écriture)
+* **music** `str` Répertoire des fichiers musicaux partagés (/srv/medias/music)
+* **videos** `str` Répertoire des fichiers vidéo partagés (/srv/medias/videos)
+* **incoming** `str` Répertoire des fichiers entrants partagés (/srv/medias/incoming accès en écriture)
+* **incomingMusic** `str` Répertoire des fichiers entrants partagés (/srv/medias/incoming/music accès en écriture)
+* **incomingVideos** `str` Répertoire des fichiers entrants partagés (/srv/medias/incoming/videos accès en écriture)
 
 ```nix
 darkone.system.srv-dirs = {
-  enable = cfg.enableNfs || cfg.enableMedias;
+  enable = cfg.enableNfs || cfg.enableMedias || cfg.enableStk;
   enableNfs = false;
   enableMedias = false;
+  enableStk = false;
   root = "/srv";
   nfs = null;
   homes = null;
   common = null;
+  stkTracks = null;
   medias = null;
   music = null;
   videos = null;
@@ -491,6 +495,8 @@ darkone.system.srv-dirs = {
   incomingVideos = null;
 };
 ```
+
+<hr/>
 
 {/* t:p 5419ce292dc882f4b69061721d7793c506bc032955c7b7562980be7b3873c2c2 */}
 ### &#x2699; darkone.system.testing

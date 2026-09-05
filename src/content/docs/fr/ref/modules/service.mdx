@@ -1148,6 +1148,44 @@ darkone.service.searx.enable = false;
 
 <hr/>
 
+{/* t:p 771c3781e0f9aedfc4156a49a4b458fb319bc1fad1ad3530f862455daf81dd7e */}
+### &#x2728; darkone.service.stk
+
+Pistes partagées SuperTuxKart, servies via NFS.
+
+:::note
+Déclarer `services: stk:` sur un hôte de la zone (`config.yaml`) : il exporte
+`srv-dirs.stkTracks` en lecture seule. Tout hôte souhaitant les pistes active
+`darkone.graphic.supertuxkart.enableNfsClient`, qui branche `enableClient`
+ci-dessous ; les clients adressent le serveur par son propre hostname,
+toujours résolvable.
+:::
+
+:::tip[Le serveur n'a besoin d'aucun montage]
+`enableClient` sur l'hôte servant est un no-op : les pistes sont déjà locales,
+et `home/modules/games.nix` lie le répertoire des addons directement vers elles.
+:::
+
+:::caution[Exporté à tout le préfixe de la zone]
+Lecture seule, `all_squash` pour les données de jeu — même portée que les
+propres règles de pare-feu du jeu, et une liste d'IP par client de moins à
+maintenir à jour avec `config.yaml`.
+:::
+
+* **enable** `bool` Exporter les pistes partagées SuperTuxKart (éviter d'activer manuellement)
+* **enableClient** `bool` Monter les pistes partagées SuperTuxKart de la zone
+* **serverName** `nullOr str` Hostname du serveur hébergeant les pistes, par défaut l'hôte `stk` de la zone
+
+```nix
+darkone.service.stk = {
+  enable = stk.isServer;
+  enableClient = false;
+  serverName = stk.server;
+};
+```
+
+<hr/>
+
 {/* t:p 4905a9139054d20bc5aff8a08be0a65e71b480c72521af5d1567e3a11febfb29 */}
 ### &#x2728; darkone.service.tailscale
 

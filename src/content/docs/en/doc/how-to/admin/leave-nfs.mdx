@@ -1,0 +1,101 @@
+---
+title: Opting Out of NFS Home Sharing
+sidebar:
+  label: Opting Out of NFS
+lang: en
+---
+
+import { Steps } from '@astrojs/starlight/components';
+
+{/* t:translated-from fr */}
+{/* t:h 0410bd74030ad23ab126578450802cdb54d975237f211fa2a6aba96f135dc4e6 */}
+
+{/* t:p e1361c5a1d2d3d3031b05ffad648e553e7c4cf08c61f768ecc40ff2b2e09b08b */}
+The `nfs` service shares user XDG directories from a zone server: on each
+client, `~/Documents`, `~/Images`… are symbolic links pointing to
+`/mnt/nfs/homes/<login>/`, with the original content parked in `<directory>.bak`.
+
+This page describes the rollback: disabling the sharing, then restoring ordinary
+local directories to each home.
+
+:::caution[Required order]
+The cleanup refuses to run as long as `/mnt/nfs/homes` is mounted. Disable NFS
+and apply the configuration **before** running the script.
+:::
+
+{/* t:p d1b94b68b171d875bf2267905bdca360c5b234a249eba2345b47d4f2860aad81 */}
+## 1. Disable NFS
+
+<Steps>
+
+1. In `etc/config.yaml`, remove `"nfs-client"` from the `features` field of each
+   client host, and the `nfs:` key from the server's `services`.
+
+2. Regenerate and apply, **clients first**, server last:
+
+   ```sh
+   just generate
+   just apply <client>
+   just apply <server>
+   ```
+
+3. Verify that nothing is mounted on the clients:
+
+   ```sh
+   findmnt /mnt/nfs/homes   # should return nothing
+   ```
+
+</Steps>
+
+{/* t:p 377c202e88a1e676cf87c14186d26ddc37f87b9a404ca2d0692857855ca0435b */}
+## 2. Clean up the homes
+
+```sh
+just nfs-cleanup <host>          # dry run, writes nothing
+just nfs-cleanup <host> apply    # execution
+```
+
+`on` accepts a comma-separated list, or `all` for every node.
+The `check` mode displays **exactly** the actions that `apply` would perform.
+
+For each `/home` account and only for top-level XDG directories, the script:
+
+* removes the links to the share;
+* on the original **server**, first moves the data from
+  `/srv/nfs/homes/<login>/` into the home (reflink copy, then source removal
+  once sizes are compared);
+* restores `<directory>.bak` entries whose name is available;
+* removes only **empty** FR/EN duplicates, and reports those that contain data
+  on both sides;
+* regenerates missing directories with `xdg-user-dirs-update`, in the zone's
+  language;
+* removes GTK bookmarks pointing to the share.
+
+The script is idempotent: a second run finds nothing left to do.
+
+:::note[What is never touched]
+The shared folder (`~/Public` → `/srv/nfs/common`) is unlinked but its data
+remains in place, and `~/.local/share/supertuxkart/addons/tracks` — which also
+points to `/mnt/nfs` — is out of scope.
+:::
+
+:::caution[Read the warnings carefully]
+Two non-empty directories for the same purpose, a link pointing to an
+unexpected target, or share data that no link claims: the script does not
+decide, it lists. These cases require manual judgement.
+:::
+
+{/* t:p 39f71aa7607ec35efd056687da6d43e9ff74d5f1bc4dec9e289c73d28a8c548d */}
+## 3. Keep sharing SuperTuxKart tracks
+
+Track sharing no longer depends on the `nfs` service: declare `stk:` in the
+`services` of the host that serves, and set the following on each player
+
+```nix
+darkone.graphic.supertuxkart = {
+  enable = true;
+  enableNfsClient = true;
+};
+```
+
+The serving host has nothing to mount — its tracks are already local.

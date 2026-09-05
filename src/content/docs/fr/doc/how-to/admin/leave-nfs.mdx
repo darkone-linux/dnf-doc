@@ -1,0 +1,103 @@
+---
+title: Sortir du partage NFS des homes
+sidebar:
+  label: Sortir de NFS
+lang: fr
+---
+
+import { Steps } from '@astrojs/starlight/components';
+
+{/* t:main */}
+{/* t:h 0410bd74030ad23ab126578450802cdb54d975237f211fa2a6aba96f135dc4e6 */}
+
+{/* t:p e1361c5a1d2d3d3031b05ffad648e553e7c4cf08c61f768ecc40ff2b2e09b08b */}
+Le service `nfs` partage les répertoires XDG des utilisateurs depuis un serveur
+de zone : sur chaque client, `~/Documents`, `~/Images`… sont des liens
+symboliques vers `/mnt/nfs/homes/<login>/`, l'ancien contenu étant garé en
+`<répertoire>.bak`.
+
+Cette page décrit la marche arrière : couper le partage, puis rendre à chaque
+home des répertoires locaux ordinaires.
+
+:::caution[Ordre imposé]
+Le nettoyage refuse de s'exécuter tant que `/mnt/nfs/homes` est monté. Coupez
+NFS et appliquez la configuration **avant** de lancer le script.
+:::
+
+{/* t:p d1b94b68b171d875bf2267905bdca360c5b234a249eba2345b47d4f2860aad81 */}
+## 1. Couper NFS
+
+<Steps>
+
+1. Dans `etc/config.yaml`, retirez `"nfs-client"` du champ `features` de chaque
+   hôte client, et la clé `nfs:` des `services` du serveur.
+
+2. Régénérez et appliquez, **clients d'abord**, serveur en dernier :
+
+   ```sh
+   just generate
+   just apply <client>
+   just apply <serveur>
+   ```
+
+3. Vérifiez que plus rien n'est monté sur les clients :
+
+   ```sh
+   findmnt /mnt/nfs/homes   # doit ne rien renvoyer
+   ```
+
+</Steps>
+
+{/* t:p 377c202e88a1e676cf87c14186d26ddc37f87b9a404ca2d0692857855ca0435b */}
+## 2. Nettoyer les homes
+
+```sh
+just nfs-cleanup <hôte>          # simulation, n'écrit rien
+just nfs-cleanup <hôte> apply    # exécution
+```
+
+`on` accepte une liste séparée par des virgules, ou `all` pour tous les nœuds.
+Le mode `check` affiche **exactement** les actions que `apply` effectuerait.
+
+Pour chaque compte de `/home` et pour les seuls répertoires XDG de premier
+niveau, le script :
+
+* supprime les liens vers le partage ;
+* sur l'ancien **serveur**, rapatrie d'abord les données de
+  `/srv/nfs/homes/<login>/` dans le home (copie *reflink*, puis suppression de
+  la source une fois les tailles comparées) ;
+* restaure les `<répertoire>.bak` dont le nom est libre ;
+* supprime les doublons FR/EN **vides** uniquement, et signale ceux qui portent
+  des données des deux côtés ;
+* régénère les répertoires manquants avec `xdg-user-dirs-update`, dans la
+  langue de la zone ;
+* supprime les signets GTK pointant vers le partage.
+
+Le script est idempotent : un second passage ne trouve plus rien à faire.
+
+:::note[Ce qui n'est jamais touché]
+Le partage commun (`~/Public` → `/srv/nfs/common`) est délié mais ses données
+restent en place, et `~/.local/share/supertuxkart/addons/tracks` — qui pointe
+aussi vers `/mnt/nfs` — est hors périmètre.
+:::
+
+:::caution[Relire les avertissements]
+Deux répertoires non vides pour un même usage, un lien vers une cible
+inattendue, ou des données du partage qu'aucun lien ne réclamait : le script ne
+tranche pas, il liste. Ces cas demandent un arbitrage manuel.
+:::
+
+{/* t:p 39f71aa7607ec35efd056687da6d43e9ff74d5f1bc4dec9e289c73d28a8c548d */}
+## 3. Conserver le partage des circuits SuperTuxKart
+
+Le partage de pistes ne dépend plus du service `nfs` : déclarez `stk:` dans les
+`services` de l'hôte qui sert, et posez sur chaque joueur
+
+```nix
+darkone.graphic.supertuxkart = {
+  enable = true;
+  enableNfsClient = true;
+};
+```
+
+L'hôte qui sert n'a rien à monter, ses pistes sont déjà locales.

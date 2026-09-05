@@ -453,7 +453,7 @@ darkone.system.sops.enable = false;
 
 <hr/>
 
-{/* t:p b67e83ac82c077c96344539057ac4c5cb759ab44f974218097feee55c1e3b7b0 */}
+{/* t:p 63f8b4c173fd3e32fac04258895bdee9faaedd0e1e1fd663ab35ef49c2d6f56d */}
 ### &#x2699; darkone.system.srv-dirs
 
 Shared directories management service.
@@ -465,10 +465,12 @@ This service is automatically enabled by services that use NFS or shared media s
 * **enable** `bool` Enable srv dirs, create the root dir (default /srv)
 * **enableNfs** `bool` Enable nfs service paths (nfs/common, nfs/homes)
 * **enableMedias** `bool` Enable media services paths (medias/[videos|music|incomming/...])
+* **enableStk** `bool` Enable SuperTuxKart tracks share path (nfs/stk-tracks)
 * **root** `str` Root dir for persistant data (/srv)
 * **nfs** `str` NFS root directory (/srv/nfs)
 * **homes** `str` Directory for shared homes (/srv/nfs/homes)
 * **common** `str` Shared common directory (/srv/nfs/common linked to ~/Public)
+* **stkTracks** `str` SuperTuxKart shared tracks directory (/srv/nfs/stk-tracks)
 * **medias** `str` Medias root dir (/srv/medias)
 * **music** `str` Shared music files directory (/srv/medias/music)
 * **videos** `str` Shared video files directory (/srv/medias/videos)
@@ -478,13 +480,15 @@ This service is automatically enabled by services that use NFS or shared media s
 
 ```nix
 darkone.system.srv-dirs = {
-  enable = cfg.enableNfs || cfg.enableMedias;
+  enable = cfg.enableNfs || cfg.enableMedias || cfg.enableStk;
   enableNfs = false;
   enableMedias = false;
+  enableStk = false;
   root = "/srv";
   nfs = null;
   homes = null;
   common = null;
+  stkTracks = null;
   medias = null;
   music = null;
   videos = null;

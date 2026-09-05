@@ -112,26 +112,37 @@ darkone.graphic.remote-desktop = {
 
 <hr/>
 
-{/* t:p 2594ab2e1f71f7bd3b6d358b9d380ba6488c93918896b315542034209850811c */}
+{/* t:p 1f672ff4b679e1c262a61929f551af992d25cb7e572738132eb35ae671af55ae */}
 ### &#x1F5BC; darkone.graphic.supertuxkart
 
-SuperTuxKart configuré pour jouer en réseau local.
+SuperTuxKart avec des configurations pour jouer en réseau local.
 
 :::tip
-À utiliser en complément du module games du home manager&nbsp;!
+À utiliser en complément du module games du home manager !
+:::
+
+:::note[Pistes partagées]
+Le partage de pistes lui-même réside dans `service/stk.nix`. `enableNfsClient` et
+`nfsServer` sont les seuls paramètres dont un hôte a besoin&nbsp;: ils relient
+`darkone.service.stk.{enableClient,serverName}` afin qu'une configuration
+d'hôte n'ait jamais besoin de nommer deux modules pour un seul jeu.
 :::
 
 :::caution[Pare-feu limité à la zone]
-Les ports de jeu et de découverte ne sont acceptés que depuis le préfixe de la zone. Un hôte STK disposant également d'une adresse WAN ou tailnet ne publie pas le jeu sur celle-ci.
+Les ports de jeu et de découverte ne sont acceptés que depuis le préfixe de
+la zone. Un hôte STK qui détient également une adresse WAN ou tailnet ne
+publie pas le jeu sur celle-ci.
 :::
 
-* **enable** `bool` SuperTuxKart + config pare-feu + partage des pistes
-* **isNfsServer** `bool` Serveur NFS (partage des pistes), par défaut le serveur NFS principal. (wip, activer sur le serveur principal)
+* **enable** `bool` SuperTuxKart + configuration du pare-feu
+* **enableNfsClient** `bool` Monter les pistes partagées du serveur `stk` de la zone
+* **nfsServer** `nullOr str` Nom d'hôte servant les pistes, par défaut c'est l'hôte du service `stk` de la zone
 
 ```nix
 darkone.graphic.supertuxkart = {
   enable = false;
-  isNfsServer = isMainNfsServer;
+  enableNfsClient = false;
+  nfsServer = null;
 };
 ```
 

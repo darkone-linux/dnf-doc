@@ -141,20 +141,19 @@ darkone.home.education = {
 };
 ```
 
-{/* t:p 228c112b0740af9d49c325a767b74cd358568d9fc9fb26c4999b947a0930f50c */}
+{/* t:p e202c2e0e406911619242d888e19e0712c66acc344372d279c687929053926fc */}
 ### &#x1F3E0; darkone.home.games
 
-Plusieurs paquets de jeux graphiques.
+Plusieurs jeux graphiques.
 
 * **enable** `bool` Activer les jeux
 * **enableBaby** `bool` Jeux pour bébés (&lt;=6 ans)
 * **enableChild** `bool` Jeux pour enfants (6-12 ans)
 * **enableTeenager** `bool` Jeux pour adolescents et adultes (&gt;=12 ans)
 * **enable3D** `bool` Plus de jeux 3D
-* **enableCli** `bool` Jeux Cli
+* **enableCli** `bool` Jeux en ligne de commande
 * **enableStk** `bool` SuperTuxKart (uniquement)
-* **enableMore** `bool` Plus (secondaires) de jeux dans chaque catégorie
-* **stkServer** `str` Nom de domaine du serveur STK
+* **enableMore** `bool` Plus de jeux (secondaires) dans chaque catégorie
 
 ```nix
 darkone.home.games = {
@@ -166,28 +165,30 @@ darkone.home.games = {
   enableCli = false;
   enableStk = false;
   enableMore = false;
-  stkServer = osConfig.darkone.service.nfs.serverDomain;
 };
 ```
 
-{/* t:p 44aab82d8bb43fd64eb3b91ed5a7359d83d4e84b8ccb09a544716c43e07b0d21 */}
+<hr/>
+
+{/* t:p 8cc86b72cc50ff00f8cfc4576fb69487d652391b82246e554ecb33446336cdec */}
 ### &#x1F3E0; darkone.home.gnome
 
 Ajustements Gnome pour home-manager.
 
-Cache l'outil de lancement `xterm` nu sans condition, enregistre les entrées `.desktop`
-polies pour `scrcpy` et `scrcpy-console` lorsque le paquet
-fait partie des `home.packages` de l'utilisateur, et (lorsque `hideTechnicalIcons`
-est défini) cache les icônes Paramètres, Extensions, Imprimantes et Gestionnaire de fichiers pour
-les profils débutant / enfant.
+Masque inconditionnellement le lanceur nu `xterm`, enregistre des
+entrées `.desktop` soignées pour `scrcpy` et `scrcpy-console` lorsque le
+package fait partie des `home.packages` de l'utilisateur, et (lorsque
+`hideTechnicalIcons` est défini) masque les icônes de Paramètres,
+Extensions, Imprimantes et File Roller pour les profils débutant/enfant.
 
 :::caution[Signets NFS]
-Ne déclarez pas `gtk.gtk3.bookmarks` à partir de ce module — le module NFS
-(`service/nfs.nix`) en est propriétaire et le remplacera.
+Ne pas déclarer `gtk.gtk3.bookmarks` depuis ce module — tant que les parts
+home NFS sont actives, `home/profiles/minimal/nfs.nix` possède ce fichier
+et l'écrase.
 :::
 
-* **enable** `bool` Activer les paramètres gnome pour home manager
-* **hideTechnicalIcons** `bool` Masquer certaines icônes pour les débutants / enfants / bébés
+* **enable** `bool` Activer les paramètres Gnome pour home-manager
+* **hideTechnicalIcons** `bool` Masquer certaines icônes pour débutants / enfants / bébés
 
 ```nix
 darkone.home.gnome = {
@@ -195,6 +196,8 @@ darkone.home.gnome = {
   hideTechnicalIcons = false;
 };
 ```
+
+<hr/>
 
 {/* t:p 66e29bc700c56c059782e370db0f691a83609c85f44233ef1b041e62f5537ba4 */}
 ### &#x1F3E0; darkone.home.imagery

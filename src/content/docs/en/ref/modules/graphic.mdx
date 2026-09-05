@@ -109,7 +109,7 @@ darkone.graphic.remote-desktop = {
 
 <hr/>
 
-{/* t:p 2594ab2e1f71f7bd3b6d358b9d380ba6488c93918896b315542034209850811c */}
+{/* t:p 1f672ff4b679e1c262a61929f551af992d25cb7e572738132eb35ae671af55ae */}
 ### &#x1F5BC; darkone.graphic.supertuxkart
 
 SuperTuxKart with configurations to play in local network.
@@ -118,18 +118,27 @@ SuperTuxKart with configurations to play in local network.
 To use in conjonction with homemanager games module!
 :::
 
+:::note[Shared tracks]
+The tracks share itself lives in `service/stk.nix`. `enableNfsClient` and
+`nfsServer` are the only knobs a host needs: they wire
+`darkone.service.stk.{enableClient,serverName}` so a machine configuration
+never has to name two modules for one game.
+:::
+
 :::caution[Zone-scoped firewall]
 Game and discovery ports are accepted from the zone prefix only. A STK host
 that also holds a WAN or tailnet address does not publish the game there.
 :::
 
-* **enable** `bool` SuperTuxKart + firewall config + tracks share
-* **isNfsServer** `bool` NFS server (share tracks), default is the main NFS server. (wip, enable on main server)
+* **enable** `bool` SuperTuxKart + firewall config
+* **enableNfsClient** `bool` Mount the shared tracks of the zone's `stk` server
+* **nfsServer** `nullOr str` Hostname serving the tracks, default is the zone's `stk` service host
 
 ```nix
 darkone.graphic.supertuxkart = {
   enable = false;
-  isNfsServer = isMainNfsServer;
+  enableNfsClient = false;
+  nfsServer = null;
 };
 ```
 
