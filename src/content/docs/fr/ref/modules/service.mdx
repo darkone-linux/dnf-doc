@@ -1023,28 +1023,24 @@ darkone.service.prometheus = {
 
 <hr/>
 
-{/* t:p 0c169a4135c7ba141019560a62bdb09ac6a016bb1112c3cc717b6048bc645e05 */}
+{/* t:p 2ce5a88e716dfe477552656f108debbf5dad6b48ea380520084fbc6fec90ddec */}
 ### &#x2728; darkone.service.restic
 
-Module de sauvegarde Restic&nbsp;: serveur REST + cibles de sauvegarde par hôte.
+Module de sauvegarde Restic : serveur REST + cibles de sauvegarde par hôte.
 
-:::tip[Deux rôles, un module]
-- Serveur&nbsp;: un hôte disposant de `restic` dans ses services config.yaml lance le serveur
-  REST (`enableServer`) et stocke le dépôt de chaque hôte.
-- Client&nbsp;: tout hôte avec `enable = true` déclare des `targets` de sauvegarde
-  (chemin local ou `rest:http://restic.<zone>:<port>`).
+:::tip[Deux rôles, un seul module]
+- Serveur : un hôte dont le `config.yaml` contient `restic` dans ses services lance le serveur REST (`enableServer`) et stocke le dépôt de chaque hôte.
+- Client : tout hôte avec `enable = true` déclare des `targets` de sauvegarde (chemin local ou `rest:http://restic.<zone>:<port>`).
 :::
 
-:::note[Deux mots de passe, ne pas les confondre]
-- Phrase de passe du dépôt&nbsp;: `restic-password-<zone>`, chiffre le contenu du dépôt.
-- Identifiant REST&nbsp;: `restic/<hostname>/rest-password` par hôte, authentifie
-  l'hôte auprès du serveur REST.
+:::note[Deux mots de passe, ne pas confondre]
+- Phrase de passe du dépôt : `restic-password-<zone>`, chiffre le contenu du dépôt.
+- Identifiant REST : `restic/<hostname>/rest-password` par hôte, authentifie l'hôte auprès du serveur REST.
 
-Les deux sont créés par `just configure-admin-host` (idempotent), qui lit
-les hôtes et zones déclarés dans la flotte.
+Les deux sont créés par `just configure-admin-host` (idempotent), qui lit les hôtes et zones déclarés dans la flotte.
 :::
 
-Exemple (configuration machine)&nbsp;:
+Exemple (configuration machine) :
 
 ```nix
 darkone.service.restic = {
@@ -1056,64 +1052,45 @@ darkone.service.restic = {
 };
 ```
 
-Structure du dépôt par cible&nbsp;: un dépôt par catégorie, nommé d'après celle-ci.
+Disposition du dépôt par cible : un dépôt par catégorie, nommé d'après celle-ci.
 
 ```
-<root>/<hostname>/system  <- catégorie "system" (/ moins les exclusions)
+<root>/<hostname>/system  <- catégorie "system" (/ hors exclus)
 <root>/<hostname>/nfs     <- catégorie "nfs"    (/srv/nfs/<...>)
 <root>/<hostname>/medias  <- catégorie "medias" (/srv/medias/<...>)
 ```
 
-:::caution[Le chemin du dépôt fait exactement deux niveaux de profondeur]
-Le serveur REST sert des dépôts à au maximum deux composantes sous son `--path`&nbsp;:
-`<hostname>/medias` répond, `<hostname>/srv/medias` renvoie 404 et restic
-affiche un message trompeur `repository does not exist`. Le sous-chemin est donc
-le nom nu de la catégorie, jamais le répertoire source. Une structure identique pour
-les cibles locales et REST permet de déplacer un dépôt de l'un vers l'autre sans renommage.
+:::caution[Le chemin du dépôt est exactement à deux niveaux]
+Le rest-server sert des dépôts à au plus deux composantes sous son `--path` :
+`<hostname>/medias` répond, `<hostname>/srv/medias` retourne 404 et restic
+signale une erreur trompeuse `repository does not exist`. Le sous-chemin est
+donc le nom nu de la catégorie, jamais le répertoire source. Une disposition
+identique pour les cibles locales et REST permet de déplacer un dépôt de
+l'une à l'autre sans le renommer.
 :::
 
-:::note[Un serveur REST inaccessible ignore l'exécution]
-Chaque cible `rest:` porte une sonde d'atteignabilité `ExecCondition`. Une sauvegarde
-dont le serveur est arrêtée est *ignorée*, jamais en échec&nbsp;: pas de
-SystemdUnitFailed nocturne, pas de quart d'heure de tentatives restic, et pas de `initialize`
+:::note[Un serveur REST inaccessible est contourné]
+Chaque cible `rest:` embarque une sonde d'atteignabilité `ExecCondition`. Une sauvegarde
+dont le serveur est arrêtée est *passée*, jamais échouée : pas de
+SystemdUnitFailed nocturne, pas dix minutes de tentatives restic, pas de `initialize`
 créant un dépôt vide contre un endpoint mort. La sauvegarde manquante apparaît
 néanmoins via ResticBackupStale / ResticBackupCritical, qui surveillent la
 dernière exécution réussie.
-:::
-
-:::caution[`listenAll` élargit la liaison, pas le pare-feu]
-Le serveur lie `params.ip`, c.-à-d. l'adresse LAN sur une passerelle. Les clients
-l'atteignant depuis une autre zone via le tailnet nécessitent `listenAll = true`
-(liaison sur `0.0.0.0`). Le pare-feu reste la frontière&nbsp;: `lan0` reçoit le port via
-`getInternalInterfaceFwPath`, `tailscale0` est déjà une interface de confiance sur
-une passerelle, et le WAN ne l'ouvre jamais.
-:::
-
-:::danger[Migrer les dépôts créés avant cette structure]
-Les dépôts écrits lorsque le sous-chemin reflétait le répertoire source se trouvent sous
-`<hostname>/srv/{nfs,medias}`. Renommez-les sur le serveur avant la prochaine exécution&nbsp;:
-`initialize = true` créerait sinon un dépôt vide au nouveau chemin et
-lancerait silencieusement un re-semis complet.
-
-```sh
-mv <data-dir>/<hostname>/srv/medias <data-dir>/<hostname>/medias
-rmdir <data-dir>/<hostname>/srv
-```
 :::
 
 * **enable** `bool` Activer le client de sauvegarde restic
 * **enableDryRun** `bool` Mode simulation
 * **enableWaitRemoteFs** `bool` Lancer les sauvegardes uniquement après remote-fs.target
 * **enableServer** `bool` Activer le serveur REST restic
-* **listenAll** `bool` Lier le serveur REST sur 0.0.0.0 (clients hors site)
-* **serverDataDir** `str` Racine de stockage locale du serveur REST (dépôts de tous les hôtes)
+* **listenAll** `bool` Écouter sur 0.0.0.0 (clients hors site)
+* **serverDataDir** `str` Répertoire de stockage local du serveur REST (dépôts de tous les hôtes)
 * **targets** `listOf submodule` Destinations de sauvegarde pour cet hôte (chemin local ou URL REST)
-  * **name** `str` Identifiant de cible, utilisé dans les noms de sauvegarde/unités (&lt;category&gt;-&lt;name&gt;)
-  * **root** `str` Racine du dépôt&nbsp;: chemin local ou URL REST
+  * **name** `str` Identifiant de cible, utilisé dans les noms de sauvegarde/unité (&lt;category&gt;-&lt;name&gt;)
+  * **root** `str` Racine du dépôt : chemin local ou URL REST
   * **zone** `str` Zone sélectionnant la phrase de passe du dépôt (restic-password-&lt;zone&gt;)
-  * **categories** `listOf ( enum [ "system" "nfs" "medias" ] )` Contenu à sauvegarder vers cette cible
-* **nfsPaths** `listOf str` Répertoires NFS (/srv/nfs/&lt;xxx&gt;) inclus dans la catégorie 'nfs'
-* **mediasPaths** `listOf str` Répertoires Médias (/srv/medias/&lt;xxx&gt;) inclus dans la catégorie 'medias'
+  * **categories** `listOf ( enum [ "system" "nfs" "medias" ] )` Quoi sauvegarder dans cette cible
+* **nfsPaths** `listOf str` Répertoires NFS (/srv/nfs/&lt;xxx&gt;) inclus dans la catégorie « nfs »
+* **mediasPaths** `listOf str` Répertoires Médias (/srv/medias/&lt;xxx&gt;) inclus dans la catégorie « medias »
 
 ```nix
 darkone.service.restic = {
