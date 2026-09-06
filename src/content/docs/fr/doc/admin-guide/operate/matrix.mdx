@@ -687,7 +687,7 @@ défaut sur les nouveaux salons.
 | Journaux MAS | `journalctl -u matrix-authentication-service -f` |
 | Journaux MatrixRTC | `journalctl -u livekit -u lk-jwt-service -f` |
 
-{/* t:p d927d4a5335f1306d4d4b41f19790f7e7e4dfe4011d788a9d42b512588431aa5 */}
+{/* t:p 0bf822848357af3a0d7f2d82960a9fe4eedb749e5e7bb77a6e8d856238c4851d */}
 ### Administrer les comptes avec MAS
 
 `dnf-mas` enveloppe l'outil officiel `mas-cli` sur l'hôte Matrix&nbsp;: il
@@ -710,6 +710,48 @@ Avec MAS, `/_synapse/admin/v1/register` est désactivé. C'est le mécanisme
 qu'utilise [`just configure-alert-bot`](/fr/doc/admin-guide/operate/justfile/)
 pour créer un compte de bot manquant&nbsp;: créer ce compte **avant** de
 migrer, ou le recréer avec `sudo dnf-mas manage register-user`.
+</Aside>
+
+`mas-cli` n'expose aucune commande de lecture&nbsp;: pour voir les comptes,
+leurs appareils et leurs sessions, activer le service `matrix-admin`, l'interface
+web [Ketesa](https://github.com/etkecc/ketesa) (ex-synapse-admin), qui parle aux
+API d'administration de MAS **et** de Synapse.
+
+```yaml
+# etc/config.yaml, sur l'hôte du serveur Matrix
+services:
+  matrix-admin:
+```
+
+Elle répond sur `https://matrix-admin.domain.tld`, **depuis le LAN et le tailnet
+uniquement**. Le sous-domaine doit tout de même résoudre publiquement vers le
+HCS&nbsp;: Caddy en a besoin pour le certificat ACME, avant de refuser les
+appelants extérieurs. Connexion par le bouton OIDC, avec un compte promu au
+préalable&nbsp;:
+
+```sh
+sudo dnf-mas manage promote-admin alice
+```
+
+| Côté | Ce que l'interface permet |
+|---|---|
+| MAS | Sessions (compat, OAuth2, personnelles), e-mails, liens OIDC amont, jetons d'inscription, mot de passe, verrouillage, désactivation |
+| Synapse | Comptes et appareils, salons, médias, signalements, limites de débit |
+
+<Aside type="tip" title="Débloquer un ami">
+Symptôme courant&nbsp;: plus aucune session ne s'ouvre, ou le chiffrement ne
+suit plus. Révoquer **toutes les sessions MAS** du compte, puis supprimer ses
+**appareils Synapse**&nbsp;: la reconnexion se fait ensuite avec le seul couple
+identifiant / mot de passe. La réinitialisation du chiffrement, elle, reste
+**côté client** («&nbsp;Réinitialiser le chiffrement&nbsp;» dans Element)&nbsp;:
+aucun outil serveur ne la fait à sa place.
+</Aside>
+
+<Aside type="caution" title="Comptes de ponts protégés">
+Les comptes appartenant aux ponts (`@whatsappbot`, `@signal_…`) sont marqués
+*appservice-managed*&nbsp;: l'interface refuse de les désactiver, de les
+verrouiller ou de leur retirer leurs appareils — de quoi casser un pont en un
+clic. Nom affiché et avatar restent modifiables.
 </Aside>
 
 {/* t:p ce89bb11502bc4f4f785a1b01cb78b4cf4d2071907c78521d1f49bbe01f69e87 */}

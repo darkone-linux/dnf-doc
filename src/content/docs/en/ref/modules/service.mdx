@@ -547,6 +547,37 @@ darkone.service.loki = {
 
 <hr/>
 
+{/* t:p 466283c3c53d1519f5f7d8e54fe78d1727971987bfd3b46441ff53df0af6df6a */}
+### &#x2728; darkone.service.matrix-admin
+
+Matrix administration UI (Ketesa, formerly synapse-admin) for the local server.
+
+Static SPA, no backend: the browser talks straight to synapse's admin API and
+to MAS's, so the whole service is a Caddy `file_server` over a store path.
+
+The DNF service name is deliberately not the package name. The UI is
+swappable (Element Admin, a later fork) without touching the URL, the DNS
+record or `etc/config.yaml`.
+
+Reachable from the LAN and the tailnet only (`proxy.isInternal`): the bundle
+holds no secret, but an admin login page has no reason to face the Internet.
+
+:::caution[Two server-side prerequisites]
+- MAS must serve its `adminapi` resource — done by `matrix.nix` as soon as
+  `mas.enable`. Without it login succeeds, then every MAS panel (sessions,
+  registration tokens, emails) fails.
+- The administrator account needs `can_request_admin`:
+  `sudo dnf-mas manage promote-admin <login>`.
+:::
+
+* **enable** `bool` Enable the local matrix administration UI
+
+```nix
+darkone.service.matrix-admin.enable = false;
+```
+
+<hr/>
+
 {/* t:p 5fa91d2fdec3ee058790e0dcd60e5acf0247c642b4fc1ad565aebda00ac945fc */}
 ### &#x2728; darkone.service.matrix
 
@@ -604,7 +635,7 @@ existing account to whoever registers a matching name upstream. Merge
 procedure in the admin guide (`operate/matrix.mdx`).
 :::
 
-{/* t:p a162b20e5b9fd71bc500b26856a72f84338ed44a8fae4478a7a68851cd2df3ce */}
+{/* t:p 792e624877d3311360f730f9983a75a568e3866eae1e1d01bf4df2574b2b50b7 */}
 #### Next-gen auth (MAS)
 
 `mas.enable` delegates all authentication to Matrix Authentication Service
@@ -624,6 +655,9 @@ tokens, `promote-admin`, `register-user`, `syn2mas`. MAS runs with
 exist outside the running unit; the wrapper rebuilds an equivalent
 credentials directory from the sops files, so it works whether the service
 is up or down (syn2mas needs it down).
+
+`mas-cli` only acts, never lists: enable the `matrix-admin` service for the
+read side (accounts, devices, sessions), it speaks both admin APIs.
 
 :::danger[Immutable once started]
 `mas-encryption-secret` and the Kanidm provider ULID must never change

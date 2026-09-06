@@ -523,6 +523,30 @@ darkone.service.loki = {
 
 <hr/>
 
+{/* t:p 466283c3c53d1519f5f7d8e54fe78d1727971987bfd3b46441ff53df0af6df6a */}
+### &#x2728; darkone.service.matrix-admin
+
+Interface d'administration Matrix (Ketesa, anciennement synapse-admin) pour le serveur local.
+
+SPA statique, pas de backend&nbsp;: le navigateur parle directement à l'API admin de synapse et à celle de MAS, donc le service entier est un `file_server` Caddy sur un store path.
+
+Le nom de service DNF est volontairement distinct du nom du paquet. L'IU est remplaçable (Element Admin, un fork ultérieur) sans toucher à l'URL, à l'enregistrement DNS ni à `etc/config.yaml`.
+
+Accessible depuis le LAN et la tailnet uniquement (`proxy.isInternal`) : le bundle ne contient aucun secret, mais une page de login admin n'a pas vocation à être exposée sur Internet.
+
+:::caution[Deux prérequis côté serveur]
+- MAS doit exposer sa ressource `adminapi` — fait par `matrix.nix` dès que `mas.enable` est activé. Sans cela, le login réussit mais chaque panneau MAS (sessions, jetons d'inscription, emails) échoue.
+- Le compte administrateur doit avoir `can_request_admin` : `sudo dnf-mas manage promote-admin <login>`.
+:::
+
+* **enable** `bool` Activer l'interface d'administration matrix locale
+
+```nix
+darkone.service.matrix-admin.enable = false;
+```
+
+<hr/>
+
 {/* t:p 5fa91d2fdec3ee058790e0dcd60e5acf0247c642b4fc1ad565aebda00ac945fc */}
 ### &#x2728; darkone.service.matrix
 
@@ -584,58 +608,35 @@ correspondant en amont. Procédure de fusion dans le guide admin
 (`operate/matrix.mdx`).
 :::
 
-{/* t:p a162b20e5b9fd71bc500b26856a72f84338ed44a8fae4478a7a68851cd2df3ce */}
+{/* t:p 792e624877d3311360f730f9983a75a568e3866eae1e1d01bf4df2574b2b50b7 */}
 #### Authentification nouvelle génération (MAS)
 
-`mas.enable` délègue toute l'authentification au Matrix Authentication Service
-(requis par Element X, la connexion par QR code, le portail self-service
-`/account`). Kanidm reste la source d'identité : MAS devient le client OIDC
-à la place de synapse, et synapse se contente de demander à MAS d'inspecter
-les jetons. Servi sur le même vhost : MAS possède la racine + les points
-d'entrée d'auth compat, synapse conserve `/_matrix/*` et
-`/_synapse/*` ; la découverte client est automatique (synapse sert
-lui-même `auth_metadata`), donc pas de changement well-known.
+`mas.enable` délègue toute l'authentification à Matrix Authentication Service (requis par Element X, la connexion par QR, le portail self-service `/account`). Kanidm reste la source d'identité : MAS devient le client OIDC à la place de synapse, et synapse se contente de demander à MAS d'introspecter les jetons. Servi sur le même vhost : MAS possède la racine + les points de compat auth, synapse conserve `/_matrix/*` et `/_synapse/*` ; la découverte client est automatique (synapse sert lui-même `auth_metadata`), donc pas de changement well-known.
 
-Secrets sops requis, tous créés par `just configure-admin-host` :
-`mas-encryption-secret`, `mas-synapse-secret` et `mas-rsa-private-key`.
+Secrets sops requis, tous créés par `just configure-admin-host` : `mas-encryption-secret`, `mas-synapse-secret` et `mas-rsa-private-key`.
 
-`dnf-mas` (racine) encapsule `mas-cli` pour l'administration côté hôte : jetons
-d'inscription, `promote-admin`, `register-user`, `syn2mas`. MAS tourne avec
-`DynamicUser` et lit ses secrets depuis les credentials systemd, qui
-n'existent pas en dehors de l'unité en cours ; le wrapper reconstitue un
-répertoire de credentials équivalent à partir des fichiers sops, ce qui
-fonctionne que le service soit en marche ou non (syn2mas nécessite qu'il
-soit arrêté).
+`dnf-mas` (root) encapsule `mas-cli` pour l'administration côté hôte : jetons d'inscription, `promote-admin`, `register-user`, `syn2mas`. MAS tourne avec `DynamicUser` et lit ses secrets depuis les credentials systemd, qui n'existent pas en dehors de l'unité en cours d'exécution ; le wrapper reconstruit un répertoire de credentials équivalent à partir des fichiers sops, donc il fonctionne que le service soit up ou down (syn2mas nécessite qu'il soit down).
 
-:::danger[Immuable une fois démarré]
-`mas-encryption-secret` et l'ULID du fournisseur Kanidm ne doivent jamais
-changer après le premier démarrage de MAS (données chiffrées de la BDD /
-liens de compte amont).
+`mas-cli` n'agit jamais ne liste pas : activez le service `matrix-admin` pour la partie lecture (comptes, appareils, sessions), il parle aux deux API admin.
+
+:::danger[Inchangeable après démarrage]
+`mas-encryption-secret` et le ULID du fournisseur Kanidm ne doivent jamais changer après le premier démarrage de MAS (données chiffrées en BDD / liens de comptes upstream).
 :::
 
-:::caution[Migrer une instance existante]
-Activer `mas.enable` sur un homeserver en service nécessite la migration
-`syn2mas` (comptes, mots de passe, sessions, identifiants externes).
-Déployez d'abord, puis, avec les deux services arrêtés : `sudo dnf-mas syn2mas check`,
-`... migrate --dry-run`, `... migrate`. Les bridges n'ont pas besoin d'un
-réenregistrement : synapse force MSC4190 sur chaque appservice dès que
-l'auth est déléguée. Procédure dans
-`.specs/matrix-authentication-service.md`.
+:::caution[Migration d'une instance existante]
+Activer `mas.enable` sur un serveur d'activités en cours nécessite la migration `syn2mas` (comptes, mots de passe, sessions, identifiants externes). Déployez d'abord, puis, avec les deux services arrêtés : `sudo dnf-mas syn2mas check`, `... migrate --dry-run`, `... migrate`. Les bridges n'ont pas besoin d'une réinscription : synapse force MSC4190 sur chaque appservice dès que l'auth est déléguée. Procédure dans `.specs/matrix-authentication-service.md`.
 :::
 
-:::caution[Pas d'enregistrement par secret partagé sous MAS]
-`/_synapse/admin/v1/register` de synapse (enregistrement par secret partagé)
-est désactivé en mode délégué, ce dont se sert `just configure-alert-bot`
-pour créer un compte bot manquant. Créez-le au préalable, ou avec
-`sudo dnf-mas manage register-user`.
+:::caution[Pas d'inscription shared-secret sous MAS]
+La route `/_synapse/admin/v1/register` (inscription shared secret) de synapse est désactivée en mode délégué, ce qui est le mode utilisé par `just configure-alert-bot` pour créer un compte bot manquant. Créez-le au préalable, ou avec `sudo dnf-mas manage register-user`.
 :::
 
 * **enable** `bool` Activer le service matrix (synapse)
-* **federation.enable** `bool` Autoriser la fédération serveur-à-serveur. Faux bloque toute la fédération.
-* **federation.whitelist** `listOf str` Vide = fédérer avec tous les serveurs ; non vide = uniquement ces domaines (entrant + sortant).
-* **mas.enable** `bool` Déléguer toute l'authentification au Matrix Authentication Service (support Element X).
+* **federation.enable** `bool` Autoriser la fédération serveur à serveur. Faux bloque toute la fédération.
+* **federation.whitelist** `listOf str` Vide = fédère avec tous les serveurs ; non vide = uniquement ces domaines (entrant + sortant).
+* **mas.enable** `bool` Déléguer toute l'authentification à Matrix Authentication Service (support Element X).
 * **matrixRtc.enable** `bool` Activer le backend MatrixRTC (LiveKit SFU) pour les appels de groupe Element Call.
-* **friendRegistration.enable** `bool` Autoriser les amis à s'auto-inscrire avec un jeton d'invitation (contrôlé par jeton).
+* **friendRegistration.enable** `bool` Autoriser les amis à s'inscrire eux-mêmes avec un jeton d'invitation (protégé par jeton).
 * **bridges.whatsapp.enable** `bool` Bridge Mautrix WhatsApp (connexion par QR code).
 * **bridges.signal.enable** `bool` Bridge Mautrix Signal (connexion par QR code).
 * **bridges.telegram.enable** `bool` Bridge Mautrix Telegram (connexion par numéro de téléphone).

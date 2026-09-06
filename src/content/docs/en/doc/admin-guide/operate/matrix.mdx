@@ -679,12 +679,12 @@ rooms.
 | Journaux MAS | `journalctl -u matrix-authentication-service -f` |
 | Journaux MatrixRTC | `journalctl -u livekit -u lk-jwt-service -f` |
 
-{/* t:p d927d4a5335f1306d4d4b41f19790f7e7e4dfe4011d788a9d42b512588431aa5 */}
-### Administering accounts with MAS
+{/* t:p 0bf822848357af3a0d7f2d82960a9fe4eedb749e5e7bb77a6e8d856238c4851d */}
+### Managing accounts with MAS
 
-`dnf-mas` wraps the official `mas-cli` tool on the Matrix host&nbsp;: it
-reconstructs the service's configuration and secrets, and therefore works
-whether the **service is stopped or started**. Always with `sudo`.
+`dnf-mas` wraps the official `mas-cli` tool on the Matrix host: it
+reconstructs the service configuration and secrets, so it works
+**whether the service is stopped or running**. Always use `sudo`.
 
 | Action | Command |
 |---|---|
@@ -693,15 +693,57 @@ whether the **service is stopped or started**. Always with `sudo`.
 | List administrators | `sudo dnf-mas manage list-admin-users` |
 | Create an account (bot, service) | `sudo dnf-mas manage register-user` |
 | Change a password | `sudo dnf-mas manage set-password alice` |
-| Close an account's sessions | `sudo dnf-mas manage kill-sessions alice` |
+| Kill all sessions for an account | `sudo dnf-mas manage kill-sessions alice` |
 | Lock an account | `sudo dnf-mas manage lock-user alice` |
-| Full diagnostic | `sudo dnf-mas doctor` |
+| Full diagnostics | `sudo dnf-mas manage doctor` |
 
 <Aside type="caution" title="No more shared registration secret">
 With MAS, `/_synapse/admin/v1/register` is disabled. This is the mechanism
-used by [`just configure-alert-bot`](/en/doc/admin-guide/operate/justfile/)
-to create a missing bot account&nbsp;: create this account **before**
+[`just configure-alert-bot`](/en/doc/admin-guide/operate/justfile/) uses
+to create a missing bot account: create this account **before**
 migrating, or recreate it with `sudo dnf-mas manage register-user`.
+</Aside>
+
+`mas-cli` exposes no read commands: to view accounts,
+their devices and sessions, enable the `matrix-admin` service, the
+web interface [Ketesa](https://github.com/etkecc/ketesa) (formerly synapse-admin), which talks to
+MAS **and** Synapse admin APIs.
+
+```yaml
+# etc/config.yaml, on the Matrix server host
+services:
+  matrix-admin:
+```
+
+It responds on `https://matrix-admin.domain.tld`, **from the LAN and tailnet
+only**. The subdomain must still resolve publicly to the
+HCS: Caddy needs it for the ACME certificate before refusing
+external callers. Log in via the OIDC button, with a previously promoted
+account:
+
+```sh
+sudo dnf-mas manage promote-admin alice
+```
+
+| Side | What the interface provides |
+|---|---|
+| MAS | Sessions (compat, OAuth2, personal), emails, upstream OIDC links, registration tokens, password, locking, deactivation |
+| Synapse | Accounts and devices, rooms, media, reports, rate limits |
+
+<Aside type="tip" title="Unlocking a friend">
+Common symptom: no session opens anymore, or encryption
+no longer follows. Revoke **all MAS sessions** for the account, then delete its
+**Synapse devices**: reconnection is then done with only the
+username/password pair. Resetting encryption, on the other hand, remains
+**client-side** ("Reset encryption" in Element): no
+server-side tool does it in your place.
+</Aside>
+
+<Aside type="caution" title="Protected bridge accounts">
+Accounts belonging to bridges (`@whatsappbot`, `@signal_…`) are marked
+*appservice-managed*: the interface refuses to deactivate, lock, or remove their
+devices — enough to break a bridge in one
+click. Display name and avatar remain editable.
 </Aside>
 
 {/* t:p ce89bb11502bc4f4f785a1b01cb78b4cf4d2071907c78521d1f49bbe01f69e87 */}
