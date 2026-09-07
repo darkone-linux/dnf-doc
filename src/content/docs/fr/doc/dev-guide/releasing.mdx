@@ -1,0 +1,135 @@
+---
+title: Publier une version
+sidebar:
+  label: Publier
+  order: 6
+lang: fr
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+{/* t:main */}
+{/* t:h c8bbdca288b29dd7666c28a9af0a404f9930ce84b5b3fac72cb5bc027685701a */}
+
+{/* t:p fecbfeb001bbb1efb08d82200060477022ab3d7fd1015aafdf3be1a0759df2d7 */}
+Publier, c'est produire des tags cohérents sur les cinq dépôts en une seule
+commande, depuis l'espace de co-développement.
+
+{/* t:p 0cc8518404b02755fa9a665fa3e5a9fe5ee75177ed8e163f4bfe79d6414e8bb4 */}
+## Ce que chaque dépôt versionne
+
+| Dépôt | Source de vérité | Règle |
+| --- | --- | --- |
+| `darkone-nixos-framework` | `VERSION` | Référence du train |
+| `dnf-generator` | `Cargo.toml` | Version propre, épinglée par le framework |
+| `dnf-doc` | `package.json` | `MAJEUR.MINEUR` du framework, correctif propre |
+| `dnf-boilerplate`, `dnf-example` | tag seul | Miroir du framework |
+
+Le projet privé consommateur n'est jamais taggué : il reste en
+co-développement et sert de banc d'intégration permanent.
+
+{/* t:p a520ff38da761c4218a9f9668f6c88bfb90349e746767129f1de33140173393e */}
+## Le vocabulaire de commit
+
+Le changelog est généré à partir des messages de commit. Un type hors liste
+disparaît silencieusement des notes de version, donc la liste est vérifiée par
+l'intégration continue sur chaque *pull request*.
+
+```
+feat fix perf refactor docs test build ci chore security revert
+```
+
+Un scope n'est jamais un type&nbsp;: `feat(matrix): …`, jamais `matrix(admin): …`.
+
+| Type | Section du changelog |
+| --- | --- |
+| `feat` | Added |
+| `fix` | Fixed |
+| `security` | Security |
+| `perf`, `refactor`, `revert` | Changed |
+| `docs` | Documentation |
+| sujet en `drop` ou `remove` | Removed |
+| `chore`, `ci`, `test`, `build` | non publié |
+
+<Aside type="caution" title="Marquer une rupture">
+Une rupture porte un `!` après le scope **et** un pied `BREAKING CHANGE:` qui
+nomme la surface cassée et la migration. C'est ce qui déclenche la section
+**⚠ Breaking** et la montée du numéro mineur.
+
+```
+feat(idm)!: drop the legacy replication scheme
+
+BREAKING CHANGE: `network.idm.replicas` remplacé par `zones.<zone>.idm`.
+```
+</Aside>
+
+{/* t:p a153f22e35add6d5f118c55fb6fa13815e7f57b192bbe3c73528d87088bec79a */}
+## Les recettes
+
+| Recette | Effet |
+| --- | --- |
+| `just versions` | Version, dernier tag et branche de chaque dépôt |
+| `just changelog` | Aperçu de la prochaine entrée, n'écrit rien |
+| `just bump [niveau]` | Version, changelog, commit et tag d'**un** dépôt |
+| `just release [niveau]` | Le train complet sur les cinq dépôts |
+
+Le niveau vaut `auto` par défaut&nbsp;: [git-cliff](https://git-cliff.org/) déduit
+le numéro suivant des commits. `patch`, `minor`, `major` ou un `X.Y.Z` littéral
+forcent la décision.
+
+`just bump` ne pousse jamais : il affiche la commande de poussée.
+
+{/* t:p 81af2c9b1e3d6a242d5196bef8c869679a1196e2f841de3087081e68b0c94b90 */}
+## Le train de release
+
+`just release` s'exécute à la racine de l'espace de co-développement, qui doit
+contenir les cinq dépôts.
+
+<Steps>
+
+1. **Barrière qualité**&nbsp;: `just check-all`, `just gen-test` et
+   `just simulate all`. Les tests en machine virtuelle ne tournent pas dans
+   l'intégration continue, donc un scénario rouge doit arrêter la publication
+   ici.
+
+2. **Générateur**, s'il a bougé depuis son dernier tag. Il possède le schéma
+   `etc/config.yaml`, donc il part avant ce qui en dépend.
+
+3. **Épinglage** du tag du générateur dans `dnf/flake.nix`, pour que le contrat
+   entre framework et générateur se lise dans un diff, pas seulement dans le
+   verrou.
+
+4. **Framework**&nbsp;: `VERSION`, `CHANGELOG.md`, commit et tag.
+
+5. **Documentation**&nbsp;: `just codegen` régénère la référence depuis le
+   framework, puis la version s'aligne sur la ligne `MAJEUR.MINEUR`, puis le
+   site est construit et déployé.
+
+6. **Boilerplate et exemple**&nbsp;: le tag du framework est écrit dans leur
+   `flake.nix`, `nix flake check` valide, et le `flake.lock` est **commité**.
+   C'est lui qui rend un clone reproductible.
+
+</Steps>
+
+{/* t:p 7640fffe4bd8ed144db0b0533dd7b901247f61496c7f0ddabfa09d8e068a2fa6 */}
+## Les garde-fous d'intégration continue
+
+Sur un tag `v*`, `release.yml` refuse de publier si&nbsp;:
+
+- le fichier `VERSION` ne correspond pas au tag ;
+- `CHANGELOG.md` ne contient pas de section pour cette version ;
+- le verrou pointe un `dnf-generator` pris sur une branche plutôt que sur une
+  release publiée.
+
+Les trois contrôles de `ci.yml` (tests unitaires, évaluation, lint) sont
+rejoués via `workflow_call`, puis la section du changelog devient les notes de
+la *release* GitHub.
+
+{/* t:p a58725841afe858830c2aa3d4f417f5562f72ae38e3ed8cea7cd4f71968276fb */}
+## Configuration partagée
+
+Un seul [git-cliff](https://git-cliff.org/) pour les trois dépôts qui
+produisent un changelog, dans `dnf/assets/release/cliff.toml`. Le script
+`dnf/assets/scripts/just-bump.sh` découvre la source de version du dépôt
+(`VERSION`, `Cargo.toml` ou `package.json`), assemble le fichier autour du bloc
+généré et préserve l'historique écrit à la main.

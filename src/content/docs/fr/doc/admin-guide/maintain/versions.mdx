@@ -1,0 +1,123 @@
+---
+title: Versions et montées de version
+sidebar:
+  label: Versions
+  order: 5
+lang: fr
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+{/* t:main */}
+{/* t:h 7cddc1fe48d6f6e06c2e3bf6ab9f87ceef83e66d15c5a7243099c2086070a599 */}
+
+{/* t:p 10bd3cb8c92d66d0434c82da6a22b3448d903776487076c6e1f05386248c46df */}
+Le framework publie des versions [SemVer](https://semver.org/lang/fr/). Une
+version est ce que votre projet épingle, ce que la documentation décrit et ce
+que vous lisez sur un hôte déployé.
+
+{/* t:p 75255e0e955f9af0bb274182f61fed8c9e77c2af68df4989dacfdb20e13a2b7e */}
+## Le contrat de version
+
+Tant que le framework est en `0.x`, c'est le numéro **MINEUR** qui porte les
+ruptures. Le numéro de **CORRECTIF** n'en porte jamais.
+
+| Chiffre | Ce qui bouge | Exemples |
+| --- | --- | --- |
+| `0.Y.z` (mineur) | Rupture assumée | clé `etc/config.yaml` renommée, option `darkone.*` supprimée, recette `just` renommée, structure `usr/` modifiée |
+| `0.y.Z` (correctif) | Rien à migrer | correction, nouveau module ou service, nouvelle option, remontée de `nixpkgs` |
+
+La version `1.0.0` marquera le lancement public. À partir de là, ce sera le
+numéro **MAJEUR** qui portera les ruptures.
+
+<Aside type="tip" title="Toujours lire le changelog avant de monter">
+Chaque rupture est décrite dans une section **⚠ Breaking** du
+[CHANGELOG](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/CHANGELOG.md),
+avec la surface cassée et la migration à faire.
+</Aside>
+
+{/* t:p f5f34e725eec337ab1e6ff1c6066db97631aa7cd3c79a55c40cce77139076972 */}
+## Épingler une version
+
+Un projet consommateur déclare le framework par son tag, et **commite son
+`flake.lock`**. Sans ce fichier, un clone du projet reconstruit un arbre
+différent à chaque fois.
+
+```nix
+# flake.nix
+inputs = {
+  dnf.url = "github:darkone-linux/darkone-nixos-framework/v0.1.0";
+};
+```
+
+Le générateur n'a pas à être déclaré : la version épinglée du framework fixe
+mécaniquement celle du générateur qui va avec.
+
+{/* t:p c0682472813d599afc1243671a1a6a4295030366e9e5a17d8d6036367f52e6f0 */}
+## Monter de version
+
+<Steps>
+
+1. Repérer la version cible dans les
+   [releases](https://github.com/darkone-linux/darkone-nixos-framework/releases)
+   et lire les sections **⚠ Breaking** de toutes les versions traversées.
+
+2. Modifier le tag dans `flake.nix`, puis rafraîchir le verrou :
+
+   ```sh
+   nix flake update dnf
+   ```
+
+3. Remettre le lien `dnf/` sur la révision que le verrou épingle :
+
+   ```sh
+   nix run .#init
+   ```
+
+4. Régénérer, contrôler, puis déployer un hôte en test avant la flotte :
+
+   ```sh
+   just generate
+   just apply-local test
+   ```
+
+5. Commiter `flake.nix` et `flake.lock` ensemble.
+
+</Steps>
+
+<Aside type="caution" title="Essayer sans s'engager">
+Pour construire contre une version sans toucher au projet&nbsp;:
+
+```sh
+nixos-rebuild switch --flake .#<hôte> \
+  --override-input dnf github:darkone-linux/darkone-nixos-framework/<tag>
+```
+</Aside>
+
+{/* t:p 6a8d99faa8bf169a6010ee13c59ac9a4e3806eaa8fca22932141e6eb9e769225 */}
+## Savoir ce qui tourne sur un hôte
+
+Chaque hôte déployé porte sa version, ce qui évite de deviner après un
+retour arrière ou une flotte mise à jour hôte par hôte.
+
+```sh
+cat /etc/dnf-release
+nixos-version
+```
+
+`/etc/dnf-release` donne la version publiée (`DNF_RELEASE`) et la révision git
+exacte (`DNF_REV`). `nixos-version` fait apparaître la version sous forme
+d'étiquette `dnf-X.Y.Z`, également visible dans les entrées de démarrage.
+
+{/* t:p d5208d8690ccf33691b1dce43b7f324777e85c715e1535d85d59c00a928bdfbc */}
+## Les projets qui vont ensemble
+
+| Projet | Règle de version |
+| --- | --- |
+| `darkone-nixos-framework` | Référence, c'est ce que vous épinglez |
+| `dnf-generator` | Version propre, épinglée par le framework |
+| `dnf-doc` | Partage `MAJEUR.MINEUR` avec le framework |
+| `dnf-boilerplate`, `dnf-example` | Tag miroir du framework, verrou commité |
+
+Pour lire la documentation qui correspond à votre version, comparez le
+`MAJEUR.MINEUR` : la doc `0.1.x` décrit le framework `0.1.x`.

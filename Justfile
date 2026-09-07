@@ -23,20 +23,23 @@ test:
 check-links:
 	node scripts/check-anchors.mjs
 
-# Bump version and tag: just bump [patch|minor|major]
+# Shares the framework's release script and git-cliff config, so the three repos
+# produce the same CHANGELOG from the same commit vocabulary.
+#
+# dnf-doc shares MAJOR.MINOR with the framework and owns only PATCH: `--line X.Y`
+# jumps onto a new framework line, which `just release` at the workspace root
+# passes automatically.
+
+# Bump version, changelog and tag: just bump [auto|patch|minor|major|X.Y.Z]
 [group('dev')]
-bump type="patch":
-	#!/usr/bin/env bash
-	set -euo pipefail
-	OLD=$(node -p "require('./package.json').version")
-	npm version {{type}} --no-git-tag-version --no-commit-hooks > /dev/null
-	NEW=$(node -p "require('./package.json').version")
-	echo "Bumping $OLD → $NEW"
-	node scripts/update-changelog.mjs --old "$OLD" --new "$NEW"
-	git add package.json package-lock.json CHANGELOG.md
-	git commit -m "Release v$NEW"
-	git tag "v$NEW"
-	echo "Done — run: git push && git push --tags"
+bump level="auto" *args:
+	bash ../dnf/assets/scripts/just-bump.sh \
+	    --config ../dnf/assets/release/cliff.toml --level {{ level }} {{ args }}
+
+# Preview the entry the next release would carry — writes nothing
+[group('dev')]
+changelog:
+	@git-cliff --config ../dnf/assets/release/cliff.toml --unreleased --bump 2>/dev/null
 
 # Upgrade astro & starlight + dependencies
 [group('dev')]

@@ -85,6 +85,30 @@ darkone.system.core = {
 
 <hr/>
 
+{/* t:p 35aba77a49509d65414a4fb97e0854e7a77506e3e330dc5533750a810412e9f2 */}
+### &#x2699; darkone.system.dnf-release
+
+Stamps the framework release on the host: `/etc/dnf-release` and the boot label.
+
+Answers "which DNF runs this machine?" without a deploy log, on a fleet where
+hosts are updated one at a time and a rollback can leave a node several
+releases behind.
+
+:::note[Unconditional]
+No `enable` option: pure metadata, no service, no cost. `dnfVersion` comes
+from `lib/mk-configuration.nix`, which reads `dnf/VERSION` and the flake
+revision.
+:::
+
+:::tip[Read it]
+```sh
+cat /etc/dnf-release      # DNF_RELEASE + DNF_REV
+nixos-version             # release appears as a `dnf-X.Y.Z` label tag
+```
+:::
+
+<hr/>
+
 {/* t:p ea546a6597149c033a54fed65c7c5775f2f4deceac65379376b6d4b4b52b7602 */}
 ### &#x2699; darkone.system.documentation
 

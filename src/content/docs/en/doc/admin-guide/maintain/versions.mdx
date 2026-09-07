@@ -1,0 +1,123 @@
+---
+title: Versions and Upgrades
+sidebar:
+  label: Versions
+  order: 5
+lang: en
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+{/* t:translated-from fr */}
+{/* t:h 7cddc1fe48d6f6e06c2e3bf6ab9f87ceef83e66d15c5a7243099c2086070a599 */}
+
+{/* t:p 10bd3cb8c92d66d0434c82da6a22b3448d903776487076c6e1f05386248c46df */}
+The framework publishes [SemVer](https://semver.org/) versions. A version is
+what your project pins, what the documentation describes, and what you read on
+a deployed host.
+
+{/* t:p 75255e0e955f9af0bb274182f61fed8c9e77c2af68df4989dacfdb20e13a2b7e */}
+## The version contract
+
+While the framework is in `0.x`, it is the **MINOR** number that carries the
+breaking changes. The **PATCH** number never carries any.
+
+| Number | What changes | Examples |
+| --- | --- | --- |
+| `0.Y.z` (minor) | Breaking change | `etc/config.yaml` key renamed, `darkone.*` option removed, `just` recipe renamed, `usr/` structure modified |
+| `0.y.Z` (patch) | Nothing to migrate | fix, new module or service, new option, `nixpkgs` bump |
+
+Version `1.0.0` will mark the public launch. From then on, it will be the
+**MAJOR** number that carries the breaking changes.
+
+<Aside type="tip" title="Always read the changelog before upgrading">
+Each breaking change is described in a **⚠ Breaking** section of the
+[CHANGELOG](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/CHANGELOG.md),
+with the broken surface and the migration to perform.
+</Aside>
+
+{/* t:p f5f34e725eec337ab1e6ff1c6066db97631aa7cd3c79a55c40cce77139076972 */}
+## Pinning a version
+
+A consumer project declares the framework by its tag, and **commits its
+`flake.lock`**. Without this file, a clone of the project rebuilds a different
+tree every time.
+
+```nix
+# flake.nix
+inputs = {
+  dnf.url = "github:darkone-linux/darkone-nixos-framework/v0.1.0";
+};
+```
+
+The generator does not need to be declared: the pinned framework version
+mechanically fixes the version of the generator that goes with it.
+
+{/* t:p c0682472813d599afc1243671a1a6a4295030366e9e5a17d8d6036367f52e6f0 */}
+## Upgrading the version
+
+<Steps>
+
+1. Spot the target version in the
+   [releases](https://github.com/darkone-linux/darkone-nixos-framework/releases)
+   and read the **⚠ Breaking** sections of all versions traversed.
+
+2. Modify the tag in `flake.nix`, then refresh the lock:
+
+   ```sh
+   nix flake update dnf
+   ```
+
+3. Point the `dnf/` link back to the revision the lock pins:
+
+   ```sh
+   nix run .#init
+   ```
+
+4. Regenerate, check, then deploy a test host before the fleet:
+
+   ```sh
+   just generate
+   just apply-local test
+   ```
+
+5. Commit `flake.nix` and `flake.lock` together.
+
+</Steps>
+
+<Aside type="caution" title="Try without committing">
+To build against a version without touching the project:
+
+```sh
+nixos-rebuild switch --flake .#<hôte> \
+  --override-input dnf github:darkone-linux/darkone-nixos-framework/<tag>
+```
+</Aside>
+
+{/* t:p 6a8d99faa8bf169a6010ee13c59ac9a4e3806eaa8fca22932141e6eb9e769225 */}
+## Knowing what runs on a host
+
+Each deployed host carries its version, which avoids guessing after a
+rollback or a fleet updated host by host.
+
+```sh
+cat /etc/dnf-release
+nixos-version
+```
+
+`/etc/dnf-release` gives the published version (`DNF_RELEASE`) and the exact git
+revision (`DNF_REV`). `nixos-version` shows the version as a `dnf-X.Y.Z` label,
+also visible in the boot entries.
+
+{/* t:p d5208d8690ccf33691b1dce43b7f324777e85c715e1535d85d59c00a928bdfbc */}
+## Projects that go together
+
+| Project | Version rule |
+| --- | --- |
+| `darkone-nixos-framework` | Reference, this is what you pin |
+| `dnf-generator` | Own version, pinned by the framework |
+| `dnf-doc` | Shares `MAJOR.MINOR` with the framework |
+| `dnf-boilerplate`, `dnf-example` | Mirror tag of the framework, committed lock |
+
+To read the documentation that matches your version, compare the
+`MAJOR.MINOR`: the `0.1.x` doc describes the `0.1.x` framework.
