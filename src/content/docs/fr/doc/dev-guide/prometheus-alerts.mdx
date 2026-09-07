@@ -53,7 +53,7 @@ Exposés via `dnfLib` (voir `dnf/lib/default.nix`) :
 | `mkAlertRuleGroups` | Raccourci : nœuds + ressources + restic + SMART + tailscale |
 | `mkSilenceRoutes` | Routes Alertmanager vers le receiver `null` (alertes connues, acceptées) |
 
-{/* t:p 3a2c869b4919f9263d282820c9cbb697290831064b24501d391499b2482005f8 */}
+{/* t:p 4c2f2ef7dfe1d6ac6c84d3d930d88a86ade6c6c531e3df5920bb09041ec2a3b1 */}
 ### Le label `host`, ou pourquoi les alertes se nomment
 
 Chaque cible de scrape porte un label `host` valant le nom d'hôte, posé par
@@ -70,9 +70,28 @@ topologie à l'évaluation.
 
 :::caution[Les agrégations effacent les labels]
 Une clause `by (...)` supprime tout label non groupé. `ResticBackupStale`
-(`max by (instance, job, host)`) et `SynapseHighErrorRate`
-(`sum by (instance, host)`) citent donc `host` explicitement. L'oublier dans une
-nouvelle règle agrégée fait retomber la notification sur l'instance brute.
+(`max by (instance, job, host)`), `SynapseHighErrorRate`
+(`sum by (instance, host)`) et les règles FS (`byDevice`) citent donc `host`
+explicitement. L'oublier dans une nouvelle règle agrégée fait retomber la
+notification sur l'instance brute.
+:::
+
+:::note[Règles FS : une alerte par partition]
+`node_filesystem_*` est émis **par montage**. Une partition montée plusieurs
+fois (sous-volumes btrfs, montages `bind`) déclenchait donc chaque règle FS
+autant de fois qu'elle a de montages, pour un seul disque plein.
+
+`mkResourceRuleGroups` agrège sur `byDevice`
+(`instance, job, host, device, fstype`)&nbsp;: `min` pour l'espace et les
+inodes, `max` pour `FilesystemReadOnly`. Les deux membres du `and` de
+`DiskWillFillSoon` sont agrégés — un membre brut porte encore `mountpoint` et ne
+matche plus rien en face.
+
+`mountpoint` disparaît avec l'agrégation. PromQL ne sait pas concaténer des
+valeurs de label&nbsp;: la liste des montages est donc résolue par la fonction
+`query` du moteur de templates Go que Prometheus applique aux annotations
+(`deviceMounts`). Coût&nbsp;: une requête instantanée par alerte active et par
+évaluation, aucune tant que la règle reste muette.
 :::
 
 :::note[Le bot n'affiche pas `summary`]
@@ -128,7 +147,7 @@ services.prometheus.rules = [
 ];
 ```
 
-{/* t:p 88ff53b7779494d1dd698278dcd71a6112d90df6cf793f107e4dd5a3bab1222f */}
+{/* t:p c20af35cceff864b8ddbf01c2809b60804aee1a3258f90baafe0edbc24df91ee */}
 ## Où ajouter quoi
 
 | Je veux… | Je touche… |
@@ -156,7 +175,7 @@ Deux listes de seuils le font, dans `mkResourceRuleGroups`&nbsp;:
 - `remoteFstypes` — retiré de **toutes** les règles FS. Un montage client
   remonte l'espace du **serveur**&nbsp;: le surveiller transforme un export
   plein en une même alerte sur chaque machine qui le monte, alors que le serveur
-  alerte déjà tout seul, avec le vrai point de montage.
+  alerte déjà tout seul, avec la vraie partition.
 - `readOnlyByDesignFstypes` — retiré de `FilesystemReadOnly` seul (médias
   optiques). La règle ne surveille donc que les montages censés être accessibles
   en écriture.

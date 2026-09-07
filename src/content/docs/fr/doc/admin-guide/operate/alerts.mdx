@@ -129,7 +129,7 @@ dnf-maintenance on    # inhibe les alertes du nœud
 dnf-maintenance off   # les réactive
 ```
 
-{/* t:p 09e1d9f6c43658c16003d2b8e5b0d10da8f3e3f5e7b9c3f38f6e5ddd45dd6115 */}
+{/* t:p 715f4640cf9ce3afaba4069b55a5199f06b08e6b0238747b149a1a0c134fa0d4 */}
 ## Silencer une alerte connue
 
 Certaines alertes sont exactes mais non actionnables&nbsp;: un disque de sauvegarde
@@ -143,7 +143,7 @@ empêche de notifier.
     {
       alert = "DiskSpaceLow";
       host = "srv-backup";
-      matchers.mountpoint = "/mnt/backup";
+      matchers.device = "/dev/sdb";
       reason = ''
         Disque de sauvegarde volontairement rempli, seuil structurellement
         franchi. Retirer si la rétention est réduite.
@@ -165,9 +165,17 @@ continue de se déclencher et reste visible dans Prometheus, Alertmanager et
 Grafana, elle cesse simplement de notifier.
 
 :::caution[Un silence est chirurgical, pas global]
-Seul l'`alertname` cité est concerné&nbsp;: taire `DiskSpaceLow` sur un point de
-montage laisse `DiskSpaceCritical` et `DiskWillFillSoon` pleinement armés sur ce
-même montage. Le vrai remplissage alerte toujours.
+Seul l'`alertname` cité est concerné&nbsp;: taire `DiskSpaceLow` sur une
+partition laisse `DiskSpaceCritical` et `DiskWillFillSoon` pleinement armés sur
+cette même partition. Le vrai remplissage alerte toujours.
+:::
+
+:::note[Viser une partition, pas un point de montage]
+Les règles disque alertent **une fois par partition**, quel que soit le nombre
+de points de montage qu'elle porte (sous-volumes btrfs `/`, `/nix`, `/home`,
+`/.swapfile`&nbsp;: une seule alerte). Ces alertes n'ont donc pas de label
+`mountpoint`&nbsp;: un `matchers.mountpoint` ne matcherait jamais. Cibler
+`matchers.device`, lu dans la description de l'alerte ou avec `df -h`.
 :::
 
 :::note[Où déclarer ces silences]
@@ -182,7 +190,7 @@ Vérifier le routage sur l'hôte Prometheus&nbsp;:
 
 ```sh
 amtool config routes test --config.file=/etc/alertmanager.yml \
-  alertname=DiskSpaceLow host=srv-backup mountpoint=/mnt/backup
+  alertname=DiskSpaceLow host=srv-backup device=/dev/sdb
 ```
 
 Pour taire un mode de défaillance systémique plutôt qu'un cas ponctuel, voir

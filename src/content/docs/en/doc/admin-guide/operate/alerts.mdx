@@ -128,12 +128,11 @@ dnf-maintenance on    # inhibits node alerts
 dnf-maintenance off   # re-enables them
 ```
 
-{/* t:p 09e1d9f6c43658c16003d2b8e5b0d10da8f3e3f5e7b9c3f38f6e5ddd45dd6115 */}
-## Silence a known alert
+{/* t:p 715f4640cf9ce3afaba4069b55a5199f06b08e6b0238747b149a1a0c134fa0d4 */}
+## Silencing a known alert
 
-Some alerts are accurate but not actionable: a backup disk that is deliberately
-filled permanently crosses `DiskSpaceLow`. `silences` prevents them from
-notifying.
+Some alerts are accurate but not actionable: a backup drive intentionally filled
+permanently triggers `DiskSpaceLow`. `silences` prevents them from notifying.
 
 ```nix
 # usr/modules/alerts.nix
@@ -142,10 +141,10 @@ notifying.
     {
       alert = "DiskSpaceLow";
       host = "srv-backup";
-      matchers.mountpoint = "/mnt/backup";
+      matchers.device = "/dev/sdb";
       reason = ''
-        Backup disk deliberately filled, threshold structurally crossed. Remove
-        if retention is reduced.
+        Disque de sauvegarde volontairement rempli, seuil structurellement
+        franchi. Retirer si la rétention est réduite.
       '';
     }
   ];
@@ -155,38 +154,46 @@ notifying.
 | Field | Role |
 |---|---|
 | `alert` | Name of the alert to silence (`alertname`) |
-| `host` | Host name to target (`host` label), `null` for the whole fleet |
+| `host` | Target host name (`host` label), `null` for the entire fleet |
 | `matchers` | Additional labels in strict equality, combined with AND |
 | `reason` | Required: why the alert is accepted |
 
-Each entry becomes an Alertmanager route to the `null` receiver. The alert still
-fires and stays visible in Prometheus, Alertmanager and Grafana, it simply stops
-notifying.
+Each entry becomes an Alertmanager route to the `null` receiver. The alert
+continues to fire and remains visible in Prometheus, Alertmanager, and Grafana;
+it simply stops notifying.
 
 :::caution[A silence is surgical, not global]
-Only the cited `alertname` is affected: silencing `DiskSpaceLow` on one mount
-point leaves `DiskSpaceCritical` and `DiskWillFillSoon` fully armed on that same
-mount point. A real fill-up always alerts.
+Only the cited `alertname` is affected: silencing `DiskSpaceLow` on a
+partition leaves `DiskSpaceCritical` and `DiskWillFillSoon` fully armed on
+that same partition. Actual fullness still triggers an alert.
+:::
+
+:::note[Target a partition, not a mount point]
+Disk rules alert **once per partition**, regardless of the number of mount
+points it carries (btrfs subvolumes `/`, `/nix`, `/home`,
+`/.swapfile`: a single alert). These alerts therefore have no `mountpoint`
+label: a `matchers.mountpoint` would never match. Use `matchers.device`, read
+from the alert description or with `df -h`.
 :::
 
 :::note[Where to declare these silences]
-The rules and routes of a zone are generated on the host running Prometheus, not
-on the machine concerned. Since each host is evaluated independently,
-`usr/machines/<host>/` is not enough. A consumer module
-(`usr/modules/alerts.nix`) is imported everywhere and groups in a single file
-what is deliberately ignored, across all zones.
+The rules and routes for a zone are generated on the host running
+Prometheus, not on the machine in question. Since each host is evaluated
+independently, `usr/machines/<host>/` alone is not enough. A consumer module
+(`usr/modules/alerts.nix`) is imported everywhere and groups into a single file
+what is intentionally ignored, across all zones.
 :::
 
-Check the routing on the Prometheus host:
+Verify routing on the Prometheus host:
 
 ```sh
 amtool config routes test --config.file=/etc/alertmanager.yml \
-  alertname=DiskSpaceLow host=srv-backup mountpoint=/mnt/backup
+  alertname=DiskSpaceLow host=srv-backup device=/dev/sdb
 ```
 
-To silence a systemic failure mode rather than a one-off case, see
+To silence a systemic failure mode rather than an isolated case, see
 `ignoredUnits` (`dnf/config/alerts.nix`), which excludes a systemd unit from
-`SystemdUnitFailed` across the whole fleet.
+`SystemdUnitFailed` across the entire fleet.
 
 {/* t:p 8051eff71befb2af62a438ff4d88cbefe0d796fc0d44b6a8dc75fd301d012bbc */}
 ## Troubleshooting

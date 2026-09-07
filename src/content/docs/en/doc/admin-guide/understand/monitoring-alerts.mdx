@@ -97,40 +97,54 @@ Like `monitoring-node:<zone>`, these features accept an owner zone :
 `alert-critical:main` makes a node (typically the HCS) monitored by the
 `main` zone.
 
-{/* t:p 3eebc12b5e8c2970659ebb0926b3a4cb9c78007de7572c0fc270ac5fdc2a0abb */}
-## What is monitored
+{/* t:p 24b8e85f3955ce1e3b0b7552705f11456f12a56dc5b77c6da641935797d41fd5 */}
+## What is Monitored
 
 Rules are derived from what each node declares; nothing to list manually.
 
 | Family | Trigger |
 |---|---|
 | Unreachable node | `node-exporter` silent (`NodeDown`) |
-| Active service but down | expected systemd unit not `active` (`ServiceDown`) |
+| Active service down | expected systemd unit not `active` (`ServiceDown`) |
 | Failed unit | a systemd unit `failed` (`SystemdUnitFailed`) |
 | Resources | disk, RAM, load, inodes, OOM (overridable thresholds) |
 | Network | gateway, tailnet (headscale) or DNS unreachable (blackbox probes) |
 | Remote site down | gateway of another zone unreachable (`PeerGatewayDown`) |
-| tailnet self-healing | Tailscale client disconnected or watchdog looping (`TailscaleUnhealthy`, `TailscaleFlapping`) |
+| Tailnet self-healing | Tailscale client stuck or watchdog flapping (`TailscaleUnhealthy`, `TailscaleFlapping`) |
 
 <Aside type="caution" title="A zone cannot report its own death">
 A zone's Prometheus runs **on its gateway** and only scrapes nodes
-in that zone. Gateway down, the observer goes down with it&nbsp;: no
-alert fires, and the site becomes invisible without anyone knowing.
+within that zone. If the gateway goes down, the observer goes down with it: no
+alert is sent, and the site becomes invisible without anyone knowing.
 
 Each zone therefore probes the gateways of **other** zones and raises
-`PeerGatewayDown` (critical, after 5&nbsp;min) when one of them stops
-responding. With three zones, an outage is seen by two witnesses&nbsp;: losing
-an observer never hides the incident. The alert carries `reach="wan"`, so a
-**local** Internet outage triggers `ZoneInternetDown` only, without a barrage of
+`PeerGatewayDown` (critical, after 5 min) when one of them stops responding.
+With three zones, an outage is seen by two witnesses: losing an
+observer never masks the incident. The alert carries `reach="wan"`, so a
+**local** Internet outage triggers only `ZoneInternetDown`, without a barrage of
 false alerts on peers.
 </Aside>
 
-<Aside type="note" title="Network mounts and read-only">
-Disk rules ignore **network** mounts (NFS, CIFS…)&nbsp;: they
-report the server's space, which already alerts on its own disk. Likewise, a
-deliberately **read-only** mount (exported share `ro`, optical media) does not
-trigger `FilesystemReadOnly`&nbsp;: the rule targets filesystems remounted
-read-only by the kernel after I/O errors.
+<Aside type="note" title="One alert per partition, not per mount">
+A single partition is often mounted multiple times: btrfs
+subvolumes (`/`, `/nix`, `/home`, `/.swapfile`), `bind` mounts. Since metrics are
+emitted **per mount**, a single full disk used to generate as many
+alerts as there were mounts.
+
+Disk rules therefore aggregate on the device: **one alert per
+partition**. The message names the device then lists its mounts:
+
+```
+/dev/nvme0n1p3 below 15% free on 10.1.2.1:9100. Mounts: /, /.swapfile, /nix.
+```
+</Aside>
+
+<Aside type="note" title="Network mounts and read-only mounts">
+Disk rules ignore **network** mounts (NFS, CIFS, etc.): they
+report the server's space, which already alerts for its own disk. Likewise,
+an intentionally **read-only** mount (exported share `ro`, optical
+media) does not trigger `FilesystemReadOnly`: the rule targets
+filesystems remounted read-only by the kernel after I/O errors.
 </Aside>
 
 {/* t:p d4e3ff350edb205693bfda166ccbb65803e3c6365b08e39ffdf1110cb2ecd97d */}
