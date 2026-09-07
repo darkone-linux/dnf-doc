@@ -105,20 +105,20 @@ own account (at least `puppeting` is required). DNF gives `full` to the domain
 so that every local account can connect and share their rooms.
 </Aside>
 
-{/* t:p 872be0f0382f211b1da743be9b7ac2166fabde666dfde51b9691a7ae76e2a110 */}
+{/* t:p 9586614fc831ebae3659bdaac0701d3df4c27b7a7864e94b09027a3b2d9b0349 */}
 ### Permissions
 
 The `mkBridgePermissions` helper (in `matrix.nix`) builds the same
-policy for all bridges:
+policy for all bridges&nbsp;:
 
 ```yaml
 permissions:
   "domain.tld": user          # tout compte local, avec son propre compte distant
-  "@alice:domain.tld": admin  # le matrix.admin déclaré dans etc/config.yaml
+  "@alice:domain.tld": admin  # chaque network.matrix.admins de etc/config.yaml
 ```
 
-Distant sessions are isolated per Matrix user: generalizing to all
-domain accounts carries no risk of interference.
+Remote sessions are isolated per Matrix user&nbsp;: extending this to all
+accounts in the domain carries no risk of interference.
 
 {/* t:p 580fec2b6739ee349a69326fb1515efd838f21ba016a7e3767969df39b631af8 */}
 ### Double puppeting
@@ -251,7 +251,7 @@ Two account origins coexist on the same server&nbsp;:
 Both types share the same rights (bridges included). The token is created on the
 host with `dnf-mas`, or via the Synapse administration API when MAS is disabled
 (see
-[the operations guide](/en/doc/admin-guide/operate/matrix/#registering-friends)).
+[the operations guide](/en/doc/admin-guide/operate/matrix/#register-friends)).
 
 Above all, both origins draw from **the same namespace**, and a Matrix
 identifier is final&nbsp;: MAS's `users` table enforces its uniqueness and a
@@ -262,10 +262,15 @@ attach on its own
 would take control of the account). Resolution&nbsp;:
 [identifier collision](/en/doc/admin-guide/operate/matrix/#managing-bridges).
 
-{/* t:p 894bea191a9519a91f28083a2dc2e94494c2c64c0043d0cdc8bef5c80deebcf9 */}
+{/* t:p ecb9e538b626276a08b90d4051a4f30fa922b795d46c2493f9d91f8167a22ac4 */}
 ## Next-generation authentication (MAS)
 
-Optional (`darkone.service.matrix.mas.enable`), the [Matrix Authentication Service](https://element-hq.github.io/matrix-authentication-service/) (MAS) moves **all** authentication out of Synapse&nbsp;: sign-in, accounts, sessions, the self-service `/account` portal. It is the foundation of [Element X](https://element.io/app/) (QR code sign-in) and the official path, as Synapse's internal authentication is end-of-life.
+Always active, the
+[Matrix Authentication Service](https://element-hq.github.io/matrix-authentication-service/)
+(MAS) offloads **all** authentication from Synapse: login,
+accounts, sessions, self-service portal `/account`. It is the foundation for
+[Element X](https://element.io/app/) (QR code login) and the official path
+forward, as Synapse's built-in authentication is end-of-life.
 
 ```d2
 style.fill: transparent
@@ -283,16 +288,34 @@ client -> caddy
 caddy -> synapse: "/_matrix/*, /_synapse/*"
 caddy -> mas: "/, login, logout, refresh"
 synapse <-> mas: "introspection, provisioning"
-mas -> idm: upstream SSO
+mas -> idm: Upstream SSO
 ```
 
-- **Single vhost**&nbsp;: MAS shares `matrix.domain.tld`. Caddy routes the root to it (sign-in pages, `/account`, `/oauth2/*`) and the whole compatibility surface `/_matrix/client/<version>/{login,logout,refresh}`, subpaths included (`logout/all` and the legacy `login/sso/redirect` of pre-OIDC clients, to which Synapse answers `M_UNRECOGNIZED` once delegated)&nbsp;; Synapse keeps `/_matrix/*` and `/_synapse/*`. No extra subdomain or DNS — the MatrixRTC backend attaches the same way, under `/livekit/*`.
-- **Kanidm remains the identity source**&nbsp;: MAS becomes the OIDC client instead of Synapse (same identifier and secret), declared as an upstream provider under a fixed ULID. Synapse only asks MAS to validate each token (shared secret, loopback).
-- **Automatic discovery**&nbsp;: connected to MAS, Synapse itself serves `auth_metadata` ([MSC2965](https://github.com/matrix-org/matrix-spec-proposals/pull/2965)). Clients find MAS without modifying the `.well-known`.
-- **Bridges unchanged**&nbsp;: registrations and double puppeting work identically. Only adaptation, automatic&nbsp;: bridges manage their e2ee devices via [MSC4190](https://github.com/matrix-org/matrix-spec-proposals/pull/4190), since the appservice `/login` API no longer exists.
-- **Friends**&nbsp;: token-based registration switches from Synapse to MAS (`friendRegistration.enable` remains the switch)&nbsp;; password accounts keep working through the compatibility layer.
+- **Single vhost**: MAS shares `matrix.domain.tld`. Caddy routes it the
+  root (login pages, `/account`, `/oauth2/*`) and the entire
+  compatibility surface `/_matrix/client/<version>/{login,logout,refresh}`, including
+  sub-paths (`logout/all` and the legacy `login/sso/redirect` for pre-OIDC
+  clients, to which Synapse responds `M_UNRECOGNIZED` once delegated); Synapse
+  keeps `/_matrix/*` and `/_synapse/*`. No additional subdomains or DNS — the
+  MatrixRTC backend grafts itself the same way, under `/livekit/*`.
+- **Kanidm remains the identity source**: MAS becomes the OIDC client
+  in place of Synapse (same client ID and secret), declared as the upstream
+  provider under a fixed ULID. Synapse now only asks MAS to validate
+  every token (shared secret, loopback).
+- **Automatic discovery**: connected to MAS, Synapse itself serves
+  `auth_metadata` ([MSC2965](https://github.com/matrix-org/matrix-spec-proposals/pull/2965)).
+  Clients find MAS without any `.well-known` changes.
+- **Bridges unchanged**: registrations and double puppeting work
+  identically. The only adaptation, automatic: bridges handle their
+  e2ee devices via
+  [MSC4190](https://github.com/matrix-org/matrix-spec-proposals/pull/4190),
+  as the appservice `/login` API no longer exists.
+- **Friends**: token-based registration moves from Synapse to MAS
+  (`friendRegistration.enable` remains the switch); password accounts
+  keep working through the compatibility layer.
 
-Activation and migration&nbsp;: see [the operations guide](/en/doc/admin-guide/operate/matrix/#enable-mas).
+Activation and migration: see
+[the operations guide](/en/doc/admin-guide/operate/matrix/#authentication-mas).
 
 {/* t:p b6417ed593bca0abe771e7d61447636c779be1dffa5374a8f462fe9d3c517232 */}
 ## Secrets and ports

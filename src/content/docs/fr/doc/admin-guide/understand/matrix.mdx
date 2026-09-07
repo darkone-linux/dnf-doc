@@ -119,7 +119,7 @@ propre compte (il faut `puppeting` au minimum). DNF donne `full` au domaine
 pour que chaque compte local puisse se connecter et partager ses salons.
 </Aside>
 
-{/* t:p 872be0f0382f211b1da743be9b7ac2166fabde666dfde51b9691a7ae76e2a110 */}
+{/* t:p 9586614fc831ebae3659bdaac0701d3df4c27b7a7864e94b09027a3b2d9b0349 */}
 ### Permissions
 
 Le helper `mkBridgePermissions` (dans `matrix.nix`) construit la même
@@ -128,7 +128,7 @@ politique pour tous les ponts&nbsp;:
 ```yaml
 permissions:
   "domain.tld": user          # tout compte local, avec son propre compte distant
-  "@alice:domain.tld": admin  # le matrix.admin déclaré dans etc/config.yaml
+  "@alice:domain.tld": admin  # chaque network.matrix.admins de etc/config.yaml
 ```
 
 Les sessions distantes sont isolées par utilisateur Matrix&nbsp;: la
@@ -275,10 +275,10 @@ SSO — MAS refuse de rattacher tout seul
 quel homonyme prendrait le contrôle du compte). Résolution&nbsp;:
 [collision d'identifiant](/fr/doc/admin-guide/operate/matrix/#collision-didentifiant-avec-un-utilisateur-déclaré).
 
-{/* t:p 894bea191a9519a91f28083a2dc2e94494c2c64c0043d0cdc8bef5c80deebcf9 */}
+{/* t:p ecb9e538b626276a08b90d4051a4f30fa922b795d46c2493f9d91f8167a22ac4 */}
 ## Authentification nouvelle génération (MAS)
 
-Optionnel (`darkone.service.matrix.mas.enable`), le
+Toujours actif, le
 [Matrix Authentication Service](https://element-hq.github.io/matrix-authentication-service/)
 (MAS) déporte **toute** l'authentification hors de Synapse&nbsp;: connexion,
 comptes, sessions, portail self-service `/account`. C'est le socle
@@ -328,7 +328,7 @@ mas -> idm: SSO amont
   de passe continuent de fonctionner via la couche de compatibilité.
 
 Activation et migration&nbsp;: voir
-[le guide d'exploitation](/fr/doc/admin-guide/operate/matrix/#activer-mas).
+[le guide d'exploitation](/fr/doc/admin-guide/operate/matrix/#authentification-mas).
 
 {/* t:p b6417ed593bca0abe771e7d61447636c779be1dffa5374a8f462fe9d3c517232 */}
 ## Secrets et ports

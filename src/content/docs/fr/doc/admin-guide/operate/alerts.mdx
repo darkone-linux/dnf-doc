@@ -17,17 +17,17 @@ e-mail pour les incidents). Un **provisionnement unique** du bot suffit : ensuit
 tout est déclaratif. Le fonctionnement d'ensemble est décrit dans
 [Monitoring & Alertes](/fr/doc/admin-guide/understand/monitoring-alerts/).
 
-{/* t:p 17774a4b6a135ddcabf9e2ba216479fa68228d3ee6f8c5c31ae4fd265847fa4b */}
+{/* t:p bd0bdcf9f88fee204a38b59fafcfe79ddbc003f7a5522e0aff9588ce6830d109 */}
 ## Pré-requis
 
 | Pré-requis | Pourquoi |
 |---|---|
 | `prometheus` + `monitoring` sur le collecteur | porte Alertmanager et les règles |
 | Service `matrix` joignable | héberge le bot et les salons |
-| Secret d'enregistrement en sops (`matrix-rss-password`) | crée le compte bot |
+| Accès ssh à l'hôte Matrix (`nix`) | crée le compte bot avec `dnf-mas` |
 | Clé admin sops présente | écrit les secrets du bot |
 
-{/* t:p 45a993de5fcf9eb47deed87429a7aa1b5821c3676a08c626a5908feff4e1f33d */}
+{/* t:p 0a5c600e6acddbe0608f1acddfd9e2684f0d3747e2470972c4f7e2bfe6cd4f17 */}
 ## Installer le bot
 
 Une seule commande, **idempotente** (rejouable sans risque) : elle crée le
@@ -35,13 +35,13 @@ compte bot, les salons, et écrit l'identité dans `var/generated/matrix.nix`.
 
 <Steps>
 
-1. Déclarer l'administrateur humain (partie locale) dans la configuration :
+1. Déclarer les administrateurs (parties locales) dans la configuration :
 
    ```yaml
    # etc/config.yaml
    network:
      matrix:
-       admin: "alice"
+       admins: ["alice", "bob"]
    ```
 
 2. Lancer le provisionnement :
@@ -51,8 +51,8 @@ compte bot, les salons, et écrit l'identité dans `var/generated/matrix.nix`.
    ```
 
    La commande, en s'appuyant sur la clé admin sops :
-   - crée le compte `@alertbot:domain.tld` (flux nonce + HMAC sur le secret partagé) ;
-   - crée ou résout les salons `#alert-warnings` et `#alert-incidents`, y fait entrer le bot et **invite l'admin** ;
+   - crée le compte `@alertbot:domain.tld` (`dnf-mas manage register-user` sur l'hôte Matrix) ;
+   - crée ou résout les salons `#alert-warnings` et `#alert-incidents`, y fait entrer le bot et **invite les admins** ;
    - écrit `bot` + les ID de salons dans `var/generated/matrix.nix` ;
    - stocke mot de passe, jeton d'accès et secret de webhook dans sops.
 

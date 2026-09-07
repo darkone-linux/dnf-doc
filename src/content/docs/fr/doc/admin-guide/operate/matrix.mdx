@@ -16,7 +16,7 @@ Activer le serveur Matrix (Synapse), son client web Element et les ponts
 mautrix (WhatsApp, Signal, Telegram, Messenger, Discord). Pour l'architecture, voir
 [Matrix dans DNF](/fr/doc/admin-guide/understand/matrix/).
 
-{/* t:p b46eabd78ea0585babc741e76a3d084cd199326cfaf99bdade250d050a8546d4 */}
+{/* t:p 3e697ae11c2c68c07519871f16467d802e9284cd2e44f0de3fdd2780670cf843 */}
 ## Activer Matrix
 
 <Steps>
@@ -33,15 +33,18 @@ mautrix (WhatsApp, Signal, Telegram, Messenger, Discord). Pour l'architecture, v
          turn:           # relais audio/vidéo des clients historiques
    ```
 
-2. Déclarer l'administrateur Matrix (clé globale, hors hôtes)&nbsp;:
+2. Déclarer les administrateurs Matrix dans la section `network` (hors hôtes)&nbsp;:
 
    ```yaml
    # etc/config.yaml
-   matrix:
-     admin: "alice"    # local part du compte administrateur
+   network:
+     matrix:
+       admins: ["alice", "bob"]    # local parts des administrateurs
    ```
 
-   Ce compte administre les ponts et reçoit les
+   Une seule liste pour les deux administrations, appliquée au rebuild&nbsp;:
+   [les ponts](#permissions) et [le serveur](#administrer-les-comptes-avec-mas). Ces
+   comptes reçoivent aussi les
    [alertes de supervision](/fr/doc/admin-guide/operate/alerts/).
 
 3. Créer les [secrets](/fr/doc/admin-guide/operate/secrets/) requis
@@ -53,7 +56,7 @@ L'authentification passe par le [SSO Kanidm](/fr/doc/admin-guide/operate/sso/)
 (OIDC)&nbsp;: tout utilisateur déclaré se connecte avec son compte réseau,
 aucune création de compte Matrix n'est nécessaire.
 
-{/* t:p 4d4e27862e3ad5b4cef085b32b77fd461c2d5eff23df64fd0158079846a7436d */}
+{/* t:p 99bfd477696d5ad4148dc0bca309c56928768e91c275e72fa316542c8a073816 */}
 ### Secrets requis
 
 Tous internes&nbsp;: `just configure-admin-host` les crée dans
@@ -61,49 +64,43 @@ Tous internes&nbsp;: `just configure-admin-host` les crée dans
 
 | Clé sops | Rôle |
 |---|---|
-| `matrix-rss-password` | Registration shared secret Synapse |
 | `oidc-secret-matrix` | Secret du client OIDC Kanidm (cf. [SSO](/fr/doc/admin-guide/operate/sso/)) |
 | `turn-secret` | Secret partagé coturn (si `turn` activé) |
 | `livekit-secret` | Secret partagé MatrixRTC (si `matrixRtc` activé) |
 | `mautrix-doublepuppet-as-token` | Token appservice *double puppeting* (commun aux ponts) |
 | `mautrix-doublepuppet-hs-token` | Idem, requis par Synapse, jamais utilisé |
 
-{/* t:p a50e24a5824fb6987b55e7922f9d5b3706ce421ec74ecf0e6bc11a36c75417d2 */}
-## Deux modes d'authentification
+{/* t:p 11e079ef674b649eef379f24677aa0107ec2173c568df9835c329f123a468195 */}
+## Authentification (MAS)
 
-Le serveur fonctionne dans **un seul** de ces deux modes, réglé par
-`darkone.service.matrix.mas.enable`. Le mode choisi change les clients
-compatibles, la façon d'inscrire des amis et les outils d'administration.
+Toute l'authentification est déléguée au
+[Matrix Authentication Service](https://element-hq.github.io/matrix-authentication-service/)
+(MAS), **sans option**&nbsp;: c'est le composant qui manque à Synapse pour
+[Element X](https://element.io/app/), la connexion par QR code et le portail de
+compte, et l'authentification interne de Synapse est abandonnée en amont
+(MSC3861). Kanidm reste la source d'identité&nbsp;: MAS devient son client
+OIDC à la place de Synapse.
 
-| | Synapse historique (défaut) | MAS activé (recommandé) |
-|---|---|---|
-| Option | `mas.enable = false` | `mas.enable = true` |
-| Connexion SSO | Synapse est client OIDC de Kanidm | MAS est client OIDC de Kanidm |
-| Element Web / Desktop | oui | oui |
-| **Element X** (Android, iOS) | **non** | **oui** |
-| Connexion par QR code | non | oui |
-| Application proposée sur mobile | Element Classic | Element X |
-| Portail de compte | aucun | `https://matrix.domain.tld/account/` |
-| Jetons d'inscription | API admin Synapse | `dnf-mas` sur l'hôte |
-| Promotion administrateur | SQL dans la base Synapse | `dnf-mas manage promote-admin` |
+Pour la place de MAS dans l'architecture, voir
+[Matrix dans DNF](/fr/doc/admin-guide/understand/matrix/#authentification-nouvelle-génération-mas).
 
-<Aside type="tip" title="Element X exige MAS">
-L'application mobile nouvelle génération [Element X](https://element.io/app/)
-ne sait se connecter qu'à un serveur piloté par MAS. Sans MAS, elle échoue à
-la connexion&nbsp;; il faut rester sur l'application Element classique.
+| Sujet | Où ça se passe |
+|---|---|
+| Connexion SSO | MAS, client OIDC de Kanidm |
+| Portail de compte | `https://matrix.domain.tld/account/` |
+| Jetons d'inscription | `dnf-mas` sur l'hôte |
+| Administrateurs serveur | `network.matrix.admins`, déclaratif |
+| Comptes, sessions, salons | interface [Ketesa](#administrer-les-comptes-avec-mas) |
 
-Le client web s'aligne tout seul&nbsp;: sa page d'accueil mobile propose
-Element X quand l'hôte porte un serveur Matrix avec MAS, Element Classic
-sinon. Rien à régler.
-</Aside>
+:::caution[Serveur antérieur à MAS]
+Un serveur qui tournait sans MAS doit passer la
+[migration `syn2mas`](#migrer-un-serveur-déjà-en-production), sinon plus
+personne ne se connecte. L'option `darkone.service.matrix.mas.enable` n'existe
+plus&nbsp;: la poser produit une erreur d'évaluation explicite.
+:::
 
-{/* t:p ce75ef3e4410ae9e3c9f58bc642e3d2a9ce4a8a1f6172498267e623bb2b403b8 */}
-### Activer MAS
-
-Le [Matrix Authentication Service](https://element-hq.github.io/matrix-authentication-service/)
-remplace l'authentification interne de Synapse. Pour ce qu'il change et
-comment il s'insère, voir
-[l'architecture](/fr/doc/admin-guide/understand/matrix/#authentification-nouvelle-génération-mas).
+{/* t:p 5d18b5c691c048d642784c0c16a81e9a0e844d75399c771ed01431c9462d0748 */}
+### Secrets de MAS
 
 <Steps>
 
@@ -120,14 +117,7 @@ comment il s'insère, voir
    | `mas-synapse-secret` | Secret partagé MAS ↔ Synapse |
    | `mas-rsa-private-key` | Clé de signature des tokens |
 
-2. Activer l'option dans la config nix de l'hôte&nbsp;:
-
-   ```nix
-   # usr/machines/<host>/default.nix
-   darkone.service.matrix.mas.enable = true;
-   ```
-
-3. Déployer. Sur un serveur **neuf**, c'est terminé. Sur un serveur qui a déjà
+2. Déployer. Sur un serveur **neuf**, c'est terminé. Sur un serveur qui a déjà
    des comptes, enchaîner sur la [migration](#migrer-un-serveur-déjà-en-production)
    **sans laisser personne se connecter entre les deux**.
 
@@ -139,7 +129,7 @@ de MAS&nbsp;: il protège des données chiffrées en base, qui deviendraient
 illisibles. Idem pour l'ULID du fournisseur Kanidm, figé dans le module.
 :::
 
-{/* t:p 505ceb150a5a409fe12d0ec66c4b45604b3cb3a0973064aea39c52071517b88b */}
+{/* t:p eb93ce0128a5e4e78cf53144a9d1129703526c1017ded133d39d5f34d222ee5d */}
 ### Migrer un serveur déjà en production
 
 MAS devient propriétaire des comptes et des sessions&nbsp;: ils doivent être
@@ -156,8 +146,8 @@ déconnecté.
    sudo systemctl start restic-backups-system-main.service
    ```
 
-2. **Déployer** la configuration avec `mas.enable = true` (cf. ci-dessus). La
-   fenêtre de maintenance commence ici.
+2. **Déployer** la configuration (cf. ci-dessus). La fenêtre de maintenance
+   commence ici.
 
 3. **Arrêter** les deux services&nbsp;: `syn2mas` exige Synapse hors ligne, et
    MAS ne doit pas provisionner de compte entre-temps.
@@ -200,21 +190,17 @@ La migration n'est pas réversible&nbsp;: revenir en arrière impose de
 restaurer la sauvegarde. Ne pas la lancer sans avoir vérifié l'étape 1.
 :::
 
-{/* t:p e6b6312e708f99a665ad8010886c03d6a37f76ad8d36bebd481217ddb59f834e */}
+{/* t:p 81b5f63b3dfd104ac8465459b2c0359b10a79e5866e75ba4831de9c7063091ff */}
 ## Inscrire des amis
 
 En plus des utilisateurs du SSO, on peut ouvrir une inscription **sur jeton**
 pour des comptes locaux à mot de passe (les amis). Sans jeton, aucune
-inscription n'est possible. Le commutateur est le même dans les deux modes,
-seule la fabrication du jeton diffère.
+inscription n'est possible.
 
 ```nix
 # usr/machines/<host>/default.nix
 darkone.service.matrix.friendRegistration.enable = true;
 ```
-
-<Tabs>
-<TabItem label="Avec MAS">
 
 <Steps>
 
@@ -243,49 +229,6 @@ darkone.service.matrix.friendRegistration.enable = true;
 Un ami change son mot de passe et révoque ses sessions depuis le portail
 `https://matrix.domain.tld/account/`, sans intervention de l'administrateur.
 </Aside>
-
-</TabItem>
-<TabItem label="Sans MAS">
-
-<Steps>
-
-1. Promouvoir le compte `matrix.admin` en *server admin* (une seule fois), sur
-   l'hôte Matrix&nbsp;:
-
-   ```sh
-   sudo -u matrix-synapse psql matrix-synapse \
-     -c "UPDATE users SET admin = 1 WHERE name = '@alice:domain.tld';"
-   ```
-
-2. Récupérer un *access token* du compte promu&nbsp;: dans Element,
-   *Paramètres → Aide & à propos → Avancé*.
-
-3. Créer un jeton d'inscription via l'API d'administration&nbsp;:
-
-   ```sh
-   curl -X POST \
-     -A "Mozilla/5.0" \
-     -H "Authorization: Bearer <ACCESS_TOKEN>" \
-     -H "Content-Type: application/json" \
-     -d '{"uses_allowed": 1, "expiry_time": null}' \
-     https://matrix.domain.tld/_synapse/admin/v1/registration_tokens/new
-   ```
-
-   La réponse contient le `token` à transmettre à l'ami.
-
-4. L'ami s'inscrit dans Element&nbsp;: *Créer un compte* → serveur `domain.tld`
-   → il colle le jeton lorsqu'il est demandé.
-
-</Steps>
-
-<Aside type="caution" title="Le filtre anti-robots">
-Le vhost Matrix renvoie `403` à tout appel dont l'*User-Agent* contient
-`curl`, `wget` ou `bot`. D'où le `-A "Mozilla/5.0"` ci-dessus&nbsp;: sans lui,
-l'appel échoue sans rapport avec le jeton.
-</Aside>
-
-</TabItem>
-</Tabs>
 
 {/* t:p 253a0cbbf33cc128fe5e17ad25c5c16671ce7f8490f327d97ce205ac35eabf89 */}
 ### Collision d'identifiant avec un utilisateur déclaré
@@ -425,14 +368,14 @@ suivi d'un redémarrage de Synapse suffit&nbsp;: leurs modules réécrivent la
 registration depuis la config à chaque démarrage.
 </Aside>
 
-{/* t:p f3eb4bb567f7ef6cafb1fd0f14a2f32d19ccfd22540309eef5aaad8f5d9ac836 */}
+{/* t:p fdcd17e867f835107ff6b82c47796ac9d4dda473b637270fdd4678f01a21b99d */}
 ### Permissions
 
 Rien à gérer&nbsp;: tout compte local (`@*:domain.tld`) peut utiliser chaque
 pont avec **son propre compte** distant, sans interférence entre
-utilisateurs. Le compte `matrix.admin` dispose des commandes
-d'administration des bots (`help` en conversation directe avec le bot pour
-la liste).
+utilisateurs. Les comptes listés dans `network.matrix.admins` disposent en
+plus des commandes d'administration des bots (`help` en conversation directe
+avec le bot pour la liste).
 
 {/* t:p 57866a0b0c836e99e3a85df4799b3a07fa81c8c06bcd8807ab57b6fae2e5fbb9 */}
 ### Double puppeting
@@ -443,7 +386,7 @@ téléphone apparaissent dans Matrix comme venant du **vrai compte** de
 l'utilisateur. C'est automatique pour tous les comptes locaux, aucune action
 par utilisateur.
 
-{/* t:p 56ddcf55b72b4a23bf2627b384161f348b306c106862d550a086969eaec749d5 */}
+{/* t:p ffd06ebe65404e33e69324359624dcb6109d7a165151bf5bd4bc2f34faf78a4b */}
 ## Appels audio et vidéo
 
 Deux piles cohabitent, parce qu'aucune ne couvre tous les clients. Elles
@@ -490,10 +433,7 @@ appels&nbsp;: activer l'un ne donne pas l'autre.
 
    ```nix
    # usr/machines/<host>/default.nix
-   darkone.service.matrix = {
-     mas.enable = true;         # requis par Element X pour se connecter
-     matrixRtc.enable = true;   # requis par Element X pour appeler
-   };
+   darkone.service.matrix.matrixRtc.enable = true;   # requis par Element X
    ```
 
 2. Générer le secret partagé, puis déployer&nbsp;:
@@ -687,7 +627,7 @@ défaut sur les nouveaux salons.
 | Journaux MAS | `journalctl -u matrix-authentication-service -f` |
 | Journaux MatrixRTC | `journalctl -u livekit -u lk-jwt-service -f` |
 
-{/* t:p 0bf822848357af3a0d7f2d82960a9fe4eedb749e5e7bb77a6e8d856238c4851d */}
+{/* t:p 34845e1161535a3b581bafb81fc004e59d12fc85e01801a1cfd9b32746d41095 */}
 ### Administrer les comptes avec MAS
 
 `dnf-mas` enveloppe l'outil officiel `mas-cli` sur l'hôte Matrix&nbsp;: il
@@ -697,20 +637,21 @@ reconstitue la configuration et les secrets du service, et fonctionne donc
 | Action | Commande |
 |---|---|
 | Créer un jeton d'inscription | `sudo dnf-mas manage issue-user-registration-token` |
-| Promouvoir un administrateur | `sudo dnf-mas manage promote-admin alice` |
 | Lister les administrateurs | `sudo dnf-mas manage list-admin-users` |
+| Retirer une promotion héritée | `sudo dnf-mas manage demote-admin alice` |
 | Créer un compte (bot, service) | `sudo dnf-mas manage register-user` |
 | Changer un mot de passe | `sudo dnf-mas manage set-password alice` |
 | Fermer les sessions d'un compte | `sudo dnf-mas manage kill-sessions alice` |
 | Verrouiller un compte | `sudo dnf-mas manage lock-user alice` |
 | Diagnostic complet | `sudo dnf-mas doctor` |
 
-<Aside type="caution" title="Plus de secret d'inscription partagé">
-Avec MAS, `/_synapse/admin/v1/register` est désactivé. C'est le mécanisme
-qu'utilise [`just configure-alert-bot`](/fr/doc/admin-guide/operate/justfile/)
-pour créer un compte de bot manquant&nbsp;: créer ce compte **avant** de
-migrer, ou le recréer avec `sudo dnf-mas manage register-user`.
-</Aside>
+:::caution[Ne pas promouvoir à la main]
+Les administrateurs se déclarent dans `network.matrix.admins`. `promote-admin`
+pose un drapeau **en base** que la configuration ne voit pas&nbsp;: la
+politique accorde l'accès sur la liste **ou** sur ce drapeau, donc une
+promotion oubliée survit à son retrait de `config.yaml`. Auditer avec
+`list-admin-users`, nettoyer avec `demote-admin`.
+:::
 
 `mas-cli` n'expose aucune commande de lecture&nbsp;: pour voir les comptes,
 leurs appareils et leurs sessions, activer le service `matrix-admin`, l'interface
@@ -726,12 +667,10 @@ services:
 Elle répond sur `https://matrix-admin.domain.tld`, **depuis le LAN et le tailnet
 uniquement**. Le sous-domaine doit tout de même résoudre publiquement vers le
 HCS&nbsp;: Caddy en a besoin pour le certificat ACME, avant de refuser les
-appelants extérieurs. Connexion par le bouton OIDC, avec un compte promu au
-préalable&nbsp;:
-
-```sh
-sudo dnf-mas manage promote-admin alice
-```
+appelants extérieurs. Connexion par le bouton OIDC, avec un compte listé dans
+[`network.matrix.admins`](#activer-matrix)&nbsp;: la politique MAS lui accorde
+les portées `urn:mas:admin` et `urn:synapse:admin:*` dont l'interface a besoin
+sur les deux API.
 
 | Côté | Ce que l'interface permet |
 |---|---|

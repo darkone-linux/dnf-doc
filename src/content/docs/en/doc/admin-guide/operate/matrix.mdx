@@ -16,7 +16,7 @@ Enable the Matrix server (Synapse), its Element web client and mautrix
 bridges (WhatsApp, Signal, Telegram, Messenger, Discord). For the architecture, see
 [Matrix in DNF](/en/doc/admin-guide/understand/matrix/).
 
-{/* t:p b46eabd78ea0585babc741e76a3d084cd199326cfaf99bdade250d050a8546d4 */}
+{/* t:p 3e697ae11c2c68c07519871f16467d802e9284cd2e44f0de3fdd2780670cf843 */}
 ## Enable Matrix
 
 <Steps>
@@ -28,87 +28,84 @@ bridges (WhatsApp, Signal, Telegram, Messenger, Discord). For the architecture, 
        services:
          matrix:
            title: "Matrix"
-           description: "Messagerie instantanée"
-         element:        # client web
-         turn:           # relais audio/vidéo des clients historiques
+           description: "Instant messaging"
+         element:        # web client
+         turn:           # audio/video relay for legacy clients
    ```
 
-2. Declare the Matrix administrator (global key, outside hosts)&nbsp;:
+2. Declare the Matrix administrators in the `network` section (outside hosts)&nbsp;:
 
    ```yaml
    # etc/config.yaml
-   matrix:
-     admin: "alice"    # local part du compte administrateur
+   network:
+     matrix:
+       admins: ["alice", "bob"]    # local parts of the administrators
    ```
 
-   This account manages the bridges and receives the
-   [supervision alerts](/en/doc/admin-guide/operate/alerts/).
+   A single list for both administrations, applied at rebuild&nbsp;:
+   [bridges](#permissions) and [server](#administer-accounts-with-mas). These
+   accounts also receive
+   [monitoring alerts](/en/doc/admin-guide/operate/alerts/).
 
 3. Create the required [secrets](/en/doc/admin-guide/operate/secrets/)
    (see table below), then deploy.
 
 </Steps>
 
-Authentication goes through [Kanidm SSO](/en/doc/admin-guide/operate/sso/)
-(OIDC)&nbsp;: every declared user signs in with their network account,
-no Matrix account creation is needed.
+Authentication is handled via [SSO Kanidm](/en/doc/admin-guide/operate/sso/)
+(OIDC)&nbsp;: any declared user logs in with their network account, and no
+Matrix account creation is needed.
 
-{/* t:p 4d4e27862e3ad5b4cef085b32b77fd461c2d5eff23df64fd0158079846a7436d */}
+{/* t:p 99bfd477696d5ad4148dc0bca309c56928768e91c275e72fa316542c8a073816 */}
 ### Required secrets
 
 All internal&nbsp;: `just configure-admin-host` creates them in
-`usr/secrets/secrets.yaml`, without overwriting existing entries.
+`usr/secrets/secrets.yaml`, without ever overwriting existing entries.
 
-| Sops key | Role |
+| Sops key | Purpose |
 |---|---|
-| `matrix-rss-password` | Synapse registration shared secret |
 | `oidc-secret-matrix` | Kanidm OIDC client secret (see [SSO](/en/doc/admin-guide/operate/sso/)) |
-| `turn-secret` | coturn shared secret (if `turn` enabled) |
-| `livekit-secret` | MatrixRTC shared secret (if `matrixRtc` enabled) |
-| `mautrix-doublepuppet-as-token` | *double puppeting* appservice token (shared across bridges) |
+| `turn-secret` | coturn shared secret (if `turn` is enabled) |
+| `livekit-secret` | MatrixRTC shared secret (if `matrixRtc` is enabled) |
+| `mautrix-doublepuppet-as-token` | *Double puppeting* appservice token (shared across bridges) |
 | `mautrix-doublepuppet-hs-token` | Same, required by Synapse, never used |
 
-{/* t:p a50e24a5824fb6987b55e7922f9d5b3706ce421ec74ecf0e6bc11a36c75417d2 */}
-## Two authentication modes
+{/* t:p 11e079ef674b649eef379f24677aa0107ec2173c568df9835c329f123a468195 */}
+## Authentication (MAS)
 
-The server runs in **one** of these two modes, set by
-`darkone.service.matrix.mas.enable`. The chosen mode changes the compatible
-clients, how to invite friends and the administration tools.
+All authentication is delegated to the
+[Matrix Authentication Service](https://element-hq.github.io/matrix-authentication-service/)
+(MAS), **with no alternative**&nbsp;: it is the missing piece that Synapse
+needs for [Element X](https://element.io/app/), QR code login and the account
+portal, while Synapse's built-in authentication is being retired upstream
+(MSC3861). Kanidm remains the identity provider&nbsp;: MAS becomes its OIDC
+client in place of Synapse.
 
-| | Synapse historique (défaut) | MAS activé (recommandé) |
-|---|---|---|
-| Option | `mas.enable = false` | `mas.enable = true` |
-| Connexion SSO | Synapse est client OIDC de Kanidm | MAS est client OIDC de Kanidm |
-| Element Web / Desktop | oui | oui |
-| **Element X** (Android, iOS) | **non** | **oui** |
-| Connexion par QR code | non | oui |
-| Application proposée sur mobile | Element Classic | Element X |
-| Portail de compte | aucun | `https://matrix.domain.tld/account/` |
-| Jetons d'inscription | API admin Synapse | `dnf-mas` sur l'hôte |
-| Promotion administrateur | SQL dans la base Synapse | `dnf-mas manage promote-admin` |
+For MAS's place in the architecture, see
+[Matrix in DNF](/en/doc/admin-guide/understand/matrix/#next-generation-authentication-mas).
 
-<Aside type="tip" title="Element X exige MAS">
-L'application mobile nouvelle génération [Element X](https://element.io/app/)
-ne sait se connecter qu'à un serveur piloté par MAS. Sans MAS, elle échoue à
-la connexion&nbsp;; il faut rester sur l'application Element classique.
+| Topic | Where it happens |
+|---|---|
+| SSO login | MAS, Kanidm OIDC client |
+| Account portal | `https://matrix.domain.tld/account/` |
+| Registration tokens | `dnf-mas` on the host |
+| Server administrators | `network.matrix.admins`, declarative |
+| Accounts, sessions, rooms | [Ketesa](#administer-accounts-with-mas) interface |
 
-Le client web s'aligne tout seul&nbsp;: sa page d'accueil mobile propose
-Element X quand l'hôte porte un serveur Matrix avec MAS, Element Classic
-sinon. Rien à régler.
-</Aside>
+:::caution[Server pre-dating MAS]
+A server that was running without MAS must go through the
+[`syn2mas` migration](#migrate-a-server-already-in-production), otherwise
+nobody will be able to log in anymore. The `darkone.service.matrix.mas.enable`
+option no longer exists&nbsp;: setting it produces an explicit evaluation error.
+:::
 
-{/* t:p ce75ef3e4410ae9e3c9f58bc642e3d2a9ce4a8a1f6172498267e623bb2b403b8 */}
-### Enable MAS
-
-The [Matrix Authentication Service](https://element-hq.github.io/matrix-authentication-service/)
-replaces Synapse's built-in authentication. For what it changes and
-how it fits in, see
-[architecture](/en/doc/admin-guide/understand/matrix/#next-generation-authentication-mas).
+{/* t:p 5d18b5c691c048d642784c0c16a81e9a0e844d75399c771ed01431c9462d0748 */}
+### MAS secrets
 
 <Steps>
 
-1. Generate the three dedicated secrets (idempotent, never overwrites
-   existing entries)&nbsp;:
+1. Generate the three dedicated secrets (idempotent, never overwrites existing
+   ones)&nbsp;:
 
    ```sh
    just configure-admin-host
@@ -120,52 +117,44 @@ how it fits in, see
    | `mas-synapse-secret` | MAS ↔ Synapse shared secret |
    | `mas-rsa-private-key` | Token signing key |
 
-2. Enable the option in the host's Nix config&nbsp;:
-
-   ```nix
-   # usr/machines/<host>/default.nix
-   darkone.service.matrix.mas.enable = true;
-   ```
-
-3. Deploy. On a **fresh** server, that's it. On a server that already has
-   accounts, proceed to the [migration](#migrating-a-server-already-in-production)
-   **without letting anyone log in between the two**.
+2. Deploy. On a **new** server, that's it. On a server that already has
+   accounts, continue with the [migration](#migrate-a-server-already-in-production)
+   **without letting anyone log in between the two steps**.
 
 </Steps>
 
 :::danger[Immutable secret]
-`mas-encryption-secret` must **never** change after MAS's first startup&nbsp;:
-it protects encrypted data in the database that would become unreadable.
-Same for the Kanidm provider ULID, frozen in the module.
+`mas-encryption-secret` must **never** change after the first MAS startup: it
+protects encrypted data in the database, which would become unreadable. The same
+applies to the Kanidm provider ULID, which is frozen in the module.
 :::
 
-{/* t:p 505ceb150a5a409fe12d0ec66c4b45604b3cb3a0973064aea39c52071517b88b */}
-### Migrating a server already in production
+{/* t:p eb93ce0128a5e4e78cf53144a9d1129703526c1017ded133d39d5f34d222ee5d */}
+### Migrate a server already in production
 
 MAS becomes the owner of accounts and sessions&nbsp;: they must be imported
 with the official `syn2mas` tool, served by the host's `dnf-mas` command.
-Without this import, all accounts are invisible and everyone is signed out.
+Without this import, all accounts are invisible and everyone is logged out.
 
 <Steps>
 
-1. **Back up**, in this order (the dump must make it into the snapshot)&nbsp;:
+1. **Back up**, in this order (the dump must fit within the snapshot)&nbsp;:
 
    ```sh
    sudo systemctl start postgresqlBackup.service
    sudo systemctl start restic-backups-system-main.service
    ```
 
-2. **Deploy** the configuration with `mas.enable = true` (see above). The
-   maintenance window starts here.
+2. **Deploy** the configuration (see above). The maintenance window starts here.
 
 3. **Stop** both services&nbsp;: `syn2mas` requires Synapse to be offline, and
-   MAS must not provision accounts in the meantime.
+   MAS must not provision any accounts in the meantime.
 
    ```sh
    sudo systemctl stop matrix-synapse matrix-authentication-service
    ```
 
-4. **Check**, then run a dry run, then migrate&nbsp;:
+4. **Verify**, then do a dry run, then migrate&nbsp;:
 
    ```sh
    sudo dnf-mas syn2mas check
@@ -173,9 +162,9 @@ Without this import, all accounts are invisible and everyone is signed out.
    sudo dnf-mas syn2mas migrate
    ```
 
-   The report announces the recovered accounts, SSO links, access tokens and
-   devices. The hundreds of "ignored" users are the bridges' ghosts&nbsp;: that's
-   normal.
+   The report lists accounts, SSO links, access tokens and devices carried
+   over. The hundreds of "ignored" users are the bridges' ghosts&nbsp;: that's
+   expected.
 
 5. **Restart**, MAS first&nbsp;:
 
@@ -187,103 +176,55 @@ Without this import, all accounts are invisible and everyone is signed out.
 </Steps>
 
 <Aside type="note" title="What the migration preserves">
-Current sessions **survive**&nbsp;: existing access tokens are converted into
-compatibility sessions, nobody needs to sign in again, and the alerts bot
-keeps its token. The bridges do **not** need a registration regeneration&nbsp;:
-Synapse enforces MSC4190 on all appservices as soon as authentication is
-delegated.
+Ongoing sessions **survive**&nbsp;: existing access tokens are converted into
+compatibility sessions, nobody needs to log in again, and the alert bot keeps
+its token. Bridges do **not** need a new registration&nbsp;: Synapse enforces
+MSC4190 on all appservices as soon as authentication is delegated.
 </Aside>
 
-:::caution[One-way only]
+:::caution[Irreversible]
 The migration is not reversible&nbsp;: going back requires restoring the
-backup. Do not run it without having verified step 1.
+backup. Do not start it without completing step 1 first.
 :::
 
-{/* t:p e6b6312e708f99a665ad8010886c03d6a37f76ad8d36bebd481217ddb59f834e */}
-## Registering friends
+{/* t:p 81b5f63b3dfd104ac8465459b2c0359b10a79e5866e75ba4831de9c7063091ff */}
+## Register friends
 
-In addition to SSO users, you can open **token-based** registration for local
-password accounts (the friends). Without a token, no registration is possible.
-The switch is the same in both modes, only how the token is produced differs.
+Beyond SSO users, you can open **token-based** registration for local
+password accounts (friends). Without a token, registration is not possible.
 
 ```nix
 # usr/machines/<host>/default.nix
 darkone.service.matrix.friendRegistration.enable = true;
 ```
 
-<Tabs>
-<TabItem label="With MAS">
-
 <Steps>
 
-1. Create a token on the Matrix host. Here valid **once** and **7 days**
-   (without options, the token is single-use and without expiry)&nbsp;:
+1. Create a token on the Matrix host. Here valid for **one use** and **7
+   days** (by default, the token is single-use and has no expiry)&nbsp;:
 
    ```sh
    sudo dnf-mas manage issue-user-registration-token --usage-limit 1 --expires-in 604800
    ```
 
-   The response displays the token, for example `Created user registration token:
+   The response displays the token, e.g. `Created user registration token:
    9SwPTGIFGQPa`. Send it to the friend.
 
-2. The friend opens `https://matrix.domain.tld/register` and chooses
-   password-based creation.
+2. The friend opens `https://matrix.domain.tld/register` and chooses password
+   creation.
 
-3. He enters his username and password, **then** the token, requested at the
-   next step.
+3. They enter their username and password, **then** the token, which is
+   requested at the next step.
 
-4. He then signs in with this username / password pair from any client,
-   Element X included.
-
-</Steps>
-
-<Aside type="tip" title="Managing one's account">
-A friend changes their password and revokes their sessions from the portal
-`https://matrix.domain.tld/account/`, without the administrator's involvement.
-</Aside>
-
-</TabItem>
-<TabItem label="Without MAS">
-
-<Steps>
-
-1. Promote the `matrix.admin` account to *server admin* (only once), on the
-   Matrix host&nbsp;:
-
-   ```sh
-   sudo -u matrix-synapse psql matrix-synapse \
-     -c "UPDATE users SET admin = 1 WHERE name = '@alice:domain.tld';"
-   ```
-
-2. Retrieve an *access token* for the promoted account&nbsp;: in Element,
-   *Settings → Help & About → Advanced*.
-
-3. Create a registration token via the administration API&nbsp;:
-
-   ```sh
-   curl -X POST \
-     -A "Mozilla/5.0" \
-     -H "Authorization: Bearer <ACCESS_TOKEN>" \
-     -H "Content-Type: application/json" \
-     -d '{"uses_allowed": 1, "expiry_time": null}' \
-     https://matrix.domain.tld/_synapse/admin/v1/registration_tokens/new
-   ```
-
-   The response contains the `token` to send to the friend.
-
-4. The friend registers in Element&nbsp;: *Create account* → server `domain.tld`
-   → he pastes the token when it is requested.
+4. They can then log in with that username/password pair from any client,
+   including Element X.
 
 </Steps>
 
-<Aside type="caution" title="The anti-bot filter">
-The Matrix vhost returns `403` for any call whose *User-Agent* contains
-`curl`, `wget` or `bot`. Hence the `-A "Mozilla/5.0"` above&nbsp;: without it,
-the call fails for reasons unrelated to the token.
+<Aside type="tip" title="Managing your account">
+A friend can change their password and revoke sessions from the
+`https://matrix.domain.tld/account/` portal, without any admin intervention.
 </Aside>
-
-</TabItem>
-</Tabs>
 
 {/* t:p 253a0cbbf33cc128fe5e17ad25c5c16671ce7f8490f327d97ce205ac35eabf89 */}
 ### Identifier collision with a declared user
@@ -421,13 +362,13 @@ followed by a Synapse restart is enough&nbsp;: their modules rewrite the
 registration from the config at every start.
 </Aside>
 
-{/* t:p f3eb4bb567f7ef6cafb1fd0f14a2f32d19ccfd22540309eef5aaad8f5d9ac836 */}
+{/* t:p fdcd17e867f835107ff6b82c47796ac9d4dda473b637270fdd4678f01a21b99d */}
 ### Permissions
 
-Nothing to manage&nbsp;: any local account (`@*:domain.tld`) can use each
-bridge with **their own** remote account, without interference between
-users. The `matrix.admin` account has the bot administration
-commands (`help` in direct conversation with the bot for the
+Nothing to manage&nbsp;: every local account (`@*:domain.tld`) can use each
+bridge with **its own** remote account, with no interference between users.
+Accounts listed in `network.matrix.admins` additionally have bot
+administration commands (`help` in a direct conversation with the bot for the
 list).
 
 {/* t:p 57866a0b0c836e99e3a85df4799b3a07fa81c8c06bcd8807ab57b6fae2e5fbb9 */}
@@ -439,11 +380,11 @@ phone appear in Matrix as coming from the user's **real account**.
 This is automatic for all local accounts, no action per
 user.
 
-{/* t:p 56ddcf55b72b4a23bf2627b384161f348b306c106862d550a086969eaec749d5 */}
+{/* t:p ffd06ebe65404e33e69324359624dcb6109d7a165151bf5bd4bc2f34faf78a4b */}
 ## Audio and video calls
 
-Two stacks coexist, because neither covers all clients. They are
-enabled separately and do not replace each other&nbsp;:
+Two stacks coexist, because neither covers all clients. They are enabled
+separately and do not replace each other&nbsp;:
 
 | | Legacy WebRTC | MatrixRTC |
 |---|---|---|
@@ -455,28 +396,28 @@ enabled separately and do not replace each other&nbsp;:
 | Element Web / Desktop | yes | yes |
 | **Element X** (Android, iOS) | **no** | **yes** |
 
-Keep **both** enabled&nbsp;: Element Classic only speaks the first,
+Keep **both** enabled&nbsp;: Element Classic only speaks the first stack,
 Element X only the second.
 
 <Aside type="danger" title="The two stacks cannot talk to each other">
 A call started from Element X is **invisible** in Element Classic, and
-vice versa&nbsp;: the two report via different Matrix events (`m.call.*`
-vs. `m.rtc.member`), and the legacy app contains no LiveKit code. No server
-configuration reconciles them&nbsp;; upstream, the issue is
+vice versa&nbsp;: the two use different Matrix events (`m.call.*` vs
+`m.rtc.member`), and the legacy app contains no LiveKit code. No server
+configuration can reconcile them&nbsp;: upstream, the issue is
 [classified "not planned"](https://github.com/element-hq/element-x-android/issues/3937).
 
-The only client that speaks **both** is Element Web/Desktop&nbsp;: a user
-who stayed on Element Classic can join an Element X call by opening
-`https://element.domain.tld` in their phone's browser.
-Otherwise, migrate to Element X — the classic app is in maintenance
-only, with no new features.
+The only client that speaks **both** stacks is Element Web/Desktop&nbsp;: a
+user still on Element Classic can join an Element X call by opening
+`https://element.domain.tld` in their phone's browser. Otherwise, migrate
+to Element X&nbsp;: the classic app is in maintenance-only mode with no new
+features.
 </Aside>
 
 <Aside type="caution" title="Element X: two separate prerequisites">
-Element X refuses to call with *"Call not supported"* (code
-`MISSING_MATRIX_RTC_TRANSPORT`) as long as MatrixRTC is absent, **even**
-if MAS is active. MAS gates login, MatrixRTC gates calls&nbsp;: enabling
-one does not give you the other.
+Element X refuses to call with *"Call not supported"* (error
+`MISSING_MATRIX_RTC_TRANSPORT`) as long as MatrixRTC is absent, **even** if
+MAS is active. MAS gates the login, MatrixRTC gates the calls&nbsp;: enabling
+one does not grant the other.
 </Aside>
 
 <Steps>
@@ -485,10 +426,7 @@ one does not give you the other.
 
    ```nix
    # usr/machines/<host>/default.nix
-   darkone.service.matrix = {
-     mas.enable = true;         # required by Element X to log in
-     matrixRtc.enable = true;   # required by Element X to call
-   };
+   darkone.service.matrix.matrixRtc.enable = true;   # required by Element X
    ```
 
 2. Generate the shared secret, then deploy&nbsp;:
@@ -498,7 +436,7 @@ one does not give you the other.
    just apply <host> switch
    ```
 
-3. Verify the server advertises a transport&nbsp;:
+3. Verify that the server advertises a transport&nbsp;:
 
    ```sh
    # must contain "org.matrix.msc4143.rtc_foci"
@@ -510,11 +448,10 @@ one does not give you the other.
 
 </Steps>
 
-No extra subdomain or certificate&nbsp;: the SFU and its authorization
-service are served on the Matrix vhost, under `/livekit/sfu` and
-`/livekit/jwt`. On the client side, nothing to configure either&nbsp;—
-Element X and Element Web ship Element Call and discover the transport
-on their own.
+No extra subdomain or certificate&nbsp;: the SFU and its authorization service
+are served on the Matrix vhost under `/livekit/sfu` and `/livekit/jwt`.
+Client-side, nothing to configure either&nbsp;— Element X and Element Web
+bundle Element Call and discover the transport automatically.
 
 {/* t:p aa8d326eab9a9e5a1f4418e7f153c1f627cb4ab6bdf868611d4da9bf5cc6b11c */}
 ### Media ports
@@ -679,35 +616,36 @@ rooms.
 | Journaux MAS | `journalctl -u matrix-authentication-service -f` |
 | Journaux MatrixRTC | `journalctl -u livekit -u lk-jwt-service -f` |
 
-{/* t:p 0bf822848357af3a0d7f2d82960a9fe4eedb749e5e7bb77a6e8d856238c4851d */}
-### Managing accounts with MAS
+{/* t:p 34845e1161535a3b581bafb81fc004e59d12fc85e01801a1cfd9b32746d41095 */}
+### Administer accounts with MAS
 
-`dnf-mas` wraps the official `mas-cli` tool on the Matrix host: it
-reconstructs the service configuration and secrets, so it works
-**whether the service is stopped or running**. Always use `sudo`.
+`dnf-mas` wraps the official `mas-cli` tool on the Matrix host&nbsp;: it
+reconstructs the service configuration and secrets, so it works **whether the
+service is stopped or running**. Always run with `sudo`.
 
 | Action | Command |
 |---|---|
 | Create a registration token | `sudo dnf-mas manage issue-user-registration-token` |
-| Promote an administrator | `sudo dnf-mas manage promote-admin alice` |
 | List administrators | `sudo dnf-mas manage list-admin-users` |
+| Remove a legacy promotion | `sudo dnf-mas manage demote-admin alice` |
 | Create an account (bot, service) | `sudo dnf-mas manage register-user` |
 | Change a password | `sudo dnf-mas manage set-password alice` |
 | Kill all sessions for an account | `sudo dnf-mas manage kill-sessions alice` |
 | Lock an account | `sudo dnf-mas manage lock-user alice` |
-| Full diagnostics | `sudo dnf-mas manage doctor` |
+| Full diagnostics | `sudo dnf-mas doctor` |
 
-<Aside type="caution" title="No more shared registration secret">
-With MAS, `/_synapse/admin/v1/register` is disabled. This is the mechanism
-[`just configure-alert-bot`](/en/doc/admin-guide/operate/justfile/) uses
-to create a missing bot account: create this account **before**
-migrating, or recreate it with `sudo dnf-mas manage register-user`.
-</Aside>
+:::caution[Do not promote manually]
+Administrators are declared in `network.matrix.admins`. `promote-admin` sets
+a flag **in the database** that the configuration does not see&nbsp;: the
+policy grants access based on the list **or** that flag, so a forgotten
+promotion survives its removal from `config.yaml`. Audit with
+`list-admin-users`, clean up with `demote-admin`.
+:::
 
-`mas-cli` exposes no read commands: to view accounts,
-their devices and sessions, enable the `matrix-admin` service, the
-web interface [Ketesa](https://github.com/etkecc/ketesa) (formerly synapse-admin), which talks to
-MAS **and** Synapse admin APIs.
+`mas-cli` exposes no read commands&nbsp;: to view accounts, their devices and
+sessions, enable the `matrix-admin` service, the [Ketesa](https://github.com/etkecc/ketesa) web
+interface (formerly synapse-admin), which speaks to the admin APIs of both
+MAS **and** Synapse.
 
 ```yaml
 # etc/config.yaml, on the Matrix server host
@@ -715,35 +653,32 @@ services:
   matrix-admin:
 ```
 
-It responds on `https://matrix-admin.domain.tld`, **from the LAN and tailnet
-only**. The subdomain must still resolve publicly to the
-HCS: Caddy needs it for the ACME certificate before refusing
-external callers. Log in via the OIDC button, with a previously promoted
-account:
+It is served at `https://matrix-admin.domain.tld`, **from the LAN and
+tailnet only**. The subdomain must still resolve publicly to the reverse
+proxy&nbsp;: Caddy needs it for the ACME certificate before rejecting external
+requesters. Log in via the OIDC button with an account listed in
+[`network.matrix.admins`](#enable-matrix)&nbsp;: the MAS policy grants it the
+`urn:mas:admin` and `urn:synapse:admin:*` scopes that the interface needs on
+both APIs.
 
-```sh
-sudo dnf-mas manage promote-admin alice
-```
-
-| Side | What the interface provides |
+| Side | What the interface allows |
 |---|---|
-| MAS | Sessions (compat, OAuth2, personal), emails, upstream OIDC links, registration tokens, password, locking, deactivation |
+| MAS | Sessions (compat, OAuth2, personal), emails, upstream OIDC links, registration tokens, password, lockout, deactivation |
 | Synapse | Accounts and devices, rooms, media, reports, rate limits |
 
-<Aside type="tip" title="Unlocking a friend">
-Common symptom: no session opens anymore, or encryption
-no longer follows. Revoke **all MAS sessions** for the account, then delete its
-**Synapse devices**: reconnection is then done with only the
-username/password pair. Resetting encryption, on the other hand, remains
-**client-side** ("Reset encryption" in Element): no
-server-side tool does it in your place.
+<Aside type="tip" title="Unblocking a friend">
+Common symptom&nbsp;: no session can be opened, or encryption no longer
+syncs. Revoke **all MAS sessions** for the account, then delete its
+**Synapse devices**&nbsp;: re-login then only requires the username/password
+pair. Resetting encryption remains a **client-side** action ("Reset
+encryption" in Element)&nbsp;: no server-side tool does it for you.
 </Aside>
 
-<Aside type="caution" title="Protected bridge accounts">
+<Aside type="caution" title="Bridge accounts are protected">
 Accounts belonging to bridges (`@whatsappbot`, `@signal_…`) are marked
-*appservice-managed*: the interface refuses to deactivate, lock, or remove their
-devices — enough to break a bridge in one
-click. Display name and avatar remain editable.
+*appservice-managed*&nbsp;: the interface refuses to deactivate them, lock
+them or remove their devices — which would break a bridge in one click.
+Display name and avatar remain editable.
 </Aside>
 
 {/* t:p ce89bb11502bc4f4f785a1b01cb78b4cf4d2071907c78521d1f49bbe01f69e87 */}

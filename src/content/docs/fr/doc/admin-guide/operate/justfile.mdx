@@ -840,11 +840,12 @@ just rotate finalize
 Ces commandes couvrent des fonctionnalités spécifiques : provisionnement du bot
 d'alertes Matrix et gestion de la réplication Kanidm.
 
-{/* t:p 6f5392cdf438fd8eefc76271cb14d343baf4a5593495236de95b8b35b970a42f */}
+{/* t:p 48667f4e4ba3d9286b3916fdfca173e07d552461629d5d5dd65e84d92d757bff */}
 ### ✳️ `configure-alert-bot`
 
 Crée ou rafraîchit le bot Matrix, le secret webhook et les salons d'alertes
-et d'incidents depuis la section `network.matrix` de `config.yaml`.
+et d'incidents depuis la section `network.matrix` de `config.yaml`. Le compte
+du bot est créé sur l'hôte Matrix avec `dnf-mas`, par ssh.
 
 ```sh
 just configure-alert-bot

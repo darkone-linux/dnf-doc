@@ -547,7 +547,7 @@ darkone.service.loki = {
 
 <hr/>
 
-{/* t:p 466283c3c53d1519f5f7d8e54fe78d1727971987bfd3b46441ff53df0af6df6a */}
+{/* t:p 3aed33d5211d279fd7b46860c052b6b452ec8bb63edc1e0302566f26450650d7 */}
 ### &#x2728; darkone.service.matrix-admin
 
 Matrix administration UI (Ketesa, formerly synapse-admin) for the local server.
@@ -562,12 +562,10 @@ record or `etc/config.yaml`.
 Reachable from the LAN and the tailnet only (`proxy.isInternal`): the bundle
 holds no secret, but an admin login page has no reason to face the Internet.
 
-:::caution[Two server-side prerequisites]
-- MAS must serve its `adminapi` resource — done by `matrix.nix` as soon as
-  `mas.enable`. Without it login succeeds, then every MAS panel (sessions,
-  registration tokens, emails) fails.
-- The administrator account needs `can_request_admin`:
-  `sudo dnf-mas manage promote-admin <login>`.
+:::caution[Log in with a declared administrator]
+Only an account listed in `network.matrix.admins` may log in: the MAS policy
+grants it the `urn:mas:admin` and `urn:synapse:admin:*` scopes this UI needs
+on both APIs. Anyone else logs in fine, then every panel fails.
 :::
 
 * **enable** `bool` Enable the local matrix administration UI
@@ -578,7 +576,7 @@ darkone.service.matrix-admin.enable = false;
 
 <hr/>
 
-{/* t:p 5fa91d2fdec3ee058790e0dcd60e5acf0247c642b4fc1ad565aebda00ac945fc */}
+{/* t:p f0b857acdd4159cd1de77d0a60ddfc7228897996a3cd833ef2194e8914375c9a */}
 ### &#x2728; darkone.service.matrix
 
 DNF matrix (synapse) server with mautrix bridges.
@@ -586,8 +584,8 @@ DNF matrix (synapse) server with mautrix bridges.
 Bridges (whatsapp, signal, telegram, messenger, discord) are usable by every
 local account: each user links its own remote account by talking to the
 bridge bot (`@whatsappbot`, `@signalbot`, ... then `login`); sessions are
-isolated per user. The declared `network.matrix.admin` administrates the
-bridges.
+isolated per user. The declared `network.matrix.admins` administrate the
+bridges and the server (cf. "Administrators" below).
 
 Double puppeting uses the official appservice method
 (https://docs.mau.fi/bridges/general/double-puppeting.html): a shared
@@ -602,7 +600,7 @@ secrets, so resetting a bridge's state dir never invalidates the
 registration synapse has loaded (which would otherwise require a registration
 wipe + synapse restart and produce "as_token was not accepted" errors).
 
-{/* t:p ff353801b94ac1fc282cf6ce672fdc79a049f111f00671c5ac098fd143bba110 */}
+{/* t:p 721584fdcd7e19220bfa29c1991267d1fef12571ca5de8ac0c5aab8b3cbe707d */}
 #### Federation
 
 Federation is configurable via `darkone.service.matrix.federation`:
@@ -621,10 +619,8 @@ family network, fill `whitelist` with trusted servers only.
 :::
 
 Friend self-registration (`friendRegistration.enable`) opens token-gated
-local password accounts alongside Kanidm OIDC users. Without MAS, minting a
-token goes through the Synapse admin API (a server admin is required); with
-MAS, mint it on the host with
-`sudo dnf-mas manage issue-user-registration-token`.
+local password accounts alongside Kanidm OIDC users. Mint a token on the host
+with `sudo dnf-mas manage issue-user-registration-token`.
 
 :::caution[One namespace, permanent ids]
 Friends and declared users draw from the same localpart namespace, and a
@@ -635,13 +631,14 @@ existing account to whoever registers a matching name upstream. Merge
 procedure in the admin guide (`operate/matrix.mdx`).
 :::
 
-{/* t:p 792e624877d3311360f730f9983a75a568e3866eae1e1d01bf4df2574b2b50b7 */}
-#### Next-gen auth (MAS)
+{/* t:p 8991e0d7f2ebabc4d8467440645ee2a7b1e06249102aa84b4071b0398d13da0f */}
+#### Authentication (MAS)
 
-`mas.enable` delegates all authentication to Matrix Authentication Service
-(required by Element X, QR login, `/account` self-service portal). Kanidm
-stays the identity source: MAS becomes the OIDC client instead of synapse,
-and synapse only asks MAS to introspect tokens. Served on the same vhost:
+All authentication is delegated to Matrix Authentication Service, always:
+Element X, QR login and the `/account` self-service portal only exist there,
+and synapse's own auth is deprecated upstream (MSC3861). Kanidm stays the
+identity source: MAS is the OIDC client instead of synapse, and synapse only
+asks MAS to introspect tokens. Served on the same vhost:
 MAS owns the root + compat auth endpoints, synapse keeps `/_matrix/*` and
 `/_synapse/*`; client discovery is automatic (synapse serves
 `auth_metadata` itself), so no well-known change.
@@ -664,26 +661,34 @@ read side (accounts, devices, sessions), it speaks both admin APIs.
 after MAS's first start (encrypted DB data / upstream account links).
 :::
 
-:::caution[Migrating an existing instance]
-Enabling `mas.enable` on a live homeserver requires the `syn2mas` migration
-(accounts, passwords, sessions, external ids). Deploy first, then, with both
-services stopped: `sudo dnf-mas syn2mas check`, `... migrate --dry-run`,
-`... migrate`. Bridges need no registration regen: synapse forces MSC4190 on
-every appservice as soon as auth is delegated. Procedure in
+:::danger[Migrating a pre-MAS instance]
+A homeserver that predates MAS needs the `syn2mas` migration (accounts,
+passwords, sessions, external ids) or nobody logs in again. Deploy first,
+then, with both services stopped: `sudo dnf-mas syn2mas check`,
+`... migrate --dry-run`, `... migrate`. Procedure in
 `.specs/matrix-authentication-service.md`.
 :::
 
-:::caution[No shared-secret registration under MAS]
-Synapse's `/_synapse/admin/v1/register` (registration shared secret) is
-disabled in delegated mode, which is what `just configure-alert-bot` uses to
-create a missing bot account. Create it beforehand, or with
-`sudo dnf-mas manage register-user`.
+{/* t:p 0fc77b947b4fa00219c9c48005b393bffb05d36cc9bb56626743d586b2542433 */}
+#### Administrators
+
+`network.matrix.admins` (local parts) is the single declarative source for
+both administrations, applied at rebuild with no database write:
+
+- bridges: `admin` level in every mautrix `permissions` map;
+- server: `policy.data.admin_users`, which the bundled MAS policy turns into
+  the `urn:mas:admin` and `urn:synapse:admin:*` scopes (MAS admin API, synapse
+  admin API, `matrix-admin` UI login).
+
+:::caution[Imperative promotions survive]
+The policy grants admin on `admin_users` OR the `can_request_admin` database
+flag `dnf-mas manage promote-admin` sets. Audit leftovers with
+`list-admin-users`, drop them with `demote-admin`.
 :::
 
 * **enable** `bool` Enable matrix (synapse) service
 * **federation.enable** `bool` Allow server-to-server federation. False blocks all federation.
 * **federation.whitelist** `listOf str` Empty = federate with all servers; non-empty = only these domains (inbound + outbound).
-* **mas.enable** `bool` Delegate all authentication to Matrix Authentication Service (Element X support).
 * **matrixRtc.enable** `bool` Enable the MatrixRTC backend (LiveKit SFU) for Element Call group calls.
 * **friendRegistration.enable** `bool` Allow friends to self-register with an invite token (token-gated).
 * **bridges.whatsapp.enable** `bool` Mautrix WhatsApp bridge (login by QR code).
@@ -697,7 +702,6 @@ darkone.service.matrix = {
   enable = false;
   federation.enable = false;
   federation.whitelist = [ ];
-  mas.enable = false;
   matrixRtc.enable = false;
   friendRegistration.enable = false;
   bridges.whatsapp.enable = true;

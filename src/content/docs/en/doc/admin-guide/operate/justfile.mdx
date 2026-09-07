@@ -805,11 +805,10 @@ just rotate finalize
 These commands cover specific features: provisioning the Matrix alert bot
 and managing Kanidm replication.
 
-{/* t:p 6f5392cdf438fd8eefc76271cb14d343baf4a5593495236de95b8b35b970a42f */}
+{/* t:p 48667f4e4ba3d9286b3916fdfca173e07d552461629d5d5dd65e84d92d757bff */}
 ### ✳️ `configure-alert-bot`
 
-Creates or refreshes the Matrix bot, the webhook secret and the alert
-and incident rooms from the `network.matrix` section of `config.yaml`.
+Creates or refreshes the Matrix bot, the webhook secret, and the alert and incident channels from the `network.matrix` section of `config.yaml`. The bot account is created on the Matrix host with `dnf-mas`, via SSH.
 
 ```sh
 just configure-alert-bot
