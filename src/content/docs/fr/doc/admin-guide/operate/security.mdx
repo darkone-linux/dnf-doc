@@ -141,13 +141,29 @@ sans bac à sable applicatif.
 | `R67` | PAM distant sécurisé | ❌ | ⚠️ | ⚠️ | ⚠️ |
 | `R69` | Bases d'utilisateurs en TLS | ❌ | ⚠️ | ⚠️ | ⚠️ |
 | `R70` | Comptes système ≠ annuaire | ❌ | ⚠️ | ⚠️ | ⚠️ |
-| `C10` | Anti force brute, limites de session | ❌ | ✅ | ✅ | ✅ |
+| `C10` | Limites de session (`nproc`, `nofile`) | ❌ | ✅ | ✅ | ✅ |
 
-:::note[`R67`, `R69`, `R70` : annuaire distant différé]
+:::note[`R69`, `R70` : annuaire distant différé]
 Ces règles ne concernent qu'un **annuaire distant** (SSSD/nslcd), non utilisé
-par DNF aujourd'hui ; leur volet TLS est différé (futur `checkScript`). Seul
-l'anti-force-brute **local** (`pam_faillock`, voir `C10`) est actif dès
-`intermediary`.
+par DNF aujourd'hui ; leur volet TLS est différé (futur `checkScript`).
+:::
+
+:::note[`R32` : déconnexion des sessions inactives]
+`TMOUT=600` ferme toute session console ou SSH restée dix minutes sans commande,
+sur **bash comme sur zsh** — DNF fait de zsh le shell de connexion par défaut,
+et la variable n'était posée que pour bash. Un `tmux` ou un `screen` laissé au
+premier plan tombe avec la session.
+:::
+
+:::danger[`R67` : `pam_faillock` verrouille vraiment les comptes]
+Trois mots de passe erronés verrouillent le compte 15 minutes, sur `login`,
+`su`, `sshd`, `sudo` et l'écran de connexion GNOME. La pile est complète —
+`preauth` compte, `authfail` refuse, la règle `account` bloque un compte déjà
+verrouillé ; auparavant seule la ligne `preauth` était posée, elle comptait sans
+jamais verrouiller. Gardez une **session root ouverte** au premier déploiement
+et connaissez le retour : `faillock --user <login> --reset`. Réglages :
+`darkone.security.pam.faillock.deny` et `.unlockTime`. `root` n'est jamais
+verrouillé.
 :::
 
 {/* t:p 528d129ae4723581358ce42fc281b8d52b9487c10c24982d45778aa18b648516 */}
@@ -193,8 +209,19 @@ n'est pas vide ; l'étiquette `needs-binfmt` reste utile pour les autres cas
 (Java, `qemu-static`).
 :::
 
+:::caution[`R28` : `/tmp` non exécutable]
+`/tmp` est un tmpfs en `nosuid,nodev,noexec`, dimensionné par
+`boot.tmp.tmpfsSize` (25 % de la RAM par défaut). R28 est **propriétaire du
+montage** : `boot.tmp.useTmpfs` est forcé à `false`, sinon l'unité `tmp.mount`
+qu'il génère — sans `noexec` — l'emporterait silencieusement sur `/etc/fstab`.
+Conséquence directe : `noexec` casse tout outil qui exécute ce qu'il vient de
+décompresser (pip, cargo, gcc). Les compilations Nix sont couvertes — le démon
+bascule sur `/var/tmp` — mais un outil interactif peut demander
+`export TMPDIR=$XDG_RUNTIME_DIR`.
+:::
+
 :::note[`R28`, `R52`, `R55` : services et partitions désignés]
-`R28` durcit d'office `/tmp`, `/proc` et `/dev/shm` ; les options sur `/var/log`,
+`R28` durcit aussi `/proc` et `/dev/shm` ; les options sur `/var/log`,
 `/srv`, `/opt`, `/home` s'ajoutent via `darkone.security.filesystem.extraMountHardening`
 (partitions séparées requises). `R52` (mode `0750` des répertoires d'exécution)
 et `R55` (`/tmp` privé par service) s'appliquent aux unités listées dans
@@ -242,6 +269,13 @@ moteurs JIT.
 Au niveau `minimal` et `intermediary`, `C4` couvre le filtrage **entrant**
 (refus par défaut). Le filtrage **sortant** (egress) s'ajoute à partir de
 `reinforced`.
+:::
+
+:::caution[`C5` : ni tunnel, ni agent, ni `ssh -J`]
+Tunnels TCP, transfert d'agent et X11 sont coupés. ProxyJump tombe avec eux :
+`ssh -J` ouvre un canal `direct-tcpip`, c'est-à-dire exactement ce que
+`AllowTcpForwarding` refuse. L'accès d'administration se fait **en direct sur le
+tailnet**, jamais par rebond.
 :::
 
 :::caution[`R13` : couper IPv6 se demande explicitement]
