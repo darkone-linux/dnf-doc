@@ -102,77 +102,112 @@ enrollment) and LUKS encryption are **declared in the host disk configuration**
 verify their actual state.
 :::
 
-{/* t:p 39ffe2c427bb1dd64be21221d1dd6e7855673b3992e33480da38510659fba48b */}
+{/* t:p 8eddfd2d22d562589a99695e7cf6c76efa8b560a3c16341db830c6ffd65666de */}
 ### Kernel
 
-| Code | Rule | Min | Inter | Renf | High |
+| Code | Rule | Min | Inter | Reinforced | Elevated |
 |---|---|:-:|:-:|:-:|:-:|
 | `R8` | Memory options on the command line | ❌ | ✅ | ✅ | ✅ |
 | `R9` | Hardening sysctls | ❌ | ✅ | ✅ | ✅ |
-| `R11` | Yama: `ptrace` restricted | ❌ | ✅ | ✅ | ✅ |
+| `R11` | Yama: restricted `ptrace` | ❌ | ✅ | ✅ | ✅ |
 | `R10` | Module loading disabled | ❌ | ❌ | ✅ | ✅ |
 | `R60` | `linux_hardened` kernel | ❌ | ❌ | ✅ | ✅ |
 | `C1` | linux-hardened patches | ❌ | ❌ | ❌ | ✅ |
 | `C2` | LSM Lockdown | ❌ | ❌ | ❌ | ✅ |
 | `R15`–`R27` | Compile-time hardening | ❌ | ❌ | ❌ | ✅ |
 
-{/* t:p e12981676425489f682f8bdd5c291f7b454a0d43b012ffe810eaca861842839b */}
-### Accounts and authentication
+:::note[`R9`: user namespaces remain allowed]
+The legacy key `kernel.unprivileged_userns_clone` comes from a Debian patch and is absent from a mainline kernel: setting it causes `systemd-sysctl` to fail. The mainline equivalent `user.max_user_namespaces = 0` breaks Flatpak, bubblewrap, and rootless Podman. It is therefore **optional**:
+`darkone.security.kernel-params.restrictUserns = true`, to be reserved for servers without application sandboxing.
+:::
 
-| Code | Rule | Min | Inter | Rein | High |
+{/* t:p bb6ba1816d88b07882fa29991df84f334cd3ae49b9f14f8f05134d91c84141c1 */}
+### Accounts and Authentication
+
+| Code | Rule | Min | Inter | Reinforced | Elevated |
 |---|---|:-:|:-:|:-:|:-:|
-| `R30` | Disabled unused accounts | ✅ | ✅ | ✅ | ✅ |
+| `R30` | Unused accounts disabled | ✅ | ✅ | ✅ | ✅ |
 | `R31` | Strong passwords | ✅ | ✅ | ✅ | ✅ |
 | `R68` | Password storage in `yescrypt` | ✅ | ✅ | ✅ | ✅ |
-| `R32` | Lock on inactivity | ❌ | ✅ | ✅ | ✅ |
-| `R33` | Admin action traceability | ❌ | ✅ | ✅ | ✅ |
+| `R32` | Idle session lockout | ❌ | ✅ | ✅ | ✅ |
+| `R33` | Admin action audit trail | ❌ | ✅ | ✅ | ✅ |
 | `R34` | Service accounts without shell | ❌ | ✅ | ✅ | ✅ |
 | `R35` | Unique service accounts | ❌ | ✅ | ✅ | ✅ |
 | `R67` | Secure remote PAM | ❌ | ⚠️ | ⚠️ | ⚠️ |
 | `R69` | User databases over TLS | ❌ | ⚠️ | ⚠️ | ⚠️ |
 | `R70` | System accounts ≠ directory | ❌ | ⚠️ | ⚠️ | ⚠️ |
-| `C10` | Anti brute-force, session limits | ❌ | ✅ | ✅ | ✅ |
+| `C10` | Session limits (`nproc`, `nofile`) | ❌ | ✅ | ✅ | ✅ |
 
-:::note[`R67`, `R69`, `R70`: remote directory deferred]
-These rules only concern a **remote directory** (SSSD/nslcd), not used by DNF
-today; their TLS aspect is deferred (future `checkScript`). Only **local**
-anti-brute-force (`pam_faillock`, see `C10`) is active from `intermediary`.
+:::note[`R69`, `R70`: remote directory deferred]
+These rules only concern a **remote directory** (SSSD/nslcd), not used by DNF today; their TLS component is deferred (future `checkScript`).
 :::
 
-{/* t:p 528d129ae4723581358ce42fc281b8d52b9487c10c24982d45778aa18b648516 */}
-### Administration rights (sudo)
+:::note[`R32`: idle session logout]
+`TMOUT=600` closes any console or SSH session that has been idle for ten minutes, on **both bash and zsh** — DNF makes zsh the default login shell, and the variable was previously only set for bash. A `tmux` or `screen` left in the foreground is terminated with the session.
 
-| Code | Rule | Min | Inter | Renf | High |
+The variable is set as `readonly`: it cannot be disabled in a session. A machine that keeps long-running terminals (compilation farms, agent tools) sets `darkone.security.users.idleTimeout = 0`, which removes the TTY delay without affecting GNOME lock.
+
+:::
+
+:::danger[`R67`: `pam_faillock` truly locks accounts]
+Three incorrect passwords lock the account for 15 minutes on `login`, `su`, `sudo`, and through the `login` stack, the GNOME lock screen. The stack is complete: `preauth` rejects, `authfail` counts, the `account` rule blocks an already locked account. The two `auth` rules bracket the `pam_unix` **for each service**; their rank is calculated as it differs from one stack to another (11700 on `su`/`sudo`, 13100 on `login`).
+
+`sshd` is intentionally excluded: DNF prohibits password authentication, so `faillock` would never count anything there. Its `account` rule could only reject a backup key session for a lock acquired at the console. Maintenance access therefore remains open under all circumstances, and `nix` (without password credentials) cannot be locked.
+
+Keep a **root session open** during the initial deployment and know the recovery command: `faillock --user <login> --reset`. Settings: `darkone.security.pam.faillock.deny` and `.unlockTime`. `root` is never locked.
+:::
+
+{/* t:p 5de8841d63bcfbc1a097d30077da9554f2f4a7912885882f3a41b6596ebbb206 */}
+### Admin Privileges (sudo)
+
+| Code | Rule | Min | Inter | Reinforced | Elevated |
 |---|---|:-:|:-:|:-:|:-:|
 | `R39` | Hardened `sudo` directives | ❌ | ✅ | ✅ | ✅ |
 | `R40` | Non-root `sudo` targets | ❌ | ✅ | ✅ | ✅ |
-| `R42` | Negation prohibition | ❌ | ✅ | ✅ | ✅ |
+| `R42` | Deny list prohibition | ❌ | ✅ | ✅ | ✅ |
 | `R44` | `sudoedit` for editing | ❌ | ✅ | ✅ | ✅ |
 | `R38` | Dedicated `sudo` group | ❌ | ❌ | ✅ | ✅ |
-| `R41` | Limited `NOEXEC` overrides | ❌ | ❌ | ✅ | ✅ |
+| `R41` | `NOEXEC` override restrictions | ❌ | ❌ | ✅ | ✅ |
 
-{/* t:p ce99852047f4ca6a5a71c15d5fa508052467924d30f4591db6f648155ce8a897 */}
-### Files and permissions
+:::caution[`R39`: without `noexec` or `requiretty`]
+These two directives are incompatible with a managed deployment: colmena escalates via `sudo -H --` without a PTY, and `switch-to-configuration` spawns child processes. R39 therefore relies on `use_pty`, `log_input`, and `log_output`, which provide the desired audit trail. Session recordings accumulate in `/var/log/sudo-io`, rotated weekly with 12 archives retained.
+:::
 
-| Code | Rule | Min | Inter | Rein | High |
+{/* t:p 308cf481082a5f3bb797d4d373ac5f1688cd328bb67bcaec4f6024918b473778 */}
+### Files and Permissions
+
+| Code | Rule | Min | Inter | Reinforced | Elevated |
 |---|---|:-:|:-:|:-:|:-:|
-| `R53` | Orphaned file detection | ✅ | ✅ | ✅ | ✅ |
+| `R53` | Detection of unowned files | ✅ | ✅ | ✅ | ✅ |
 | `R54` | Sticky bit on `/tmp` and `/var/tmp` | ✅ | ✅ | ✅ | ✅ |
-| `R56` | `setuid` detection outside whitelist | ✅ | ✅ | ✅ | ✅ |
+| `R56` | Detection of `setuid` outside allowlist | ✅ | ✅ | ✅ | ✅ |
 | `R14` | Filesystem sysctls | ❌ | ✅ | ✅ | ✅ |
 | `R28` | Partitioning and mount options | ❌ | ✅ | ✅ | ✅ |
-| `R50` | Sensitive file restriction | ❌ | ✅ | ✅ | ✅ |
+| `R50` | Sensitive file restrictions | ❌ | ✅ | ✅ | ✅ |
 | `R52` | Socket and named pipe permissions | ❌ | ⚠️ | ⚠️ | ⚠️ |
 | `R55` | Per-user temporary directories | ❌ | ⚠️ | ⚠️ | ⚠️ |
 | `R36` | `UMASK` 0077 | ❌ | ❌ | ✅ | ✅ |
 | `R57` | Minimal root `setuid` (capabilities) | ❌ | ❌ | ✅ | ✅ |
 
+:::note[`R14`: `binfmt_misc` kept on emulating hosts]
+Disabling `binfmt_misc` breaks cross-compilation (aarch64 images for Raspberry Pi). The restriction is automatically lifted when `boot.binfmt.emulatedSystems` is not empty; the `needs-binfmt` label remains useful for other cases (Java, `qemu-static`).
+:::
+
+:::caution[`R28`: `/tmp` non-executable]
+`/tmp` is a tmpfs with `nosuid,nodev,noexec`, sized via `boot.tmp.tmpfsSize` (25% of RAM by default). R28 **owns the mount**: `boot.tmp.useTmpfs` is forced to `false`, otherwise the `tmp.mount` unit it generates — without `noexec` — would silently override `/etc/fstab`.
+
+`noexec` forbids direct execution **and** `dlopen`. It therefore breaks any tool that executes what it just decompressed (pip, cargo, gcc) and any runtime that extracts its native libraries into `/tmp` (Bun, Electron, agent tools). Nix builds are covered, the daemon switching to `/var/tmp`, but an interactive tool may require `export TMPDIR=$XDG_RUNTIME_DIR`.
+
+Two fallback options per host:
+
+| Option | Effect |
+|---|---|
+| `darkone.security.filesystem.tmpNoexec = false` | keeps the tmpfs with `nosuid,nodev`, removes `noexec` |
+| `darkone.security.filesystem.tmpfs = false` | leaves `/tmp` on its original filesystem (persistent data, no RAM consumed) |
+:::
+
 :::note[`R28`, `R52`, `R55`: designated services and partitions]
-`R28` hardens `/tmp`, `/proc` and `/dev/shm` by default; options on `/var/log`,
-`/srv`, `/opt`, `/home` are added via `darkone.security.filesystem.extraMountHardening`
-(separate partitions required). `R52` (`0750` mode for runtime directories)
-and `R55` (private `/tmp` per service) apply to units listed in
-`darkone.security.services.hardenedUnits` — empty by default. See `R63`.
+`R28` also hardens `/proc` (`hidepid=2`) and `/dev/shm`. The `proc` group, which grants the right to see other users' processes, is populated with `wheel` members; otherwise `ps`, `htop`, and the GNOME monitor would display nothing for administrators themselves. Mount options on `/var/log`, `/srv`, `/opt`, `/home` are added via `darkone.security.filesystem.extraMountHardening` (separate partitions required). `R52` (directory mode `0750`) and `R55` (per-service private `/tmp`) apply to units listed in `darkone.security.services.hardenedUnits` — empty by default. See `R63`.
 :::
 
 {/* t:p 1dfc54618127e4183dc0a6137f2382e47156604b5c525a114b9baaca9ef7097b */}
@@ -196,25 +231,39 @@ hardening would break services. The list acts as a *floor*, overridable per
 unit, and `needs-jit` lifts `MemoryDenyWriteExecute` for JIT engines.
 :::
 
-{/* t:p f463c066b8dde638f3eab2eb0c7daef12a51a6115c6ca12c1e651cd5a1a0745d */}
+{/* t:p 542c96536187250d8bbb30417e249fd337e1d74a33c0d6278fbab99bc86ab80e */}
 ### Network
 
-| Code | Rule | Min | Inter | Renf | High |
+| Code | Rule | Min | Inter | Reinforced | Elevated |
 |---|---|:-:|:-:|:-:|:-:|
-| `R80` | Monitoring listening ports | ✅ | ✅ | ✅ | ✅ |
-| `C4` | Firewall default deny | ⚠️ | ⚠️ | ✅ | ✅ |
+| `R80` | Listening port monitoring | ✅ | ✅ | ✅ | ✅ |
+| `C4` | Default-deny firewall | ⚠️ | ⚠️ | ✅ | ✅ |
 | `R12` | IPv4 network sysctls | ❌ | ✅ | ✅ | ✅ |
-| `R13` | IPv6 disabled (unless `no-ipv6`) | ❌ | ✅ | ✅ | ✅ |
+| `R13` | IPv6 disabling (on request) | ❌ | ⚠️ | ⚠️ | ⚠️ |
 | `C5` | OpenSSH hardening | ❌ | ✅ | ✅ | ✅ |
 | `C7` | NTS time synchronization | ❌ | ✅ | ✅ | ✅ |
 | `C8` | Secure DNS resolver (DNSSEC, DoT) | ❌ | ✅ | ✅ | ✅ |
 | `R79` | Hardened exposed services **(server)** | ❌ | ✅ | ✅ | ✅ |
 | `R78` | Network service isolation **(server)** | ❌ | ❌ | ✅ | ✅ |
 
-:::note[`C4` partial at the first two levels]
-At `minimal` and `intermediary` levels, `C4` covers **inbound** filtering
-(default deny). **Outbound** filtering (egress) is added from
-`reinforced` and above.
+:::note[`C4` partial on the first two levels]
+At the `minimal` and `intermediary` levels, `C4` covers **inbound** filtering (default deny). **Outbound** (egress) filtering is added starting from `reinforced`.
+:::
+
+:::caution[`C5`: no tunnel, no agent, no `ssh -J`]
+TCP tunnels, agent forwarding, and X11 are disabled. ProxyJump falls with them: `ssh -J` opens a `direct-tcpip` channel, which is exactly what `AllowTcpForwarding` denies. Administration access is **directly on the tailnet**, never via a jump host.
+:::
+
+:::caution[`R13`: disabling IPv6 requires explicit opt-in]
+An exclusion label can only **remove** a rule. `no-ipv6` therefore made R13 active by default and disabled IPv6 across the entire fleet. Disabling is now done via `darkone.security.kernel-params.disableIpv6` (`false` by default); ANSSI prefers to harden IPv6 rather than remove it anyway.
+:::
+
+:::note[`R12`: reverse path filtering adapted to role]
+Strict mode (`rp_filter = 1`) drops all asymmetric return traffic. A Tailscale subnet router advertises its routes without SNAT (`--snat-subnet-routes=false`): this is exactly that case. Hosts with `isGateway` or `isExitNode` switch to loose mode (`2`), the others remain strict.
+:::
+
+:::caution[`R79`: every exposed service must have its own filter]
+fail2ban runs on the `systemd` backend: a jail requires a `filter.d` definition **and** a `journalmatch`, otherwise the daemon refuses to start — and takes the `sshd` jail down with it. `exposedServices` is therefore validated at evaluation time against `darkone.security.network.filters`. Provided today: `sshd` (shipped with fail2ban) and `vaultwarden`. Caddy, Matrix, and Kanidm require written patterns based on real logs.
 :::
 
 {/* t:p f59cb27147ba7402e4a96f7569e41a10ad12531fce1d1012e41269834820e6aa */}
@@ -253,22 +302,24 @@ kernel. On a machine without this need, add `kernel-recompile` to `excludes` to
 ignore it.
 :::
 
-{/* t:p bd52fe6aa55ab1a5b3abfa55798db39b658200d3d37d3a18346916037adb1aab */}
-## Adapt without breaking everything
+{/* t:p f2876bf44b01b1856bdce70aa9597b18a7be31990dbf8bc736ea7233a5bc573c */}
+## Adjusting Without Breaking Everything
 
-Two safety valves allow bypassing a specific protection without lowering the
-global level.
+Three levers allow fine-tuning a specific protection without lowering the global level.
 
-- **Tags** (`excludes`): exclude a **group** of incompatible rules
-  (e.g. `needs-jit`, `no-ipv6`).
-- **Exceptions** (`exceptions`): bypass **one** rule, justification
-  required.
+- **Tags** (`excludes`): disable a **group** of incompatible rules (e.g. `needs-jit`, `needs-binfmt`).
+- **Exceptions** (`exceptions`): bypass a **single** rule, with mandatory justification.
+- **Activation options**: enable a rule too destructive to be active by default (`disableIpv6`, `restrictUserns`).
 
-Details on these safety valves are in [Security
-concepts](/en/doc/admin-guide/understand/security-notions/#exclusion-labels).
+:::note[A tag can only remove]
+`excludes` and `exceptions` **subtract** rules; neither can add one. A dangerous rule that is enabled by default is therefore controlled via a dedicated option, never by the absence of a tag.
+:::
+
+The details of these levers are in [Security
+Concepts](/en/doc/admin-guide/understand/security-notions/#exclusion-labels).
 
 :::danger[Module under stabilization]
-Raise the level **progressively** and test each host before production.
+Raise the level **gradually** and test each host before production.
 :::
 
 {/* t:p e7e75fc2664cff04022043f12392c2bbcb3e4ba07577b01d877932b81320a7ca */}

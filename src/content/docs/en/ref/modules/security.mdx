@@ -13,7 +13,7 @@ sidebar:
 **A security module** hardens the system, its programs and functionalities.
 :::
 
-{/* t:p 82efc324f2e32b588e940c97afc58034a6a0e57c9913366b87b9f4fc91da2d5c */}
+{/* t:p 4b8e12ea5dbca03b34d8a51f1366c63297efa208f9e47b08e6efb6f03ce2fa1a */}
 ### &#x1F511; darkone.security.complement
 
 Cross-cutting complementary measures — Annex A (C1–C12). (wip)
@@ -47,8 +47,10 @@ kernel downloads). Required: a controlled outbound HTTP(S) proxy.
 :::
 
 :::caution[C5 — Hardened SSH]
-SSH tunnels, agent forwarding, and X11 disabled. Adapt admin workflows
-to ProxyJump (`ssh -J`). This module overrides `core.nix` for SSH.
+Tunnels, agent forwarding and X11 are off. `ssh -J` goes too: ProxyJump
+opens a `direct-tcpip` channel, which is exactly what `AllowTcpForwarding`
+refuses — admin access is direct over the tailnet, never bounced. This
+module overrides `core.nix` for SSH.
 :::
 
 * **enable** `bool` Enable complementary ANSSI measures (C1–C12).
@@ -82,7 +84,7 @@ darkone.security.complement = {
 
 <hr/>
 
-{/* t:p 490bf588fd5118381d40d7e7cfc7dff2e5bb8745ffe345c167c517ed7cde80f7 */}
+{/* t:p 5304cb101f345ca25eee423e871ee5e44320eb5cc087f850534f73ec37d7bbda */}
 ### &#x1F511; darkone.security.filesystem
 
 Partitioning, file tree, and file permissions (R28–R29, R50–R57). (wip)
@@ -99,8 +101,11 @@ defined in `darkone.system.security` (via `isActive`).
 :::
 
 :::caution[R28 — noexec /tmp]
-`noexec` on /tmp breaks many installers and compilers (pip, cargo, gcc).
-Workaround: `export TMPDIR=$XDG_RUNTIME_DIR` in shell profiles.
+`noexec` on /tmp blocks execution *and* `dlopen`: it breaks installers and
+compilers running what they unpack (pip, cargo, gcc) and any runtime
+extracting native libraries there (Bun, Electron, agent tooling). Nix builds
+are covered — the daemon's TMPDIR moves to /var/tmp. Opt out per host with
+`darkone.security.filesystem.tmpNoexec = false`.
 :::
 
 :::caution[R29 — /boot noauto]
@@ -110,6 +115,14 @@ A `nixos-rebuild` wrapper must ensure automatic mount/unmount.
 
 * **enable** `bool` Enable ANSSI filesystem hardening (R28–R29, R50–R57).
 * **allowedSetuid** `listOf str` Allowlist of tolerated setuid/setgid binaries (R56, R57).
+* **tmpfs** `bool` Whether R28 owns `/tmp` as a hardened tmpfs sized on
+  `boot.tmp.tmpfsSize`. Set to `false` to leave `/tmp` on the filesystem
+  it already lives on — a host keeping several GB of persistent scratch
+  there loses both the data and the RAM otherwise.
+* **tmpNoexec** `bool` Whether the R28 `/tmp` carries `noexec`. `noexec` blocks direct
+  execution *and* `dlopen`, so it breaks any runtime unpacking native
+  libraries there (Bun, Electron, agent tooling) and anything compiling
+  then running in `TMPDIR`. Only meaningful when `tmpfs` is `true`.
 * **extraMountHardening** `listOf str` Mount points to harden with `nosuid,nodev,noexec` (R28). Each listed
   path MUST be a separate partition declared elsewhere (hardware-
   configuration / disko); the options are merged into its existing
@@ -121,6 +134,8 @@ A `nixos-rebuild` wrapper must ensure automatic mount/unmount.
 darkone.security.filesystem = {
   enable = false;
   allowedSetuid = [ ];
+  tmpfs = true;
+  tmpNoexec = true;
   extraMountHardening = [ ];
 };
 ```
@@ -234,7 +249,7 @@ darkone.security.kernel-build.enable = false;
 
 <hr/>
 
-{/* t:p 56c0860c610faff6fab74d8ba684b2307911d524dd061bac32113f560c4b13e1 */}
+{/* t:p f701da1539e91186f2e34cc6bed07ca1ade5b51653c7269e351a4ebbc472ea34 */}
 ### &#x1F511; darkone.security.kernel-params
 
 Dynamic kernel configuration: boot parameters and sysctls (R8–R14). (wip)
@@ -256,9 +271,17 @@ which reduces multi-threaded throughput by around 30%. Evaluate on compute
 servers before enabling the `intermediary` level.
 :::
 
-:::caution[R9 — unprivileged_userns_clone=0]
-Breaks rootless Docker, rootless Podman, non-suid bubblewrap, and Flatpak.
-Use the R9 exception if these tools are required.
+:::caution[R9 — restricting user namespaces is opt-in]
+`kernel.unprivileged_userns_clone` is a Debian / linux-hardened key, absent
+from mainline: writing it fails `systemd-sysctl`. The mainline equivalent
+(`user.max_user_namespaces = 0`) breaks Flatpak, bubblewrap and rootless
+Podman, hence `restrictUserns` — off by default.
+:::
+
+:::caution[R12 — reverse path filtering]
+Strict mode (`rp_filter = 1`) drops any asymmetric return path. A tailscale
+subnet router advertising routes with `--snat-subnet-routes=false` is exactly
+that case, so routers fall back to loose mode (2).
 :::
 
 :::caution[R10 — Modules disabled]
@@ -267,9 +290,18 @@ Mutually exclusive with `nixos-rebuild switch` on the driver side.
 :::
 
 * **enable** `bool` Enable ANSSI dynamic kernel parameters (R8–R14).
+* **restrictUserns** `bool` R9: forbid unprivileged user namespaces (`user.max_user_namespaces`).
+  Breaks Flatpak, bubblewrap and rootless Podman, so it stays opt-in and
+  belongs on servers that run none of them.
+* **disableIpv6** `bool` R13: disable IPv6 entirely. Off by default — ANSSI itself prefers
+  hardening IPv6 over dropping it, and a public host generally needs it.
 
 ```nix
-darkone.security.kernel-params.enable = false;
+darkone.security.kernel-params = {
+  enable = false;
+  restrictUserns = false;
+  disableIpv6 = false;
+};
 ```
 
 <hr/>
@@ -336,7 +368,7 @@ darkone.security.mta.enable = false;
 
 <hr/>
 
-{/* t:p 23a4b22aa98bf0bf0d21a79e37228d7d795edc176c9e768c3c87518d4489fff8 */}
+{/* t:p eb846a06691f8925570fb39da2f9bce2c788354b7de3c150feafca7b46c55339 */}
 ### &#x1F511; darkone.security.network
 
 Network services — isolation and supervision (R78–R80). (wip)
@@ -357,13 +389,28 @@ defined in `darkone.system.security` (via `isActive`).
 only set on a fully controlled domain.
 :::
 
+:::caution[R79 — Every jail needs a filter]
+fail2ban runs on the systemd backend here: a jail needs both a `filter.d`
+definition and a `journalmatch`, or it aborts the whole daemon at startup —
+losing the working `sshd` jail. `exposedServices` is therefore asserted
+against `filters`; caddy, matrix and idm still need theirs written.
+:::
+
 :::caution[R80 — Listener filtering]
 Some services (KDE Connect, mDNS) listen by default on all interfaces.
 Declare them in `network.publicListeners` or reconfigure them.
 :::
 
 * **enable** `bool` Enable ANSSI network hardening (R78–R80).
-* **exposedServices** `listOf str` Public services for which fail2ban and supervision will be enabled (R79).
+* **exposedServices** `listOf str` Public services to jail with fail2ban (R79). Each entry MUST resolve to
+  a filter — one shipped by fail2ban, or one declared in `filters` — or
+  the assertion refuses the build.
+* **filters** `attrs` Filters usable in `exposedServices`, on top of those fail2ban ships.
+  Caddy, Synapse and Kanidm need theirs written against real journal
+  output — declare them here once the patterns are confirmed.
+  * **journalmatch** `str` Journal match for the jail (fail2ban runs on the systemd backend).
+  * **failregex** `str` Failure pattern, written to `filter.d/&lt;name&gt;.conf`. Empty when
+    fail2ban already ships the filter and only the match is missing.
 * **publicListeners** `listOf str` Services allowed to listen on 0.0.0.0 / :: (R80).
 * **httpsHeaders** `bool` Adds ANSSI HTTP security headers in Nginx/Caddy (R79).
 * **tlsCiphers** `listOf str` ANSSI TLS cipher suite for Nginx (R79).
@@ -372,6 +419,8 @@ Declare them in `network.publicListeners` or reconfigure them.
 darkone.security.network = {
   enable = false;
   exposedServices = [ ];
+  filters.journalmatch = "_SYSTEMD_UNIT=forgejo.service";
+  filters.failregex = "";
   publicListeners = [ ];
   httpsHeaders = true;
   tlsCiphers = [ ];
@@ -450,7 +499,7 @@ darkone.security.packages = {
 
 <hr/>
 
-{/* t:p c407396b10860c7cdbee2f0b33fc73932799455b0c88034a184fd1b3d0cfde5e */}
+{/* t:p 722219f9bb15ee60c5751f5d65a9f317de84f87435a4b84f31deea742d22c9ef */}
 ### &#x1F511; darkone.security.pam
 
 PAM — Authentication and password storage (R67–R68). (wip)
@@ -465,14 +514,28 @@ defined in `darkone.system.security` (via `isActive`).
 :::
 
 :::note[Complements]
-pam_faillock (anti brute-force) is configured here for R67 and in
-complement.nix (C10). The complexity policy (R31) is in users.nix.
+pam_faillock (anti brute-force) is configured here for R67; complement.nix
+(C10) only sets session limits. The complexity policy (R31) is in users.nix.
+:::
+
+:::danger[R67 — pam_faillock locks accounts for real]
+Three failed passwords lock the account for 15 minutes by default, on
+`login`, `su`, `sudo` and — through the `login` substack — the GNOME
+greeter. Keep a root session open when first deploying it, and know the way
+back: `faillock --user <login> --reset`. SSH is deliberately spared so that
+a key-based rescue session always stays open.
 :::
 
 * **enable** `bool` Enable ANSSI PAM module — authentication and passwords (R67–R68).
+* **faillock.deny** `ints.positive` Failed attempts before pam_faillock locks the account (R67).
+* **faillock.unlockTime** `ints.positive` Seconds an account stays locked (R67). Unlock early with `faillock --reset`.
 
 ```nix
-darkone.security.pam.enable = false;
+darkone.security.pam = {
+  enable = false;
+  faillock.deny = 3;
+  faillock.unlockTime = 900;
+};
 ```
 
 <hr/>
@@ -555,7 +618,7 @@ darkone.security.services = {
 
 <hr/>
 
-{/* t:p dc75c5d9d99ca996012e9ba428f13856e96a7462d8215997de5ba6b38348b9a7 */}
+{/* t:p 3a70a46454d905a001c31c0f571e16c22b0fe2eb73078e6eea604a944eaf4af7 */}
 ### &#x1F511; darkone.security.sudo
 
 sudo hardening (R38–R44). (wip)
@@ -571,9 +634,11 @@ Rules (Rxx/Cxx) are activated based on level, category, and excludes
 defined in `darkone.system.security` (via `isActive`).
 :::
 
-:::caution[R39 — requiretty]
-`requiretty` makes `ssh user@host sudo cmd` fail without an allocated TTY.
-The SSH `-t` option is required: `ssh -t user@host sudo cmd`.
+:::caution[R39 — `noexec` and `requiretty` dropped]
+Both are incompatible with an agent-driven deployment: colmena escalates
+with `sudo -H --` over SSH (no PTY, so `requiretty` refuses), and
+`switch-to-configuration` spawns children (so `noexec` blocks it).
+Accountability rests on `use_pty` + `log_input`/`log_output` instead.
 :::
 
 :::caution[R39 — rootpw]
@@ -593,7 +658,7 @@ darkone.security.sudo = {
 
 <hr/>
 
-{/* t:p e67787e87a68bd74ab38a9c9fc7e2e0231fca1d846b74290f7820cf1373977ed */}
+{/* t:p 3090146596fd12dfb7af06ef95712f3a153621bcdc787e20416ef4ac9198fcb5 */}
 ### &#x1F511; darkone.security.users
 
 User accounts and authentication (R30–R36). (wip)
@@ -620,9 +685,15 @@ Breaks group collaboration (`/srv/share`). Document that
 :::
 
 * **enable** `bool` Enable ANSSI account management (R30–R36).
+* **idleTimeout** `ints.unsigned` Seconds before an idle login shell exits (R32, `TMOUT`). `0` drops the
+  TTY timeout entirely; the GNOME idle lock is unaffected. Workstations
+  holding long-lived terminals (build farm, agent tooling) set `0`.
 
 ```nix
-darkone.security.users.enable = false;
+darkone.security.users = {
+  enable = false;
+  idleTimeout = 600;
+};
 ```
 
 <hr/>

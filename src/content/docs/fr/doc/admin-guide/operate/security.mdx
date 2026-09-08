@@ -103,7 +103,7 @@ la configuration disque** de l'hôte (`disko`) ; le module ne fait que signaler
 leur absence. Le futur `checkScript` vérifiera leur état réel.
 :::
 
-{/* t:p 39ffe2c427bb1dd64be21221d1dd6e7855673b3992e33480da38510659fba48b */}
+{/* t:p 8eddfd2d22d562589a99695e7cf6c76efa8b560a3c16341db830c6ffd65666de */}
 ### Noyau
 
 | Code | Règle | Min | Inter | Renf | Élevé |
@@ -126,7 +126,7 @@ et Podman rootless. Il est donc **optionnel** :
 sans bac à sable applicatif.
 :::
 
-{/* t:p e12981676425489f682f8bdd5c291f7b454a0d43b012ffe810eaca861842839b */}
+{/* t:p bb6ba1816d88b07882fa29991df84f334cd3ae49b9f14f8f05134d91c84141c1 */}
 ### Comptes et authentification
 
 | Code | Règle | Min | Inter | Renf | Élevé |
@@ -153,20 +153,34 @@ par DNF aujourd'hui ; leur volet TLS est différé (futur `checkScript`).
 sur **bash comme sur zsh** — DNF fait de zsh le shell de connexion par défaut,
 et la variable n'était posée que pour bash. Un `tmux` ou un `screen` laissé au
 premier plan tombe avec la session.
+
+La variable est posée `readonly` : elle ne se désarme pas en session. Un poste
+qui garde des terminaux au long cours (ferme de compilation, outillage
+d'agents) règle `darkone.security.users.idleTimeout = 0`, ce qui retire le
+délai TTY sans toucher au verrouillage GNOME.
 :::
 
 :::danger[`R67` : `pam_faillock` verrouille vraiment les comptes]
 Trois mots de passe erronés verrouillent le compte 15 minutes, sur `login`,
-`su`, `sshd`, `sudo` et l'écran de connexion GNOME. La pile est complète —
-`preauth` compte, `authfail` refuse, la règle `account` bloque un compte déjà
-verrouillé ; auparavant seule la ligne `preauth` était posée, elle comptait sans
-jamais verrouiller. Gardez une **session root ouverte** au premier déploiement
-et connaissez le retour : `faillock --user <login> --reset`. Réglages :
+`su`, `sudo` et, via la sous-pile `login`, l'écran de connexion GNOME. La
+pile est complète : `preauth` refuse, `authfail` compte, la règle `account`
+bloque un compte déjà verrouillé. Les deux règles `auth` encadrent le
+`pam_unix` **de chaque service** ; leur rang est calculé, car il diffère d'une
+pile à l'autre (11700 sur `su`/`sudo`, 13100 sur `login`).
+
+`sshd` en est volontairement exclu : DNF interdit l'authentification par mot de
+passe, donc `faillock` n'y compterait jamais rien. Sa règle `account` ne
+saurait qu'y refuser une session de secours par clé pour un verrou acquis à la
+console. L'accès de maintenance reste donc ouvert en toutes circonstances, et
+`nix` (sans credential mot de passe) ne peut pas être verrouillé.
+
+Gardez tout de même une **session root ouverte** au premier déploiement et
+connaissez le retour : `faillock --user <login> --reset`. Réglages :
 `darkone.security.pam.faillock.deny` et `.unlockTime`. `root` n'est jamais
 verrouillé.
 :::
 
-{/* t:p 528d129ae4723581358ce42fc281b8d52b9487c10c24982d45778aa18b648516 */}
+{/* t:p 5de8841d63bcfbc1a097d30077da9554f2f4a7912885882f3a41b6596ebbb206 */}
 ### Droits d'administration (sudo)
 
 | Code | Règle | Min | Inter | Renf | Élevé |
@@ -186,7 +200,7 @@ qui portent la traçabilité recherchée. Les captures de session s'accumulent d
 `/var/log/sudo-io`, tourné chaque semaine sur 12 archives.
 :::
 
-{/* t:p ce99852047f4ca6a5a71c15d5fa508052467924d30f4591db6f648155ce8a897 */}
+{/* t:p 308cf481082a5f3bb797d4d373ac5f1688cd328bb67bcaec4f6024918b473778 */}
 ### Fichiers et permissions
 
 | Code | Règle | Min | Inter | Renf | Élevé |
@@ -214,14 +228,27 @@ n'est pas vide ; l'étiquette `needs-binfmt` reste utile pour les autres cas
 `boot.tmp.tmpfsSize` (25 % de la RAM par défaut). R28 est **propriétaire du
 montage** : `boot.tmp.useTmpfs` est forcé à `false`, sinon l'unité `tmp.mount`
 qu'il génère — sans `noexec` — l'emporterait silencieusement sur `/etc/fstab`.
-Conséquence directe : `noexec` casse tout outil qui exécute ce qu'il vient de
-décompresser (pip, cargo, gcc). Les compilations Nix sont couvertes — le démon
-bascule sur `/var/tmp` — mais un outil interactif peut demander
+
+`noexec` interdit l'exécution directe **et** `dlopen`. Il casse donc tout outil
+qui exécute ce qu'il vient de décompresser (pip, cargo, gcc) et tout runtime
+qui extrait ses bibliothèques natives dans `/tmp` (Bun, Electron, outillage
+d'agents). Les compilations Nix sont couvertes, le démon basculant sur
+`/var/tmp`, mais un outil interactif peut demander
 `export TMPDIR=$XDG_RUNTIME_DIR`.
+
+Deux sorties de secours, par hôte :
+
+| Option | Effet |
+|---|---|
+| `darkone.security.filesystem.tmpNoexec = false` | garde le tmpfs et `nosuid,nodev`, retire `noexec` |
+| `darkone.security.filesystem.tmpfs = false` | laisse `/tmp` sur son système de fichiers d'origine (données persistantes, pas de RAM consommée) |
 :::
 
 :::note[`R28`, `R52`, `R55` : services et partitions désignés]
-`R28` durcit aussi `/proc` et `/dev/shm` ; les options sur `/var/log`,
+`R28` durcit aussi `/proc` (`hidepid=2`) et `/dev/shm`. Le groupe `proc`, qui
+donne le droit de voir les processus des autres, est peuplé des membres de
+`wheel`, sans quoi `ps`, `htop` et le moniteur GNOME n'afficheraient plus rien
+aux administrateurs eux-mêmes. Les options sur `/var/log`, les options sur `/var/log`,
 `/srv`, `/opt`, `/home` s'ajoutent via `darkone.security.filesystem.extraMountHardening`
 (partitions séparées requises). `R52` (mode `0750` des répertoires d'exécution)
 et `R55` (`/tmp` privé par service) s'appliquent aux unités listées dans
@@ -250,7 +277,7 @@ surchargeable par unité, et `needs-jit` lève `MemoryDenyWriteExecute` pour les
 moteurs JIT.
 :::
 
-{/* t:p f463c066b8dde638f3eab2eb0c7daef12a51a6115c6ca12c1e651cd5a1a0745d */}
+{/* t:p 542c96536187250d8bbb30417e249fd337e1d74a33c0d6278fbab99bc86ab80e */}
 ### Réseau
 
 | Code | Règle | Min | Inter | Renf | Élevé |
@@ -338,7 +365,7 @@ Le durcissement noyau du niveau `high` (R15 à R27, C1) implique de
 `kernel-recompile` à `excludes` pour l'ignorer.
 :::
 
-{/* t:p bd52fe6aa55ab1a5b3abfa55798db39b658200d3d37d3a18346916037adb1aab */}
+{/* t:p f2876bf44b01b1856bdce70aa9597b18a7be31990dbf8bc736ea7233a5bc573c */}
 ## Adapter sans tout casser
 
 Trois soupapes permettent d'ajuster une protection précise sans descendre le

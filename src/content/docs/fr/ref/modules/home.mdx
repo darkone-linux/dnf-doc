@@ -451,24 +451,33 @@ darkone.home.umi = {
 
 <hr/>
 
-{/* t:p 547ee4daed2acde13003ad986f960568575e0bc22291ee241f854bd57a1cc21c */}
+{/* t:p c4e7ccd302eeb7b1f711e952c7b240e65376ef7ae3efef2d060a20669491507b */}
 ### &#x1F3E0; darkone.home.video
 
 Outils et applications vidéo.
 
-Installe toujours la visionneuse GNOME (`showtime`) et contrôle le reste par
-audience : `enableTools` (ffmpeg, mlt, vlc, video-trimmer, parabolic),
-`enableEditing` (kdenlive + shotcut de nixpkgs stable),
-`enableCreator` (OBS Studio avec `obs-backgroundremoval`,
-`obs-vkcapture`, etc.), `enableUnfree` (davinci-resolve de stable),
+Installe par défaut le lecteur (`celluloid`, interface GTK4/libadwaita au-dessus de mpv)
+et conditionne les autres par audience : `enableTools` (ffmpeg, mlt, vlc,
+video-trimmer, parabolic), `enableEditing` (kdenlive + shotcut depuis stable
+nixpkgs), `enableCreator` (OBS Studio avec `obs-backgroundremoval`,
+`obs-vkcapture`, etc.), `enableUnfree` (davinci-resolve depuis stable),
 et `enableAlternative` (mpv).
 
-* **enable** `bool` Module home de création et d'outils vidéo
-* **enableTools** `bool` Outils vidéo pour les professionnels
-* **enableEditing** `bool` Outils d'édition vidéo (kdenlive...)
-* **enableCreator** `bool` Outils de créateur vidéo (obs...)
-* **enableUnfree** `bool` Applications vidéo non libres (davinci...)
-* **enableAlternative** `bool` Applications vidéo alternatives (mpv...)
+:::caution[Pas GNOME Showtime]
+Showtime 50 se bloque sur certains fichiers — `get_state(CLOCK_TIME_NONE)` sur le
+thread principal, [GNOME/showtime#299](https://gitlab.gnome.org/GNOME/showtime/-/work_items/299).
+Le processus bloqué conserve le nom D-Bus `org.gnome.Showtime`, donc chaque
+lancement ultérieur est activé vers celui-ci et ne fait rien silencieusement :
+ni fenêtre, ni log.
+Non corrigé en amont à la version 50.0.
+:::
+
+* **enable** `bool` Module maison de création et d'outils vidéo
+* **enableTools** `bool` Outils vidéo pour professionnels
+* **enableEditing** `bool` Outils de montage vidéo (kdenlive…)
+* **enableCreator** `bool` Outils de création vidéo (obs…)
+* **enableUnfree** `bool` Applications vidéo non libres (davinci…)
+* **enableAlternative** `bool` Applications vidéo alternatives (mpv…)
 
 ```nix
 darkone.home.video = {
@@ -480,3 +489,5 @@ darkone.home.video = {
   enableAlternative = false;
 };
 ```
+
+<hr/>

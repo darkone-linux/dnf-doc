@@ -252,7 +252,7 @@ darkone.system.luks = {
 
 <hr/>
 
-{/* t:p 041916cd4113f0a72db3207a756d7cd316e448f724b142147e12a57f127392d3 */}
+{/* t:p 1a2ed6f7cc963d56619b153a050b77f29a22832102c8e4e39f7e14c21f5b9db7 */}
 ### &#x2699; darkone.system.security
 
 ANSSI BP-028 v2.0 (GNU/Linux) system hardening. (wip)
@@ -308,7 +308,9 @@ Independent of `host.profile` — to be explicitly defined in each host profile.
 :::note[Exclusion tags]
 - `kernel-recompile`             : ignores R15–R27, C1 (no custom kernel).
 - `disable-kernel-module-loading`: ignores R10 (may break devices).
-- `no-ipv6`                      : ignores R13, R22 (IPv6 disable).
+- `no-ipv6`                      : ignores R22 (IPv6 kernel options). Dropping
+                                   IPv6 itself (R13) is the opt-in option
+                                   `darkone.security.kernel-params.disableIpv6`.
 - `no-mac`                       : ignores R37, R45 (no active MAC).
 - `no-sealing`                   : ignores R76, R77 (no HIDS/AIDE).
 - `no-auditd`                    : ignores R73 (auditd not configurable).

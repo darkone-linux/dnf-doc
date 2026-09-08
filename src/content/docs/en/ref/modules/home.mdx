@@ -457,17 +457,25 @@ darkone.home.umi = {
 
 <hr/>
 
-{/* t:p 547ee4daed2acde13003ad986f960568575e0bc22291ee241f854bd57a1cc21c */}
+{/* t:p c4e7ccd302eeb7b1f711e952c7b240e65376ef7ae3efef2d060a20669491507b */}
 ### &#x1F3E0; darkone.home.video
 
 Video tools and applications.
 
-Always installs the GNOME viewer (`showtime`) and gates the rest by
-audience: `enableTools` (ffmpeg, mlt, vlc, video-trimmer, parabolic),
-`enableEditing` (kdenlive + shotcut from stable nixpkgs),
-`enableCreator` (OBS Studio with `obs-backgroundremoval`,
+Always installs the default player (`celluloid`, GTK4/libadwaita front-end
+over mpv) and gates the rest by audience: `enableTools` (ffmpeg, mlt, vlc,
+video-trimmer, parabolic), `enableEditing` (kdenlive + shotcut from stable
+nixpkgs), `enableCreator` (OBS Studio with `obs-backgroundremoval`,
 `obs-vkcapture`, etc.), `enableUnfree` (davinci-resolve from stable),
 and `enableAlternative` (mpv).
+
+:::caution[Not GNOME Showtime]
+Showtime 50 deadlocks on some files — `get_state(CLOCK_TIME_NONE)` on the
+main thread, [GNOME/showtime#299](https://gitlab.gnome.org/GNOME/showtime/-/work_items/299).
+The stuck process keeps the `org.gnome.Showtime` D-Bus name, so every later
+launch is activated onto it and silently does nothing: no window, no log.
+Unfixed upstream as of 50.0.
+:::
 
 * **enable** `bool` Video creation and tools home module
 * **enableTools** `bool` Video tools for professionals

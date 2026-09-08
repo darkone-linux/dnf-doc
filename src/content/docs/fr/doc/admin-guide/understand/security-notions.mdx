@@ -188,6 +188,103 @@ ceux qu'il faut connaître pour lire le catalogue des règles.
 | [auditd](https://www.man7.org/linux/man-pages/man8/auditd.8.html) | Enregistre les appels système sensibles |
 | Scellement / HIDS | Vérifie qu'aucun fichier système n'a été altéré |
 
+{/* t:p 164d2abafb8aa73d863d0da831aa3b9fafbb42ae90894410212d3ea2c290aaf8 */}
+## La pile PAM, en pratique
+
+Toute authentification du système passe par PAM, et `R67` y greffe
+l'anti&#8209;force&#8209;brute. Comprendre la mécanique évite deux erreurs
+coûteuses : croire qu'une règle posée agit, et se verrouiller hors d'une
+machine.
+
+Une pile PAM se lit **de haut en bas**, en quatre étapes indépendantes&nbsp;:
+
+| Étape | Question posée |
+|---|---|
+| `auth` | Le demandeur prouve&#8209;t&#8209;il son identité&nbsp;? |
+| `account` | Ce compte a&#8209;t&#8209;il le droit d'ouvrir une session maintenant&nbsp;? |
+| `password` | Sous quelles règles change&#8209;t&#8209;on le mot de passe&nbsp;? |
+| `session` | Que met&#8209;on en place autour de la session&nbsp;? |
+
+Dans chaque étape, NixOS ordonne les règles par un **rang numérique**. C'est ce
+rang, et lui seul, qui décide de ce qui agit&nbsp;: une règle placée après
+`pam_deny` est lue trop tard pour refuser quoi que ce soit.
+
+{/* t:p 86128b356cb83c72b4ab1090da71cdb9b8edc89afae3b48a5ddc3ef4e287b34a */}
+### Où `pam_faillock` se place
+
+`pam_faillock` ne fonctionne qu'à trois règles, jamais une seule&nbsp;:
+
+| Règle | Étape | Rôle |
+|---|---|---|
+| `preauth` | `auth`, juste **avant** `pam_unix` | refuse d'emblée un compte déjà verrouillé |
+| `authfail` | `auth`, juste **après** `pam_unix` | compte l'échec qui vient d'avoir lieu |
+| `account` | `account`, en tête | bloque un compte verrouillé, quel que soit le moyen d'authentification |
+
+```d2
+style.fill: transparent
+direction: down
+
+title: Pile PAM de sudo au palier intermediary {
+  shape: text
+  style.font-size: 20
+}
+
+auth: "Étape auth" {
+  u2f: "sufficient : pam_u2f (10900)"
+  pre: "required : pam_faillock preauth (11650)"
+  unix: "sufficient : pam_unix (11700)"
+  fail: "default=die : pam_faillock authfail (11750)"
+  deny: "required : pam_deny (12500)"
+
+  u2f -> pre -> unix -> fail -> deny
+}
+
+account: "Étape account" {
+  afail: "required : pam_faillock (10050)"
+  aunix: "required : pam_unix (11000)"
+
+  afail -> aunix
+}
+
+auth -> account
+```
+
+Les deux règles `auth` **encadrent** le `pam_unix` de la pile. Or ce rang varie
+d'un service à l'autre&nbsp;: 11700 sur `su` et `sudo`, 13100 sur `login`. DNF
+le calcule donc pour chaque service au lieu de le figer, sans quoi les deux
+règles atterrissent après `pam_deny` sur toutes les piles sauf une.
+
+{/* t:p fd04ea473c6a058c5b2d74b6eed446cbe257de6ee9089e76faa3fcf1f4fcd887 */}
+### Les services couverts, et les deux exclus
+
+:::caution[`sshd` et l'écran GNOME sont volontairement hors pile]
+`sshd` en est exclu parce que DNF interdit l'authentification par mot de passe
+sur SSH&nbsp;: `pam_faillock` n'y compterait jamais rien, et sa règle `account`
+ne saurait qu'y refuser une **session de secours par clé** pour un verrou
+acquis à la console. L'accès de maintenance doit rester ouvert en toutes
+circonstances.
+
+`gdm-password` en est exclu parce qu'il inclut la pile `login` en `substack`,
+laquelle porte déjà les trois règles&nbsp;: une seconde série compterait chaque
+échec deux fois, et le compte se verrouillerait au deuxième essai au lieu du
+troisième.
+:::
+
+Restent `login`, `su` et `sudo`, les trois piles où un mot de passe est
+réellement soumis. Le compte `nix`, qui porte le déploiement, n'a aucun
+credential mot de passe&nbsp;: il ne peut pas être verrouillé, et reste donc le
+chemin de retour quand un compte humain l'est.
+
+:::tip[Lire la pile rendue, pas le module]
+Le rang effectif d'une règle ne se devine pas. Il se lit sur la configuration
+construite&nbsp;:
+
+```bash
+nix build .#nixosConfigurations.<hote>.config.system.build.etc
+grep -E '^(auth|account)' result/etc/pam.d/sudo
+```
+:::
+
 {/* t:p 893ddb92a5ee9dcf7605da616a7d3dba4e6c8a2d7e961bd96efe2e9335b6c9a6 */}
 ## Les étiquettes d'exclusion
 

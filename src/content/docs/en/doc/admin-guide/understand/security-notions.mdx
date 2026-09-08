@@ -186,6 +186,102 @@ the ones you need to know to read the rules catalog.
 | [auditd](https://www.man7.org/linux/man-pages/man8/auditd.8.html) | Records sensitive system calls |
 | Sealing / HIDS | Verifies that no system file has been altered |
 
+{/* t:p 164d2abafb8aa73d863d0da831aa3b9fafbb42ae90894410212d3ea2c290aaf8 */}
+## The PAM stack, in practice
+
+Every system authentication goes through PAM, and `R67` grafts
+anti&#8209;brute&#8209;force onto it. Understanding the mechanics avoids two costly
+mistakes: believing a rule is in effect when it isn't, and locking yourself out
+of a machine.
+
+A PAM stack is read **top to bottom**, in four independent steps:
+
+| Step | Question asked |
+|---|---|
+| `auth` | Does the requester prove their identity? |
+| `account` | Does this account have the right to open a session right now? |
+| `password` | Under what rules do we change the password? |
+| `session` | What do we put in place around the session? |
+
+In each step, NixOS orders rules by a **numeric rank**. This rank, and this
+rank alone, determines what takes effect: a rule placed after `pam_deny` is
+read too late to deny anything.
+
+{/* t:p 86128b356cb83c72b4ab1090da71cdb9b8edc89afae3b48a5ddc3ef4e287b34a */}
+### Where `pam_faillock` sits
+
+`pam_faillock` only works with three rules, never just one&nbsp;:
+
+| Rule | Stage | Role |
+|---|---|---|
+| `preauth` | `auth`, just **before** `pam_unix` | immediately rejects an already locked account |
+| `authfail` | `auth`, just **after** `pam_unix` | counts the failure that just occurred |
+| `account` | `account`, at the top | blocks a locked account regardless of the authentication method |
+
+```d2
+style.fill: transparent
+direction: down
+
+title: sudo PAM stack at the intermediate tier {
+  shape: text
+  style.font-size: 20
+}
+
+auth: "auth stage" {
+  u2f: "sufficient : pam_u2f (10900)"
+  pre: "required : pam_faillock preauth (11650)"
+  unix: "sufficient : pam_unix (11700)"
+  fail: "default=die : pam_faillock authfail (11750)"
+  deny: "required : pam_deny (12500)"
+
+  u2f -> pre -> unix -> fail -> deny
+}
+
+account: "account stage" {
+  afail: "required : pam_faillock (10050)"
+  aunix: "required : pam_unix (11000)"
+
+  afail -> aunix
+}
+
+auth -> account
+```
+
+The two `auth` rules **bracket** the `pam_unix` entry in the stack. However, that rank varies
+from one service to another: 11700 on `su` and `sudo`, 13100 on `login`. DNF
+therefore computes it per service instead of hardcoding it, otherwise both
+rules end up after `pam_deny` on all stacks except one.
+
+{/* t:p fd04ea473c6a058c5b2d74b6eed446cbe257de6ee9089e76faa3fcf1f4fcd887 */}
+### Services covered, and the two exclusions
+
+:::caution[`sshd` and the GNOME screen are intentionally outside the stack]
+`sshd` is excluded because DNF disables password authentication over SSH:
+`pam_faillock` would never count anything there, and its `account` rule could
+only deny a **failover key session** for a lock already acquired at the
+console. Maintenance access must remain open under all circumstances.
+
+`gdm-password` is excluded because it includes the `login` stack as a
+`substack`, which already carries the three rules: a second series would count
+each failure twice, and the account would lock on the second attempt instead of
+the third.
+:::
+
+What remains are `login`, `su`, and `sudo`, the three stacks where a password
+is actually evaluated. The `nix` account, which handles deployment, has no
+password credentials: it cannot be locked, and therefore remains the fallback
+path when a human account is locked.
+
+:::tip[Read the rendered stack, not the module]
+A rule's effective rank cannot be guessed. It is read from the built
+configuration:
+
+```bash
+nix build .#nixosConfigurations.<hote>.config.system.build.etc
+grep -E '^(auth|account)' result/etc/pam.d/sudo
+```
+:::
+
 {/* t:p 893ddb92a5ee9dcf7605da616a7d3dba4e6c8a2d7e961bd96efe2e9335b6c9a6 */}
 ## Exclusion labels
 
