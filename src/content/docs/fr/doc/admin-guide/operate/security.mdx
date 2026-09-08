@@ -117,6 +117,15 @@ leur absence. Le futur `checkScript` vérifiera leur état réel.
 | `C2` | LSM Lockdown | ❌ | ❌ | ❌ | ✅ |
 | `R15`–`R27` | Durcissement à la compilation | ❌ | ❌ | ❌ | ✅ |
 
+:::note[`R9` : les espaces de noms utilisateur restent autorisés]
+La clé historique `kernel.unprivileged_userns_clone` vient d'un correctif
+Debian, absente d'un noyau mainline : l'écrire met `systemd-sysctl` en échec.
+L'équivalent mainline `user.max_user_namespaces = 0` casse Flatpak, bubblewrap
+et Podman rootless. Il est donc **optionnel** :
+`darkone.security.kernel-params.restrictUserns = true`, à réserver aux serveurs
+sans bac à sable applicatif.
+:::
+
 {/* t:p e12981676425489f682f8bdd5c291f7b454a0d43b012ffe810eaca861842839b */}
 ### Comptes et authentification
 
@@ -153,6 +162,14 @@ l'anti-force-brute **local** (`pam_faillock`, voir `C10`) est actif dès
 | `R38` | Groupe `sudo` dédié | ❌ | ❌ | ✅ | ✅ |
 | `R41` | Limitation des overrides `NOEXEC` | ❌ | ❌ | ✅ | ✅ |
 
+:::caution[`R39` : sans `noexec` ni `requiretty`]
+Ces deux directives sont incompatibles avec un déploiement piloté : colmena
+escalade en `sudo -H --` sans PTY, et `switch-to-configuration` lance des
+processus fils. R39 s'appuie donc sur `use_pty`, `log_input` et `log_output`,
+qui portent la traçabilité recherchée. Les captures de session s'accumulent dans
+`/var/log/sudo-io`, tourné chaque semaine sur 12 archives.
+:::
+
 {/* t:p ce99852047f4ca6a5a71c15d5fa508052467924d30f4591db6f648155ce8a897 */}
 ### Fichiers et permissions
 
@@ -168,6 +185,13 @@ l'anti-force-brute **local** (`pam_faillock`, voir `C10`) est actif dès
 | `R55` | Répertoires temporaires par utilisateur | ❌ | ⚠️ | ⚠️ | ⚠️ |
 | `R36` | `UMASK` 0077 | ❌ | ❌ | ✅ | ✅ |
 | `R57` | `setuid` root minimal (capabilities) | ❌ | ❌ | ✅ | ✅ |
+
+:::note[`R14` : `binfmt_misc` conservé sur les hôtes qui émulent]
+Couper `binfmt_misc` casse la construction croisée (images aarch64 des
+Raspberry Pi). La coupure est levée d'office quand `boot.binfmt.emulatedSystems`
+n'est pas vide ; l'étiquette `needs-binfmt` reste utile pour les autres cas
+(Java, `qemu-static`).
+:::
 
 :::note[`R28`, `R52`, `R55` : services et partitions désignés]
 `R28` durcit d'office `/tmp`, `/proc` et `/dev/shm` ; les options sur `/var/log`,
@@ -207,7 +231,7 @@ moteurs JIT.
 | `R80` | Surveillance des ports en écoute | ✅ | ✅ | ✅ | ✅ |
 | `C4` | Pare-feu en refus par défaut | ⚠️ | ⚠️ | ✅ | ✅ |
 | `R12` | sysctls réseau IPv4 | ❌ | ✅ | ✅ | ✅ |
-| `R13` | Désactivation d'IPv6 (sauf `no-ipv6`) | ❌ | ✅ | ✅ | ✅ |
+| `R13` | Désactivation d'IPv6 (sur demande) | ❌ | ⚠️ | ⚠️ | ⚠️ |
 | `C5` | Durcissement OpenSSH | ❌ | ✅ | ✅ | ✅ |
 | `C7` | Synchronisation horaire NTS | ❌ | ✅ | ✅ | ✅ |
 | `C8` | Résolveur DNS sécurisé (DNSSEC, DoT) | ❌ | ✅ | ✅ | ✅ |
@@ -218,6 +242,29 @@ moteurs JIT.
 Au niveau `minimal` et `intermediary`, `C4` couvre le filtrage **entrant**
 (refus par défaut). Le filtrage **sortant** (egress) s'ajoute à partir de
 `reinforced`.
+:::
+
+:::caution[`R13` : couper IPv6 se demande explicitement]
+Une étiquette d'exclusion ne sait que **retirer** une règle. `no-ipv6` rendait
+donc R13 active par défaut et coupait IPv6 sur toute la flotte. La désactivation
+passe désormais par `darkone.security.kernel-params.disableIpv6` (`false` par
+défaut) ; ANSSI préfère de toute façon durcir IPv6 plutôt que le supprimer.
+:::
+
+:::note[`R12` : filtrage de chemin inverse adapté au rôle]
+Le mode strict (`rp_filter = 1`) jette tout retour asymétrique. Un routeur de
+sous-réseau tailscale annonce ses routes sans SNAT
+(`--snat-subnet-routes=false`) : c'est exactement ce cas. Les hôtes `isGateway`
+ou `isExitNode` passent en mode souple (`2`), les autres restent stricts.
+:::
+
+:::caution[`R79` : chaque service exposé doit avoir son filtre]
+fail2ban tourne sur le backend `systemd` : une prison exige une définition
+`filter.d` **et** un `journalmatch`, sinon le démon refuse de démarrer — et
+emporte la prison `sshd` avec lui. `exposedServices` est donc vérifié à
+l'évaluation contre `darkone.security.network.filters`. Fournis aujourd'hui :
+`sshd` (livré par fail2ban) et `vaultwarden`. Caddy, Matrix et Kanidm réclament
+des motifs écrits sur journaux réels.
 :::
 
 {/* t:p f59cb27147ba7402e4a96f7569e41a10ad12531fce1d1012e41269834820e6aa */}
@@ -260,13 +307,21 @@ Le durcissement noyau du niveau `high` (R15 à R27, C1) implique de
 {/* t:p bd52fe6aa55ab1a5b3abfa55798db39b658200d3d37d3a18346916037adb1aab */}
 ## Adapter sans tout casser
 
-Deux soupapes permettent d'écarter une protection précise sans descendre le
+Trois soupapes permettent d'ajuster une protection précise sans descendre le
 niveau global.
 
 - **Tags** (`excludes`) : couper un **groupe** de règles incompatibles
-  (ex. `needs-jit`, `no-ipv6`).
+  (ex. `needs-jit`, `needs-binfmt`).
 - **Exceptions** (`exceptions`) : contourner **une** règle, justification
   obligatoire.
+- **Options d'activation** : allumer une règle trop destructrice pour être
+  active par défaut (`disableIpv6`, `restrictUserns`).
+
+:::note[Un tag ne sait que retirer]
+`excludes` et `exceptions` **soustraient** des règles ; aucun des deux ne peut
+en ajouter une. Une règle dangereuse par défaut se pilote donc par une option
+dédiée, jamais par l'absence d'un tag.
+:::
 
 Le détail de ces soupapes est dans [Notions de
 sécurité](/fr/doc/admin-guide/understand/security-notions/#les-étiquettes-dexclusion).
