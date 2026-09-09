@@ -32,7 +32,7 @@ Les modules prêts à l'emploi sont documentés dans la
 [référence des modules](/fr/ref/modules/), classés par catégorie (système,
 service, sécurité, console, graphic, admin, user, mixin, home).
 
-{/* t:p 464d43da478e7f986653b28d427c4876377f7d15927ee13bee136aff2844257a */}
+{/* t:p fe3953c97b85bafb668392df027bf8185b14ad2479e774852b57a1059e2a0160 */}
 ## Les couches d'abstraction
 
 Chaque niveau s'appuie sur le précédent : le système de base sert les modules,
@@ -47,6 +47,7 @@ qui composent les profils, qui définissent les hôtes et les utilisateurs.
 | **Mixins** | `dnf/modules/mixin/` | Macro-modules : profils d'hôtes, compléments de profils. |
 | **Home** | `dnf/home/` | Modules et profils [Home Manager](https://github.com/nix-community/home-manager) (utilisateurs). |
 | **Librairie** | `dnf/lib/` | Helpers partagés (`dnfLib`) : réseau, OIDC, pare-feu, sécurité… |
+| **Paquets** | `dnf/pkgs/` | Programmes [absents de nixpkgs](/fr/doc/dev-guide/packages/), exposés en `pkgs.<nom>`. |
 | **Génération** | `src/generator/` | Transforme `etc/config.yaml` → `var/generated/`. |
 
 {/* t:p 472d57dc0d807d5acb57d0d9631fc00f1d36262b93f2a8519dd5513e77add8db */}

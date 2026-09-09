@@ -32,22 +32,22 @@ The ready-to-use modules are documented in the
 [module reference](/en/ref/modules/), sorted by category (system, service,
 security, console, graphic, admin, user, mixin, home).
 
-{/* t:p 464d43da478e7f986653b28d427c4876377f7d15927ee13bee136aff2844257a */}
+{/* t:p fe3953c97b85bafb668392df027bf8185b14ad2479e774852b57a1059e2a0160 */}
 ## Abstraction layers
 
-Each level builds upon the previous one: the base system serves the modules,
-which compose the profiles, which define hosts and users.
+Each level builds on the previous one: the base system serves the modules, which compose the profiles, which define the hosts and users.
 
-- **[Complete file structure](/en/doc/#structure)** : detailed directory tree.
-- **[Layer diagram](/en/doc/#abstraction-layers)** : from system to profiles.
+- **[Complete file structure](/en/doc/#structure)** : detailed tree.
+- **[Layers diagram](/en/doc/#abstraction-layers)** : from the system to the profiles.
 
 | Layer | Where | Role |
 |---|---|---|
-| **Modules** | `dnf/modules/standard/` | Unit bricks (a service, a system setting). |
-| **Mixins** | `dnf/modules/mixin/` | Macro-modules : host profiles, profile complements. |
+| **Modules** | `dnf/modules/standard/` | Unit building blocks (a service, a system setting). |
+| **Mixins** | `dnf/modules/mixin/` | Macro-modules: host profiles, profile complements. |
 | **Home** | `dnf/home/` | [Home Manager](https://github.com/nix-community/home-manager) modules and profiles (users). |
-| **Library** | `dnf/lib/` | Shared helpers (`dnfLib`) : network, OIDC, firewall, security… |
-| **Generation** | `src/generator/` | Transforms `etc/config.yaml` → `var/generated/`. |
+| **Library** | `dnf/lib/` | Shared helpers (`dnfLib`): network, OIDC, firewall, security... |
+| **Packages** | `dnf/pkgs/` | Programs [absent from nixpkgs](/en/doc/dev-guide/packages/), exposed as `pkgs.<name>`. |
+| **Generation** | `src/generator/` | Transform `etc/config.yaml` → `var/generated/`. |
 
 {/* t:p 472d57dc0d807d5acb57d0d9631fc00f1d36262b93f2a8519dd5513e77add8db */}
 ## Framework vs local project

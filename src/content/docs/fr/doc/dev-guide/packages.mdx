@@ -1,0 +1,122 @@
+---
+title: Les paquets hors nixpkgs
+sidebar:
+  label: Paquets
+  order: 7
+lang: fr
+---
+
+import { Steps } from '@astrojs/starlight/components';
+
+{/* t:main */}
+{/* t:h 995fdd0e29082611062507527822b00af3b4b873bd2b7ff1b9b2c66796388c4e */}
+
+{/* t:p 8fe832e1f48e42b7459c660b6ee898317acb5b887028ef5b2b3ee1478812c0ec */}
+Quelques programmes installés par le framework n'existent pas dans
+[nixpkgs](https://github.com/NixOS/nixpkgs). Leurs recettes de construction
+vivent dans `dnf/pkgs/`, et sont exposées à tous les hôtes comme n'importe quel
+paquet, sous `pkgs.<nom>`.
+
+{/* t:p a4d36c64ae861e6346bef83a18d33957d529af4ddee3ffe1ffa5e7cb74da8b35 */}
+## Où mettre quoi
+
+Trois emplacements existent pour un paquet qui sort de l'ordinaire, avec trois
+intentions différentes.
+
+| Emplacement | Pour quoi | Durée de vie |
+|---|---|---|
+| `dnf/pkgs/` | Absent de nixpkgs, installé par les hôtes ou les utilisateurs. | Jusqu'à publication dans nixpkgs. |
+| `dnf/lib/overlays/` | Correctif sur un paquet nixpkgs existant (build cassé, PR en attente). | Temporaire, retiré dès le correctif amont. |
+| `inputs` de `dnf/flake.nix` | Ce dont la machinerie du framework a besoin (`dnf-generator`, `colmena`). | Permanente. |
+
+:::note[Pourquoi pas un input de flake]
+Un input est téléchargé à **chaque évaluation**, chez **chaque** consommateur,
+même sur un hôte qui n'installe pas l'outil. Un paquet de `dnf/pkgs/` n'est
+téléchargé qu'au **build** de sa dérivation.
+:::
+
+{/* t:p 6010c88dafb8d6d178610dfcbb8fee91fa447accf72c39687a69fa720ec5aae3 */}
+## Arborescence
+
+```
+dnf/pkgs/
+├── default.nix          <-- jeu de paquets, découvert depuis les dossiers
+├── overlay.nix          <-- le même jeu en overlay -> pkgs.<nom>
+└── <nom>/package.nix    <-- la dérivation
+```
+
+Un dossier = un paquet. `default.nix` scanne les dossiers, il n'y a donc **aucun
+registre** à tenir à jour. L'overlay, lui, est appliqué une fois pour toutes par
+`dnf/lib/mk-configuration.nix`, sur tous les hôtes.
+
+:::tip[Forme nixpkgs dès le départ]
+`<nom>/package.nix` reprend la forme
+[by-name](https://github.com/NixOS/nixpkgs/tree/master/pkgs/by-name) de nixpkgs :
+une publication ultérieure se réduit à déplacer le dossier.
+:::
+
+{/* t:p 7f570f1543d5edc9da5d014e7bbab22596f42aa28c7b09fb981d39236df502d9 */}
+## Ajouter un paquet
+
+<Steps>
+
+1. Créer `dnf/pkgs/<nom>/package.nix`, sous forme `callPackage` classique, avec
+   un `meta` complet (`description`, `homepage`, `license`, `mainProgram`,
+   `platforms`). Épingler la version stable, pas une branche.
+
+2. `git add` le dossier : les flakes ignorent les fichiers non suivis.
+
+3. Construire une première fois pour figer les empreintes, que Nix affiche dans
+   son message d'erreur&nbsp;:
+
+   ```sh
+   nix build .#<nom>
+   ```
+
+4. `just clean` puis commiter.
+
+</Steps>
+
+Rien d'autre à câbler. Le paquet est alors utilisable dans n'importe quel module
+NixOS ou [Home Manager](/fr/doc/dev-guide/modules/), comme un paquet nixpkgs&nbsp;:
+
+```nix
+# dnf/home/modules/advanced.nix
+(lib.mkIf cfg.enableEssentials rename-simple)
+```
+
+:::caution[Images ISO et SD]
+Les médias d'installation reçoivent leur `pkgs` tout construit
+(`nixpkgs.pkgs`), sans cet overlay : `pkgs.<nom>` n'y est pas disponible. Le
+rendre visible demande d'appliquer l'overlay à cette instance, dans
+`dnf/lib/mk-configuration.nix`.
+:::
+
+{/* t:p fa57cc81d0d871027d02880c6c5cf91747709ce580d5104ffb4620a68026782f */}
+## Mettre à jour un paquet
+
+```sh
+just pkg-update <nom>
+```
+
+[nix-update](https://github.com/Mic92/nix-update) cherche la dernière version
+publiée en amont, puis réécrit la version et les empreintes dans `package.nix`.
+Vérifier ensuite le `changelog` amont, reconstruire, et commiter.
+
+{/* t:p ac1b2ba20564599783a9099f764072e9272265e95dfff6e0046d1f3623ea4c0a */}
+## Publier dans nixpkgs
+
+L'objectif, à terme, pour tout paquet d'intérêt général&nbsp;:
+
+<Steps>
+
+1. Déplacer le dossier dans un clone de nixpkgs, sous le shard à deux lettres du
+   nom (`pkgs/by-name/re/rename-simple/`).
+2. Ajouter l'entrée `maintainers`, ouvrir la pull request.
+3. Une fois la PR fusionnée et remontée dans `nixos-unstable`, supprimer le
+   dossier de `dnf/pkgs/`.
+
+</Steps>
+
+`pkgs.<nom>` continue de résoudre, depuis nixpkgs cette fois : aucun module à
+modifier.

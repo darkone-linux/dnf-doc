@@ -1,0 +1,122 @@
+---
+title: Packages outside nixpkgs
+sidebar:
+  label: Packages
+  order: 7
+lang: en
+---
+
+import { Steps } from '@astrojs/starlight/components';
+
+{/* t:translated-from fr */}
+{/* t:h 995fdd0e29082611062507527822b00af3b4b873bd2b7ff1b9b2c66796388c4e */}
+
+{/* t:p 8fe832e1f48e42b7459c660b6ee898317acb5b887028ef5b2b3ee1478812c0ec */}
+Some programs installed by the framework do not exist in
+[nixpkgs](https://github.com/NixOS/nixpkgs). Their build recipes live in
+`dnf/pkgs/`, and are exposed to all hosts like any other package, under
+`pkgs.<name>`.
+
+{/* t:p a4d36c64ae861e6346bef83a18d33957d529af4ddee3ffe1ffa5e7cb74da8b35 */}
+## Where to put what
+
+Three locations exist for a package that is out of the ordinary, with three
+different intents.
+
+| Location | Purpose | Lifetime |
+|---|---|---|
+| `dnf/pkgs/` | Not in nixpkgs, installed by hosts or users. | Until published in nixpkgs. |
+| `dnf/lib/overlays/` | Patch on an existing nixpkgs package (broken build, pending PR). | Temporary, removed as soon as the upstream fix lands. |
+| `inputs` of `dnf/flake.nix` | What the framework machinery needs (`dnf-generator`, `colmena`). | Permanent. |
+
+:::note[Why not a flake input]
+An input is downloaded on **every evaluation**, on **every** consumer, even on
+a host that does not install the tool. A package from `dnf/pkgs/` is only
+downloaded at the **build** of its derivation.
+:::
+
+{/* t:p 6010c88dafb8d6d178610dfcbb8fee91fa447accf72c39687a69fa720ec5aae3 */}
+## Directory structure
+
+```
+dnf/pkgs/
+├── default.nix          <-- package set, discovered from subdirectories
+├── overlay.nix          <-- the same set as an overlay -> pkgs.<name>
+└── <name>/package.nix   <-- the derivation
+```
+
+One folder = one package. `default.nix` scans subdirectories, so there is
+**no registry** to maintain. The overlay, on the other hand, is applied once
+and for all by `dnf/lib/mk-configuration.nix`, on every host.
+
+:::tip[nixpkgs shape from the start]
+`<name>/package.nix` follows the
+[by-name](https://github.com/NixOS/nixpkgs/tree/master/pkgs/by-name) layout
+of nixpkgs: a later publication simply amounts to moving the folder.
+:::
+
+{/* t:p 7f570f1543d5edc9da5d014e7bbab22596f42aa28c7b09fb981d39236df502d9 */}
+## Adding a package
+
+<Steps>
+
+1. Create `dnf/pkgs/<name>/package.nix` using the classic `callPackage` form,
+   with a complete `meta` block (`description`, `homepage`, `license`,
+   `mainProgram`, `platforms`). Pin the stable version, not a branch.
+
+2. `git add` the folder: flakes ignore untracked files.
+
+3. Build once to freeze the hashes, which Nix displays in its error
+   message&nbsp;:
+
+   ```sh
+   nix build .#<name>
+   ```
+
+4. `just clean` then commit.
+
+</Steps>
+
+Nothing else to wire up. The package is now usable in any NixOS module or
+[Home Manager](/en/doc/dev-guide/modules/) module, just like a nixpkgs
+package&nbsp;:
+
+```nix
+# dnf/home/modules/advanced.nix
+(lib.mkIf cfg.enableEssentials rename-simple)
+```
+
+:::caution[ISO images and SD cards]
+Installation media receive their `pkgs` fully built (`nixpkgs.pkgs`), without
+this overlay: `pkgs.<name>` is not available there. Making it visible requires
+applying the overlay to that instance, in `dnf/lib/mk-configuration.nix`.
+:::
+
+{/* t:p fa57cc81d0d871027d02880c6c5cf91747709ce580d5104ffb4620a68026782f */}
+## Updating a package
+
+```sh
+just pkg-update <name>
+```
+
+[nix-update](https://github.com/Mic92/nix-update) looks up the latest version
+published upstream, then rewrites the version and hashes in `package.nix`. Then
+review the upstream changelog, rebuild, and commit.
+
+{/* t:p ac1b2ba20564599783a9099f764072e9272265e95dfff6e0046d1f3623ea4c0a */}
+## Publishing to nixpkgs
+
+The end goal, for every package of general interest&nbsp;:
+
+<Steps>
+
+1. Move the folder into a nixpkgs clone, under the two-letter shard of the
+   name (`pkgs/by-name/re/rename-simple/`).
+2. Add the `maintainers` entry, open the pull request.
+3. Once the PR is merged and made it into `nixos-unstable`, remove the folder
+   from `dnf/pkgs/`.
+
+</Steps>
+
+`pkgs.<name>` keeps resolving, this time from nixpkgs: no module needs to be
+updated.
