@@ -63,23 +63,53 @@ BREAKING CHANGE: `network.idm.replicas` replaced by `zones.<zone>.idm`.
 ```
 </Aside>
 
-{/* t:p a153f22e35add6d5f118c55fb6fa13815e7f57b192bbe3c73528d87088bec79a */}
+{/* t:p 6d907fa42d6a663e171f19c18c86fc66932de202f26bc37212bf3f8971568c78 */}
 ## The recipes
 
 | Recipe | Effect |
 | --- | --- |
-| `just versions` | Version, last tag and branch of each repository |
+| `just versions` | Version, latest tag and branch of each repository |
 | `just changelog` | Preview of the next entry, writes nothing |
 | `just bump [level]` | Version, changelog, commit and tag of **one** repository |
-| `just release [level]` | The complete train on the five repositories |
+| `just release [level]` | The full train on the five repositories |
+| `just version` | Pinned version, revision and generator of the framework |
 
-The level is `auto` by default: [git-cliff](https://git-cliff.org/) infers the
-next number from the commits. `patch`, `minor`, `major` or a literal `X.Y.Z`
-force the decision.
+The level defaults to `auto`&nbsp;: [git-cliff](https://git-cliff.org/) infers
+the next number from the commits. `patch`, `minor`, `major` or a literal `X.Y.Z`
+forces the decision.
 
-`just bump` never pushes: it displays the push command.
+`just bump` never pushes&nbsp;: it displays the push command. Two flags are
+passed to the script&nbsp;: `--dry-run` shows the entry then restores the file
+without committing anything, `--yes` chains without confirmation.
 
-{/* t:p 81af2c9b1e3d6a242d5196bef8c869679a1196e2f841de3087081e68b0c94b90 */}
+<Aside type="tip" title="Run from the development environment">
+`bump` and `changelog` call [git-cliff](https://git-cliff.org/), absent from the
+default `PATH`. Enter the environment with `just develop` before publishing.
+</Aside>
+
+{/* t:p f79dfe66bc6fe94590138851e9766c5c336240a057ad8b1ee3155539680050b2 */}
+## Writing by hand into an entry
+
+The generated block only contains commit messages. A preamble, a table of
+companion versions or a migration note is written under
+`## [Unreleased]` in the `CHANGELOG.md`&nbsp;: at publication, the script empties
+this section and folds its content at the top of the entry, before the
+generated headings.
+
+<Aside type="caution" title="Leave nothing after the notes">
+The section runs until the next `##` heading. If the reference links at the
+bottom of the page are the last content of the file, they get swallowed into the
+published entry. Remove them, the script regenerates them.
+</Aside>
+
+<Aside type="note" title="The very first release">
+Without a `v*` tag, `auto` has nothing to infer&nbsp;: the script reuses the
+declared version as is, and git-cliff goes back up to the first commit of the
+repository. The entry then covers the whole history, and must be trimmed before
+pushing.
+</Aside>
+
+{/* t:p 09e27ea73478ef93c00da695e83cf1f22908e953750ca0ef248b7928a94409ad */}
 ## The release train
 
 `just release` runs at the root of the co-development workspace, which must
@@ -87,25 +117,27 @@ contain the five repositories.
 
 <Steps>
 
-1. **Quality barrier**: `just check-all`, `just gen-test` and
-   `just simulate all`. Virtual machine tests do not run in continuous
+1. **Quality gate**&nbsp;: `just check-all`, `just gen-test` and
+   `just simulate all`. Virtual-machine tests do not run in continuous
    integration, so a failing scenario must stop the publication here.
 
 2. **Generator**, if it has moved since its last tag. It owns the
-   `etc/config.yaml` schema, so it goes before everything that depends on it.
+   `etc/config.yaml` schema, so it goes before what depends on it.
 
 3. **Pinning** of the generator tag in `dnf/flake.nix`, so that the contract
    between framework and generator is readable in a diff, not only in the lock.
 
-4. **Framework**: `VERSION`, `CHANGELOG.md`, commit and tag.
+4. **Framework**&nbsp;: `VERSION`, `CHANGELOG.md`, commit and tag, then immediate
+   push. Any edit of the entry after this step would force a tag already
+   consumed by `release.yml`, so it happens beforehand.
 
-5. **Documentation**: `just codegen` regenerates the reference from the
-   framework, then the version aligns with the `MAJOR.MINOR` line, then the
-   site is built and deployed.
+5. **Documentation**&nbsp;: `just codegen` regenerates the reference from the
+   framework, then the version aligns on the `MAJOR.MINOR` line, then the site
+   is built and deployed.
 
-6. **Boilerplate and example**: the framework tag is written into their
-   `flake.nix`, `nix flake check` validates, and the `flake.lock` is
-   **committed**. It is what makes a clone reproducible.
+6. **Boilerplate and example**&nbsp;: the framework tag is written into their
+   `flake.nix`, `nix flake check` validates, and the `flake.lock` is **committed**.
+   It is what makes a clone reproducible.
 
 </Steps>
 

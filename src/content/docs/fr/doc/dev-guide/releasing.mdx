@@ -63,7 +63,7 @@ BREAKING CHANGE: `network.idm.replicas` remplacé par `zones.<zone>.idm`.
 ```
 </Aside>
 
-{/* t:p a153f22e35add6d5f118c55fb6fa13815e7f57b192bbe3c73528d87088bec79a */}
+{/* t:p 6d907fa42d6a663e171f19c18c86fc66932de202f26bc37212bf3f8971568c78 */}
 ## Les recettes
 
 | Recette | Effet |
@@ -72,14 +72,44 @@ BREAKING CHANGE: `network.idm.replicas` remplacé par `zones.<zone>.idm`.
 | `just changelog` | Aperçu de la prochaine entrée, n'écrit rien |
 | `just bump [niveau]` | Version, changelog, commit et tag d'**un** dépôt |
 | `just release [niveau]` | Le train complet sur les cinq dépôts |
+| `just version` | Version, révision et générateur épinglé du framework |
 
 Le niveau vaut `auto` par défaut&nbsp;: [git-cliff](https://git-cliff.org/) déduit
 le numéro suivant des commits. `patch`, `minor`, `major` ou un `X.Y.Z` littéral
 forcent la décision.
 
-`just bump` ne pousse jamais : il affiche la commande de poussée.
+`just bump` ne pousse jamais : il affiche la commande de poussée. Deux drapeaux
+passent au script&nbsp;: `--dry-run` montre l'entrée puis restaure le fichier sans
+rien commiter, `--yes` enchaîne sans confirmation.
 
-{/* t:p 81af2c9b1e3d6a242d5196bef8c869679a1196e2f841de3087081e68b0c94b90 */}
+<Aside type="tip" title="Lancer depuis l'environnement de développement">
+`bump` et `changelog` appellent [git-cliff](https://git-cliff.org/), absent du
+`PATH` par défaut. Entrer dans l'environnement avec `just develop` avant de
+publier.
+</Aside>
+
+{/* t:p f79dfe66bc6fe94590138851e9766c5c336240a057ad8b1ee3155539680050b2 */}
+## Écrire à la main dans une entrée
+
+Le bloc généré ne contient que des messages de commit. Un préambule, un tableau
+de versions compagnes ou une note de migration s'écrivent sous
+`## [Unreleased]` dans le `CHANGELOG.md`&nbsp;: à la publication, le script vide
+cette section et replie son contenu en tête de l'entrée, avant les rubriques
+générées.
+
+<Aside type="caution" title="Ne rien laisser après les notes">
+La section court jusqu'au titre `##` suivant. Si les liens de référence de bas
+de page sont le dernier contenu du fichier, ils sont avalés dans l'entrée
+publiée. Les retirer, le script les régénère.
+</Aside>
+
+<Aside type="note" title="La toute première release">
+Sans tag `v*`, `auto` n'a rien à déduire&nbsp;: le script reprend la version
+déclarée telle quelle, et git-cliff remonte jusqu'au premier commit du dépôt.
+L'entrée couvre alors tout l'historique, à élaguer avant la poussée.
+</Aside>
+
+{/* t:p 09e27ea73478ef93c00da695e83cf1f22908e953750ca0ef248b7928a94409ad */}
 ## Le train de release
 
 `just release` s'exécute à la racine de l'espace de co-développement, qui doit
@@ -99,7 +129,9 @@ contenir les cinq dépôts.
    entre framework et générateur se lise dans un diff, pas seulement dans le
    verrou.
 
-4. **Framework**&nbsp;: `VERSION`, `CHANGELOG.md`, commit et tag.
+4. **Framework**&nbsp;: `VERSION`, `CHANGELOG.md`, commit et tag, puis poussée
+   immédiate. Toute retouche de l'entrée après cette étape imposerait de forcer
+   un tag déjà consommé par `release.yml`, donc elle se fait avant.
 
 5. **Documentation**&nbsp;: `just codegen` régénère la référence depuis le
    framework, puis la version s'aligne sur la ligne `MAJEUR.MINEUR`, puis le
