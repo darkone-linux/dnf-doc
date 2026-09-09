@@ -109,6 +109,27 @@ nixos-version
 exacte (`DNF_REV`). `nixos-version` fait apparaître la version sous forme
 d'étiquette `dnf-X.Y.Z`, également visible dans les entrées de démarrage.
 
+## La version de Nix du parc
+
+Le framework épingle **Nix 2.35** sur tous les nœuds. nixpkgs, lui, garde
+`nixVersions.stable` sur 2.34 : une montée majeure de Nix y passe par la
+branche `staging`. L'épinglage vise les gains côté démon : mémoire de
+l'ordonnanceur, temporisation des transferts, copie de sources paresseuse.
+
+Il déplace aussi l'évaluation du parc, car l'évaluateur `chunked` de colmena
+appelle le `nix-instantiate` du système. Nix ne compile pas lui-même : la durée
+des compilations, elle, ne change pas.
+
+```sh
+nix --version
+```
+
+<Aside type="caution" title="Épinglage temporaire">
+La ligne disparaîtra dès que nixpkgs promeut `nixVersions.stable` en 2.35 ou
+au-delà. Un hôte qui doit rester sur la version par défaut de nixpkgs surcharge
+l'option dans sa configuration&nbsp;: `nix.package = pkgs.nix;`.
+</Aside>
+
 {/* t:p d5208d8690ccf33691b1dce43b7f324777e85c715e1535d85d59c00a928bdfbc */}
 ## Les projets qui vont ensemble
 
