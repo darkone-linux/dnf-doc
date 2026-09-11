@@ -117,7 +117,7 @@ contenir les cinq dépôts.
 
 <Steps>
 
-1. **Barrière qualité**&nbsp;: `just check-all`, `just gen-test` et
+1. **Barrière qualité**&nbsp;: `just check`, `just gen-test` et
    `just simulate all`. Les tests en machine virtuelle ne tournent pas dans
    l'intégration continue, donc un scénario rouge doit arrêter la publication
    ici.
@@ -161,7 +161,7 @@ la *release* GitHub.
 ## Configuration partagée
 
 Un seul [git-cliff](https://git-cliff.org/) pour les trois dépôts qui
-produisent un changelog, dans `dnf/assets/release/cliff.toml`. Le script
-`dnf/assets/scripts/just-bump.sh` découvre la source de version du dépôt
+produisent un changelog, dans `dnf/just/scripts/cliff.toml`. Le script
+`dnf/just/scripts/bump.sh` découvre la source de version du dépôt
 (`VERSION`, `Cargo.toml` ou `package.json`), assemble le fichier autour du bloc
 généré et préserve l'historique écrit à la main.
