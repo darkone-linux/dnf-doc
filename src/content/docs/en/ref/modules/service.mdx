@@ -295,18 +295,48 @@ darkone.service.harmonia.enable = false;
 
 <hr/>
 
-{/* t:p 37a8e8aa3b107db09b4f268e4447d391037f8dd2cf6f51d416a1c6212a8cb1c6 */}
+{/* t:p 0c98a3a7d1ef30c3dea797754108a0bbecffa7f9e945a673182a7db5b7091406 */}
 ### &#x2728; darkone.service.headscale
 
 A full-configured headscale service for HCS.
 
+The tailnet ACL policy is generated from the topology (zones, hosts, users)
+by `dnfLib.mkHeadscalePolicy`, validated by `headscale policy check` at build
+time, then reloaded on change (SIGHUP) without restarting headscale.
+
+- Machines are tagged: `tag:hcs`, `tag:gw-<zone>`, `tag:admin` (host whose
+  `groups` contains `admin`).
+- Machines and zone LANs reach each other; personal devices get the HCS DNS
+  and HTTPS services; SSH from admin stations and `policy.adminDevices`.
+
+```nix
+darkone.service.headscale.policy.adminDevices.phone-alice = "100.64.0.9";
+```
+
+:::caution[Open mode]
+`policy.enforce = false` keeps the identities but allows all traffic: for a
+migration only, while nodes get tagged.
+:::
+
 * **enable** `bool` Enable headscale DNF service
 * **enableGRPC** `bool` Open GRPC TCP port
+* **nodeExpiry** `str` Key expiry of personal devices (`0`: never). Tagged machines never expire.
+* **policy.enforce** `bool` Default-deny tailnet ACLs. `false` allows all traffic, for a migration only.
+* **policy.adminDevices** `attrs` Personal devices granted SSH on every machine and zone: name -&gt; tailnet IPv4.
+* **policy.exitNodeSources** `listOf str` Policy sources allowed to use the HCS as exit node.
+* **policy.extraHosts** `attrs` Extra policy host aliases (name -&gt; CIDR), to use in `extraAcls`.
+* **policy.extraAcls** `listOf (attrsOf anything)` ACL rules appended after the generated ones.
 
 ```nix
 darkone.service.headscale = {
   enable = false;
   enableGRPC = false;
+  nodeExpiry = "180d";
+  policy.enforce = true;
+  policy.adminDevices = { };
+  policy.exitNodeSources = [ ];
+  policy.extraHosts = { };
+  policy.extraAcls = [ ];
 };
 ```
 

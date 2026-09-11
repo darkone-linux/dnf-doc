@@ -277,20 +277,53 @@ darkone.service.harmonia.enable = false;
 
 <hr/>
 
-{/* t:p 37a8e8aa3b107db09b4f268e4447d391037f8dd2cf6f51d416a1c6212a8cb1c6 */}
+{/* t:p 0c98a3a7d1ef30c3dea797754108a0bbecffa7f9e945a673182a7db5b7091406 */}
 ### &#x2728; darkone.service.headscale
 
 Un service headscale entièrement configuré pour HCS.
 
-* **enable** `bool` Activer le service DNF headscale
-* **enableGRPC** `bool` Ouvrir le port TCP GRPC
+La politique ACL du tailnet est générée depuis la topologie (zones, hôtes,
+utilisateurs) par `dnfLib.mkHeadscalePolicy`, validée par `headscale policy check`
+au moment du build, puis rechargée à la volée (SIGHUP) sans redémarrer headscale.
+
+- Les machines sont taggées&nbsp;: `tag:hcs`, `tag:gw-<zone>`, `tag:admin` (hôte dont
+  `groups` contient `admin`).
+- Les machines et les LAN des zones communiquent entre eux&nbsp;; les appareils
+  personnels obtiennent le DNS HCS et les services HTTPS&nbsp;; SSH depuis les
+  postes admin et `policy.adminDevices`.
+
+```nix
+darkone.service.headscale.policy.adminDevices.phone-alice = "100.64.0.9";
+```
+
+:::caution[Mode ouvert]
+`policy.enforce = false` conserve les identités mais autorise tout le trafic&nbsp;:
+uniquement pour une migration, en attendant que les nœuds soient taggés.
+:::
+
+* **enable** `bool` Active le service DNF headscale
+* **enableGRPC** `bool` Ouvre le port TCP GRPC
+* **nodeExpiry** `str` Expiration des clés des appareils personnels (`0`&nbsp;: jamais). Les machines taggées n'expirent jamais.
+* **policy.enforce** `bool` ACL du tailnet en refus par défaut. `false` autorise tout le trafic, uniquement pour une migration.
+* **policy.adminDevices** `attrs` Appareils personnels autorisés en SSH sur chaque machine et zone&nbsp;: nom -&gt; IPv4 du tailnet.
+* **policy.exitNodeSources** `listOf str` Sources de politique autorisées à utiliser HCS comme nœud de sortie.
+* **policy.extraHosts** `attrs` Alias d'hôtes de politique supplémentaires (nom -&gt; CIDR), à utiliser dans `extraAcls`.
+* **policy.extraAcls** `listOf (attrsOf anything)` Règles ACL ajoutées après celles générées.
 
 ```nix
 darkone.service.headscale = {
   enable = false;
   enableGRPC = false;
+  nodeExpiry = "180d";
+  policy.enforce = true;
+  policy.adminDevices = { };
+  policy.exitNodeSources = [ ];
+  policy.extraHosts = { };
+  policy.extraAcls = [ ];
 };
 ```
+
+<hr/>
 
 {/* t:p 523d33f51a43b72db9764f2a58fc7f51c81fadd1930300a951547a5d0a9041a2 */}
 ### &#x2728; darkone.service.home-assistant
