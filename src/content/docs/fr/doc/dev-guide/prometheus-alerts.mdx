@@ -68,6 +68,11 @@ Le poser au scrape le propage gratuitement à toutes les alertes issues de ces
 jobs, y compris les règles ressources génériques, qui ignorent tout de la
 topologie à l'évaluation.
 
+Les sondes blackbox n'ont pas de `host` (la cible est une IP). `PeerGatewayDown`
+le pose donc dans la règle, avec le nom de la passerelle visée. Sans lui, les
+règles d'une zone ne différeraient que par leur `expr` → `promtool` les signale
+comme doublons.
+
 :::caution[Les agrégations effacent les labels]
 Une clause `by (...)` supprime tout label non groupé. `ResticBackupStale`
 (`max by (instance, job, host)`), `SynapseHighErrorRate`

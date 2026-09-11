@@ -124,7 +124,8 @@ Chaque zone sonde donc les passerelles des **autres** zones et lève
 plus. Avec trois zones, une panne est vue par deux témoins&nbsp;: perdre un
 observateur ne masque jamais l'incident. L'alerte porte `reach="wan"`, donc une
 coupure Internet **locale** déclenche `ZoneInternetDown` seule, sans volée de
-fausses alertes sur les pairs.
+fausses alertes sur les pairs. Elle porte aussi `host` (la passerelle
+visée)&nbsp;: une route de silence peut ainsi viser un seul site.
 </Aside>
 
 <Aside type="note" title="Une alerte par partition, pas par montage">
