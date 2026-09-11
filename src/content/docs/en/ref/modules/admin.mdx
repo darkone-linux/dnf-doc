@@ -13,14 +13,14 @@ sidebar:
 **A administration module** deals with system-specific functionalities for administrators.
 :::
 
-{/* t:p 6fc8b36e0ba82ff814ed07be42e47332784603fbd8877465ee30d7d052454bbe */}
+{/* t:p 3843b1fc8c8bd6f6ad35516b2ac9860ccf154f96bdcfb041b93f5c65778a022c */}
 ### &#x1F451; darkone.admin.nix
 
 NixOS configuration for the local LAN administrator computer.
 
 :::tip[Build farm (remote builders)]
 An admin host builds every node closure locally and pushes it (`buildOnTarget`
-empty, see `assets/just/project.just`), so it is the machine that actually
+empty, see `just/project.just`), so it is the machine that actually
 compiles. Any fleet host flagged `build-farm` in `config.yaml` becomes one of
 its `nix.buildMachines`, reached over SSH as the `nix` deploy user.
 

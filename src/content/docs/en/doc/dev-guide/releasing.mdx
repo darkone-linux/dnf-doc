@@ -109,35 +109,38 @@ repository. The entry then covers the whole history, and must be trimmed before
 pushing.
 </Aside>
 
-{/* t:p 09e27ea73478ef93c00da695e83cf1f22908e953750ca0ef248b7928a94409ad */}
-## The release train
+{/* t:p e29cdf96181d18051b253ae9c72769d865e7faa7aee9836cf4678b20f424c07c */}
+## The release pipeline
 
 `just release` runs at the root of the co-development workspace, which must
 contain the five repositories.
 
 <Steps>
 
-1. **Quality gate**&nbsp;: `just check-all`, `just gen-test` and
-   `just simulate all`. Virtual-machine tests do not run in continuous
-   integration, so a failing scenario must stop the publication here.
+1. **Quality gate**&nbsp;: `just check`, `just gen-test`, and
+   `just simulate all`. Virtual-machine tests do not run in
+   continuous integration, so a failing scenario must stop the release
+   here.
 
-2. **Generator**, if it has moved since its last tag. It owns the
-   `etc/config.yaml` schema, so it goes before what depends on it.
+2. **Generator**, if it has changed since its last tag. It owns the
+   `etc/config.yaml` schema, so it is built before anything that
+   depends on it.
 
-3. **Pinning** of the generator tag in `dnf/flake.nix`, so that the contract
-   between framework and generator is readable in a diff, not only in the lock.
+3. **Pinning** the generator's tag in `dnf/flake.nix`, so that the contract
+   between the framework and the generator is readable in a diff, not just in
+   the lock file.
 
 4. **Framework**&nbsp;: `VERSION`, `CHANGELOG.md`, commit and tag, then immediate
-   push. Any edit of the entry after this step would force a tag already
-   consumed by `release.yml`, so it happens beforehand.
+   push. Any tweak to the entry after this step would require forcing
+   a tag already consumed by `release.yml`, so it is done before.
 
 5. **Documentation**&nbsp;: `just codegen` regenerates the reference from the
-   framework, then the version aligns on the `MAJOR.MINOR` line, then the site
-   is built and deployed.
+   framework, then the version is aligned to the `MAJEUR.MINEUR` line, and the
+   site is built and deployed.
 
-6. **Boilerplate and example**&nbsp;: the framework tag is written into their
+6. **Boilerplate and example**&nbsp;: the framework's tag is written into their
    `flake.nix`, `nix flake check` validates, and the `flake.lock` is **committed**.
-   It is what makes a clone reproducible.
+   This is what makes a clone reproducible.
 
 </Steps>
 
@@ -155,11 +158,11 @@ The three `ci.yml` checks (unit tests, evaluation, lint) are replayed via
 `workflow_call`, then the changelog section becomes the notes of the GitHub
 *release*.
 
-{/* t:p a58725841afe858830c2aa3d4f417f5562f72ae38e3ed8cea7cd4f71968276fb */}
+{/* t:p c56b439f2118cc5234a4d31e6e6ffd31552395dd86c967a0b17027d3bfce3092 */}
 ## Shared configuration
 
 A single [git-cliff](https://git-cliff.org/) for the three repositories that
-produce a changelog, in `dnf/assets/release/cliff.toml`. The script
-`dnf/assets/scripts/just-bump.sh` discovers the version source of the repository
-(`VERSION`, `Cargo.toml` or `package.json`), assembles the file around the
-generated block and preserves the hand-written history.
+produce a changelog, in `dnf/just/scripts/cliff.toml`. The script
+`dnf/just/scripts/bump.sh` discovers the repository's version source
+(`VERSION`, `Cargo.toml`, or `package.json`), assembles the file around the
+generated block, and preserves the hand-written history.

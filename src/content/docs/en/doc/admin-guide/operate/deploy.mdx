@@ -65,19 +65,20 @@ coordinated by the HCS. Deploying a link before its support can make subsequent
 hosts unreachable.
 :::
 
-{/* t:p e346822eb441ce59f0a14fc1e09b22c4fa9be7535a1315e6fc8a787e847c700a */}
-## Update
+{/* t:p fca40cb3a60aa02902bf46d2e618fcdd168826893877684ca1a9efddd8002181 */}
+## Updating
 
-The system is pinned by flakes. Updating = refresh the inputs, then redeploy.
+The system is locked down by *flakes*. Updating = refreshing the inputs,
+then redeploying.
 
 ```sh
-just update-flake     # updates dnf/ + root, commits the locks
-just apply '*'        # deploys the update
+just update-flake     # met à jour dnf/ + racine, commit les locks
+just apply '*'        # déploie la mise à jour
 ```
 
 :::caution[Always test first]
-Before a large deployment, validate locally: `just check-flake` (or
-`just check-all`), then `just apply <pilot-host>` on **one** test host.
+Before a wide rollout, validate locally: `just check`, then
+`just apply <pilot-host>` on **a** single test host.
 :::
 
 {/* t:p 7fba6574d9772edc82643418791070ada23d13d56e447c3d0b519b767870e521 */}

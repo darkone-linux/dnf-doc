@@ -13,58 +13,34 @@ sidebar:
 **Un module d'administration** s'occupe des fonctionnalités spécifiques au système pour les administrateurs.
 :::
 
-{/* t:p 6fc8b36e0ba82ff814ed07be42e47332784603fbd8877465ee30d7d052454bbe */}
+{/* t:p 3843b1fc8c8bd6f6ad35516b2ac9860ccf154f96bdcfb041b93f5c65778a022c */}
 ### &#x1F451; darkone.admin.nix
 
-Configuration NixOS pour le poste administrateur du LAN local.
+Configuration NixOS pour l'ordinateur de l'administrateur du réseau local.
 
-:::tip[Ferme de build (builders distants)]
-Un hôte admin construit localement chaque closure de nœud et la pousse
-(`buildOnTarget` vide, voir `assets/just/project.just`), c'est donc lui qui
-compile réellement. Tout hôte de la flotte marqué `build-farm` dans
-`config.yaml` devient l'un de ses `nix.buildMachines`, joint en SSH avec
-l'utilisateur de déploiement `nix`.
+:::tip[Ferme de compilation (builders distants)]
+Un hôte admin compile chaque fermeture (closure) de nœud en local et la pousse (`buildOnTarget` vide, voir `just/project.just`), c'est donc lui qui compile réellement. Tout hôte de la flotte marqué `build-farm` dans `config.yaml` devient l'un de ses `nix.buildMachines`, accessible en SSH via l'utilisateur de déploiement `nix`.
 
-La délégation est volontairement étroite. `mandatoryFeatures` (défaut
-`big-parallel`) signifie que la ferme ne se voit proposer **que** les
-derivations qui déclarent `requiredSystemFeatures = [ "big-parallel" ]` :
-kernel, chromium, firefox, llvm, rustc… c'est-à-dire les builds longs pour
-lesquels une machine costaude est voulue. Tout le reste reste local, ce qui
-compte quand la ferme se trouve derrière une liaison lente : seul le résultat
-demandé repart.
+La délégation est volontairement restreinte. `mandatoryFeatures` (par défaut `big-parallel`) signifie que la ferme ne reçoit **que** les dérivations qui déclarent `requiredSystemFeatures = [ "big-parallel" ]` : kernel, chromium, firefox, llvm, rustc… c'est-à-dire les compilations longues pour lesquelles une machine puissante est souhaitée. Le reste reste local, ce qui est important lorsque la ferme se trouve derrière une liaison montante lente : seul le résultat demandé remonte.
 
-Ne retirez jamais `big-parallel` de `nix.settings.system-features` de cet hôte
-pour forcer la délégation : le conserver signifie qu'une ferme injoignable fait
-refuser le hook de build et la derivation est simplement buildée localement au
-lieu d'échouer.
+Ne retirez jamais `big-parallel` des `nix.settings.system-features` de cet hôte pour forcer la délégation : le conserver signifie qu'une ferme injoignable fait échouer le hook de compilation et que la dérivation est simplement construite en local au lieu d'échouer.
 
 :::caution[Clé de déploiement requise]
-`sshKey` pointe sur la clé de déploiement partagée que `just configure-admin-host`
-génère dans le home de l'utilisateur `nix`. Les hôtes admin la détiennent par
-construction ; un hôte qui active ce module sans la clé journalise des échecs
-SSH à chaque build délégué.
+`sshKey` pointe vers la clé de déploiement partagée générée par `just configure-admin-host` sous le répertoire personnel de l'utilisateur `nix`. Les hôtes admin la détiennent par construction ; un hôte qui active ce module sans la clé enregistre des échecs SSH sur chaque compilation déléguée.
 :::
 
-:::note[Pourquoi pas un cache binaire]
-Un `harmonia` sur la ferme partagerait ses résultats de build, mais harmonia
-sert tout `/nix/store` et ne peut pas exprimer « seulement ce que j'ai compilé » :
-il capte le trafic que le cache public devrait servir. Le déchargement est une
-question d'ordonnancement de build, pas de substitution : d'où `buildMachines`
-ici et une priorité de substituteur en dernier recours dans `service/nix-cache.nix`.
+:::note[Pas de cache binaire, et pourquoi]
+Un `harmonia` sur la ferme partagerait ses résultats de compilation, mais harmonia dessert la *totalité* de `/nix/store` et ne peut pas exprimer « uniquement ce que j'ai compilé » : il intercepte le trafic que le cache public devrait gérer. Le délestage relève de la planification de compilation, pas de la substitution — d'où `buildMachines` ici et un substituteur de dernier recours dans `service/nix-cache.nix`.
 :::
 
-* **enable** `bool` Active les outils de construction de configuration NIX
-* **enableNh** `bool` Active l'outil de gestion nix helper (nh)
-* **remoteBuilders.enable** `bool` Décharge les builds vers les hôtes de la flotte marqués `build-farm` dans
-  `config.yaml`. Inerte tant qu'aucun hôte ne porte le drapeau.
-* **remoteBuilders.maxJobs** `int` Emplacements de build parallèles à utiliser sur chaque ferme.
-* **remoteBuilders.speedFactor** `int` Indice de vitesse relatif d'une ferme, comparé à cet hôte.
-* **remoteBuilders.mandatoryFeatures** `listOf str` Fonctionnalités qu'une derivation DOIT exiger pour qu'une ferme se la voie proposer. C'est
-  ce qui maintient les petites derivations hors d'une liaison distante (potentiellement lente).
-  Une liste vide envoie chaque derivation éligible à la ferme.
-* **remoteBuilders.supportedFeatures** `listOf str` Fonctionnalités système qu'une ferme peut fournir.
-* **remoteBuilders.systems** `listOf str` Plateformes pour lesquelles une ferme build. Explicite plutôt que dérivé : `hosts.nix`
-  ne porte une architecture que lorsqu'elle diffère du défaut.
+* **enable** `bool` Activer les outils de configuration NIX builder
+* **enableNh** `bool` Activer l'outil de gestion nix helper (nh)
+* **remoteBuilders.enable** `bool` Délester les compilations vers les hôtes de la flotte marqués `build-farm` dans `config.yaml`. Inactif tant qu'aucun hôte ne porte ce marqueur.
+* **remoteBuilders.maxJobs** `int` Nombre de slots de compilation parallèles à utiliser sur chaque ferme.
+* **remoteBuilders.speedFactor** `int` Vitesse relative de compilation d'une ferme, par rapport à cet hôte.
+* **remoteBuilders.mandatoryFeatures** `listOf str` Caractéristiques qu'une dérivation DOIT exiger pour qu'une ferme lui soit proposée. C'est ce qui empêche les petites dérivations d'emprunter une liaison distante (potentiellement lente). Une liste vide envoie toutes les dérivations éligibles à la ferme.
+* **remoteBuilders.supportedFeatures** `listOf str` Caractéristiques système qu'une ferme peut fournir.
+* **remoteBuilders.systems** `listOf str` Plateformes pour lesquelles une ferme compile. Valeurs explicites plutôt que déduites : `hosts.nix` ne contient une architecture que lorsqu'elle diffère de la valeur par défaut.
 
 ```nix
 darkone.admin.nix = {

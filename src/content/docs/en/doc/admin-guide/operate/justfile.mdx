@@ -9,21 +9,23 @@ lang: en
 {/* t:translated-from fr */}
 {/* t:h a9d3e91f20671c82bf0ff9e6d7dfa9d0723b67b045c6b42ef19e1e1b10276bdb */}
 
-{/* t:p 5b214ef36e772402e2ed34cd0d68a3faf6b8f8fe0996d758fb030c13ecc7a8b1 */}
-The commands below are all run with [`just`](https://just.systems/man/).
+{/* t:p 49cf9e198501be38f1945389f92af2641f289bff592f30e7f329bf2faed74aa4 */}
+The commands below are all executed with [`just`](https://just.systems/man/).
 
 ```sh title=Usage
 just <command> <arguments>
 ```
 
-Each command is prefixed with an icon indicating its context:
+Each command is prefixed with an icon indicating its usage context:
 
-- 💠 **Shared**: available both in the project and the framework.
+- 💠 **Common**: available in all contexts.
 - 🔆 **Framework**: specific to the upstream DNF framework (`dnf/`).
 - ✳️ **Project**: specific to the consuming project (my network).
+- 🔗 **Co-development**: consuming project that contains a clone of the framework.
 
-:::caution[Privilege escalation]
-Most commands run as the user administering the project, but some of them escalate privileges to the `nix` user (`sudo -u nix ...`).
+:::caution[Privilege elevation]
+Most commands run with the user who administers the project, but
+some of them elevate privileges to the `nix` user (`sudo -u nix ...`).
 :::
 
 :::tip[Key commands]
@@ -32,132 +34,40 @@ Commands marked with a ⭐ are the most useful on a daily basis.
 
 ---
 
-{/* t:p bed3d60ace971836243ebfc33a8a6daf1ebc6daa845112b4968e239ecaf51b14 */}
-## GIT Commands
+{/* t:p 3b2b6d153c2c2363ceb289a51bb815f4c315ece7626f9562e55532ed0f4f5cc1 */}
+## Choosing your Justfile
 
-These commands work on **all repositories** of the project (by default `src/*/`, `dnf`, `doc`, and the root). The short alias is `g`.
+Recipes live in `dnf/just/`. The project's `Justfile` imports **one**
+bootstrap file, which determines the available commands.
 
-{/* t:p a1e6bad8fb415d7340e9d07849875119abef92d8dc270e84321e520836107748 */}
-### ✳️ `git <cmd> [project]`
+| Context | `Justfile` line | Commands |
+|---|---|---|
+| Framework | `import 'just/dnf.just'` | 💠 🔆 |
+| Consuming project | `import? 'dnf/just/project.just'` | 💠 ✳️ |
+| Co-development | `import 'dnf/just/codev.just'` | 💠 ✳️ 🔗 and tests 🔆 |
 
-Run any git command on one or all projects.
+In a consuming project, `dnf/` is the symlink to the Nix store placed by
+`nix run .#init`. The `?` in `import?` allows `just` to start as long as this
+symlink doesn't exist.
 
-:::tip[Iterated projects]
-Listed by `just git-show-repos` (all by default).
+Co-development replaces this symlink with a git clone of the framework. The
+🔆 recipes `unit-tests`, `check-recipes`, `simulate`, `simulate-debug`,
+`fixtures` and `pkg-update` also run from the root in that context. Project
+templates include the `codev.just` line, commented out.
+
+:::note[Context detection]
+A project is identified by its `etc/config.yaml`, a framework clone by
+`dnf/.git`. A `dnf/` symlinked to the store is read-only: `generate`,
+`format` and `check` skip it.
 :::
-
-```sh
-just git "log --oneline -5"       # last commits of all projects
-just git "status" dnf             # git status on dnf/ only
-just git "remote -v"              # remotes of all projects
-```
-
-{/* t:p 48edf57ea025e134f58bc136457844f56ed64d9df6c39185730c9bd89dd2a4c8 */}
-### ✳️ `commit <message> [project]` ⭐
-
-`add -A` + `commit -m` on one or all projects. If the message is identical to the last commit, the recipe **amends** instead of creating a new commit.
-
-```sh
-just commit "fix(net): update dns config"
-just commit "fix(net): update dns config" dnf    # dnf/ only
-```
-
-{/* t:p 90027dc80a9496cb27b392290b13a3820287445362d9d2e490deb6beaac7c348 */}
-### ✳️ `amend [project]` ⭐
-
-Adds current changes to the last commit (`--no-edit`, `--allow-empty`).
-
-```sh
-just amend
-```
-
-{/* t:p c2295ee11880ad5dce401a9e8e73818b6818dd1b30e65a839fb9e45faa4aaef5 */}
-### ✳️ `status [project]` ⭐
-
-Shows the git status of one or all projects.
-
-```sh
-just status
-```
-
-{/* t:p 2f64b99062c2be5085d0c81ddd33871c01712acc289fa4f8ac6e8efb26895c16 */}
-### ✳️ `diff [project]`
-
-Shows the git diff of one or all projects.
-
-```sh
-just diff
-```
-
-{/* t:p 893bc27510a19149eecc64210dc46a7d9eb69b65cbcc41ea47ef025ac179f12a */}
-### ✳️ `push [project]` ⭐
-
-Checks for an upstream branch and ahead commits before pushing.
-
-```sh
-just push
-```
-
-{/* t:p 2e12bba7d9d24596607a3dd84c5755e1a95607de07a675ce7ceafaf5ea46fe08 */}
-### ✳️ `pull [project]`
-
-Pulls the latest changes from one or all projects.
-
-```sh
-just pull
-```
-
-{/* t:p 8e3113c76b1a16f1e01464a2ef4665ffe3841d64801638b478914ce17cb1c7fa */}
-### ✳️ `git-last-log`
-
-Shows the last commit message of all projects, formatted and aligned.
-
-```sh
-just git-last-log
-```
-
-{/* t:p 82732d2fd84239b4f018d4bfbeec4f61c3d8ddbffa123a5026e6f47b251104f3 */}
-### ✳️ `git-show-repos`
-
-Shows the list of repositories that git commands iterate over.
-
-```sh
-just git-show-repos
-```
-
-{/* t:p 9533e3d66660d0732a6dec00a57b8bbbed251f3566bf5269d1f433ae17f5554e */}
-### ✳️ `update-flake`
-
-Updates flake inputs of `dnf/` then the root. If the last commit of `dnf/` is already an `update(flake):`, it amends it.
-
-:::caution[Do not use in production]
-`nix flake update` bumps all inputs to their latest version: only use for regular, tested updates.
-:::
-
-```sh
-just update-flake
-```
-
-{/* t:p d9a3d2b8f7d76bab8b26a3a01b5ff12c131b35343920df057d94b8e965d5b26d */}
-### ✳️ `update-dnf`
-
-Syncs `flake.lock` with the local HEAD of `dnf/` (co-development).
-
-:::note[No dnf/ checkout]
-If `dnf/.git` does not exist (release mode), the command does nothing.
-:::
-
-```sh
-just update-dnf
-```
 
 ---
 
-{/* t:p 89aab6be4a5b048fbcd22e06a1074f98014bd824b0f36032067a905ac59e923d */}
+{/* t:p e2b66c530c0c4e8309b3b03a83f9a147ed1bf1e373bbe4363b77ed74bd899cb8 */}
 ## Development commands
 
-These commands help maintain the code, generate declarative files and
-work on the Rust generator.
+Common to all contexts, these commands help maintain the code and
+generate declarative files.
 
 {/* t:p eb4a577e49e9efa153acd9d8fd2b10c3417afab6dcccd1cefc2f6547932ca292 */}
 ### 💠 `develop` / `d`
@@ -168,10 +78,10 @@ Runs `nix develop -c zsh` to get a shell with the project tools.
 just develop
 ```
 
-{/* t:p 2e20ef33ae5bba911f0cde8b4b705dce91521ba44885599275227e595a08cc96 */}
+{/* t:p 646466489fa0e2fa6a91e0ba7d50103b5b27b91822cf4b6efd88871c1e6b240d */}
 ### 💠 `clean` / `c` ⭐
 
-Runs the full chain: `fix` → `check` → `generate` → `format` → `_fix_fs_permissions`.
+Runs the full chain: `statix fix` → `check-code` → `generate` → `format` → `_fix_fs_permissions`.
 
 :::tip[Before committing]
 `just clean` is the recommended entry point before each commit.
@@ -181,65 +91,29 @@ Runs the full chain: `fix` → `check` → `generate` → `format` → `_fix_fs_
 just clean
 ```
 
-{/* t:p dfdc484b84123bc270fd987661f5c1100a7f5fcc35cec587446d688b7bb07748 */}
+{/* t:p b749b4f5b8a1ff6c59273ae71c210d208399fdbda62e9133ef2edaa62b33eb46 */}
 ### 💠 `format`
 
-Runs `treefmt` on all files with the framework's shared config.
+Runs `treefmt` on all files using the shared framework config. In
+co-development, also formats `dnf/`.
 
 ```sh
 just format
 ```
 
-{/* t:p f4065382c83f3b8eaf494edcb93b5e251dba0ddce8e39408bd04e2cc474ea881 */}
-### 💠 `fix`
-
-Automatically fixes issues detected by `statix`.
-
-```sh
-just fix
-```
-
-{/* t:p b1aed15cb0ab39568c6aff3519f2c09be0194b43e190d556b838d1127e22f46c */}
+{/* t:p 68ab2120accf9872167017ad6862d92b9cb1ef3c6083161023dd23265f05e0a5 */}
 ### 💠 `generate`
 
-Regenerates the `default.nix` files in module folders and the
-`var/generated/*.nix` files from `etc/config.yaml`.
+Regenerates the `default.nix` files for module directories and, in a project,
+the `var/generated/*.nix` files from `etc/config.yaml`.
 
 :::note[Two modes]
-- **Co-development** : uses the Rust generator (`cargo run`).
-- **Release** : uses the `dnf-generator` binary provided by devShell.
+- **Generator sources present** (`src/generator/`): `cargo run`.
+- **Otherwise**: `dnf-generator` binary provided by the devShell (`just develop`).
 :::
 
 ```sh
 just generate
-```
-
-{/* t:p f2340907a4c604a8d08839d7fd5133a60b7792a0bf9332af196c40ab3e85d195 */}
-### ✳️ `gen-build`
-
-Builds the generator binary (`src/generator/`).
-
-```sh
-just gen-build
-```
-
-{/* t:p fb9becbae80d28a7e5087b1bc541797fa0a8f23076b4ead52ca14d7b78ad6ea3 */}
-### ✳️ `gen-test`
-
-Runs the generator unit tests.
-
-```sh
-just gen-test
-```
-
-{/* t:p 6f332ccb43d9f828b056f062f280fcd19424d1dd8bbb62d3e46e37b8770a9d03 */}
-### ✳️ `cat <host>` ⭐
-
-Chains `clean` → `amend` → `apply-local` (or `apply-verbose <host>`).
-
-```sh
-just cat                   # applies locally
-just cat myserver          # applies on myserver
 ```
 
 ---
@@ -249,53 +123,69 @@ just cat myserver          # applies on myserver
 
 Run these checks before deploying to catch regressions.
 
-{/* t:p 44ad9749345cb2b267bacbeb948219bbc53427c92f35f072fce9b0ac55ba7247 */}
+{/* t:p 3f6f51aa2f590c86d306ed0aff04cd9e22a809f1de44ef6ade25649c3faa52eb */}
 ### 💠 `check`
 
-Runs `deadnix` recursively on all `*.nix` files.
+Runs code verification (`check-code`), DNF unit tests and
+flake verification (`check-flake`). Unit tests only run on a
+framework clone: a `dnf/` symlinked to the store was tested before publication.
+
+:::tip[Before deploying]
+Run `just check` to catch regressions early.
+:::
 
 ```sh
 just check
 ```
 
-{/* t:p 8765e84d8470eefdde61d35231c6101d2ac895357e6d7f132a040b0916b61ae1 */}
+{/* t:p 351e6e59d430c07f8a62025b152f8029d7e56f8e992394e9f651b92082716a43 */}
+### 💠 `check-code`
+
+Static analysis with `statix` and dead code detection with `deadnix`, on
+all `*.nix` files.
+
+```sh
+just check-code
+```
+
+{/* t:p 345864fbbd5bd6f0be6f3d36d9decfa45cff4fb4a4b0ae914b33116c9485bac1 */}
 ### 💠 `check-flake`
 
-Runs `nix flake check` filtering out known warnings from DNF non-standard outputs (`colmena`, `colmenaHive`, `homeManagerModules`, `libTests`).
+Runs `nix flake check` while filtering known warnings from DNF's non-standard
+*outputs* (`colmena`, `colmenaHive`, `homeManagerModules`, `libTests`,
+`mkNodes`, `secretsPlan`, `version`).
 
 ```sh
 just check-flake
 ```
 
-{/* t:p e73a370772e52045ec6c3d6deb1b61babc2f3fb07d9eb7d24d88f5bec27df168 */}
-### 💠 `check-statix`
+---
 
-Static analysis of Nix code with `statix`.
+{/* t:p d79a34ccbf150a70123b67edc263121a4a9a8ddc23684fa0ebe536198439c1aa */}
+## Framework commands
 
-```sh
-just check-statix
-```
+In the framework repository (`dnf/`). Tests and `pkg-update` also run
+from the root of a co-development project.
 
-{/* t:p 84063acad7325e9d7a4b9e760377f8355ad2a71decece6f2c14d468943e543b6 */}
-### ✳️ `check-all`
-
-Runs DNF unit tests, DNF flake check and network flake check.
-
-:::tip[Before deploying]
-Run `just check-all` to catch regressions early.
-:::
-
-```sh
-just check-all
-```
-
-{/* t:p e6443a68fe3002c7c1c038568a4da8960b3463f3ce3b072d89e28389a97b4730 */}
+{/* t:p ddbbf42c59e60a62be8ad484599139564f5dd4ad647100a9f9fbd11f67cacd60 */}
 ### 🔆 `unit-tests` ⭐
 
-Runs `nix-unit` on `.#libTests`.
+Runs `nix-unit` on the framework's `libTests` tests.
 
 ```sh
 just unit-tests
+```
+
+{/* t:p fdf27241f8bb96a7f37321d780a08c984edeec64bbfdae83b974fc8ea871cc96 */}
+### 🔆 `check-recipes`
+
+Verifies that the three bootstraps (`dnf`, `project`, `codev`) load correctly,
+and that each nested `just <recipe>` call resolves to a recipe from its own
+context. `just` only resolves these calls at runtime: CI runs the same
+verification.
+
+```sh
+just check-recipes
 ```
 
 {/* t:p 27b3a8a83f90c87e37c7eb5b9610186962c99771d32d255d5267f8cfabb16706 */}
@@ -329,19 +219,62 @@ Useful for `node1.shell_interact()`, `node1.succeed(...)` directly.
 just simulate-debug modules-node-console-git
 ```
 
-{/* t:p 8d3a08f1770261b1418d6ee89a53d400cdea6f9584b2cf2c5ffcd84c200bd033 */}
+{/* t:p 7d46b1a271136165509319c03edb589920adca78721587c9b3fac424033759cf */}
 ### 🔆 `fixtures <action>`
 
-Manages test fixtures: generation, drift check, regeneration of keys and disposable secrets.
+Manages test fixtures: generation, drift check, regeneration of disposable keys and secrets.
 
 | Action | Effect |
 |---|---|
-| `generate` | Regenerates `var/generated/` for all test spaces |
+| `generate` | Regenerates `var/generated/` for all test environments |
 | `check` | Checks for drift without modifying the tree |
-| `gen-secrets` | Regenerates test keys and secrets (disposable) |
+| `gen-secrets` | Regenerates disposable test keys and secrets |
 
 ```sh
 just fixtures check
+```
+
+{/* t:p a8ef367ee9b44c86661515fc436fd8006b7653bd9a6333d7fc29c04167f0f2ca */}
+### 🔆 `pkg-update <package>`
+
+Updates a package from `dnf/pkgs/` to its latest upstream version with
+[nix-update](https://github.com/Mic92/nix-update). See [Packages outside
+nixpkgs](/en/doc/dev-guide/packages/#updating-a-package).
+
+:::note[Framework clone required]
+`nix-update` rewrites `package.nix`&nbsp;: a store-linked `dnf/` is read-only.
+:::
+
+```sh
+just pkg-update rename-simple
+```
+
+{/* t:p 9b5df38cc5488263f1dbc6f4a460e1c99b2e258429949798872002e4d4fdbd5d */}
+### 🔆 `version`
+
+Displays the framework version, its revision, its latest tag, and the generator release it pins.
+
+```sh
+just version
+```
+
+{/* t:p ccfcebf39841eb83d791913424d27a48022b5b88df11b0616d7c298207e7ad7e */}
+### 🔆 `changelog`
+
+Displays what the next release entry would look like, without writing anything. Requires
+`git-cliff`, provided by the devShell (`just develop`).
+
+```sh
+just changelog
+```
+
+{/* t:p a73106240d7c62adc39e590b7618521b57823dc482ed1335513f2733a7e10cc0 */}
+### 🔆 `bump [level]`
+
+Bumps the version, adds the CHANGELOG entry, commits and tags the framework, without pushing. See [Publishing a release](/en/doc/dev-guide/releasing/#the-recipes).
+
+```sh
+just bump          # level inferred from commits
 ```
 
 ---
@@ -351,69 +284,51 @@ just fixtures check
 
 Installing a new host follows a precise sequence.
 
-{/* t:p 5daaa4837cad73164248e564960b82676e4767a7030f1a5a8c0c898e07ef1077 */}
+{/* t:p 26ad8f4341e8d4b7a67a0c437f484feb81b4b1cba7bc9705cd22c18186860e3e */}
 ### ✳️ `install <host> [user] [ip]`
 
-Formats the disks via **disko** and installs NixOS via **nixos-anywhere**.
+Formats disks via **disko** and installs NixOS via **nixos-anywhere**.
 
 :::danger[Destructive]
-All data on the target host is erased. Confirmation is
-requested before running.
+All data on the target host is erased. A confirmation is requested before executing.
 :::
 
-:::note[Required configuration]
-The host must have a disko configuration in `etc/config.yaml`, a
-`usr/machines/<host>/default.nix` folder, a `mac` key and a fixed address
-(`zone: "<zone>:<x.y>"`). The last two points are checked before any
-formatting&nbsp;: without them, the machine changes address at the reboot that
-follows installation. See [Initial
+:::note[Configuration required]
+The host must have a disko configuration in `etc/config.yaml`, a `usr/machines/<host>/default.nix` directory, a `mac` key, and a fixed address (`zone: "<zone>:<x.y>"`). The last two are checked before any formatting: without them, the machine changes address on the reboot following installation. See [Initial
 installation](/en/doc/admin-guide/install/first-network-installation/#installing-a-machine).
 :::
 
-The `ip` argument defaults to `auto`&nbsp;: the address is computed as for
-`full-install`, no need to read it off.
+The `ip` argument defaults to `auto`: the address is calculated as for `full-install`, no need to look it up.
 
 :::caution[The address must be the one the machine keeps]
-`nixos-anywhere` pins its target address for the whole run and cannot
-follow a renumbering. Yet the installer does a fresh DHCP&nbsp;: if the
-machine so far ran on a dynamic lease older than its reservation
-— the typical case of an installation **over another system** — it
-switches to its reserved address mid-installation and the run talks into thin
-air.
+`nixos-anywhere` freezes its target address for the entire run and cannot follow a renumbering. But the installer renews DHCP: if the machine was running on a dynamic lease older than its reservation (the typical case of an installation **over another system**), it switches to its reserved address mid-installation and the run talks to thin air.
 
-The recipe therefore refuses to start on an address the host does not keep, and
-shows the ones it accepts. Before installing over an existing OS,
-reboot the machine so it takes its reserved address.
+The recipe therefore refuses to start on an address the host does not keep, and displays the ones it accepts. Before installing over an existing OS, reboot the machine so it takes its reserved address.
 :::
 
-The recipe also drops on the target, **before** the system installation, the
-age key `/etc/sops/age/infra.key` and, on an encrypted host, the SSH host key of
-its initrd&nbsp;: sops works from the first activation and the very first
-boot already listens on port 2222. The volume is formatted with the
-shared fleet passphrase, so there is nothing to type.
+The recipe also drops on the target, **before** system installation, the age key `/etc/sops/age/infra.key` and, on an encrypted host, its initrd SSH host key: sops works from the first activation and the very first boot already listens on port 2222. The volume is formatted with the fleet's shared passphrase, so there is nothing to enter.
 
 ```sh
 just install myserver
 just install myserver nixos 10.0.0.5     # custom IP
-just install myserver do=test             # test VM only
+just install myserver nix auto test      # test VM only
 ```
 
 :::caution[LUKS and `do=test`]
-`nixos-anywhere` refuses `--vm-test` at the same time as the options that drop
-files and the formatting key&nbsp;: test mode therefore cannot
-format an encrypted volume. The recipe reports it.
+`nixos-anywhere` rejects `--vm-test` along with options that drop files and the formatting key: test mode therefore cannot format an encrypted volume. The recipe flags this.
 :::
 
-{/* t:p 0d60d66b6c653daae5ddc439e39dd1a67cc5736d5e4d9d9a803d72cd689cfead */}
+{/* t:p 332f678ae6aba4cf91ff9de59d833c42c4410666cb70c507792612466a979694 */}
 ### ✳️ `full-install <host> [user] [ip]` ⭐
 
-Complete chain: `install` + reboot wait + `unlock` + `configure` + `apply` + `gc` + reboot.
+Full chain: `install` + wait for reboot + `unlock` + `configure` + `apply` + `gc` + reboot.
 
-The starting address is computed on its own: the host name in its own zone, a reserved transit address if it is plugged in elsewhere. See [Machines outside their zone](/en/doc/admin-guide/understand/network/#machines-outside-their-zone).
+The starting address is calculated automatically: host name in its own zone, reserved pass-through address if plugged in elsewhere. See [Machines outside
+their zone](/en/doc/admin-guide/understand/network/#machines-outside-their-zone).
 
-After the reboot, the machine has not necessarily come back to the same place: the recipe probes **all** its known addresses, on ports 22 and 2222, and continues on the one that responds. An encrypted host is unlocked along the way by `just unlock`.
+After reboot, the machine may not have returned to the same place: the recipe probes **all** its known addresses, on ports 22 and 2222, and continues on whichever responds. An encrypted host is unlocked along the way by `just unlock`.
 
-The final reboot is not decorative: `apply` activates the userspace but not the kernel or the initrd, and this reboot is the only automatic proof that the machine starts back up **on its own**. On an encrypted host, it proves at the same time that remote unlocking works — while you are still in front of it, and not at the first power outage. `unlock` is therefore recalled right after.
+The final reboot is not cosmetic: `apply` activates user space but not the kernel or initrd, and this reboot is the only automatic proof that the machine restarts **on its own**. On an encrypted host, it also proves that remote unlock works, while you are still in front of it rather than at the first power outage. `unlock` is therefore called again right after.
 
 ```sh
 just full-install myserver
@@ -561,10 +476,10 @@ adding a host or a zone. See
 just configure-admin-host
 ```
 
-{/* t:p a7c90013eb9cb0b128c79f31b7886313080da03c7d8b1c36d586ae96bc9894c8 */}
-### 💠 `build-iso [arch]`
+{/* t:p acb78183caf1bf914a25a73ebe75aa2943291d34e30fc05807884f8055117ab6 */}
+### ✳️ `build-iso [arch]`
 
-Builds the framework ISO image for the given architecture.
+Builds the installation ISO image for the given architecture. It bundles the administration public key (`usr/secrets/nix.pub`): `just full-install` connects to it without a password.
 
 ```sh
 just build-iso                        # x86_64-linux (default)
@@ -580,18 +495,18 @@ The deployment tool is [colmena](https://github.com/zhaofengli/colmena).
 All apply commands first refresh the DNF lock via
 `update-dnf`.
 
-{/* t:p 68a3a1962d58418a2c6ca2087c01b8a6f09b61aede53766186715eebd7c0eff9 */}
+{/* t:p ece18c6d5eea966020a1665a58fb2d9a5f883a5877b62e92e5884a772cb90e58 */}
 ### ✳️ `apply <target> [action]` / `a` ⭐
 
-Deploys the configuration to one or more targets.
+Deploys the configuration on one or more targets.
 
 | Parameter | Description |
 |---|---|
-| `target` | Hostname, pattern (`'*'`), list (`a,b`), colmena tag (`@server`) |
+| `target` | Hostname, glob (`'*'`), list (`a,b`), colmena tag (`@server`) |
 | `action` | `switch` (default), `boot`, `test`, `build` |
 
-:::note[Build on target]
-`--build-on-target`: compilation happens on the deployed host, not on the admin machine.
+:::note[Centralized build]
+The machine running `just` builds each system once, then harmonia shares it with the fleet. To build on targets (architecture the machine cannot build): `just buildOnTarget=1 apply <target>`.
 :::
 
 ```sh
@@ -619,13 +534,39 @@ Applies the configuration on the current machine.
 just apply-local
 ```
 
-{/* t:p 22f50550ea1db641342a91870b52519605c5002bc529388e25c22a3cfa9b3933 */}
+{/* t:p dec9250484fab9f127eccd513f41f34feb92074ffa7d19a408135968935cf18e */}
 ### ✳️ `apply-silenced <target> [action]`
 
 Enables Alertmanager maintenance mode before applying, disables it after.
 
 ```sh
 just apply-silenced myserver
+```
+
+{/* t:p 7c7131a40b73017118225abe190a94e5de5aa02437db87cbf5fe94365af4067b */}
+### ✳️ `update-flake`
+
+Updates the root flake inputs. In co-development, updates `dnf/` inputs first and commits them (`chore(flake):`, amended if the latest `dnf/` commit is already one).
+
+:::caution[Do not use in production]
+`nix flake update` bumps all inputs to their latest version: use only for regular, tested updates.
+:::
+
+```sh
+just update-flake
+```
+
+{/* t:p d9a3d2b8f7d76bab8b26a3a01b5ff12c131b35343920df057d94b8e965d5b26d */}
+### ✳️ `update-dnf`
+
+Syncs `flake.lock` with the local HEAD of `dnf/` (co-development).
+
+:::note[No dnf/ checkout]
+If `dnf/.git` does not exist (release mode), the command does nothing.
+:::
+
+```sh
+just update-dnf
 ```
 
 ---
@@ -659,20 +600,16 @@ On a host without a LUKS volume, it is a logged no-op.
 just unlock myserver
 ```
 
-{/* t:p 019d407a935850d914ee2feec96f9932ac460bf20b29db1615e7cd87d2968988 */}
-### ✳️ `remote-desktop <hôte> [ro|rw|login]` / `rd` ⭐
+{/* t:p 02fa3ced2db0dd6fdcdf8d51363f67974b3c73d0ae89e57b14dcf6bd883d56c4 */}
+### ✳️ `remote-desktop <host> [ro|rw|login]` / `rd` ⭐
 
-Opens the remote desktop of a host. `ro` (default) observes the graphical
-session **already open**, `rw` takes control of it; both fail if no one is
-connected. `login` instead opens **your own session** behind a GDM login
-screen. No port is opened on the host: the stream goes through an SSH tunnel
-mounted by `nix`. See
+Opens the remote desktop of a host. `ro` (default) watches the **already open** graphical session, `rw` takes control of it; both fail if nobody is logged in. `login` opens **your own session** behind a GDM login screen instead. No port is opened on the host: the stream goes through an SSH tunnel set up by `nix`. See
 [Remote desktop](/en/doc/admin-guide/operate/remote-desktop/).
 
 ```sh
-just rd clemence            # observe
-just rd clemence rw         # take control
-just rd clemence login      # your own session, via GDM
+just rd mypc                # observation
+just rd mypc rw             # take control
+just rd mypc login          # own session, via GDM
 ```
 
 {/* t:p 9b7b4e97dc24da8d0af1bcb9ff36b375c3556753bead84315fd0c1df5f548041 */}
@@ -689,10 +626,10 @@ just reboot myserver
 just reboot 'web-*'         # all web-*
 ```
 
-{/* t:p 111e1172fff6ed466c60e9e678595ed7ff7e013cb13b56844f31ebc9a4293908 */}
+{/* t:p 5b92b2b3461e03f1ef3881f56890275686d37ddf4c55fea4b20dc2e43d4cef10 */}
 ### ✳️ `halt <host>`
 
-Halts (poweroff) the host via colmena exec.
+Shuts down (poweroff) the host via colmena exec, after confirmation.
 
 ```sh
 just halt myserver
@@ -707,22 +644,26 @@ Runs `nix-collect-garbage -d` then `switch-to-configuration boot` on the host.
 just gc myserver
 ```
 
-{/* t:p 6d9a61229063eda367273336d0ad2b8dc32f07bfbf01d167587d3ca4882500e1 */}
+{/* t:p 71bf7ccbff6cfed3261bc2c1d64c5fa1493ec3d4cee07f20635d95de21416c80 */}
+### ✳️ `nfs-cleanup <hosts> [mode]`
+
+Cleans up the home directories of a host removed from the NFS share: dead XDG
+symlinks removed, `.bak` backups restored. `check` (default) writes nothing and
+shows what `apply` would do. `hosts` is a comma-separated list, or `all`. See
+[Leaving the NFS home share](/en/doc/how-to/admin/leave-nfs/).
+
+```sh
+just nfs-cleanup myserver          # dry run, writes nothing
+just nfs-cleanup myserver apply    # actual execution
+```
+
+{/* t:p 4873218939a6b08ab3b5c3fcb2627475521a93d2f57aad33722e0d5bbd58c4bb */}
 ### ✳️ `fix-boot <host>`
 
 Reinstalls the bootloader with `NIXOS_INSTALL_BOOTLOADER=1`.
 
 ```sh
 just fix-boot myserver
-```
-
-{/* t:p c24841a584d65e1fa801fb80eff87d295180301b683d59e60841ebbaeb1b1f1c */}
-### ✳️ `fix-zsh <host>`
-
-Removes `.zshrc.bkp` on the target host.
-
-```sh
-just fix-zsh myserver
 ```
 
 ---
@@ -842,22 +783,178 @@ just idm-fix-replica hcs agate,gw
 
 ---
 
-{/* t:p 63d6c44a190565519c998dc8cd9d40ba52d57d60e353c6e6c79afe1aaa34583a */}
+{/* t:p dce9769bd1e361411c9db68b37bf79267a4761044d32381e0364f0a5d8881b99 */}
+## Co-development commands
+
+At the root of a co-development project. Git commands operate on **all
+repositories** of the project (default: `src/*/`, `dnf`, `doc`, and the
+root). The short alias for `git` is `g`.
+
+{/* t:p cbdefe32a6a73a2abcf623b8ad6b1f49de48dd5cd3c568090291f76d7773aef0 */}
+### 🔗 `git <cmd> [project]`
+
+Runs any git command on one or all projects.
+
+:::tip[Iterated projects]
+Listed by `just git-show-repos` (all by default).
+:::
+
+```sh
+just git "log --oneline -5"       # latest commits of all projects
+just git "status" dnf             # git status on dnf/ only
+just git "remote -v"              # remotes of all projects
+```
+
+{/* t:p efacc1b9c33481552ed92afa9e004ec4b3bf35f16486327796bc46b3929d5a85 */}
+### 🔗 `commit <message> [project]` ⭐
+
+`add -A` + `commit -m` on one or all projects. If the message is
+identical to the latest commit, the recipe **amends** instead of creating a new
+commit.
+
+On all projects, the root is processed last, after `update-dnf`: its
+commit pins the revision of `dnf/` that was just committed.
+
+```sh
+just commit "fix(net): update dns config"
+just commit "fix(net): update dns config" dnf    # dnf/ only
+```
+
+{/* t:p ab853d57f5e98d6ae271a34a4836d96825a38f00ba12437a1421ff545d80f18a */}
+### 🔗 `amend [project]` ⭐
+
+Adds the current changes to the latest commit of each project
+(`--no-edit`). On all projects, the root lock is then realigned to `dnf/`.
+
+```sh
+just amend
+```
+
+{/* t:p 90d33eedf683f9bbbfe6e512bd85afb1ee079e889d07a6f65185e3215255ba7c */}
+### 🔗 `status [project]` ⭐
+
+Displays the git status of one or all projects.
+
+```sh
+just status
+```
+
+{/* t:p 569274b71a922e8b066d2e2f8dfad83670de2ee717ae0ebd3624e6d107004428 */}
+### 🔗 `diff [project]`
+
+Displays the git diff of one or all projects.
+
+```sh
+just diff
+```
+
+{/* t:p c6e4487795c404be99b51a8f0980907be511a2ab2d5c202f28113c10869e3e66 */}
+### 🔗 `push [project]` ⭐
+
+Checks for an upstream branch and ahead commits before pushing.
+
+```sh
+just push
+```
+
+{/* t:p 4649122de850734ac2586908605dfce41f52add26d8009afa7c69bb507a21dfd */}
+### 🔗 `pull [project]`
+
+Pulls the latest changes for one or all projects.
+
+```sh
+just pull
+```
+
+{/* t:p 9d873f0f7874bf9f613ebd263e1c90f137dc2459c2c84616da5c97d703d61959 */}
+### 🔗 `git-last-log`
+
+Displays the latest commit message for all projects, formatted and aligned.
+
+```sh
+just git-last-log
+```
+
+{/* t:p 1962ae319f8f16cfd52e6edc6f347154105f33a02c3f04e332cd24d29c4ba009 */}
+### 🔗 `git-show-repos`
+
+Displays the list of repositories that git commands iterate over.
+
+```sh
+just git-show-repos
+```
+
+{/* t:p 7951c3abc100e068d76ae25823beea79b94019bd8a8d3d8bcb6337d266752bf4 */}
+### 🔗 `gen-build`
+
+Builds the generator binary (`src/generator/`).
+
+```sh
+just gen-build
+```
+
+{/* t:p 5fe27a872673fd444f5e1df13b8a2ed357fbe11379c4227e850be893559df4a8 */}
+### 🔗 `gen-test`
+
+Runs the generator unit tests.
+
+```sh
+just gen-test
+```
+
+{/* t:p 9a6969984aaf1a7ed01649b0872d3c366ce7503ab0ac814dc48f26b266c7c28d */}
+### 🔗 `cat [host]` ⭐
+
+Chains `clean` → `amend` → `apply-local test` (or `apply-verbose <host>`).
+
+```sh
+just cat                   # tests locally
+just cat myserver          # applies on myserver
+```
+
+{/* t:p 51737696af1a90997dcc39b9fa1d0907bd1a12d8ebd738b211e1f04a1ddfe02e */}
+### 🔗 `versions`
+
+Displays the version, latest tag and branch of each repository, along with
+the generator release pinned by the framework.
+
+```sh
+just versions
+```
+
+{/* t:p 2cd6eb89656cc2c40c6a3a194ca00a72a7305b0b2d8638d5736ab80f54e09b72 */}
+### 🔗 `release [level]`
+
+Publishes the entire ecosystem (generator, framework, documentation and project
+templates) after checks and dry runs. See [The release
+train](/en/doc/dev-guide/releasing/#the-release-train).
+
+:::danger[Pushes to public repositories]
+Each step commits, tags, and pushes. Only run this for a real release.
+:::
+
+```sh
+just release
+```
+
+---
+
+{/* t:p 1a7f09b4a5d0c90e8dedf0f9d258499b5150608a0d41f0aa71207afc1cd169d9 */}
 ## Alias summary
 
-| Alias | Command |
-|---|---|
-| `a` | `apply` |
-| `al` | `apply-local` |
-| `av` | `apply-verbose` |
-| `c` | `clean` |
-| `d` | `develop` |
-| `e` | `enter` |
-| `g` | `git` |
-| `amend` | `git-amend` |
-| `commit` | `git-commit` |
-| `diff` | `git-diff` |
-| `pull` | `git-pull` |
-| `push` | `git-push` |
-| `status` | `git-status` |
-| `rd` | `remote-desktop` |
+| Alias | Command | Context |
+|---|---|---|
+| `a` | `apply` | ✳️ |
+| `al` | `apply-local` | ✳️ |
+| `av` | `apply-verbose` | ✳️ |
+| `c` | `clean` | 💠 |
+| `d` | `develop` | 💠 |
+| `e` | `enter` | ✳️ |
+| `g` | `git` | 🔗 |
+| `amend` | `git-amend` | 🔗 |
+| `commit` | `git-commit` | 🔗 |
+| `diff` | `git-diff` | 🔗 |
+| `pull` | `git-pull` | 🔗 |
+| `push` | `git-push` | 🔗 |
+| `status` | `git-status` | 🔗 |
+| `rd` | `remote-desktop` | ✳️ |

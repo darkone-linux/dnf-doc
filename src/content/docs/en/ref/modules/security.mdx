@@ -84,7 +84,7 @@ darkone.security.complement = {
 
 <hr/>
 
-{/* t:p 5304cb101f345ca25eee423e871ee5e44320eb5cc087f850534f73ec37d7bbda */}
+{/* t:p 79bb2e49cb1d8435476bdcdbd32021ad2c32960a16fb0622e1552d80f0f8d112 */}
 ### &#x1F511; darkone.security.filesystem
 
 Partitioning, file tree, and file permissions (R28–R29, R50–R57). (wip)
@@ -106,6 +106,17 @@ compilers running what they unpack (pip, cargo, gcc) and any runtime
 extracting native libraries there (Bun, Electron, agent tooling). Nix builds
 are covered — the daemon's TMPDIR moves to /var/tmp. Opt out per host with
 `darkone.security.filesystem.tmpNoexec = false`.
+:::
+
+:::caution[R28 — cross to the hardened /tmp at boot, not at switch]
+A host already on `boot.tmp.useTmpfs` carries a static `tmp.mount`, which
+this rule replaces with an fstab entry: the switch therefore *stops* it, and
+`PrivateTmp=yes` implies `RequiresMountsFor=/tmp`, so every such unit goes
+down with it — `dbus-broker` included. `switch-to-configuration` drives
+systemd over D-Bus, so it loses its own transport mid-run and aborts, every
+time. Use `apply <host> boot` and reboot; the tier needs a reboot for
+`boot.kernelParams` anyway. Hosts that never used `useTmpfs` only gain a
+mount, which is harmless.
 :::
 
 :::caution[R29 — /boot noauto]
@@ -249,7 +260,7 @@ darkone.security.kernel-build.enable = false;
 
 <hr/>
 
-{/* t:p f701da1539e91186f2e34cc6bed07ca1ade5b51653c7269e351a4ebbc472ea34 */}
+{/* t:p 79ce68cfa0f93382523cdb98f747993cc9bdaad26ae7a58b714b211e3c15c0e4 */}
 ### &#x1F511; darkone.security.kernel-params
 
 Dynamic kernel configuration: boot parameters and sysctls (R8–R14). (wip)
@@ -266,9 +277,18 @@ defined in `darkone.system.security` (via `isActive`).
 :::
 
 :::caution[R8 — SMT disabled]
-`mds=full,nosmt` and `mitigations=auto,nosmt` disable hyperthreading,
-which reduces multi-threaded throughput by around 30%. Evaluate on compute
-servers before enabling the `intermediary` level.
+`l1tf=full,force`, `mds=full,nosmt` and `mitigations=auto,nosmt` disable
+hyperthreading, worth around 30% of multi-threaded throughput — a price a
+build farm cannot always pay. `disableSmt = false` keeps the rest of R8.
+:::
+
+:::caution[R8 — the allocator extras replace the wipe ANSSI asks for]
+`page_poison=on` takes precedence over `init_on_alloc`/`init_on_free` — the
+kernel says as much at boot — so R8 ships a debug facility where ANSSI asks
+for a memory wipe, and `slub_debug=FZP` rides along on every slab cache.
+`memoryDebug = false` drops the three and gives `init_on_*` back; measured
+at 7% of a compile (95s to 88s, ms-a2, SMT on), so the reason is conformity
+rather than speed.
 :::
 
 :::caution[R9 — restricting user namespaces is opt-in]
@@ -293,6 +313,16 @@ Mutually exclusive with `nixos-rebuild switch` on the driver side.
 * **restrictUserns** `bool` R9: forbid unprivileged user namespaces (`user.max_user_namespaces`).
   Breaks Flatpak, bubblewrap and rootless Podman, so it stays opt-in and
   belongs on servers that run none of them.
+* **disableSmt** `bool` R8: turn hyperthreading off. Three parameters carry it; `false` falls
+  each back to its SMT-preserving form and leaves the other fourteen
+  alone. Note `l1tf=full` drops SMT even without `force` — it only
+  leaves the sysfs knob behind — so the fallback there is `flush`.
+* **memoryDebug** `bool` R8: the allocator extras — `slub_debug=FZP`, `page_poison=on` and
+  `slab_nomerge=yes`. None of the three is in the ANSSI R8 list, and
+  `page_poison` displaces `init_on_alloc`/`init_on_free`, which are:
+  the kernel says so at boot, and honours the debug facility instead.
+  Turning it off restores the specified wipe and gives back 7% of a
+  compile (95s to 88s, ms-a2, SMT on).
 * **disableIpv6** `bool` R13: disable IPv6 entirely. Off by default — ANSSI itself prefers
   hardening IPv6 over dropping it, and a public host generally needs it.
 
@@ -300,6 +330,8 @@ Mutually exclusive with `nixos-rebuild switch` on the driver side.
 darkone.security.kernel-params = {
   enable = false;
   restrictUserns = false;
+  disableSmt = true;
+  memoryDebug = true;
   disableIpv6 = false;
 };
 ```
@@ -368,7 +400,7 @@ darkone.security.mta.enable = false;
 
 <hr/>
 
-{/* t:p eb846a06691f8925570fb39da2f9bce2c788354b7de3c150feafca7b46c55339 */}
+{/* t:p b4c4c2444b363b844bed44c0db75bbcef1a61dbe389b3d0ede6f08de4ffee648 */}
 ### &#x1F511; darkone.security.network
 
 Network services — isolation and supervision (R78–R80). (wip)
@@ -387,6 +419,14 @@ defined in `darkone.system.security` (via `isActive`).
 `Content-Security-Policy: default-src 'self'` breaks tools without nonces
 (dashboards with CDN, third-party widgets). HSTS preload is irreversible —
 only set on a fully controlled domain.
+:::
+
+:::caution[R79 — nginx headers are opt-in per vhost]
+`add_header` replaces the parent set instead of adding to it, so a global
+block is dropped by the first vhost or location declaring a header of its
+own — and gixy fails the build over the shadowing. The set therefore ships
+as `/etc/nginx/dnf-security-headers.conf`, to `include` from the vhost's own
+`extraConfig`. Only the TLS directives stay global.
 :::
 
 :::caution[R79 — Every jail needs a filter]

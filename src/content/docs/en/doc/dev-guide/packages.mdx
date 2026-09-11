@@ -92,16 +92,19 @@ this overlay: `pkgs.<name>` is not available there. Making it visible requires
 applying the overlay to that instance, in `dnf/lib/mk-configuration.nix`.
 :::
 
-{/* t:p fa57cc81d0d871027d02880c6c5cf91747709ce580d5104ffb4620a68026782f */}
+{/* t:p 021dcfae7bd46d61cdd1165684ec3dcb1fa5da6f01345724fdcc157ccfbb375b */}
 ## Updating a package
+
+Run inside `dnf/` or at the root of a co-development project: a
+`dnf/` linked to the Nix store is read-only.
 
 ```sh
 just pkg-update <name>
 ```
 
-[nix-update](https://github.com/Mic92/nix-update) looks up the latest version
-published upstream, then rewrites the version and hashes in `package.nix`. Then
-review the upstream changelog, rebuild, and commit.
+[nix-update](https://github.com/Mic92/nix-update) looks for the latest
+published upstream version, then rewrites the version and hashes in `package.nix`.
+Then check the upstream `changelog`, rebuild, and commit.
 
 {/* t:p ac1b2ba20564599783a9099f764072e9272265e95dfff6e0046d1f3623ea4c0a */}
 ## Publishing to nixpkgs

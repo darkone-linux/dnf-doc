@@ -252,7 +252,7 @@ darkone.system.luks = {
 
 <hr/>
 
-{/* t:p 1a2ed6f7cc963d56619b153a050b77f29a22832102c8e4e39f7e14c21f5b9db7 */}
+{/* t:p 2ae0ce3c72ee9d5c96840f5e2da781eee35b67fef1719dd58e9cb2cdd966c8c2 */}
 ### &#x2699; darkone.system.security
 
 ANSSI BP-028 v2.0 (GNU/Linux) system hardening. (wip)
@@ -328,10 +328,10 @@ Mandatory rationale in `rationale`.
 :::
 
 :::caution[Side effects]
-Some rules may break common usage: `noexec /tmp` (R28),
-SMT disabled (R8), unsigned modules (R18), rootless containers (R9),
-JIT (R63). Check `sideEffects` comments in each themed file before
-raising the level on a production system.
+Some rules may break common usage: `noexec /tmp` (R28), SMT disabled (R8 —
+keep it with `darkone.security.kernel-params.disableSmt = false`), unsigned
+modules (R18), rootless containers (R9), JIT (R63). Check `sideEffects`
+comments in each themed file before raising the level on a production system.
 :::
 
 * **enable** `bool` Enable the ANSSI BP-028 v2.0 hardening module.

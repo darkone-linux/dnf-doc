@@ -31,8 +31,8 @@ All these commands target a host (or a pattern / list) via colmena:
 The target accepts a pattern or list: `just gc '*'`, `just reboot a,b`.
 :::
 
-{/* t:p 954560242917881cf17b1ee53c002c4bd7832d89da40e097699abbb75825415f */}
-## Clean and format code
+{/* t:p 11e569f300d2821bbe7f0fa59bbfa2886c4d47cc4fedabe8586501fc6a1e85d4 */}
+## Clean and format the code
 
 Before committing or deploying, normalize the repository:
 
@@ -40,8 +40,8 @@ Before committing or deploying, normalize the repository:
 just clean      # fix + check + generate + format
 ```
 
-- `just check-all` : unit tests + flake checking (before deployment).
-- `just gc <host>` : reclaim disk space (deletes old generations).
+- `just check`: code + unit tests + flake checks (before deployment).
+- `just gc <host>`: reclaims disk space (old generations deleted).
 
 {/* t:p 9376adef28eee4541cef0c4da991075f26970350eff0e2a8768d5adef40e1d90 */}
 ## Rollback

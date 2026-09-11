@@ -84,51 +84,62 @@ darkone.security.complement = {
 
 <hr/>
 
-{/* t:p 5304cb101f345ca25eee423e871ee5e44320eb5cc087f850534f73ec37d7bbda */}
+{/* t:p 79bb2e49cb1d8435476bdcdbd32021ad2c32960a16fb0622e1552d80f0f8d112 */}
 ### &#x1F511; darkone.security.filesystem
 
-Partitionnement, arborescence et permissions (R28–R29, R50–R57). (wip)
+Partitionnement, arborescence de fichiers et permissions (R28–R29, R50–R57). (wip)
 
 Couvre les options de montage sécurisées (R28), la restriction de /boot (R29),
-les permissions des fichiers sensibles (R50), les mots de passe exclus du
-magasin (R51), les sockets (R52), les fichiers orphelins (R53), le bit sticky
-(R54), les répertoires temporaires par utilisateur (R55), et setuid (R56, R57).
+les permissions des fichiers sensibles (R50), les mots de passe exclus du magasin (R51),
+les sockets (R52), les fichiers orphelins (R53), le bit sticky (R54),
+les répertoires temporaires par utilisateur (R55) et le setuid (R56, R57).
 
 :::caution[Activation]
 L'option `enable` suit `darkone.system.security.enable` par défaut.
-Les règles (Rxx/Cxx) sont activées selon le niveau, la catégorie et les
-exclusions définis dans `darkone.system.security` (via `isActive`).
+Les règles (Rxx/Cxx) sont activées en fonction du niveau, de la catégorie et des exclusions
+définies dans `darkone.system.security` (via `isActive`).
 :::
 
 :::caution[R28 — noexec /tmp]
-`noexec` sur /tmp bloque l'exécution *et* `dlopen` : casse les installateurs et
-compilateurs qui exécutent ce qu'ils décompressent (pip, cargo, gcc) et tout
-runtime extrayant des bibliothèques native là (Bun, Electron, outils d'agent).
-Les builds Nix sont couverts — le TMPDIR du daemon passe à /var/tmp. Exclusion
-par hôte avec `darkone.security.filesystem.tmpNoexec = false`.
+Le `noexec` sur /tmp bloque l'exécution *et* `dlopen` : il perturbe les installateurs et
+compilateurs exécutant ce qu'ils décompressent (pip, cargo, gcc) ainsi que tout runtime
+extrait des bibliothèques native sur place (Bun, Electron, outils d'agent). Les builds Nix
+sont couverts — le TMPDIR du daemon passe en /var/tmp. Exclusion possible par hôte avec
+`darkone.security.filesystem.tmpNoexec = false`.
+:::
+
+:::caution[R28 — basculement vers /tmp hardené au boot, pas au switch]
+Un hôte déjà configuré avec `boot.tmp.useTmpfs` porte un `tmp.mount` statique, que
+cette règle remplace par une entrée fstab : le switch l'*arrête* donc, et
+`PrivateTmp=yes` implique `RequiresMountsFor=/tmp`, donc chaque unité concernée tombe
+avec lui — `dbus-broker` compris. `switch-to-configuration` pilote systemd via D-Bus,
+il perd donc son propre transport en cours d'exécution et abandonne, à chaque fois.
+Utiliser `apply <host> boot` et redémarrer ; ce niveau nécessite un redémarrage pour
+`boot.kernelParams` de toute façon. Les hôtes n'ayant jamais utilisé `useTmpfs`
+gagnent simplement un montage, ce qui est sans danger.
 :::
 
 :::caution[R29 — /boot noauto]
-`noauto` sur /boot nécessite un remontage manuel à chaque mise à jour NixOS.
-Un wrapper `nixos-rebuild` doit assurer le montage/démontage automatique.
+Le `noauto` sur /boot nécessite un remontage manuel à chaque mise à jour NixOS.
+Un wrapper `nixos-rebuild` doit garantir le montage/démontage automatique.
 :::
 
-* **enable** `bool` Activer le durcissement ANSSI du système de fichiers (R28–R29, R50–R57).
+* **enable** `bool` Activer le renforcement ANSSI du système de fichiers (R28–R29, R50–R57).
 * **allowedSetuid** `listOf str` Liste blanche des binaires setuid/setgid tolérés (R56, R57).
-* **tmpfs** `bool` Indique si R28 gère `/tmp` en tant que tmpfs renforcé dimensionné selon
-  `boot.tmp.tmpfsSize`. Passer à `false` pour laisser `/tmp` sur le système de
-  fichiers existant — un hôte conservant plusieurs Go de brouillon persistant là
-  perd à la fois les données et la RAM autrement allouée.
-* **tmpNoexec** `bool` Indique si le `/tmp` de R28 porte `noexec`. `noexec` bloque l'exécution
-  directe *et* `dlopen`, donc casse tout runtime décompressant des bibliothèques
-  native là (Bun, Electron, outils d'agent) et tout ce qui compile puis exécute
-  dans `TMPDIR`. N'a de sens que lorsque `tmpfs` est `true`.
-* **extraMountHardening** `listOf str` Points de montage à renforcer avec `nosuid,nodev,noexec` (R28). Chaque
-  chemin listé DOIT être une partition séparée déclarée ailleurs (hardware-
-  configuration / disko) ; les options sont fusionnées dans l'entrée `fileSystems`
-  existante. Une liste explicite (plutôt qu'un drapeau global) évite de deviner
-  la disposition et ne crée jamais de montages fantômes. Ne pas lister `/home`
-  si des utilisateurs y exécutent des scripts — `noexec` les casserait.
+* **tmpfs** `bool` Indique si R28 prend en charge `/tmp` en tant que tmpfs durci dimensionné sur
+  `boot.tmp.tmpfsSize`. Régler sur `false` pour laisser `/tmp` sur le système de fichiers
+  où il se trouve déjà — un hôte conservant plusieurs Go de brouillon persistant perd à la fois
+  les données et la RAM qui iraient avec.
+* **tmpNoexec** `bool` Indique si le `/tmp` de R28 porte `noexec`. Le `noexec` bloque l'exécution
+  directe *et* `dlopen`, il perturbe donc tout runtime décompressant des bibliothèques
+  native sur place (Bun, Electron, outils d'agent) ainsi que tout ce qui compile
+  puis s'exécute dans `TMPDIR`. N'est pertinent que lorsque `tmpfs` vaut `true`.
+* **extraMountHardening** `listOf str` Points de montage à durcir avec `nosuid,nodev,noexec` (R28). Chaque chemin
+  listé DOIT être une partition séparée déclarée ailleurs (hardware-configuration / disko) ;
+  les options sont fusionnées dans l'entrée `fileSystems` existante. Une liste explicite
+  (plutôt qu'un indicateur global) évite de deviner la disposition et ne crée jamais de
+  montages fictifs. Ne pas lister `/home` si les utilisateurs y exécutent des scripts —
+  `noexec` les casserait.
 
 ```nix
 darkone.security.filesystem = {
@@ -245,59 +256,78 @@ R18 (modules signés) rend la signature de tout module externe obligatoire
 darkone.security.kernel-build.enable = false;
 ```
 
-{/* t:p f701da1539e91186f2e34cc6bed07ca1ade5b51653c7269e351a4ebbc472ea34 */}
+{/* t:p 79ce68cfa0f93382523cdb98f747993cc9bdaad26ae7a58b714b211e3c15c0e4 */}
 ### &#x1F511; darkone.security.kernel-params
 
 Configuration dynamique du noyau : paramètres de démarrage et sysctls (R8–R14). (wip)
 
 Règles applicables sans recompilation du noyau. Couvre les options mémoire (R8),
-les sysctls système (R9), la désactivation du chargement de modules (R10),
-Yama/ptrace (R11), les sysctls réseau IPv4 (R12), la désactivation de l'IPv6
-(R13), et les sysctls système de fichiers (R14).
+les sysctls système (R9), la désactivation du chargement de modules (R10), Yama/ptrace (R11),
+les sysctls réseau IPv4 (R12), la désactivation d'IPv6 (R13)
+et les sysctls du système de fichiers (R14).
 
 :::caution[Activation]
 L'option `enable` suit `darkone.system.security.enable` par défaut.
-Les règles (Rxx/Cxx) sont activées selon le niveau, la catégorie et les
-exclusions définis dans `darkone.system.security` (via `isActive`).
+Les règles (Rxx/Cxx) sont activées en fonction du niveau, de la catégorie et des exclusions
+définies dans `darkone.system.security` (via `isActive`).
 :::
 
 :::caution[R8 — SMT désactivé]
-`mds=full,nosmt` et `mitigations=auto,nosmt` désactivent l'hyperthreading,
-ce qui réduit le débit multi-thread d'environ 30%. Évaluer sur les serveurs
-de calcul avant d'activer le niveau `intermediary`.
+`l1tf=full,force`, `mds=full,nosmt` et `mitigations=auto,nosmt` désactivent
+l'hyperthreading, ce qui représente environ 30 % du débit multi-thread — un prix qu'une
+ferme de build ne peut pas toujours payer. `disableSmt = false` conserve le reste de R8.
 :::
 
-:::caution[R9 — la restriction des user namespaces est optionnelle]
+:::caution[R8 — les extras de l'allocateur remplacent le nettoyage demandé par l'ANSSI]
+`page_poison=on` a priorité sur `init_on_alloc`/`init_on_free` — le noyau
+l'indique au démarrage — R8 fournit donc une fonctionnalité de débogage là où l'ANSSI
+demande un nettoyage mémoire, et `slub_debug=FZP` profite de chaque cache slab.
+`memoryDebug = false` supprime les trois et restitue `init_on_*` ; mesuré à
+7 % d'une compilation (95 s à 88 s, ms-a2, SMT activé), donc la raison est la conformité
+plutôt que la vitesse.
+:::
+
+:::caution[R9 — la restriction des namespaces utilisateur est optionnelle]
 `kernel.unprivileged_userns_clone` est une clé Debian / linux-hardened, absente
-du mainline : l'écrire fait échouer `systemd-sysctl`. L'équivalent mainline
-(`user.max_user_namespaces = 0`) casse Flatpak, bubblewrap et Podman sans root,
-d'où `restrictUserns` — désactivé par défaut.
+du noyau principal : l'échec de l'écriture fait échouer `systemd-sysctl`. L'équivalent
+principal (`user.max_user_namespaces = 0`) casse Flatpak, bubblewrap et Podman
+sans root, d'où `restrictUserns` — désactivé par défaut.
 :::
 
 :::caution[R12 — filtrage du chemin inverse]
-Le mode strict (`rp_filter = 1`) rejette tout chemin retour asymétrique. Un
-routeur de subnet tailscale annonçant des routes avec
-`--snat-subnet-routes=false` est exactement ce cas, donc les routeurs reviennent
-en mode loose (2).
+Le mode strict (`rp_filter = 1`) rejette tout chemin de retour asymétrique. Un routeur
+de sous-réseau Tailscale annonçant des routes avec `--snat-subnet-routes=false`
+correspond exactement à ce cas, les routeurs basculent donc en mode souple (2).
 :::
 
 :::caution[R10 — Modules désactivés]
-Tout nouveau périphérique nécessitant un module non pré-chargé requiert un
-redémarrage. Mutuellement exclusif avec `nixos-rebuild switch` côté pilote.
+Tout nouvel appareil nécessitant un module non pré-chargé nécessite un redémarrage.
+Mutuellement exclusif avec `nixos-rebuild switch` côté pilote.
 :::
 
 * **enable** `bool` Activer les paramètres dynamiques ANSSI du noyau (R8–R14).
-* **restrictUserns** `bool` R9 : interdire les user namespaces privilégiés (`user.max_user_namespaces`).
+* **restrictUserns** `bool` R9 : interdire les namespaces utilisateur privilégiés (`user.max_user_namespaces`).
   Casse Flatpak, bubblewrap et Podman sans root, donc reste optionnel et
-  concerne les serveurs n'en utilisant aucun.
-* **disableIpv6** `bool` R13 : désactiver l'IPv6 entièrement. Désactivé par défaut — l'ANSSI elle-même
-  préfère durcir l'IPv6 plutôt que le supprimer, et un hôte public en a
-  généralement besoin.
+  concerne les serveurs qui n'en exécutent aucun.
+* **disableSmt** `bool` R8 : désactiver l'hyperthreading. Trois paramètres le portent ; `false` les
+  ramène chacun à sa forme préservant le SMT et laisse les quatorze autres
+  inchangés. Attention, `l1tf=full` supprime le SMT même sans `force` — il ne laisse
+  que le paramètre sysfs derrière — donc le repli est `flush`.
+* **memoryDebug** `bool` R8 : les extras de l'allocateur — `slub_debug=FZP`, `page_poison=on` et
+  `slab_nomerge=yes`. Aucun des trois ne figure dans la liste ANSSI R8, et
+  `page_poison` déplace `init_on_alloc`/`init_on_free`, qui sont pourtant :
+  le noyau le précise au démarrage et privilégie la fonctionnalité de débogage.
+  La désactivation restaure le nettoyage spécifié et récupère 7 % d'une
+  compilation (95 s à 88 s, ms-a2, SMT activé).
+* **disableIpv6** `bool` R13 : désactiver IPv6 entièrement. Désactivé par défaut — l'ANSSI elle-même
+  préfère durcir IPv6 plutôt que le supprimer, et un hôte public en a généralement besoin.
 
 ```nix
 darkone.security.kernel-params = {
   enable = false;
   restrictUserns = false;
+  disableSmt = true;
+  memoryDebug = true;
   disableIpv6 = false;
 };
 ```
@@ -362,55 +392,61 @@ définis dans `darkone.system.security` (via `isActive`).
 darkone.security.mta.enable = false;
 ```
 
-{/* t:p eb846a06691f8925570fb39da2f9bce2c788354b7de3c150feafca7b46c55339 */}
+{/* t:p b4c4c2444b363b844bed44c0db75bbcef1a61dbe389b3d0ede6f08de4ffee648 */}
 ### &#x1F511; darkone.security.network
 
 Services réseau — isolation et supervision (R78–R80). (wip)
 
-Couvre l'isolation des services réseau (R78 : catégorie serveur), le
-durcissement et la surveillance des services exposés (R79 : fail2ban,
+Couvre l'isolation des services réseau (R78 : catégorie serveur),
+le durcissement et la surveillance des services exposés (R79 : fail2ban,
 en-têtes HTTP, TLS ANSSI) et la réduction de la surface réseau (R80).
 
 :::caution[Activation]
 L'option `enable` suit `darkone.system.security.enable` par défaut.
-Les règles (Rxx/Cxx) sont activées selon le niveau, la catégorie et les
-exclusions définis dans `darkone.system.security` (via `isActive`).
+Les règles (Rxx/Cxx) sont activées en fonction du niveau, de la catégorie et des exclusions
+définies dans `darkone.system.security` (via `isActive`).
 :::
 
 :::caution[R79 — CSP strict]
 `Content-Security-Policy: default-src 'self'` casse les outils sans nonces
-(tableaux de bord avec CDN, widgets tiers). Le préchargement HSTS est
-irréversible — ne le définir que sur un domaine entièrement contrôlé.
+(tableaux de bord avec CDN, widgets tiers). Le préchargement HSTS est irréversible —
+ne le configurer que sur un domaine entièrement contrôlé.
 :::
 
-:::caution[R79 — Chaque jail nécessite un filtre]
-fail2ban utilise ici le backend systemd : un jail nécessite à la fois une
-définition `filter.d` et un `journalmatch`, sinon il interrompt tout le
-démarrage du daemon — perdant le jail `sshd` fonctionnel. `exposedServices`
-est donc soumis à une assertion sur `filters` ; caddy, matrix et idm doivent
-toujours avoir les leurs écrits.
+:::caution[R79 — les en-têtes nginx sont optionnels par vhost]
+`add_header` remplace le jeu parent au lieu de s'y ajouter, donc un bloc
+global est abandonné par le premier vhost ou location déclarant un en-tête
+propre — et gixy fait échouer le build à cause de l'occultation. Le jeu est
+fourni sous `/etc/nginx/dnf-security-headers.conf`, à `include` depuis le
+`extraConfig` propre au vhost. Seules les directives TLS restent globales.
 :::
 
-:::caution[R80 — Filtrage des auditeurs]
-Certains services (KDE Connect, mDNS) écoutent par défaut sur toutes les
-interfaces. Les déclarer dans `network.publicListeners` ou les reconfigurer.
+:::caution[R79 — Chaque prison nécessite un filtre]
+fail2ban fonctionne ici avec le backend systemd : une prison nécessite à la fois une
+définition `filter.d` et un `journalmatch`, sinon elle abandonne l'ensemble du
+daemon au démarrage — perdant la prison `sshd` fonctionnelle. `exposedServices`
+est donc soumis à une assertion vérifiant `filters` ; caddy, matrix et idm
+doivent encore avoir les leurs rédigés.
 :::
 
-* **enable** `bool` Activer le durcissement ANSSI réseau (R78–R80).
-* **exposedServices** `listOf str` Services publics à jailer avec fail2ban (R79). Chaque entrée DOIT
-  résoudre vers un filtre — fourni par fail2ban ou déclaré dans `filters` —
+:::caution[R80 — Filtrage des écouteurs]
+Certains services (KDE Connect, mDNS) écoutent par défaut sur toutes les interfaces.
+Les déclarer dans `network.publicListeners` ou les reconfigurer.
+:::
+
+* **enable** `bool` Activer le durcissement réseau ANSSI (R78–R80).
+* **exposedServices** `listOf str` Services publics à mettre en prison avec fail2ban (R79). Chaque entrée DOIT
+  résoudre vers un filtre — celui fourni par fail2ban, ou celui déclaré dans `filters` —
   sinon l'assertion refuse le build.
-* **filters** `attrs` Filtres utilisables dans `exposedServices`, en complément de ceux
-  fournis par fail2ban. Caddy, Synapse et Kanidm nécessitent les leurs
-  écrits contre de vraies sorties de journal — les déclarer ici une fois
-  les motifs confirmés.
-  * **journalmatch** `str` Motif de correspondance journal pour le jail (fail2ban utilise le backend
-    systemd).
+* **filters** `attrs` Filtres utilisables dans `exposedServices`, en plus de ceux fournis par fail2ban.
+  Caddy, Synapse et Kanidm nécessitent que les leurs soient rédigés contre de
+  vraies sorties journal — les déclarer ici une fois les motifs confirmés.
+  * **journalmatch** `str` Correspondance journal pour la prison (fail2ban fonctionne avec le backend systemd).
   * **failregex** `str` Motif d'échec, écrit dans `filter.d/&lt;name&gt;.conf`. Vide lorsque
-    fail2ban fournit déjà le filtre et qu'il ne manque que la correspondance.
+    fourni par fail2ban et que seule la correspondance manque.
 * **publicListeners** `listOf str` Services autorisés à écouter sur 0.0.0.0 / :: (R80).
 * **httpsHeaders** `bool` Ajoute les en-têtes de sécurité HTTP ANSSI dans Nginx/Caddy (R79).
-* **tlsCiphers** `listOf str` Suite de chiffrement TLS ANSSI pour Nginx (R79).
+* **tlsCiphers** `listOf str` Suite de cipher TLS ANSSI pour Nginx (R79).
 
 ```nix
 darkone.security.network = {
