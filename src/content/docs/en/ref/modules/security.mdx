@@ -13,7 +13,7 @@ sidebar:
 **A security module** hardens the system, its programs and functionalities.
 :::
 
-{/* t:p 4b8e12ea5dbca03b34d8a51f1366c63297efa208f9e47b08e6efb6f03ce2fa1a */}
+{/* t:p f37aad27931418729a28f6b24ca1265444cd50f92920621f405e53d8c288355a */}
 ### &#x1F511; darkone.security.complement
 
 Cross-cutting complementary measures — Annex A (C1–C12). (wip)
@@ -73,8 +73,12 @@ darkone.security.complement = {
   ntpServers = [ ];
   useNts = true;
   sshBanner = ''
-        *** Access restricted to authorized personnel ***
-        All connections are logged and may be subject to prosecution.
+        ╔═════════════════════════════════════════════════════════╗
+        ║                    DNF NETWORK NODE                     ║
+        ║             Restricted and monitored access.            ║
+        ║ Unauthorized access may result in criminal prosecution  ║
+        ║ under Articles 323-1 to 323-8 of the French Penal Code. ║
+        ╚═════════════════════════════════════════════════════════╝
       '';
   cronAllowedUsers = [ ];
   atAllowedUsers = [ ];

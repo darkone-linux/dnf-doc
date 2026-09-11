@@ -97,42 +97,43 @@ Like `monitoring-node:<zone>`, these features accept an owner zone :
 `alert-critical:main` makes a node (typically the HCS) monitored by the
 `main` zone.
 
-{/* t:p 24b8e85f3955ce1e3b0b7552705f11456f12a56dc5b77c6da641935797d41fd5 */}
-## What is Monitored
+{/* t:p 873f83cc958c4fe060ce67293d7f6c076d80de1569c2109a5239bc2336217664 */}
+## What is monitored
 
 Rules are derived from what each node declares; nothing to list manually.
 
 | Family | Trigger |
 |---|---|
 | Unreachable node | `node-exporter` silent (`NodeDown`) |
-| Active service down | expected systemd unit not `active` (`ServiceDown`) |
-| Failed unit | a systemd unit `failed` (`SystemdUnitFailed`) |
+| Active but failing service | expected systemd unit not `active` (`ServiceDown`) |
+| Failed unit | a systemd unit is `failed` (`SystemdUnitFailed`) |
 | Resources | disk, RAM, load, inodes, OOM (overridable thresholds) |
 | Network | gateway, tailnet (headscale) or DNS unreachable (blackbox probes) |
 | Remote site down | gateway of another zone unreachable (`PeerGatewayDown`) |
-| Tailnet self-healing | Tailscale client stuck or watchdog flapping (`TailscaleUnhealthy`, `TailscaleFlapping`) |
+| Tailnet self-healing | Tailscale client disconnected or watchdog looping (`TailscaleUnhealthy`, `TailscaleFlapping`) |
 
 <Aside type="caution" title="A zone cannot report its own death">
-A zone's Prometheus runs **on its gateway** and only scrapes nodes
-within that zone. If the gateway goes down, the observer goes down with it: no
-alert is sent, and the site becomes invisible without anyone knowing.
+A zone's Prometheus instance runs **on its gateway** and only scrapes nodes
+within that zone. When the gateway goes down, the observer goes down with it&nbsp;:
+no alerts fire, and the site becomes invisible without anything reporting it.
 
 Each zone therefore probes the gateways of **other** zones and raises
-`PeerGatewayDown` (critical, after 5 min) when one of them stops responding.
-With three zones, an outage is seen by two witnesses: losing an
-observer never masks the incident. The alert carries `reach="wan"`, so a
+`PeerGatewayDown` (critical, after 5&nbsp;min) when one of them stops
+responding. With three zones, an outage is seen by two witnesses&nbsp;: losing one
+observer never hides the incident. The alert carries `reach="wan"`, so a
 **local** Internet outage triggers only `ZoneInternetDown`, without a barrage of
-false alerts on peers.
+false alerts on peers. It also carries `host` (the targeted gateway)&nbsp;: a
+silence route can thus target a single site.
 </Aside>
 
 <Aside type="note" title="One alert per partition, not per mount">
-A single partition is often mounted multiple times: btrfs
-subvolumes (`/`, `/nix`, `/home`, `/.swapfile`), `bind` mounts. Since metrics are
-emitted **per mount**, a single full disk used to generate as many
+The same partition is often mounted multiple times&nbsp;: btrfs subvolumes
+(`/`, `/nix`, `/home`, `/.swapfile`), `bind` mounts. Since metrics are
+emitted **per mount**, a single full disk previously produced as many
 alerts as there were mounts.
 
-Disk rules therefore aggregate on the device: **one alert per
-partition**. The message names the device then lists its mounts:
+Disk rules therefore aggregate on the device&nbsp;: **one alert per
+partition**. The message names the device and then lists its mounts&nbsp;:
 
 ```
 /dev/nvme0n1p3 below 15% free on 10.1.2.1:9100. Mounts: /, /.swapfile, /nix.
@@ -140,11 +141,11 @@ partition**. The message names the device then lists its mounts:
 </Aside>
 
 <Aside type="note" title="Network mounts and read-only mounts">
-Disk rules ignore **network** mounts (NFS, CIFS, etc.): they
-report the server's space, which already alerts for its own disk. Likewise,
-an intentionally **read-only** mount (exported share `ro`, optical
-media) does not trigger `FilesystemReadOnly`: the rule targets
-filesystems remounted read-only by the kernel after I/O errors.
+Disk rules ignore **network** mounts (NFS, CIFS…)&nbsp;: they report the
+server's space, which already alerts on its own disk. Likewise, a
+deliberately **read-only** mount (exported share `ro`, optical media)
+does not trigger `FilesystemReadOnly`&nbsp;: the rule targets filesystems
+that the kernel remounted read-only after I/O errors.
 </Aside>
 
 {/* t:p d4e3ff350edb205693bfda166ccbb65803e3c6365b08e39ffdf1110cb2ecd97d */}

@@ -13,21 +13,21 @@ sidebar:
 **Un module de sécurité** renforce le système, ses programmes et ses fonctionnalités.
 :::
 
-{/* t:p 4b8e12ea5dbca03b34d8a51f1366c63297efa208f9e47b08e6efb6f03ce2fa1a */}
+{/* t:p f37aad27931418729a28f6b24ca1265444cd50f92920621f405e53d8c288355a */}
 ### &#x1F511; darkone.security.complement
 
-Mesures complémentaires transversales — Annexe A (C1–C12). (wip)
+Mesures complémentaires transversales — Annexe A (C1 à C12). (wip)
 
-Ces mesures ne portent pas de numéro ANSSI mais sont essentielles à l'esprit du guide.
+Ces mesures n'ont pas de numéro ANSSI mais sont essentielles à l'esprit du guide.
 Couvre les correctifs linux-hardened (C1), Lockdown LSM (C2), USBGuard (C3),
 nftables deny-by-default (C4), SSH renforcé (C5), LUKS2 (C6), NTP/NTS (C7),
-DNS sécurisé (C8), dumps core désactivés (C9), PAM anti force brute (C10),
+DNS sécurisé (C8), core dumps désactivés (C9), PAM anti force brute (C10),
 bannières légales (C11), et restriction cron/at (C12).
 
 :::caution[Activation]
 L'option `enable` suit `darkone.system.security.enable` par défaut.
-Les règles (Rxx/Cxx) sont activées selon le niveau, la catégorie et les
-exclusions définis dans `darkone.system.security` (via `isActive`).
+Les règles (Rxx/Cxx) sont activées en fonction du niveau, de la catégorie et des exclusions
+définis dans `darkone.system.security` (via `isActive`).
 :::
 
 :::note[Niveau Lockdown LSM (C2)]
@@ -37,23 +37,23 @@ exclusions définis dans `darkone.system.security` (via `isActive`).
 :::
 
 :::caution[C2 — Lockdown LSM]
-`lockdown=confidentiality` interdit kexec, les écritures sur /dev/mem, MSR,
-l'hibernation. Casse `dmidecode` sur certaines zones, `flashrom`, `i2c-tools`.
+`lockdown=confidentiality` interdit kexec, les écritures dans /dev/mem, MSR, l'hibernation.
+Casse `dmidecode` sur certaines zones, `flashrom`, `i2c-tools`.
 :::
 
-:::caution[C4 — Filtrage de sortie]
-La politique deny-by-default de sortie casse les outils qui accèdent aux CDN
-(curl, téléchargements noyau). Nécessaire : un proxy HTTP(S) sortant contrôlé.
+:::caution[C4 — Filtrage sortant]
+La politique deny-by-default en sortie casse les outils accédant aux CDNs (curl,
+téléchargements noyau). Requis : un proxy HTTP(S) sortant contrôlé.
 :::
 
 :::caution[C5 — SSH renforcé]
-Les tunnels, le transfert d'agent et X11 sont désactivés. `ssh -J` l'est aussi :
-ProxyJump ouvre un canal `direct-tcpip`, ce que `AllowTcpForwarding` refuse
-justement — l'accès administrateur se fait directement via la tailnet, jamais en relais.
-Ce module écrase la configuration SSH de `core.nix`.
+Les tunnels, le forwarding d'agent et X11 sont désactivés. `ssh -J` aussi : ProxyJump
+ouvre un canal `direct-tcpip`, exactement ce que `AllowTcpForwarding`
+refuse — l'accès admin est direct via la tailnet, jamais en rebond. Ce
+module écrase la config SSH de `core.nix`.
 :::
 
-* **enable** `bool` Activer les mesures complémentaires ANSSI (C1–C12).
+* **enable** `bool` Activer les mesures complémentaires ANSSI (C1 à C12).
 * **lockdownLevel** `enum [ "none" "integrity" "confidentiality" ]` Niveau Lockdown LSM (C2)
 * **lsmStack** `listOf str` Ordre de la pile LSM (C2, R11, R20). Modifie boot.kernelParams lsm=...
 * **ntpServers** `listOf str` Serveurs NTP/NTS (C7).
@@ -61,9 +61,9 @@ Ce module écrase la configuration SSH de `core.nix`.
 * **sshBanner** `str` Bannière SSH affichée avant l'authentification (C11).
 * **cronAllowedUsers** `listOf str` Utilisateurs autorisés à planifier des tâches cron (C12).
 * **atAllowedUsers** `listOf str` Utilisateurs autorisés à planifier des tâches at (C12). Reflète cronAllowedUsers par défaut.
-* **egressAllowList** `listOf str` Adresses IPv4/IPv6 ou CIDRs autorisées en sortie sous la politique
-  renforcée deny-by-default C4. Liste vide conserve la politique mais seul le
-  trafic loopback et établi/lié passe (proxy requis).
+* **egressAllowlist** `listOf str` Adresses IPv4/IPv6 ou CIDRs autorisées en sortie sous la politique renforcée
+  deny-by-default de C4. Liste vide conserve la politique mais seul
+  le trafic loopback et établi/lié passe (proxy requis).
 
 ```nix
 darkone.security.complement = {
@@ -73,8 +73,12 @@ darkone.security.complement = {
   ntpServers = [ ];
   useNts = true;
   sshBanner = ''
-        *** Accès réservé au personnel autorisé ***
-        Toutes les connexions sont enregistrées et peuvent faire l'objet de poursuites.
+        ╔═════════════════════════════════════════════════════════╗
+        ║                    DNF NETWORK NODE                     ║
+        ║             Restricted and monitored access.            ║
+        ║ Unauthorized access may result in criminal prosecution  ║
+        ║ under Articles 323-1 to 323-8 of the French Penal Code. ║
+        ╚═════════════════════════════════════════════════════════╝
       '';
   cronAllowedUsers = [ ];
   atAllowedUsers = [ ];

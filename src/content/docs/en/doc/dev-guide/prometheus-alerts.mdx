@@ -52,8 +52,8 @@ Exposed via `dnfLib` (see `dnf/lib/default.nix`):
 | `mkAlertRuleGroups` | Shortcut: nodes + resources + restic + SMART + tailscale |
 | `mkSilenceRoutes` | Alertmanager routes to the `null` receiver (known, accepted alerts) |
 
-{/* t:p 4c2f2ef7dfe1d6ac6c84d3d930d88a86ade6c6c531e3df5920bb09041ec2a3b1 */}
-### The `host` label, or why alerts are named
+{/* t:p 0b104f2b37912ed7c139519842cb7bd9c665b7ba1765abfb5e3340cbfc55d04e */}
+### The `host` label, or why alerts are named this way
 
 Every scrape target carries a `host` label whose value is the hostname, set by
 `mkHostTargets` in `prometheus.nix` (one `static_config` per host rather than a
@@ -63,41 +63,46 @@ single target list). Two effects:
   `<ip>:<port>` instance;
 - a silence route can target a single machine.
 
-Setting it at scrape propagates it free of charge to all alerts originating from
-these jobs, including the generic resource rules, which know nothing about
+Setting it at scrape time propagates it for free to all alerts originating from
+these jobs, including the generic resource rules, which are unaware of the
 topology at evaluation time.
 
+Blackbox probes have no `host` (the target is an IP address).
+`PeerGatewayDown` therefore sets it in the rule, with the name of the targeted
+gateway. Without it, the rules for a zone would differ only in their `expr` →
+`promtool` would flag them as duplicates.
+
 :::caution[Aggregations erase labels]
-A `by (...)` clause drops any label that is not grouped. `ResticBackupStale`
-(`max by (instance, job, host)`), `SynapseHighErrorRate`
-(`sum by (instance, host)`) and the FS rules (`byDevice`) therefore cite `host`
-explicitly. Omitting it in a new aggregated rule causes the notification to fall
-back to the raw instance.
+A `by (...)` clause drops every label that is not grouped.
+`ResticBackupStale` (`max by (instance, job, host)`),
+`SynapseHighErrorRate` (`sum by (instance, host)`) and the FS rules
+(`byDevice`) therefore list `host` explicitly. Omitting it in a new aggregated
+rule causes the notification to fall back to the raw instance.
 :::
 
 :::note[FS rules: one alert per partition]
 `node_filesystem_*` is emitted **per mount**. A partition mounted several times
-(btrfs subvolumes, `bind` mounts) therefore triggered each FS rule once per
-mount, for a single full disk.
+(btrfs subvolumes, `bind` mounts) therefore triggered each FS rule as many times
+as it had mounts, for a single full disk.
 
 `mkResourceRuleGroups` aggregates on `byDevice`
-(`instance, job, host, device, fstype`)&nbsp;: `min` for space and inodes, `max`
-for `FilesystemReadOnly`. Both members of the `and` in `DiskWillFillSoon` are
+(`instance, job, host, device, fstype`): `min` for space and inodes, `max` for
+`FilesystemReadOnly`. Both members of the `and` in `DiskWillFillSoon` are
 aggregated — a raw member still carries `mountpoint` and no longer matches
 anything on the other side.
 
 `mountpoint` disappears with aggregation. PromQL cannot concatenate label
-values&nbsp;: the mount list is therefore resolved by the `query` function of
-the Go template engine that Prometheus applies to annotations (`deviceMounts`).
-Cost&nbsp;: one instant query per active alert and per evaluation, none as long
-as the rule stays silent.
+values: the mount list is therefore resolved by the Go template engine's `query`
+function that Prometheus applies to annotations (`deviceMounts`). Cost: one
+instant query per active alert and per evaluation, none as long as the rule
+remains silent.
 :::
 
 :::note[The bot does not display `summary`]
-The Matrix bot renders the title then the `description` annotation, and only
-falls back to `summary` when `description` is absent&nbsp;: all DNF rules define
-one, so `summary` never reaches it. Any information to include in the
-notification must go into `description`.
+The Matrix bot renders the title and then the `description` annotation, and only
+falls back to `summary` when `description` is absent: all DNF rules define one,
+so `summary` never reaches it. Any information that should appear in the
+notification must go in `description`.
 :::
 
 {/* t:p 7c13d3bbffc588d69c9063078871bec5dde8fca22801d89ebdad825c59ee2d66 */}
