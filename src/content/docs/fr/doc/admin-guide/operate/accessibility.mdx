@@ -11,10 +11,12 @@ import { Steps } from '@astrojs/starlight/components';
 {/* t:main */}
 {/* t:h ab21fc5e1af366b7e3f79bd928157c81dd1860790dcffd6160283197cf31bab3 */}
 
-{/* t:p dcc21f57a02e5b1e3e9423dcd27db15a8b4cc60632ce6db2c241351d2db3f6d9 */}
-Les profils `umi` génèrent un poste de travail en machine utilisable **sans
-clavier ni souris**, pilotée au regard, à la voix ou au toucher.
-Il s'adresse aux personnes en situation de handicap moteur.
+{/* t:p 98f694bb2a1757f98133ba8b5815f768b3eef92d19dc0968ba007a4d986d194b */}
+Les profils `umi` (*Unified Multimodal Input*, saisie multimodale unifiée)
+génèrent un poste de travail utilisable **sans clavier ni souris**. Il se
+pilote par plusieurs moyens de saisie coordonnés entre eux&nbsp;: toucher, voix,
+regard… L'objectif est l'accessibilité, notamment pour les personnes en
+situation de handicap moteur.
 
 Ils se composent de deux parties&nbsp;: un
 [profil d'hôte](/fr/doc/admin-guide/understand/host-profiles/) `umi` qui
@@ -22,34 +24,53 @@ déclare le matériel et la session, et un
 [profil d'utilisateur](/fr/doc/admin-guide/understand/user-profiles/) `umi`
 qui fixe l'environnement de l'utilisateur.
 
-{/* t:p 9852bb25719698ffaaddd5016c4dfb05d813b67d7bae1bb233e0ec6b8d5da960 */}
+{/* t:p 1a9132b4a595976f48374c14f19cc1630a5dd0142d8f1dd51cef73439b7cc3c9 */}
 ## Le principe
 
-Les périphériques courants (clavier, souris) peuvent être remplacés par la voix,
-le regard ou le tactile. Des outils d'accessibilité peuvent être paramétrés en
-fonction des caractéristiques de l'utilisateur.
+Aucun moyen de saisie ne remplace seul le clavier et la souris&nbsp;: chacun a
+ses limites (précision du regard, fatigue de la voix, amplitude du geste). Le
+poste UMI les combine pour qu'ils se complètent, et se règle selon les capacités
+de l'utilisateur.
+
+| Moyen de saisie | Outil | Usage |
+|---|---|---|
+| Toucher | Écran tactile, clavier visuel Onboard | Désigner, cliquer, saisir du texte |
+| Voix | Talon | Commandes vocales |
+| Regard | Tobii Eye Tracker 5, piloté par Talon | Déplacer le pointeur |
+
+Exemple de coordination&nbsp;: le regard place le pointeur, la voix ou le clic
+par temporisation valide, le clavier visuel saisit le texte.
 
 ```d2
 style.fill: transparent
 direction: down
 
 user: Utilisateur { shape: person }
+touch: Écran tactile
+mic: Micro
 tracker: Tobii Eye Tracker 5
+onboard: Clavier visuel Onboard
 talon: Talon
 uinput: /dev/uinput
 session: Session Cinnamon (X11)
-onboard: Clavier visuel Onboard
 
+user -> touch: Toucher
+user -> mic: Voix
 user -> tracker: Regard
-user -> talon: Voix
+touch -> onboard
+touch -> session
+mic -> talon
 tracker -> talon
 talon -> uinput
 uinput -> session
 onboard -> session
 ```
 
-{/* t:p 212d7a2e3f7ff6b66cc62a87923573e27aacfe7f8e8aec6c4dc477350a9852d1 */}
+{/* t:p 22136799006bcc7d90a56897a9bc38a35f38da651ff7684cab675cf7e273b849 */}
 ## Le matériel
+
+Chaque périphérique sert un moyen de saisie&nbsp;: n'équiper le poste que de
+ceux adaptés à l'utilisateur.
 
 | Élément | Exigence |
 |---|---|
@@ -65,7 +86,7 @@ Windows, avec l'application Tobii Experience. Sans cette étape, le traqueur
 reste muet sous Linux.
 :::
 
-{/* t:p f248b8b380dadbb88d4853b4033272b60f0ec98a0505a09d13f87c2c4586ee71 */}
+{/* t:p 208a3aca634ff3f618adb98174a3c91ee5c87880d7a32ba3a103d190f0d0184b */}
 ## Mettre en place un poste
 
 <Steps>
@@ -97,7 +118,7 @@ reste muet sous Linux.
    machine, si l'utilisateur ne peut pas utiliser de clavier pour s'identifier&nbsp;:
 
    ```nix
-   # usr/machines/poste-regard/default.nix
+   # usr/machines/umi-desktop/default.nix
    darkone.host.umi.autoLoginUser = "alice";
    ```
 
@@ -180,7 +201,7 @@ clic par claquement de langue. Ils se déclarent de façon reproductible&nbsp;:
 ```
 :::
 
-{/* t:p 1ac1f13c7b21ac7b5f667ab845ea7af7ce1cc9540fbc39ff37ea09aba445349e */}
+{/* t:p 5044490a8abeb5837bee3f39342be30b9e5ecdfdb568bfbb2cebd68ad5353c7f */}
 ## Ce que le profil change
 
 Le poste est volontairement dépouillé de tout ce qui suppose un clavier ou une
@@ -192,7 +213,7 @@ souris.
 | Ouverture de session automatique | Aucun mot de passe saisissable |
 | Verrouillage et veille désactivés | Un écran verrouillé est un cul-de-sac |
 | Trousseau de clés sans mot de passe | Évite une invite impossible à satisfaire (hôte non chiffré uniquement) |
-| Curseur et texte agrandis | Précision du regard limitée à quelques dizaines de pixels |
+| Curseur et texte agrandis | Précision limitée du regard (quelques dizaines de pixels) et du doigt |
 | Clavier visuel ancré en bas | Toujours disponible, grandes cibles, prédiction de mots |
 
 :::danger[Le poste n'est pas protégé au démarrage]

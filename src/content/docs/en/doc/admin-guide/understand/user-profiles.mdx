@@ -45,15 +45,15 @@ advanced -> student
 admin -> nixadmin
 ```
 
-{/* t:p e3513dcb87ab9e7192bba8871559078ecd45b02a919644d193bba5f860aa8cd0 */}
-## Profiles
+{/* t:p 9541bd4a9788a4ff38b843f98cd81df90bfc2cdc5b22807aebe6e921b891d286 */}
+## The profiles
 
 | Profile | For whom | Inherits from |
 |---|---|---|
-| `minimal` | Base for every profile | |
+| `minimal` | Base of every profile | |
 | `normal` | Standard user (desktop) | `minimal` |
-| `advanced` | Developers, IT professionals | `normal` |
-| `umi` | User driven by gaze | `normal` |
+| `advanced` | Developers, computer scientists | `normal` |
+| `umi` | User with multimodal input (touch, voice, gaze) | `normal` |
 | `admin` | Network administrator | `advanced` |
 | `nix-admin` | Fleet administrator (Nix tools) | `admin` |
 | `student` | Student | `advanced` |
@@ -62,14 +62,14 @@ admin -> nixadmin
 | `child` | Child (technical icons hidden) | `minimal` |
 | `baby` | Very young child | `minimal` |
 
-:::tip[The `umi` profile goes hand in hand]
-It only makes sense on a host running the `umi` profile, which provides the
-eye tracker and the X11 session. See
+:::tip[The `umi` profile comes as a pair]
+It only makes sense on a host in `umi` profile, which provides the X11 session
+and support for input devices (eye tracker, event injection). See
 [Accessibility](/en/doc/admin-guide/operate/accessibility/).
 :::
 
 :::tip[User side]
-A usage-oriented presentation can be found in the
+A usage-oriented overview is available in the
 [user guide](/en/doc/user-guide/understand/profiles/).
 :::
 

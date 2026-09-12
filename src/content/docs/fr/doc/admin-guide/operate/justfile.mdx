@@ -34,17 +34,18 @@ Les commandes marquées d'une ⭐ sont les plus utiles au quotidien.
 
 ---
 
-{/* t:p 3b2b6d153c2c2363ceb289a51bb815f4c315ece7626f9562e55532ed0f4f5cc1 */}
-## Choisir son Justfile
+{/* t:p 127c8d9ceee17728f5cabf8a765dbe3b5ce119e7e89833526db227027fff9565 */}
+## Commandes disponibles
 
 Les recettes vivent dans `dnf/just/`. Le `Justfile` du projet importe **un**
-fichier d'amorçage, qui détermine les commandes disponibles.
+fichier d'amorçage, qui détermine les commandes disponibles en fonction du
+contexte.
 
 | Contexte | Ligne du `Justfile` | Commandes |
 |---|---|---|
 | Framework | `import 'just/dnf.just'` | 💠 🔆 |
 | Projet consommateur | `import? 'dnf/just/project.just'` | 💠 ✳️ |
-| Co-développement | `import 'dnf/just/codev.just'` | 💠 ✳️ 🔗 et tests 🔆 |
+| Co-développement | `import 'dnf/just/codev.just'` | 💠 ✳️ 🔗 |
 
 Dans un projet consommateur, `dnf/` est le lien vers le store Nix posé par
 `nix run .#init`. Le `?` de `import?` laisse `just` démarrer tant que ce lien

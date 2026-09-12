@@ -11,66 +11,88 @@ import { Steps } from '@astrojs/starlight/components';
 {/* t:translated-from fr */}
 {/* t:h ab21fc5e1af366b7e3f79bd928157c81dd1860790dcffd6160283197cf31bab3 */}
 
-{/* t:p dcc21f57a02e5b1e3e9423dcd27db15a8b4cc60632ce6db2c241351d2db3f6d9 */}
-The `umi` profiles generate a workstation usable **without a keyboard or
-mouse**, controlled by gaze, voice or touch.
-It is intended for people with motor disabilities.
+{/* t:p 98f694bb2a1757f98133ba8b5815f768b3eef92d19dc0968ba007a4d986d194b */}
+The `umi` profiles (*Unified Multimodal Input*, unified multimodal input)
+produce a workstation usable **without keyboard or mouse**. It is
+driven through several input methods coordinated with each other&nbsp;: touch, voice,
+gaze… The goal is accessibility, especially for people
+with motor disabilities.
 
-They consist of two parts: an `umi`
-[host profile](/en/doc/admin-guide/understand/host-profiles/) that
-declares the hardware and the session, and a `umi`
-[user profile](/en/doc/admin-guide/understand/user-profiles/)
-that sets up the user's environment.
+They consist of two parts&nbsp;: a
+[host profile](/en/doc/admin-guide/understand/host-profiles/) `umi` that
+declares the hardware and the session, and a
+[user profile](/en/doc/admin-guide/understand/user-profiles/) `umi`
+that sets the user's environment.
 
-{/* t:p 9852bb25719698ffaaddd5016c4dfb05d813b67d7bae1bb233e0ec6b8d5da960 */}
+{/* t:p 1a9132b4a595976f48374c14f19cc1630a5dd0142d8f1dd51cef73439b7cc3c9 */}
 ## The principle
 
-Common peripherals (keyboard, mouse) can be replaced by voice, gaze or touch.
-Accessibility tools can be configured according to the user's characteristics.
+No single input method replaces keyboard and mouse on its own: each has its
+limits (gaze precision, voice fatigue, gesture range). The UMI workstation
+combines them so they complement each other, and adjusts to the user's
+abilities.
+
+| Input method | Tool | Usage |
+|---|---|---|
+| Touch | Touchscreen, Onboard on-screen keyboard | Point, click, enter text |
+| Voice | Talon | Voice commands |
+| Gaze | Tobii Eye Tracker 5, driven by Talon | Move the pointer |
+
+Coordination example: gaze places the pointer, voice or dwell-click confirms,
+on-screen keyboard enters text.
 
 ```d2
 style.fill: transparent
 direction: down
 
-user: Utilisateur { shape: person }
+user: User { shape: person }
+touch: Touchscreen
+mic: Microphone
 tracker: Tobii Eye Tracker 5
+onboard: Onboard on-screen keyboard
 talon: Talon
 uinput: /dev/uinput
-session: Session Cinnamon (X11)
-onboard: Clavier visuel Onboard
+session: Cinnamon Session (X11)
 
-user -> tracker: Regard
-user -> talon: Voix
+user -> touch: Touch
+user -> mic: Voice
+user -> tracker: Gaze
+touch -> onboard
+touch -> session
+mic -> talon
 tracker -> talon
 talon -> uinput
 uinput -> session
 onboard -> session
 ```
 
-{/* t:p 212d7a2e3f7ff6b66cc62a87923573e27aacfe7f8e8aec6c4dc477350a9852d1 */}
-## The hardware
+{/* t:p 22136799006bcc7d90a56897a9bc38a35f38da651ff7684cab675cf7e273b849 */}
+## Hardware
+
+Each device serves one input method&nbsp;: only equip the workstation with
+those suited to the user.
 
 | Item | Requirement |
 |---|---|
 | Eye tracker | Tobii Eye Tracker 5 (USB, manufacturer ID `2104`) |
-| Architecture | `x86_64-linux` only (Talon does not provide another binary) |
+| Architecture | `x86_64-linux` only (Talon provides no other binary) |
 | Microphone | Needed for voice commands |
-| Speakers | Sound feedback for visual keyboard keystrokes |
+| Speakers | Audio feedback for visual keyboard keystrokes |
 | Screen | A good touchscreen for controlling the desktop and applications |
 
 :::caution[First boot under Windows]
 The Tobii 5 firmware must be initialized **once** on a Windows
-machine, with the Tobii Experience app. Without this step, the tracker
+machine, using the Tobii Experience app. Without this step, the tracker
 stays silent under Linux.
 :::
 
-{/* t:p f248b8b380dadbb88d4853b4033272b60f0ec98a0505a09d13f87c2c4586ee71 */}
+{/* t:p 208a3aca634ff3f618adb98174a3c91ee5c87880d7a32ba3a103d190f0d0184b */}
 ## Setting up a workstation
 
 <Steps>
 
 1. **Declare the host and its user** in `etc/config.yaml`, both with
-   the `umi` profile:
+   the `umi` profile&nbsp;:
 
    ```yaml
    # etc/config.yaml
@@ -92,15 +114,15 @@ stays silent under Linux.
    The user profile adds the account to the `input` and `uinput` groups,
    without which Talon cannot inject events.
 
-2. **Enable automatic login** in the machine configuration,
-   if the user cannot use a keyboard to identify themselves:
+2. **Enable automatic login** in the machine's
+   configuration, if the user cannot use a keyboard to sign in&nbsp;:
 
    ```nix
-   # usr/machines/poste-regard/default.nix
+   # usr/machines/umi-desktop/default.nix
    darkone.host.umi.autoLoginUser = "alice";
    ```
 
-3. **Generate and deploy**:
+3. **Generate and deploy**&nbsp;:
 
    ```sh
    just generate
@@ -111,16 +133,16 @@ stays silent under Linux.
 
    :::caution[Eye tracker: calibrate on first launch]
    Unplug then replug the tracker (the udev rules only apply at
-   plug-in), relaunch Talon, then run the calibration from its menu.
+   plug-in), restart Talon, then run calibration from its menu.
    :::
 
 </Steps>
 
 :::tip[Multiple users on the same machine]
-Only the account listed in `autoLoginUser` opens its session on its own. The
-other UMI accounts declare themselves in `gazeUsers` to inherit
-the Cinnamon session. Regular accounts keep their usual GNOME Wayland
-session.
+Only the account listed in `autoLoginUser` opens its session by itself. The
+other UMI accounts are declared in `gazeUsers` to inherit
+the Cinnamon session. Regular accounts keep their usual GNOME
+Wayland session.
 :::
 
 {/* t:p 0edad830c1621af0cd9b10d4be0ca43ea35fb1e4c03de2c43d580093037abfb2 */}
@@ -179,42 +201,43 @@ click by tongue click. They are declared reproducibly:
 ```
 :::
 
-{/* t:p 1ac1f13c7b21ac7b5f667ab845ea7af7ce1cc9540fbc39ff37ea09aba445349e */}
+{/* t:p 5044490a8abeb5837bee3f39342be30b9e5ecdfdb568bfbb2cebd68ad5353c7f */}
 ## What the profile changes
 
-The workstation is deliberately stripped of anything that requires a keyboard or a
-mouse.
+The workstation is deliberately stripped of anything that assumes a keyboard or
+a mouse.
 
 | Change | Reason |
 |---|---|
 | Cinnamon session on X11 | Talon (unfortunately) does not work under Wayland |
-| Automatic sign-in | No password that could be typed |
+| Automatic login | No password can be entered |
 | Locking and sleep disabled | A locked screen is a dead end |
-| Keyring without password | Avoids a prompt that cannot be satisfied (unencrypted host only) |
-| Enlarged cursor and text | Eye-tracking accuracy limited to a few dozen pixels |
-| On-screen keyboard anchored at the bottom | Always available, large targets, word prediction |
+| Passwordless keyring | Avoids an impossible-to-fill prompt (unencrypted host only) |
+| Enlarged cursor and text | Limited accuracy of gaze (a few dozen pixels) and of the finger |
+| Visual keyboard anchored at bottom | Always available, large targets, word prediction |
 
 :::danger[The workstation is not protected at startup]
-Automatic sign-in, no screen locking&nbsp;: anyone turning on the machine is in
-the session. The only useful barrier is [disk encryption](/en/doc/admin-guide/operate/luks/),
-to plan from installation if the workstation is mobile.
+Automatic login, no screen locking&nbsp;: anyone who
+turns on the machine is in the session. The only useful barrier is
+[disk encryption](/en/doc/admin-guide/operate/luks/), to plan for from
+installation if the workstation is mobile.
 
-Face recognition sign-in is on the TODO list.
+Login through facial recognition is on the TODO list.
 :::
 
 :::note[The keyring follows disk encryption]
 Session keyring handling depends on the host&nbsp;:
 
-- **unencrypted workstation**&nbsp;: the keyring is created without a password,
-  otherwise the session would open on a prompt that no one can satisfy ;
-- **encrypted workstation (LUKS)**&nbsp;: the passphrase entered at startup is
-  passed to the keyring by the PAM stack of automatic sign-in. The keyring stays
-  protected, and nothing is requested.
+- **unencrypted workstation** : the keyring is created without a password,
+  otherwise the session would open on a prompt that nobody can fill in ;
+- **encrypted workstation (LUKS)** : the passphrase entered at boot is passed to
+  the keyring through the PAM stack of automatic login. The keyring
+  stays protected, and nothing is asked.
 
 Consequence on an encrypted workstation&nbsp;: changing the LUKS passphrase
-without changing the keyring one triggers the message "the login password no
-longer matches your keyring's". Then delete
-`~/.local/share/keyrings/login.keyring` and open the session again.
+without changing the one in the keyring triggers the message "the login
+password no longer matches the one in your keyring". Then delete
+`~/.local/share/keyrings/login.keyring` and reopen the session.
 :::
 
 {/* t:p 0d6884836da7cb7f47cd1adf7ac95f0476333b18b3c52557168d7f034641bbba */}

@@ -155,20 +155,26 @@ darkone.host.server = {
 
 <hr/>
 
-{/* t:p 1a62b10e93d8f895788b714397adc74a9d3ba2dd1366fac86a694a99f48699ed */}
+{/* t:p e37e61c0a610091ca01fe18b2a13647e83cafdf83f1e26799384a0ce93e9322d */}
 ### &#x1F4E6; darkone.host.umi
 
-Host profile: gaze-driven workstation (Tobii Eye Tracker 5 + Talon), usable without keyboard/mouse.
+Host profile: UMI (Unified Multimodal Input) workstation, usable without keyboard/mouse.
+
+:::note[UMI: Unified Multimodal Input]
+Accessibility goal: coordinated inputs (touch, voice, gaze…) replace keyboard
+and mouse, combined to fit the user's abilities. Current stack: Onboard on a
+touchscreen, Talon voice commands, Tobii Eye Tracker 5 driven through Talon.
+:::
 
 :::note[Extends desktop]
 Inherits the full desktop profile (GNOME, multimedia, office) and adds the
-gaze prerequisites: a Cinnamon X11 session for gaze users, auto-login,
+UMI prerequisites: a Cinnamon X11 session for UMI users, auto-login,
 uinput event injection and Tobii udev rules.
 :::
 
 :::tip[X11 / Wayland coexistence]
 Talon requires X11 (Wayland unsupported upstream, not planned) and
-GNOME 50 dropped its Xorg session, so gaze sessions run Cinnamon (X11,
+GNOME 50 dropped its Xorg session, so UMI sessions run Cinnamon (X11,
 GNOME-like UX, native tray) while other users keep GNOME Wayland. The
 users listed in `gazeUsers` (plus `autoLoginUser`) get their saved GDM
 session seeded to "cinnamon" through AccountsService; GDM keeps managing
@@ -197,9 +203,9 @@ The tracker is reached through interface 0 (vendor-specific, bulk
 endpoints), never through /dev/video*.
 :::
 
-* **enable** `bool` Eye-tracking optimized host configuration (Tobii + Talon)
+* **enable** `bool` UMI host configuration: multimodal input, touch + voice + gaze (Onboard, Talon, Tobii)
 * **autoLoginUser** `nullOr str` Auto-login user (mandatory for a keyboard-free session).
-* **gazeUsers** `listOf str` Gaze users whose GDM session is seeded to Cinnamon/X11 (autoLoginUser is always included).
+* **gazeUsers** `listOf str` UMI users whose GDM session is seeded to Cinnamon/X11 (autoLoginUser is always included).
 * **package** `nullOr package` Talon package (defaults to `pkgs.talon` from the talon-nix overlay when available).
 
 ```nix

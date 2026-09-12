@@ -34,31 +34,23 @@ Commands marked with a ⭐ are the most useful on a daily basis.
 
 ---
 
-{/* t:p 3b2b6d153c2c2363ceb289a51bb815f4c315ece7626f9562e55532ed0f4f5cc1 */}
-## Choosing your Justfile
+{/* t:p 127c8d9ceee17728f5cabf8a765dbe3b5ce119e7e89833526db227027fff9565 */}
+## Available commands
 
-Recipes live in `dnf/just/`. The project's `Justfile` imports **one**
-bootstrap file, which determines the available commands.
+The recipes live in `dnf/just/`. The project `Justfile` imports **one** bootstrap file, which determines the available commands depending on the context.
 
 | Context | `Justfile` line | Commands |
 |---|---|---|
 | Framework | `import 'just/dnf.just'` | 💠 🔆 |
-| Consuming project | `import? 'dnf/just/project.just'` | 💠 ✳️ |
-| Co-development | `import 'dnf/just/codev.just'` | 💠 ✳️ 🔗 and tests 🔆 |
+| Consumer project | `import? 'dnf/just/project.just'` | 💠 ✳️ |
+| Co-development | `import 'dnf/just/codev.just'` | 💠 ✳️ 🔗 |
 
-In a consuming project, `dnf/` is the symlink to the Nix store placed by
-`nix run .#init`. The `?` in `import?` allows `just` to start as long as this
-symlink doesn't exist.
+In a consumer project, `dnf/` is the symlink to the Nix store created by `nix run .#init`. The `?` in `import?` lets `just` start as long as this symlink does not exist.
 
-Co-development replaces this symlink with a git clone of the framework. The
-🔆 recipes `unit-tests`, `check-recipes`, `simulate`, `simulate-debug`,
-`fixtures` and `pkg-update` also run from the root in that context. Project
-templates include the `codev.just` line, commented out.
+Co-development replaces this link with a git clone of the framework. The recipes 🔆 `unit-tests`, `check-recipes`, `simulate`, `simulate-debug`, `fixtures` and `pkg-update` can also be run there from the root. Project templates include the `codev.just` line, commented out.
 
-:::note[Context detection]
-A project is identified by its `etc/config.yaml`, a framework clone by
-`dnf/.git`. A `dnf/` symlinked to the store is read-only: `generate`,
-`format` and `check` skip it.
+:::note[Context adaptation]
+A project is recognized by its `etc/config.yaml`, a framework clone by `dnf/.git`. A `dnf/` symlinked to the store is read-only&nbsp;: `generate`, `format` and `check` leave it aside.
 :::
 
 ---

@@ -13,7 +13,7 @@ sidebar:
 **A GUI application module** installs graphical applications and their configuration optimized for DNF.
 :::
 
-{/* t:p d05670fbf85609883d168e1e582e4a2ae08851f227ad2451765a8e25094643c1 */}
+{/* t:p 918755c0433e74935a1d84e103acfd707ccd1ab2b205f1ad831e00ce5246f5dc */}
 ### &#x1F5BC; darkone.graphic.gnome
 
 Pre-configured gnome environment with dependences.
@@ -26,7 +26,7 @@ Pre-configured gnome environment with dependences.
 * **enableOnlineServices** `bool` Online Accounts, CalDAV, CardDAV...
 * **xkbVariant** `str` Keyboard variant. Layout is extracted from console keymap.
 * **screenBlankDelay** `ints.unsigned` Screen-blank delay in seconds (0 = never). Laptops override it to 900 (15 min).
-* **cursorSize** `ints.positive` Pointer size in pixels, locked host-wide. Gaze hosts (`darkone.host.umi`) raise it to 48.
+* **cursorSize** `ints.positive` Pointer size in pixels, locked host-wide. UMI hosts (`darkone.host.umi`) raise it to 48.
 
 ```nix
 darkone.graphic.gnome = {
@@ -44,7 +44,7 @@ darkone.graphic.gnome = {
 
 <hr/>
 
-{/* t:p 4ef986f4cd55b23412ac2700c3436cf10b5636902401cffd7cbe36b3e46de6a3 */}
+{/* t:p 3e8ef2720d2589e61783e120e68226f952addf9e568cf57474e88711de906915 */}
 ### &#x1F5BC; darkone.graphic.remote-desktop
 
 Admin remote desktop: attach to an open graphical session, or open one, over RDP.
@@ -70,7 +70,7 @@ served by the system daemon, whoever is in front of the machine.
 :::tip[Three backends, one protocol]
 A GNOME Wayland session is served by `gnome-remote-desktop`, driven through
 `grdctl` inside the session owner's own bus. A Cinnamon X11 session — the
-gaze-driven UMI workstation, since GNOME 50 dropped its Xorg session — is
+UMI (multimodal input) workstation, since GNOME 50 dropped its Xorg session — is
 served by `freerdp-shadow-cli` on the existing display. A `login` session is
 served by the same `gnome-remote-desktop`, in its system runtime mode, which
 hands the client over to GDM. Same protocol, same client, `ro`/`rw`

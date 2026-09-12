@@ -13,20 +13,20 @@ sidebar:
 **Un module d'application GUI** installe des applications graphiques et leur configuration optimisée pour DNF.
 :::
 
-{/* t:p d05670fbf85609883d168e1e582e4a2ae08851f227ad2451765a8e25094643c1 */}
+{/* t:p 918755c0433e74935a1d84e103acfd707ccd1ab2b205f1ad831e00ce5246f5dc */}
 ### &#x1F5BC; darkone.graphic.gnome
 
-Environnement GNOME pré-configuré avec ses dépendances.
+Environnement gnome préconfiguré avec ses dépendances.
 
-* **enable** `bool` GNOME pré-configuré comme WM
-* **enableDashToDock** `bool` Extension Dash to Dock
-* **enableLightDM** `bool` Activer LightDM au lieu de GDM
-* **enableCaffeine** `bool` Désactiver la suspension automatique
+* **enable** `bool` WM gnome préconfiguré
+* **enableDashToDock** `bool` Plugin Dash to dock
+* **enableLightDM** `bool` Active LightDM à la place de GDM
+* **enableCaffeine** `bool` Désactive la mise en veille automatique
 * **enableGsConnect** `bool` Communication avec les appareils
-* **enableOnlineServices** `bool` Comptes en ligne, CalDAV, CardDAV…
-* **xkbVariant** `str` Variante de clavier. La disposition est extraite du clavier console.
-* **screenBlankDelay** `ints.unsigned` Délai avant mise en veille de l'écran en secondes (0 = jamais). Les portables le forcent à 900 (15 min).
-* **cursorSize** `ints.positive` Taille du pointeur en pixels, verrouillée pour tout l'hôte. Les hôtes gaze (`darkone.host.umi`) le portent à 48.
+* **enableOnlineServices** `bool` Comptes en ligne, CalDAV, CardDAV...
+* **xkbVariant** `str` Variante du clavier. La disposition est extraite du keymap de la console.
+* **screenBlankDelay** `ints.unsigned` Délai d'extinction de l'écran en secondes (0 = jamais). Les laptops le remplacent par 900 (15 min).
+* **cursorSize** `ints.positive` Taille du curseur en pixels, verrouillée à l'échelle de l'hôte. Les hôtes UMI (`darkone.host.umi`) le portent à 48.
 
 ```nix
 darkone.graphic.gnome = {
@@ -44,63 +44,62 @@ darkone.graphic.gnome = {
 
 <hr/>
 
-{/* t:p 4ef986f4cd55b23412ac2700c3436cf10b5636902401cffd7cbe36b3e46de6a3 */}
+{/* t:p 3e8ef2720d2589e61783e120e68226f952addf9e568cf57474e88711de906915 */}
 ### &#x1F5BC; darkone.graphic.remote-desktop
 
-Bureau à distance admin&nbsp;: attacher à une session graphique ouverte, ou en ouvrir une, via RDP.
+Bureau à distance pour l'administration : se connecter à une session graphique ouverte, ou en ouvrir une, via RDP.
 
-:::note[Rien installé, rien exposé]
-`gnome-remote-desktop` est déjà livré et actif sur chaque hôte GNOME (le
-module nixpkgs GNOME l'active par défaut) ; il reste simplement inactif tant
-que son backend RDP n'est pas activé. Ce module n'ajoute aucun démon et
-n'ouvre aucun port&nbsp;: il installe `dnf-remote-desktop`, un assistant que la
+:::note[Rien n'est installé, rien n'est exposé]
+`gnome-remote-desktop` est déjà fourni et tourne sur chaque hôte GNOME (le
+module GNOME de nixpkgs l'active par défaut) ; il reste simplement inactif
+tant que son backend RDP n'est pas activé. Ce module n'ajoute aucun démon et
+n'ouvre aucun port : il installe `dnf-remote-desktop`, un outil d'aide que la
 recette `just remote-desktop` appelle par ssh pour armer une session, puis la
-désarmer. L'écoute RDP ne se lie que pendant le support et n'est accessible
-que par un tunnel ssh — le pare-feu reste fermé.
+désarmer. Le listener RDP ne se lie que pendant qu'une session de support
+tourne et n'est atteignable que via un tunnel ssh : le pare-feu reste fermé.
 :::
 
 :::tip[Trois modes]
-`ro` reflète l'écran en lecture seule, `rw` le reflète et prend le contrôle.
-Les deux nécessitent une session ouverte et échouent sinon, plutôt que de
-fournir silencieusement une session privée qu'un admin demandant de
-*surveiller* un utilisateur ne souhaiterait pas.
-`login` est cette session privée, demandée explicitement&nbsp;: un écran de
-login GDM servi par le démon système, pour qui se trouve devant la machine.
+`ro` reflète l'écran en lecture seule, `rw` le reflète et prend le contrôle. Les deux
+exigent qu'un utilisateur soit connecté et échouent sinon, plutôt que de fournir
+discrètement une session privée qu'un administrateur ayant demandé à *regarder*
+un utilisateur n'attendrait pas. `login` est cette session privée, demandée
+explicitement : un écran de connexion GDM servi par le démon système, pour
+quiconque se trouve devant la machine.
 :::
 
-:::tip[Trois backends, un protocole]
-Une session GNOME Wayland est servie par `gnome-remote-desktop`, piloté via
-`grdctl` dans le bus du propriétaire de la session. Une session Cinnamon X11
-— le poste UMI piloté par le regard, depuis l'abandon de la session Xorg
-par GNOME 50 — est servie par `freerdp-shadow-cli` sur l'affichage existant.
-Une session `login` est servie par le même `gnome-remote-desktop`, en mode
-runtime système, qui délègue le client à GDM. Même protocole, même client,
-`ro`/`rw` appliqués côté serveur.
+:::tip[Trois backends, un seul protocole]
+Une session GNOME Wayland est servie par `gnome-remote-desktop`, piloté par
+`grdctl` dans le propre bus du propriétaire de la session. Une session
+Cinnamon X11 (le poste UMI à entrée multimodale, car GNOME 50 a abandonné sa
+session Xorg) est servie par `freerdp-shadow-cli` sur l'écran existant. Une
+session `login` est servie par le même `gnome-remote-desktop`, dans son mode
+runtime système, qui confie le client à GDM. Même protocole, même client,
+`ro`/`rw` imposés côté serveur.
 :::
 
-:::caution[S'attacher, c'est prendre le contrôle de l'écran d'autrui]
-La session cible appartient à un utilisateur très probablement assis devant
-son écran. GNOME affiche un indicateur de partage, mais rien ne demande de
-consentement&nbsp;: c'est un outil de support pour les machines que vous
-administrez, et l'activer sur un hôte est une déclaration délibérée et
-auditable dans `config.yaml`. `login` est le mode discret&nbsp;: il ne touche
-jamais l'écran sur le moniteur.
+:::caution[Se connecter, c'est s'emparer de l'écran de quelqu'un]
+La session cible appartient à un utilisateur qui est très probablement assis
+devant elle. GNOME affiche un indicateur de partage, mais rien ne demande de
+consentement : c'est un outil de support pour les machines que vous
+administrez, et l'activer sur un hôte est une déclaration volontaire et
+auditable dans `config.yaml`. `login` est le mode discret : il ne touche
+jamais à l'écran du moniteur.
 :::
 
 :::tip[Activation]
-Un hôte se note dans sa liste `features` de `config.yaml` :
+Un hôte accepte via sa liste `features` dans `config.yaml` :
 `features: [ "remote-desktop", ... ]`. Contrairement à `services:`, les
-features sont héritées par les groupes d'hôtes modélisés (`range:` /
-`hosts:`), donc une famille entière de postes identiques est couverte par
-une seule ligne.
+features sont héritées par les groupes d'hôtes modélisés (`range:` / `hosts:`),
+ainsi toute une famille de bureaux identiques est couverte par une ligne.
 :::
 
-* **enable** `bool` Accès au bureau à distance (piloté par la feature de l'hôte, éviter l'activation manuelle).
-* **timeout** `ints.positive` Minutes avant qu'une session de support armée ne se ferme.
-* **embedCursor** `bool` Patche gnome-remote-desktop pour que le pointeur soit composité dans la
+* **enable** `bool` Accès au support du bureau à distance (piloté par la feature de l'hôte, éviter d'activer manuellement).
+* **timeout** `ints.positive` Minutes avant qu'une session de support armée ne se referme seule.
+* **embedCursor** `bool` Patche gnome-remote-desktop pour que le curseur soit composité dans la
   vidéo. Sans cela, l'observateur ne voit pas où pointe l'utilisateur,
-  ce qui annule l'intérêt du mode lecture seule. Nécessite une
-  compilation locale de gnome-remote-desktop.
+  ce qui prive le mode lecture seule de son intérêt. Coûte une
+  recompilation locale de gnome-remote-desktop.
 
 ```nix
 darkone.graphic.remote-desktop = {

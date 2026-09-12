@@ -58,7 +58,7 @@ desktop -> umi
 | `hcs` | VPN coordination | `server` | Headscale + shared services |
 | `vm` | Virtual machine | `server` | Guest tools (VirtualBox/QEMU/Xen) |
 
-{/* t:p a253eff7cb711f930d39f7c8d63204def6e841b3e824ffb496271420ef57a6af */}
+{/* t:p 8e8c875a21edff3916f1840f55da250b12833b4f26a3d9a40b99f475e5e2cc42 */}
 ## Choosing a profile
 
 ```yaml
@@ -68,11 +68,11 @@ hosts:
     profile: "desktop"
 ```
 
-:::caution[No profile suspends on its own]
-A machine in the fleet must stay reachable&nbsp;: automatic suspension would take
-it off the network, and only a physical intervention would bring it back. No
-profile, laptop included, therefore enables suspension on inactivity, neither on
-the desktop nor on the login screen. To restore it on a specific machine&nbsp;:
+:::caution[No profile puts itself to sleep on its own]
+A fleet machine must stay reachable&nbsp;: automatic sleep takes it off the
+network, and only physical intervention brings it back. No profile, portable
+included, therefore enables sleep by inactivity, neither on the desktop nor on
+the login screen. To restore it on a specific machine&nbsp;:
 
 ```yaml
 # etc/config.yaml
@@ -92,12 +92,13 @@ its profile.
 :::
 
 :::tip[The `umi` profile may require hardware]
-An eye-tracking workstation assumes a gaze tracker and a special commissioning
-process, described in
+A UMI (*Unified Multimodal Input*) station is driven by combining touch, voice
+and gaze. Each input method requires its own hardware (touchscreen,
+microphone, eye tracker) and a specific setup, described in
 [Accessibility](/en/doc/admin-guide/operate/accessibility/).
 :::
 
 :::note[Full reference]
-The options of each profile are in the
+The options for each profile are in the
 [module reference](/en/ref/modules/mixin/).
 :::
