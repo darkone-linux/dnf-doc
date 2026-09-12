@@ -195,11 +195,11 @@ Add a second `target` (different `name`, different `root`/`zone`) to replicate
 the backup, for example to the REST server of another zone.
 </Aside>
 
-{/* t:p 0d8ab56fb53bfd5cf7dbace422cb305894294dcf6e4a71a10b2e37e21b1ca6d4 */}
+{/* t:p 7667fae19f4bc1fba78a5cff61bf6f86e5acbed09e5bc9e190ab908837e3ebee */}
 ## Off-site backup
 
-A second `target` pointing to another zone's REST server provides the "1" in the
-3-2-1 rule. Two precautions specific to off-site backups.
+A second `target` pointing to the REST server of another zone gives the "1" of
+the 3-2-1 rule. Two off-site-specific precautions.
 
 **Address the server by its tailnet IP**, never by its zone name:
 
@@ -214,18 +214,19 @@ A second `target` pointing to another zone's REST server provides the "1" in the
 
 A name like `restic.<remote-zone>.example.net` is only resolved by that zone's
 gateway. If the remote site goes down, the resolver goes down with it and the
-failure appears as a **DNS resolution error**, which misleads diagnostics. The
-tailnet IP removes this indirection, along with the dependency on the remote
+failure presents itself as a **name resolution error**, which misleads diagnosis.
+The tailnet IP removes this indirection, as well as the dependency on the remote
 site's subnet route. It requires `listenAll` on the server side (see above).
 
 <Aside type="note" title="An absent off-site server does not fail the unit">
 Each `rest:` target carries a reachability probe (`ExecCondition`). Server
-unreachable: the unit is **skipped**, not failed — no `SystemdUnitFailed`
-alert at night, no quarter-hour of restic retries, and no empty repository
-created against a dead address. The missed backup is still reported by
-`ResticBackupStale` (36 h) then `ResticBackupCritical` (7 days), which
-monitor the date of the last success. The journal then shows
-`Skipped due to ExecCondition=`.
+unreachable: the unit is **skipped**, not failed — no nightly
+`SystemdUnitFailed` alert, no quarter-hour of restic attempts, and no empty
+repository creation against a dead address. The missed backup remains reported
+by `ResticBackupStale` (36h) then `ResticBackupCritical` (7 days), which monitor
+the date of the last success of each job (failing that, its declaration date),
+including those declared directly in `services.restic.backups`. The journal then
+reports `Skipped due to ExecCondition=`.
 </Aside>
 
 {/* t:p 857b90e6265488cd7606a6a98345e6bc02ace2599ca7beae576dc2665957007e */}

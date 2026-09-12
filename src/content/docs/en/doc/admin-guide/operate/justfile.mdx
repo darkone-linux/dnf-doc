@@ -635,13 +635,23 @@ Shuts down (poweroff) the host via colmena exec, after confirmation.
 just halt myserver
 ```
 
-{/* t:p c97f80ae872f00719fe0ed20955e088009698f547a3063c132765aeca602aeae */}
-### ✳️ `gc <host>` ⭐
+{/* t:p 71beeec2634e08d87b3b8f32f12176f837eab8d22e62218197d3ed8ff0a700cd */}
+### ✳️ `gc <host> [keep]` ⭐
 
-Runs `nix-collect-garbage -d` then `switch-to-configuration boot` on the host.
+Removes old generations, cleans the store, then regenerates the boot entries
+(`switch-to-configuration boot`). `keep` sets what is retained:
+
+| `keep` | Generations retained |
+|---|---|
+| (empty) | Current only, all profiles (`nix-collect-garbage -d`) |
+| `N` (1 to 99) | Last `N` system generations, current included |
+| `Nd` (1 to 99) | Those less than `N` days old, plus the active one on that date |
 
 ```sh
-just gc myserver
+# Clean hosts whose name starts with "server-"
+just gc "server-*"    # Keep only the current generation
+just gc "server-*" 3  # Keep the last 3 generations, current included
+just gc "server-*" 3d # Remove generations older than 3 days
 ```
 
 {/* t:p 71bf7ccbff6cfed3261bc2c1d64c5fa1493ec3d4cee07f20635d95de21416c80 */}

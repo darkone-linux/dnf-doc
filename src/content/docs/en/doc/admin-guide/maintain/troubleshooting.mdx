@@ -14,7 +14,7 @@ import { Steps } from '@astrojs/starlight/components';
 {/* t:p c5eaf8b034237c763df0de11402c3e425415d18d3917d23530ffd6631f988bc1 */}
 The administrator's daily routine: keeping the fleet clean, intervening on a host, rolling back after a bad configuration, reading logs.
 
-{/* t:p 85d11ed72c5f6181bd6ebead1e454848cf342d8d6ccb0a61969eb2c4d8e6ed25 */}
+{/* t:p 7bbe61a4703dbc270a50aed4923b1d2356e68a81ef3d03ebc6c8963e48a12950 */}
 ## Acting on a host
 
 All these commands target a host (or a pattern / list) via colmena:
@@ -23,16 +23,22 @@ All these commands target a host (or a pattern / list) via colmena:
 |---|---|
 | `just enter <host>` | Open an SSH shell (alias `e`) |
 | `just reboot <host>` | Reboot |
-| `just halt <host>` | Shutdown |
-| `just gc <host>` | Purge generations + clean the store |
+| `just halt <host>` | Shut down |
+| `just gc <host> [keep]` | Purge generations + clean the store |
 | `just fix-boot <host>` | Reinstall the boot loader |
 
 :::tip[Multiple hosts at once]
-The target accepts a pattern or list: `just gc '*'`, `just reboot a,b`.
+The target accepts a pattern or a list: `just gc '*'`, `just reboot a,b`.
 :::
 
-{/* t:p 11e569f300d2821bbe7f0fa59bbfa2886c4d47cc4fedabe8586501fc6a1e85d4 */}
-## Clean and format the code
+The `keep` argument of `just gc` limits the purge:
+
+- `just gc <host>`: keeps only the current generation.
+- `just gc <host> 3`: keeps the last 3 generations, including the current one.
+- `just gc <host> 3d`: removes generations older than 3 days.
+
+{/* t:p b2d4aa7a693426c6c0abedf8dd5c8e8f5131f947a919abc94206e135da907ca5 */}
+## Cleaning and formatting code
 
 Before committing or deploying, normalize the repository:
 
@@ -41,7 +47,6 @@ just clean      # fix + check + generate + format
 ```
 
 - `just check`: code + unit tests + flake checks (before deployment).
-- `just gc <host>`: reclaims disk space (old generations deleted).
 
 {/* t:p 9376adef28eee4541cef0c4da991075f26970350eff0e2a8768d5adef40e1d90 */}
 ## Rollback

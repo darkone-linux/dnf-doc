@@ -15,7 +15,7 @@ import { Steps } from '@astrojs/starlight/components';
 Le quotidien de l'administrateur : garder le parc propre, intervenir sur un
 hôte, revenir en arrière après une mauvaise configuration, lire les journaux.
 
-{/* t:p 85d11ed72c5f6181bd6ebead1e454848cf342d8d6ccb0a61969eb2c4d8e6ed25 */}
+{/* t:p 7bbe61a4703dbc270a50aed4923b1d2356e68a81ef3d03ebc6c8963e48a12950 */}
 ## Agir sur un hôte
 
 Toutes ces commandes ciblent un hôte (ou un motif / une liste) via colmena :
@@ -25,14 +25,20 @@ Toutes ces commandes ciblent un hôte (ou un motif / une liste) via colmena :
 | `just enter <host>` | Ouvrir un shell SSH (alias `e`) |
 | `just reboot <host>` | Redémarrer |
 | `just halt <host>` | Éteindre |
-| `just gc <host>` | Purger les générations + nettoyer le store |
+| `just gc <host> [keep]` | Purger les générations + nettoyer le store |
 | `just fix-boot <host>` | Réinstaller le chargeur d'amorçage |
 
 :::tip[Plusieurs hôtes à la fois]
 La cible accepte un motif ou une liste : `just gc '*'`, `just reboot a,b`.
 :::
 
-{/* t:p 11e569f300d2821bbe7f0fa59bbfa2886c4d47cc4fedabe8586501fc6a1e85d4 */}
+L'argument `keep` de `just gc` limite la purge&nbsp;:
+
+- `just gc <host>` : ne garde que la génération courante.
+- `just gc <host> 3` : garde les 3 dernières générations, courante incluse.
+- `just gc <host> 3d` : supprime les générations de plus de 3 jours.
+
+{/* t:p b2d4aa7a693426c6c0abedf8dd5c8e8f5131f947a919abc94206e135da907ca5 */}
 ## Nettoyer et formater le code
 
 Avant de committer ou déployer, normaliser le dépôt :
@@ -42,7 +48,6 @@ just clean      # fix + check + generate + format
 ```
 
 - `just check` : code + tests unitaires + vérification des flakes (avant déploiement).
-- `just gc <host>` : récupère l'espace disque (ancien générations supprimées).
 
 {/* t:p 9376adef28eee4541cef0c4da991075f26970350eff0e2a8768d5adef40e1d90 */}
 ## Revenir en arrière
