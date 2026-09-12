@@ -11,14 +11,14 @@ import { Steps } from '@astrojs/starlight/components';
 {/* t:main */}
 {/* t:h 049935b87b05d181b65551e7bea751dfc1e19eb9d762cd0616a80db58286ebbf */}
 
-{/* t:p f544ee875991247b16430886663e6e6fc83aa81b3a4d7a12730007b0633b711f */}
+{/* t:p dd2fb74c1fd80091d7cdc17befa0db0de701c5f2f86663d5e04b40289a00fa3d */}
 Le VPN maille les zones, le serveur de coordination et les appareils distants&nbsp;:
 [Headscale](https://headscale.net/) coordonne depuis le HCS,
 [Tailscale](https://tailscale.com/) est le client de chaque nœud. Cette page réunit
 les gestes d'exploitation. Routage, DNS, MagicDNS, politique d'accès et clés sont
 expliqués dans [Fonctionnement du tailnet](/fr/doc/admin-guide/understand/tailnet/).
 
-{/* t:p be556da93b9b830aa8e89f43b69dd1d5eecc77324080157f7f93e3fa42167c45 */}
+{/* t:p f18805f3a171bae6f3f9d0fa75ecf4dd6b5a86138e3e43925e31e6ec8591a553 */}
 ## Activer le VPN
 
 Activer la coordination et déclarer le HCS (`profile: hcs`) suffit&nbsp;:
@@ -53,7 +53,7 @@ darkone.service.tailscale.autoPauseOnLan.enable = true;
 `autoPauseOnLan` met le client en pause quand le portable est branché dans une zone
 (NetworkManager requis).
 
-{/* t:p 8613f51a270bd20bb99e7e1edc5742d208e04db4770be256123ea4a3f11e5638 */}
+{/* t:p 5d79bed90933c20274551bac203f54f849c31d80cf66906280037b3d472d168c */}
 ## Enrôler une machine
 
 Les machines rejoignent le tailnet **sans clé partagée**&nbsp;: le HCS crée pour
@@ -102,7 +102,7 @@ ré-enrôler (voir [Migrer le matériel d'une
 passerelle](/fr/doc/admin-guide/install/gateway-hardware-migration/)).
 :::
 
-{/* t:p 7024a1a0eb07db8310341bcec3137b7dc104f32f44464887045be017beef3ba4 */}
+{/* t:p 1bf0e4f69bd5d4a698f0e2074033bcba6642dd9078caf78a0700e151761820b5 */}
 ## Enregistrer une passerelle
 
 Une passerelle s'enrôle comme toute machine&nbsp;; deux points lui sont propres.
@@ -145,6 +145,7 @@ Une passerelle s'enrôle comme toute machine&nbsp;; deux points lui sont propres
 
 </Steps>
 
+{/* t:p 2aa4f2ec3235c034f85c5dd331468459a074712747a4af663271ff067b77f372 */}
 ## Connecter un appareil personnel
 
 Un smartphone ou un ordinateur personnel se connecte avec l'identité
@@ -177,6 +178,7 @@ navigateur ne les résout pas. Contournement&nbsp;: désactiver « Use Tailscale
 dans l'application le temps de la connexion, puis le réactiver.
 :::
 
+{/* t:p be58a7b8cf40a417c5a1a5d34d2a33875721e8c923f0b088fcb77cdde366d574 */}
 ## Adapter la politique d'accès
 
 La politique est générée depuis la topologie&nbsp;: ses règles sont détaillées dans
@@ -227,7 +229,7 @@ Ouvrir `exitNodeSources` ne suffit pas&nbsp;: l'utilisateur choisit le HCS comme
 node dans son application.
 :::
 
-{/* t:p 2cd327a28bf884d3a8858f334f58663a1d6f2961389ee3e95f716a349026ab0b */}
+{/* t:p 861b4b2b0564dd254d82317b0aa1780aa6f53c10b9d8186bd1acd51087e8a389 */}
 ## Administration
 
 Sur le HCS (`just enter hcs`)&nbsp;:
@@ -254,8 +256,10 @@ annoncées, SSH Tailscale coupé, exit node) sont réalignés par
 pré-autorisées&nbsp;: ne pas les copier dans un ticket ou un salon.
 :::
 
+{/* t:p d5ee34c07a998cc19781c2ecc0eaa5253a92b3f7855ab78034ead5ba1e270566 */}
 ## Introspecter et dépanner
 
+{/* t:p 3edeec36911a9d7daffc08b021fb2fa5801d174f00c40583d9bdf3a29dbf58b7 */}
 ### Sur un nœud
 
 | Commande | Répond à |
@@ -266,6 +270,7 @@ pré-autorisées&nbsp;: ne pas les copier dans un ticket ou un salon.
 | `tailscale dns status` | MagicDNS, DNS scindé, domaines de recherche reçus |
 | `journalctl -u tailscaled-autoconnect` | dernier enregistrement ou réalignement des réglages |
 
+{/* t:p de8d395845696e87f750749c9665f8a0c4d919c05095d6d6ed0d55e3ca0dd1d8 */}
 ### Tester une politique
 
 Sans option `--bypass…`, `headscale policy check` compile un fichier **contre les
@@ -296,6 +301,7 @@ vrais nœuds** et exécute son bloc `tests`, sans toucher à la politique en pla
 
 </Steps>
 
+{/* t:p 28b0e94abdf6b0dda0ea316acbaa540b6eecb76af5ae81021a636ba8108a122b */}
 ### Pannes courantes
 
 | Symptôme | Vérifier | Remède |
@@ -309,6 +315,7 @@ vrais nœuds** et exécute son bloc `tests`, sans toucher à la politique en pla
 | `no declared tailnet identity` | hôte tagué, HCS déployé depuis sa déclaration | `just apply hcs` |
 | `named … is online, not deleting it` | deux machines portent le même nom | éteindre l'ancienne ou renommer l'hôte |
 
+{/* t:p d629ec6af8ec775ba08208ec500c5c9d9793f20d770afc02205e0ae249246900 */}
 ## Audit et alertes
 
 Toutes les 15 minutes, `headscale-audit` compare les nœuds réels à la topologie
@@ -335,7 +342,7 @@ vérifiés.
 Kanidm revenu, relancer Headscale&nbsp;: `sudo systemctl restart headscale`.
 :::
 
-{/* t:p 57f43a04ecd0435cf5602521b8b31ebb7243b8523504c043f23ca0b3f30dc508 */}
+{/* t:p 7cb3c8a4d88bffa9c2fb9e975f7385d0b8c9435a10a952b17737b43a0cc0c076 */}
 ## Auto-réparation du client
 
 Un `tailscaled` peut **décrocher silencieusement** de Headscale&nbsp;: la connexion de
@@ -363,7 +370,7 @@ Deux [alertes](/fr/doc/admin-guide/operate/alerts/) accompagnent le mécanisme&n
 Pour le désactiver sur un hôte&nbsp;: `darkone.service.tailscale.selfHeal.enable = false;`.
 :::
 
-{/* t:p 943f6b2028a602409af4c6b87e458b1a94b6b8c8360a9f9632ed6e5222b8f2f2 */}
+{/* t:p 380f751bf9b79ea27e807bebea57a1c995908326a7503ecb35de8a7f84908f57 */}
 ## Amorçage du plan de contrôle
 
 Sur une passerelle, dnsmasq envoie tout `domain.tld` au résolveur du HCS **à travers
@@ -387,7 +394,7 @@ panne, précisément quand l'auto-réparation doit pouvoir agir.
 l'ancienne entrée, ils ne se reconnectent pas, même avec un DNS public correct.
 :::
 
-{/* t:p e0299c915299f5fddae3bae5314b854f0cea6de180f96b58b418f6a7892780d8 */}
+{/* t:p 235b9e262f15039cafb0ae3834ec8091a3a215ee996fb7ae0d7092f941079f84 */}
 ## Hors d'une zone
 
 - **Appareil personnel**&nbsp;: voir [Connecter un appareil

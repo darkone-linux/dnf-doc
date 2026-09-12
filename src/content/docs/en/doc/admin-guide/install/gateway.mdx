@@ -128,15 +128,20 @@ Then, `just full-install gw` does without an address&nbsp;: the tooling computes
 On site, it takes back the fixed address of its zone (`.1.1`). The SSH forwarding set up for the installation is no longer needed&nbsp;: `just roaming-clear gw`.
 :::
 
-{/* t:p 01d1c74ecd46a9bb5299e084fe813b35adde90d4685c6c6272ac2edb72f8bbe0 */}
-## Register the gateway on the VPN
+{/* t:p de4a2eb7e6d7f7db2df8b62ac6e221d24562de6d4348d9e3fcbad5b025e2cbff */}
+## Enroll the gateway on the VPN
 
-A gateway is a **Tailscale client**: it advertises its zone's subnet in
-the [Headscale](/en/doc/admin-guide/operate/vpn/) mesh. Until it is
-registered on the tailnet, other zones cannot see it.
+A gateway is a **Tailscale client**: it advertises its zone's subnet in the
+[tailnet](/en/doc/admin-guide/understand/tailnet/). As long as it is not enrolled
+there, the other zones cannot see it. `just full-install` enrolls it on the
+way&nbsp;; otherwise, or to check&nbsp;:
 
-Follow the dedicated procedure: [Register a
-gateway](/en/doc/admin-guide/operate/vpn/#administration).
+```sh
+just tailnet-enroll gw
+```
+
+All that remains is to declare its tailnet address: see [Enregister a
+gateway](/en/doc/admin-guide/operate/vpn/#registering-a-gateway).
 
 {/* t:p 61db6fbe1ce1034ab649b1b95dfbf897a78af5208463a659932ba8a06f78ef1f */}
 ## Connecting other machines

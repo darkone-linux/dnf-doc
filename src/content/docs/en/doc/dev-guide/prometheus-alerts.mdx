@@ -26,30 +26,31 @@ The code is split in two to keep rule generation **testable**:
 
 Any non-trivial logic goes into `alerts.nix` ; the module merely plugs it in.
 
-{/* t:p 455e583701bd20d8de414032ee9a6897ff834c8ad2d3b7d9fe001ae9ed17d3df */}
-## Helpers (`alerts.nix`)
+{/* t:p 448fa70889689b1ea34a52579c7351fe2be26b86be677baeb146752dccb6838f */}
+## The helpers (`alerts.nix`)
 
-Exposed via `dnfLib` (see `dnf/lib/default.nix`):
+Exposed via `dnfLib` (see `dnf/lib/default.nix`) :
 
 | Helper | Role |
 |---|---|
 | `serviceUnits` | DNF service → systemd unit (e.g. `idm` → `kanidm.service`) |
-| `nodeClass` | Class of a node (critical / non-critical / disabled): `alert-*` features then profile |
-| `nodeAlertEligible` | Selection: a node is monitored only if it is a network/server node, carries `alert-non-critical`, or hosts a mapped service |
+| `nodeClass` | Node class (critical / non-critical / disabled): `alert-*` features then profile |
+| `nodeAlertEligible` | Selection: a node is only monitored if it is a network/server node, carries `alert-non-critical`, or hosts a mapped service |
 | `severityForClass` | Class → severity (`critical` or `warning`) |
-| `hostExpectedUnits` | Expected units of a host (based on its enabled services) |
-| `mkNodeRuleGroups` | `NodeDown`, `ServiceDown`, `SystemdUnitFailed` (+ `reach` label local/wan) |
+| `hostExpectedUnits` | A host's expected units (from its enabled services) |
+| `mkNodeRuleGroups` | `NodeDown`, `ServiceDown`, `SystemdUnitFailed` (+ local/WAN `reach` label) |
 | `mkResourceRuleGroups` | Disk, RAM, load, inodes, OOM, read-only FS, disk prediction, clock, conntrack |
 | `mkNetworkRuleGroups` | Blackbox probes (gateway, tailnet, DNS, `ZoneInternetDown`) |
-| `mkHttpRuleGroups` | HTTP probes: `ServiceEndpointDown` + TLS certificate expiration |
+| `mkHttpRuleGroups` | HTTP probes: `ServiceEndpointDown` + TLS certificate expiry |
 | `mkResticRuleGroups` | Backup freshness (`ResticBackupStale`/`Critical`) |
 | `mkSmartctlRuleGroups` | SMART disk health (`DiskSmartFailing`, `DiskTemperatureHigh`) |
 | `mkPostfixRuleGroups` | Postfix relay (`PostfixRelayUnhealthy`, `PostfixDeferredQueueHigh`) |
 | `mkSynapseRuleGroups` | Synapse (`SynapseRestarting`, `SynapseHighErrorRate`) |
 | `mkMaintenanceRuleGroups` | Maintenance flag (silence during rebuild) |
-| `mkTailscaleRuleGroups` | Tailnet self-healing (`TailscaleUnhealthy`, `TailscaleFlapping`) |
+| `mkTailscaleRuleGroups` | Tailnet self-repair (`TailscaleUnhealthy`, `TailscaleFlapping`) |
+| `mkHeadscaleRuleGroups` | Tailnet audit on the HCS (`HeadscaleNodeDrift`, `HeadscaleUnexpectedNode`, `HeadscalePolicyInvalid`, `HeadscaleOidcFallback`, `HeadscaleNodeExpiring`, `HeadscaleAuditStale`) |
 | `mergeRuleGroups` | Merges fragments into a **single** document |
-| `mkAlertRuleGroups` | Shortcut: nodes + resources + restic + SMART + tailscale |
+| `mkAlertRuleGroups` | Shortcut: nodes + resources + restic + SMART + tailscale + headscale |
 | `mkSilenceRoutes` | Alertmanager routes to the `null` receiver (known, accepted alerts) |
 
 {/* t:p 0b104f2b37912ed7c139519842cb7bd9c665b7ba1765abfb5e3340cbfc55d04e */}

@@ -152,26 +152,26 @@ disappear in the same edit as the rename&nbsp;: an alias cannot carry the name
 of a host in its zone, the generator refuses the configuration.
 :::
 
-{/* t:p c02e40cf43e5f63f6dd230e6a321792cf003b391176a3163be6c434f91af3fec */}
+{/* t:p 091d7958ce8a28a5afc14d13e5cc2f19e84890e35753dbdf17854c478ca75a0a */}
 ## Gateway case
 
-A gateway carries the DNS and binary cache of its zone, hence two ordering
-rules&nbsp;:
+A gateway carries the DNS and the binary cache of its zone, hence two ordering
+rules:
 
-- Deploy the gateway before its clients (their binary cache points to its name).
+- Deploy the gateway before its clients (their binary cache targets its name).
 - Then deploy the gateways of the other zones, which publish the new name.
 
-The VPN node keeps its key, its address and its approved routes. Only the
-displayed name stays frozen, to fix on the coordination server.
+The VPN node keeps its key, address and routes. Only its name remains the old
+one: `just tailnet-enroll` renames it based on the configuration.
 
 ```sh
-sudo headscale nodes list
-sudo headscale nodes rename <nouveau-nom> -i <identifiant>
+just tailnet-enroll <nouveau-nom>
 ```
 
 :::danger[Never delete the node]
-Deleting then re-enrolling releases the tailnet's fixed address and clears the
-approved routes. See [VPN](/en/doc/admin-guide/operate/vpn/#administration).
+Deleting then re-enrolling assigns a **new** tailnet address:
+`vpn.ipv4` and everything pointing to the old address would need to be redone.
+See [VPN](/en/doc/admin-guide/operate/vpn/#control-plane-bootstrap).
 :::
 
 {/* t:p 28b912b6c39dbcedf5352b3de0e87a56109d71023e56e1e98e1886cb64262115 */}

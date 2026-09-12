@@ -39,28 +39,32 @@ access everywhere.
 - **Mobile apps** (photos, files, email): enter the service address provided by
   the administrator, then your usual username.
 
-{/* t:p 228f62ceff266e848a64515b44ac89ffa016a3681e15fec48c5e966e2d02aad9 */}
+{/* t:p a4ba6398a48b3ecd920c1e7d4900a8bb4e49497313d9662ca696d7991964b031 */}
 ## From outside
 
-Outside a zone, a secure application (Tailscale VPN client) connects your
-device to the network, as if you were at home.
+Outside a zone, the [Tailscale](https://tailscale.com/download) app connects your device to the network, as if you were at home.
 
 :::note[Often unnecessary]
-Most services published online are already accessible **without a VPN**,
-directly from your browser. This step is only needed for services internal to
-a zone.
+Most services published online are already accessible **without a VPN**, directly from your browser. This step is only needed for services internal to a zone.
 :::
 
 <Steps>
 
 1. **Install Tailscale** on the device (iOS, Android, Windows, macOS, Linux).
-2. **Log in** to the server provided by your administrator.
-3. **Wait for approval** from the administrator: your device then joins the
-   network and its services.
+2. **Choose a custom server** in the account settings of the app, then enter the address given by your administrator (like `https://headscale.domain.tld`).
+3. **Sign in with your usual identifier**: the network's sign-in page opens, just like for the other services.
+4. **You're all set.** Your zones' services answer at their usual address.
 
 </Steps>
 
-:::tip[Admin side]
-Approving a remote device is described in the
-[administrator's guide](/en/doc/admin-guide/install/hcs/#connect-from-outside).
+:::tip[The sign-in page does not show up?]
+Disable "Use Tailscale DNS" in the app while you sign in, then turn it back on.
+:::
+
+:::note[Every six months]
+For security, your device is disconnected after six months: simply sign back in with your identifier.
+:::
+
+:::tip[Administrator side]
+Opening the access is described in the [administrator guide](/en/doc/admin-guide/operate/vpn/#administration).
 :::

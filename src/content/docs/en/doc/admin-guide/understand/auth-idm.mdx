@@ -54,16 +54,17 @@ proxy.o2p -> kanidm
 proxy.caddy -> proxy.svc
 ```
 
-{/* t:p 8f55b56e2f6c992dbce905ab8ed7461a2cd6b5636ec943617cca7fdb55d89ecb */}
+{/* t:p feef532e8305765e6cef5050914f3dfe6d0b1f47c10ed64d90f4d894a8427835 */}
 ## Identities and groups
 
-Accounts and groups are **provisioned** in Kanidm from `etc/config.yaml`: one
-account per person, groups that control access. The `users` group contains
-**all** accounts; `idm-admins` and `idm-devs` are the special administration
-and development groups.
+Accounts and groups are **provisioned** in Kanidm from `etc/config.yaml`&nbsp;: one
+account per person, groups that drive access. The `users` group contains **all**
+accounts&nbsp;; `idm-admins` and `idm-devs` are the special administration and
+development groups. The `tailnet` group brings together administrators and members
+of a zone&nbsp;: it alone can connect a device to the [VPN](/en/doc/admin-guide/operate/vpn/#administration).
 
 <Aside type="note" title="Account details">
-Account management (creation, passwords, groups) is described in
+Account management (creation, password, groups) is described in
 [SSO and identities](/en/doc/admin-guide/operate/sso/).
 </Aside>
 

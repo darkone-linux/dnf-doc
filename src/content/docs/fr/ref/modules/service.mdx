@@ -277,47 +277,38 @@ darkone.service.harmonia.enable = false;
 
 <hr/>
 
-{/* t:p bde9fc1089380403e62764a82cb511505af3af24aed85ccaf69033aae427a502 */}
+{/* t:p a2133ed0c411241da41e2adc3735446cd67fdf46a3d65f7a9c5f40c9507e06bb */}
 ### &#x2728; darkone.service.headscale
 
 Un service headscale entièrement configuré pour HCS.
 
-La politique ACL du tailnet est générée à partir de la topologie (zones, hôtes,
-utilisateurs) par `dnfLib.mkHeadscalePolicy`, validée par `headscale policy check`
-au moment du build, puis rechargée au changement (SIGHUP) sans redémarrer headscale.
+La politique ACL du tailnet est générée à partir de la topologie (zones, hôtes, utilisateurs) par `dnfLib.mkHeadscalePolicy`, validée par `headscale policy check` au build, puis rechargée à la modification (SIGHUP) sans redémarrer headscale.
 
-- Les machines sont taggées&nbsp;: `tag:hcs`, `tag:gw-<zone>`, `tag:admin` (hôte dont
-  les `groups` contiennent `admin`).
-- Les machines et les LAN des zones se joignent mutuellement. Appareils personnels&nbsp;:
-  DNS et HTTPS sur le HCS, HTTPS sur les passerelles de zone (chaque zone pour les
-  admins, sinon leurs groupes `zone-*`). SSH depuis les postes admin et `policy.adminDevices`.
-- Les appareils personnels se connectent via Kanidm (OIDC), pour les membres du groupe
-  Kanidm `tailnet`&nbsp;; leurs clés expirent après `nodeExpiry`.
-- `headscale-audit` (toutes les 15 min) compare les nœuds actifs à la topologie
-  déclarée&nbsp;: métriques pour les alertes `dnf-headscale-<zone>`, détails dans son
-  journal. Il ne taggue ni ne supprime jamais.
+- Les machines sont taguées&nbsp;: `tag:hcs`, `tag:gw-<zone>`, `tag:admin` (hôte dont `groups` contient `admin`).
+- Les machines et les LAN de zone se joignent mutuellement. Appareils personnels&nbsp;: DNS et HTTPS sur le HCS, HTTPS sur les passerelles de zone (toutes les zones pour les admins, sinon leurs groupes `zone-*`). SSH depuis les postes admin et `policy.adminDevices`.
+- Les appareils personnels se connectent via Kanidm (OIDC), pour les membres du groupe Kanidm `tailnet` &nbsp;; leurs clés expirent après `nodeExpiry`.
+- `headscale-audit` (toutes les 15 min) compare les nœuds actifs avec la topologie déclarée&nbsp;: métriques pour les alertes `dnf-headscale-<zone>`, détails dans son journal. Il ne tague ni ne supprime jamais.
+- `dnf-tailnet-enroll` alimente `just tailnet-enroll`&nbsp;: clés à usage unique taguées à partir de la topologie déclarée, nom et tags déclarés sur le nœud inscrit.
 
 ```nix
 darkone.service.headscale.policy.adminDevices.phone-alice = "100.64.0.9";
 ```
 
 :::caution[Mode ouvert]
-`policy.enforce = false` conserve les identités mais autorise tout le trafic&nbsp;:
-pour une migration uniquement, pendant que les nœuds sont taggés.
+`policy.enforce = false` conserve les identités mais autorise tout le trafic&nbsp;: uniquement pour une migration, le temps que les nœuds soient tagués.
 :::
 
-:::note[Panne Kanidm]
-headscale démarre quand même sans Kanidm et retombe sur l'inscription en CLI
-jusqu'à son prochain redémarrage. Les nœuds inscrits ne sont pas affectés.
+:::note[Panne de Kanidm]
+headscale démarre quand même sans Kanidm et retombe sur l'inscription par CLI jusqu'à son prochain redémarrage. Les nœuds inscrits ne sont pas affectés.
 :::
 
-* **enable** `bool` Activer le service DNF headscale
-* **enableGRPC** `bool` Ouvrir le port TCP GRPC
-* **nodeExpiry** `str` Expiration des clés des appareils personnels (`0`&nbsp;: jamais). Les machines taggées n'expirent jamais.
-* **policy.enforce** `bool` ACL tailnet par défaut-refus. `false` autorise tout le trafic, pour une migration uniquement.
-* **policy.adminDevices** `attrs` Appareils personnels ayant SSH sur chaque machine et zone&nbsp;: nom -&gt; IPv4 du tailnet.
+* **enable** `bool` Active le service DNF headscale
+* **enableGRPC** `bool` Ouvre le port TCP GRPC
+* **nodeExpiry** `str` Expiration des clés des appareils personnels (`0` : jamais). Les machines taguées n'expirent jamais.
+* **policy.enforce** `bool` ACL tailnet par défaut-refus. `false` autorise tout le trafic, uniquement pour une migration.
+* **policy.adminDevices** `attrs` Appareils personnels autorisés en SSH sur toutes les machines et zones&nbsp;: name -&gt; IPv4 tailnet.
 * **policy.exitNodeSources** `listOf str` Sources de politique autorisées à utiliser le HCS comme nœud de sortie.
-* **policy.extraHosts** `attrs` Alias d'hôtes supplémentaires pour la politique (nom -&gt; CIDR), à utiliser dans `extraAcls`.
+* **policy.extraHosts** `attrs` Alias d'hôtes de politique supplémentaires (name -&gt; CIDR), à utiliser dans `extraAcls`.
 * **policy.extraAcls** `listOf (attrsOf anything)` Règles ACL ajoutées après celles générées.
 
 ```nix
@@ -1211,23 +1202,24 @@ darkone.service.stk = {
 
 <hr/>
 
-{/* t:p 4905a9139054d20bc5aff8a08be0a65e71b480c72521af5d1567e3a11febfb29 */}
+{/* t:p 03a1368f4559b952ebbd866587b9d926128a3c3007a7d24086d3005e31db63c7 */}
 ### &#x2728; darkone.service.tailscale
 
-Service client Tailscale pour le HCS.
+Service client Tailscale pour HCS.
 
 :::note
-Un client tailscale pour connecter un hôte externe au HCS.
-Ne pas l'utiliser pour connecter une passerelle d'un sous-réseau tailnet.
+Un client tailscale pour connecter un hôte externe au HCS. Ne pas l'utiliser pour connecter une passerelle de sous-réseau tailnet.
 :::
 
-* **enable** `bool` Activer le client tailscale pour connecter le HCS
+:::note[Inscription]
+Pas de clé partagée. `just tailnet-enroll <host>`, également lancé par `just configure`, crée une clé à usage unique taguée pour l'hôte sur le HCS et la remet à `dnf-tailnet-join`. Idempotent&nbsp;: un nœud inscrit n'est pas modifié.
+:::
+
+* **enable** `bool` Active le client tailscale pour connecter le HCS
 * **isGateway** `bool` Ce nœud tailscale est une passerelle de sous-réseau
-* **isExitNode** `bool` Configurer ce client comme nœud de sortie
-* **selfHeal.enable** `bool` Chien de garde : détecter la déconnexion de headscale et redémarrer tailscaled.
-* **autoPauseOnLan.enable** `bool` Client nomade : mettre en pause tailscale (down) tant qu'il est branché sur un LAN
-  d'une zone DNF connue, le reprendre ailleurs. Clients NetworkManager
-  non-passerelles uniquement.
+* **isExitNode** `bool` Configure ce client comme nœud de sortie
+* **selfHeal.enable** `bool` Watchdog&nbsp;: détecte la déconnexion de headscale et redémarre tailscaled.
+* **autoPauseOnLan.enable** `bool` Client itinérant&nbsp;: met tailscale en pause (down) tant qu'il est branché sur un LAN de zone DNF connu, le reprend ailleurs. Clients NetworkManager non-passereaux uniquement.
 
 ```nix
 darkone.service.tailscale = {

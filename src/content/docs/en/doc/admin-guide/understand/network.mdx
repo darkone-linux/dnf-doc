@@ -74,11 +74,11 @@ agh -> up: Rest, filtered
 - It blocks ads and trackers, and encrypts queries to the outside.
 - `dnsmasq` moves to an internal port and keeps local names and DHCP.
 
-{/* t:p 630729a6b54f1047751a03be0c5c3bf403a3e475c1a3c1b0c7e673dc3108e9df */}
-## Extended network (VPN)
+{/* t:p 57fc5b43d7eb3bcde6aa9ee46c543e26940e4aa2fd9d07581e87f11c00a41a70 */}
+## Wide area network (VPN)
 
-Multiple zones are connected by a mesh VPN, coordinated by the coordination server
-(HCS).
+Several zones are linked by a mesh VPN, the tailnet, coordinated by the
+coordination server (HCS).
 
 ```d2
 style.fill: transparent
@@ -88,31 +88,38 @@ hcs: Coordination\nHeadscale (HCS) { shape: cylinder }
 
 zoneA: Zone A {
   gwa: Gateway
-  la: Workstations
+  la: Clients
   gwa -> la
 }
 zoneB: Zone B {
   gwb: Gateway
-  lb: Workstations
+  lb: Clients
   gwb -> lb
 }
 ext: Remote machine
 
-hcs -> zoneA.gwa: VPN
-hcs -> zoneB.gwb: VPN
-hcs -> ext: VPN
-zoneA.gwa <-> zoneB.gwb: Mesh
+hcs -> zoneA.gwa: Control { style.stroke-dash: 3 }
+hcs -> zoneB.gwb: Control { style.stroke-dash: 3 }
+hcs -> ext: Control { style.stroke-dash: 3 }
+zoneA.gwa <-> zoneB.gwb: Direct traffic
+ext <-> zoneA.gwa
 ```
 
-- The HCS (Headscale) is public and orchestrates the mesh.
-- Each gateway is a *subnet router*: it publishes its zone's subnet into the
-  VPN.
-- Zones can see each other; remote machines (smartphone, PC) join the network
-  via Tailscale.
-- A forwarder resolver on the HCS routes each zone to its own DNS.
+- The HCS (Headscale) is public and coordinates the meshing; traffic goes
+  directly from one node to another.
+- Each gateway is a *subnet router*: it publishes the
+  subnet of its zone into the VPN.
+- Zones can see each other; remote machines (smartphone, PC)
+  join the network via Tailscale.
+- Nothing is allowed by default: an access policy, generated from
+  `etc/config.yaml`, specifies who can reach what.
+- A pivot resolver on the HCS routes each zone's names to its gateway.
+
+Routing, DNS, MagicDNS, access policy, and activation keys are detailed in
+[Tailnet operation](/en/doc/admin-guide/understand/tailnet/).
 
 <Aside type="note" title="Optional VPN">
-The mesh is only enabled if `network.coordination.enable` is true in
+Meshing is only enabled when `network.coordination.enable` is true in
 `etc/config.yaml`. Without it, zones remain local and independent.
 </Aside>
 
@@ -212,39 +219,47 @@ Who resolves what :
 - Public (Internet) names go to upstream encrypted DNS, filtered by
   AdGuardHome if enabled.
 
-{/* t:p c9144db0481f8a97ed7d130a099ca5cf98925d1e1e53b8cba1f734e4a2513e0a */}
+{/* t:p 85f3fe6956a70f9611dbcb98bd9f85a9a205238c879b765a9ed130bc2f4ddf0b */}
 ### The pivot resolver (HCS)
 
-On the coordination server (HCS), a **pivot resolver** centralizes the internal DNS resolution of the VPN. It knows the zone layout and merely routes&nbsp;:
+On the coordination server (HCS), a **pivot resolver** (unbound) centralizes
+the internal VPN resolution. It knows the zone breakdown and simply routes&nbsp;:
 
-- each zone FQDN to its zone's gateway&nbsp;;
-- the rest to an encrypted external DNS.
+- each zone FQDN goes to its zone's gateway, at its tailnet address&nbsp;;
+- global services hosted on the HCS are resolved locally&nbsp;;
+- everything else goes to an encrypted external DNS.
 
-All VPN machines query it on the HCS's VPN address. It bridges zones together for name resolution.
+Remote devices query it via MagicDNS (split DNS), and gateways query it for names
+in the domain they don't know. Between two zones, a gateway queries the other
+zone's gateway directly. Details in
+[DNS](/en/doc/admin-guide/understand/tailnet/#dns).
 
-{/* t:p 886f7c04c865952614e60b28e4c6c7e5066e128f49234faf36fb6771149f7280 */}
+{/* t:p 5b69e05442d90b3cb3f5ec87f37b218a378a439f61d56be91184eed9fc9371e8 */}
 ### Resolution from outside
 
-A machine outside any zone (laptop on the go, smartphone) joins the network via
-the VPN. Its DNS resolution is **split** (split-DNS) according to the type of name
-requested:
+A machine outside any zone (laptop on the go, smartphone) joins the
+network via the VPN. Its DNS resolution is **split** (split-DNS) based on the
+nature of the requested name:
 
-- **internal names**: routed, through the VPN, to the HCS hub resolver, which
-  then directs them to the correct gateway;
-- **public names**: resolved by the local resolver of the visited network (ISP
-  box, public access point), without going through the VPN.
+- **internal names**: routed through the VPN to the HCS pivot resolver,
+  which then directs them to the correct gateway;
+- **tailnet node names** (`<node>.tailnet.internal`, or the short name):
+  resolved on the device itself by
+  [MagicDNS](/en/doc/admin-guide/understand/tailnet/#magicdns);
+- **public names**: resolved by the local resolver of the visited network
+  (home router, public access point), without going through the VPN.
 
 ```d2
 style.fill: transparent
 direction: down
 
-pc: Roaming device { shape: person }
+pc: Mobile machine { shape: person }
 split: Split-DNS routing { shape: diamond }
 
-pivot: Hub resolver\nHCS { shape: cylinder }
+pivot: Pivot resolver\nHCS { shape: cylinder }
 gwa: Zone A gateway
 gwb: Zone B gateway
-local: Local resolver\nof the visited network { shape: cloud }
+local: Local resolver\nof visited network { shape: cloud }
 net: Internet { shape: cloud }
 
 pc -> split
@@ -256,16 +271,16 @@ local -> net
 ```
 
 :::note[Why not route public names through the VPN]
-Routing everything through the HCS resolver tunnels all DNS traffic inside the
-VPN. If the VPN path degrades (intermediate relay, blocked UDP), nothing resolves
-anymore. Leaving public names to the local resolver preserves Internet access even
-when the VPN link is unstable.
+Routing everything through the HCS resolver tunnels all DNS traffic over
+the VPN. If the VPN path degrades (intermediate relay, blocked UDP), nothing
+resolves anymore. Leaving public names to the local resolver preserves Internet
+access even when the VPN link is unstable.
 :::
 
-:::tip[Device reconnected in a zone]
-A roaming laptop reconnected via ethernet in a zone no longer needs the VPN to
-reach it. Its VPN client then pauses to hand control back to the local gateway
-(direct resolution and routing), then reactivates upon departure.
+:::tip[Laptop reconnected in a zone]
+A traveling laptop reconnected via wired Ethernet in a zone no longer needs
+the VPN to reach it. Its VPN client then pauses to hand off to the local
+gateway (direct resolution and routing), and reactivates when it leaves.
 :::
 
 {/* t:p ed143a8571d029b2acb5bf9bafee916d8f1ec6a7705b70d4732a70ecd9aea7e4 */}

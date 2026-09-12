@@ -295,7 +295,7 @@ darkone.service.harmonia.enable = false;
 
 <hr/>
 
-{/* t:p bde9fc1089380403e62764a82cb511505af3af24aed85ccaf69033aae427a502 */}
+{/* t:p a2133ed0c411241da41e2adc3735446cd67fdf46a3d65f7a9c5f40c9507e06bb */}
 ### &#x2728; darkone.service.headscale
 
 A full-configured headscale service for HCS.
@@ -314,6 +314,8 @@ time, then reloaded on change (SIGHUP) without restarting headscale.
 - `headscale-audit` (every 15 min) compares the live nodes with the declared
   topology: metrics for the `dnf-headscale-<zone>` alerts, details in its
   journal. It never tags nor deletes.
+- `dnf-tailnet-enroll` backs `just tailnet-enroll`: single-use keys tagged
+  from the declared topology, declared name and tags on the enrolled node.
 
 ```nix
 darkone.service.headscale.policy.adminDevices.phone-alice = "100.64.0.9";
@@ -1266,7 +1268,7 @@ darkone.service.stk = {
 
 <hr/>
 
-{/* t:p 4905a9139054d20bc5aff8a08be0a65e71b480c72521af5d1567e3a11febfb29 */}
+{/* t:p 03a1368f4559b952ebbd866587b9d926128a3c3007a7d24086d3005e31db63c7 */}
 ### &#x2728; darkone.service.tailscale
 
 Tailscale client service for HCS.
@@ -1274,6 +1276,12 @@ Tailscale client service for HCS.
 :::note
 A tailscale client to connect an external host to HCS.
 Do not use it to connect a gateway for a tailnet subnet.
+:::
+
+:::note[Enrollment]
+No shared key. `just tailnet-enroll <host>`, also run by `just configure`,
+mints a single-use key tagged for the host on the HCS and hands it to
+`dnf-tailnet-join`. Idempotent: an enrolled node is left untouched.
 :::
 
 * **enable** `bool` Enable tailscale client to connect HCS

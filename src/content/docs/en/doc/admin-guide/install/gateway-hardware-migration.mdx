@@ -241,24 +241,20 @@ sudo -u nix ssh -G gw | awk '$1 == "hostname" { print $2 }'
 ```
 :::
 
-{/* t:p 043cf503f73148c1e7e8f8e9a06fd477dc2baf3ac00b3b7921c8520deb298c45 */}
-## Restore the data
+{/* t:p f5a2501fd34c17f547b4fb7ca48bd012a12669296aa465aeb754507a69c8bf7e */}
+## Restoring data
 
-The backup server isolates repositories per host&nbsp;: the authenticated user must
-equal the path's first segment. The renamed repository therefore stays
-inaccessible until the server has republished the new account.
+The backup server isolates repositories by host: the authenticated user must match the first path segment. The renamed repository therefore remains inaccessible until the server republishes the new account.
 
 ```sh
 restic-system-main snapshots
 ```
 
-This check is the real control&nbsp;: it must list the old machine's history. An
-**empty** repository signals a successful authentication but against the wrong
-path, restore nothing in that case.
+This check is the real control: it must list the history of the old machine. An **empty** repository signals successful authentication but on the wrong path; do not restore anything in that case.
 
 <Steps>
 
-1. **Stop the services** whose state is going to be replaced.
+1. **Stop the services** whose state is about to be replaced.
 
 2. **Empty the state directories** before restoring.
 
@@ -269,38 +265,30 @@ path, restore nothing in that case.
      --include /var/lib/forgejo --include /var/lib/postgresql
    ```
 
-4. **Restore the owners**, by name.
+4. **Restore ownership**, by name.
 
-5. **Restart the services** and check.
+5. **Restart the services** and verify.
 
 </Steps>
 
-:::danger[Restore merges, it does not replace]
-Between installation and restore, the services ran on the new machine and
-wrote their own state. The restore writes over **without deleting** what
-already exists, and the two generations mix together.
+:::danger[Restoring merges, it does not replace]
+Between installation and restoration, services have been running on the new machine and writing their own state. Restoration writes over existing data **without deleting** it, and the two generations get mixed together.
 
-On storage with sequentially numbered files, that is corruption. The time
-series database refuses to start, the segments no longer being consecutive.
-Timestamps separate the two generations unambiguously.
+On storage with sequentially numbered files, this is corruption. The time-series database refuses to start because segments are no longer consecutive. Timestamps cleanly separate the two generations.
 
-Hence the rule&nbsp;: empty the state directory **before** restoring it, or stop
-the services concerned from the very first boot.
+Hence the rule: empty the state directory **before** restoring, or stop the affected services on first boot.
 :::
 
-:::danger[Digital identities do not carry over]
-Restore reinstates **numeric UIDs and GIDs**, not names. Yet system accounts
-without a fixed identifier are numbered in order of creation, which differs
-from one machine to another. A restored directory ends up assigned to an
-unrelated account, or even to none.
+:::danger[Digital identities cannot be transposed]
+Restoration restores **numeric UIDs and GIDs**, not names. System accounts without a fixed identifier are numbered in creation order, which differs between machines. A restored directory ends up assigned to an unrelated account, or to none at all.
 
-The error message never mentions permissions in a readable way&nbsp;:
+The error message never mentions permissions in a readable way:
 
 ```
 Failed at step CHDIR ... Permission denied
 ```
 
-Restore by name, then sweep what remains&nbsp;:
+Restore by name, then scan for what remains:
 
 ```sh
 chown -R forgejo:forgejo /var/lib/forgejo
@@ -308,15 +296,11 @@ find /var/lib/forgejo \( -nouser -o -nogroup \)
 ```
 :::
 
-:::tip[Keeping the VPN identity]
-Restoring the VPN client's state directory, then restarting its service, makes
-the new gateway take over **the old one's node identity**, and therefore its
-address on the mesh. Nothing to change in `etc/config.yaml`.
+:::tip[Preserving VPN identity]
+Restoring the VPN client's state directory, then restarting its service, makes the new gateway resume **the old node's identity**, and thus its mesh address. Nothing to change in `etc/config.yaml`.
 
-Only do this once the old machine is definitively powered off, never with both
-in service. Otherwise, follow [Enregistrer une
-passerelle](/en/doc/admin-guide/operate/vpn/#register-a-gateway) and
-report the new address.
+Do this only once the old machine is permanently shut down, never with both running. Otherwise, `just tailnet-enroll gw` enrolls it as a new machine (the old node, offline, is replaced): record its new address, see [Registering a
+gateway](/en/doc/admin-guide/operate/vpn/#registering-a-gateway).
 :::
 
 {/* t:p 1e0eab87c92bcdffc5edf54bf44fe1c65ce899a9dc29733e8ab4225a4bb5d99d */}

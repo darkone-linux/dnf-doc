@@ -76,11 +76,10 @@ deploy locally. With several zones, a VPN however makes it easier to administer
 remote nodes thanks to secure direct access.
 :::
 
-{/* t:p 1af6bec1066118c14995da1f716b6aaa0dc931b41b71819e769ac897ece7af2b */}
-## "zones" section
+{/* t:p 7d128f788a02a87c7251d108d7a89f3a99b700cf0f2aab21d842c6660d9265f0 */}
+## Section "zones"
 
-A **zone** is a subnet (home LAN, guest network, remote site...). Each zone
-carries an IP prefix in `/16`, a gateway and, optionally, non-NixOS devices.
+A **zone** is a subnet (home LAN, guest network, remote site, etc.). Each zone carries a `/16` IP prefix, a gateway and, optionally, non-NixOS devices.
 
 ```yaml
 # etc/config.yaml
@@ -96,13 +95,13 @@ zones:
       lan:
         interfaces: ["enp2s0"]   # interface(s) interne(s) (requis)
       vpn:
-        ipv4: "10.0.0.1"         # IP VPN de la passerelle (après enregistrement)
+        ipv4: "100.64.0.1"       # IP tailnet de la passerelle (après enrôlement)
 ```
 
 | Key | Role |
 |---|---|
 | `description` | Zone label. |
-| `locale` / `timezone` | Local overrides (otherwise `network.default`). |
+| `locale` / `timezone` | Locale overrides (otherwise `network.default`). |
 | `ipPrefix` | First two octets of an RFC1918 `/16` (e.g. `10.0`). |
 | `gateway` | Gateway configuration (see below). |
 | `extraHosts` | Non-NixOS devices resolved by name (see below). |
@@ -115,21 +114,21 @@ The project reserves the octets as follows (prefix `10.0`)&nbsp;:
 - `10.0.3.x` DHCP range,
 - `10.0.4-5.x` non-NixOS devices,
 - `10.0.6.x` machines from other zones, passing through (reserved, computed),
-- `10.0.11-99.x` hosts in the range.
+- `10.0.11-99.x` hosts within the range.
 :::
 
-{/* t:p 0f49f42cf7c0764aa411b0b315edfddd8408273654c08f913ff29b85541765e2 */}
+{/* t:p be8946e4a097f0ada2284bc45b89330617069d026237a50bf40ba806c20557e7 */}
 ### The gateway
 
 | Key | Role |
 |---|---|
-| `wan.interface` | Network interface to Internet (required). |
-| `lan.interfaces` | List of internal interfaces (required), integrated into the `lan0` bridge. |
-| `lan.dhcp-range` | DHCP range (optional; default `<prefix>.3.200,<prefix>.3.249,24h`). |
-| `vpn.ipv4` | Gateway VPN IP, to fill in after Headscale registration. |
+| `wan.interface` | Network interface to the Internet (required). |
+| `lan.interfaces` | List of internal interfaces (required), joined into the `lan0` bridge. |
+| `lan.dhcp-range` | DHCP range (optional; default `<préfixe>.3.200,<préfixe>.3.249,24h`). |
+| `vpn.ipv4` | Gateway tailnet IP, collected after `just tailnet-enroll` ([details](/en/doc/admin-guide/operate/vpn/#registering-a-gateway)). |
 
-:::note[Auto-detection]
-The host whose IP ends in `.1.1` is **automatically** the gateway of its zone. See [Gateway](/en/doc/admin-guide/install/gateway/).
+:::note[Automatic detection]
+The host whose IP ends with `.1.1` is **automatically** the gateway of its zone. See [Gateway](/en/doc/admin-guide/install/gateway/).
 :::
 
 {/* t:p 4845bed7a3f9bf9cb748e88a0d1d22b71fd0581e81ce7d6af8e981037930e27d */}

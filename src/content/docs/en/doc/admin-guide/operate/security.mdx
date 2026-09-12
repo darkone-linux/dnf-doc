@@ -231,39 +231,61 @@ hardening would break services. The list acts as a *floor*, overridable per
 unit, and `needs-jit` lifts `MemoryDenyWriteExecute` for JIT engines.
 :::
 
-{/* t:p 542c96536187250d8bbb30417e249fd337e1d74a33c0d6278fbab99bc86ab80e */}
+{/* t:p a7baad7ec6820c3db327fb89c81fa9a93e1111d78610e3fe9b1565b59c73039e */}
 ### Network
 
-| Code | Rule | Min | Inter | Reinforced | Elevated |
+| Code | Rule | Min | Inter | Reinforced | High |
 |---|---|:-:|:-:|:-:|:-:|
-| `R80` | Listening port monitoring | ✅ | ✅ | ✅ | ✅ |
-| `C4` | Default-deny firewall | ⚠️ | ⚠️ | ✅ | ✅ |
+| `R80` | Listening ports monitoring | ✅ | ✅ | ✅ | ✅ |
+| `C4` | Firewall default-deny | ⚠️ | ⚠️ | ✅ | ✅ |
 | `R12` | IPv4 network sysctls | ❌ | ✅ | ✅ | ✅ |
-| `R13` | IPv6 disabling (on request) | ❌ | ⚠️ | ⚠️ | ⚠️ |
+| `R13` | Disabling IPv6 (on request) | ❌ | ⚠️ | ⚠️ | ⚠️ |
 | `C5` | OpenSSH hardening | ❌ | ✅ | ✅ | ✅ |
 | `C7` | NTS time synchronization | ❌ | ✅ | ✅ | ✅ |
 | `C8` | Secure DNS resolver (DNSSEC, DoT) | ❌ | ✅ | ✅ | ✅ |
 | `R79` | Hardened exposed services **(server)** | ❌ | ✅ | ✅ | ✅ |
 | `R78` | Network service isolation **(server)** | ❌ | ❌ | ✅ | ✅ |
 
-:::note[`C4` partial on the first two levels]
-At the `minimal` and `intermediary` levels, `C4` covers **inbound** filtering (default deny). **Outbound** (egress) filtering is added starting from `reinforced`.
+:::note[`C4` partial at the first two levels]
+At the `minimal` and `intermediary` levels, `C4` covers **inbound**
+filtering (default-deny). **Outbound** (egress) filtering is added from
+`reinforced` onwards.
 :::
 
 :::caution[`C5`: no tunnel, no agent, no `ssh -J`]
-TCP tunnels, agent forwarding, and X11 are disabled. ProxyJump falls with them: `ssh -J` opens a `direct-tcpip` channel, which is exactly what `AllowTcpForwarding` denies. Administration access is **directly on the tailnet**, never via a jump host.
+TCP tunnels, agent forwarding and X11 are disabled. ProxyJump falls with them:
+`ssh -J` opens a `direct-tcpip` channel, which is exactly what
+`AllowTcpForwarding` refuses. Administrative access happens **directly on the
+tailnet**, never through a jump.
 :::
 
-:::caution[`R13`: disabling IPv6 requires explicit opt-in]
-An exclusion label can only **remove** a rule. `no-ipv6` therefore made R13 active by default and disabled IPv6 across the entire fleet. Disabling is now done via `darkone.security.kernel-params.disableIpv6` (`false` by default); ANSSI prefers to harden IPv6 rather than remove it anyway.
+:::note[On the tailnet, SSH follows the workstation]
+The tailnet access policy only opens port 22 to administration workstations
+and to devices declared in `adminDevices`&nbsp;: an administrator account is not
+enough. See [Access policy](/en/doc/admin-guide/understand/tailnet/#access-policy-acl).
 :::
 
-:::note[`R12`: reverse path filtering adapted to role]
-Strict mode (`rp_filter = 1`) drops all asymmetric return traffic. A Tailscale subnet router advertises its routes without SNAT (`--snat-subnet-routes=false`): this is exactly that case. Hosts with `isGateway` or `isExitNode` switch to loose mode (`2`), the others remain strict.
+:::caution[`R13`: disabling IPv6 is an explicit request]
+An exclusion label only knows how to **remove** a rule. `no-ipv6` therefore made
+R13 active by default and cut IPv6 across the whole fleet. Disabling now goes
+through `darkone.security.kernel-params.disableIpv6` (`false` by
+default); ANSSI prefers hardening IPv6 over removing it anyway.
 :::
 
-:::caution[`R79`: every exposed service must have its own filter]
-fail2ban runs on the `systemd` backend: a jail requires a `filter.d` definition **and** a `journalmatch`, otherwise the daemon refuses to start — and takes the `sshd` jail down with it. `exposedServices` is therefore validated at evaluation time against `darkone.security.network.filters`. Provided today: `sshd` (shipped with fail2ban) and `vaultwarden`. Caddy, Matrix, and Kanidm require written patterns based on real logs.
+:::note[`R12`: reverse-path filtering matched to the role]
+Strict mode (`rp_filter = 1`) drops any asymmetric reply. A tailscale
+subnet router advertises its routes without SNAT
+(`--snat-subnet-routes=false`): this is exactly that case. `isGateway`
+or `isExitNode` hosts switch to loose mode (`2`), the others stay strict.
+:::
+
+:::caution[`R79`: every exposed service must have its filter]
+fail2ban runs on the `systemd` backend: a jail requires a `filter.d`
+definition **and** a `journalmatch`, otherwise the daemon refuses to start —
+and takes the `sshd` jail down with it. `exposedServices` is therefore checked
+at evaluation against `darkone.security.network.filters`. Provided today:
+`sshd` (shipped with fail2ban) and `vaultwarden`. Caddy, Matrix and Kanidm need
+patterns written from real journal logs.
 :::
 
 {/* t:p f59cb27147ba7402e4a96f7569e41a10ad12531fce1d1012e41269834820e6aa */}

@@ -8,6 +8,10 @@ lang: fr
 
 import { Aside } from '@astrojs/starlight/components';
 
+{/* t:main */}
+{/* t:h 3327e3244dd9d492f06acff25eccfbba1972bc2673818c1c358565606e6bd6e0 */}
+
+{/* t:p 36d13994ae8a1985cf398e0ef550b22890aafc87bac5541dedd1774a6f1cf4f4 */}
 Le tailnet est le VPN maillé du réseau&nbsp;: il relie les zones, le serveur de
 coordination (HCS) et les appareils distants. [Headscale](https://headscale.net/)
 le coordonne, [Tailscale](https://tailscale.com/) le fait vivre sur chaque nœud.
@@ -15,6 +19,7 @@ Cette page explique qui y figure, par où passent paquets et requêtes DNS, qui 
 joindre quoi, et comment une machine y entre. Les gestes d'exploitation sont dans
 [VPN](/fr/doc/admin-guide/operate/vpn/).
 
+{/* t:p 1a15bbd187c4c1e68f428151a7262776b8bef47ef490ecdf9479ffdce87348be */}
 ## Plan de contrôle, plan de données
 
 Headscale distribue les informations, jamais le trafic&nbsp;: les nœuds échangent
@@ -52,6 +57,7 @@ control.headscale -> data: Clés, adresses, routes, DNS, ACL { style.stroke-dash
 - HCS indisponible&nbsp;: les tunnels établis continuent de fonctionner, mais rien ne
   change (nouveau nœud, nouvelle route, nouvelle politique) jusqu'à son retour.
 
+{/* t:p 0da41f50b999eff27fa0adc72d97b2247e1d8dbbf555e4e1f1c8683d7ef44b6d */}
 ## Qui est sur le tailnet
 
 Deux sortes d'identités coexistent&nbsp;: les **machines**, identifiées par un tag
@@ -72,6 +78,7 @@ qui dit leur rôle, et les **appareils personnels**, rattachés à leur proprié
 - Les `tags` libres d'un hôte dans `etc/config.yaml` n'accordent aucun droit.
 - Chaque nœud porte un nom MagicDNS&nbsp;: `<nœud>.tailnet.internal`.
 
+{/* t:p 1023e48a76ada045e7fb51ebdae3b007c6707db084b37145c98c6eb15d365978 */}
 ## Routage
 
 Le tailnet donne une adresse à chaque nœud et relie les sous-réseaux des zones.
@@ -126,6 +133,7 @@ maison.gw -> atelier.gw: tailnet, route 10.1.0.0/16
 Ce qu'une passerelle laisse traverser est détaillé dans [Ce qui traverse une
 passerelle](/fr/doc/admin-guide/understand/network/#ce-qui-traverse-une-passerelle).
 
+{/* t:p fe7c76bd443a57614cb4878bb829c13acbafe3db8f726431921ad43c0f52df4e */}
 ## DNS
 
 Chaque machine interroge un résolveur différent, mais les noms d'une zone finissent
@@ -178,6 +186,7 @@ unbound -> peer: atelier.domain.tld
 - **`headscale.domain.tld`**&nbsp;: jamais demandé au tunnel qu'il sert à monter, voir
   [Amorçage du plan de contrôle](/fr/doc/admin-guide/operate/vpn/#amorçage-du-plan-de-contrôle).
 
+{/* t:p a6aeea99a3370e2a3d25fa9effbb15e98f0384c764eec332452b418eb1cdef35 */}
 ## MagicDNS
 
 MagicDNS est le petit résolveur que chaque client Tailscale embarque, à l'adresse
@@ -191,6 +200,7 @@ consignes&nbsp;:
 | DNS scindé | `domain.tld` → unbound du HCS | les noms internes partent, par le tunnel, au résolveur pivot |
 | Résolveur global | aucun | le reste va au résolveur habituel de l'appareil |
 
+{/* t:p e53fead1727c2f215a528bafafb193736eacd83c468528d8078a5f02bb6b4e7c */}
 ### Où il intervient
 
 Un client ne s'en sert comme résolveur que s'il accepte le DNS du tailnet
@@ -204,6 +214,7 @@ Un client ne s'en sert comme résolveur que s'il accepte le DNS du tailnet
 | HCS | oui | présent, mais le système interroge unbound (`127.0.0.1`) |
 | Poste d'une zone | pas de client | aucun |
 
+{/* t:p 0bb79570e7dff46e9437af300ac0572d691e48b87aefb3f650636d1b0f5c5d48 */}
 ### Pourquoi
 
 - **Nommer les nœuds hors des zones**&nbsp;: un portable en déplacement joint
@@ -217,6 +228,7 @@ Un client ne s'en sert comme résolveur que s'il accepte le DNS du tailnet
 - **Laisser la main aux passerelles**&nbsp;: elles gardent leur propre DNS
   (`--accept-dns=false`), dont dépendent leur zone et ses clients.
 
+{/* t:p 91bc1bde70dba30de3eec75662137cb84d5c6f65aa840b40733bb0231ac959e1 */}
 ### Comment ça s'articule
 
 Un appareil distant ouvre un service de la zone `maison`&nbsp;:
@@ -253,6 +265,7 @@ résout pas. Viser une adresse tailnet (voir la
 directement&nbsp;: `dig @100.100.100.100 gw-atelier.tailnet.internal`.
 </Aside>
 
+{/* t:p 2a52d780151021c39574fdca9d7606444d43380e64338b45341264ad7ddcaaaa */}
 ## Politique d'accès (ACL)
 
 Sur le tailnet, **rien ne passe par défaut**. Headscale compile une politique en
@@ -263,6 +276,7 @@ La politique n'est pas écrite à la main&nbsp;: DNF la génère depuis
 `etc/config.yaml` (zones, hôtes, utilisateurs), la vérifie à la construction
 (`headscale policy check`), puis Headscale la recharge à chaud au déploiement.
 
+{/* t:p dbfcafbe239a0ff0d3d51e5ab74e66a2f852c3be9657b41b8fc5e507d21bc447 */}
 ### Les briques
 
 | Brique | Contenu généré |
@@ -273,6 +287,7 @@ La politique n'est pas écrite à la main&nbsp;: DNF la génère depuis
 | `autoApprovers` | route de chaque zone → `tag:gw-<zone>`&nbsp;; exit node → `tag:hcs` |
 | `acls` | les règles ci-dessous |
 
+{/* t:p aceb36cc31b05f033a037a983c6334db953abd9a7bd43e372b9604e5fe66d4fb */}
 ### Les règles
 
 | # | Source | Destination | Pour |
@@ -299,6 +314,7 @@ La politique n'est pas écrite à la main&nbsp;: DNF la génère depuis
 Les options qui ajustent la politique sont décrites dans [Adapter la politique
 d'accès](/fr/doc/admin-guide/operate/vpn/#adapter-la-politique-daccès).
 
+{/* t:p f94c4e5b7b9d7c14f9d75ae2016a602edd2ce5b245f75960ca76585111dd516e */}
 ## Clés d'activation et enrôlement
 
 Un nœud prouve **une seule fois** à Headscale qu'il a le droit d'entrer. Ensuite, sa
@@ -312,6 +328,7 @@ appareil personnel.
 | Clé pré-autorisée | créée par Headscale | autorise un enregistrement sans navigateur, avec les tags qu'elle porte |
 | Session OIDC | Kanidm | autorise l'enregistrement d'un appareil personnel |
 
+{/* t:p e0987f5e0014500f8e01ef87001b30c82c616ab34e4d3a01baf7eadb3b4570de */}
 ### Machines : une clé à usage unique
 
 `just tailnet-enroll <hôte>` fait entrer une machine, sans clé partagée&nbsp;:
@@ -354,6 +371,7 @@ Tous les hôtes déchiffrent le même fichier sops. Une clé commune y serait à
 de chacun&nbsp;: un poste compromis pourrait entrer sous l'identité d'une passerelle.
 </Aside>
 
+{/* t:p 217114493079e1d6c3821f255474d326ebd5e7389ff6fabdf63b68139bcdac08 */}
 ### Appareils personnels : OIDC
 
 1. L'application Tailscale contacte Headscale, qui la renvoie vers Kanidm.

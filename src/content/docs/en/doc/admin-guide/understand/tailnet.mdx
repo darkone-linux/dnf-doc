@@ -1,0 +1,383 @@
+---
+title: How the tailnet works
+sidebar:
+  label: Tailnet
+  order: 2.5
+lang: en
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+{/* t:translated-from fr */}
+{/* t:h 3327e3244dd9d492f06acff25eccfbba1972bc2673818c1c358565606e6bd6e0 */}
+
+{/* t:p 36d13994ae8a1985cf398e0ef550b22890aafc87bac5541dedd1774a6f1cf4f4 */}
+The tailnet is the network's mesh VPN: it connects zones, the coordination
+server (HCS) and remote devices. [Headscale](https://headscale.net/)
+coordinates it, [Tailscale](https://tailscale.com/) brings it to life on each
+node. This page explains who is on it, how packets and DNS queries travel, who
+can reach what, and how a machine joins. Operational procedures are in
+[VPN](/en/doc/admin-guide/operate/vpn/).
+
+{/* t:p 1a15bbd187c4c1e68f428151a7262776b8bef47ef490ecdf9479ffdce87348be */}
+## Control plane, data plane
+
+Headscale distributes information, never traffic: nodes exchange directly with each
+other, encrypted with [WireGuard](https://www.wireguard.com/).
+
+```d2
+style.fill: transparent
+direction: down
+
+control: Control plane {
+  headscale: Headscale (HCS) { shape: hexagon }
+}
+
+data: Data plane {
+  gwa: Home gateway
+  gwb: Workshop gateway
+  phone: Remote device { shape: person }
+  gwa <-> gwb: WireGuard
+  phone <-> gwa: WireGuard
+}
+
+control.headscale -> data: Keys, addresses, routes, DNS, ACL { style.stroke-dash: 3 }
+```
+
+| Plane | Carried by | Content |
+|---|---|---|
+| Control | Headscale on the HCS (HTTPS) | identities, public keys, addresses, routes, DNS, ACL filters |
+| Data | each Tailscale client (UDP 41641) | the traffic, from one node to another |
+| Relay | Tailscale public DERP servers | the encrypted traffic, when no direct path exists |
+
+- Nodes punch through NAT to connect directly. UDP port 41641 is open on the HCS
+  and on the gateways' WAN, which helps behind strict NAT.
+- Without a direct path (filtered UDP, strict NAT on both sides), traffic goes
+  through a DERP relay: always end-to-end encrypted, but slower.
+- HCS unavailable: established tunnels keep working, but nothing changes (new node,
+  new route, new policy) until it is back.
+
+{/* t:p 0da41f50b999eff27fa0adc72d97b2247e1d8dbbf555e4e1f1c8683d7ef44b6d */}
+## Who is on the tailnet
+
+Two kinds of identities coexist: **machines**, identified by a tag that tells
+their role, and **personal devices**, attached to their owner.
+
+| Node | Identity | Obtained by | Expiration |
+|---|---|---|---|
+| HCS | `tag:hcs` | one-time key (`just tailnet-enroll`) | never |
+| Zone gateway | `tag:gw-<zone>` | one-time key | never |
+| Admin workstation | `tag:admin` | one-time key | never |
+| Personal device | its owner (`alice@`) | [Kanidm](/en/doc/admin-guide/understand/auth-idm/) sign-in | 180 days |
+
+- Tags derive from the topology: `hcs` profile, zone gateway, host whose
+  `groups` contains `admin` and which enables the Tailscale client.
+- A tagged node belongs to no one (`tagged-devices` in Headscale).
+- Only accounts in the Kanidm `tailnet` group connect a device: admins and
+  zone members (group `zone-<zone>`).
+- A host's free `tags` in `etc/config.yaml` grant no rights.
+- Each node carries a MagicDNS name: `<node>.tailnet.internal`.
+
+{/* t:p 1023e48a76ada045e7fb51ebdae3b007c6707db084b37145c98c6eb15d365978 */}
+## Routing
+
+The tailnet gives every node an address and links the zone subnets.
+Path of a workstation in the `maison` zone to a server in the `atelier` zone:
+
+```d2
+style.fill: transparent
+direction: down
+
+maison: Maison zone 10.0.0.0/16 {
+  pc: Workstation 10.0.2.4
+  gw: Home gateway
+  pc -> gw: default route
+}
+
+atelier: Atelier zone 10.1.0.0/16 {
+  gw: Workshop gateway
+  srv: Server 10.1.1.2 { shape: cylinder }
+  gw -> srv: without SNAT
+}
+
+maison.gw -> atelier.gw: tailnet, route 10.1.0.0/16
+```
+
+| Path | Route | Mechanism |
+|---|---|---|
+| Workstation of one zone → another zone | its gateway, the tailnet, the remote gateway | subnet routes |
+| Remote device → a zone's service | the tailnet, the zone's gateway | the zone's subnet route |
+| Remote device → global service | the tailnet, the HCS | HCS tailnet address |
+| Node → node | direct | `100.64.x.y` addresses |
+| Node → Internet | its own connection | HCS exit node closed by default |
+
+- **Addresses**: Headscale assigns them in order, within `100.64.0.0/10` (and
+  `fd7a:115c:a1e0::/48`). A reinstalled machine (new machine key) gets a new one.
+- **Advertised routes**: each gateway advertises its zone's `/16`. The policy
+  approves it outright for `tag:gw-<zone>` only: a gateway cannot divert another
+  zone's subnet.
+- **Accepted routes**: each client installs the other zones' `/16` in Tailscale's
+  routing table 52, consulted before the main table. A gateway does not install its
+  own zone there.
+- **Without SNAT**: a gateway relays without masking the source
+  (`--snat-subnet-routes=false`). A machine in the zone sees the real tailnet
+  address and answers through its default route, the gateway; hence the gateways'
+  permissive reverse-path filtering (rule `R12` of
+  [security](/en/doc/admin-guide/operate/security/)).
+- **Exit node**: the HCS advertises itself as an Internet exit, approved outright,
+  but no rule authorizes it while `policy.exitNodeSources` is empty.
+- **Filtering**: the policy applies on arrival. For a zone, its gateway is what
+  filters what enters from the tailnet.
+
+What a gateway lets through is detailed in [What crosses a
+gateway](/en/doc/admin-guide/understand/network/#what-traverses-a-gateway).
+
+{/* t:p fe7c76bd443a57614cb4878bb829c13acbafe3db8f726431921ad43c0f52df4e */}
+## DNS
+
+Every machine queries a different resolver, but a zone's names always end up with
+the same owner: that zone's gateway.
+
+| Machine | Resolver | A zone's names | Global services | Internet |
+|---|---|---|---|---|
+| Workstation of a zone, gateway | gateway's dnsmasq, behind AdGuard Home if enabled | dnsmasq, or the zone's gateway | dnsmasq, or the HCS's unbound | public DNS, filtered by AdGuard Home |
+| HCS | unbound, local | the zone's gateway | unbound | Quad9, encrypted |
+| Remote device | MagicDNS (`100.100.100.100`) | through the HCS's unbound | through the HCS's unbound | resolver of the visited network |
+
+```d2
+style.fill: transparent
+direction: down
+
+pc: Workstation of a zone { shape: person }
+remote: Remote device { shape: person }
+
+gw: Home gateway {
+  agh: AdGuard Home
+  dnsmasq: dnsmasq { shape: cylinder }
+  agh -> dnsmasq: internal names
+}
+
+magic: MagicDNS\n100.100.100.100 { shape: hexagon }
+unbound: unbound (HCS) { shape: cylinder }
+peer: Workshop gateway
+upstream: Encrypted DNS { shape: cloud }
+visited: Resolver\nof the visited network { shape: cloud }
+
+pc -> gw.agh
+remote -> magic
+gw.agh -> upstream: Internet
+gw.dnsmasq -> peer: atelier.domain.tld
+gw.dnsmasq -> unbound: domain.tld
+magic -> unbound: domain.tld
+magic -> visited: Internet
+unbound -> peer: atelier.domain.tld
+```
+
+- **Gateway**: dnsmasq knows the machines of all zones and the declared services.
+  An unknown name of another zone goes to that zone's gateway (LAN address, through
+  the tailnet); the rest of `domain.tld` goes to unbound, on the HCS.
+- **A zone's services**: `*.<zone>.domain.tld` points to the zone gateway's LAN
+  address, which serves them behind its proxy.
+- **HCS**: unbound listens on `127.0.0.1` and on the HCS's tailnet address, for
+  tailnet addresses only. It forwards `<zone>.domain.tld` to the gateway's
+  resolver, at its tailnet address: hence the importance of declaring `vpn.ipv4`.
+- **`headscale.domain.tld`**: never requested on the tunnel it helps set up, see
+  [Booting the control plane](/en/doc/admin-guide/operate/vpn/#control-plane-bootstrap).
+
+{/* t:p a6aeea99a3370e2a3d25fa9effbb15e98f0384c764eec332452b418eb1cdef35 */}
+## MagicDNS
+
+MagicDNS is the small resolver each Tailscale client embeds, at the address
+`100.100.100.100`. Headscale enables it for the whole tailnet and pushes its
+settings to it:
+
+| Setting | Value | Effect |
+|---|---|---|
+| Node names | `tailnet.internal` | `gw-atelier.tailnet.internal` → tailnet address, kept up to date by Headscale |
+| Search domain | `tailnet.internal` | `ssh gw-atelier` is enough |
+| Split DNS | `domain.tld` → HCS unbound | internal names go, through the tunnel, to the pivot resolver |
+| Global resolver | none | the rest goes to the device's usual resolver |
+
+{/* t:p e53fead1727c2f215a528bafafb193736eacd83c468528d8078a5f02bb6b4e7c */}
+### Where it comes in
+
+A client only uses it as a resolver if it accepts the tailnet's DNS
+(`--accept-dns`).
+
+| Machine | `--accept-dns` | MagicDNS role |
+|---|---|---|
+| Personal device, laptop away from its zone | yes | system resolver: node names and split DNS |
+| Laptop reconnected to its zone | client paused | none, the local gateway takes over |
+| Gateway | no | reverse names of `100.x` addresses, for AdGuard Home statistics |
+| HCS | yes | present, but the system queries unbound (`127.0.0.1`) |
+| Zone workstation | no client | none |
+
+{/* t:p 0bb79570e7dff46e9437af300ac0572d691e48b87aefb3f650636d1b0f5c5d48 */}
+### Why
+
+- **Name nodes outside zones**: a laptop on the move reaches `gw-atelier`
+  directly over the tailnet, without relying on a subnet route or a zone's DNS.
+  That is what `just enter gw-atelier` does away from home.
+- **Resolve internal names everywhere**: split DNS is enough, without routing
+  all DNS through the VPN.
+- **Keep the Internet out of the tunnel**: if the VPN path weakens, public name
+  resolution holds
+  ([why](/en/doc/admin-guide/understand/network/#resolution-from-outside)).
+- **Leave control to gateways**: they keep their own DNS (`--accept-dns=false`),
+  which their zone and its clients depend on.
+
+{/* t:p 91bc1bde70dba30de3eec75662137cb84d5c6f65aa840b40733bb0231ac959e1 */}
+### How it fits together
+
+A remote device opens a service of the `maison` zone:
+
+```d2
+style.fill: transparent
+shape: sequence_diagram
+
+app: Remote device
+magic: MagicDNS
+unbound: unbound (HCS)
+gw: Home gateway
+
+app -> magic: photos.maison.domain.tld ?
+magic -> unbound: split DNS, through the tunnel
+unbound -> gw: maison zone
+gw -> unbound: 10.0.1.1
+unbound -> magic: 10.0.1.1
+magic -> app: 10.0.1.1
+app -> gw: HTTPS 10.0.1.1
+gw -> app: service page
+```
+
+1. MagicDNS recognizes `domain.tld` and forwards the query, through the tunnel, to
+   unbound.
+2. unbound forwards it to the `maison` gateway's resolver, at its tailnet address.
+3. The answer is the gateway's LAN address (`10.0.1.1`).
+4. The device reaches it through the zone's subnet route; the policy authorizes it
+   on port 443 (`gateway-maison`).
+
+<Aside type="caution" title="Gateways and HCS: no tailnet.internal names">
+Their system does not go through MagicDNS: `gw-atelier.tailnet.internal` does not
+resolve there. Aim at a tailnet address (see the
+[network backup](/en/doc/how-to/admin/network-backup/)), or query MagicDNS
+directly: `dig @100.100.100.100 gw-atelier.tailnet.internal`.
+</Aside>
+
+{/* t:p 2a52d780151021c39574fdca9d7606444d43380e64338b45341264ad7ddcaaaa */}
+## Access policy (ACL)
+
+On the tailnet, **nothing passes by default**. Headscale compiles a policy into
+filters it pushes to each node; each drops whatever no rule allows. For a zone,
+filtering happens at its gateway.
+
+The policy is not hand-written: DNF generates it from `etc/config.yaml` (zones,
+hosts, users), validates it at build time (`headscale policy check`), then
+Headscale hot-reloads it at deployment.
+
+{/* t:p dbfcafbe239a0ff0d3d51e5ab74e66a2f852c3be9657b41b8fc5e507d21bc447 */}
+### The building blocks
+
+| Block | Generated content |
+|---|---|
+| `groups` | `group:admins` (`admin`, `nix-admin` profiles), `group:zone-<zone>` (`zone-<zone>` group) |
+| `tagOwners` | `tag:hcs`, `tag:gw-<zone>`, `tag:admin`, owned by `group:admins` |
+| `hosts` | `zone-<zone>` (subnet), `gateway-<zone>` (gateway LAN address), admin workstations (LAN address), `adminDevices`, `extraHosts` |
+| `autoApprovers` | route of each zone → `tag:gw-<zone>`; exit node → `tag:hcs` |
+| `acls` | the rules below |
+
+{/* t:p aceb36cc31b05f033a037a983c6334db953abd9a7bd43e372b9604e5fe66d4fb */}
+### The rules
+
+| # | Source | Destination | Purpose |
+|---|---|---|---|
+| 1 | tagged machines, zone subnets | all machines and zones, all ports | infrastructure: DNS, monitoring, backups, deployment |
+| 2 | personal devices (`autogroup:member`) | HCS, ports 53 and 443 | internal DNS, global services |
+| 3 | `group:admins` | gateways of all zones, port 443 | all zones' services |
+| 4 | `group:zone-<zone>` | its zone's gateway, port 443 | its zones' services |
+| 5 | personal devices | devices of the same owner | between one's own devices |
+| 6 | `tag:admin`, admin workstations, `adminDevices` | all machines and zones, port 22 | SSH administration |
+| 7 | `policy.exitNodeSources` | Internet | the HCS exit node, if enabled |
+| 8 | `policy.extraAcls` | free | the network's own needs |
+
+- **SSH follows the workstation, not the person**: an admin on their phone has
+  no SSH, except for a device declared in `adminDevices`.
+- **`gateway-<zone>` in addition to the tag**: a zone's services resolve to the
+  LAN address of its gateway, which `tag:gw-<zone>` does not cover (it only
+  designates its tailnet addresses).
+- **An empty group disappears** from the policy: a rule citing it would get the
+  whole policy rejected.
+- **Open mode** (`policy.enforce = false`): a single rule allows everything.
+  Reserved for a migration, while nodes are being tagged.
+
+The options that fine-tune the policy are described in [Adapting the access
+policy](/en/doc/admin-guide/operate/vpn/#client-self-repair).
+
+{/* t:p f94c4e5b7b9d7c14f9d75ae2016a602edd2ce5b245f75960ca76585111dd516e */}
+## Pre-authorized keys and enrollment
+
+A node proves **once** to Headscale that it is allowed in. After that, its node
+key is enough: forever if tagged, until expiry for a personal device.
+
+| Key | Where | Role |
+|---|---|---|
+| Machine key | the node's `/var/lib/tailscale` | identifies the machine to Headscale; lost on reinstall |
+| Node key | the node's `/var/lib/tailscale` | encrypts traffic; Headscale publishes its public part to peers |
+| Pre-authorized key | created by Headscale | authorizes enrollment without a browser, with the tags it carries |
+| OIDC session | Kanidm | authorizes a personal device's enrollment |
+
+{/* t:p e0987f5e0014500f8e01ef87001b30c82c616ab34e4d3a01baf7eadb3b4570de */}
+### Machines: a single-use key
+
+`just tailnet-enroll <host>` enrolls a machine, without a shared key:
+
+```d2
+style.fill: transparent
+shape: sequence_diagram
+
+admin: Admin workstation
+node: Machine
+hcs: Headscale (HCS)
+
+admin -> node: tailscale status
+admin -> hcs: status
+hcs -> admin: declared identity, unknown node
+admin -> hcs: key
+hcs -> admin: single-use key
+admin -> node: key, via dnf-tailnet-join
+node -> hcs: registration
+admin -> hcs: adopt
+hcs -> admin: name, tags, address
+```
+
+- **Forced tags**: the HCS creates the key for the host's **declared** tags
+  (`dnf-tailnet-enroll`), whatever the caller asks for.
+- **Single use, 10 minutes**: worthless once served.
+- **No trace**: the key goes through a pipe, never through a command line,
+  a variable, a disk or sudo's input/output journal (rules
+  `NOLOG_INPUT` and `NOLOG_OUTPUT`).
+- **Held in memory**: `dnf-tailnet-join` puts it in
+  `/run/tailscale-enroll`, `tailscaled-autoconnect` uses it
+  (`tailscale up --force-reauth`) then erases it.
+- **Portable in pause in its zone**: it registers without routes or DNS, then
+  pauses again.
+- **Final control**: `adopt` sets the declared tags and name, replaces an old
+  offline node with the same name, and the recipe checks the result.
+
+<Aside type="note" title="Why not a shared key">
+All hosts decrypt the same sops file. A common key would be within everyone's
+reach: a compromised workstation could enter under a gateway's identity.
+</Aside>
+
+{/* t:p 217114493079e1d6c3821f255474d326ebd5e7389ff6fabdf63b68139bcdac08 */}
+### Personal devices: OIDC
+
+1. The Tailscale app contacts Headscale, which redirects it to Kanidm.
+2. Kanidm only accepts members of the `tailnet` group; Headscale checks it too.
+3. The device is enrolled under the person's name (`alice@`) and expires after
+   180 days (`nodeExpiry`): they then sign in again.
+
+<Aside type="caution" title="Kanidm unavailable at Headscale startup">
+Headscale still starts, but without OIDC until its next restart: no personal
+device can connect. The `HeadscaleOidcFallback` alert reports it.
+</Aside>

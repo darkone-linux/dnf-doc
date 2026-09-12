@@ -16,10 +16,10 @@ The coordination server (HCS) connects zones via a
 [mesh VPN](/en/doc/admin-guide/understand/network/) and hosts shared services.
 It is a small **public** server (a VPS is sufficient).
 
-{/* t:p aa32894c75012b350d20cf27a719a20038290fa0424e58a518267d61ca100931 */}
-## Declare the HCS
+{/* t:p f7bf40af86c8e342f8fef83298a7e53d71227b618605769ab698d613130695a9 */}
+## Declaring the HCS
 
-Enable coordination and declare the host `profile: hcs`:
+Coordination is enabled and the host is declared with `profile: hcs`:
 
 ```yaml
 # etc/config.yaml
@@ -31,20 +31,22 @@ network:
 
 hosts:
   - hostname: "hcs"
-    name: "Coordination server"
+    name: "Serveur de coordination"
     profile: "hcs"
     ipv4:
-      external: "203.0.113.10"   # Public IP of the VPS
-      internal: "100.64.0.2"     # IP in the tailnet
+      external: "203.0.113.10"   # IP publique du VPS
+      internal: "100.64.0.2"     # IP tailnet (après enrôlement)
     services:
-      headscale:                 # VPN coordination
-      idm:                       # identities (Kanidm)
-      vaultwarden:               # vault
+      headscale:                 # coordination du VPN
+      idm:                       # identités (Kanidm)
+      vaultwarden:               # coffre-fort
 ```
 
 Installation follows the same procedure as a
 [gateway](/en/doc/admin-guide/install/gateway/#installing-the-gateway)
-(`just install` / `configure` / `apply`).
+(`just install` / `configure` / `apply`). `just configure` also enrolls the HCS on
+its own [tailnet](/en/doc/admin-guide/operate/vpn/#enrolling-a-machine)&nbsp;:
+then report its tailnet address in the declaration above.
 
 {/* t:p ba8dffdcffe41df2842792581fe17f6c11c7a22177403eac4c9ee620f404192c */}
 ## Global services
@@ -121,29 +123,36 @@ A service marked `global: true` is exposed on the HCS with a **public DNS**
 
 </Steps>
 
-{/* t:p 3dba964e730b8d6f6b18cb771130ce717d52014a10b998b05a1a8ee608a4361b */}
-## Connect from outside
+{/* t:p 88496679587db9333e4e5149c30dbc490910a6751a59276f591e116724cd46c1 */}
+## Connecting from outside
 
-Outside a zone, access to services goes through a Tailscale VPN client, validated
-by the administrator.
+Outside a zone, access to services goes through the Tailscale client. Nothing to
+distribute&nbsp;: everyone connects with their Kanidm identity.
 
 <Steps>
 
-1. **User side**
+1. **Administrator side**
 
-   - Install the Tailscale client.
-   - Request to join the network `headscale.domain.tld`.
+   Give the user an administrator profile or a `zone-<zone>` group, regenerate,
+   then deploy the HCS&nbsp;:
 
-2. **Admin side**
-
-   ```sh
-   just enter hcs
-
-   # Reusable temporary key (multiple clients)
-   sudo headscale preauthkeys create --reusable --expiration 1h --user 1
-
-   # Or validate an already connected client
-   sudo headscale nodes register --key <key> --user nix
+   ```yaml
+   # etc/config.yaml
+   users:
+     bob:
+       groups: ["global", "zone-maison"]
    ```
 
+   ```sh
+   just generate
+   just apply hcs
+   ```
+
+2. **User side**
+
+   Follow [Connect a device](/en/doc/how-to/user/connect-device/#from-outside).
+
 </Steps>
+
+Details, expiration and troubleshooting&nbsp;:
+[VPN](/en/doc/admin-guide/operate/vpn/#administration).
