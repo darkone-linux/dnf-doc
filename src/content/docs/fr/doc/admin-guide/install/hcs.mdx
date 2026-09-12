@@ -35,7 +35,7 @@ hosts:
     profile: "hcs"
     ipv4:
       external: "203.0.113.10"   # IP publique du VPS
-      internal: "100.64.0.2"     # IP dans le tailnet
+      internal: "100.64.0.2"     # IP tailnet (après enrôlement)
     services:
       headscale:                 # coordination du VPN
       idm:                       # identités (Kanidm)
@@ -44,7 +44,9 @@ hosts:
 
 L'installation suit la même procédure qu'une
 [passerelle](/fr/doc/admin-guide/install/gateway/#installer-la-passerelle)
-(`just install` / `configure` / `apply`).
+(`just install` / `configure` / `apply`). `just configure` enrôle aussi le HCS sur
+son propre [tailnet](/fr/doc/admin-guide/operate/vpn/#enrôler-une-machine)&nbsp;:
+reporter ensuite son adresse tailnet dans la déclaration ci-dessus.
 
 {/* t:p ba8dffdcffe41df2842792581fe17f6c11c7a22177403eac4c9ee620f404192c */}
 ## Services globaux
@@ -125,26 +127,33 @@ Un service marqué `global: true` est exposé sur le HCS avec un **DNS public**
 {/* t:p 3dba964e730b8d6f6b18cb771130ce717d52014a10b998b05a1a8ee608a4361b */}
 ## Se connecter depuis l'extérieur
 
-Hors d'une zone, l'accès aux services passe par un client VPN Tailscale, validé
-par l'administrateur.
+Hors d'une zone, l'accès aux services passe par le client Tailscale. Rien à
+distribuer&nbsp;: chacun se connecte avec son identité Kanidm.
 
 <Steps>
 
-1. **Côté utilisateur**
+1. **Côté administrateur**
 
-   - Installer le client Tailscale.
-   - Demander à rejoindre le réseau `headscale.domain.tld`.
+   Donner à l'utilisateur un profil administrateur ou un groupe `zone-<zone>`,
+   régénérer, puis déployer le HCS&nbsp;:
 
-2. **Côté administrateur**
-
-   ```sh
-   just enter hcs
-
-   # Clé temporaire réutilisable (plusieurs clients)
-   sudo headscale preauthkeys create --reusable --expiration 1h --user 1
-
-   # Ou valider un client déjà connecté
-   sudo headscale nodes register --key <clé> --user nix
+   ```yaml
+   # etc/config.yaml
+   users:
+     bob:
+       groups: ["global", "zone-maison"]
    ```
 
+   ```sh
+   just generate
+   just apply hcs
+   ```
+
+2. **Côté utilisateur**
+
+   Suivre [Connecter un appareil](/fr/doc/how-to/user/connect-device/#depuis-lextérieur).
+
 </Steps>
+
+Détails, expiration et dépannage&nbsp;:
+[VPN](/fr/doc/admin-guide/operate/vpn/#connecter-un-appareil-personnel).

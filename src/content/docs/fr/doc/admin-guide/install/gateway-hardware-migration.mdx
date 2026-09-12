@@ -315,9 +315,10 @@ reprendre à la nouvelle passerelle **l'identité de nœud de l'ancienne**, et d
 son adresse sur le maillage. Rien à changer dans `etc/config.yaml`.
 
 À ne faire qu'une fois l'ancienne machine définitivement éteinte, jamais avec
-les deux en service. À défaut, suivre [Enregistrer une
-passerelle](/fr/doc/admin-guide/operate/vpn/#enregistrer-une-passerelle) et
-reporter la nouvelle adresse.
+les deux en service. À défaut, `just tailnet-enroll gw` l'enrôle comme une
+nouvelle machine (l'ancien nœud, hors ligne, est remplacé)&nbsp;: reporter alors sa
+nouvelle adresse, voir [Enregistrer une
+passerelle](/fr/doc/admin-guide/operate/vpn/#enregistrer-une-passerelle).
 :::
 
 {/* t:p 1e0eab87c92bcdffc5edf54bf44fe1c65ce899a9dc29733e8ab4225a4bb5d99d */}

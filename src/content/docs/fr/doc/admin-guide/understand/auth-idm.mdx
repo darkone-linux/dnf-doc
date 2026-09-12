@@ -60,7 +60,9 @@ proxy.caddy -> proxy.svc
 Comptes et groupes sont **provisionnés** dans Kanidm depuis `etc/config.yaml` : un
 compte par personne, des groupes qui pilotent les accès. Le groupe `users`
 contient **tous** les comptes ; `idm-admins` et `idm-devs` sont les groupes
-spéciaux d'administration et de développement.
+spéciaux d'administration et de développement. Le groupe `tailnet` réunit les
+administrateurs et les membres d'une zone&nbsp;: lui seul peut connecter un appareil
+au [VPN](/fr/doc/admin-guide/operate/vpn/#connecter-un-appareil-personnel).
 
 <Aside type="note" title="Détail des comptes">
 La gestion des comptes (création, mot de passe, groupes) est décrite dans

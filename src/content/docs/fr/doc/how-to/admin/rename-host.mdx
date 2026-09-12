@@ -161,17 +161,17 @@ d'ordre&nbsp;:
 - Déployer la passerelle avant ses clients (leur cache binaire vise son nom).
 - Déployer ensuite les passerelles des autres zones, qui publient le nouveau nom.
 
-Le nœud VPN garde sa clé, son adresse et ses routes approuvées. Seul le nom
-affiché reste figé, à corriger sur le serveur de coordination.
+Le nœud VPN garde sa clé, son adresse et ses routes. Seul son nom reste
+l'ancien&nbsp;: `just tailnet-enroll` le renomme d'après la configuration.
 
 ```sh
-sudo headscale nodes list
-sudo headscale nodes rename <nouveau-nom> -i <identifiant>
+just tailnet-enroll <nouveau-nom>
 ```
 
 :::danger[Ne jamais supprimer le nœud]
-Supprimer puis ré-enrôler libère l'adresse fixe du tailnet et efface les routes
-approuvées. Voir [VPN](/fr/doc/admin-guide/operate/vpn/#administration).
+Supprimer puis ré-enrôler attribue une **nouvelle** adresse tailnet&nbsp;:
+`vpn.ipv4` et tout ce qui vise l'ancienne adresse seraient à reprendre. Voir
+[VPN](/fr/doc/admin-guide/operate/vpn/#administration).
 :::
 
 {/* t:p 28b912b6c39dbcedf5352b3de0e87a56109d71023e56e1e98e1886cb64262115 */}

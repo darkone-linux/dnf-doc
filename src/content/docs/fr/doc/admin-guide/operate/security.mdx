@@ -305,6 +305,12 @@ Tunnels TCP, transfert d'agent et X11 sont coupés. ProxyJump tombe avec eux :
 tailnet**, jamais par rebond.
 :::
 
+:::note[Sur le tailnet, le SSH suit le poste]
+La politique d'accès du tailnet n'ouvre le port 22 qu'aux postes d'administration
+et aux appareils déclarés dans `adminDevices`&nbsp;: un compte administrateur ne
+suffit pas. Voir [Politique d'accès](/fr/doc/admin-guide/understand/tailnet/#politique-daccès-acl).
+:::
+
 :::caution[`R13` : couper IPv6 se demande explicitement]
 Une étiquette d'exclusion ne sait que **retirer** une règle. `no-ipv6` rendait
 donc R13 active par défaut et coupait IPv6 sur toute la flotte. La désactivation

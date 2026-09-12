@@ -49,8 +49,9 @@ Exposés via `dnfLib` (voir `dnf/lib/default.nix`) :
 | `mkSynapseRuleGroups` | Synapse (`SynapseRestarting`, `SynapseHighErrorRate`) |
 | `mkMaintenanceRuleGroups` | Drapeau de maintenance (silence pendant rebuild) |
 | `mkTailscaleRuleGroups` | Auto-réparation tailnet (`TailscaleUnhealthy`, `TailscaleFlapping`) |
+| `mkHeadscaleRuleGroups` | Audit du tailnet sur le HCS (`HeadscaleNodeDrift`, `HeadscaleUnexpectedNode`, `HeadscalePolicyInvalid`, `HeadscaleOidcFallback`, `HeadscaleNodeExpiring`, `HeadscaleAuditStale`) |
 | `mergeRuleGroups` | Fusionne des fragments en **un seul** document |
-| `mkAlertRuleGroups` | Raccourci : nœuds + ressources + restic + SMART + tailscale |
+| `mkAlertRuleGroups` | Raccourci : nœuds + ressources + restic + SMART + tailscale + headscale |
 | `mkSilenceRoutes` | Routes Alertmanager vers le receiver `null` (alertes connues, acceptées) |
 
 {/* t:p 0b104f2b37912ed7c139519842cb7bd9c665b7ba1765abfb5e3340cbfc55d04e */}

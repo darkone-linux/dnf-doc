@@ -97,7 +97,7 @@ zones:
       lan:
         interfaces: ["enp2s0"]   # interface(s) interne(s) (requis)
       vpn:
-        ipv4: "10.0.0.1"         # IP VPN de la passerelle (après enregistrement)
+        ipv4: "100.64.0.1"       # IP tailnet de la passerelle (après enrôlement)
 ```
 
 | Clé | Rôle |
@@ -127,7 +127,7 @@ Le projet réserve les octets ainsi (préfixe `10.0`)&nbsp;:
 | `wan.interface` | Carte réseau vers Internet (requis). |
 | `lan.interfaces` | Liste des cartes internes (requis), intégrées au pont `lan0`. |
 | `lan.dhcp-range` | Plage DHCP (optionnel ; défaut `<préfixe>.3.200,<préfixe>.3.249,24h`). |
-| `vpn.ipv4` | IP VPN de la passerelle, à renseigner après enregistrement Headscale. |
+| `vpn.ipv4` | IP tailnet de la passerelle, relevée après `just tailnet-enroll` ([détail](/fr/doc/admin-guide/operate/vpn/#enregistrer-une-passerelle)). |
 
 :::note[Détection automatique]
 L'hôte dont l'IP se termine par `.1.1` est **automatiquement** la passerelle de

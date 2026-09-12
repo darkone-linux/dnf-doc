@@ -12,15 +12,16 @@ import { Steps } from '@astrojs/starlight/components';
 {/* t:h 049935b87b05d181b65551e7bea751dfc1e19eb9d762cd0616a80db58286ebbf */}
 
 {/* t:p f544ee875991247b16430886663e6e6fc83aa81b3a4d7a12730007b0633b711f */}
-Le VPN maille toutes les zones et les machines distantes :
-[Headscale](https://headscale.net/) coordonne (sur le HCS),
-[Tailscale](https://tailscale.com/) est le client sur chaque nœud. Vue
-d'ensemble dans [Réseau](/fr/doc/admin-guide/understand/network/#réseau-étendu-vpn).
+Le VPN maille les zones, le serveur de coordination et les appareils distants&nbsp;:
+[Headscale](https://headscale.net/) coordonne depuis le HCS,
+[Tailscale](https://tailscale.com/) est le client de chaque nœud. Cette page réunit
+les gestes d'exploitation. Routage, DNS, MagicDNS, politique d'accès et clés sont
+expliqués dans [Fonctionnement du tailnet](/fr/doc/admin-guide/understand/tailnet/).
 
 {/* t:p be556da93b9b830aa8e89f43b69dd1d5eecc77324080157f7f93e3fa42167c45 */}
 ## Activer le VPN
 
-Activer la coordination et déclarer le HCS (`profile: hcs`) suffit :
+Activer la coordination et déclarer le HCS (`profile: hcs`) suffit&nbsp;:
 
 ```yaml
 # etc/config.yaml
@@ -31,106 +32,97 @@ network:
     domain: "headscale"
 ```
 
-Les rôles se déduisent du profil de chaque hôte :
+Le rôle de chaque nœud se déduit de la topologie&nbsp;:
 
-- **HCS** : coordination du maillage (Headscale).
-- **Passerelle** : *subnet router* + *exit node* : publie le sous-réseau de sa zone.
-- **Autres nœuds** : clients Tailscale.
+| Nœud | Identité | Rôle |
+|---|---|---|
+| HCS | `tag:hcs` | coordination, DNS pivot, services globaux, exit node (fermé) |
+| Passerelle | `tag:gw-<zone>` | routeur de sous-réseau&nbsp;: publie le `/16` de sa zone |
+| Poste d'administration | `tag:admin` | SSH vers toutes les machines |
+| Appareil personnel | son propriétaire | services, selon ses groupes |
 
-{/* t:p 8613f51a270bd20bb99e7e1edc5742d208e04db4770be256123ea4a3f11e5638 */}
-## Préparer le tailnet (une fois)
+Un poste d'administration est un hôte dont `groups` contient `admin` et dont le
+fichier d'hôte active le client&nbsp;:
 
-Toutes les machines rejoignent le maillage via un **utilisateur Headscale
-d'attache** partagé (`nix`). Il se crée **une seule fois** pour tout le réseau ;
-s'il existe déjà, passer cette étape.
-
-```sh
-just enter hcs
-sudo headscale users list        # déjà présent ? → rien à faire
-sudo headscale users create nix --display-name "Nix Admin" --email "nix@domain.tld"
+```nix
+# usr/machines/portable/default.nix
+darkone.service.tailscale.enable = true;
+darkone.service.tailscale.autoPauseOnLan.enable = true;
 ```
 
-:::caution[Non modifiable]
-L'e-mail et le nom affiché d'un utilisateur ne sont **pas** modifiables après création.
+`autoPauseOnLan` met le client en pause quand le portable est branché dans une zone
+(NetworkManager requis).
+
+{/* t:p 8613f51a270bd20bb99e7e1edc5742d208e04db4770be256123ea4a3f11e5638 */}
+## Enrôler une machine
+
+Les machines rejoignent le tailnet **sans clé partagée**&nbsp;: le HCS crée pour
+chacune une clé à usage unique, avec ses tags déclarés. `just configure` s'en charge,
+donc `just full-install` aussi. La recette seule se relance à tout moment&nbsp;:
+
+```sh
+just tailnet-enroll gw
+```
+
+```
+[ DNF ] TAILNET • gw not enrolled, backend NeedsLogin: sending a single-use key...
+[ DNF ] TAILNET • gw: gw tag:gw-maison 100.64.0.8
+```
+
+Elle est **idempotente**&nbsp;:
+
+| Situation | Effet |
+|---|---|
+| Nœud enrôlé, nom et tags conformes | rien (`already enrolled`) |
+| Tags ou nom différents | corrigés sur le HCS, sans reconnexion |
+| Jamais enrôlé, supprimé ou réinstallé | nouvelle clé, enregistrement |
+| Ancien nœud du même nom hors ligne | supprimé, le nouveau prend le nom |
+| Ancien nœud du même nom en ligne | refus&nbsp;: deux machines portent ce nom |
+| Hôte sans client Tailscale | ignoré |
+
+Le mécanisme est détaillé dans [Clés d'activation et
+enrôlement](/fr/doc/admin-guide/understand/tailnet/#clés-dactivation-et-enrôlement).
+
+:::caution[Déployer le HCS après avoir déclaré l'hôte]
+Le HCS ne crée une clé que pour un hôte qu'il connaît. Un hôte tout juste ajouté à
+`etc/config.yaml` exige d'abord `just apply hcs`, sinon&nbsp;:
+`no declared tailnet identity`.
+:::
+
+:::note[Échec pendant une installation]
+HCS injoignable, `just configure` avertit sans s'arrêter&nbsp;: relancer
+`just tailnet-enroll <hôte>` une fois le HCS revenu.
+:::
+
+:::note[Nouvelle adresse après une réinstallation]
+Headscale attribue les adresses dans l'ordre et ne permet pas de les fixer. Une
+machine réinstallée reçoit une nouvelle adresse tailnet&nbsp;: pour une passerelle, la
+reporter dans `vpn.ipv4`. Pour la conserver, restaurer l'état du client plutôt que
+ré-enrôler (voir [Migrer le matériel d'une
+passerelle](/fr/doc/admin-guide/install/gateway-hardware-migration/)).
 :::
 
 {/* t:p 7024a1a0eb07db8310341bcec3137b7dc104f32f44464887045be017beef3ba4 */}
 ## Enregistrer une passerelle
 
-Le profil `gateway` fait déjà de la passerelle un **client Tailscale** : au
-déploiement, le service `tailscaled-autoconnect` l'enregistre tout seul sur
-Headscale et annonce le sous-réseau de sa zone. Il reste deux gestes manuels :
-fournir une **clé d'attache** dans sops (avant le déploiement) et **approuver les
-routes** sur le HCS (après).
+Une passerelle s'enrôle comme toute machine&nbsp;; deux points lui sont propres.
 
 <Steps>
 
-1. **Sur le HCS : générer une clé d'attache**
+1. **Vérifier la route de sa zone**
+
+   La passerelle annonce le `/16` de sa zone, que la politique approuve d'office
+   pour `tag:gw-<zone>`. Sur le HCS&nbsp;:
 
    ```sh
-   just enter hcs
-   sudo headscale users list                                    # ID de l'utilisateur nix
-   sudo headscale preauthkeys create --reusable --expiration 1h --user <id>
+   sudo headscale nodes list-routes
    ```
 
-   Copier la clé affichée (`tskey-...`). Elle n'a besoin de vivre que le temps du
-   déploiement.
+2. **Déclarer son adresse tailnet**
 
-2. **Déposer la clé dans les secrets**
-
-   ```sh
-   just sops        # ouvre usr/secrets/secrets.yaml
-   ```
-
-   Renseigner la clé sous `tailscale/authKey` :
-
-   ```yaml
-   # usr/secrets/secrets.yaml
-   tailscale:
-       authKey: "tskey-..."
-   ```
-
-   :::caution[Avant l'installation]
-   Poser cette clé **avant** le premier `just apply` (ou `just full-install`) de la
-   passerelle : sans le secret `tailscale/authKey`, l'activation sops échoue.
-   :::
-
-3. **Déployer la passerelle**
-
-   ```sh
-   just apply gw
-   ```
-
-   La passerelle s'enregistre automatiquement. En interne, le démon exécute :
-
-   ```sh
-   tailscale up \
-     --login-server https://headscale.domain.tld \
-     --auth-key file:/run/secrets/tailscale/authKey \
-     --advertise-routes 10.0.0.0/16 --accept-routes --reset
-   ```
-
-   :::note[Rien à taper à la main]
-   Inutile de lancer `tailscale up` ou `tailscale set` soi-même : le service
-   `tailscaled-autoconnect` applique ces options (login-server, clé, routes) à
-   chaque démarrage. Si l'enregistrement n'a pas eu lieu (HCS injoignable au
-   déploiement), le [watchdog](#auto-réparation-du-client) le rejoue&nbsp;; on peut
-   aussi forcer avec `sudo systemctl restart tailscaled-autoconnect`.
-   :::
-
-4. **Sur le HCS : approuver les routes annoncées**
-
-   ```sh
-   sudo headscale nodes list                                    # ID de la passerelle
-   sudo headscale nodes approve-routes --identifier <id> --routes 10.0.0.0/16
-   ```
-
-5. **Déclarer l'IP tailnet de la passerelle**
-
-   À l'enregistrement, Headscale attribue à la passerelle une IP tailnet
-   (`100.64.x.y`), visible dans `headscale nodes list`. La reporter dans
-   `etc/config.yaml`&nbsp;: les autres nœuds joignent la zone (DNS interne,
-   réplication, supervision) par cette adresse.
+   Le HCS joint le résolveur de la zone par cette adresse (DNS pivot), comme les
+   services qui la visent (sauvegardes, supervision). La relever dans la sortie de
+   `just tailnet-enroll`, puis la reporter&nbsp;:
 
    ```yaml
    # etc/config.yaml
@@ -141,76 +133,265 @@ routes** sur le HCS (après).
            ipv4: "100.64.0.8"
    ```
 
-   Puis régénérer et redéployer les nœuds concernés (le HCS et les clients de la
-   zone) pour propager l'adresse.
+3. **Propager l'adresse**
+
+   ```sh
+   just generate
+   just apply hcs
+   ```
+
+   Redéployer aussi les hôtes qui visent cette adresse. `HeadscaleNodeDrift` signale
+   une adresse déclarée qui ne correspond plus.
 
 </Steps>
+
+## Connecter un appareil personnel
+
+Un smartphone ou un ordinateur personnel se connecte avec l'identité
+[Kanidm](/fr/doc/admin-guide/understand/auth-idm/) de son propriétaire&nbsp;: ni clé,
+ni validation manuelle.
+
+| Peut se connecter | Condition dans `etc/config.yaml` |
+|---|---|
+| Administrateur | profil `admin` ou `nix-admin` |
+| Membre d'une zone | groupe `zone-<zone>` |
+
+Ces comptes forment le groupe Kanidm `tailnet`, provisionné tout seul&nbsp;; Kanidm
+refuse les autres. Pour ouvrir l'accès, ajouter le groupe à l'utilisateur,
+régénérer, puis `just apply hcs`. L'utilisateur suit ensuite [Connecter un
+appareil](/fr/doc/how-to/user/connect-device/#depuis-lextérieur).
+
+L'appareil appartient à la personne (`alice@`) et **expire après 180 jours**&nbsp;:
+elle se reconnecte alors avec son identifiant.
+
+```sh
+sudo headscale nodes list                 # appareils, propriétaires, expiration
+sudo headscale nodes expire -i <id>       # forcer une reconnexion
+sudo headscale nodes delete -i <id>       # retirer l'appareil
+```
+
+:::caution[Page de connexion introuvable]
+Le DNS scindé envoie tout `domain.tld` au HCS **par le tunnel**, y compris
+`headscale.domain.tld` et `idm.domain.tld`. Tant que le tunnel n'est pas monté, le
+navigateur ne les résout pas. Contournement&nbsp;: désactiver « Use Tailscale DNS »
+dans l'application le temps de la connexion, puis le réactiver.
+:::
+
+## Adapter la politique d'accès
+
+La politique est générée depuis la topologie&nbsp;: ses règles sont détaillées dans
+[Politique d'accès](/fr/doc/admin-guide/understand/tailnet/#politique-daccès-acl).
+Des options l'ajustent, sur le HCS&nbsp;:
+
+| Option `darkone.service.headscale.` | Défaut | Effet |
+|---|---|---|
+| `policy.adminDevices` | `{ }` | appareils personnels autorisés en SSH&nbsp;: nom → IPv4 tailnet |
+| `policy.exitNodeSources` | `[ ]` | sources autorisées à sortir sur Internet par le HCS |
+| `policy.extraHosts` | `{ }` | alias supplémentaires&nbsp;: nom → CIDR |
+| `policy.extraAcls` | `[ ]` | règles ajoutées après les règles générées |
+| `policy.enforce` | `true` | `false`&nbsp;: tout autorisé, pour une migration seulement |
+| `nodeExpiry` | `"180d"` | expiration des appareils personnels (`0`&nbsp;: jamais) |
+
+```nix
+# usr/machines/hcs/default.nix
+darkone.service.headscale.policy = {
+
+  # SSH depuis le téléphone d'Alice (adresse lue dans `headscale nodes list`)
+  adminDevices.phone-alice = "100.64.0.9";
+
+  # Exit node du HCS ouvert aux administrateurs
+  exitNodeSources = [ "group:admins" ];
+
+  # Imprimante réseau pour tous les appareils personnels
+  extraHosts.printer = "10.0.4.10/32";
+  extraAcls = [
+    {
+      action = "accept";
+      src = [ "autogroup:member" ];
+      dst = [ "printer:631" ];
+    }
+  ];
+};
+```
+
+Puis `just apply hcs`&nbsp;: la politique est vérifiée à la construction, et Headscale
+la recharge sans redémarrer.
+
+:::caution[Adresse d'un appareil déclaré]
+`adminDevices` vise une adresse IPv4. Un appareil réenregistré comme nouveau nœud
+change d'adresse&nbsp;: `HeadscaleNodeDrift` le signale, reporter la nouvelle.
+:::
+
+:::note[Exit node]
+Ouvrir `exitNodeSources` ne suffit pas&nbsp;: l'utilisateur choisit le HCS comme exit
+node dans son application.
+:::
 
 {/* t:p 2cd327a28bf884d3a8858f334f58663a1d6f2961389ee3e95f716a349026ab0b */}
 ## Administration
 
-La commande `headscale` (alias `h` = `sudo headscale`) sur le HCS :
+Sur le HCS (`just enter hcs`)&nbsp;:
+
+| Commande | Usage |
+|---|---|
+| `sudo headscale nodes list` | nœuds, propriétaire, tags, adresses, expiration |
+| `sudo headscale nodes list-routes` | routes annoncées et approuvées |
+| `sudo headscale nodes rename -i <id> <nom>` | renommer un nœud |
+| `sudo headscale nodes expire -i <id>` | forcer une reconnexion |
+| `sudo headscale nodes delete -i <id>` | supprimer un nœud |
+| `sudo headscale users list` | propriétaires d'appareils personnels |
+| `sudo headscale preauthkeys list` | clés pré-autorisées&nbsp;: tags, usage, expiration |
+| `sudo headscale policy get` | politique servie |
+| `sudo dnf-tailnet-enroll status <hôte>` | identité déclarée d'un hôte |
+
+Tags et routes ne se règlent pas à la main&nbsp;: `just tailnet-enroll` pose les tags
+déclarés, la politique approuve les routes. Les autres réglages du client (routes
+annoncées, SSH Tailscale coupé, exit node) sont réalignés par
+`tailscaled-autoconnect`, au démarrage et aux déploiements qui le modifient.
+
+:::caution[Sorties JSON]
+`nodes list -o json` et `preauthkeys list -o json` peuvent contenir des clés
+pré-autorisées&nbsp;: ne pas les copier dans un ticket ou un salon.
+:::
+
+## Introspecter et dépanner
+
+### Sur un nœud
+
+| Commande | Répond à |
+|---|---|
+| `tailscale status` | pairs, en ligne ou non, chemin direct ou relais |
+| `tailscale ping <nœud>` | chemin réel&nbsp;: `via <ip>:41641` (direct) ou `via DERP` |
+| `tailscale whois <ip>` | nœud, tags ou propriétaire derrière une adresse |
+| `tailscale dns status` | MagicDNS, DNS scindé, domaines de recherche reçus |
+| `journalctl -u tailscaled-autoconnect` | dernier enregistrement ou réalignement des réglages |
+
+### Tester une politique
+
+Sans option `--bypass…`, `headscale policy check` compile un fichier **contre les
+vrais nœuds** et exécute son bloc `tests`, sans toucher à la politique en place.
+
+<Steps>
+
+1. Partir de la politique servie&nbsp;:
+
+   ```sh
+   sudo headscale policy get > /tmp/policy.json
+   ```
+
+2. Ajouter un bloc `tests`&nbsp;: une source, puis les destinations attendues,
+   chacune un **hôte unique** (adresse et port)&nbsp;:
+
+   ```json
+   "tests": [
+     { "src": "alice@", "accept": ["100.64.0.8:443"], "deny": ["100.64.0.8:22"] }
+   ]
+   ```
+
+3. Vérifier&nbsp;:
+
+   ```sh
+   sudo headscale policy check -f /tmp/policy.json
+   ```
+
+</Steps>
+
+### Pannes courantes
+
+| Symptôme | Vérifier | Remède |
+|---|---|---|
+| `TailscaleUnhealthy`, backend `NeedsLogin` | `tailscale status` sur le nœud | `just tailnet-enroll <hôte>` |
+| Zone injoignable depuis le tailnet | `headscale nodes list-routes` | passerelle enrôlée avec son tag, route approuvée |
+| Service de zone refusé à un appareil | groupes de l'utilisateur, `tailscale whois <ip>` | ajouter `zone-<zone>`, `just apply hcs` |
+| SSH refusé sur une adresse tailnet | poste `tag:admin` ou appareil `adminDevices` | déclarer l'appareil |
+| Noms internes non résolus hors zone | `tailscale dns status` | activer « Use Tailscale DNS » |
+| Trafic lent | `tailscale ping` affiche `via DERP` | UDP sortant filtré, ou NAT strict des deux côtés |
+| `no declared tailnet identity` | hôte tagué, HCS déployé depuis sa déclaration | `just apply hcs` |
+| `named … is online, not deleting it` | deux machines portent le même nom | éteindre l'ancienne ou renommer l'hôte |
+
+## Audit et alertes
+
+Toutes les 15 minutes, `headscale-audit` compare les nœuds réels à la topologie
+déclarée, sans rien modifier. Le détail des écarts est dans son journal&nbsp;:
 
 ```sh
-sudo headscale users list      # utilisateurs
-sudo headscale nodes list      # clients connectés
-sudo headscale nodes routes    # routes annoncées / approuvées
+journalctl -u headscale-audit -n 20
 ```
+
+| Alerte | Signale | Après |
+|---|---|---|
+| `HeadscaleNodeDrift` | HCS ou passerelle absent, tags faux, adresse différente de celle déclarée | 30 min |
+| `HeadscaleUnexpectedNode` | nœud tagué non déclaré, ou appareil d'un compte hors du groupe `tailnet` | aussitôt |
+| `HeadscalePolicyInvalid` | politique refusée, ou politique servie différente du fichier | 30 min |
+| `HeadscaleOidcFallback` | Kanidm absent au démarrage de Headscale&nbsp;: connexions OIDC coupées | aussitôt |
+| `HeadscaleNodeExpiring` | appareil personnel qui expire sous 7 jours | 1 h |
+| `HeadscaleAuditStale` | audit sans succès depuis plus d'une heure | aussitôt |
+
+Toutes sont en `warning`, sur le Prometheus qui supervise le HCS. Un poste
+d'administration absent n'est pas une anomalie&nbsp;; présent, ses tags sont
+vérifiés.
+
+:::tip[Après `HeadscaleOidcFallback`]
+Kanidm revenu, relancer Headscale&nbsp;: `sudo systemctl restart headscale`.
+:::
 
 {/* t:p 57f43a04ecd0435cf5602521b8b31ebb7243b8523504c043f23ca0b3f30dc508 */}
 ## Auto-réparation du client
 
-Un `tailscaled` peut **décrocher silencieusement** de Headscale : la connexion de
+Un `tailscaled` peut **décrocher silencieusement** de Headscale&nbsp;: la connexion de
 contrôle est perdue alors que le service reste « actif », et le sous-réseau d'une
-passerelle devient injoignable jusqu'à un redémarrage manuel. Un *watchdog* local
-détecte et corrige ce cas, sur **chaque client** Tailscale.
+passerelle devient injoignable. Un *watchdog* local détecte et corrige ce cas, sur
+**chaque client** Tailscale.
 
 | Aspect | Comportement |
 |---|---|
-| Sonde | toutes les 60&nbsp;s : `tailscale status` (backend, état en ligne, santé) |
-| Anti-rebond | 3 sondes en échec d'affilée (~3&nbsp;min) avant d'agir : encaisse les coupures WAN passagères |
-| Correction | `systemctl restart tailscaled` (ré-enregistrement automatique sur Headscale) |
+| Sonde | toutes les 60&nbsp;s&nbsp;: `tailscale status` (backend, état en ligne) |
+| Anti-rebond | 3 sondes en échec d'affilée (~3&nbsp;min) avant d'agir |
+| Correction | redémarre `tailscaled`, qui se reconnecte au plan de contrôle |
 | Anti-boucle | une seule correction par fenêtre de 10&nbsp;min |
-| Observabilité | métriques `dnf_tailscale_healthy` et `dnf_tailscale_selfheal_restarts_total` (textfile node_exporter) |
+| Nœud non enrôlé | aucun redémarrage (`NeedsLogin`)&nbsp;: `just tailnet-enroll` |
+| Portable en pause | watchdog à l'arrêt, métrique retirée |
+| Observabilité | `dnf_tailscale_healthy`, `dnf_tailscale_selfheal_restarts_total` (textfile node_exporter) |
 
-Deux [alertes](/fr/doc/admin-guide/operate/alerts/) accompagnent le mécanisme :
+Deux [alertes](/fr/doc/admin-guide/operate/alerts/) accompagnent le mécanisme&nbsp;:
 
-- **`TailscaleUnhealthy`** : toujours décroché malgré la correction (problème de fond) ;
-- **`TailscaleFlapping`** : l'auto-réparation se répète trop souvent (cause à traiter).
+- **`TailscaleUnhealthy`**&nbsp;: toujours décroché après 10&nbsp;min, malgré la
+  correction&nbsp;;
+- **`TailscaleFlapping`**&nbsp;: plus de 3 corrections en une heure.
 
 :::note[Activé par défaut]
-Le watchdog tourne sur tout client Tailscale. Pour le désactiver sur un hôte :
-`darkone.service.tailscale.selfHeal.enable = false;`.
+Pour le désactiver sur un hôte&nbsp;: `darkone.service.tailscale.selfHeal.enable = false;`.
 :::
 
 {/* t:p 943f6b2028a602409af4c6b87e458b1a94b6b8c8360a9f9632ed6e5222b8f2f2 */}
 ## Amorçage du plan de contrôle
 
-Le nom du serveur Headscale se résout normalement **à travers le tailnet** : sur
-une passerelle, dnsmasq route tout le domaine du réseau vers le serveur DNS du
-tailnet. Le client aurait donc besoin du VPN pour joindre le serveur qui monte
-le VPN — et au démarrage, le résolveur local n'écoute pas encore.
+Sur une passerelle, dnsmasq envoie tout `domain.tld` au résolveur du HCS **à travers
+le tailnet**&nbsp;: le client aurait besoin du VPN pour trouver le serveur qui monte
+le VPN. Au démarrage, en plus, le résolveur local n'écoute pas encore.
 
-Chaque client Tailscale reçoit donc l'IP publique du HCS dans son `/etc/hosts`,
-déduite de `etc/config.yaml` (le HCS lui-même est exclu) :
+Chaque client Tailscale reçoit donc l'adresse publique du HCS dans son
+`/etc/hosts`, déduite de `etc/config.yaml` (le HCS lui-même est exclu). dnsmasq
+répond à ce nom depuis ce fichier, sans jamais le transmettre&nbsp;:
 
 ```sh
-grep headscale /etc/hosts     # 217.182.207.26 headscale.example.org
+grep headscale /etc/hosts     # 203.0.113.10 headscale.domain.tld
 ```
 
-Le client n'a ainsi besoin d'aucun résolveur pour se connecter, y compris quand
-le DNS local est en panne — précisément le moment où l'auto-réparation
-ci-dessus doit pouvoir agir.
+Le client se connecte ainsi sans aucun résolveur, y compris quand le DNS local est en
+panne, précisément quand l'auto-réparation doit pouvoir agir.
 
-:::caution[Changement d'IP du HCS]
-`/etc/hosts` **prime sur le DNS**. Si le VPS de coordination change d'adresse,
-mettre à jour `etc/config.yaml` puis **redéployer les clients Tailscale** : tant
-qu'ils portent l'ancienne entrée, ils ne se reconnecteront pas, même si le DNS
-public est correct.
+:::caution[Changement d'adresse du HCS]
+`/etc/hosts` **prime sur le DNS**. Si le VPS change d'adresse, mettre à jour
+`etc/config.yaml` puis **redéployer les clients Tailscale**&nbsp;: tant qu'ils portent
+l'ancienne entrée, ils ne se reconnectent pas, même avec un DNS public correct.
 :::
 
 {/* t:p e0299c915299f5fddae3bae5314b854f0cea6de180f96b58b418f6a7892780d8 */}
-## Accès depuis l'extérieur
+## Hors d'une zone
 
-Pour rejoindre le réseau hors d'une zone, voir
-[Se connecter depuis l'extérieur](/fr/doc/admin-guide/install/hcs/#se-connecter-depuis-lextérieur).
+- **Appareil personnel**&nbsp;: voir [Connecter un appareil
+  personnel](#connecter-un-appareil-personnel).
+- **Portable d'administration**&nbsp;: en déplacement, il joint toutes les zones par
+  le tailnet (`just enter <hôte>`). Rebranché dans une zone, son client se met en
+  pause et la passerelle locale reprend la main.

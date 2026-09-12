@@ -1,0 +1,369 @@
+---
+title: Fonctionnement du tailnet
+sidebar:
+  label: Tailnet
+  order: 2.5
+lang: fr
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Le tailnet est le VPN maillé du réseau&nbsp;: il relie les zones, le serveur de
+coordination (HCS) et les appareils distants. [Headscale](https://headscale.net/)
+le coordonne, [Tailscale](https://tailscale.com/) le fait vivre sur chaque nœud.
+Cette page explique qui y figure, par où passent paquets et requêtes DNS, qui peut
+joindre quoi, et comment une machine y entre. Les gestes d'exploitation sont dans
+[VPN](/fr/doc/admin-guide/operate/vpn/).
+
+## Plan de contrôle, plan de données
+
+Headscale distribue les informations, jamais le trafic&nbsp;: les nœuds échangent
+directement entre eux, chiffrés par [WireGuard](https://www.wireguard.com/).
+
+```d2
+style.fill: transparent
+direction: down
+
+control: Plan de contrôle {
+  headscale: Headscale (HCS) { shape: hexagon }
+}
+
+data: Plan de données {
+  gwa: Passerelle maison
+  gwb: Passerelle atelier
+  phone: Appareil distant { shape: person }
+  gwa <-> gwb: WireGuard
+  phone <-> gwa: WireGuard
+}
+
+control.headscale -> data: Clés, adresses, routes, DNS, ACL { style.stroke-dash: 3 }
+```
+
+| Plan | Porté par | Contenu |
+|---|---|---|
+| Contrôle | Headscale sur le HCS (HTTPS) | identités, clés publiques, adresses, routes, DNS, filtres ACL |
+| Données | chaque client Tailscale (UDP 41641) | le trafic, d'un nœud à l'autre |
+| Relais | serveurs DERP publics de Tailscale | le trafic chiffré, faute de chemin direct |
+
+- Les nœuds percent le NAT pour se joindre en direct. Le port UDP 41641 est ouvert
+  sur le HCS et sur le WAN des passerelles, ce qui aide derrière un NAT strict.
+- Sans chemin direct (UDP filtré, NAT strict des deux côtés), le trafic passe par un
+  relais DERP&nbsp;: toujours chiffré de bout en bout, mais plus lent.
+- HCS indisponible&nbsp;: les tunnels établis continuent de fonctionner, mais rien ne
+  change (nouveau nœud, nouvelle route, nouvelle politique) jusqu'à son retour.
+
+## Qui est sur le tailnet
+
+Deux sortes d'identités coexistent&nbsp;: les **machines**, identifiées par un tag
+qui dit leur rôle, et les **appareils personnels**, rattachés à leur propriétaire.
+
+| Nœud | Identité | Obtenue par | Expiration |
+|---|---|---|---|
+| HCS | `tag:hcs` | clé à usage unique (`just tailnet-enroll`) | jamais |
+| Passerelle d'une zone | `tag:gw-<zone>` | clé à usage unique | jamais |
+| Poste d'administration | `tag:admin` | clé à usage unique | jamais |
+| Appareil personnel | son propriétaire (`alice@`) | connexion [Kanidm](/fr/doc/admin-guide/understand/auth-idm/) | 180 jours |
+
+- Les tags se déduisent de la topologie&nbsp;: profil `hcs`, passerelle de zone, hôte
+  dont `groups` contient `admin` et qui active le client Tailscale.
+- Un nœud tagué n'appartient à personne (`tagged-devices` dans Headscale).
+- Seuls les comptes du groupe Kanidm `tailnet` connectent un appareil&nbsp;:
+  administrateurs et membres d'une zone (groupe `zone-<zone>`).
+- Les `tags` libres d'un hôte dans `etc/config.yaml` n'accordent aucun droit.
+- Chaque nœud porte un nom MagicDNS&nbsp;: `<nœud>.tailnet.internal`.
+
+## Routage
+
+Le tailnet donne une adresse à chaque nœud et relie les sous-réseaux des zones.
+Trajet d'un poste de la zone `maison` vers un serveur de la zone `atelier`&nbsp;:
+
+```d2
+style.fill: transparent
+direction: down
+
+maison: Zone maison 10.0.0.0/16 {
+  pc: Poste 10.0.2.4
+  gw: Passerelle maison
+  pc -> gw: route par défaut
+}
+
+atelier: Zone atelier 10.1.0.0/16 {
+  gw: Passerelle atelier
+  srv: Serveur 10.1.1.2 { shape: cylinder }
+  gw -> srv: sans SNAT
+}
+
+maison.gw -> atelier.gw: tailnet, route 10.1.0.0/16
+```
+
+| Trajet | Chemin | Mécanisme |
+|---|---|---|
+| Poste d'une zone → autre zone | sa passerelle, le tailnet, la passerelle distante | routes de sous-réseau |
+| Appareil distant → service d'une zone | le tailnet, la passerelle de la zone | route de sous-réseau de la zone |
+| Appareil distant → service global | le tailnet, le HCS | adresse tailnet du HCS |
+| Nœud → nœud | direct | adresses `100.64.x.y` |
+| Nœud → Internet | sa propre connexion | exit node du HCS fermé par défaut |
+
+- **Adresses**&nbsp;: Headscale les attribue dans l'ordre, dans `100.64.0.0/10` (et
+  `fd7a:115c:a1e0::/48`). Une machine réinstallée (nouvelle clé de machine) en reçoit
+  une nouvelle.
+- **Routes annoncées**&nbsp;: chaque passerelle annonce le `/16` de sa zone. La
+  politique l'approuve d'office pour le seul `tag:gw-<zone>`&nbsp;: une passerelle ne
+  peut pas détourner le sous-réseau d'une autre zone.
+- **Routes acceptées**&nbsp;: chaque client installe les `/16` des autres zones dans
+  la table de routage 52 de Tailscale, consultée avant la table principale. Une
+  passerelle n'y installe pas sa propre zone.
+- **Sans SNAT**&nbsp;: une passerelle relaie sans masquer la source
+  (`--snat-subnet-routes=false`). Une machine de la zone voit la vraie adresse
+  tailnet et répond par sa route par défaut, la passerelle&nbsp;; d'où le filtrage de
+  chemin inverse souple des passerelles (règle `R12` de la
+  [sécurité](/fr/doc/admin-guide/operate/security/)).
+- **Exit node**&nbsp;: le HCS s'annonce comme sortie vers Internet, approuvée d'office,
+  mais aucune règle ne l'autorise tant que `policy.exitNodeSources` est vide.
+- **Filtrage**&nbsp;: la politique s'applique à l'arrivée. Pour une zone, c'est sa
+  passerelle qui trie ce qui entre depuis le tailnet.
+
+Ce qu'une passerelle laisse traverser est détaillé dans [Ce qui traverse une
+passerelle](/fr/doc/admin-guide/understand/network/#ce-qui-traverse-une-passerelle).
+
+## DNS
+
+Chaque machine interroge un résolveur différent, mais les noms d'une zone finissent
+toujours chez le même détenteur&nbsp;: la passerelle de cette zone.
+
+| Machine | Résolveur | Noms d'une zone | Services globaux | Internet |
+|---|---|---|---|---|
+| Poste d'une zone, passerelle | dnsmasq de la passerelle, derrière AdGuard Home s'il est activé | dnsmasq, ou passerelle de la zone | dnsmasq, ou unbound du HCS | DNS publics, filtrés par AdGuard Home |
+| HCS | unbound, local | passerelle de la zone | unbound | Quad9, chiffré |
+| Appareil distant | MagicDNS (`100.100.100.100`) | par unbound du HCS | par unbound du HCS | résolveur du réseau visité |
+
+```d2
+style.fill: transparent
+direction: down
+
+pc: Poste d'une zone { shape: person }
+remote: Appareil distant { shape: person }
+
+gw: Passerelle maison {
+  agh: AdGuard Home
+  dnsmasq: dnsmasq { shape: cylinder }
+  agh -> dnsmasq: noms internes
+}
+
+magic: MagicDNS\n100.100.100.100 { shape: hexagon }
+unbound: unbound (HCS) { shape: cylinder }
+peer: Passerelle atelier
+upstream: DNS chiffrés { shape: cloud }
+visited: Résolveur\ndu réseau visité { shape: cloud }
+
+pc -> gw.agh
+remote -> magic
+gw.agh -> upstream: Internet
+gw.dnsmasq -> peer: atelier.domain.tld
+gw.dnsmasq -> unbound: domain.tld
+magic -> unbound: domain.tld
+magic -> visited: Internet
+unbound -> peer: atelier.domain.tld
+```
+
+- **Passerelle**&nbsp;: dnsmasq connaît les machines de toutes les zones et les
+  services déclarés. Un nom inconnu d'une autre zone part vers la passerelle de cette
+  zone (adresse LAN, à travers le tailnet)&nbsp;; le reste de `domain.tld` part vers
+  unbound, sur le HCS.
+- **Services d'une zone**&nbsp;: `*.<zone>.domain.tld` pointe vers l'adresse LAN de la
+  passerelle de la zone, qui les sert derrière son proxy.
+- **HCS**&nbsp;: unbound écoute sur `127.0.0.1` et sur l'adresse tailnet du HCS, pour
+  les seules adresses du tailnet. Il transmet `<zone>.domain.tld` au résolveur de la
+  passerelle, à son adresse tailnet&nbsp;: d'où l'importance de déclarer `vpn.ipv4`.
+- **`headscale.domain.tld`**&nbsp;: jamais demandé au tunnel qu'il sert à monter, voir
+  [Amorçage du plan de contrôle](/fr/doc/admin-guide/operate/vpn/#amorçage-du-plan-de-contrôle).
+
+## MagicDNS
+
+MagicDNS est le petit résolveur que chaque client Tailscale embarque, à l'adresse
+`100.100.100.100`. Headscale l'active pour tout le tailnet et lui transmet ses
+consignes&nbsp;:
+
+| Consigne | Valeur | Effet |
+|---|---|---|
+| Noms des nœuds | `tailnet.internal` | `gw-atelier.tailnet.internal` → adresse tailnet, tenue à jour par Headscale |
+| Domaine de recherche | `tailnet.internal` | `ssh gw-atelier` suffit |
+| DNS scindé | `domain.tld` → unbound du HCS | les noms internes partent, par le tunnel, au résolveur pivot |
+| Résolveur global | aucun | le reste va au résolveur habituel de l'appareil |
+
+### Où il intervient
+
+Un client ne s'en sert comme résolveur que s'il accepte le DNS du tailnet
+(`--accept-dns`).
+
+| Machine | `--accept-dns` | Rôle de MagicDNS |
+|---|---|---|
+| Appareil personnel, portable hors zone | oui | résolveur du système&nbsp;: noms des nœuds et DNS scindé |
+| Portable rebranché dans sa zone | client en pause | aucun, la passerelle locale reprend la main |
+| Passerelle | non | noms inverses des adresses `100.x`, pour les statistiques d'AdGuard Home |
+| HCS | oui | présent, mais le système interroge unbound (`127.0.0.1`) |
+| Poste d'une zone | pas de client | aucun |
+
+### Pourquoi
+
+- **Nommer les nœuds hors des zones**&nbsp;: un portable en déplacement joint
+  `gw-atelier` en direct sur le tailnet, sans dépendre d'une route de sous-réseau ni du
+  DNS d'une zone. C'est ce que fait `just enter gw-atelier` hors de chez soi.
+- **Résoudre les noms internes partout**&nbsp;: le DNS scindé suffit, sans faire passer
+  tout le DNS dans le VPN.
+- **Garder Internet hors du tunnel**&nbsp;: si le chemin VPN faiblit, la résolution des
+  noms publics tient
+  ([pourquoi](/fr/doc/admin-guide/understand/network/#résolution-depuis-lextérieur)).
+- **Laisser la main aux passerelles**&nbsp;: elles gardent leur propre DNS
+  (`--accept-dns=false`), dont dépendent leur zone et ses clients.
+
+### Comment ça s'articule
+
+Un appareil distant ouvre un service de la zone `maison`&nbsp;:
+
+```d2
+style.fill: transparent
+shape: sequence_diagram
+
+app: Appareil distant
+magic: MagicDNS
+unbound: unbound (HCS)
+gw: Passerelle maison
+
+app -> magic: photos.maison.domain.tld ?
+magic -> unbound: DNS scindé, par le tunnel
+unbound -> gw: zone maison
+gw -> unbound: 10.0.1.1
+unbound -> magic: 10.0.1.1
+magic -> app: 10.0.1.1
+app -> gw: HTTPS 10.0.1.1
+gw -> app: page du service
+```
+
+1. MagicDNS reconnaît `domain.tld` et transmet la question, par le tunnel, à unbound.
+2. unbound la transmet au résolveur de la passerelle `maison`, à son adresse tailnet.
+3. La réponse est l'adresse LAN de la passerelle (`10.0.1.1`).
+4. L'appareil l'atteint par la route de sous-réseau de la zone&nbsp;; la politique
+   l'autorise sur le port 443 (`gateway-maison`).
+
+<Aside type="caution" title="Passerelles et HCS : pas de noms tailnet.internal">
+Leur système ne passe pas par MagicDNS&nbsp;: `gw-atelier.tailnet.internal` n'y
+résout pas. Viser une adresse tailnet (voir la
+[sauvegarde réseau](/fr/doc/how-to/admin/network-backup/)), ou interroger MagicDNS
+directement&nbsp;: `dig @100.100.100.100 gw-atelier.tailnet.internal`.
+</Aside>
+
+## Politique d'accès (ACL)
+
+Sur le tailnet, **rien ne passe par défaut**. Headscale compile une politique en
+filtres qu'il pousse à chaque nœud&nbsp;; chacun jette ce qu'aucune règle n'autorise.
+Pour une zone, le tri se fait sur sa passerelle.
+
+La politique n'est pas écrite à la main&nbsp;: DNF la génère depuis
+`etc/config.yaml` (zones, hôtes, utilisateurs), la vérifie à la construction
+(`headscale policy check`), puis Headscale la recharge à chaud au déploiement.
+
+### Les briques
+
+| Brique | Contenu généré |
+|---|---|
+| `groups` | `group:admins` (profils `admin`, `nix-admin`), `group:zone-<zone>` (groupe `zone-<zone>`) |
+| `tagOwners` | `tag:hcs`, `tag:gw-<zone>`, `tag:admin`, détenus par `group:admins` |
+| `hosts` | `zone-<zone>` (sous-réseau), `gateway-<zone>` (adresse LAN de la passerelle), postes d'administration (adresse LAN), `adminDevices`, `extraHosts` |
+| `autoApprovers` | route de chaque zone → `tag:gw-<zone>`&nbsp;; exit node → `tag:hcs` |
+| `acls` | les règles ci-dessous |
+
+### Les règles
+
+| # | Source | Destination | Pour |
+|---|---|---|---|
+| 1 | machines taguées, sous-réseaux des zones | toutes les machines et zones, tous ports | l'infrastructure&nbsp;: DNS, supervision, sauvegardes, déploiement |
+| 2 | appareils personnels (`autogroup:member`) | HCS, ports 53 et 443 | DNS interne, services globaux |
+| 3 | `group:admins` | passerelles de toutes les zones, port 443 | les services de toutes les zones |
+| 4 | `group:zone-<zone>` | passerelle de la zone, port 443 | les services de ses zones |
+| 5 | appareils personnels | appareils du même propriétaire | entre ses propres appareils |
+| 6 | `tag:admin`, postes d'administration, `adminDevices` | toutes les machines et zones, port 22 | l'administration SSH |
+| 7 | `policy.exitNodeSources` | Internet | l'exit node du HCS, s'il est ouvert |
+| 8 | `policy.extraAcls` | libre | les besoins propres au réseau |
+
+- **Le SSH suit le poste, pas la personne**&nbsp;: un administrateur sur son téléphone
+  n'a pas le SSH, sauf appareil déclaré dans `adminDevices`.
+- **`gateway-<zone>` en plus du tag**&nbsp;: les services d'une zone se résolvent vers
+  l'adresse LAN de sa passerelle, que `tag:gw-<zone>` ne couvre pas (il ne désigne
+  que ses adresses tailnet).
+- **Un groupe vide disparaît** de la politique&nbsp;: une règle qui le citerait la
+  ferait refuser en entier.
+- **Mode ouvert** (`policy.enforce = false`)&nbsp;: une règle unique autorise tout.
+  Réservé à une migration, le temps de taguer les nœuds.
+
+Les options qui ajustent la politique sont décrites dans [Adapter la politique
+d'accès](/fr/doc/admin-guide/operate/vpn/#adapter-la-politique-daccès).
+
+## Clés d'activation et enrôlement
+
+Un nœud prouve **une seule fois** à Headscale qu'il a le droit d'entrer. Ensuite, sa
+clé de nœud suffit&nbsp;: pour toujours s'il est tagué, jusqu'à expiration pour un
+appareil personnel.
+
+| Clé | Où | Rôle |
+|---|---|---|
+| Clé de machine | `/var/lib/tailscale` du nœud | identifie la machine auprès de Headscale&nbsp;; perdue à la réinstallation |
+| Clé de nœud | `/var/lib/tailscale` du nœud | chiffre le trafic&nbsp;; Headscale publie sa partie publique aux pairs |
+| Clé pré-autorisée | créée par Headscale | autorise un enregistrement sans navigateur, avec les tags qu'elle porte |
+| Session OIDC | Kanidm | autorise l'enregistrement d'un appareil personnel |
+
+### Machines : une clé à usage unique
+
+`just tailnet-enroll <hôte>` fait entrer une machine, sans clé partagée&nbsp;:
+
+```d2
+style.fill: transparent
+shape: sequence_diagram
+
+admin: Poste admin
+node: Machine
+hcs: Headscale (HCS)
+
+admin -> node: tailscale status
+admin -> hcs: status
+hcs -> admin: identité déclarée, nœud inconnu
+admin -> hcs: key
+hcs -> admin: clé à usage unique
+admin -> node: clé, par dnf-tailnet-join
+node -> hcs: enregistrement
+admin -> hcs: adopt
+hcs -> admin: nom, tags, adresse
+```
+
+- **Tags imposés**&nbsp;: le HCS crée la clé pour les tags **déclarés** de l'hôte
+  (`dnf-tailnet-enroll`), quoi que demande l'appelant.
+- **Usage unique, 10 minutes**&nbsp;: sans valeur une fois servie.
+- **Aucune trace**&nbsp;: la clé passe par un tube, jamais par une ligne de commande,
+  une variable, un disque ou le journal d'entrées et sorties de sudo (règles
+  `NOLOG_INPUT` et `NOLOG_OUTPUT`).
+- **Déposée en mémoire**&nbsp;: `dnf-tailnet-join` la pose dans
+  `/run/tailscale-enroll`, `tailscaled-autoconnect` l'utilise
+  (`tailscale up --force-reauth`) puis l'efface.
+- **Portable en pause dans sa zone**&nbsp;: il s'enregistre sans routes ni DNS, puis se
+  remet en pause.
+- **Contrôle final**&nbsp;: `adopt` pose les tags et le nom déclarés, remplace un
+  ancien nœud hors ligne du même nom, et la recette vérifie le résultat.
+
+<Aside type="note" title="Pourquoi pas de clé partagée">
+Tous les hôtes déchiffrent le même fichier sops. Une clé commune y serait à la portée
+de chacun&nbsp;: un poste compromis pourrait entrer sous l'identité d'une passerelle.
+</Aside>
+
+### Appareils personnels : OIDC
+
+1. L'application Tailscale contacte Headscale, qui la renvoie vers Kanidm.
+2. Kanidm n'accepte que les membres du groupe `tailnet`&nbsp;; Headscale le vérifie
+   aussi.
+3. L'appareil est enregistré au nom de la personne (`alice@`) et expire après
+   180 jours (`nodeExpiry`)&nbsp;: elle se reconnecte alors.
+
+<Aside type="caution" title="Kanidm indisponible au démarrage de Headscale">
+Headscale démarre quand même, mais sans OIDC jusqu'à son prochain redémarrage&nbsp;:
+aucun appareil personnel ne peut se connecter. L'alerte `HeadscaleOidcFallback` le
+signale.
+</Aside>

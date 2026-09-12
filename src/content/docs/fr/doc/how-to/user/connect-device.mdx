@@ -44,8 +44,8 @@ tu retrouves partout tes accès.
 {/* t:p 228f62ceff266e848a64515b44ac89ffa016a3681e15fec48c5e966e2d02aad9 */}
 ## Depuis l'extérieur
 
-En dehors d'une zone, une application sécurisée (client VPN Tailscale) relie ton
-appareil au réseau, comme si tu étais à la maison.
+En dehors d'une zone, l'application [Tailscale](https://tailscale.com/download)
+relie ton appareil au réseau, comme si tu étais à la maison.
 
 :::note[Souvent inutile]
 La plupart des services publiés en ligne sont déjà accessibles **sans VPN**,
@@ -56,13 +56,26 @@ services internes à une zone.
 <Steps>
 
 1. **Installe Tailscale** sur l'appareil (iOS, Android, Windows, macOS, Linux).
-2. **Connecte-toi** au serveur indiqué par ton administrateur.
-3. **Attends la validation** de l'administrateur : ton appareil rejoint alors le
-   réseau et ses services.
+2. **Choisis un serveur personnalisé** dans les réglages de compte de
+   l'application, puis saisis l'adresse donnée par ton administrateur (du type
+   `https://headscale.domain.tld`).
+3. **Connecte-toi avec ton identifiant habituel** : la page de connexion du réseau
+   s'ouvre, comme pour les autres services.
+4. **C'est prêt.** Les services de tes zones répondent à leur adresse habituelle.
 
 </Steps>
 
+:::tip[La page de connexion ne s'affiche pas ?]
+Désactive « Use Tailscale DNS » dans l'application le temps de te connecter, puis
+réactive-le.
+:::
+
+:::note[Tous les six mois]
+Par sécurité, ton appareil est déconnecté au bout de six mois : reconnecte-toi
+simplement avec ton identifiant.
+:::
+
 :::tip[Côté administrateur]
-La validation d'un appareil distant est décrite dans le
-[guide de l'administrateur](/fr/doc/admin-guide/install/hcs/#se-connecter-depuis-lextérieur).
+L'ouverture de l'accès est décrite dans le
+[guide de l'administrateur](/fr/doc/admin-guide/operate/vpn/#connecter-un-appareil-personnel).
 :::

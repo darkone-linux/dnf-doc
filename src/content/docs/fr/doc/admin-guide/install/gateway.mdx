@@ -141,10 +141,15 @@ posée pour l'installation ne sert plus&nbsp;: `just roaming-clear gw`.
 ## Enregistrer la passerelle sur le VPN
 
 Une passerelle est un **client Tailscale** : elle publie le sous-réseau de sa
-zone dans le maillage [Headscale](/fr/doc/admin-guide/operate/vpn/). Tant qu'elle
-n'est pas enregistrée sur le tailnet, les autres zones ne la voient pas.
+zone dans le [tailnet](/fr/doc/admin-guide/understand/tailnet/). Tant qu'elle n'y
+est pas enrôlée, les autres zones ne la voient pas. `just full-install` l'enrôle au
+passage&nbsp;; sinon, ou pour vérifier&nbsp;:
 
-Suivre la procédure dédiée : [Enregistrer une
+```sh
+just tailnet-enroll gw
+```
+
+Reste à déclarer son adresse tailnet : voir [Enregistrer une
 passerelle](/fr/doc/admin-guide/operate/vpn/#enregistrer-une-passerelle).
 
 {/* t:p 61db6fbe1ce1034ab649b1b95dfbf897a78af5208463a659932ba8a06f78ef1f */}

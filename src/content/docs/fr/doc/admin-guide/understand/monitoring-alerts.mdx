@@ -113,6 +113,7 @@ Les règles sont dérivées de ce que chaque nœud déclare ; rien à lister à 
 | Réseau | passerelle, tailnet (headscale) ou DNS injoignable (sondes blackbox) |
 | Site distant éteint | passerelle d'une autre zone injoignable (`PeerGatewayDown`) |
 | Auto-réparation tailnet | client Tailscale décroché ou watchdog qui boucle (`TailscaleUnhealthy`, `TailscaleFlapping`) |
+| Audit du tailnet | nœud absent, mal tagué ou déplacé, nœud inattendu, politique invalide, repli OIDC, appareil qui expire, audit bloqué ([`Headscale*`](/fr/doc/admin-guide/operate/vpn/#audit-et-alertes)) |
 
 <Aside type="caution" title="Une zone ne peut pas signaler sa propre mort">
 Le Prometheus d'une zone tourne **sur sa passerelle** et ne scrute que les nœuds
