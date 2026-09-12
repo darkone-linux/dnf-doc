@@ -76,10 +76,17 @@ comme doublons.
 
 :::caution[Les agrégations effacent les labels]
 Une clause `by (...)` supprime tout label non groupé. `ResticBackupStale`
-(`max by (instance, job, host)`), `SynapseHighErrorRate`
+(`max by (instance, backup, host)`), `SynapseHighErrorRate`
 (`sum by (instance, host)`) et les règles FS (`byDevice`) citent donc `host`
 explicitement. L'oublier dans une nouvelle règle agrégée fait retomber la
 notification sur l'instance brute.
+:::
+
+:::caution[Un label job exporté est renommé au scrape]
+Le job de scrape pose son propre label `job`. Celui d'une métrique exportée
+(collecteur textfile compris) devient donc `exported_job`. La métrique restic
+porte le nom du job dans `backup`&nbsp;: grouper sur `job` fusionnerait tous les
+jobs d'un hôte, et un job en échec resterait masqué tant qu'un autre réussit.
 :::
 
 :::note[Règles FS : une alerte par partition]
