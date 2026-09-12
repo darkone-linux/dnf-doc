@@ -225,9 +225,10 @@ injoignable&nbsp;: l'unité est **sautée**, pas mise en échec — aucune alert
 `SystemdUnitFailed` nocturne, pas de quart d'heure de tentatives restic, et
 aucune création de dépôt vide contre une adresse morte. La sauvegarde manquante
 reste signalée par `ResticBackupStale` (36&nbsp;h) puis `ResticBackupCritical`
-(7&nbsp;jours), qui surveillent la date du dernier succès de chaque job, y
-compris ceux déclarés directement dans `services.restic.backups`. Le journal
-indique alors `Skipped due to ExecCondition=`.
+(7&nbsp;jours), qui surveillent la date du dernier succès de chaque job (à
+défaut, sa date de déclaration), y compris ceux déclarés directement dans
+`services.restic.backups`. Le journal indique alors
+`Skipped due to ExecCondition=`.
 </Aside>
 
 {/* t:p 857b90e6265488cd7606a6a98345e6bc02ace2599ca7beae576dc2665957007e */}

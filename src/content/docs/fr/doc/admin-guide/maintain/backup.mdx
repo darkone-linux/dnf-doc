@@ -77,6 +77,12 @@ site distant éteint se voit donc au bout d'une journée, et non à la première
 nuit manquée.
 :::
 
+:::note[Un job jamais réussi alerte aussi]
+Chaque hôte exporte la liste de ses jobs, avec leur date de déclaration. Un job
+qui n'a jamais réussi est donc signalé 36&nbsp;h après son déploiement. Un job
+retiré perd sa métrique au déploiement suivant&nbsp;: pas d'alerte orpheline.
+:::
+
 :::tip[Politique de rétention]
 Par défaut : 24 dernières + 24 horaires + 7 quotidiennes + 8 hebdomadaires + 24
 mensuelles. Intégrité vérifiée à chaque sauvegarde.

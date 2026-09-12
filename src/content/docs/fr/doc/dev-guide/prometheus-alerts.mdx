@@ -89,6 +89,14 @@ porte le nom du job dans `backup`&nbsp;: grouper sur `job` fusionnerait tous les
 jobs d'un hôte, et un job en échec resterait masqué tant qu'un autre réussit.
 :::
 
+:::note[Un job jamais réussi n'a pas de série]
+`dnf_restic_last_success_timestamp` n'existe qu'après un premier succès. Le
+module restic exporte donc aussi `dnf_restic_declared_timestamp`, date de
+première déclaration de chaque job. Les règles prennent le succès, `or` la
+déclaration à défaut&nbsp;: deux agrégats `by (instance, backup, host)`, le côté
+gauche l'emporte. Sans cette liste, un nœud garde l'ancien comportement.
+:::
+
 :::note[Règles FS : une alerte par partition]
 `node_filesystem_*` est émis **par montage**. Une partition montée plusieurs
 fois (sous-volumes btrfs, montages `bind`) déclenchait donc chaque règle FS
