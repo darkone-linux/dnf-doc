@@ -277,20 +277,25 @@ darkone.service.harmonia.enable = false;
 
 <hr/>
 
-{/* t:p 0c98a3a7d1ef30c3dea797754108a0bbecffa7f9e945a673182a7db5b7091406 */}
+{/* t:p bde9fc1089380403e62764a82cb511505af3af24aed85ccaf69033aae427a502 */}
 ### &#x2728; darkone.service.headscale
 
 Un service headscale entièrement configuré pour HCS.
 
-La politique ACL du tailnet est générée depuis la topologie (zones, hôtes,
+La politique ACL du tailnet est générée à partir de la topologie (zones, hôtes,
 utilisateurs) par `dnfLib.mkHeadscalePolicy`, validée par `headscale policy check`
-au moment du build, puis rechargée à la volée (SIGHUP) sans redémarrer headscale.
+au moment du build, puis rechargée au changement (SIGHUP) sans redémarrer headscale.
 
 - Les machines sont taggées&nbsp;: `tag:hcs`, `tag:gw-<zone>`, `tag:admin` (hôte dont
-  `groups` contient `admin`).
-- Les machines et les LAN des zones communiquent entre eux&nbsp;; les appareils
-  personnels obtiennent le DNS HCS et les services HTTPS&nbsp;; SSH depuis les
-  postes admin et `policy.adminDevices`.
+  les `groups` contiennent `admin`).
+- Les machines et les LAN des zones se joignent mutuellement. Appareils personnels&nbsp;:
+  DNS et HTTPS sur le HCS, HTTPS sur les passerelles de zone (chaque zone pour les
+  admins, sinon leurs groupes `zone-*`). SSH depuis les postes admin et `policy.adminDevices`.
+- Les appareils personnels se connectent via Kanidm (OIDC), pour les membres du groupe
+  Kanidm `tailnet`&nbsp;; leurs clés expirent après `nodeExpiry`.
+- `headscale-audit` (toutes les 15 min) compare les nœuds actifs à la topologie
+  déclarée&nbsp;: métriques pour les alertes `dnf-headscale-<zone>`, détails dans son
+  journal. Il ne taggue ni ne supprime jamais.
 
 ```nix
 darkone.service.headscale.policy.adminDevices.phone-alice = "100.64.0.9";
@@ -298,16 +303,21 @@ darkone.service.headscale.policy.adminDevices.phone-alice = "100.64.0.9";
 
 :::caution[Mode ouvert]
 `policy.enforce = false` conserve les identités mais autorise tout le trafic&nbsp;:
-uniquement pour une migration, en attendant que les nœuds soient taggés.
+pour une migration uniquement, pendant que les nœuds sont taggés.
 :::
 
-* **enable** `bool` Active le service DNF headscale
-* **enableGRPC** `bool` Ouvre le port TCP GRPC
+:::note[Panne Kanidm]
+headscale démarre quand même sans Kanidm et retombe sur l'inscription en CLI
+jusqu'à son prochain redémarrage. Les nœuds inscrits ne sont pas affectés.
+:::
+
+* **enable** `bool` Activer le service DNF headscale
+* **enableGRPC** `bool` Ouvrir le port TCP GRPC
 * **nodeExpiry** `str` Expiration des clés des appareils personnels (`0`&nbsp;: jamais). Les machines taggées n'expirent jamais.
-* **policy.enforce** `bool` ACL du tailnet en refus par défaut. `false` autorise tout le trafic, uniquement pour une migration.
-* **policy.adminDevices** `attrs` Appareils personnels autorisés en SSH sur chaque machine et zone&nbsp;: nom -&gt; IPv4 du tailnet.
-* **policy.exitNodeSources** `listOf str` Sources de politique autorisées à utiliser HCS comme nœud de sortie.
-* **policy.extraHosts** `attrs` Alias d'hôtes de politique supplémentaires (nom -&gt; CIDR), à utiliser dans `extraAcls`.
+* **policy.enforce** `bool` ACL tailnet par défaut-refus. `false` autorise tout le trafic, pour une migration uniquement.
+* **policy.adminDevices** `attrs` Appareils personnels ayant SSH sur chaque machine et zone&nbsp;: nom -&gt; IPv4 du tailnet.
+* **policy.exitNodeSources** `listOf str` Sources de politique autorisées à utiliser le HCS comme nœud de sortie.
+* **policy.extraHosts** `attrs` Alias d'hôtes supplémentaires pour la politique (nom -&gt; CIDR), à utiliser dans `extraAcls`.
 * **policy.extraAcls** `listOf (attrsOf anything)` Règles ACL ajoutées après celles générées.
 
 ```nix

@@ -295,7 +295,7 @@ darkone.service.harmonia.enable = false;
 
 <hr/>
 
-{/* t:p 0c98a3a7d1ef30c3dea797754108a0bbecffa7f9e945a673182a7db5b7091406 */}
+{/* t:p bde9fc1089380403e62764a82cb511505af3af24aed85ccaf69033aae427a502 */}
 ### &#x2728; darkone.service.headscale
 
 A full-configured headscale service for HCS.
@@ -306,8 +306,14 @@ time, then reloaded on change (SIGHUP) without restarting headscale.
 
 - Machines are tagged: `tag:hcs`, `tag:gw-<zone>`, `tag:admin` (host whose
   `groups` contains `admin`).
-- Machines and zone LANs reach each other; personal devices get the HCS DNS
-  and HTTPS services; SSH from admin stations and `policy.adminDevices`.
+- Machines and zone LANs reach each other. Personal devices: DNS and HTTPS
+  on the HCS, HTTPS on zone gateways (every zone for admins, else their
+  `zone-*` groups). SSH from admin stations and `policy.adminDevices`.
+- Personal devices log in through Kanidm (OIDC), for members of the Kanidm
+  `tailnet` group; their keys expire after `nodeExpiry`.
+- `headscale-audit` (every 15 min) compares the live nodes with the declared
+  topology: metrics for the `dnf-headscale-<zone>` alerts, details in its
+  journal. It never tags nor deletes.
 
 ```nix
 darkone.service.headscale.policy.adminDevices.phone-alice = "100.64.0.9";
@@ -316,6 +322,11 @@ darkone.service.headscale.policy.adminDevices.phone-alice = "100.64.0.9";
 :::caution[Open mode]
 `policy.enforce = false` keeps the identities but allows all traffic: for a
 migration only, while nodes get tagged.
+:::
+
+:::note[Kanidm outage]
+headscale still starts without Kanidm and falls back to CLI registration
+until its next restart. Registered nodes are unaffected.
 :::
 
 * **enable** `bool` Enable headscale DNF service
