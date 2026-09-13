@@ -287,7 +287,7 @@ All data on the target host is erased. A confirmation is requested before execut
 
 :::note[Configuration required]
 The host must have a disko configuration in `etc/config.yaml`, a `usr/machines/<host>/default.nix` directory, a `mac` key, and a fixed address (`zone: "<zone>:<x.y>"`). The last two are checked before any formatting: without them, the machine changes address on the reboot following installation. See [Initial
-installation](/en/doc/admin-guide/install/first-network-installation/#installing-a-machine).
+installation](/en/doc/admin-guide/install/first-network-installation/#install-a-machine).
 :::
 
 The `ip` argument defaults to `auto`: the address is calculated as for `full-install`, no need to look it up.

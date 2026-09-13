@@ -44,6 +44,51 @@ darkone.graphic.gnome = {
 
 <hr/>
 
+{/* t:p 432dee80f741c89110ef8b51b6f8dc3636dd7ba45c29fc2bbb145d29bd9e61a5 */}
+### &#x1F5BC; darkone.graphic.qemu
+
+QEMU test VMs bridged on the DNF LAN
+
+Used by `dnf/scripts/vm-start.sh`.
+Enslaves the wired NIC into a NetworkManager bridge and lets unprivileged
+users plug VMs into it through the setuid `qemu-bridge-helper`. A VM then
+gets its address from the zone gateway like a physical machine, so
+`just full-install <host> nixos <ip>` reaches it.
+
+:::caution[Bridge MAC address]
+`bridge.macAddress` must be the NIC's own MAC: the bridge takes over the host
+IP, and the zone DHCP reservation (`mac` in `etc/config.yaml`) matches on it.
+:::
+
+:::note[Activation]
+Deploying only loads the profiles. Reboot, or `nmcli connection up br0`, to
+move the host IP onto the bridge.
+:::
+
+```nix
+darkone.graphic.qemu = {
+  enable = true;
+  bridge.interface = "enp2s0";
+  bridge.macAddress = "aa:bb:cc:dd:ee:ff";
+};
+```
+
+* **enable** `bool` QEMU test VMs bridged on the DNF LAN
+* **bridge.name** `str` Bridge interface the VMs plug into.
+* **bridge.interface** `str` Wired NIC enslaved into the bridge.
+* **bridge.macAddress** `str` Bridge MAC address: the NIC's own, to keep the zone DHCP reservation.
+
+```nix
+darkone.graphic.qemu = {
+  enable = false;
+  bridge.name = "br0";
+  bridge.interface = "enp2s0";
+  bridge.macAddress = "aa:bb:cc:dd:ee:ff";
+};
+```
+
+<hr/>
+
 {/* t:p 3e8ef2720d2589e61783e120e68226f952addf9e568cf57474e88711de906915 */}
 ### &#x1F5BC; darkone.graphic.remote-desktop
 

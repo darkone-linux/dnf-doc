@@ -1,0 +1,99 @@
+---
+title: Tester une installation dans une VM QEMU
+sidebar:
+  label: VM de test QEMU
+  order: 8
+lang: fr
+---
+
+import { Steps } from '@astrojs/starlight/components';
+
+{/* t:main */}
+{/* t:h 02231c0cb2602fc960a68b89fe450dbdf1d82d3707eecbc36d4e0de80ce6ee72 */}
+
+{/* t:p 5b025b13dc1b679c3d37889a5e04990f8a0064dfedd7ae5267644658cecbdc71 */}
+Le script `dnf/scripts/vm-start.sh` démarre une machine virtuelle QEMU sur
+l'image d'installation DNF. La VM est **pontée sur le LAN**&nbsp;: elle reçoit
+son adresse de la passerelle de zone, comme un poste physique.
+
+{/* t:p d71ec20e2a9c33ba5ca8a4b1ff359d8f35924b689f081d858900ecf9e1f50a27 */}
+## Préparer le poste d'administration
+
+Le pont réseau et `qemu-bridge-helper` viennent du module
+`darkone.graphic.qemu`, à activer sur le poste qui lance les VM&nbsp;:
+
+```nix
+# usr/machines/poste/default.nix
+darkone.graphic.qemu = {
+  enable = true;
+  bridge.interface = "enp2s0";
+  bridge.macAddress = "aa:bb:cc:dd:ee:ff";
+};
+```
+
+:::caution[MAC du pont]
+`bridge.macAddress` doit être la MAC de la carte réseau (`ip link`)&nbsp;: le
+pont reprend l'adresse IP du poste, et la réservation DHCP de la zone porte sur
+cette MAC.
+:::
+
+Le déploiement charge le pont sans l'activer. Redémarrer le poste (ou lancer
+`nmcli connection up br0`) pour basculer son adresse IP sur le pont.
+
+{/* t:p 0ce5947705bcd9fd29e6e6d8de6ddacfb94e4fbfd9add5fc4b9d05205f7a197b */}
+## Démarrer une VM
+
+<Steps>
+
+1. **Générer l'image**
+
+   ```sh
+   just build-iso
+   ```
+
+2. **Démarrer la VM**, depuis la racine du projet
+
+   ```sh
+   # dnf/scripts/vm-start.sh <hôte>
+   dnf/scripts/vm-start.sh poste
+   ```
+
+   Au premier lancement, le script crée le disque `var/vm/poste.qcow2`
+   (40&nbsp;Go), ignoré par git. Un disque vide démarre sur l'image.
+
+3. **Installer**
+
+   L'écran de la VM affiche son adresse IP et sa MAC. Lancer ensuite
+   l'[installation habituelle](/fr/doc/admin-guide/install/first-network-installation/)&nbsp;:
+
+   ```sh
+   just full-install poste nixos 10.0.0.50
+   ```
+
+   Au redémarrage, la VM démarre sur son disque.
+
+</Steps>
+
+{/* t:p 928e2cbf450f9c46652c945f6f1fa2757fa6f11d3e28770f99422e3b5f608811 */}
+## Réglages
+
+Variables d'environnement du script&nbsp;:
+
+| Variable | Défaut | Rôle |
+| --- | --- | --- |
+| `DISK_BUS` | `sata` | `sata` → `/dev/sda`, `nvme` → `/dev/nvme0n1`, selon le disko de l'hôte |
+| `DISK_SIZE` | `40G` | Taille du disque, à sa création |
+| `MEMORY` | `4096` | Mémoire (Mio) |
+| `CPUS` | `2` | Nombre de processeurs |
+| `BRIDGE` | `br0` | Pont réseau |
+
+Les arguments placés après le nom de l'hôte sont transmis à QEMU.
+
+:::tip[Adresse fixe]
+La MAC de la VM dépend uniquement de son nom. La déclarer dans
+`etc/config.yaml` (`mac`) fixe l'adresse de la VM, même après réinstallation.
+:::
+
+:::note[Repartir de zéro]
+Supprimer `var/vm/<hôte>.qcow2` et `var/vm/<hôte>.vars.fd`.
+:::
