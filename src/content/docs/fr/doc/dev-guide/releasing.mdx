@@ -28,15 +28,24 @@ commande, depuis l'espace de co-développement.
 Le projet privé consommateur n'est jamais taggué : il reste en
 co-développement et sert de banc d'intégration permanent.
 
-{/* t:p a520ff38da761c4218a9f9668f6c88bfb90349e746767129f1de33140173393e */}
+{/* t:p c5526368cab6502939c0a47cc4d89e6c3cd0b468e55ee46045a27daab9eb1be0 */}
 ## Le vocabulaire de commit
 
 Le changelog est généré à partir des messages de commit. Un type hors liste
-disparaît silencieusement des notes de version, donc la liste est vérifiée par
-l'intégration continue sur chaque *pull request*.
+disparaît silencieusement des notes de version, donc le format est vérifié :
+une seule ligne `<type>(<scope>): <sujet>`, 80 caractères max, type de la liste
+suivante.
 
 ```
 feat fix perf refactor docs test build ci chore security revert
+```
+
+Le même script, `scripts/check-commit-msg.sh`, contrôle chaque *push* vers
+`main` et chaque *pull request* dans l'intégration continue, et chaque commit
+en local via le hook `commit-msg`, à installer une fois par clone :
+
+```sh
+ln -s ../../scripts/check-commit-msg.sh .git/hooks/commit-msg
 ```
 
 Un scope n'est jamais un type&nbsp;: `feat(matrix): …`, jamais `matrix(admin): …`.
@@ -52,14 +61,13 @@ Un scope n'est jamais un type&nbsp;: `feat(matrix): …`, jamais `matrix(admin):
 | `chore`, `ci`, `test`, `build` | non publié |
 
 <Aside type="caution" title="Marquer une rupture">
-Une rupture porte un `!` après le scope **et** un pied `BREAKING CHANGE:` qui
-nomme la surface cassée et la migration. C'est ce qui déclenche la section
+Une rupture porte un `!` après le scope, et son sujet nomme la surface cassée.
+Pas de pied `BREAKING CHANGE:` : le message tient sur une ligne, la migration
+est décrite dans la documentation. C'est le `!` qui déclenche la section
 **⚠ Breaking** et la montée du numéro mineur.
 
 ```
-feat(idm)!: drop the legacy replication scheme
-
-BREAKING CHANGE: `network.idm.replicas` remplacé par `zones.<zone>.idm`.
+feat(idm)!: replace network.idm.replicas with zones.<zone>.idm
 ```
 </Aside>
 

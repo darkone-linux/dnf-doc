@@ -28,15 +28,18 @@ command, from the co-development workspace.
 The consumer private project is never tagged: it stays in co-development and
 serves as a permanent integration bench.
 
-{/* t:p a520ff38da761c4218a9f9668f6c88bfb90349e746767129f1de33140173393e */}
-## The commit vocabulary
+{/* t:p c5526368cab6502939c0a47cc4d89e6c3cd0b468e55ee46045a27daab9eb1be0 */}
+## Commit vocabulary
 
-The changelog is generated from commit messages. Any type outside the list
-silently disappears from the release notes, so the list is checked by
-continuous integration on every *pull request*.
+The changelog is generated from commit messages. A type not in the list is silently dropped from the release notes, so the format is enforced: a single line `<type>(<scope>): <subject>`, 80 characters max, type from the following list.
 
 ```
-feat fix perf refactor docs test build ci chore security revert
+feat fix perf refactor docs test build ci chore security revert```
+
+The same script, `scripts/check-commit-msg.sh`, checks every push to `main` and every pull request in continuous integration, and every local commit via the `commit-msg` hook, which needs to be installed once per clone:
+
+```sh
+ln -s ../../scripts/check-commit-msg.sh .git/hooks/commit-msg
 ```
 
 A scope is never a type: `feat(matrix): …`, never `matrix(admin): …`.
@@ -48,18 +51,15 @@ A scope is never a type: `feat(matrix): …`, never `matrix(admin): …`.
 | `security` | Security |
 | `perf`, `refactor`, `revert` | Changed |
 | `docs` | Documentation |
-| subject in `drop` or `remove` | Removed |
+| subject starts with `drop` or `remove` | Removed |
 | `chore`, `ci`, `test`, `build` | not published |
 
 <Aside type="caution" title="Marking a breaking change">
-A breaking change carries a `!` after the scope **and** a `BREAKING CHANGE:`
-footer that names the broken surface and the migration. This is what triggers
-the **⚠ Breaking** section and the bump of the minor number.
+A breaking change carries a `!` after the scope, and its subject names the broken surface.
+No `BREAKING CHANGE:` footer: the message stays on one line, the migration is described in the documentation. The `!` is what triggers the **⚠ Breaking** section and the minor version bump.
 
 ```
-feat(idm)!: drop the legacy replication scheme
-
-BREAKING CHANGE: `network.idm.replicas` replaced by `zones.<zone>.idm`.
+feat(idm)!: replace network.idm.replicas with zones.<zone>.idm
 ```
 </Aside>
 

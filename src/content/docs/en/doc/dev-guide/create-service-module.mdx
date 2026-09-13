@@ -447,16 +447,16 @@ remove the module path (and any overlay). The wrapper
 `modules/service/<name>.nix` stays unchanged.
 </Aside>
 
-{/* t:p 2e6c98f07c0b05d5204721cda60c5f12179a4bcedd732ae5064eff7db3a9dcb7 */}
+{/* t:p 115d003f8e8d1ff8f87008a952d2555f275b6594cf03de93b3d1fd2537983caf */}
 ## Finalize and commit
 
 <Steps>
 
-1. `just generate`: regenerates `default.nix` (auto-import of the new module).
-2. `just clean`: fix + check + generate + format (mandatory before commit).
+1. `just generate` : regenerates the `default.nix` files (auto-import of the new module).
+2. `just clean` : fix + check + generate + format (required before committing).
 3. Evaluate / build a host to validate, then commit.
 
 </Steps>
 
 Commit message: one line, 80 characters max, English, format
-`<type>(<subject>): <message>`, e.g. `module(oxicloud): full DNF service with OIDC`.
+`<type>(<scope>): <message>`, e.g. `feat(oxicloud): full DNF service with OIDC`.
