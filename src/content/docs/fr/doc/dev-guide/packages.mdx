@@ -106,6 +106,13 @@ just pkg-update <nom>
 publiée en amont, puis réécrit la version et les empreintes dans `package.nix`.
 Vérifier ensuite le `changelog` amont, reconstruire, et commiter.
 
+:::note[Arguments propres au paquet]
+`pkg-update` reprend les arguments de `passthru.updateScript`
+(`nix-update-script { extraArgs = [ … ]; }`), comme nixpkgs. Exemple&nbsp;:
+`fleet-update` (Bun) y déclare `--subpackage node_modules`, pour recalculer
+l'empreinte de ses dépendances avec celle des sources.
+:::
+
 {/* t:p ac1b2ba20564599783a9099f764072e9272265e95dfff6e0046d1f3623ea4c0a */}
 ## Publier dans nixpkgs
 

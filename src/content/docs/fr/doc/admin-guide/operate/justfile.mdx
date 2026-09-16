@@ -539,9 +539,9 @@ just build-iso "aarch64-linux"
 {/* t:p 4ef28b0e628a528eb64610d0b820a3282a349b1b41f540749fb17a0f2634a9db */}
 ## Commandes de déploiement
 
-L'outil de déploiement est [colmena](https://github.com/zhaofengli/colmena).
-Toutes les commandes d'application rafraîchissent d'abord le verrou DNF via
-`update-dnf`.
+Les commandes `apply*` reposent sur [colmena](https://github.com/zhaofengli/colmena)
+et rafraîchissent d'abord le verrou DNF via `update-dnf`. `fleet-update` pilote
+une mise à jour complète avec des commandes Nix natives.
 
 {/* t:p ece18c6d5eea966020a1665a58fb2d9a5f883a5877b62e92e5884a772cb90e58 */}
 ### ✳️ `apply <cible> [action]` / `a` ⭐
@@ -591,6 +591,21 @@ Active le mode maintenance Alertmanager avant d'appliquer, le désactive après.
 
 ```sh
 just apply-silenced myserver
+```
+
+### ✳️ `fleet-update [options]`
+
+Met à jour, construit et déploie tout le parc par vagues. Voir
+[Mettre à jour le parc avec fleet-update](/fr/doc/admin-guide/operate/deploy/#mettre-à-jour-le-parc-avec-fleet-update).
+
+:::danger[Pas encore fonctionnel]
+Seule l'interface existe&nbsp;: la commande rejoue des scénarios enregistrés.
+Déployer avec `apply` en attendant.
+:::
+
+```sh
+just fleet-update --list        # scénarios disponibles
+just fleet-update nominal       # rejoue un déploiement complet
 ```
 
 {/* t:p 7c7131a40b73017118225abe190a94e5de5aa02437db87cbf5fe94365af4067b */}
