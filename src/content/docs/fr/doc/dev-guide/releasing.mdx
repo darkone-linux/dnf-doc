@@ -11,17 +11,18 @@ import { Steps, Aside } from '@astrojs/starlight/components';
 {/* t:main */}
 {/* t:h c8bbdca288b29dd7666c28a9af0a404f9930ce84b5b3fac72cb5bc027685701a */}
 
-{/* t:p fecbfeb001bbb1efb08d82200060477022ab3d7fd1015aafdf3be1a0759df2d7 */}
-Publier, c'est produire des tags cohérents sur les cinq dépôts en une seule
+{/* t:p 21e9e904129f05cc5fc1b143b5ca76070b3da56ab805d160d910adbd32275923 */}
+Publier, c'est produire des tags cohérents sur les six dépôts en une seule
 commande, depuis l'espace de co-développement.
 
-{/* t:p 0cc8518404b02755fa9a665fa3e5a9fe5ee75177ed8e163f4bfe79d6414e8bb4 */}
+{/* t:p b33cd56a1d8ed6bf187c30e0bb496fcd5679acc00e2e2b8b8a78d9fae4648f05 */}
 ## Ce que chaque dépôt versionne
 
 | Dépôt | Source de vérité | Règle |
 | --- | --- | --- |
 | `darkone-nixos-framework` | `VERSION` | Référence du train |
 | `dnf-generator` | `Cargo.toml` | Version propre, épinglée par le framework |
+| `dnf-fleet-update` | `package.json` | Version propre, empaquetée par le framework |
 | `dnf-doc` | `package.json` | `MAJEUR.MINEUR` du framework, correctif propre |
 | `dnf-boilerplate`, `dnf-example` | tag seul | Miroir du framework |
 
@@ -71,7 +72,7 @@ feat(idm)!: replace network.idm.replicas with zones.<zone>.idm
 ```
 </Aside>
 
-{/* t:p 6d907fa42d6a663e171f19c18c86fc66932de202f26bc37212bf3f8971568c78 */}
+{/* t:p 345d376a3bfd92fbd014bf697a00af649b26d9cac2bb7298be351192b4777b6b */}
 ## Les recettes
 
 | Recette | Effet |
@@ -79,7 +80,7 @@ feat(idm)!: replace network.idm.replicas with zones.<zone>.idm
 | `just versions` | Version, dernier tag et branche de chaque dépôt |
 | `just changelog` | Aperçu de la prochaine entrée, n'écrit rien |
 | `just bump [niveau]` | Version, changelog, commit et tag d'**un** dépôt |
-| `just release [niveau]` | Le train complet sur les cinq dépôts |
+| `just release [niveau]` | Le train complet sur les six dépôts |
 | `just version` | Version, révision et générateur épinglé du framework |
 
 Le niveau vaut `auto` par défaut&nbsp;: [git-cliff](https://git-cliff.org/) déduit
@@ -117,18 +118,19 @@ déclarée telle quelle, et git-cliff remonte jusqu'au premier commit du dépôt
 L'entrée couvre alors tout l'historique, à élaguer avant la poussée.
 </Aside>
 
-{/* t:p e29cdf96181d18051b253ae9c72769d865e7faa7aee9836cf4678b20f424c07c */}
+{/* t:p bef5a6791bc98c724629a3471b5fc6cdf21ecb46ff460096ef3a63f17d39e120 */}
 ## Le train de release
 
 `just release` s'exécute à la racine de l'espace de co-développement, qui doit
-contenir les cinq dépôts.
+contenir les six dépôts.
 
 <Steps>
 
 1. **Barrière qualité**&nbsp;: `just check`, `just gen-test` et
    `just simulate all`. Les tests en machine virtuelle ne tournent pas dans
    l'intégration continue, donc un scénario rouge doit arrêter la publication
-   ici.
+   ici. `dnf-fleet-update` passe aussi ses barrières `ci` et `audit`, avec
+   l'outillage de son `nix develop`.
 
 2. **Générateur**, s'il a bougé depuis son dernier tag. Il possède le schéma
    `etc/config.yaml`, donc il part avant ce qui en dépend.
@@ -137,15 +139,23 @@ contenir les cinq dépôts.
    entre framework et générateur se lise dans un diff, pas seulement dans le
    verrou.
 
-4. **Framework**&nbsp;: `VERSION`, `CHANGELOG.md`, commit et tag, puis poussée
+4. **fleet-update**, s'il a bougé depuis son dernier tag. Le framework
+   l'empaquette, donc il part avant lui.
+
+5. **Épinglage** du tag de `fleet-update` dans `dnf/pkgs/fleet-update`, par
+   `just pkg-update fleet-update <version>`, puis construction du paquet. À la
+   première release, l'épinglage sur un commit de `main` devient un épinglage
+   sur le tag.
+
+6. **Framework**&nbsp;: `VERSION`, `CHANGELOG.md`, commit et tag, puis poussée
    immédiate. Toute retouche de l'entrée après cette étape imposerait de forcer
    un tag déjà consommé par `release.yml`, donc elle se fait avant.
 
-5. **Documentation**&nbsp;: `just codegen` régénère la référence depuis le
+7. **Documentation**&nbsp;: `just codegen` régénère la référence depuis le
    framework, puis la version s'aligne sur la ligne `MAJEUR.MINEUR`, puis le
    site est construit et déployé.
 
-6. **Boilerplate et exemple**&nbsp;: le tag du framework est écrit dans leur
+8. **Boilerplate et exemple**&nbsp;: le tag du framework est écrit dans leur
    `flake.nix`, `nix flake check` valide, et le `flake.lock` est **commité**.
    C'est lui qui rend un clone reproductible.
 
@@ -165,10 +175,10 @@ Les trois contrôles de `ci.yml` (tests unitaires, évaluation, lint) sont
 rejoués via `workflow_call`, puis la section du changelog devient les notes de
 la *release* GitHub.
 
-{/* t:p c56b439f2118cc5234a4d31e6e6ffd31552395dd86c967a0b17027d3bfce3092 */}
+{/* t:p d87f2d9af5696ad41093b3f3cbdece53d78db1dc7bab2a515db8dcad09fed0c2 */}
 ## Configuration partagée
 
-Un seul [git-cliff](https://git-cliff.org/) pour les trois dépôts qui
+Un seul [git-cliff](https://git-cliff.org/) pour les quatre dépôts qui
 produisent un changelog, dans `dnf/just/scripts/cliff.toml`. Le script
 `dnf/just/scripts/bump.sh` découvre la source de version du dépôt
 (`VERSION`, `Cargo.toml` ou `package.json`), assemble le fichier autour du bloc

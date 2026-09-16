@@ -237,10 +237,11 @@ régénération des clés et secrets jetables.
 just fixtures check
 ```
 
-{/* t:p a8ef367ee9b44c86661515fc436fd8006b7653bd9a6333d7fc29c04167f0f2ca */}
-### 🔆 `pkg-update <paquet>`
+{/* t:p 04842afa271f51652d177f9d20a49f49f8763df08af84e80a5c846fe5ead27ed */}
+### 🔆 `pkg-update <paquet> [version]`
 
-Met à jour un paquet de `dnf/pkgs/` vers sa dernière version amont, avec
+Met à jour un paquet de `dnf/pkgs/` vers sa dernière version amont, ou vers
+`version` si elle est donnée, avec
 [nix-update](https://github.com/Mic92/nix-update). Voir [Les paquets hors
 nixpkgs](/fr/doc/dev-guide/packages/#mettre-à-jour-un-paquet).
 
@@ -251,6 +252,7 @@ seule.
 
 ```sh
 just pkg-update rename-simple
+just pkg-update fleet-update 0.2.0    # version explicite (train de release)
 ```
 
 {/* t:p 9b5df38cc5488263f1dbc6f4a460e1c99b2e258429949798872002e4d4fdbd5d */}
@@ -536,7 +538,7 @@ just build-iso "aarch64-linux"
 
 ---
 
-{/* t:p 4ef28b0e628a528eb64610d0b820a3282a349b1b41f540749fb17a0f2634a9db */}
+{/* t:p ae6b31e17a99b3ce191bbd0c3b96667b7e7c9cdbe2e5fcf4b76e16aa79fcdb3b */}
 ## Commandes de déploiement
 
 Les commandes `apply*` reposent sur [colmena](https://github.com/zhaofengli/colmena)
@@ -593,6 +595,7 @@ Active le mode maintenance Alertmanager avant d'appliquer, le désactive après.
 just apply-silenced myserver
 ```
 
+{/* t:p 30799a7c941a38244be44189962357bcc42dbb3e475d4652eb8f28f9882371e1 */}
 ### ✳️ `fleet-update [options]`
 
 Met à jour, construit et déploie tout le parc par vagues. Voir
@@ -1011,11 +1014,11 @@ release du générateur épinglée par le framework.
 just versions
 ```
 
-{/* t:p 2cd6eb89656cc2c40c6a3a194ca00a72a7305b0b2d8638d5736ab80f54e09b72 */}
+{/* t:p d8dab6aea07c6a29faed528ca2d2d8eb8149c5dc49623a8307d040b0dac8bcd4 */}
 ### 🔗 `release [niveau]`
 
-Publie tout l'écosystème (générateur, framework, documentation et modèles de
-projet) après les vérifications et les simulations. Voir [Le train de
+Publie tout l'écosystème (générateur, `fleet-update`, framework, documentation
+et modèles de projet) après les vérifications et les simulations. Voir [Le train de
 release](/fr/doc/dev-guide/releasing/#le-train-de-release).
 
 :::danger[Pousse sur les dépôts publics]

@@ -85,6 +85,7 @@ Avant un déploiement large, validez localement : `just check`, puis
 `just apply <hôte-pilote>` sur **un** hôte témoin.
 :::
 
+{/* t:p d635f14e347879e36e27454a1a76e4b14d6c54a4ff9b73bfdf72cbc48cc8ffa1 */}
 ## Mettre à jour le parc avec fleet-update
 
 `fleet-update` enchaîne toute la mise à jour en une commande&nbsp;: flakes,
@@ -97,6 +98,7 @@ Seule l'interface existe&nbsp;: la commande rejoue des scénarios enregistrés
 `just update-flake` puis `just apply`, et laisser `timer.enable` désactivé.
 :::
 
+{/* t:p 9a7e349addbc0b65573e6ae2095b537019c20f76d8d392c8884c3d2d566e9281 */}
 ### Lancer
 
 ```sh
@@ -116,6 +118,7 @@ La recette choisit l'outil à lancer, dans cet ordre&nbsp;:
 - `var/deployments/` ignoré par git : règle `/var/*` du boilerplate.
 :::
 
+{/* t:p b140e2ce0eadf1058d08e62ea6b45ab657f3afb8135d13b213923d61ddf46539 */}
 ### Ordre des vagues et hôtes critiques
 
 Les valeurs par défaut du parc se déclarent dans `config.yaml`&nbsp;:
@@ -137,6 +140,7 @@ Profils séparés par `:`, `[others]` désigne les profils non listés. Bloc
 facultatif&nbsp;: sans lui, l'outil applique les valeurs ci-dessus. Les options
 `--deployment-order` et `--critical-profiles` priment sur `config.yaml`.
 
+{/* t:p 29e5a91b46b709bc0951b55337b2df4b9e364290667f3c9686b01a131b140615 */}
 ### Exécution quotidienne
 
 Sur l'hôte de déploiement, le module installe l'outil et, avec `timer.enable`,

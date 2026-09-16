@@ -226,21 +226,6 @@ Manages test fixtures: generation, drift check, regeneration of disposable keys 
 just fixtures check
 ```
 
-{/* t:p a8ef367ee9b44c86661515fc436fd8006b7653bd9a6333d7fc29c04167f0f2ca */}
-### 🔆 `pkg-update <package>`
-
-Updates a package from `dnf/pkgs/` to its latest upstream version with
-[nix-update](https://github.com/Mic92/nix-update). See [Packages outside
-nixpkgs](/en/doc/dev-guide/packages/#updating-a-package).
-
-:::note[Framework clone required]
-`nix-update` rewrites `package.nix`&nbsp;: a store-linked `dnf/` is read-only.
-:::
-
-```sh
-just pkg-update rename-simple
-```
-
 {/* t:p 9b5df38cc5488263f1dbc6f4a460e1c99b2e258429949798872002e4d4fdbd5d */}
 ### 🔆 `version`
 
@@ -479,13 +464,6 @@ just build-iso "aarch64-linux"
 ```
 
 ---
-
-{/* t:p 4ef28b0e628a528eb64610d0b820a3282a349b1b41f540749fb17a0f2634a9db */}
-## Deployment commands
-
-The deployment tool is [colmena](https://github.com/zhaofengli/colmena).
-All apply commands first refresh the DNF lock via
-`update-dnf`.
 
 {/* t:p ece18c6d5eea966020a1665a58fb2d9a5f883a5877b62e92e5884a772cb90e58 */}
 ### ✳️ `apply <target> [action]` / `a` ⭐
@@ -923,23 +901,6 @@ the generator release pinned by the framework.
 ```sh
 just versions
 ```
-
-{/* t:p 2cd6eb89656cc2c40c6a3a194ca00a72a7305b0b2d8638d5736ab80f54e09b72 */}
-### 🔗 `release [level]`
-
-Publishes the entire ecosystem (generator, framework, documentation and project
-templates) after checks and dry runs. See [The release
-train](/en/doc/dev-guide/releasing/#the-release-pipeline).
-
-:::danger[Pushes to public repositories]
-Each step commits, tags, and pushes. Only run this for a real release.
-:::
-
-```sh
-just release
-```
-
----
 
 {/* t:p 1a7f09b4a5d0c90e8dedf0f9d258499b5150608a0d41f0aa71207afc1cd169d9 */}
 ## Alias summary
