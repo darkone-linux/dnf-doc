@@ -6,6 +6,8 @@ sidebar:
 lang: fr
 ---
 
+import { Steps } from '@astrojs/starlight/components';
+
 {/* t:main */}
 {/* t:h 105938957d65ed55bf9c9bc5d4fc332fc008efc27c2d25e2226abd40d5c9e76d */}
 
@@ -92,6 +94,8 @@ Avant un déploiement large, validez localement : `just check`, puis
 construction de tous les hôtes, test par vagues (les hôtes dont dépend le
 réseau d'abord), puis activation définitive des hôtes validés.
 
+![Interface de fleet-update](../../../../../../assets/dfu-screenshot-01.png)
+
 :::caution[Options pas encore disponibles]
 `--send-report` (rapport Matrix) est refusée&nbsp;: message d'erreur et code de
 sortie `2`. Les options `--ai-*` sont acceptées, sans effet pour l'instant.
@@ -120,13 +124,13 @@ La recette choisit l'outil à lancer, dans cet ordre&nbsp;:
 {/* t:p 2638960249953bad6d7c5b97357dbe57e9d98557ae5744e468d22ebf8d647d76 */}
 ### Le déroulé d'un lancement
 
-| Étape | Ce qui se passe |
-|---|---|
-| Mise à jour | `nix flake update` du projet puis de `dnf/` (co-développement), `just clean`, un commit par dépôt |
-| Sélection | Hôtes, profils et zones lus dans `var/generated/`, filtrés par `--on` ; zone courante déduite de l'IP locale |
-| Construction | Tous les hôtes sélectionnés, joignables ou non, sur la machine de déploiement |
-| Test | `switch-to-configuration test`, une vague par profil ; la vague suivante démarre quand tous ses hôtes sont OK ou écartés |
-| Switch | Tous les hôtes validés en test, **d'un seul coup**, hors ordre des vagues |
+<Steps>
+1. **Mise à jour** : `nix flake update` du projet puis de `dnf/` (co-développement), `just clean`, un commit par dépôt.
+2. **Sélection** : hôtes, profils et zones lus dans `var/generated/`, filtrés par `--on` ; zone courante déduite de l'IP locale.
+3. **Construction** : tous les hôtes sélectionnés, joignables ou non, sur la machine de déploiement.
+4. **Test** : `switch-to-configuration test`, une vague par profil ; la vague suivante démarre quand tous ses hôtes sont OK ou écartés.
+5. **Switch** : tous les hôtes validés en test, **d'un seul coup**, hors ordre des vagues.
+</Steps>
 
 Trois options raccourcissent ce déroulé&nbsp;:
 
@@ -194,9 +198,21 @@ network:
 | `pingInterval` | Secondes entre deux pings des hôtes suivis | `15` |
 | `timeouts.<clé>` | Durée maximale d'une opération, en secondes | selon l'opération |
 
-Clés de `timeouts`, dans l'ordre du déroulé&nbsp;: `flakeUpdate` (120),
-`clean` (60), `commit` (60), `eval` (1200), `build` (10800), `copy` (3600),
-`activation` (300), `ssh` (30), `ping` (5), `matrix` (30), `killGrace` (10).
+Clés de `timeouts`, dans l'ordre du déroulé&nbsp;:
+
+| `timeouts.<clé>` | Défaut (s) |
+|---|---|
+| `flakeUpdate` | 120 |
+| `clean` | 60 |
+| `commit` | 60 |
+| `eval` | 1200 |
+| `build` | 10800 |
+| `copy` | 3600 |
+| `activation` | 300 |
+| `ssh` | 30 |
+| `ping` | 5 |
+| `matrix` | 30 |
+| `killGrace` | 10 |
 
 :::note[Une clé inconnue arrête la génération]
 `just generate` vérifie les noms de clés et refuse un délai nul ou négatif&nbsp;:
