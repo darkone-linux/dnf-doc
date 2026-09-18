@@ -771,6 +771,18 @@ Creates or refreshes the Matrix bot, the webhook secret, and the alert and incid
 just configure-alert-bot
 ```
 
+{/* t:p 2a5c82df2461ae65345b361ab94b7f74c5f7516b919c2cf9c50d1fa4f9f125b7 */}
+### ✳️ `send-msg`
+
+Sends a message to an alert channel (`warnings` or `incidents`), Markdown
+body on standard input. Channels and token come from the project&nbsp;:
+the caller only writes the text. Exit codes&nbsp;: `10` nothing configured,
+`11` message rejected by the server.
+
+```sh
+just send-msg warnings < rapport.md
+```
+
 {/* t:p c42e83fd9c7a4f3c783eedfafd3f9f0b7516069ed1a976f4f14797c206d917bf */}
 ### ✳️ `idm-sync-certs`
 

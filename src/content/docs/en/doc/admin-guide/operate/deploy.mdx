@@ -6,6 +6,8 @@ sidebar:
 lang: en
 ---
 
+import { Steps } from '@astrojs/starlight/components';
+
 {/* t:translated-from fr */}
 {/* t:h 105938957d65ed55bf9c9bc5d4fc332fc008efc27c2d25e2226abd40d5c9e76d */}
 
@@ -81,16 +83,17 @@ Before a wide rollout, validate locally: `just check`, then
 `just apply <pilot-host>` on **a** single test host.
 :::
 
-{/* t:p f39603893bc800169e1572b8b43cd9f56426cbafa86123d4ed8fe40ba5d14343 */}
+{/* t:p 5c5f2078619ee6710d2a750c535b1749d1ec53091f839b65d6b5775c4d79202b */}
 ## Updating the fleet with fleet-update
 
-`fleet-update` chains the entire update into a single command&nbsp;: flakes,
-build of all hosts, staged testing (the hosts the network depends on first),
-then definitive activation of the validated hosts.
+`fleet-update` runs the entire update in a single command&nbsp;: flakes, building
+of all hosts, testing in waves (the hosts the network depends on first), then
+final activation of validated hosts.
+
+![Interface of fleet-update](../../../../../../assets/dfu-screenshot-01.png)
 
 :::caution[Options not yet available]
-`--send-report` (Matrix report) is refused&nbsp;: error message and exit code
-`2`. The `--ai-*` options are accepted, with no effect for now.
+The `--ai-*` options are accepted, with no effect for now.
 :::
 
 {/* t:p 9a7e349addbc0b65573e6ae2095b537019c20f76d8d392c8884c3d2d566e9281 */}
@@ -113,18 +116,18 @@ The recipe picks the tool to run, in this order&nbsp;:
 - `var/deployments/` ignored by git: `/var/*` rule from the boilerplate.
 :::
 
-{/* t:p 2638960249953bad6d7c5b97357dbe57e9d98557ae5744e468d22ebf8d647d76 */}
-### How a launch unfolds
+{/* t:p 5a5612c044a6c26c7b9082190d8fa9494c2c9c9af02ece0f48358324cbbf49d3 */}
+### How a launch runs
 
-| Step | What happens |
-|---|---|
-| Update | `nix flake update` of the project then of `dnf/` (co-development), `just clean`, one commit per repository |
-| Selection | Hosts, profiles and zones read from `var/generated/`, filtered by `--on`; current zone deduced from the local IP |
-| Build | All selected hosts, reachable or not, on the deployment machine |
-| Test | `switch-to-configuration test`, one wave per profile; the next wave starts when all its hosts are OK or set aside |
-| Switch | All hosts validated in test, **all at once**, regardless of wave order |
+<Steps>
+1. **Update** : `nix flake update` of the project then of `dnf/` (co-development), `just clean`, one commit per repository.
+2. **Selection** : hosts, profiles and zones read from `var/generated/`, filtered by `--on` ; current zone inferred from the local IP.
+3. **Build** : all selected hosts, reachable or not, on the deployment machine.
+4. **Test** : `switch-to-configuration test`, one wave per profile; the next wave starts when all its hosts are OK or excluded.
+5. **Switch** : all hosts validated in test, **all at once**, regardless of wave order.
+</Steps>
 
-Three options shorten this flow&nbsp;:
+Three options shorten this launch&nbsp;:
 
 | Option | Effect |
 |---|---|
@@ -134,18 +137,18 @@ Three options shorten this flow&nbsp;:
 
 :::note[Why the switch is not done in waves]
 Waves protect an unproven configuration. Once the test succeeds on each host,
-there is nothing left to protect&nbsp;: the switch goes out in one go, at most
-`--max-parallel` hosts activated simultaneously. With `--skip-test`, nothing
-has been proven&nbsp;: the switch follows the wave order again.
+there is nothing left to protect&nbsp;: the switch goes out in one go, with at
+most `--max-parallel` hosts activated simultaneously. With `--skip-test`,
+nothing has been proven&nbsp;: the switch follows the wave order again.
 :::
 
 :::tip[Resuming an interrupted launch]
-`--resume` restarts from the last folder of `var/deployments/`&nbsp;: update
-skipped, waves and options of the original launch, and the hosts that still
-remained to do (remaining, offline, failed, or only tested). The builds are
-reused if the revisions of the project and of `dnf/` have not moved and the
-paths are still in the store&nbsp;; otherwise they are rebuilt. Nothing to
-resume&nbsp;: exit code `2`, no launch.
+`--resume` restarts from the last folder in `var/deployments/`&nbsp;: update
+skipped, waves and options of the original launch, and the hosts that still had
+to be done (remaining, offline, failed, or only tested). Builds are reused if
+the project and `dnf/` revisions have not moved and the paths are still in the
+store&nbsp;; otherwise they are rebuilt. Nothing to resume&nbsp;: exit code `2`,
+no launch.
 :::
 
 {/* t:p b140e2ce0eadf1058d08e62ea6b45ab657f3afb8135d13b213923d61ddf46539 */}
@@ -168,10 +171,10 @@ network:
 
 Profiles separated by `:`, `[others]` designates the unlisted profiles. Optional block&nbsp;: without it, the tool applies the values above. The `--deployment-order` and `--critical-profiles` options take precedence over `config.yaml`.
 
-{/* t:p 8c18218d94bc36b57e9b029d2e88ce28a7827d74430b0223582cd4145c5d8a1a */}
+{/* t:p 886fda88630e88793bf0ce85a815564400da16f6285ec72524117ef0c9674244 */}
 ### Timeouts and monitoring
 
-Two other optional blocks of `config.yaml` set the durations&nbsp;:
+Two other optional blocks in `config.yaml` set the durations&nbsp;:
 
 ```yaml
 # etc/config.yaml
@@ -186,19 +189,79 @@ network:
 | Key | Role | Default |
 |---|---|---|
 | `pingInterval` | Seconds between two pings of the tracked hosts | `15` |
-| `timeouts.<key>` | Maximum duration of an operation, in seconds | depending on the operation |
+| `timeouts.<clé>` | Maximum duration of an operation, in seconds | depends on the operation |
 
-`timeouts` keys, in the order of the flow&nbsp;: `flakeUpdate` (120),
-`clean` (60), `commit` (60), `eval` (1200), `build` (10800), `copy` (3600),
-`activation` (300), `ssh` (30), `ping` (5), `matrix` (30), `killGrace` (10).
+`timeouts` keys, in the order of the launch&nbsp;:
+
+| `timeouts.<clé>` | Default (s) |
+|---|---|
+| `flakeUpdate` | 120 |
+| `clean` | 60 |
+| `commit` | 60 |
+| `eval` | 1200 |
+| `build` | 10800 |
+| `copy` | 3600 |
+| `activation` | 300 |
+| `ssh` | 30 |
+| `ping` | 5 |
+| `matrix` | 30 |
+| `killGrace` | 10 |
 
 :::note[An unknown key stops generation]
-`just generate` checks the key names and refuses a zero or negative timeout&nbsp;:
-a typo would otherwise silently fall back on the default value.
+`just generate` checks the key names and rejects a zero or negative timeout&nbsp;:
+otherwise a typo would silently fall back to the default value.
 :::
 
-{/* t:p c9a19178222080d1138e0fa0d033d7424898ae37421f71789429bc1b119ab886 */}
-### Daily run
+{/* t:p b3d52501e35b3ac644cde45df1d4e267f2268294b921ee8215968bc583f47fdb */}
+### Report and Matrix alerts
+
+Each launch writes its folder in `var/deployments/<date>-<mode>/`&nbsp;:
+`report.md` (the report), `state.json` (the state `--resume` picks up),
+`events.jsonl` and the logs per host. The path is displayed at the end of the
+launch.
+
+The `--send-report` option sends this report to the rooms of the
+[alert bot](/en/doc/admin-guide/operate/alerts/), installed beforehand with
+`just configure-alert-bot`.
+
+| Situation | Room | Content |
+|---|---|---|
+| Launch finished | warnings | Summary&nbsp;: hosts by status, duration, known errors |
+| Critical hosts not deployed | incidents | Separate message&nbsp;: affected hosts and reasons |
+| Stopped on error | incidents | Error that stopped the launch, then summary |
+
+A host is critical when its profile appears in `criticalProfiles`. After a
+stop, hosts left in `test` complete the incident message&nbsp;: a reboot would
+bring them back to their previous generation.
+
+The message reuses the report header, with the exit code in the title&nbsp;:
+
+```markdown
+**Fleet Update Report** (1)
+
+Error: srv-ag: activation failed
+
+- Started at 2026-09-17 02:00:00 UTC, duration: 4m12s
+- Options: partial run, selection gw-*, test skipped, 10 in parallel
+- Hosts: 5 deployed, 1 failed (srv-ag)
+- Run stopped on error
+```
+
+:::note[When the send fails]
+The launch stays valid and the report is written, but the command exits with `3`.
+Under the timer, the unit goes into a failed state, hence the
+`SystemdUnitFailed` alert.
+:::
+
+:::caution[What sending requires]
+Sending goes through the recipe [`just send-msg`](/en/doc/admin-guide/operate/alerts/#sending-a-message-to-a-room)&nbsp;:
+rooms and token remain the framework's responsibility, the tool only writes the
+text. Nothing is sent if the bot is not provisioned, nor on an abort (`^C`,
+service stop).
+:::
+
+{/* t:p 8706c5bb5bdec3a788fc742bd40fed889c013d0c8b271a518d54639190589b94 */}
+### Daily execution
 
 On the deployment host, the module installs the tool and, with `timer.enable`,
 runs `fleet-update --no-ui` every day&nbsp;:
@@ -217,18 +280,24 @@ darkone.admin.fleet-update = {
 | `user` | none | Project owner: git, age key, AI, Matrix |
 | `workDir` | `/etc/nixos` | Consumer project on disk |
 | `timer.onCalendar` | `*-*-* 04:00` | Launch time |
-| `timer.extraArgs` | `[ ]` | Options added to `--no-ui` |
+| `timer.extraArgs` | `[ ]` | Options added to `--no-ui`, `--send-report` for example |
 | `timer.timeout` | `6h` | Maximum duration of a launch |
 
 :::note[Exit codes and alerts]
-A launch already in progress (code `4`) is not an error. Any other failure,
-or an overrun of `timer.timeout`, puts the unit in failed state and triggers
-the [alert](/en/doc/admin-guide/operate/alerts/) `SystemdUnitFailed`.
+An already-running launch (code `4`) is not an error. Any other failure, or an
+overrun of `timer.timeout`, puts the unit into a failed state and triggers the
+[alert](/en/doc/admin-guide/operate/alerts/) `SystemdUnitFailed`.
 :::
 
 :::caution[Account and deployment host]
 The timer requires `darkone.admin.nix` on the host, and a `user` account with
 passwordless `sudo`.
+:::
+
+:::note[Daily report]
+`--send-report` will become the default of `timer.extraArgs` when the packaged
+version of the tool knows how to send it. Until then, add it after checking the
+send manually.
 :::
 
 {/* t:p 7fba6574d9772edc82643418791070ada23d13d56e447c3d0b519b767870e521 */}

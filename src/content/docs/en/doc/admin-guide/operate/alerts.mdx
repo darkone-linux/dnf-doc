@@ -94,6 +94,30 @@ Provisioning stores three secrets in `usr/secrets/secrets.yaml`:
 | `alertmanager-matrix-token` | bot access token (message sending) |
 | `alertmanager-webhook-secret` | authenticates Alertmanager to the Matrix bridge |
 
+{/* t:p b3e0b4941bc9a26caaef50845e2e3a668dfe61cc9bdf2394beeb6a3b2dbc2a38 */}
+## Sending a message to a room
+
+Once the bot is in place, any tool in the project can write to the alert rooms. The message body, in markdown, arrives on standard input:
+
+```sh
+just send-msg warnings < rapport.md
+echo "**Sauvegarde nocturne** : 2 dépôts en retard" | just send-msg incidents
+```
+
+The recipe reads the rooms from `var/generated/matrix.nix` and the token from sops, under the deployment identity `nix`. The caller therefore does not need to know either of them.
+
+Markdown is converted to HTML before sending; otherwise Matrix clients would display it as-is: headings, lists, **bold**, `code` and links. No italics: a lone `*` is a host pattern (`gw-*`).
+
+| Exit code | Meaning |
+|---|---|
+| `0` | Message sent |
+| `10` | Nothing configured here: missing room, token or program |
+| `11` | The Matrix server refused the message |
+
+:::note[Who uses it]
+`fleet-update --send-report` sends its report through this recipe (see [Déploiement](/en/doc/admin-guide/operate/deploy/#report-and-matrix-alerts)). Exit code `10` is enough for it to know that retrying is pointless.
+:::
+
 {/* t:p f32c7b8dcfd6d535fabe1e784c4eeddba81543756385f6400ccad5babc2fa83d */}
 ## Testing an alert
 
