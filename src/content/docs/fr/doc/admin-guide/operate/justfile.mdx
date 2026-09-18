@@ -601,14 +601,11 @@ just apply-silenced myserver
 Met à jour, construit et déploie tout le parc par vagues. Voir
 [Mettre à jour le parc avec fleet-update](/fr/doc/admin-guide/operate/deploy/#mettre-à-jour-le-parc-avec-fleet-update).
 
-:::danger[Pas encore fonctionnel]
-Seule l'interface existe&nbsp;: la commande rejoue des scénarios enregistrés.
-Déployer avec `apply` en attendant.
-:::
-
 ```sh
-just fleet-update --list        # scénarios disponibles
-just fleet-update nominal       # rejoue un déploiement complet
+just fleet-update                   # tout le parc, interface interactive
+just fleet-update --on '+server'    # les hôtes d'un profil
+just fleet-update --build-only      # construire sans rien activer
+just fleet-update --help            # toutes les options
 ```
 
 {/* t:p 7c7131a40b73017118225abe190a94e5de5aa02437db87cbf5fe94365af4067b */}

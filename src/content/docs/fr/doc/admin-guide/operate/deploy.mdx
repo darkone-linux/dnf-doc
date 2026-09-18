@@ -92,10 +92,10 @@ Avant un déploiement large, validez localement : `just check`, puis
 construction de tous les hôtes, test par vagues (les hôtes dont dépend le
 réseau d'abord), puis activation définitive des hôtes validés.
 
-:::danger[Pas encore fonctionnel]
-Seule l'interface existe&nbsp;: la commande rejoue des scénarios enregistrés
-(`just fleet-update --list`). En attendant, mettre à jour avec
-`just update-flake` puis `just apply`, et laisser `timer.enable` désactivé.
+:::caution[Options pas encore disponibles]
+`--resume` (reprise d'un lancement interrompu) et `--send-report` (rapport
+Matrix) sont refusées&nbsp;: message d'erreur et code de sortie `2`. Les
+options `--ai-*` sont acceptées, sans effet pour l'instant.
 :::
 
 {/* t:p 9a7e349addbc0b65573e6ae2095b537019c20f76d8d392c8884c3d2d566e9281 */}
@@ -116,6 +116,31 @@ La recette choisit l'outil à lancer, dans cet ordre&nbsp;:
 :::caution[Prérequis]
 - Arbres git propres : projet, et `dnf/` en co-développement.
 - `var/deployments/` ignoré par git : règle `/var/*` du boilerplate.
+:::
+
+### Le déroulé d'un lancement
+
+| Étape | Ce qui se passe |
+|---|---|
+| Mise à jour | `nix flake update` du projet puis de `dnf/` (co-développement), `just clean`, un commit par dépôt |
+| Sélection | Hôtes, profils et zones lus dans `var/generated/`, filtrés par `--on` ; zone courante déduite de l'IP locale |
+| Construction | Tous les hôtes sélectionnés, joignables ou non, sur la machine de déploiement |
+| Test | `switch-to-configuration test`, une vague par profil ; la vague suivante démarre quand tous ses hôtes sont OK ou écartés |
+| Switch | Tous les hôtes validés en test, **d'un seul coup**, hors ordre des vagues |
+
+Trois options raccourcissent ce déroulé&nbsp;:
+
+| Option | Effet |
+|---|---|
+| `--build-only` | S'arrête après la construction ; en interactif, propose de continuer |
+| `--skip-test` | Pas de test : le switch se fait vague par vague, directement après la construction |
+| `--skip-switch` | Pas de switch : le lancement s'arrête sur ce que le test a laissé en place |
+
+:::note[Pourquoi le switch n'est pas par vagues]
+Les vagues protègent une configuration non prouvée. Une fois le test réussi sur
+chaque hôte, il n'y a plus rien à protéger&nbsp;: le switch part en une fois, au
+plus `--max-parallel` hôtes activés simultanément. Avec `--skip-test`, rien n'a
+été prouvé&nbsp;: le switch reprend l'ordre des vagues.
 :::
 
 {/* t:p b140e2ce0eadf1058d08e62ea6b45ab657f3afb8135d13b213923d61ddf46539 */}
@@ -140,6 +165,34 @@ Profils séparés par `:`, `[others]` désigne les profils non listés. Bloc
 facultatif&nbsp;: sans lui, l'outil applique les valeurs ci-dessus. Les options
 `--deployment-order` et `--critical-profiles` priment sur `config.yaml`.
 
+### Délais et surveillance
+
+Deux autres blocs facultatifs de `config.yaml` règlent les durées&nbsp;:
+
+```yaml
+# etc/config.yaml
+network:
+  fleetUpdate:
+    pingInterval: 15
+    timeouts:
+      build: 10800
+      ssh: 30
+```
+
+| Clé | Rôle | Défaut |
+|---|---|---|
+| `pingInterval` | Secondes entre deux pings des hôtes suivis | `15` |
+| `timeouts.<clé>` | Durée maximale d'une opération, en secondes | selon l'opération |
+
+Clés de `timeouts`, dans l'ordre du déroulé&nbsp;: `flakeUpdate` (120),
+`clean` (60), `commit` (60), `eval` (1200), `build` (10800), `copy` (3600),
+`activation` (300), `ssh` (30), `ping` (5), `matrix` (30), `killGrace` (10).
+
+:::note[Une clé inconnue arrête la génération]
+`just generate` vérifie les noms de clés et refuse un délai nul ou négatif&nbsp;:
+une faute de frappe retomberait sinon sur la valeur par défaut, en silence.
+:::
+
 {/* t:p 29e5a91b46b709bc0951b55337b2df4b9e364290667f3c9686b01a131b140615 */}
 ### Exécution quotidienne
 
@@ -160,7 +213,7 @@ darkone.admin.fleet-update = {
 | `user` | aucun | Propriétaire du projet : git, clé age, IA, Matrix |
 | `workDir` | `/etc/nixos` | Projet consommateur sur le disque |
 | `timer.onCalendar` | `*-*-* 04:00` | Heure de lancement |
-| `timer.extraArgs` | `[ "--send-report" ]` | Options ajoutées à `--no-ui` |
+| `timer.extraArgs` | `[ ]` | Options ajoutées à `--no-ui` |
 | `timer.timeout` | `6h` | Durée maximale d'un lancement |
 
 :::note[Codes de sortie et alertes]
