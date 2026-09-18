@@ -218,7 +218,7 @@ Clés de `timeouts`, dans l'ordre du déroulé&nbsp;:
 une faute de frappe retomberait sinon sur la valeur par défaut, en silence.
 :::
 
-{/* t:p 2fb981b3ac33dc79e9a3892c955e6edfe6f41191e2cf8fb5a91e5b209033d2b4 */}
+{/* t:p b3d52501e35b3ac644cde45df1d4e267f2268294b921ee8215968bc583f47fdb */}
 ### Rapport et alertes Matrix
 
 Chaque lancement écrit son dossier dans `var/deployments/<date>-<mode>/`&nbsp;:
@@ -238,6 +238,19 @@ L'option `--send-report` envoie ce rapport aux salons du
 Un hôte est critique quand son profil figure dans `criticalProfiles`. Après un
 arrêt, les hôtes laissés en `test` complètent le message d'incident&nbsp;: un
 redémarrage les ramènerait à leur génération précédente.
+
+Le message reprend l'en-tête du rapport, le code de sortie dans le titre&nbsp;:
+
+```markdown
+**Fleet Update Report** (1)
+
+Error: srv-ag: activation failed
+
+- Started at 2026-09-17 02:00:00 UTC, duration: 4m12s
+- Options: partial run, selection gw-*, test skipped, 10 in parallel
+- Hosts: 5 deployed, 1 failed (srv-ag)
+- Run stopped on error
+```
 
 :::note[Envoi impossible]
 Le lancement reste valide et le rapport est écrit, mais la commande sort en `3`.
