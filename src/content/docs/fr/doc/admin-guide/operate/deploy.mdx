@@ -87,7 +87,7 @@ Avant un déploiement large, validez localement : `just check`, puis
 `just apply <hôte-pilote>` sur **un** hôte témoin.
 :::
 
-{/* t:p f39603893bc800169e1572b8b43cd9f56426cbafa86123d4ed8fe40ba5d14343 */}
+{/* t:p 5c5f2078619ee6710d2a750c535b1749d1ec53091f839b65d6b5775c4d79202b */}
 ## Mettre à jour le parc avec fleet-update
 
 `fleet-update` enchaîne toute la mise à jour en une commande&nbsp;: flakes,
@@ -97,8 +97,7 @@ réseau d'abord), puis activation définitive des hôtes validés.
 ![Interface de fleet-update](../../../../../../assets/dfu-screenshot-01.png)
 
 :::caution[Options pas encore disponibles]
-`--send-report` (rapport Matrix) est refusée&nbsp;: message d'erreur et code de
-sortie `2`. Les options `--ai-*` sont acceptées, sans effet pour l'instant.
+Les options `--ai-*` sont acceptées, sans effet pour l'instant.
 :::
 
 {/* t:p 9a7e349addbc0b65573e6ae2095b537019c20f76d8d392c8884c3d2d566e9281 */}
@@ -121,7 +120,7 @@ La recette choisit l'outil à lancer, dans cet ordre&nbsp;:
 - `var/deployments/` ignoré par git : règle `/var/*` du boilerplate.
 :::
 
-{/* t:p 2638960249953bad6d7c5b97357dbe57e9d98557ae5744e468d22ebf8d647d76 */}
+{/* t:p 5a5612c044a6c26c7b9082190d8fa9494c2c9c9af02ece0f48358324cbbf49d3 */}
 ### Le déroulé d'un lancement
 
 <Steps>
@@ -178,7 +177,7 @@ Profils séparés par `:`, `[others]` désigne les profils non listés. Bloc
 facultatif&nbsp;: sans lui, l'outil applique les valeurs ci-dessus. Les options
 `--deployment-order` et `--critical-profiles` priment sur `config.yaml`.
 
-{/* t:p 8c18218d94bc36b57e9b029d2e88ce28a7827d74430b0223582cd4145c5d8a1a */}
+{/* t:p 886fda88630e88793bf0ce85a815564400da16f6285ec72524117ef0c9674244 */}
 ### Délais et surveillance
 
 Deux autres blocs facultatifs de `config.yaml` règlent les durées&nbsp;:
@@ -219,7 +218,39 @@ Clés de `timeouts`, dans l'ordre du déroulé&nbsp;:
 une faute de frappe retomberait sinon sur la valeur par défaut, en silence.
 :::
 
-{/* t:p c9a19178222080d1138e0fa0d033d7424898ae37421f71789429bc1b119ab886 */}
+{/* t:p 6944becf838aca37f4e5d8d30103778852c896295bfd98731a8a7457293c16a7 */}
+### Rapport et alertes Matrix
+
+Chaque lancement écrit son dossier dans `var/deployments/<date>-<mode>/`&nbsp;:
+`report.md` (le rapport), `state.json` (l'état que `--resume` reprend),
+`events.jsonl` et les journaux par hôte. Le chemin s'affiche en fin de lancement.
+
+L'option `--send-report` envoie ce rapport aux salons du
+[bot d'alertes](/fr/doc/admin-guide/operate/alerts/), installé au préalable par
+`just configure-alert-bot`.
+
+| Situation | Salon | Contenu |
+|---|---|---|
+| Lancement terminé | warnings | Résumé&nbsp;: hôtes par état, durée, erreurs connues |
+| Hôtes critiques non déployés | incidents | Message séparé&nbsp;: hôtes concernés et raisons |
+| Arrêt sur erreur | incidents | Erreur qui a arrêté le lancement, puis résumé |
+
+Un hôte est critique quand son profil figure dans `criticalProfiles`. Après un
+arrêt, les hôtes laissés en `test` complètent le message d'incident&nbsp;: un
+redémarrage les ramènerait à leur génération précédente.
+
+:::note[Envoi impossible]
+Le lancement reste valide et le rapport est écrit, mais la commande sort en `3`.
+Sous le timer, l'unité passe en échec, donc l'alerte `SystemdUnitFailed`.
+:::
+
+:::caution[Ce que l'envoi exige]
+Le compte qui lance l'outil déchiffre le jeton `alertmanager-matrix-token` avec
+sa clé age, et les salons viennent de `var/generated/matrix.nix`. Un abandon
+(`^C`, arrêt du service) n'envoie rien.
+:::
+
+{/* t:p 8706c5bb5bdec3a788fc742bd40fed889c013d0c8b271a518d54639190589b94 */}
 ### Exécution quotidienne
 
 Sur l'hôte de déploiement, le module installe l'outil et, avec `timer.enable`,
@@ -239,7 +270,7 @@ darkone.admin.fleet-update = {
 | `user` | aucun | Propriétaire du projet : git, clé age, IA, Matrix |
 | `workDir` | `/etc/nixos` | Projet consommateur sur le disque |
 | `timer.onCalendar` | `*-*-* 04:00` | Heure de lancement |
-| `timer.extraArgs` | `[ ]` | Options ajoutées à `--no-ui` |
+| `timer.extraArgs` | `[ ]` | Options ajoutées à `--no-ui`, `--send-report` par exemple |
 | `timer.timeout` | `6h` | Durée maximale d'un lancement |
 
 :::note[Codes de sortie et alertes]
@@ -251,6 +282,12 @@ l'[alerte](/fr/doc/admin-guide/operate/alerts/) `SystemdUnitFailed`.
 :::caution[Compte et hôte de déploiement]
 Le timer exige `darkone.admin.nix` sur l'hôte, et un compte `user` disposant de
 `sudo` sans mot de passe.
+:::
+
+:::note[Rapport quotidien]
+`--send-report` deviendra le défaut de `timer.extraArgs` quand la version
+empaquetée de l'outil saura l'envoyer. Ajoutez-la d'ici là, après avoir vérifié
+l'envoi à la main.
 :::
 
 {/* t:p 7fba6574d9772edc82643418791070ada23d13d56e447c3d0b519b767870e521 */}
