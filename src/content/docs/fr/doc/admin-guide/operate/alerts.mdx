@@ -95,7 +95,7 @@ Le provisionnement dépose trois secrets dans `usr/secrets/secrets.yaml` :
 | `alertmanager-matrix-token` | jeton d'accès du bot (envoi des messages) |
 | `alertmanager-webhook-secret` | authentifie Alertmanager auprès du pont Matrix |
 
-{/* t:p 59551f452ca485cdd63651c800d4a2005d49926c0cbe5d75019696e5fac9812e */}
+{/* t:p b3e0b4941bc9a26caaef50845e2e3a668dfe61cc9bdf2394beeb6a3b2dbc2a38 */}
 ## Envoyer un message dans un salon
 
 Une fois le bot en place, n'importe quel outil du projet peut écrire dans les
@@ -110,6 +110,10 @@ echo "**Sauvegarde nocturne** : 2 dépôts en retard" | just send-msg incidents
 La recette lit les salons dans `var/generated/matrix.nix` et le jeton dans sops,
 sous l'identité de déploiement `nix`. L'appelant n'a donc à connaître ni l'un ni
 l'autre.
+
+Le markdown est converti en HTML avant l'envoi, sans quoi les clients Matrix
+l'afficheraient tel quel&nbsp;: titres, listes, **gras**, `code` et liens. Pas
+d'italique&nbsp;: un `*` isolé est un motif d'hôtes (`gw-*`).
 
 | Code de sortie | Signification |
 |---|---|
