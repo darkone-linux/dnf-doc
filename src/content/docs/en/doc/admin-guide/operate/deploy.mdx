@@ -212,29 +212,24 @@ network:
 otherwise a typo would silently fall back to the default value.
 :::
 
-{/* t:p b3d52501e35b3ac644cde45df1d4e267f2268294b921ee8215968bc583f47fdb */}
+{/* t:p 7988552e89533af9c3f66d26c89bf4e0d9fd5623ea1b78e5d3a58dcdd52619ab */}
 ### Report and Matrix alerts
 
-Each launch writes its folder in `var/deployments/<date>-<mode>/`&nbsp;:
-`report.md` (the report), `state.json` (the state `--resume` picks up),
-`events.jsonl` and the logs per host. The path is displayed at the end of the
-launch.
+Each run writes its folder to `var/deployments/<date>-<mode>/`: `report.md` (the report), `state.json` (the state that `--resume` resumes), `events.jsonl` and the per-host logs. The path is displayed at the end of the run.
 
-The `--send-report` option sends this report to the rooms of the
-[alert bot](/en/doc/admin-guide/operate/alerts/), installed beforehand with
-`just configure-alert-bot`.
+The `--send-report` option sends this report to the channels of the [alerts bot](/en/doc/admin-guide/operate/alerts/), installed beforehand with `just configure-alert-bot`.
 
-| Situation | Room | Content |
+| Situation | Channel | Content |
 |---|---|---|
-| Launch finished | warnings | Summary&nbsp;: hosts by status, duration, known errors |
-| Critical hosts not deployed | incidents | Separate message&nbsp;: affected hosts and reasons |
-| Stopped on error | incidents | Error that stopped the launch, then summary |
+| Finished run | warnings | Summary: hosts by state, duration, known errors |
+| Critical hosts not deployed | incidents | Separate message: affected hosts and reasons |
+| Stop on error | incidents | Error that stopped the run, then summary |
 
-A host is critical when its profile appears in `criticalProfiles`. After a
-stop, hosts left in `test` complete the incident message&nbsp;: a reboot would
+A host is critical when its profile is listed in `criticalProfiles`. After a
+stop, the hosts left in `test` complete the incident message: a restart would
 bring them back to their previous generation.
 
-The message reuses the report header, with the exit code in the title&nbsp;:
+The message uses the report's header, with the exit code in the title:
 
 ```markdown
 **Fleet Update Report** (1)
@@ -243,21 +238,18 @@ Error: srv-ag: activation failed
 
 - Started at 2026-09-17 02:00:00 UTC, duration: 4m12s
 - Options: partial run, selection gw-*, test skipped, 10 in parallel
-- Hosts: 5 deployed, 1 failed (srv-ag)
+- Hosts: 5 deployed (hcs, gw-ag, pc-ag, gw-cp, lt-cp), 1 failed (srv-ag)
 - Run stopped on error
 ```
 
-:::note[When the send fails]
-The launch stays valid and the report is written, but the command exits with `3`.
-Under the timer, the unit goes into a failed state, hence the
-`SystemdUnitFailed` alert.
+:::note[Impossible to send]
+The run remains valid and the report is written, but the command exits with `3`.
+Under the timer, the unit goes to a failed state, hence the `SystemdUnitFailed`
+alert.
 :::
 
 :::caution[What sending requires]
-Sending goes through the recipe [`just send-msg`](/en/doc/admin-guide/operate/alerts/#sending-a-message-to-a-room)&nbsp;:
-rooms and token remain the framework's responsibility, the tool only writes the
-text. Nothing is sent if the bot is not provisioned, nor on an abort (`^C`,
-service stop).
+Sending goes through the [`just send-msg`](/en/doc/admin-guide/operate/alerts/#sending-a-message-to-a-room) recipe: channels and token remain the framework's responsibility, the tool only writes the text. Nothing goes out if the bot is not provisioned, nor on an abort (`^C`, service stop).
 :::
 
 {/* t:p 8706c5bb5bdec3a788fc742bd40fed889c013d0c8b271a518d54639190589b94 */}
