@@ -537,20 +537,16 @@ Enables Alertmanager maintenance mode before applying, disables it after.
 just apply-silenced myserver
 ```
 
-{/* t:p 30799a7c941a38244be44189962357bcc42dbb3e475d4652eb8f28f9882371e1 */}
+{/* t:p 9524d70de8ff0a7c689b7c165250ab722e611c56bbfaab8a3d9386bd9e9f8a23 */}
 ### ✳️ `fleet-update [options]`
 
-Updates, builds and deploys the whole fleet in waves. See
-[Updating the fleet with fleet-update](/en/doc/admin-guide/operate/deploy/#binary-cache).
-
-:::danger[Not functional yet]
-Only the interface exists: the command replays recorded scenarios. Deploy with
-`apply` in the meantime.
-:::
+Updates, builds and deploys the entire fleet in waves. See [Update the fleet with fleet-update](/en/doc/admin-guide/operate/deploy/#updating-the-fleet-with-fleet-update).
 
 ```sh
-just fleet-update --list        # available scenarios
-just fleet-update nominal       # replays a full deployment
+just fleet-update                   # tout le parc, interface interactive
+just fleet-update --on '+server'    # les hôtes d'un profil
+just fleet-update --build-only      # construire sans rien activer
+just fleet-update --help            # toutes les options
 ```
 
 {/* t:p 7c7131a40b73017118225abe190a94e5de5aa02437db87cbf5fe94365af4067b */}

@@ -13,14 +13,14 @@ sidebar:
 **A administration module** deals with system-specific functionalities for administrators.
 :::
 
-{/* t:p 7a60aaf27ffbf45d458aff275fbc2121bacde26e34d5acfa93583ab8c828e37d */}
+{/* t:p 9137c1e089f16bd26cd0e08e743e191ef2fe05bb8e6e4bb74faaf998c5ac0acd */}
 ### &#x1F451; darkone.admin.fleet-update
 
 Fleet update tool (`fleet-update`) and its unattended daily run.
 
 `enable` installs the tool on a deployment host; `just fleet-update` then
 runs it. `timer.enable` adds a daily `fleet-update --no-ui` run: flake
-update, build, test by waves, switch, Matrix report.
+update, build, test by waves, switch.
 
 :::caution[Service identity]
 The run belongs to `user`, owner of `workDir`: git identity, sops age key,

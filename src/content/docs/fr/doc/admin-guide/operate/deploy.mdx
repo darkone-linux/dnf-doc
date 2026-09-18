@@ -85,7 +85,7 @@ Avant un déploiement large, validez localement : `just check`, puis
 `just apply <hôte-pilote>` sur **un** hôte témoin.
 :::
 
-{/* t:p d635f14e347879e36e27454a1a76e4b14d6c54a4ff9b73bfdf72cbc48cc8ffa1 */}
+{/* t:p f39603893bc800169e1572b8b43cd9f56426cbafa86123d4ed8fe40ba5d14343 */}
 ## Mettre à jour le parc avec fleet-update
 
 `fleet-update` enchaîne toute la mise à jour en une commande&nbsp;: flakes,
@@ -117,6 +117,7 @@ La recette choisit l'outil à lancer, dans cet ordre&nbsp;:
 - `var/deployments/` ignoré par git : règle `/var/*` du boilerplate.
 :::
 
+{/* t:p 2638960249953bad6d7c5b97357dbe57e9d98557ae5744e468d22ebf8d647d76 */}
 ### Le déroulé d'un lancement
 
 | Étape | Ce qui se passe |
@@ -173,6 +174,7 @@ Profils séparés par `:`, `[others]` désigne les profils non listés. Bloc
 facultatif&nbsp;: sans lui, l'outil applique les valeurs ci-dessus. Les options
 `--deployment-order` et `--critical-profiles` priment sur `config.yaml`.
 
+{/* t:p 8c18218d94bc36b57e9b029d2e88ce28a7827d74430b0223582cd4145c5d8a1a */}
 ### Délais et surveillance
 
 Deux autres blocs facultatifs de `config.yaml` règlent les durées&nbsp;:
@@ -201,7 +203,7 @@ Clés de `timeouts`, dans l'ordre du déroulé&nbsp;: `flakeUpdate` (120),
 une faute de frappe retomberait sinon sur la valeur par défaut, en silence.
 :::
 
-{/* t:p 29e5a91b46b709bc0951b55337b2df4b9e364290667f3c9686b01a131b140615 */}
+{/* t:p c9a19178222080d1138e0fa0d033d7424898ae37421f71789429bc1b119ab886 */}
 ### Exécution quotidienne
 
 Sur l'hôte de déploiement, le module installe l'outil et, avec `timer.enable`,
