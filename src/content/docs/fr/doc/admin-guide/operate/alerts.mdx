@@ -95,6 +95,34 @@ Le provisionnement dépose trois secrets dans `usr/secrets/secrets.yaml` :
 | `alertmanager-matrix-token` | jeton d'accès du bot (envoi des messages) |
 | `alertmanager-webhook-secret` | authentifie Alertmanager auprès du pont Matrix |
 
+{/* t:p 59551f452ca485cdd63651c800d4a2005d49926c0cbe5d75019696e5fac9812e */}
+## Envoyer un message dans un salon
+
+Une fois le bot en place, n'importe quel outil du projet peut écrire dans les
+salons d'alerte. Le corps du message, en markdown, arrive sur l'entrée
+standard&nbsp;:
+
+```sh
+just send-msg warnings < rapport.md
+echo "**Sauvegarde nocturne** : 2 dépôts en retard" | just send-msg incidents
+```
+
+La recette lit les salons dans `var/generated/matrix.nix` et le jeton dans sops,
+sous l'identité de déploiement `nix`. L'appelant n'a donc à connaître ni l'un ni
+l'autre.
+
+| Code de sortie | Signification |
+|---|---|
+| `0` | Message envoyé |
+| `10` | Rien de configuré ici&nbsp;: salon, jeton ou programme manquant |
+| `11` | Le serveur Matrix a refusé le message |
+
+:::note[Qui s'en sert]
+`fleet-update --send-report` envoie son rapport par cette recette
+(voir [Déploiement](/fr/doc/admin-guide/operate/deploy/#rapport-et-alertes-matrix)).
+Le code `10` lui suffit pour savoir qu'insister est inutile.
+:::
+
 {/* t:p f32c7b8dcfd6d535fabe1e784c4eeddba81543756385f6400ccad5babc2fa83d */}
 ## Tester une alerte
 

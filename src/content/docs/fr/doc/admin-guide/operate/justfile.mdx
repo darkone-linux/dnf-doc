@@ -843,6 +843,18 @@ du bot est créé sur l'hôte Matrix avec `dnf-mas`, par ssh.
 just configure-alert-bot
 ```
 
+{/* t:p 2a5c82df2461ae65345b361ab94b7f74c5f7516b919c2cf9c50d1fa4f9f125b7 */}
+### ✳️ `send-msg`
+
+Envoie un message dans un salon d'alertes (`warnings` ou `incidents`), corps
+markdown sur l'entrée standard. Salons et jeton viennent du projet&nbsp;:
+l'appelant n'écrit que le texte. Codes de sortie&nbsp;: `10` rien de configuré,
+`11` message refusé par le serveur.
+
+```sh
+just send-msg warnings < rapport.md
+```
+
 {/* t:p c42e83fd9c7a4f3c783eedfafd3f9f0b7516069ed1a976f4f14797c206d917bf */}
 ### ✳️ `idm-sync-certs`
 

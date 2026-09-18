@@ -218,7 +218,7 @@ Clés de `timeouts`, dans l'ordre du déroulé&nbsp;:
 une faute de frappe retomberait sinon sur la valeur par défaut, en silence.
 :::
 
-{/* t:p 6944becf838aca37f4e5d8d30103778852c896295bfd98731a8a7457293c16a7 */}
+{/* t:p 2fb981b3ac33dc79e9a3892c955e6edfe6f41191e2cf8fb5a91e5b209033d2b4 */}
 ### Rapport et alertes Matrix
 
 Chaque lancement écrit son dossier dans `var/deployments/<date>-<mode>/`&nbsp;:
@@ -245,9 +245,10 @@ Sous le timer, l'unité passe en échec, donc l'alerte `SystemdUnitFailed`.
 :::
 
 :::caution[Ce que l'envoi exige]
-Le compte qui lance l'outil déchiffre le jeton `alertmanager-matrix-token` avec
-sa clé age, et les salons viennent de `var/generated/matrix.nix`. Un abandon
-(`^C`, arrêt du service) n'envoie rien.
+L'envoi passe par la recette [`just send-msg`](/fr/doc/admin-guide/operate/alerts/#envoyer-un-message-dans-un-salon)&nbsp;:
+salons et jeton restent du ressort du framework, l'outil n'écrit que le texte.
+Rien ne part si le bot n'est pas provisionné, ni sur un abandon (`^C`, arrêt du
+service).
 :::
 
 {/* t:p 8706c5bb5bdec3a788fc742bd40fed889c013d0c8b271a518d54639190589b94 */}
