@@ -92,6 +92,27 @@ this overlay: `pkgs.<name>` is not available there. Making it visible requires
 applying the overlay to that instance, in `dnf/lib/mk-configuration.nix`.
 :::
 
+{/* t:p e531d98c40944b8ba4ca35fc5df650917db3afb276f4763d3c10616d700baf37 */}
+## Updating a package
+
+Run it in `dnf/` or at the root of a co-development project&nbsp;: a `dnf/`
+linked to the Nix store is read-only.
+
+```sh
+just pkg-update <nom>
+```
+
+[nix-update](https://github.com/Mic92/nix-update) looks up the latest release
+published upstream, then rewrites the version and the hashes in `package.nix`.
+Then check the upstream `changelog`, rebuild, and commit.
+
+:::note[Package-specific arguments]
+`pkg-update` reuses the arguments of `passthru.updateScript`
+(`nix-update-script { extraArgs = [ … ]; }`), like nixpkgs. Example&nbsp;:
+`fleet-update` (Bun) declares `--subpackage node_modules` there, to recompute
+the hash of its dependencies along with the one of the sources.
+:::
+
 {/* t:p ac1b2ba20564599783a9099f764072e9272265e95dfff6e0046d1f3623ea4c0a */}
 ## Publishing to nixpkgs
 

@@ -13,7 +13,7 @@ sidebar:
 **A home manager module** works with [home manager](https://github.com/nix-community/home-manager) profiles.
 :::
 
-{/* t:p 36b6c508392ab7b255a2b12448623593208e05129934d548b6efc61661c5df57 */}
+{/* t:p 1875c51405935cdbc347b17e430c5db26c3cc19a191714237b6a81531b953274 */}
 ### &#x1F3E0; darkone.home.advanced
 
 Home profile for advanced users (computer scientists, developers, admins).
@@ -23,6 +23,7 @@ Home profile for advanced users (computer scientists, developers, admins).
 * **enablePhoneTools** `bool` Smartphone tools (scrcpy)
 * **enableAdmin** `bool` Enable administrator features (network, os tools)
 * **enableNixAdmin** `bool` Enable nix administration features
+* **enableDnfDeveloper** `bool` Enable all tools for DNF Codev Developer
 * **enableDeveloper** `bool` Enable tools for developer
 * **enableEssentials** `bool` Frequently used tools
 
@@ -33,6 +34,7 @@ darkone.home.advanced = {
   enablePhoneTools = false;
   enableAdmin = false;
   enableNixAdmin = false;
+  enableDnfDeveloper = false;
   enableDeveloper = true;
   enableEssentials = true;
 };

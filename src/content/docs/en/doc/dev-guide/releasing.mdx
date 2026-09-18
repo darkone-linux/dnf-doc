@@ -11,6 +11,23 @@ import { Steps, Aside } from '@astrojs/starlight/components';
 {/* t:translated-from fr */}
 {/* t:h c8bbdca288b29dd7666c28a9af0a404f9930ce84b5b3fac72cb5bc027685701a */}
 
+{/* t:p 21e9e904129f05cc5fc1b143b5ca76070b3da56ab805d160d910adbd32275923 */}
+Publishing means producing consistent tags on the six repositories with a single command, from the co-development workspace.
+
+{/* t:p b33cd56a1d8ed6bf187c30e0bb496fcd5679acc00e2e2b8b8a78d9fae4648f05 */}
+## What each repository versions
+
+| Repository | Source of truth | Rule |
+| --- | --- | --- |
+| `darkone-nixos-framework` | `VERSION` | Train reference |
+| `dnf-generator` | `Cargo.toml` | Own version, pinned by the framework |
+| `dnf-fleet-update` | `package.json` | Own version, packaged by the framework |
+| `dnf-doc` | `package.json` | Framework `MAJOR.MINOR`, own patch |
+| `dnf-boilerplate`, `dnf-example` | tag only | Framework mirror |
+
+The private consumer project is never tagged: it stays in
+co-development and serves as a permanent integration bench.
+
 {/* t:p c5526368cab6502939c0a47cc4d89e6c3cd0b468e55ee46045a27daab9eb1be0 */}
 ## Commit vocabulary
 
@@ -46,6 +63,31 @@ feat(idm)!: replace network.idm.replicas with zones.<zone>.idm
 ```
 </Aside>
 
+{/* t:p 345d376a3bfd92fbd014bf697a00af649b26d9cac2bb7298be351192b4777b6b */}
+## The recipes
+
+| Recipe | Effect |
+| --- | --- |
+| `just versions` | Version, last tag and branch of each repository |
+| `just changelog` | Preview of the next entry, writes nothing |
+| `just bump [niveau]` | Version, changelog, commit and tag of **one** repository |
+| `just release [level]` | The full train across the six repositories |
+| `just version` | Version, revision and pinned generator of the framework |
+
+The level defaults to `auto`: [git-cliff](https://git-cliff.org/) deduces the
+next number from the commits. `patch`, `minor`, `major` or a literal `X.Y.Z`
+forces the decision.
+
+`just bump` never pushes: it prints the push command. Two flags are passed to
+the script: `--dry-run` shows the entry then restores the file without
+committing anything, `--yes` goes on without confirmation.
+
+<Aside type="tip" title="Run from the development environment">
+`bump` and `changelog` call [git-cliff](https://git-cliff.org/), missing from
+the default `PATH`. Enter the environment with `just develop` before
+publishing.
+</Aside>
+
 {/* t:p f79dfe66bc6fe94590138851e9766c5c336240a057ad8b1ee3155539680050b2 */}
 ## Writing by hand into an entry
 
@@ -68,6 +110,49 @@ repository. The entry then covers the whole history, and must be trimmed before
 pushing.
 </Aside>
 
+{/* t:p bef5a6791bc98c724629a3471b5fc6cdf21ecb46ff460096ef3a63f17d39e120 */}
+## The release train
+
+`just release` runs at the root of the co-development workspace, which must
+contain the six repositories.
+
+<Steps>
+
+1. **Quality gate**: `just check`, `just gen-test` and
+   `just simulate all`. Virtual machine tests do not run in
+   continuous integration, so a red scenario must stop the publication
+   here. `dnf-fleet-update` also passes its `ci` and `audit` gates,
+   with the tooling of its `nix develop`.
+
+2. **Generator**, if it has moved since its last tag. It owns the
+   `etc/config.yaml` schema, so it goes first, before anything that depends on it.
+
+3. **Pinning** of the generator tag in `dnf/flake.nix`, so the contract
+   between framework and generator can be read in a diff, not only in the
+   lock.
+
+4. **fleet-update**, if it has moved since its last tag. The framework
+   packages it, so it goes before it.
+
+5. **Pinning** of the `fleet-update` tag in `dnf/pkgs/fleet-update`,
+   via `just pkg-update fleet-update <version>`, then packaging the build. At the
+   first release, pinning to a `main` commit becomes a pinning
+   to the tag.
+
+6. **Framework**: `VERSION`, `CHANGELOG.md`, commit and tag, then immediate
+   push. Any edit of the entry after this step would force
+   a tag already consumed by `release.yml`, so it happens before.
+
+7. **Documentation**: `just codegen` regenerates the reference from the
+   framework, then the version aligns on the `MAJOR.MINOR` line, then the
+   site is built and deployed.
+
+8. **Boilerplate and example**: the framework tag is written into their
+   `flake.nix`, `nix flake check` validates, and the `flake.lock` is **committed**.
+   That is what makes a clone reproducible.
+
+</Steps>
+
 {/* t:p 7640fffe4bd8ed144db0b0533dd7b901247f61496c7f0ddabfa09d8e068a2fa6 */}
 ## Continuous integration safeguards
 
@@ -81,3 +166,12 @@ On a `v*` tag, `release.yml` refuses to publish if:
 The three `ci.yml` checks (unit tests, evaluation, lint) are replayed via
 `workflow_call`, then the changelog section becomes the notes of the GitHub
 *release*.
+
+{/* t:p d87f2d9af5696ad41093b3f3cbdece53d78db1dc7bab2a515db8dcad09fed0c2 */}
+## Shared configuration
+
+A single [git-cliff](https://git-cliff.org/) for the four repositories that
+produce a changelog, in `dnf/just/scripts/cliff.toml`. The script
+`dnf/just/scripts/bump.sh` discovers the repository's version source
+(`VERSION`, `Cargo.toml` or `package.json`), assembles the file around the
+generated block and preserves the hand-written history.

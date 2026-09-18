@@ -13,7 +13,7 @@ sidebar:
 **A administration module** deals with system-specific functionalities for administrators.
 :::
 
-{/* t:p 6beaed7cf0ca1af493aa2e3d4449c8e8c2034a93804ebc52bb66a223a380f2a1 */}
+{/* t:p 7a60aaf27ffbf45d458aff275fbc2121bacde26e34d5acfa93583ab8c828e37d */}
 ### &#x1F451; darkone.admin.fleet-update
 
 Fleet update tool (`fleet-update`) and its unattended daily run.
@@ -45,6 +45,8 @@ darkone.admin.fleet-update = {
 :::
 
 * **enable** `bool` fleet-update, the fleet update and deployment tool
+* **package** `package` The fleet-update package. Its `nix-eval-jobs` is matched to the
+  system Nix: the tool evaluates the consumer flake with it.
 * **user** `nullOr str` Account running the unattended update: owner of `workDir`, holding
   the git identity, the sops age key and the AI and Matrix credentials.
 * **workDir** `str` Consumer workspace on disk. Not the `workDir` module argument, which
@@ -59,6 +61,7 @@ darkone.admin.fleet-update = {
 ```nix
 darkone.admin.fleet-update = {
   enable = false;
+  package = pkgs.fleet-update.override { nix-eval-jobs = nixEvalJobs; };
   user = "admin";
   workDir = "/etc/nixos";
   timer.enable = false;

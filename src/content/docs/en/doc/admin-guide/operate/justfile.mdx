@@ -226,6 +226,23 @@ Manages test fixtures: generation, drift check, regeneration of disposable keys 
 just fixtures check
 ```
 
+{/* t:p 04842afa271f51652d177f9d20a49f49f8763df08af84e80a5c846fe5ead27ed */}
+### 🔆 `pkg-update <package> [version]`
+
+Updates a package from `dnf/pkgs/` to its latest upstream version, or to
+`version` if given, using
+[nix-update](https://github.com/Mic92/nix-update). See [Packages outside
+nixpkgs](/en/doc/dev-guide/packages/#publishing-to-nixpkgs).
+
+:::note[Framework clone required]
+`nix-update` rewrites `package.nix`: a `dnf/` linked to the store is read-only.
+:::
+
+```sh
+just pkg-update rename-simple
+just pkg-update fleet-update 0.2.0    # explicit version (release train)
+```
+
 {/* t:p 9b5df38cc5488263f1dbc6f4a460e1c99b2e258429949798872002e4d4fdbd5d */}
 ### 🔆 `version`
 
@@ -465,6 +482,13 @@ just build-iso "aarch64-linux"
 
 ---
 
+{/* t:p ae6b31e17a99b3ce191bbd0c3b96667b7e7c9cdbe2e5fcf4b76e16aa79fcdb3b */}
+## Deployment commands
+
+The `apply*` commands rely on [colmena](https://github.com/zhaofengli/colmena)
+and first refresh the DNF lock via `update-dnf`. `fleet-update` drives a full
+update using native Nix commands.
+
 {/* t:p ece18c6d5eea966020a1665a58fb2d9a5f883a5877b62e92e5884a772cb90e58 */}
 ### ✳️ `apply <target> [action]` / `a` ⭐
 
@@ -511,6 +535,22 @@ Enables Alertmanager maintenance mode before applying, disables it after.
 
 ```sh
 just apply-silenced myserver
+```
+
+{/* t:p 30799a7c941a38244be44189962357bcc42dbb3e475d4652eb8f28f9882371e1 */}
+### ✳️ `fleet-update [options]`
+
+Updates, builds and deploys the whole fleet in waves. See
+[Updating the fleet with fleet-update](/en/doc/admin-guide/operate/deploy/#binary-cache).
+
+:::danger[Not functional yet]
+Only the interface exists: the command replays recorded scenarios. Deploy with
+`apply` in the meantime.
+:::
+
+```sh
+just fleet-update --list        # available scenarios
+just fleet-update nominal       # replays a full deployment
 ```
 
 {/* t:p 7c7131a40b73017118225abe190a94e5de5aa02437db87cbf5fe94365af4067b */}
@@ -901,6 +941,23 @@ the generator release pinned by the framework.
 ```sh
 just versions
 ```
+
+{/* t:p d8dab6aea07c6a29faed528ca2d2d8eb8149c5dc49623a8307d040b0dac8bcd4 */}
+### 🔗 `release [release-level]`
+
+Publishes the whole ecosystem (generator, `fleet-update`, framework, documentation
+and project templates) after checks and simulations. See [The release
+train](/en/doc/dev-guide/releasing/#the-release-train).
+
+:::danger[Pushes to public repositories]
+Each step commits, tags and pushes. Only launch it for a real release.
+:::
+
+```sh
+just release
+```
+
+---
 
 {/* t:p 1a7f09b4a5d0c90e8dedf0f9d258499b5150608a0d41f0aa71207afc1cd169d9 */}
 ## Alias summary

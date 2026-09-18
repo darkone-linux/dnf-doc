@@ -81,6 +81,85 @@ Before a wide rollout, validate locally: `just check`, then
 `just apply <pilot-host>` on **a** single test host.
 :::
 
+{/* t:p d635f14e347879e36e27454a1a76e4b14d6c54a4ff9b73bfdf72cbc48cc8ffa1 */}
+## Update the fleet with fleet-update
+
+`fleet-update` chains the whole update in one command&nbsp;: flakes, building every host, testing in waves (network-critical hosts first), then final activation of validated hosts.
+
+:::danger[Not functional yet]
+Only the interface exists&nbsp;: the command replays recorded scenarios (`just fleet-update --list`). Meanwhile, update with `just update-flake` then `just apply`, and leave `timer.enable` disabled.
+:::
+
+{/* t:p 9a7e349addbc0b65573e6ae2095b537019c20f76d8d392c8884c3d2d566e9281 */}
+### Launch
+
+```sh
+just fleet-update [options]
+```
+
+The recipe picks the tool to run, in this order&nbsp;:
+
+| Situation | Tool run |
+|---|---|
+| Co-development (`src/dnf-fleet-update/` present) | The sources, with `bun` |
+| Active `darkone.admin.fleet-update` module | The installed `fleet-update` command |
+| Any other case | `nix run .#fleet-update`, per the project's `flake.lock` |
+
+:::caution[Prerequisites]
+- Clean git trees: project, and `dnf/` in co-development.
+- `var/deployments/` ignored by git: `/var/*` rule from the boilerplate.
+:::
+
+{/* t:p b140e2ce0eadf1058d08e62ea6b45ab657f3afb8135d13b213923d61ddf46539 */}
+### Wave order and critical hosts
+
+The fleet's default values are declared in `config.yaml`&nbsp;:
+
+```yaml
+# etc/config.yaml
+network:
+  fleetUpdate:
+    deploymentOrder: "hcs:gateway:server:[others]:laptop"
+    criticalProfiles: "hcs:gateway:server"
+```
+
+| Key | Role |
+|---|---|
+| `deploymentOrder` | One test wave per host profile, in that order |
+| `criticalProfiles` | Profiles whose failures also go to the incident room |
+
+Profiles separated by `:`, `[others]` designates the unlisted profiles. Optional block&nbsp;: without it, the tool applies the values above. The `--deployment-order` and `--critical-profiles` options take precedence over `config.yaml`.
+
+{/* t:p 29e5a91b46b709bc0951b55337b2df4b9e364290667f3c9686b01a131b140615 */}
+### Daily execution
+
+On the deployment host, the module installs the tool and, with `timer.enable`, runs `fleet-update --no-ui` every day&nbsp;:
+
+```nix
+# usr/machines/<hôte>/default.nix
+darkone.admin.fleet-update = {
+  enable = true;
+  user = "admin";
+  timer.enable = true;
+};
+```
+
+| Option | Default | Role |
+|---|---|---|
+| `user` | none | Project owner: git, age key, AI, Matrix |
+| `workDir` | `/etc/nixos` | Consumer project on disk |
+| `timer.onCalendar` | `*-*-* 04:00` | Launch time |
+| `timer.extraArgs` | `[ "--send-report" ]` | Options added to `--no-ui` |
+| `timer.timeout` | `6h` | Maximum duration of a run |
+
+:::note[Exit codes and alerts]
+A run already in progress (code `4`) is not an error. Any other failure, or a `timer.timeout` exceeded, puts the unit in a failed state and triggers the [alert](/en/doc/admin-guide/operate/alerts/) `SystemdUnitFailed`.
+:::
+
+:::caution[Account and deployment host]
+The timer requires `darkone.admin.nix` on the host, and a `user` account with passwordless `sudo`.
+:::
+
 {/* t:p 7fba6574d9772edc82643418791070ada23d13d56e447c3d0b519b767870e521 */}
 ## Binary cache
 

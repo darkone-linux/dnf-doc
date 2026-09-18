@@ -13,6 +13,55 @@ sidebar:
 **Un module d'administration** s'occupe des fonctionnalités spécifiques au système pour les administrateurs.
 :::
 
+{/* t:p 7a60aaf27ffbf45d458aff275fbc2121bacde26e34d5acfa93583ab8c828e37d */}
+### &#x1F451; darkone.admin.fleet-update
+
+Outil de mise à jour de la flotte (`fleet-update`) et son exécution quotidienne non surveillée.
+
+`enable` installe l'outil sur un hôte de déploiement ; `just fleet-update` le lance ensuite. `timer.enable` ajoute une exécution quotidienne de `fleet-update --no-ui` : mise à jour du flake, build, tests par vagues, switch, rapport Matrix.
+
+:::caution[Identité du service]
+L'exécution appartient à `user`, propriétaire de `workDir` : identité git, clé age sops, identifiants IA et Matrix. Elle nécessite un `sudo` sans mot de passe (permissions `just clean`, identité de déploiement `nix` dont la clé se trouve dans `~nix/.ssh`).
+:::
+
+:::note[Codes de sortie]
+`4` (une exécution détient déjà le verrou) est compté comme un succès : aucune alerte. Tout autre échec fait échouer l'unité et déclenche l'alerte existante `SystemdUnitFailed`, comme une exécution toujours en cours après `timer.timeout`.
+:::
+
+:::tip[Activer sur l'hôte admin]
+```nix
+darkone.admin.fleet-update = {
+  enable = true;
+  user = "admin";
+  timer.enable = true;
+};
+```
+:::
+
+* **enable** `bool` fleet-update, outil de mise à jour et de déploiement de la flotte
+* **package** `package` le paquet fleet-update. Son `nix-eval-jobs` est apparié au Nix système : l'outil évalue le flake consommateur avec celui-ci.
+* **user** `nullOr str` Compte exécutant la mise à jour non surveillée : propriétaire de `workDir`, détenteur de l'identité git, de la clé age sops et des identifiants IA et Matrix.
+* **workDir** `str` Espace de travail consommateur sur disque. Pas l'argument de module `workDir`, qui en est la copie dans le store nix.
+* **timer.enable** `bool` l'exécution quotidienne non surveillée (`fleet-update --no-ui`)
+* **timer.onCalendar** `str` Quand l'exécution démarre (`OnCalendar` systemd).
+* **timer.extraArgs** `listOf str` Options passées après `--no-ui`, que le module définit toujours.
+* **timer.timeout** `str` Durée maximale avant que systemd n'arrête l'exécution (`TimeoutStartSec`). Une exécution bloquée retiendrait sinon le verrou, et chaque exécution ultérieure sortirait avec `4` sans aucune alerte.
+
+```nix
+darkone.admin.fleet-update = {
+  enable = false;
+  package = pkgs.fleet-update.override { nix-eval-jobs = nixEvalJobs; };
+  user = "admin";
+  workDir = "/etc/nixos";
+  timer.enable = false;
+  timer.onCalendar = "*-*-* 04:00";
+  timer.extraArgs = [ ];
+  timer.timeout = "6h";
+};
+```
+
+<hr/>
+
 {/* t:p 3843b1fc8c8bd6f6ad35516b2ac9860ccf154f96bdcfb041b93f5c65778a022c */}
 ### &#x1F451; darkone.admin.nix
 

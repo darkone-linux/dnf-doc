@@ -13,18 +13,19 @@ sidebar:
 **Un module home manager** fonctionne avec les profils [home manager](https://github.com/nix-community/home-manager).
 :::
 
-{/* t:p 36b6c508392ab7b255a2b12448623593208e05129934d548b6efc61661c5df57 */}
+{/* t:p 1875c51405935cdbc347b17e430c5db26c3cc19a191714237b6a81531b953274 */}
 ### &#x1F3E0; darkone.home.advanced
 
-Profil d'accueil pour les utilisateurs avancés (informaticiens, développeurs, administrateurs).
+Profil maison pour utilisateurs avancés (informaticiens, développeurs, admins).
 
-* **enable** `bool` Activer les fonctionnalités des utilisateurs avancés
-* **enableTools** `bool` Divers outils pour les utilisateurs avancés
-* **enablePhoneTools** `bool` Outils smartphone (scrcpy)
-* **enableAdmin** `bool` Activer les fonctionnalités d'administrateur (réseau, outils os)
-* **enableNixAdmin** `bool` Activer les fonctionnalités d'administration nix
-* **enableDeveloper** `bool` Activer les outils pour développeur
-* **enableEssentials** `bool` Outils fréquemment utilisés
+* **enable** `bool` Active les fonctionnalités utilisateur avancé
+* **enableTools** `bool` Divers outils pour utilisateurs avancés
+* **enablePhoneTools** `bool` Outils pour smartphone (scrcpy)
+* **enableAdmin** `bool` Active les fonctionnalités administrateur (réseau, outils système)
+* **enableNixAdmin** `bool` Active les fonctionnalités d'administration nix
+* **enableDnfDeveloper** `bool` Active tous les outils pour le développeur DNF Codev
+* **enableDeveloper** `bool` Active les outils pour développeur
+* **enableEssentials** `bool` Outils utilisés fréquemment
 
 ```nix
 darkone.home.advanced = {
@@ -33,10 +34,13 @@ darkone.home.advanced = {
   enablePhoneTools = false;
   enableAdmin = false;
   enableNixAdmin = false;
+  enableDnfDeveloper = false;
   enableDeveloper = true;
   enableEssentials = true;
 };
 ```
+
+<hr/>
 
 {/* t:p a5e441f3c183fb2f15936a96c5e611e8f896620e006989a02ee60fa5470d9fc5 */}
 ### &#x1F3E0; darkone.home.ai
