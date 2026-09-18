@@ -93,9 +93,8 @@ construction de tous les hôtes, test par vagues (les hôtes dont dépend le
 réseau d'abord), puis activation définitive des hôtes validés.
 
 :::caution[Options pas encore disponibles]
-`--resume` (reprise d'un lancement interrompu) et `--send-report` (rapport
-Matrix) sont refusées&nbsp;: message d'erreur et code de sortie `2`. Les
-options `--ai-*` sont acceptées, sans effet pour l'instant.
+`--send-report` (rapport Matrix) est refusée&nbsp;: message d'erreur et code de
+sortie `2`. Les options `--ai-*` sont acceptées, sans effet pour l'instant.
 :::
 
 {/* t:p 9a7e349addbc0b65573e6ae2095b537019c20f76d8d392c8884c3d2d566e9281 */}
@@ -141,6 +140,15 @@ Les vagues protègent une configuration non prouvée. Une fois le test réussi s
 chaque hôte, il n'y a plus rien à protéger&nbsp;: le switch part en une fois, au
 plus `--max-parallel` hôtes activés simultanément. Avec `--skip-test`, rien n'a
 été prouvé&nbsp;: le switch reprend l'ordre des vagues.
+:::
+
+:::tip[Reprendre un lancement interrompu]
+`--resume` repart du dernier dossier de `var/deployments/`&nbsp;: mise à jour
+sautée, vagues et options du lancement d'origine, et les hôtes qui restaient à
+faire (restants, hors ligne, en échec, ou seulement testés). Les constructions
+sont réutilisées si les révisions du projet et de `dnf/` n'ont pas bougé et que
+les chemins sont encore dans le store&nbsp;; sinon elles sont refaites. Rien à
+reprendre&nbsp;: code de sortie `2`, aucun lancement.
 :::
 
 {/* t:p b140e2ce0eadf1058d08e62ea6b45ab657f3afb8135d13b213923d61ddf46539 */}
