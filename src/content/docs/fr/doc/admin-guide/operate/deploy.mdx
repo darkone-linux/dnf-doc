@@ -87,12 +87,13 @@ Avant un déploiement large, validez localement : `just check`, puis
 `just apply <hôte-pilote>` sur **un** hôte témoin.
 :::
 
-{/* t:p 5c5f2078619ee6710d2a750c535b1749d1ec53091f839b65d6b5775c4d79202b */}
+{/* t:p dddc02978fc2b35b332e6f081a018f5bdb9edcb97afda7002f5032954bd441c1 */}
 ## Mettre à jour le parc avec fleet-update
 
 `fleet-update` enchaîne toute la mise à jour en une commande&nbsp;: flakes,
-construction de tous les hôtes, test par vagues (les hôtes dont dépend le
-réseau d'abord), puis activation définitive des hôtes validés.
+construction de tous les hôtes, publication des fermetures sur le parc, test par
+vagues (les hôtes dont dépend le réseau d'abord), puis activation définitive des
+hôtes validés.
 
 ![Interface de fleet-update](../../../../../../assets/dfu-screenshot-01.png)
 
@@ -120,16 +121,27 @@ La recette choisit l'outil à lancer, dans cet ordre&nbsp;:
 - `var/deployments/` ignoré par git : règle `/var/*` du boilerplate.
 :::
 
-{/* t:p 5a5612c044a6c26c7b9082190d8fa9494c2c9c9af02ece0f48358324cbbf49d3 */}
+{/* t:p 2281cf145dd58450b9b79836a9794b5bb6d08cfad2eabd91e6f23afe91fe018e */}
 ### Le déroulé d'un lancement
 
 <Steps>
 1. **Mise à jour** : `nix flake update` du projet puis de `dnf/` (co-développement), `just clean`, un commit par dépôt.
-2. **Sélection** : hôtes, profils et zones lus dans `var/generated/`, filtrés par `--on` ; zone courante déduite de l'IP locale.
-3. **Construction** : tous les hôtes sélectionnés, joignables ou non, sur la machine de déploiement.
-4. **Test** : `switch-to-configuration test`, une vague par profil ; la vague suivante démarre quand tous ses hôtes sont OK ou écartés.
-5. **Switch** : tous les hôtes validés en test, **d'un seul coup**, hors ordre des vagues.
+2. **Sélection** : hôtes, profils et zones lus dans `var/generated/`, filtrés par `--on` ; zone courante déduite de l'IP locale ; un builder élu par hôte.
+3. **Construction** : tous les hôtes sélectionnés, joignables ou non, chacun sur son builder.
+4. **Publication** : la fermeture de chaque hôte joignable est amenée dans son store, hors vagues, avant toute activation.
+5. **Test** : `switch-to-configuration test`, une vague par profil ; la vague suivante démarre quand tous ses hôtes sont OK ou écartés.
+6. **Switch** : tous les hôtes validés en test, **d'un seul coup**, hors ordre des vagues.
 </Steps>
+
+:::note[Pourquoi publier avant d'activer]
+Servir et activer sont deux besoins distincts. Une fois chaque hôte servi, une
+vague ne dépend plus que de `ssh`&nbsp;: une passerelle qui redémarre son réseau
+ne prive plus personne de son substituteur.
+
+L'hôte **tire** d'abord (`nix build --max-jobs 0`, qui substitue sans jamais
+compiler sur place), et n'est **poussé** qu'en repli. Un tirage qui échoue est le
+cas ordinaire&nbsp;: un chemin tout frais n'est encore dans aucun cache.
+:::
 
 Trois options raccourcissent ce déroulé&nbsp;:
 
@@ -138,6 +150,16 @@ Trois options raccourcissent ce déroulé&nbsp;:
 | `--build-only` | S'arrête après la construction ; en interactif, propose de continuer |
 | `--skip-test` | Pas de test : le switch se fait vague par vague, directement après la construction |
 | `--skip-switch` | Pas de switch : le lancement s'arrête sur ce que le test a laissé en place |
+
+:::tip[Précharger le parc sans rien activer]
+`--skip-test --skip-switch` construit **et publie**, puis s'arrête&nbsp;: chaque
+hôte détient sa fermeture (état `ready`) sans avoir rien activé. Un lancement
+suivant, ou un `--resume`, active alors sans plus rien copier. Pratique pour
+séparer une grosse descente de paquets d'une fenêtre d'intervention courte.
+
+`--build-only` est l'autre extrême&nbsp;: rien ne sort de la machine de
+déploiement, la publication elle-même est écartée.
+:::
 
 :::note[Pourquoi le switch n'est pas par vagues]
 Les vagues protègent une configuration non prouvée. Une fois le test réussi sur
@@ -153,6 +175,64 @@ faire (restants, hors ligne, en échec, ou seulement testés). Les constructions
 sont réutilisées si les révisions du projet et de `dnf/` n'ont pas bougé et que
 les chemins sont encore dans le store&nbsp;; sinon elles sont refaites. Rien à
 reprendre&nbsp;: code de sortie `2`, aucun lancement.
+:::
+
+{/* t:p 714bc89ae272bae239a43508b13fd5a274631075ab25dd113b1e9ac24701388d */}
+### Construction distribuée
+
+La machine de déploiement ne doit pas être le goulot du parc. Chaque hôte est
+donc construit par le **builder élu** pour lui. L'élection est recalculée à
+chaque lancement depuis `var/generated/`, jamais déclarée&nbsp;: changer la
+topologie de déploiement ne doit pas reconstruire le parc.
+
+| Ordre | Builder retenu | Condition |
+|---|---|---|
+| 1 | L'hôte lui-même | Fonctionnalité `auto-build` déclarée sur l'hôte |
+| 2 | L'hôte `harmonia` de sa zone | La zone en a un |
+| 3 | L'hôte `harmonia` `global` | Il en existe un dans le parc |
+| 4 | La machine de déploiement | Défaut |
+
+La règle tient en une phrase&nbsp;: **un builder doit pouvoir servir ce qu'il
+construit**. D'où le choix des hôtes `harmonia`, dont le `/nix/store` est déjà le
+cache de leur zone, sans rien à amorcer. Une passerelle sans `harmonia` ne
+convient pas&nbsp;: ses chemins ne sont dans aucun substituteur.
+
+Le résultat reste chez le builder. C'est la publication qui l'amène ensuite aux
+hôtes de la zone, en LAN, par leur substituteur habituel.
+
+```yaml
+# etc/config.yaml
+    features: ["auto-build"]
+```
+
+:::tip[Quand déclarer `auto-build`]
+Un hôte qui se construit lui-même ne reçoit plus aucune fermeture. C'est décisif
+pour un hôte isolé derrière une liaison lente qui embarque un gros paquet absent
+du cache public, et c'est la réponse pour un hôte d'une autre architecture.
+
+Le choix se fait **par hôte**, jamais par zone&nbsp;: la RAM et le disque sont
+des propriétés de la machine. Contrepartie à peser&nbsp;: la clôture des
+dérivations, plusieurs centaines de Mio, monte vers lui à chaque lancement qui
+bouge `nixpkgs`. Ce sont les compteurs de copie du rapport qui tranchent le cas,
+pas l'intuition.
+:::
+
+:::note[Repli automatique]
+Builder injoignable, en échec, ou d'une architecture incompatible avec sa
+cible&nbsp;→ la construction revient sur la machine de déploiement. Aucun hôte
+n'échoue à cause d'une délégation, et le rapport nomme le builder qui a
+réellement construit.
+:::
+
+L'option `--no-distributed-build` ramène tout au centre, quelle que soit
+l'élection. C'est une échappatoire de mise au point&nbsp;: la règle vient du
+parc, l'exception de la ligne de commande.
+
+:::caution[Une zone sans `harmonia` coûte cher]
+Sans cache de zone, il n'y a ni builder local ni source commune&nbsp;: chaque
+hôte se fait pousser sa fermeture, un par un, depuis la machine de déploiement.
+Le rapport liste ces zones et le nombre d'octets poussés le montre. Déclarez un
+[`harmonia`](#cache-binaire) sur un hôte de la zone.
 :::
 
 {/* t:p b140e2ce0eadf1058d08e62ea6b45ab657f3afb8135d13b213923d61ddf46539 */}
@@ -177,7 +257,7 @@ Profils séparés par `:`, `[others]` désigne les profils non listés. Bloc
 facultatif&nbsp;: sans lui, l'outil applique les valeurs ci-dessus. Les options
 `--deployment-order` et `--critical-profiles` priment sur `config.yaml`.
 
-{/* t:p 886fda88630e88793bf0ce85a815564400da16f6285ec72524117ef0c9674244 */}
+{/* t:p 0a5b254f6bf9490b52578c7302521a81749c025f7b5d164c02037162ec859964 */}
 ### Délais et surveillance
 
 Deux autres blocs facultatifs de `config.yaml` règlent les durées&nbsp;:
@@ -206,6 +286,7 @@ Clés de `timeouts`, dans l'ordre du déroulé&nbsp;:
 | `commit` | 60 |
 | `eval` | 1200 |
 | `build` | 10800 |
+| `publish` | 3600 |
 | `copy` | 3600 |
 | `activation` | 300 |
 | `ssh` | 30 |
@@ -218,12 +299,29 @@ Clés de `timeouts`, dans l'ordre du déroulé&nbsp;:
 une faute de frappe retomberait sinon sur la valeur par défaut, en silence.
 :::
 
-{/* t:p 7988552e89533af9c3f66d26c89bf4e0d9fd5623ea1b78e5d3a58dcdd52619ab */}
+{/* t:p 90785646b6b8695ab63e4e5146a8bf6a5a1d1571dd4fcc26a70ed98509402379 */}
 ### Rapport et alertes Matrix
 
 Chaque lancement écrit son dossier dans `var/deployments/<date>-<mode>/`&nbsp;:
 `report.md` (le rapport), `state.json` (l'état que `--resume` reprend),
 `events.jsonl` et les journaux par hôte. Le chemin s'affiche en fin de lancement.
+
+Le rapport détaille ce que le lancement a réellement fait&nbsp;:
+
+| Section | Ce qu'elle donne |
+|---|---|
+| **Steps**, **Waves** | Durée de chaque étape, composition et durée de chaque vague |
+| **Builders** | Qui a construit quoi, replis compris |
+| **Copies** | Par hôte : chemins tirés et par quel substituteur, chemins poussés, volume |
+| **Zones without a cache** | Zones du lancement qu'aucun `harmonia` ne sert |
+| **Hosts not deployed** | Hôtes restés de côté, et la raison |
+
+:::tip[Lire les compteurs de copie]
+Un hôte qui tire l'essentiel depuis `harmonia <zone>` prouve que le cache de sa
+zone joue son rôle. Un hôte qui se fait **pousser** beaucoup de volume est au
+contraire candidat à un `harmonia` dans sa zone, ou à `auto-build`. Aucune ligne
+de copie pour un hôte&nbsp;→ il détenait déjà tout, rien n'a voyagé.
+:::
 
 L'option `--send-report` envoie ce rapport aux salons du
 [bot d'alertes](/fr/doc/admin-guide/operate/alerts/), installé au préalable par
@@ -304,7 +402,7 @@ empaquetée de l'outil saura l'envoyer. Ajoutez-la d'ici là, après avoir véri
 l'envoi à la main.
 :::
 
-{/* t:p 7fba6574d9772edc82643418791070ada23d13d56e447c3d0b519b767870e521 */}
+{/* t:p 333e4a36fb171ecc02ba4e561f232805b6736598cb272e45c16286eb2328a3df */}
 ## Cache binaire
 
 Deux services se combinent pour éviter de recompiler ou de retélécharger les
@@ -314,6 +412,10 @@ dérivations à chaque déploiement.
 |---|---|
 | `harmonia` | Sert le `/nix/store` local, signé, **directement** aux hôtes (LAN, ou VPN s'il est `global`). |
 | `nix-cache` | Proxy `nginx` par zone qui met en cache le cache public `cache.nixos.org` sur la passerelle. |
+
+Un hôte `harmonia` a un second rôle&nbsp;: il est le
+[builder élu](#construction-distribuée) de sa zone, parce qu'il sait servir ce
+qu'il construit.
 
 Un hôte interroge ces sources dans l'ordre de priorité suivant. La première
 récupération depuis Internet est ainsi mutualisée pour toute la zone.
@@ -380,7 +482,7 @@ d'URL ni de base de données, donc pas l'erreur HTTP 500 « invalid nar hash » 
 l'ancien relais `ncps`.
 :::
 
-{/* t:p a9f7d5c5485d69cd5a8966004acff0cb3b8dada45e673495d4fb3311fddb46f5 */}
+{/* t:p 54036d97ac85014a52079c024508dd3fbf02c05c1a43782ae13514626aaf9fa1 */}
 ## Ferme de build
 
 Récupérer un paquet et le construire sont deux besoins distincts. Le cache
@@ -407,6 +509,19 @@ résultat demandé fait le trajet retour.
 
 Ajustez avec `darkone.admin.nix.remoteBuilders`&nbsp;: `maxJobs`, `speedFactor`,
 et `mandatoryFeatures` (liste vide = tout part à la ferme).
+:::
+
+:::note[`build-farm` ou `auto-build`&nbsp;?]
+Deux mécanismes distincts, cumulables sur un même hôte.
+
+| Fonctionnalité | Qui s'en sert | Ce qu'elle déplace |
+|---|---|---|
+| `build-farm` | Nix, sur les hôtes d'administration | Les seules dérivations `big-parallel`, quel que soit l'outil lancé |
+| `auto-build` | `fleet-update`, à la construction du parc | Toute la fermeture système de l'hôte qui la déclare |
+
+`build-farm` soulage un poste admin de ses compilations longues.
+[`auto-build`](#construction-distribuée) supprime un transfert vers un hôte.
+Ils ne se remplacent pas.
 :::
 
 :::caution[Une ferme n'est pas un cache prioritaire]
