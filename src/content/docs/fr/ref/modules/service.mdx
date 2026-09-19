@@ -231,45 +231,47 @@ darkone.service.geneweb = {
 
 <hr/>
 
-{/* t:p 03c2c3ad6e182a1d1fe673360a2d73c12c9ebafa8d67ce952df66ff87b9fe658 */}
+{/* t:p 9eff601bfa10173d76a5cf1c41937f362ab0c5f9b552985b84dc53cd18a30d87 */}
 ### &#x2728; darkone.service.harmonia
 
-Harmonia&nbsp;: serveur local de cache binaire Nix (sert le /nix/store de cet hôte).
+Harmonia : serveur de cache binaire Nix local (sert le `/nix/store` de cet hôte).
 
-Expose les chemins du store construits / réalisés localement sur HTTP simple (port 5000), signés avec la clé de cache binaire déployée sur tout le réseau. À activer par hôte depuis `usr/config.yaml` (services.harmonia), comme tout autre service DNF.
+Expose les chemins du store construits/obtenus localement en HTTP simple (port 5000), signés avec la clé du cache binaire de tout le déploiement. Activation par hôte depuis `usr/config.yaml` (services.harmonia), comme tout autre service DNF.
 
 :::note[Comment harmonia fonctionne avec le proxy nix-cache]
-Harmonia est une *source* de paquets, servis **directement** aux clients sur le LAN (in-zone) ou le tailnet (quand il est marqué `global`). Le proxy `nix-cache` par zone est un sujet séparé&nbsp;: il met en cache le cache binaire *public* (`cache.nixos.org`), jamais harmonia.
+Harmonia est une *source* de paquets, servie **directement** aux clients sur le LAN (dans la zone) ou le tailnet (quand flaggée `global`). Le proxy `nix-cache` propre à la zone est une préoccupation distincte : il met en cache le cache binaire *public* (`cache.nixos.org`), jamais harmonia.
 
-Les substituters de chaque hôte de la zone locale deviennent, par ordre de priorité&nbsp;:
+Les substituters de chaque hôte de la zone locale deviennent, par ordre de priorité :
 
-- les instances harmonia de *sa propre zone* (priorité la plus haute, LAN), puis
-- toute harmonia marquée `global` (typiquement sur le HCS, via le tailnet), puis
+- les instances harmonia de *sa propre* zone (priorité la plus haute, LAN), puis
+- toute harmonia flaggée `global` (typiquement sur le HCS, via le tailnet), puis
 - le proxy `nix-cache` de la zone (cache public).
 
-Cet ordre est figé côté client avec `?priority=` sur chaque URL de substituter (voir `nix-cache.nix`), car la `priority` définie ci-dessous est identique sur chaque instance et Nix trie les substituters par priorité annoncée, pas par ordre de liste.
+Cet ordre est fixé côté client avec `?priority=` sur chaque URL de substituter (voir `nix-cache.nix`), car la `priority` définie ci-dessous est identique sur chaque instance et Nix trie les substituters par priorité annoncée, pas par ordre de liste.
 
-Un hôte qui exécute harmonia ne reçoit **pas** sa propre instance comme substituter&nbsp;: elle ne servirait que des chemins que son store local possède déjà.
+Un hôte qui fait tourner harmonia n'obtient **pas** sa propre instance comme substituter : il ne servirait que des chemins que son store local possède déjà.
 
-Les harmonia non-globales des autres zones ne sont jamais utilisées. La signature d'harmonia est transmise telle quelle, donc chaque hôte fait confiance à la clé publique harmonia déployée (`usr/secrets/harmonia.pub`). Le transport est en HTTP simple sur le LAN / VPN de confiance&nbsp;: l'intégrité vient de la signature NAR, pas de TLS.
+Un hôte de la zone globale (`www`) n'a ni LAN ni proxy : son seul substituter de flotte est l'harmonia `global`, via le tailnet.
+
+Les harmonia non-globales des autres zones ne sont jamais utilisées. La signature d'harmonia est transmise telle quelle, donc chaque hôte fait confiance à la clé publique harmonia du déploiement (`usr/secrets/harmonia.pub`). Le transport est en HTTP simple sur le LAN / VPN de confiance : l'intégrité vient de la signature NAR, pas de TLS.
 :::
 
 :::tip[Provisionnement de la clé de signature]
-`just configure-admin-host` génère automatiquement la paire de clés déployée quand `usr/secrets/harmonia.pub` est absent&nbsp;: la clé publique est commitée et la clé privée est injectée dans le secret sops `harmonia-secret-key`.
+`just configure-admin-host` génère automatiquement la paire de clés du déploiement quand `usr/secrets/harmonia.pub` manque : la clé publique est commitée et la clé privée est injectée dans le secret sops `harmonia-secret-key`.
 :::
 
-:::note[Avertissement de démarrage bénin sur les permissions de la clé de signature]
+:::note[Avertissement bénin au démarrage sur les permissions de la clé de signature]
 `WARN harmonia_cache::tls: /run/credentials/harmonia.service/sign-key-0 has
-insecure permissions 0o440; recommend 0600` est un faux positif&nbsp;: systemd
+insecure permissions 0o440; recommend 0600` est un faux positif : systemd
 expose les fichiers `LoadCredential` en mode 0440 appartenant à root, avec une
-ACL qui n'accorde l'accès qu'à l'utilisateur du service
-(systemd/systemd#29435)&nbsp;; harmonia vérifie naïvement les bits de chmod.
-Surveillez quand même l'amont&nbsp;: harmonia rejette déjà fermement les clés
-*TLS* lisibles par le groupe au démarrage&nbsp;; si cette politique s'étend un
-jour aux clés de signature, cette unité cassera à la mise à jour.
+ACL qui n'accorde l'accès qu'à l'utilisateur du service (systemd/systemd#29435) ;
+harmonia vérifie naïvement les bits chmod. Surveillez tout de même l'amont :
+harmonia rejette déjà fermement les clés *TLS* lisibles par le groupe au
+démarrage ; si cette politique s'étend un jour aux clés de signature, cette
+unité cassera à la mise à jour.
 :::
 
-* **enable** `bool` Active un serveur de cache binaire Nix Harmonia local
+* **enable** `bool` Activer un serveur de cache binaire Nix local Harmonia
 
 ```nix
 darkone.service.harmonia.enable = false;
@@ -845,48 +847,31 @@ darkone.service.nfs = {
 
 <hr/>
 
-{/* t:p 636e9c56d6d9cd6bd903ed9d145a5a4398e258dafa574b71ead00f7164734bef */}
+{/* t:p 8be7c3f5233aa6db94ee37dede9fd367109619b2f64646434f83fc519e58c4fb */}
 ### &#x2728; darkone.service.nix-cache
 
 Proxy de cache binaire Nix par zone (nginx `proxy_cache`).
 
-Met en cache le cache Nix public (`cache.nixos.org`) sur la passerelle de la
-zone afin qu'un déploiement à l'échelle de la flotte tire chaque closure du WAN
-une seule fois, puis la sert sur le LAN à tous les autres hôtes. Les chemins
-construits localement sont servis directement par `harmonia` (voir
-`harmonia.nix`) ; ce proxy ne se place jamais devant harmonia.
+Met en cache le cache Nix public (`cache.nixos.org`) sur la passerelle de zone pour qu'un déploiement à l'échelle de la flotte tire chaque fermeture du WAN une seule fois, puis la serve sur le LAN à chaque autre hôte. Les chemins construits localement sont servis directement par `harmonia` (voir `harmonia.nix`) ; ce proxy ne sert jamais de façade à harmonia.
 
-:::note[Pourquoi nginx et pas un proxy de réécriture]
-Un point de terminaison de cache fait face à **un** amont exactement. Un
-`narinfo` et son `nar` sont deux requêtes distinctes et l'URL du `nar` ne dépend
-pas de l'amont, donc un proxy multi-amont doit réécrire les URL `narinfo` dans
-son propre espace de noms et les suivre dans une base de données (l'approche
-qu'adoptait l'ancien proxy `ncps`, et la source de ses HTTP 500 « invalid nar
-hash » récurrents). Avec un seul amont, il n'y a pas d'ambiguïté :
-nginx met en cache `narinfo` + `nar` verbatim, les signatures transitent
-intactes et les clients les vérifient. Pas de réécriture, pas de base de
-données, ce bug est impossible par construction.
+:::note[Pourquoi nginx et pas un proxy réécrivant]
+Un point de terminaison de cache sert de façade à exactement **un** upstream. Un `narinfo` et son `nar` sont deux requêtes distinctes et l'URL du `nar` est indépendante de l'upstream, donc un proxy multi-upstream doit réécrire les URLs `narinfo` dans son propre espace de noms et les suivre dans une base de données (l'approche qu'a prise l'ancien proxy `ncps`, et la source de ses HTTP 500 "invalid nar hash" récurrents). Avec un seul upstream, il n'y a pas d'ambiguïté :
+nginx met en cache `narinfo` + `nar` verbatim, les signatures passent intouchées et les clients les vérifient. Pas de réécriture, pas de base de données, pas de tel bogue par construction.
 :::
 
 :::tip[Topologie]
-- serveur : l'hôte passerelle qui liste `nix-cache` dans `config.yaml` (un par
-  zone). Exécute nginx sur l'IP interne, port `network.ports.nixCache`.
-- clients : tous les hôtes de la zone locale. Leurs substituters deviennent les
-  instances harmonia de la zone (directes, LAN/tailnet) plus ce proxy.
-- clients nomades (`roaming = true`) : hôtes itinérants déplacés entre les zones.
-  Leurs substituters sont les noms neutres de zone (`harmonia.dnf.internal`,
-  `nix-cache.dnf.internal`) que le DNS de chaque zone résout vers ses propres
-  services de cache (voir `service/dnsmasq.nix`), afin que le cache suive le
-  portable.
+- serveur : l'hôte passerelle qui liste `nix-cache` dans `config.yaml` (un par zone). Fait tourner nginx sur l'IP interne, port `network.ports.nixCache`.
+- clients : chaque hôte de la zone locale. Leurs substituters deviennent les instances harmonia de la zone (direct, LAN/tailnet) plus ce proxy.
+- clients itinérants (`roaming = true`) : hôtes nomades déplacés entre les zones. Leurs substituters sont les noms neutres de zone (`harmonia.dnf.internal`, `nix-cache.dnf.internal`) que le DNS de chaque zone résout vers ses propres services de cache (voir `service/dnsmasq.nix`), donc le cache suit le portable.
+- hôtes de la zone globale (`www`, un VPS de datacenter) : pas de LAN, pas de passerelle, donc pas de proxy. Ils prennent l'harmonia `global` via le tailnet et la clé de flotte, sans quoi ils ne peuvent rien tirer de ce que la flotte a construit.
 :::
 
 * **enable** `bool` le proxy de cache binaire Nix par zone (nginx devant cache.nixos.org)
-* **maxSize** `str` Taille maximale du cache sur disque ; au-delà, nginx évince les entrées les moins récemment utilisées.
-* **roaming** `bool` Hôte nomade (portable déplacé entre zones) : remplacer les
-  substituters épinglés à la zone par les noms neutres de zone que le DNS de
-  chaque zone résout vers ses propres services de cache. En dehors de toute
-  zone DNF, les noms répondent NXDOMAIN instantanément et Nix retombe sur
-  cache.nixos.org.
+* **maxSize** `str` Taille maximale du cache sur disque ; nginx évince les entrées les moins récemment utilisées au-delà.
+* **roaming** `bool` Hôte nomade (portable déplacé entre zones) : remplace les substituters
+  attachés à la zone par les noms neutres de zone que le DNS de chaque zone résout vers
+  ses propres services de cache. Hors de toute zone DNF, les noms donnent NXDOMAIN
+  immédiatement et Nix retombe sur cache.nixos.org.
 
 ```nix
 darkone.service.nix-cache = {

@@ -237,7 +237,7 @@ darkone.service.geneweb = {
 
 <hr/>
 
-{/* t:p 03c2c3ad6e182a1d1fe673360a2d73c12c9ebafa8d67ce952df66ff87b9fe658 */}
+{/* t:p 9eff601bfa10173d76a5cf1c41937f362ab0c5f9b552985b84dc53cd18a30d87 */}
 ### &#x2728; darkone.service.harmonia
 
 Harmonia: local Nix binary cache server (serves this host's /nix/store).
@@ -264,6 +264,9 @@ instance and Nix sorts substituters by advertised priority, not by list order.
 
 A host running harmonia does **not** get its own instance as a substituter: it
 would only ever serve paths its local store already has.
+
+A global-zone host (`www`) has no LAN and no proxy: its only fleet substituter
+is the `global` harmonia, over the tailnet.
 
 Other zones' non-global harmonia are never used. Harmonia's signature is
 passed through unchanged, so every host trusts the deployment-wide harmonia
@@ -910,7 +913,7 @@ darkone.service.nfs = {
 
 <hr/>
 
-{/* t:p 636e9c56d6d9cd6bd903ed9d145a5a4398e258dafa574b71ead00f7164734bef */}
+{/* t:p 8be7c3f5233aa6db94ee37dede9fd367109619b2f64646434f83fc519e58c4fb */}
 ### &#x2728; darkone.service.nix-cache
 
 Per-zone Nix binary-cache proxy (nginx `proxy_cache`).
@@ -940,6 +943,9 @@ clients verify them. No rewrite, no database, no such bug by construction.
   Their substituters are the zone-neutral names (`harmonia.dnf.internal`,
   `nix-cache.dnf.internal`) that each zone's DNS resolves to its own cache
   services (see `service/dnsmasq.nix`), so the cache follows the laptop.
+- global-zone hosts (`www`, a datacenter VPS): no LAN, no gateway, so no
+  proxy. They take the `global` harmonia over the tailnet and the fleet key,
+  without which they can pull nothing the fleet built.
 :::
 
 * **enable** `bool` the per-zone Nix binary-cache proxy (nginx in front of cache.nixos.org)
