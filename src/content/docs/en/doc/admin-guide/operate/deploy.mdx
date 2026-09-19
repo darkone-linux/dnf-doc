@@ -83,14 +83,12 @@ Before a wide rollout, validate locally: `just check`, then
 `just apply <pilot-host>` on **a** single test host.
 :::
 
-{/* t:p 5c5f2078619ee6710d2a750c535b1749d1ec53091f839b65d6b5775c4d79202b */}
+{/* t:p dddc02978fc2b35b332e6f081a018f5bdb9edcb97afda7002f5032954bd441c1 */}
 ## Updating the fleet with fleet-update
 
-`fleet-update` runs the entire update in a single command&nbsp;: flakes, building
-of all hosts, testing in waves (the hosts the network depends on first), then
-final activation of validated hosts.
+`fleet-update` chains the whole update in a single command: flakes, build of every host, publishing of closures to the fleet, test by waves (network-critical hosts first), then final activation of validated hosts.
 
-![Interface of fleet-update](../../../../../../assets/dfu-screenshot-01.png)
+![fleet-update interface](../../../../../../assets/dfu-screenshot-01.png)
 
 :::caution[Options not yet available]
 The `--ai-*` options are accepted, with no effect for now.
@@ -116,39 +114,115 @@ The recipe picks the tool to run, in this order&nbsp;:
 - `var/deployments/` ignored by git: `/var/*` rule from the boilerplate.
 :::
 
-{/* t:p 5a5612c044a6c26c7b9082190d8fa9494c2c9c9af02ece0f48358324cbbf49d3 */}
-### How a launch runs
+{/* t:p 2281cf145dd58450b9b79836a9794b5bb6d08cfad2eabd91e6f23afe91fe018e */}
+### How a run unfolds
 
 <Steps>
-1. **Update** : `nix flake update` of the project then of `dnf/` (co-development), `just clean`, one commit per repository.
-2. **Selection** : hosts, profiles and zones read from `var/generated/`, filtered by `--on` ; current zone inferred from the local IP.
-3. **Build** : all selected hosts, reachable or not, on the deployment machine.
-4. **Test** : `switch-to-configuration test`, one wave per profile; the next wave starts when all its hosts are OK or excluded.
-5. **Switch** : all hosts validated in test, **all at once**, regardless of wave order.
+1. **Update**: `nix flake update` of the project then of `dnf/` (co-development), `just clean`, one commit per repository.
+2. **Selection**: hosts, profiles and zones read from `var/generated/`, filtered by `--on`; current zone inferred from the local IP; one builder elected per host.
+3. **Build**: all selected hosts, reachable or not, each on its builder.
+4. **Publish**: the closure of each reachable host is brought into its store, outside waves, before any activation.
+5. **Test**: `switch-to-configuration test`, one wave per profile; the next wave starts when all its hosts are OK or set aside.
+6. **Switch**: all hosts validated in test, **all at once**, regardless of wave order.
 </Steps>
 
-Three options shorten this launch&nbsp;:
+:::note[Why publish before activating]
+Serving and activating are two distinct needs. Once each host is served, a wave
+depends only on `ssh`: a gateway that restarts its network no longer deprives
+anyone of their substituter.
+
+The host **pulls** first (`nix build --max-jobs 0`, which substitutes without
+ever compiling locally), and is only **pushed** as a fallback. A pull that fails
+is the ordinary case: a very fresh path is not yet in any cache.
+:::
+
+Three options shorten this flow:
 
 | Option | Effect |
 |---|---|
 | `--build-only` | Stops after the build; in interactive mode, offers to continue |
 | `--skip-test` | No test: the switch happens wave by wave, right after the build |
-| `--skip-switch` | No switch: the launch stops on what the test left in place |
+| `--skip-switch` | No switch: the run stops on what the test left in place |
 
-:::note[Why the switch is not done in waves]
-Waves protect an unproven configuration. Once the test succeeds on each host,
-there is nothing left to protect&nbsp;: the switch goes out in one go, with at
-most `--max-parallel` hosts activated simultaneously. With `--skip-test`,
-nothing has been proven&nbsp;: the switch follows the wave order again.
+:::tip[Preload the fleet without activating anything]
+`--skip-test --skip-switch` builds **and** publishes, then stops: each host
+holds its closure (state `ready`) without having activated anything. A
+subsequent run, or a `--resume`, then activates without copying anything more.
+Handy for separating a large package download from a short intervention window.
+
+`--build-only` is the other extreme: nothing leaves the deployment machine, the
+publication itself is skipped.
 :::
 
-:::tip[Resuming an interrupted launch]
-`--resume` restarts from the last folder in `var/deployments/`&nbsp;: update
-skipped, waves and options of the original launch, and the hosts that still had
-to be done (remaining, offline, failed, or only tested). Builds are reused if
-the project and `dnf/` revisions have not moved and the paths are still in the
-store&nbsp;; otherwise they are rebuilt. Nothing to resume&nbsp;: exit code `2`,
-no launch.
+:::note[Why the switch is not wave-based]
+Waves protect an unproven configuration. Once the test passed on each host,
+there is nothing left to protect: the switch fires at once, at most
+`--max-parallel` hosts activated simultaneously. With `--skip-test`, nothing has
+been proven: the switch resumes the wave order.
+:::
+
+:::tip[Resume an interrupted run]
+`--resume` restarts from the last folder of `var/deployments/`: update skipped,
+waves and options of the original run, and the hosts that still had work
+(remaining, offline, failed, or only tested). Builds are reused if the revisions
+of the project and of `dnf/` have not moved and the paths are still in the
+store; otherwise they are redone. Nothing to resume: exit code `2`, no run.
+:::
+
+{/* t:p 714bc89ae272bae239a43508b13fd5a274631075ab25dd113b1e9ac24701388d */}
+### Distributed build
+
+The deployment machine must not be the fleet's bottleneck. Each host is
+therefore built by the **builder elected** for it. The election is recomputed at
+every run from `var/generated/`, never declared: changing the deployment
+topology must not rebuild the fleet.
+
+| Order | Builder kept | Condition |
+|---|---|---|
+| 1 | The host itself | `auto-build` feature declared on the host |
+| 2 | The `harmonia` host of its zone | The zone has one |
+| 3 | The `global` `harmonia` host | One exists in the fleet |
+| 4 | The deployment machine | Default |
+
+The rule fits in one sentence: **a builder must be able to serve what it
+builds**. Hence the choice of `harmonia` hosts, whose `/nix/store` is already
+the cache of their zone, with nothing to bootstrap. A gateway without `harmonia`
+is not suitable: its paths are in no substituter.
+
+The result stays at the builder's. It is publication that then brings it to the
+zone's hosts, over LAN, through their usual substituter.
+
+```yaml
+# etc/config.yaml
+    features: ["auto-build"]
+```
+
+:::tip[When to declare `auto-build`]
+A host that builds itself no longer receives any closure. This is decisive for a
+host isolated behind a slow link that embeds a large package missing from the
+public cache, and it is the answer for a host of a different architecture.
+
+The choice is made **per host**, never per zone: RAM and disk are properties of
+the machine. Counterpart to weigh: the closure of derivations, several hundred
+MiB, moves up to it at each run that moves `nixpkgs`. It is the copy counters of
+the report that settle the case, not intuition.
+:::
+
+:::note[Automatic fallback]
+Builder unreachable, failed, or of an architecture incompatible with its
+target → the build falls back to the deployment machine. No host fails because
+of a delegation, and the report names the builder that actually built.
+:::
+
+The `--no-distributed-build` option brings everything back to the center,
+whatever the election. It is a debugging escape hatch: the rule comes from the
+fleet, the exception from the command line.
+
+:::caution[A zone without `harmonia` is expensive]
+Without a zone cache, there is neither a local builder nor a common source: each
+host gets its closure pushed to it, one by one, from the deployment machine. The
+report lists these zones and the pushed byte count shows it. Declare a
+[`harmonia`](#binary-cache) on a host of the zone.
 :::
 
 {/* t:p b140e2ce0eadf1058d08e62ea6b45ab657f3afb8135d13b213923d61ddf46539 */}
@@ -171,10 +245,10 @@ network:
 
 Profiles separated by `:`, `[others]` designates the unlisted profiles. Optional block&nbsp;: without it, the tool applies the values above. The `--deployment-order` and `--critical-profiles` options take precedence over `config.yaml`.
 
-{/* t:p 886fda88630e88793bf0ce85a815564400da16f6285ec72524117ef0c9674244 */}
+{/* t:p 0a5b254f6bf9490b52578c7302521a81749c025f7b5d164c02037162ec859964 */}
 ### Timeouts and monitoring
 
-Two other optional blocks in `config.yaml` set the durations&nbsp;:
+Two other optional `config.yaml` blocks set the durations:
 
 ```yaml
 # etc/config.yaml
@@ -188,10 +262,10 @@ network:
 
 | Key | Role | Default |
 |---|---|---|
-| `pingInterval` | Seconds between two pings of the tracked hosts | `15` |
-| `timeouts.<clé>` | Maximum duration of an operation, in seconds | depends on the operation |
+| `pingInterval` | Seconds between two pings of tracked hosts | `15` |
+| `timeouts.<clé>` | Maximum duration of an operation, in seconds | depending on the operation |
 
-`timeouts` keys, in the order of the launch&nbsp;:
+`timeouts` keys, in the order of the run:
 
 | `timeouts.<clé>` | Default (s) |
 |---|---|
@@ -200,6 +274,7 @@ network:
 | `commit` | 60 |
 | `eval` | 1200 |
 | `build` | 10800 |
+| `publish` | 3600 |
 | `copy` | 3600 |
 | `activation` | 300 |
 | `ssh` | 30 |
@@ -208,28 +283,49 @@ network:
 | `killGrace` | 10 |
 
 :::note[An unknown key stops generation]
-`just generate` checks the key names and rejects a zero or negative timeout&nbsp;:
-otherwise a typo would silently fall back to the default value.
+`just generate` checks key names and refuses a zero or negative timeout: a typo
+would otherwise fall back to the default value, in silence.
 :::
 
-{/* t:p 7988552e89533af9c3f66d26c89bf4e0d9fd5623ea1b78e5d3a58dcdd52619ab */}
+{/* t:p 90785646b6b8695ab63e4e5146a8bf6a5a1d1571dd4fcc26a70ed98509402379 */}
 ### Report and Matrix alerts
 
-Each run writes its folder to `var/deployments/<date>-<mode>/`: `report.md` (the report), `state.json` (the state that `--resume` resumes), `events.jsonl` and the per-host logs. The path is displayed at the end of the run.
+Each run writes its folder in `var/deployments/<date>-<mode>/`: `report.md` (the
+report), `state.json` (the state that `--resume` resumes), `events.jsonl` and
+the per-host logs. The path is displayed at the end of the run.
 
-The `--send-report` option sends this report to the channels of the [alerts bot](/en/doc/admin-guide/operate/alerts/), installed beforehand with `just configure-alert-bot`.
+The report details what the run actually did:
+
+| Section | What it gives |
+|---|---|
+| **Steps**, **Waves** | Duration of each step, composition and duration of each wave |
+| **Builders** | Who built what, fallbacks included |
+| **Copies** | Per host: paths pulled and by which substituter, pushed paths, volume |
+| **Zones without a cache** | Zones of the run that no `harmonia` serves |
+| **Hosts not deployed** | Hosts left aside, and the reason |
+
+:::tip[Reading the copy counters]
+A host that pulls most of it from `harmonia <zone>` proves that its zone cache
+plays its role. A host that gets **pushed** a lot of volume is on the contrary a
+candidate for a `harmonia` in its zone, or for `auto-build`. No copy line for a
+host → it held everything already, nothing traveled.
+:::
+
+The `--send-report` option sends this report to the channels of the
+[alert bot](/en/doc/admin-guide/operate/alerts/), previously installed with
+`just configure-alert-bot`.
 
 | Situation | Channel | Content |
 |---|---|---|
-| Finished run | warnings | Summary: hosts by state, duration, known errors |
+| Run finished | warnings | Summary: hosts by state, duration, known errors |
 | Critical hosts not deployed | incidents | Separate message: affected hosts and reasons |
 | Stop on error | incidents | Error that stopped the run, then summary |
 
-A host is critical when its profile is listed in `criticalProfiles`. After a
-stop, the hosts left in `test` complete the incident message: a restart would
-bring them back to their previous generation.
+A host is critical when its profile appears in `criticalProfiles`. After a stop,
+the hosts left in `test` complete the incident message: a reboot would bring
+them back to their previous generation.
 
-The message uses the report's header, with the exit code in the title:
+The message takes the report header, with the exit code in the title:
 
 ```markdown
 **Fleet Update Report** (1)
@@ -242,14 +338,17 @@ Error: srv-ag: activation failed
 - Run stopped on error
 ```
 
-:::note[Impossible to send]
-The run remains valid and the report is written, but the command exits with `3`.
-Under the timer, the unit goes to a failed state, hence the `SystemdUnitFailed`
+:::note[Send impossible]
+The run stays valid and the report is written, but the command exits with `3`.
+Under the timer, the unit goes into failure, hence the `SystemdUnitFailed`
 alert.
 :::
 
-:::caution[What sending requires]
-Sending goes through the [`just send-msg`](/en/doc/admin-guide/operate/alerts/#sending-a-message-to-a-room) recipe: channels and token remain the framework's responsibility, the tool only writes the text. Nothing goes out if the bot is not provisioned, nor on an abort (`^C`, service stop).
+:::caution[What the send requires]
+The send goes through the [`just send-msg`](/en/doc/admin-guide/operate/alerts/#sending-a-message-to-a-room)
+recipe: channels and token remain the framework's business, the tool only writes
+the text. Nothing goes out if the bot is not provisioned, nor on an abort (`^C`,
+service stop).
 :::
 
 {/* t:p 8706c5bb5bdec3a788fc742bd40fed889c013d0c8b271a518d54639190589b94 */}
@@ -292,10 +391,10 @@ version of the tool knows how to send it. Until then, add it after checking the
 send manually.
 :::
 
-{/* t:p 7fba6574d9772edc82643418791070ada23d13d56e447c3d0b519b767870e521 */}
+{/* t:p 333e4a36fb171ecc02ba4e561f232805b6736598cb272e45c16286eb2328a3df */}
 ## Binary cache
 
-Two services combine to avoid recompiling or re-downloading derivations on each
+Two services combine to avoid recompiling or re-downloading derivations at every
 deployment.
 
 | Service | Role |
@@ -303,44 +402,48 @@ deployment.
 | `harmonia` | Serves the local `/nix/store`, signed, **directly** to hosts (LAN, or VPN if `global`). |
 | `nix-cache` | Per-zone `nginx` proxy that caches the public `cache.nixos.org` cache on the gateway. |
 
+A `harmonia` host has a second role: it is the
+[elected builder](#distributed-build) of its zone, because it knows how to
+serve what it builds.
+
 A host queries these sources in the following priority order. The first fetch
-from the Internet is thus shared across the whole zone.
+from the Internet is thus shared for the whole zone.
 
 | Priority | Source | Scope |
 |---|---|---|
-| 20 | zone `harmonia` | LAN, what the zone has compiled |
-| 35 | zone `nix-cache` proxy | LAN, shared mirror of the public cache |
+| 20 | `harmonia` of the zone | LAN, what the zone compiled |
+| 35 | `nix-cache` proxy of the zone | LAN, shared mirror of the public cache |
 | 40 | `cache.nixos.org` directly | safety net if the gateway is down |
 | 45 | `global` `harmonia` | last resort, over the VPN |
 
 :::note[How the order is guaranteed]
 Nix does not follow the order of the `substituters` list; it sorts caches
-according to the priority each one announces in its `nix-cache-info`. But these
-announced values are equal: all `harmonia` services declare 30, and the proxy
-relaying `cache.nixos.org` as-is declares 40, like direct access to the public
-cache. DNF therefore sets the priority in the substituter URL (`?priority=35`),
-which overrides the announced value and makes the table order explicit.
+according to the priority each announces in its `nix-cache-info`. Yet those
+announced values are equal: all `harmonia` declare 30, and the proxy relaying
+`cache.nixos.org` as is declares 40, like direct access to the public cache. DNF
+therefore fixes the priority in the substituter URL (`?priority=35`), which
+overrides the announced value and makes the table order explicit.
 
-Two intended consequences. The zone proxy goes **before** direct access to the
+Two intended consequences. The zone proxy goes **ahead** of direct access to the
 public cache, otherwise zone sharing would never happen. And a `global`
-`harmonia` goes **after** this public cache: `harmonia` serves a whole
-`/nix/store` without being able to tell what it compiled from the rest, so a
-well-stocked host would capture all the traffic the public cache is meant to
+`harmonia` goes **behind** this public cache: `harmonia` serves a whole
+`/nix/store`, without being able to tell what it compiled from the rest, so a
+well-stocked host would capture all the traffic that the public cache must
 serve. As a last resort, it is only consulted for what `cache.nixos.org` does
-not have, that is, its own builds.
+not have, i.e. its own builds.
 :::
 
 :::note[A host does not use its own `harmonia`]
 This service serves its own `/nix/store`, so it can only provide paths already
 present locally. On that host, anything missing necessarily comes from another
-source: that is normal, its `harmonia` only benefits the **other** machines in
+source: that's normal, its `harmonia` only benefits the **other** machines of
 the zone.
 :::
 
-:::tip[Roaming host (multi-zone portable)]
-A laptop that moves between zones should not keep substituters frozen to its
-declared zone: unreachable elsewhere, they cost timeouts on every request.
-Enable *roaming* mode:
+:::tip[Roaming host (multi-zone laptop)]
+A laptop that changes zone must not keep substituters frozen on its declared
+zone: unreachable elsewhere, they cost timeouts on every request. Enable
+*roaming* mode:
 
 ```nix
 # usr/machines/<hôte>/default.nix
@@ -349,30 +452,30 @@ darkone.service.nix-cache.roaming = true;
 
 Its substituters become **neutral** names (`harmonia.dnf.internal`,
 `nix-cache.dnf.internal`) that each zone's DNS resolves to its own caches → the
-cache follows the machine. Outside any zone, immediate NXDOMAIN response →
-direct fallback to `cache.nixos.org`, with no delay. Since signing keys are
-shared across the whole network, nothing else to configure.
+cache follows the machine. Outside any zone, immediate NXDOMAIN answer → direct
+fallback on `cache.nixos.org`, without delay. Since signature keys are common to
+the whole network, nothing else to configure.
 :::
 
 :::note[Activation]
 `harmonia` and `nix-cache` are [services](/en/doc/admin-guide/operate/services/)
-to enable on a network host (`nix-cache` on the zone gateway). The harmonia
-signing key is managed by
-[sops](/en/doc/admin-guide/operate/secrets/) (`just configure-admin-host`).
+to enable on a network host (`nix-cache` on the zone gateway). harmonia's
+signature key is managed by [sops](/en/doc/admin-guide/operate/secrets/)
+(`just configure-admin-host`).
 :::
 
 :::tip[Why a single-upstream proxy]
 `nix-cache` relays only **one** upstream (`cache.nixos.org`): it caches
-`narinfo` and `nar` as-is, signatures intact. No URL rewriting and no database,
-hence no HTTP 500 "invalid nar hash" error from the old `ncps` relay.
+`narinfo` and `nar` as is, signatures intact. No URL rewriting or database,
+therefore no HTTP 500 "invalid nar hash" error from the old `ncps` relay.
 :::
 
-{/* t:p a9f7d5c5485d69cd5a8966004acff0cb3b8dada45e673495d4fb3311fddb46f5 */}
+{/* t:p 54036d97ac85014a52079c024508dd3fbf02c05c1a43782ae13514626aaf9fa1 */}
 ## Build farm
 
 Fetching a package and building it are two distinct needs. The binary cache
-above covers the first. For the second, a powerful network host can take over
-the long compilations of an administration host.
+above covers the first. For the second, a powerful host of the network can take
+on the long compilations of an administrative host.
 
 Declare it with the `build-farm` feature:
 
@@ -381,31 +484,43 @@ Declare it with the `build-farm` feature:
     features: ["build-farm"]
 ```
 
-Each administration host then adds it to its `nix.buildMachines`, connecting
-over SSH with the `nix` deployment account. Nothing else to configure: the key
-and the authorization are already in place across the whole fleet.
+Each administrative host then adds it to its `nix.buildMachines`, joined over
+SSH by the deployment account `nix`. Nothing else to configure: the key and the
+authorization are already in place across the whole fleet.
 
-:::tip[Only long compilations leave]
+:::tip[Only long compilations go away]
 The delegation is deliberately narrow: the farm is only offered derivations
 declaring `requiredSystemFeatures = [ "big-parallel" ]`, i.e. the kernel,
-browsers, `llvm`, `rustc`… Everything else is built locally. This is decisive
-when the farm sits behind a slow link, since only the requested result makes
-the return trip.
+browsers, `llvm`, `rustc`... Everything else is built locally. This is decisive
+when the farm is behind a slow link, since only the requested result makes the
+return trip.
 
 Adjust with `darkone.admin.nix.remoteBuilders`: `maxJobs`, `speedFactor`, and
 `mandatoryFeatures` (empty list = everything goes to the farm).
 :::
 
+:::note[`build-farm` or `auto-build`?]
+Two distinct mechanisms, combinable on the same host.
+
+| Feature | Who uses it | What it moves |
+|---|---|---|
+| `build-farm` | Nix, on administrative hosts | Only the `big-parallel` derivations, whatever tool is launched |
+| `auto-build` | `fleet-update`, at fleet build | The whole system closure of the host that declares it |
+
+`build-farm` relieves an admin machine of its long compilations.
+[`auto-build`](#distributed-build) removes a transfer to a host. They do
+not replace each other.
+:::
+
 :::caution[A farm is not a priority cache]
 Do not promote a remote farm to a priority `global` `harmonia` to share its
 results: `harmonia` serves the whole `/nix/store` and would capture the traffic
-the public cache is meant to serve, across the slowest link on the network.
-That is the role of level 45 in the table above: last resort, never the main
-source.
+the public cache must serve, across the slowest link of the network. That is the
+role of level 45 of the table above: last resort, never primary source.
 :::
 
 :::note[Fallback if the farm is unreachable]
-The administration host keeps `big-parallel` in its own `system-features`. When
-the farm does not respond, Nix simply resumes the build locally instead of
+The administrative host keeps `big-parallel` in its own `system-features`. When
+the farm does not answer, Nix simply resumes the compilation locally instead of
 failing. Do not remove this feature to force delegation.
 :::
