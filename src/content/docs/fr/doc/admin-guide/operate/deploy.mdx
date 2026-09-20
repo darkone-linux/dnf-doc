@@ -299,6 +299,70 @@ Clés de `timeouts`, dans l'ordre du déroulé&nbsp;:
 une faute de frappe retomberait sinon sur la valeur par défaut, en silence.
 :::
 
+### Erreurs, diagnostic et réparation
+
+Une erreur courante doit se lire sans connaître Nix. L'outil tient une **table de
+signatures**&nbsp;: un motif reconnu dans la sortie d'une commande donne un
+message en clair, et l'action à prendre.
+
+| Motif reconnu | Ce que ça signifie | Action |
+|---|---|---|
+| `mismatch in field 'narHash'` | `nix-eval-jobs` n'est pas lié au même Nix que le système | Arrêt |
+| `lacks a signature by a trusted key` | Le compte de déploiement n'est pas *trusted user* sur cet hôte | Arrêt |
+
+Le message s'affiche au fil du lancement (`hint:`), une seule fois, et se retrouve
+dans la section **Known errors** du rapport. Il s'ajoute à la raison de l'hôte,
+il ne la remplace jamais&nbsp;: la trace entière reste dans `logs/`.
+
+| Action de la table | Ce que fait l'outil |
+|---|---|
+| Relance | Rejoue la commande, au plus trois fois, si elle est rejouable&nbsp;: évaluation, construction, copie de dérivation, tirage |
+| Exclusion | Poursuit sans l'hôte&nbsp;; s'il était déjà activé, le ramène d'abord à son origine |
+| Arrêt | Arrête le lancement, sans poser de question |
+
+Aucune signature ne demande de relance aujourd'hui&nbsp;: les deux entrées
+connues sont des arrêts.
+
+:::caution[Une action de la table ne se discute pas]
+Elle s'applique aussi en interactif&nbsp;: une réparation déterministe passe
+avant la question. Un lancement de nuit et un lancement surveillé traitent donc
+la même erreur de la même façon. La ligne `known error decides: stop` le dit au
+fil du lancement, et la raison de l'hôte reste au rapport.
+
+Activation, pose du profil, commit et redémarrage d'unités ne sont **jamais**
+rejoués tout seuls&nbsp;: seules les commandes qu'on peut réexécuter sans
+conséquence le sont.
+:::
+
+**Collecte déterministe.** Un hôte qui échoue en restant joignable est interrogé
+avant toute décision&nbsp;: `systemctl status`, liste des unités en échec, puis
+le journal de chacune depuis le début de sa vague.
+
+| Ce qui est collecté | Où ça va |
+|---|---|
+| Sortie complète des commandes et journaux | `logs/<hôte>.diag` du dossier de lancement |
+| Unités en échec, extrait de l'erreur | Section **Diagnostics** du rapport, message d'incident |
+
+**Redémarrage des unités.** Une activation qui se termine avec des unités en
+échec laisse l'hôte en état `error`. L'outil tente alors une réparation simple.
+
+<Steps>
+1. Attente de dix secondes&nbsp;: une unité lente à démarrer n'est pas une unité en échec.
+2. `systemctl restart` de toutes les unités en échec, en une seule commande.
+3. Relecture de la liste des unités en échec&nbsp;: c'est elle qui conclut, pas le code de sortie.
+</Steps>
+
+Tout repart → l'hôte reprend son cours, rejoint le switch avec les autres, et le
+rapport note un **probable problème d'ordre d'activation** (section **Notes**).
+Une unité résiste → l'hôte reste en `error`, son nom et celui de l'unité au
+rapport.
+
+:::note[Ce que l'interface affiche pendant ce temps]
+L'hôte porte un libellé clignotant à droite de son nom, avec son indicateur
+d'activité&nbsp;: `under repair` en jaune pendant la réparation déterministe,
+`AI analysis` et `AI repair` en magenta quand l'IA prendra le relais.
+:::
+
 {/* t:p 90785646b6b8695ab63e4e5146a8bf6a5a1d1571dd4fcc26a70ed98509402379 */}
 ### Rapport et alertes Matrix
 
@@ -315,6 +379,9 @@ Le rapport détaille ce que le lancement a réellement fait&nbsp;:
 | **Copies** | Par hôte : chemins tirés et par quel substituteur, chemins poussés, volume |
 | **Zones without a cache** | Zones du lancement qu'aucun `harmonia` ne sert |
 | **Hosts not deployed** | Hôtes restés de côté, et la raison |
+| **Diagnostics** | Par hôte en échec : unités en échec, puis extrait de l'erreur |
+| **Notes** | Ce que le lancement a constaté : ordre d'activation probable après un redémarrage d'unités |
+| **Known errors** | Pièges reconnus par la table de signatures, en clair |
 
 :::tip[Lire les compteurs de copie]
 Un hôte qui tire l'essentiel depuis `harmonia <zone>` prouve que le cache de sa
@@ -330,7 +397,7 @@ L'option `--send-report` envoie ce rapport aux salons du
 | Situation | Salon | Contenu |
 |---|---|---|
 | Lancement terminé | warnings | Résumé&nbsp;: hôtes par état, durée, erreurs connues |
-| Hôtes critiques non déployés | incidents | Message séparé&nbsp;: hôtes concernés et raisons |
+| Hôtes critiques non déployés | incidents | Message séparé&nbsp;: hôtes concernés, raisons et unités en échec |
 | Arrêt sur erreur | incidents | Erreur qui a arrêté le lancement, puis résumé |
 
 Un hôte est critique quand son profil figure dans `criticalProfiles`. Après un
