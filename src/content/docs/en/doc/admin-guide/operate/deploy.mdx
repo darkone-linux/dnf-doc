@@ -287,12 +287,76 @@ network:
 would otherwise fall back to the default value, in silence.
 :::
 
-{/* t:p 90785646b6b8695ab63e4e5146a8bf6a5a1d1571dd4fcc26a70ed98509402379 */}
-### Report and Matrix alerts
+{/* t:p 99d045f2da864a2a62675432f5b261163caaaa11d7dea2034ff2be4239620384 */}
+### Errors, diagnostics and repair
 
-Each run writes its folder in `var/deployments/<date>-<mode>/`: `report.md` (the
-report), `state.json` (the state that `--resume` resumes), `events.jsonl` and
-the per-host logs. The path is displayed at the end of the run.
+A common error should be readable without knowing Nix. The tool keeps a **signature
+table**: a recognized pattern in a command's output gives a plain-language
+message and the action to take.
+
+| Recognized pattern | What it means | Action |
+|---|---|---|
+| `mismatch in field 'narHash'` | `nix-eval-jobs` isn't bound to the same Nix as the system | Stop |
+| `lacks a signature by a trusted key` | The deployment account isn't a *trusted user* on this host | Stop |
+
+The message is shown as the run progresses (`hint:`), once only, and is also
+found in the report's **Known errors** section. It is added to the host's reason,
+it never replaces it: the full trace stays in `logs/`.
+
+| Table action | What the tool does |
+|---|---|
+| Retry | Replays the command, at most three times, if it is replayable: evaluation, build, derivation copy, pull |
+| Exclude | Continues without the host; if already activated, first brings it back to its origin |
+| Stop | Stops the run, without asking any question |
+
+No signature calls for a retry today: the two known entries are stops.
+
+:::caution[A table action is not discussed]
+It also applies in interactive mode: a deterministic repair comes before the
+question. A nightly run and a supervised run therefore handle the same error
+the same way. The `known error decides: stop` line says it as the run
+progresses, and the host's reason stays in the report.
+
+Activation, profile installation, commit, and unit restart are **never**
+replayed on their own: only commands that can be re-executed without
+consequence are.
+:::
+
+**Deterministic collection.** A host that fails while remaining reachable is
+interrogated before any decision: `systemctl status`, list of failing units, then
+each one's log since the start of its wave.
+
+| What is collected | Where it goes |
+|---|---|
+| Full output of commands and logs | `logs/<hôte>.diag` in the run folder |
+| Failing units, error extract | Report's **Diagnostics** section, incident message |
+
+**Unit restart.** An activation that ends with failing units leaves the host in
+`error` state. The tool then attempts a simple repair.
+
+<Steps>
+1. Ten-second wait: a unit that is slow to start isn't a failing unit.
+2. `systemctl restart` of all the failing units, in a single command.
+3. Re-reading the failing-unit list: it is what concludes, not the exit code.
+</Steps>
+
+Everything comes back up → the host resumes its course, rejoins the switch with
+the others, and the report notes a **probable activation-order issue**
+(**Notes** section). A unit resists → the host stays in `error`, its name and the
+unit's are in the report.
+
+:::note[What the interface shows meanwhile]
+The host carries a blinking label to the right of its name, with its activity
+indicator: `under repair` in yellow during deterministic repair,
+`AI analysis` and `AI repair` in magenta when the AI takes over.
+:::
+
+{/* t:p 65e6f15ec30d9e247975f8c9ad98983f38e4af0a3c28bd447c8feb9da45241b0 */}
+### Reports and Matrix alerts
+
+Each run writes its folder to `var/deployments/<date>-<mode>/`:
+`report.md` (the report), `state.json` (the state that `--resume` picks up),
+`events.jsonl`, and per-host logs. The path is shown at the end of the run.
 
 The report details what the run actually did:
 
@@ -300,32 +364,35 @@ The report details what the run actually did:
 |---|---|
 | **Steps**, **Waves** | Duration of each step, composition and duration of each wave |
 | **Builders** | Who built what, fallbacks included |
-| **Copies** | Per host: paths pulled and by which substituter, pushed paths, volume |
-| **Zones without a cache** | Zones of the run that no `harmonia` serves |
+| **Copies** | Per host: pulled paths and by which substituter, pushed paths, volume |
+| **Zones without a cache** | Run zones that no `harmonia` serves |
 | **Hosts not deployed** | Hosts left aside, and the reason |
+| **Diagnostics** | Per failing host: failing units, then error extract |
+| **Notes** | What the run observed: probable activation order after a unit restart |
+| **Known errors** | Pitfalls recognized by the signature table, in plain language |
 
 :::tip[Reading the copy counters]
-A host that pulls most of it from `harmonia <zone>` proves that its zone cache
-plays its role. A host that gets **pushed** a lot of volume is on the contrary a
-candidate for a `harmonia` in its zone, or for `auto-build`. No copy line for a
-host → it held everything already, nothing traveled.
+A host that pulls most of its content from `harmonia <zone>` proves that its
+zone's cache does its job. A host that gets a lot of volume **pushed** to it is
+on the contrary a candidate for a `harmonia` in its zone, or for `auto-build`.
+No copy line for a host → it already held everything, nothing traveled.
 :::
 
-The `--send-report` option sends this report to the channels of the
-[alert bot](/en/doc/admin-guide/operate/alerts/), previously installed with
+The `--send-report` option sends this report to the rooms of the
+[alerts bot](/en/doc/admin-guide/operate/alerts/), installed beforehand by
 `just configure-alert-bot`.
 
-| Situation | Channel | Content |
+| Situation | Room | Content |
 |---|---|---|
 | Run finished | warnings | Summary: hosts by state, duration, known errors |
-| Critical hosts not deployed | incidents | Separate message: affected hosts and reasons |
+| Critical hosts not deployed | incidents | Separate message: concerned hosts, reasons, and failing units |
 | Stop on error | incidents | Error that stopped the run, then summary |
 
-A host is critical when its profile appears in `criticalProfiles`. After a stop,
-the hosts left in `test` complete the incident message: a reboot would bring
-them back to their previous generation.
+A host is critical when its profile is listed in `criticalProfiles`. After a
+stop, the hosts left in `test` complete the incident message: a restart would
+bring them back to their previous generation.
 
-The message takes the report header, with the exit code in the title:
+The message takes the report's header, the exit code in the title:
 
 ```markdown
 **Fleet Update Report** (1)
@@ -338,16 +405,16 @@ Error: srv-ag: activation failed
 - Run stopped on error
 ```
 
-:::note[Send impossible]
-The run stays valid and the report is written, but the command exits with `3`.
+:::note[Sending impossible]
+The run remains valid and the report is written, but the command exits with `3`.
 Under the timer, the unit goes into failure, hence the `SystemdUnitFailed`
 alert.
 :::
 
-:::caution[What the send requires]
-The send goes through the [`just send-msg`](/en/doc/admin-guide/operate/alerts/#sending-a-message-to-a-room)
-recipe: channels and token remain the framework's business, the tool only writes
-the text. Nothing goes out if the bot is not provisioned, nor on an abort (`^C`,
+:::caution[What sending requires]
+Sending goes through the [`just send-msg`](/en/doc/admin-guide/operate/alerts/#sending-a-message-to-a-room) recipe:
+rooms and token remain the framework's responsibility, the tool only writes the
+text. Nothing leaves if the bot isn't provisioned, nor on an abort (`^C`,
 service stop).
 :::
 
