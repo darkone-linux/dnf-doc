@@ -11,13 +11,34 @@ import { Steps } from '@astrojs/starlight/components';
 {/* t:main */}
 {/* t:h a16a904ba4cebc0eb0b300d71e8fdf2acdb7a6b7b8b5ee282b9fb96b6d721679 */}
 
-{/* t:p 157d6f51401dba7bfc1ed0a9f5373fe7cb35a2d96dd0f1d7fb880712f0d8f4d6 */}
+{/* t:p f4e56a74e962230e926f93991fa077d96bd0f6018dfd04ddc8bb0c631bf3132d */}
+:::danger[Important]
+Un utilisateur peut avoir 3 comptes liés, qu'il est possible de déclarer
+indépendamment.
+
+* **Linux (POSIX)** : session Linux & SSH, déclaré dans config.yaml.
+* **Kanidm (IDM)** : accès aux services, SSO, déclaré avec kanidm.
+* **Matrix** : accès à la messagerie Matrix.
+:::
+
+:::tip[L'ordre de création et les liaisons entre compte sont importants]
+
+- Un compte Linux `alice`
+  - implique la création d'un compte Kanidm `alice` / `alice@domain.tld`
+  - qui implique la création d'un compte Matrix `alice:domain.tld`.
+- A l'inverse, créer un compte Matrix seul, sans compte IDM ou POSIX lié, est cohérent.
+  - Par exemple, le compte `john.doe:domain.tld` d'un ami.
+:::
+
+{/* t:p 1156a0686209d54e9f12811173f61e73c611eb3ec899c9961192361308eab2dc */}
+## Créer un compte Linux (POSIX)
+
 Les utilisateurs sont déclarés **une fois** dans `etc/config.yaml`, puis
 **rattachés** aux hôtes où ils doivent ouvrir une session. Le même compte peut
 exister sur plusieurs machines.
 
-{/* t:p 64b47647090661b6f6ba9f495acb4f4cea77956223225b2dd95abffa63798261 */}
-## Déclarer un utilisateur
+{/* t:p 875f3ee8246831006547317554684773380c9a7fdc858a07ebba456a2770e30e */}
+### Déclarer un utilisateur
 
 ```yaml
 # etc/config.yaml
@@ -39,8 +60,8 @@ users:
 | `profile` | [Profil utilisateur](/fr/doc/admin-guide/understand/user-profiles/) (environnement) |
 | `groups` | Groupes (accès réseau et services) |
 
-{/* t:p 18c2a01b04dbf04056a6a32f6895a758f608a036bb5739f831b9705a96bb39f3 */}
-## Rattacher à un hôte
+{/* t:p f93adb95d0c4124c98ae91d5835b63faf346221b89bc26b732dea3d70af6ffd4 */}
+### Rattacher à un hôte
 
 Sous un hôte, `users` liste les **logins existants** autorisés à s'y connecter :
 
@@ -52,11 +73,14 @@ hosts:
     users: ["alice"]
 ```
 
-{/* t:p 3308c83275bc786cef6dcb5dd1be3ae4403c5dccfad48f43be896eda081cd47f */}
-## Déployer les modifications
+:::tip[Via un groupe]
+Autre possibilité : rattacher un utilisateur à un hôte grâce à un groupe commun déclaré dans la liste `groups` commune.
+:::
 
-Toute modification de `etc/config.yaml` suit le **même cycle** : décrire,
-régénérer, valider dans git, puis déployer.
+{/* t:p 566263d5256294795aca42d3f61a7a982d58982ddad68b53c267d5382b2f515e */}
+### Déployer les modifications
+
+Toute modification de `etc/config.yaml` suit le **même cycle** :
 
 <Steps>
 
@@ -85,12 +109,12 @@ régénérer, valider dans git, puis déployer.
 </Steps>
 
 :::caution[Toujours committer avant de déployer]
-`just generate` réécrit `var/generated/`. Sans `clean` + `commit`, le
+`just clean` réécrit `var/generated/`. Sans `clean` + `commit`, le
 déploiement part d'un état incohérent ou non versionné.
 :::
 
-{/* t:p 4a84a4a9e649f66c1e590cb87258cf52edfbef66b71bf0284a2fba03f788cac0 */}
-## Définir le mot de passe
+{/* t:p e3a147302d14e2e73b35651a82628b73004bdfcfb0405b111e2fbffcbfca7b06 */}
+### Définir le mot de passe
 
 <Steps>
 
@@ -103,13 +127,13 @@ déploiement part d'un état incohérent ou non versionné.
 2. **Valider dans git**
 
    ```sh
-   just commit "user(passwd): alice"
+   just commit "chore(user): alice password"
    ```
 
 3. **Déployer**
 
    ```sh
-   just apply @user-alice
+   just apply @user-alice,hcs
    ```
 
 </Steps>
@@ -119,6 +143,17 @@ déploiement part d'un état incohérent ou non versionné.
 n'enregistre que le mot de passe de référence du parc. Voir
 [Secrets](/fr/doc/admin-guide/operate/secrets/).
 :::
+
+:::note[Redéfinition de mot de passe (todo)]
+Pour le moment il n'est pas possible pour un utilisateur de redéfinir son
+mot de passe POSIX pour l'ensemble du parc.
+:::
+
+{/* t:p 82e591259013b8ec44c9f0e307b03860ec5e9853c0dc6affaa993da145a7e023 */}
+### Activer les accès Kanidm (services) et Matrix
+
+- Pour que l'utilisateur ait accès aux services, [activez son compte Kanidm](/fr/doc/admin-guide/operate/sso/#créer-un-compte-utilisateur).
+- Pour qu'il puisse communiquer avec Matrix, [activez son compte Matrix](/fr/doc/admin-guide/operate/matrix/#authentification-mas).
 
 {/* t:p 933885347c28a0e97bb028dbb55fad18f18efa9daf282a64ef33790217809ce9 */}
 ## Accès SSH
@@ -159,7 +194,7 @@ hôte par hôte :
 darkone.user.build.sshDeniedGroups = [ "guests" ];
 ```
 
-{/* t:p 3da66ab20a71d06366f967c011a7dace6d7caa26e6632758009b1adb57cd3c09 */}
+{/* t:p 201b895a3fe4bc096c9396e3303466b4147f3dae7ccc53c7b49e2111e7cd37f5 */}
 ## Identités et SSO
 
 Au-delà du compte système, l'utilisateur dispose d'une **identité unique**
@@ -171,7 +206,7 @@ Au-delà du compte système, l'utilisateur dispose d'une **identité unique**
 
 :::note[Créer un compte de bout en bout]
 Le parcours complet (compte + identité + premier mot de passe) est décrit dans
-[Créer un compte utilisateur](/fr/doc/admin-guide/install/hcs/#créer-un-compte-utilisateur).
+[Créer un compte utilisateur](/fr/doc/admin-guide/operate/sso/#créer-un-compte-utilisateur).
 Pour réinitialiser : [Réinitialiser un mot de passe](/fr/doc/how-to/admin/reset-user-password/).
 :::
 

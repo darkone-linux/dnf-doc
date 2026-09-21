@@ -11,11 +11,33 @@ import { Steps } from '@astrojs/starlight/components';
 {/* t:translated-from fr */}
 {/* t:h a16a904ba4cebc0eb0b300d71e8fdf2acdb7a6b7b8b5ee282b9fb96b6d721679 */}
 
-{/* t:p 157d6f51401dba7bfc1ed0a9f5373fe7cb35a2d96dd0f1d7fb880712f0d8f4d6 */}
-Users are declared **once** in `etc/config.yaml`, then **attached** to the hosts where they need to log in. The same account can exist on multiple machines.
+{/* t:p f4e56a74e962230e926f93991fa077d96bd0f6018dfd04ddc8bb0c631bf3132d */}
+:::danger[Important]
+A user can have up to 3 linked accounts, each of which can be declared
+independently.
 
-{/* t:p 64b47647090661b6f6ba9f495acb4f4cea77956223225b2dd95abffa63798261 */}
-## Declaring a user
+* **Linux (POSIX)** : Linux & SSH session, declared in config.yaml.
+* **Kanidm (IDM)** : access to services, SSO, declared with kanidm.
+* **Matrix** : access to the Matrix messaging.
+:::
+
+:::tip[The creation order and the links between accounts are important]
+
+- A Linux account `alice`
+  - implies the creation of a Kanidm account `alice` / `alice@domain.tld`
+  - which implies the creation of a Matrix account `alice:domain.tld`.
+- Conversely, creating a Matrix account alone, without a linked IDM or POSIX account, is consistent.
+  - For example, a friend's `john.doe:domain.tld` account.
+:::
+
+{/* t:p 1156a0686209d54e9f12811173f61e73c611eb3ec899c9961192361308eab2dc */}
+## Create a Linux (POSIX) account
+
+Users are declared **once** in `etc/config.yaml`, then **attached** to the hosts
+where they need to open a session. The same account can exist on several machines.
+
+{/* t:p 875f3ee8246831006547317554684773380c9a7fdc858a07ebba456a2770e30e */}
+### Declare a user
 
 ```yaml
 # etc/config.yaml
@@ -33,12 +55,12 @@ users:
 | *(key)* | Account login (e.g. `alice`) |
 | `uid` | Stable numeric identifier |
 | `name` | Display name |
-| `email` | Address (also used for SSO identity) |
+| `email` | Address (also used for the SSO identity) |
 | `profile` | [User profile](/en/doc/admin-guide/understand/user-profiles/) (environment) |
-| `groups` | Groups (network and service access) |
+| `groups` | Groups (network and services access) |
 
-{/* t:p 18c2a01b04dbf04056a6a32f6895a758f608a036bb5739f831b9705a96bb39f3 */}
-## Attaching to a host
+{/* t:p f93adb95d0c4124c98ae91d5835b63faf346221b89bc26b732dea3d70af6ffd4 */}
+### Attach to a host
 
 Under a host, `users` lists the **existing logins** allowed to connect to it:
 
@@ -50,25 +72,28 @@ hosts:
     users: ["alice"]
 ```
 
-{/* t:p 3308c83275bc786cef6dcb5dd1be3ae4403c5dccfad48f43be896eda081cd47f */}
-## Deploying changes
+:::tip[Via a group]
+Another possibility: attach a user to a host through a common group declared in the shared `groups` list.
+:::
 
-Any modification to `etc/config.yaml` follows the **same cycle**: describe,
-regenerate, commit to git, then deploy.
+{/* t:p 566263d5256294795aca42d3f61a7a982d58982ddad68b53c267d5382b2f515e */}
+### Deploy the changes
+
+Any change to `etc/config.yaml` follows the **same cycle**:
 
 <Steps>
 
 1. **Describe the change**
 
-   Create or modify the user and their workstations in `etc/config.yaml`.
+   Create or modify the user and their machines in `etc/config.yaml`.
 
-2. **Regenerate and clean code**
+2. **Regenerate and clean the code**
 
    ```sh
    just clean       # generate + fix + format
    ```
 
-3. **Commit to git**
+3. **Commit in git**
 
    ```sh
    just commit "user(new): alice"
@@ -83,16 +108,16 @@ regenerate, commit to git, then deploy.
 </Steps>
 
 :::caution[Always commit before deploying]
-`just generate` rewrites `var/generated/`. Without `clean` + `commit`, the
+`just clean` rewrites `var/generated/`. Without `clean` + `commit`, the
 deployment starts from an inconsistent or unversioned state.
 :::
 
-{/* t:p 4a84a4a9e649f66c1e590cb87258cf52edfbef66b71bf0284a2fba03f788cac0 */}
-## Setting the password
+{/* t:p e3a147302d14e2e73b35651a82628b73004bdfcfb0405b111e2fbffcbfca7b06 */}
+### Set the password
 
 <Steps>
 
-1. **Define the fingerprint**
+1. **Set the hash**
 
    ```sh
    just passwd alice
@@ -101,22 +126,32 @@ deployment starts from an inconsistent or unversioned state.
 2. **Commit in git**
 
    ```sh
-   just commit "user(passwd): alice"
+   just commit "chore(user): alice password"
    ```
 
 3. **Deploy**
 
    ```sh
-   just apply @user-alice
+   just apply @user-alice,hcs
    ```
 
 </Steps>
 
 :::tip[An account has no password until one is set]
-`just passwd <login>` is what opens the session; `just passwd-default`
-only records the park's reference password. See
+`just passwd <login>` is what enables the session; `just passwd-default`
+only records the reference password of the fleet. See
 [Secrets](/en/doc/admin-guide/operate/secrets/).
 :::
+
+:::note[Password redefinition (todo)]
+For now, a user cannot redefine their POSIX password for the whole fleet.
+:::
+
+{/* t:p 82e591259013b8ec44c9f0e307b03860ec5e9853c0dc6affaa993da145a7e023 */}
+### Enable Kanidm (services) and Matrix access
+
+- So the user can access the services, [enable their Kanidm account](/en/doc/admin-guide/operate/sso/#connect-a-service-oidc).
+- So they can communicate with Matrix, [enable their Matrix account](/en/doc/admin-guide/operate/matrix/#authentication-mas).
 
 {/* t:p 933885347c28a0e97bb028dbb55fad18f18efa9daf282a64ef33790217809ce9 */}
 ## SSH access
@@ -157,20 +192,20 @@ on a per-host basis:
 darkone.user.build.sshDeniedGroups = [ "guests" ];
 ```
 
-{/* t:p 3da66ab20a71d06366f967c011a7dace6d7caa26e6632758009b1adb57cd3c09 */}
+{/* t:p 201b895a3fe4bc096c9396e3303466b4147f3dae7ccc53c7b49e2111e7cd37f5 */}
 ## Identities and SSO
 
-Beyond the system account, the user has a **single identity** (Kanidm) that
-provides access to network services.
+Beyond the system account, the user has a **single identity**
+(Kanidm) that opens the network's services.
 
-- `groups` control service access.
+- `groups` control access to services.
 - `idm-admins` / `idm-devs` are the administration and development groups.
-- For details: [SSO and identities](/en/doc/admin-guide/operate/sso/).
+- Details: [SSO and identities](/en/doc/admin-guide/operate/sso/).
 
-:::note[Creating an account end-to-end]
-The full workflow (account + identity + initial password) is described in
-[Creating a user account](/en/doc/admin-guide/install/hcs/#create-a-user-account).
-To reset: [Resetting a password](/en/doc/how-to/admin/reset-user-password/).
+:::note[Create an end-to-end account]
+The full journey (account + identity + first password) is described in
+[Create a user account](/en/doc/admin-guide/operate/sso/#create-a-user-account).
+To reset: [Reset a password](/en/doc/how-to/admin/reset-user-password/).
 :::
 
 {/* t:p d929a47941fb703dd34d9ac49a678dc511433d466b60b6ab033b9f661944261d */}

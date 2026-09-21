@@ -38,6 +38,94 @@ users:
 - **Groups** control access to services.
 - Two special groups: `idm-admins` (administration), `idm-devs` (development).
 
+{/* t:p 88a99c87a0148709570105df547dd7a5660923eee7a4585c3c81ed7d86e0d8b1 */}
+### Create a user account
+
+:::tip[Each user will have…]
+- An identifier and a **master password** (vault).
+- An **authentication key** for all services (SSO).
+- A **recovery password** in case the key is lost.
+:::
+
+<Steps>
+
+1. **System account (optional)**
+
+   If the user needs a [Linux account](/en/doc/admin-guide/operate/users/),
+   create it first. Otherwise, the following steps will create Vaultwarden
+   and Kanidm users in a non-declarative way.
+
+2. **Vaultwarden account**
+
+   1. Administrator: send an invitation.
+   2. User: receives an email to set their master password.
+   3. Administrator: confirm the user.
+
+3. **Kanidm account** (on the HCS)
+
+   ```sh
+   just enter hcs
+   kanidm person credential create-reset-token <login> --name idm_admin
+   ```
+
+   Pass the link or QR code to the user, who creates their key and recovery
+   password.
+
+4. **Bitwarden**
+
+   Installing Bitwarden on browsers and smartphones simplifies access.
+
+   :::note[Choose "self-hosted" carefully]
+   Vaultwarden login: enter the cloud Vaultwarden URL **before** the master
+   password, since bitwarden.com is specified by default.
+   :::
+
+5. **Service access**
+
+   SSO provides access to all services with a single authentication.
+   Access rights are defined via Kanidm groups.
+
+6. **Matrix access** (optional)
+
+   [Activating your Matrix account](/en/doc/admin-guide/operate/matrix/#authentication-mas) goes
+   through authentication via Matrix Authentification Service.
+
+</Steps>
+
+{/* t:p 69a57970ac1171dbf03ca116fc96297bc2bd54b666ac27c21167a026e7789c1d */}
+### Logging in from outside
+
+Outside a zone, access to services goes through the Tailscale client. Nothing to
+distribute: everyone logs in with their Kanidm identity.
+
+<Steps>
+
+1. **Administrator side**
+
+   Give the user an administrator profile or a `zone-<zone>` group,
+   regenerate, then deploy the HCS:
+
+   ```yaml
+   # etc/config.yaml
+   users:
+     bob:
+       groups: ["global", "zone-maison"]
+   ```
+
+   ```sh
+   just generate
+   just apply hcs
+   ```
+
+2. **User side**
+
+   Follow [Connect an device](/en/doc/how-to/user/connect-device/#from-outside).
+
+</Steps>
+
+For details, expiration and troubleshooting&nbsp;:
+[VPN](/en/doc/admin-guide/operate/vpn/#connecting-a-personal-device).
+
 {/* t:p ac1fc81e7b77d2baf389c63217472b84acd3acbd151f093ba937b3d251d6b666 */}
 ## Connect a service (OIDC)
 
@@ -99,17 +187,17 @@ hcs -> gwb
 2. `just idm-sync-certs` then `just apply`: gateways switch to read-only (pull from the HCS).
 :::
 
-{/* t:p 694e5fdf9be2e87257305796f83a3e911d7fccb0826cdae46c46e13aa9866a7f */}
+{/* t:p 70ede9103fe40c264228ac5727f60004db43d45bab803cd9d7776b8a79bd46ec */}
 ## Administration
 
-Administration is done via the command line on the HCS:
+Administration is done from the command line on the HCS:
 
 ```sh
 just enter hcs
 kanidm person credential create-reset-token <login> --name idm_admin
 ```
 
-See [Create a user account](/en/doc/admin-guide/install/hcs/#create-a-user-account)
+See [Create a user account](/en/doc/admin-guide/operate/sso/#create-a-user-account)
 and [Reset a password](/en/doc/how-to/admin/reset-user-password/).
 
 {/* t:p 3ec5307468ea4efb7dca16dab524a2055a5886286f0ad5e2e23f6d8da7daf33f */}
