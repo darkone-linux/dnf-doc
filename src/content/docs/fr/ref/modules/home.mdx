@@ -292,56 +292,56 @@ darkone.home.music = {
 };
 ```
 
-{/* t:p fd6d1f2d551335bdea41eed6b4bc0457dfa401b4b03c69fda83dc5eb272f20a1 */}
+{/* t:p ded5ad9f99e27d7640344f065f7d7b5d9dd322fbe27e9e17904d1896f523e969 */}
 ### &#x1F3E0; darkone.home.office
 
-Outils courants pour le bureau de travail.
+Outils courants pour un poste bureautique.
 
 * **enable** `bool` Paquets utiles par défaut
-* **enableMore** `bool` Plus de paquets alternatifs
-* **enableUnsafeFeatures** `bool` Fonctionnalités pour utilisateurs avancés non enfants
+* **enableMore** `bool` Davantage de paquets alternatifs
+* **enableUnsafeFeatures** `bool` Fonctionnalités pour utilisateurs avancés non-enfants
 * **enableUBlock** `bool` Active le plugin ublock
 * **enableTools** `bool` Petits outils (gnome) (iotas, dialect, etc.)
-* **enableProductivity** `bool` Applications de productivité (obsidian, gestion du temps, projets, etc.)
+* **enableProductivity** `bool` Applications de productivité (obsidian, time mgm, projects, etc.)
 * **enableCommunication** `bool` Outils de communication
 * **enableOffice** `bool` Paquets bureautiques (libreoffice, huntspell, polices...)
-* **enableFirefox** `bool` Active firefox
-* **enableLibreWolf** `bool` Active LibreWolf (alternative à firefox)
-* **enableChromium** `bool` Active chromium
-* **enableBrave** `bool` Active le navigateur Brave
-* **enableEmail** `bool` Paquets de gestion d'e-mails (thunderbird)
+* **enableFirefox** `bool` Active Firefox
+* **enableLibreWolf** `bool` Active LibreWolf (alternative à Firefox)
+* **enableChromium** `bool` Active Chromium
+* **enableBrave** `bool` Active Brave Browser
+* **enableEmail** `bool` Paquets de gestion de courriel (thunderbird)
 * **enableSecurity** `bool` Outils de sécurité (keepass)
-* **enableCalendarContacts** `bool` Calendrier GNOME, contacts et applications associées
+* **enableCalendarContacts** `bool` Calendrier, contacts, tâches et applications associées
 * **enableEssentials** `bool` Outils essentiels
 * **huntspellLang** `str` [Langue Huntspell](https://mynixos.com/nixpkgs/packages/hunspellDicts)
-* **enableElementAutoStart** `bool` Démarre automatiquement Element Desktop à la connexion lorsqu'un serveur Matrix local est présent
-* **enableFractalAutoStart** `bool` Démarre automatiquement Fractal à la connexion lorsqu'un serveur Matrix local est présent (sur option, voir les mises en garde ci-dessous)
+* **enableElementAutoStart** `bool` Démarrage automatique d'Element Desktop à la connexion lorsqu'un serveur Matrix local est présent
+* **enableFractalAutoStart** `bool` Démarrage automatique de Fractal à la connexion lorsqu'un serveur Matrix local est présent (opt-in, voir les mises en garde ci-dessous)
 * **nextcloud.enable** `bool` Installe le client de bureau Nextcloud, pré-lié à l'instance du réseau
-* **nextcloud.server** `nullOr str` Instance Nextcloud à laquelle le client se lie. `null` choisit celle déclarée
-  sur le réseau (cette zone en premier). À définir pour cibler une instance locale ou
-  externe à la place.
+* **nextcloud.server** `nullOr str` Instance Nextcloud à laquelle le client se lie. `null` retient celle déclarée
+  sur le réseau (cette zone d'abord). Définissez-la pour cibler plutôt une instance
+  locale ou externe.
 * **nextcloud.enableAutoStart** `bool` Démarre le client Nextcloud en arrière-plan à la connexion
-* **nextcloud.enableWebdav** `bool` Livre `nextcloud-webdav-login`, un assistant à usage unique qui authentifie
-  via le navigateur (SSO Kanidm) et enregistre le résultat comme compte en ligne
-  GNOME&nbsp;: fichiers via WebDAV dans le gestionnaire de fichiers, plus calendrier
+* **nextcloud.enableWebdav** `bool` Fournit `nextcloud-webdav-login`, un assistant à usage unique qui authentifie
+  via le navigateur (Kanidm SSO) et enregistre le résultat comme compte en ligne
+  GNOME : fichiers via WebDAV dans le gestionnaire de fichiers, plus calendrier
   et contacts dans Evolution. Nécessaire car Nextcloud refuse de créer
   un mot de passe d'application depuis son interface web pour un utilisateur OIDC.
 
-  L'assistant affiche aussi le mot de passe d'application, afin que tout autre
-  client WebDAV puisse être pointé vers le même compte.
+  L'assistant affiche également le mot de passe d'application, si bien que tout autre
+  client WebDAV peut être pointé vers le même compte.
 
   :::note[GNOME uniquement]
-  Le compte est écrit là où GNOME Online Accounts le lit, ce que
-  `darkone.graphic.gnome` active de lui-même dès que le réseau
-  porte un cloud. Sur un autre bureau, le mot de passe affiché reste utilisable.
+  Le compte est écrit là où les comptes en ligne GNOME le lisent, que
+  `darkone.graphic.gnome` active de lui-même dès que le réseau porte un cloud.
+  Sur un autre bureau, le mot de passe affiché reste utilisable.
   :::
 
   Ignoré lorsque `darkone.home.office.nextcloud.enable` est désactivé.
 * **nextcloud.syncDir** `nullOr str` Dossier local pré-rempli dans l'assistant de configuration, relatif à `$HOME`.
 
   :::caution[Aucune synchronisation par défaut]
-  Laissé à `null` exprès. L'assistant s'arrête alors sur sa page de dossier et
-  l'utilisateur décide quoi, le cas échéant, synchroniser. Le définir ignore
+  Laissé à `null` à dessein. L'assistant s'arrête alors sur sa page de dossier et
+  l'utilisateur décide quoi synchroniser, le cas échéant. Le définir passe
   cette page.
   :::
 
