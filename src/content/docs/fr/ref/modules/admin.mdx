@@ -13,19 +13,23 @@ sidebar:
 **Un module d'administration** s'occupe des fonctionnalités spécifiques au système pour les administrateurs.
 :::
 
-{/* t:p 9137c1e089f16bd26cd0e08e743e191ef2fe05bb8e6e4bb74faaf998c5ac0acd */}
+{/* t:p a7fa833a756ad43ab70fd3f52eb56bdd74eb7a1a1c38512780f4ae3159941ac0 */}
 ### &#x1F451; darkone.admin.fleet-update
 
-Outil de mise à jour de la flotte (`fleet-update`) et son exécution quotidienne automatisée.
+Outil de mise à jour de la flotte (`fleet-update`) et son exécution quotidienne sans intervention.
 
-`enable` installe l'outil sur un hôte de déploiement ; `just fleet-update` le lance ensuite. `timer.enable` ajoute une exécution quotidienne de `fleet-update --no-ui` : mise à jour du flake, build, tests par vagues, switch.
+`enable` installe l'outil sur un hôte de déploiement&nbsp;; `just fleet-update` l'exécute ensuite. `timer.enable` ajoute une exécution quotidienne de `fleet-update --no-ui`&nbsp;: mise à jour du flake, build, tests par vagues, switch.
 
 :::caution[Identité du service]
-L'exécution appartient à `user`, propriétaire de `workDir` : identité git, clé age sops, identifiants AI et Matrix. Elle nécessite un `sudo` sans mot de passe (permissions `just clean`, identité de déploiement `nix` dont la clé se trouve dans `~nix/.ssh`).
+L'exécution appartient à `user`, propriétaire de `workDir`&nbsp;: identité git, clé sops age, identifiants IA et Matrix. Elle nécessite un `sudo` sans mot de passe (permissions `just clean`, identité de déploiement `nix` dont la clé vit dans `~nix/.ssh`).
+:::
+
+:::tip[Outils IA]
+`--ai-model` lance `claude` ou `opencode` depuis `PATH`. Déclarez dans `aiPackages` ce que l'exécution sans intervention peut atteindre&nbsp;; sans cela, l'exécution émet un avertissement une fois et continue sans IA.
 :::
 
 :::note[Codes de sortie]
-`4` (une exécution détient déjà le verrou) compte comme un succès : aucune alerte. Toute autre défaillance fait échouer l'unité et déclenche l'alerte existante `SystemdUnitFailed`, tout comme une exécution encore en cours après `timer.timeout`.
+`4` (une exécution détient déjà le verrou) compte comme un succès&nbsp;: aucune alerte. Toute autre panne fait échouer l'unité et déclenche l'alerte existante `SystemdUnitFailed`, comme une exécution encore active après `timer.timeout`.
 :::
 
 :::tip[Activer sur l'hôte admin]
@@ -38,19 +42,24 @@ darkone.admin.fleet-update = {
 ```
 :::
 
-* **enable** `bool` fleet-update, l'outil de mise à jour et de déploiement de la flotte
-* **package** `package` Le paquet fleet-update. Son `nix-eval-jobs` est adapté au Nix système : l'outil évalue avec lui le flake consommateur.
-* **user** `nullOr str` Compte qui lance la mise à jour automatisée : propriétaire de `workDir`, détenteur de l'identité git, de la clé age sops et des identifiants AI et Matrix.
-* **workDir** `str` Espace de travail du consommateur sur disque. Pas l'argument de module `workDir`, qui est sa copie dans le store nix.
-* **timer.enable** `bool` l'exécution quotidienne automatisée (`fleet-update --no-ui`)
+* **enable** `bool` Active fleet-update, l'outil de mise à jour et de déploiement de la flotte.
+* **package** `package` Le paquet fleet-update. Son `nix-eval-jobs` est assorti au Nix système&nbsp;: l'outil évalue le flake consommateur avec lui.
+* **aiPackages** `listOf package` Outils IA accessibles depuis l'exécution sans intervention (`--ai-model`). Facultatif&nbsp;: l'outil avertit et continue sans IA quand aucun n'est trouvé.
+
+  Ce n'est pas une dépendance du paquet, car `pkgs.claude-code` n'est pas libre et forcerait `allowUnfree` sur chaque consommateur.
+  `pkgs.opencode` est sous licence MIT.
+* **user** `nullOr str` Compte exécutant la mise à jour sans intervention&nbsp;: propriétaire de `workDir`, détenteur de l'identité git, de la clé sops age et des identifiants IA et Matrix.
+* **workDir** `str` Espace de travail consommateur sur disque. Pas l'argument de module `workDir`, qui est sa copie dans le store Nix.
+* **timer.enable** `bool` L'exécution quotidienne sans intervention (`fleet-update --no-ui`).
 * **timer.onCalendar** `str` Quand l'exécution démarre (`OnCalendar` systemd).
 * **timer.extraArgs** `listOf str` Options passées après `--no-ui`, que le module définit toujours.
-* **timer.timeout** `str` Durée maximale avant que systemd ne l'arrête (`TimeoutStartSec`). Sinon, une exécution bloquée conserverait le verrou et toute exécution ultérieure sortirait en code `4` sans aucune alerte.
+* **timer.timeout** `str` Durée maximale de l'exécution avant que systemd ne l'arrête (`TimeoutStartSec`). Sans cela, une exécution bloquée détiendrait le verrou, et toute exécution ultérieure sortirait en `4` sans aucune alerte.
 
 ```nix
 darkone.admin.fleet-update = {
   enable = false;
   package = pkgs.fleet-update.override { nix-eval-jobs = nixEvalJobs; };
+  aiPackages = [ ];
   user = "admin";
   workDir = "/etc/nixos";
   timer.enable = false;

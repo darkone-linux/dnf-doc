@@ -13,7 +13,7 @@ sidebar:
 **A administration module** deals with system-specific functionalities for administrators.
 :::
 
-{/* t:p 9137c1e089f16bd26cd0e08e743e191ef2fe05bb8e6e4bb74faaf998c5ac0acd */}
+{/* t:p a7fa833a756ad43ab70fd3f52eb56bdd74eb7a1a1c38512780f4ae3159941ac0 */}
 ### &#x1F451; darkone.admin.fleet-update
 
 Fleet update tool (`fleet-update`) and its unattended daily run.
@@ -26,6 +26,12 @@ update, build, test by waves, switch.
 The run belongs to `user`, owner of `workDir`: git identity, sops age key,
 AI and Matrix credentials. It needs passwordless `sudo` (`just clean`
 permissions, `nix` deploy identity whose key lives in `~nix/.ssh`).
+:::
+
+:::tip[AI tools]
+`--ai-model` launches `claude` or `opencode` from `PATH`. Declare what the
+unattended run may reach in `aiPackages`; without it the run warns once and
+carries on without AI.
 :::
 
 :::note[Exit codes]
@@ -47,6 +53,12 @@ darkone.admin.fleet-update = {
 * **enable** `bool` fleet-update, the fleet update and deployment tool
 * **package** `package` The fleet-update package. Its `nix-eval-jobs` is matched to the
   system Nix: the tool evaluates the consumer flake with it.
+* **aiPackages** `listOf package` AI tools reachable from the unattended run (`--ai-model`). Optional:
+  the tool warns and goes on without AI when none is found.
+
+  Not a dependency of the package, because `pkgs.claude-code` is
+  unfree and would force `allowUnfree` on every consumer.
+  `pkgs.opencode` is MIT.
 * **user** `nullOr str` Account running the unattended update: owner of `workDir`, holding
   the git identity, the sops age key and the AI and Matrix credentials.
 * **workDir** `str` Consumer workspace on disk. Not the `workDir` module argument, which
@@ -62,6 +74,7 @@ darkone.admin.fleet-update = {
 darkone.admin.fleet-update = {
   enable = false;
   package = pkgs.fleet-update.override { nix-eval-jobs = nixEvalJobs; };
+  aiPackages = [ ];
   user = "admin";
   workDir = "/etc/nixos";
   timer.enable = false;

@@ -83,15 +83,19 @@ Before a wide rollout, validate locally: `just check`, then
 `just apply <pilot-host>` on **a** single test host.
 :::
 
-{/* t:p dddc02978fc2b35b332e6f081a018f5bdb9edcb97afda7002f5032954bd441c1 */}
+{/* t:p 2cdbcd7a50d418f11d3eb7e30616c624079a88dbfa9be11e66bb535efa337750 */}
 ## Updating the fleet with fleet-update
 
-`fleet-update` chains the whole update in a single command: flakes, build of every host, publishing of closures to the fleet, test by waves (network-critical hosts first), then final activation of validated hosts.
+`fleet-update` runs the whole update in a single command: flakes, building all
+hosts, publishing closures to the fleet, testing in waves (hosts the network
+depends on first), then the definitive activation of validated hosts.
 
 ![fleet-update interface](../../../../../../assets/dfu-screenshot-01.png)
 
-:::caution[Options not yet available]
-The `--ai-*` options are accepted, with no effect for now.
+:::note[The AI at work]
+The AI analyses, acts on services and fixes the code — see
+[AI analysis](#ai-analysis), [Repairing a service](#repairing-a-service)
+and [Repairing through code](#repairing-through-code).
 :::
 
 {/* t:p 9a7e349addbc0b65573e6ae2095b537019c20f76d8d392c8884c3d2d566e9281 */}
@@ -351,12 +355,184 @@ indicator: `under repair` in yellow during deterministic repair,
 `AI analysis` and `AI repair` in magenta when the AI takes over.
 :::
 
-{/* t:p 65e6f15ec30d9e247975f8c9ad98983f38e4af0a3c28bd447c8feb9da45241b0 */}
-### Reports and Matrix alerts
+{/* t:p 693bd6a932ee750a71119e6898e6df88e85b7b27aa6c76e5268b9483369be2c5 */}
+### AI analysis
 
-Each run writes its folder to `var/deployments/<date>-<mode>/`:
-`report.md` (the report), `state.json` (the state that `--resume` picks up),
-`events.jsonl`, and per-host logs. The path is shown at the end of the run.
+The AI **explains** a failure: it reads the run state, the logs and, if needed,
+the code, then produces a plain-language analysis. With `--ai-error-action
+repair` it can then **act on the failed units**, and nothing else
+(see [Repairing a service](#repairing-a-service)). The run never waits for
+it — an analysis that fails, exceeds its time or budget leaves the host
+exactly where it was.
+
+Two options control it, **both set to `none` by default**: nothing goes to an
+AI until it is asked for. A third one chooses the tool.
+
+| Option | Default | Role |
+|---|---|---|
+| `--ai-analysis none\|passive\|active` | `none` | Analysis depth, and end-of-run summary in the report |
+| `--ai-error-action none\|analysis\|repair` | `none` | What the AI does when a host fails |
+| `--ai-model <tool>[:<model>][@<effort>]` | `claude:opus@high` | Tool and model, e.g. `opencode:ollama/qwen3:32b` |
+
+```sh
+just fleet-update --ai-analysis passive          # enriched report, nothing more
+just fleet-update --ai-error-action analysis     # each failure is explained
+```
+
+The fleet's default model is set in `config.yaml`, the option takes
+precedence:
+
+```yaml
+# etc/config.yaml
+network:
+  fleetUpdate:
+    aiModel: "claude:opus@high"
+```
+
+**AI tools are not a dependency of the tool.** `claude` and `opencode`
+are looked up in the `PATH`; the module's `aiPackages` option puts them there
+for the daily run. Missing or refused → a warning along the run, a note in the
+report, and the rest proceeds without AI.
+
+{/* t:p e30b3241ff8deb86eed7cb18c0767ceb6c9842b4f287929ff3625fa5d5da4c05 */}
+#### What the AI is allowed to do
+
+The AI has **neither shell nor free SSH**. It only acts through the
+`fleet-update` tools, and the requested level sets the list presented to it: what
+it does not see there, it cannot ask for.
+
+| Level | Tools presented |
+|---|---|
+| `passive` | Run state, host diagnosis, build and activation logs |
+| `active`, `analysis` | + code reading (project and `dnf/`), host units and logs, read-only |
+| `repair` | + one action on a host's failed units, and editing the code that describes them |
+
+The retained level is the **highest of the two options**: `--ai-analysis
+passive --ai-error-action analysis` gives `active`. The built-in tools of
+`claude` and `opencode` are cut off, and the instructions those tools would
+pick up in the project (`CLAUDE.md`, user settings) are
+neutralized: the AI only sees what is shown to it.
+
+| Guard-rail | Effect |
+|---|---|
+| Read path | Confined to the project and `dnf/`, after link resolution; `usr/secrets/` and `.trash/` refused |
+| Host, unit | Checked against the run table before any command |
+| Excerpts | 200 lines of log, 400 lines of source, truncated from the end: the error is at the bottom |
+| Time, budget | 300 seconds per analysis; dollar budget for `claude` |
+
+**Every tool call leaves a trace** — one line along the run
+(`AI reads usr/modules/nginx.nix`) and one line in `logs/ai.log` of the run
+folder. A call refused by a guard-rail is traced too, with its reason.
+
+{/* t:p 2d2fe48e84023feb6f2bab0e6f734ce79943b83295085a56bfbcb0a2e31d9c80 */}
+#### When it intervenes
+
+<Steps>
+1. **A host fails**, with `--ai-error-action` ≠ `none`: after the deterministic collection and unit restart, before the question that decides its fate. The host carries `AI analysis` in magenta during this time, then returns to its state.
+2. **A host recovers** after a unit restart, with `--ai-analysis` ≠ `none`: the analysis explains the activation order, without touching the host's state.
+3. **End of run**, with `--ai-analysis` ≠ `none`: a summary of the whole, written before the report that carries it.
+4. **Pressing `a`**, at any time: a free-form question. It receives an answer even under `--ai-analysis none` — without any tool: `none` removes the tools and automatic analysis, not the conversation.
+</Steps>
+
+{/* t:p 2cf96bc85ae42256523f7f27abb300866f40d4ceb9f6f5b61675cbe346b1c92e */}
+#### Repairing a service
+
+`--ai-error-action repair` opens a **second session** on the host, right after
+the analysis and in the `AI repair` state. The first of its tools acts on
+services: `systemctl start`, `stop`, `restart` or `reset-failed` **on the
+units the run saw fail**. This is the gesture to prefer: it
+is local and reversible. When it is not enough, the AI fixes the code
+([Repairing through code](#repairing-through-code)).
+
+```sh
+just fleet-update --ai-error-action repair
+```
+
+<Steps>
+1. The grouped deterministic restart failed: the host stays in `error`.
+2. The AI analyses, in the `AI analysis` state, read-only.
+3. The AI repairs, in the `AI repair` state: it acts, then re-reads the failed units.
+4. Nothing failing anymore → the host resumes its course and joins the switch. Otherwise → the usual question, `revert` / `keep` / `stop` / `rollback`.
+</Steps>
+
+| Guard-rail | Effect |
+|---|---|
+| Units | **Only those the collection saw failing** on this host; any other is refused |
+| Host | Refused if it is not currently being repaired: a read session never acts |
+| Attempts | Three actions per host, refusals not counted; the fourth is refused |
+| Stopping mid-run | A run that stops repairs nothing: it is a new operation |
+| Confirmation | In interactive mode, a button question before each action: `apply` or `skip` |
+
+In non-interactive mode (night timer, `--no-ui`), **the action passes without asking**.
+It is strictly less risky than what the run already does without
+witness: the deterministic repair restarts **all** the host's
+failed units.
+
+Each action is **counted**, not just traced: it ends up in
+`state.json` and in the **AI repair** section of the report, refusals included, with its
+reason. A repaired host also carries a note in the report.
+
+{/* t:p 5c2b167471065366f42a2e7cb15fef0734b2b938c86cf13ea636fef7c7bf4483 */}
+#### Repairing through code
+
+When no restart can help, the AI **writes the fix** in the
+project, validates it, commits it, and **the sole host** is then rebuilt and
+redeployed.
+
+<Steps>
+1. `edit_code` rewrites a whole file. The git tree must be clean before the first edit, and the diff goes into `logs/ai.log`.
+2. `validate` runs the project cleanup, then re-evaluates and rebuilds **this host alone**.
+3. `commit` writes `fix(<host>): <subject>` — `dnf/` first in co-development, then the project with its realigned lock.
+4. The host returns to `built` with its new path; its wave serves it once more: copy, activation, conclusion.
+</Steps>
+
+| Guard-rail | Effect |
+|---|---|
+| Paths | The project, and `dnf/` in co-development; never `usr/secrets/`, `.trash/`, `.git/`, `var/generated/`, `etc/config.yaml` nor a `*.lock` |
+| Outside co-development | `dnf/` is a store path: writing it is refused, and would have changed nothing |
+| Tree | Dirty before the first edit → refused: a repair commit only carries the fix |
+| Attempts | **One attempt is a change.** Validating and committing cost none, otherwise fixing would cost three times more than restarting |
+| Hooks | Never bypassed: the commit goes through the repository gate like any other |
+
+:::danger[The fleet ends up straddling two revisions]
+Only the repaired host is rebuilt: **all the others keep the path
+the run had built at the start** and switch with it. Until the
+next run, the fleet therefore runs on two revisions. The report and the
+alert message say it in plain words: `Repaired in flight: <host>`.
+
+Consequence on resume: after a repair commit, `--resume`
+**rebuilds everything**. That is the guarantee itself — one does not redeploy
+paths built before the fix.
+:::
+
+:::caution[In non-interactive mode too]
+Under the night timer, the AI edits, commits and redeploys **without asking**. An
+unreviewed commit can therefore land on the branch. What makes it
+bearable: the required clean tree, the confined paths, the logged diff,
+the three attempts, and the automatic rollback that stays armed. If that is not
+what you want, leave `--ai-error-action` at `none` or at `analysis`
+in `timer.extraArgs`.
+:::
+
+:::caution[What AI repair is not]
+It is neither the [deterministic repair](#errors-diagnostics-and-repair)
+(grouped restart, once, without AI), nor the retrying of a command decided
+by the signature table, nor a decision — excluding or stopping comes first,
+without a question. The AI only arrives after what is deterministic.
+:::
+
+:::note[The analysis adds, it replaces nothing]
+A host's raw reason, its failed units and the whole `logs/` trace remain
+what they were. The analysis completes them, like the plain-language message
+of a known error.
+:::
+
+{/* t:p b55420f2dacb15a69c5c6dfbfa25a4e29a859d498511bc668938947a6fd28d01 */}
+### Report and Matrix alerts
+
+Each run writes its folder in `var/deployments/<date>-<mode>/`:
+`report.md` (the report), `state.json` (the state `--resume` picks up),
+`events.jsonl` and the per-host logs. The path is shown at the end of the run.
 
 The report details what the run actually did:
 
@@ -364,35 +540,41 @@ The report details what the run actually did:
 |---|---|
 | **Steps**, **Waves** | Duration of each step, composition and duration of each wave |
 | **Builders** | Who built what, fallbacks included |
-| **Copies** | Per host: pulled paths and by which substituter, pushed paths, volume |
+| **Copies** | Per host: paths pulled and by which substituter, paths pushed, volume |
 | **Zones without a cache** | Run zones that no `harmonia` serves |
 | **Hosts not deployed** | Hosts left aside, and the reason |
-| **Diagnostics** | Per failing host: failing units, then error extract |
+| **Diagnostics** | Per failed host: failed units, then an excerpt of the error |
 | **Notes** | What the run observed: probable activation order after a unit restart |
-| **Known errors** | Pitfalls recognized by the signature table, in plain language |
+| **AI analysis** | AI analysis: one entry per analysed host, then the run summary |
+| **AI repair** | AI actions: host, action, outcome, and the reason for a refusal. A repair commit also appears in the header, `Repaired in flight` |
+| **Known errors** | Known traps from the signature table, in plain language |
 
 :::tip[Reading the copy counters]
-A host that pulls most of its content from `harmonia <zone>` proves that its
-zone's cache does its job. A host that gets a lot of volume **pushed** to it is
-on the contrary a candidate for a `harmonia` in its zone, or for `auto-build`.
-No copy line for a host → it already held everything, nothing traveled.
+A host pulling most of its content from `harmonia <zone>` proves that its zone's
+cache plays its role. A host that gets a lot of volume **pushed** to it is on the
+contrary a candidate for a `harmonia` in its zone, or for `auto-build`. No copy
+line for a host → it already held everything, nothing travelled.
 :::
 
 The `--send-report` option sends this report to the rooms of the
-[alerts bot](/en/doc/admin-guide/operate/alerts/), installed beforehand by
+[alerts bot](/en/doc/admin-guide/operate/alerts/), installed beforehand via
 `just configure-alert-bot`.
 
 | Situation | Room | Content |
 |---|---|---|
 | Run finished | warnings | Summary: hosts by state, duration, known errors |
-| Critical hosts not deployed | incidents | Separate message: concerned hosts, reasons, and failing units |
+| Critical hosts not deployed | incidents | Separate message: affected hosts, reasons and failed units |
 | Stop on error | incidents | Error that stopped the run, then summary |
 
-A host is critical when its profile is listed in `criticalProfiles`. After a
-stop, the hosts left in `test` complete the incident message: a restart would
-bring them back to their previous generation.
+A host is critical when its profile appears in `criticalProfiles`. After a
+stop, the hosts left in `test` complete the incident message: a
+restart would bring them back to their previous generation.
 
-The message takes the report's header, the exit code in the title:
+**Only the end-of-run summary** reaches the message, never the
+per-host analyses, and it is capped there at six lines: beyond that, the message
+points to `report.md`. An alerts room is not a report.
+
+The message repeats the report header, the exit code in the title:
 
 ```markdown
 **Fleet Update Report** (1)
@@ -405,17 +587,16 @@ Error: srv-ag: activation failed
 - Run stopped on error
 ```
 
-:::note[Sending impossible]
+:::note[Send impossible]
 The run remains valid and the report is written, but the command exits with `3`.
-Under the timer, the unit goes into failure, hence the `SystemdUnitFailed`
-alert.
+Under the timer, the unit fails, therefore the `SystemdUnitFailed` alert.
 :::
 
 :::caution[What sending requires]
 Sending goes through the [`just send-msg`](/en/doc/admin-guide/operate/alerts/#sending-a-message-to-a-room) recipe:
-rooms and token remain the framework's responsibility, the tool only writes the
-text. Nothing leaves if the bot isn't provisioned, nor on an abort (`^C`,
-service stop).
+rooms and token remain the framework's concern, the tool only writes the text.
+Nothing goes out if the bot is not provisioned, nor on an abort (`^C`, service
+stop).
 :::
 
 {/* t:p 8706c5bb5bdec3a788fc742bd40fed889c013d0c8b271a518d54639190589b94 */}

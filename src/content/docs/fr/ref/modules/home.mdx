@@ -42,42 +42,44 @@ darkone.home.advanced = {
 
 <hr/>
 
-{/* t:p a5e441f3c183fb2f15936a96c5e611e8f896620e006989a02ee60fa5470d9fc5 */}
+{/* t:p 2c073d8dcf1ab2cf24b11a5f9ae7e5ea7f96b2b76ce6fd7c221bec1bf3c9ba7f */}
 ### &#x1F3E0; darkone.home.ai
 
-Outils de codage IA et utilitaires de support.
+Outils de codage IA et utilitaires associés.
 
-:::note[Drapeaux]
-- `darkone.home.ai.enable` commutateur principal installe les paquets utilitaires
-  (aichat, llm, fabric-ai, gh, lazygit, direnv, outils de qualité de code, etc.)
-  et active le système de drapeau par agent ci-dessous.
-- `darkone.home.ai.enable{Claude,OpenCode,Codex,Aider,Goose}` chacun
-  installe et configure un agent de codage IA spécifique.
-- `darkone.home.ai.preferLocal` lorsqu'il est combiné avec un hôte `darkone.service.ai`
-  ollama local, les agents utilisent par défaut le modèle local au lieu des APIs cloud.
+:::note[Options]
+- `darkone.home.ai.enable` : interrupteur maître qui installe les paquets
+  utilitaires (aichat, llm, fabric-ai, gh, lazygit, direnv, outils de qualité
+  de code, etc.) et active le système de drapeaux par agent ci-dessous.
+- `darkone.home.ai.enable{Claude,OpenCode,Codex,Aider,Goose}` : installe et
+  configure chacun un agent de codage IA spécifique.
+- `darkone.home.ai.preferLocal` : combiné à un hôte ollama local
+  `darkone.service.ai`, les agents utilisent par défaut le modèle local plutôt que les API cloud.
 :::
 
 :::tip[Câblage par hôte]
 Ce module lit `osConfig.darkone.service.ai.enable` pour détecter un
-hôte ollama local. Sur ces hôtes, `gollama`, la CLI `ollama` et
-les valeurs par défaut du modèle local pour Aider / OpenCode sont activés automatiquement.
+hôte ollama local. Sur ces hôtes, `gollama`, la CLI `ollama` et les
+modèles locaux par défaut pour Aider / OpenCode sont activés automatiquement.
 
 `programs.gh` est activé avec l'extension `github-copilot-cli`.
-OpenCode obtient deux serveurs MCP (système de fichiers, fetch) via `npx -y`.
-Claude Code applique une matrice d'autorisations allow/ask/deny et un hook de gouvernance RTK
-sur les appels Bash. Son `settings.json` n'est PAS épinglé comme symlink du magasin
-en lecture seule : le socle est fusionné dans un `~/.claude/settings.json` WRITABLE
-à chaque commutation, afin que les plugins/modules additionnels
-(claude-mem, graphify, ...) puissent être installés et gérés à la main par-dessus.
+OpenCode dispose de deux serveurs MCP (filesystem, fetch) via `npx -y`.
+Claude Code applique une matrice de permissions allow/ask/deny et un hook
+de gouvernance RTK sur les appels Bash. Son `settings.json` n'est PAS épinglé
+comme un lien symbolique en lecture seule vers le store : le socle est fusionné
+dans un `~/.claude/settings.json` ÉCRIVABLE à chaque switch, afin que les
+plugins / add-ons (claude-mem, graphify, ...) puissent être installés et gérés
+à la main par-dessus.
 :::
 
-* **enable** `bool` Activer les outils IA et les utilitaires de support
-* **enableClaude** `bool` Claude Code CLI
-* **enableOpenCode** `bool` Agent IA terminal OpenCode
+* **enable** `bool` Active les outils IA et les utilitaires associés
+* **enableClaude** `bool` CLI Claude Code
+* **enableOpenCode** `bool` Agent IA de terminal OpenCode
 * **enableCodex** `bool` CLI OpenAI Codex
-* **enableAider** `bool` Programmation en pair IA Aider
+* **enableAntigravity** `bool` CLI Google Antigravity
+* **enableAider** `bool` Programmation en binôme IA avec Aider
 * **enableGoose** `bool` Agent de codage IA Goose (Block Inc.)
-* **preferLocal** `bool` Préférer les modèles locaux aux modèles cloud
+* **preferLocal** `bool` Préfère les modèles locaux aux modèles cloud
 
 ```nix
 darkone.home.ai = {
@@ -85,11 +87,14 @@ darkone.home.ai = {
   enableClaude = false;
   enableOpenCode = false;
   enableCodex = false;
+  enableAntigravity = false;
   enableAider = false;
   enableGoose = false;
   preferLocal = false;
 };
 ```
+
+<hr/>
 
 {/* t:p 0fabfb5339e05d605bca4e56694acf6244ae0c63d5b9fa84a7005fab56fe6689 */}
 ### &#x1F3E0; darkone.home.audio
