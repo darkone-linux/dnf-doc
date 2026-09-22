@@ -87,7 +87,7 @@ Avant un déploiement large, validez localement : `just check`, puis
 `just apply <hôte-pilote>` sur **un** hôte témoin.
 :::
 
-{/* t:p 7fbed97c79443cea8e11bec2046d8504585202c515372464fce0da46b4b3dfe0 */}
+{/* t:p ed6e518acbbad4e1d1ac1b6008b7c4ade26cad58eee0f810674426cc0eb9b55a */}
 ## Mettre à jour le parc avec fleet-update
 
 `fleet-update` enchaîne toute la mise à jour en une commande&nbsp;: flakes,
@@ -98,9 +98,9 @@ hôtes validés.
 ![Interface de fleet-update](../../../../../../assets/dfu-screenshot-01.png)
 
 :::caution[Ce qui n'est pas encore là]
-L'IA **analyse** (voir [Analyse par l'IA](#analyse-par-lia)), elle ne répare pas
-encore&nbsp;: `--ai-error-action repair` est accepté et se comporte comme
-`analysis`.
+L'IA analyse et **agit sur les services** (voir [Analyse par l'IA](#analyse-par-lia)
+et [Réparer un service](#réparer-un-service)). Elle ne touche pas encore au
+code&nbsp;: éditer, valider et commiter une correction viendra ensuite.
 :::
 
 {/* t:p 9a7e349addbc0b65573e6ae2095b537019c20f76d8d392c8884c3d2d566e9281 */}
@@ -366,13 +366,15 @@ d'activité&nbsp;: `under repair` en jaune pendant la réparation déterministe,
 `AI analysis` et `AI repair` en magenta quand l'IA prendra le relais.
 :::
 
-{/* t:p 3f783e040b51432ec3840a312ff6bf2fba1298f3d22d85350dfa9bf910cebab4 */}
+{/* t:p 693bd6a932ee750a71119e6898e6df88e85b7b27aa6c76e5268b9483369be2c5 */}
 ### Analyse par l'IA
 
-L'IA **explique** un échec, elle ne le répare pas&nbsp;: elle lit l'état du
-lancement, les journaux et, au besoin, le code, puis rend une analyse en clair.
-Le lancement n'attend jamais après elle&nbsp;— une analyse qui échoue, dépasse
-son délai ou son budget laisse l'hôte exactement où il était.
+L'IA **explique** un échec&nbsp;: elle lit l'état du lancement, les journaux et,
+au besoin, le code, puis rend une analyse en clair. Avec `--ai-error-action
+repair` elle peut ensuite **agir sur les unités tombées**, et rien d'autre
+(voir [Réparer un service](#réparer-un-service)). Le lancement n'attend jamais
+après elle&nbsp;— une analyse qui échoue, dépasse son délai ou son budget laisse
+l'hôte exactement où il était.
 
 Deux options la commandent, **toutes deux à `none` par défaut**&nbsp;: rien ne
 part vers une IA tant qu'on ne l'a pas demandé. Une troisième choisit l'outil.
@@ -402,7 +404,7 @@ sont cherchés dans le `PATH`&nbsp;; l'option `aiPackages` du module les y met
 pour le lancement quotidien. Absents ou refusés&nbsp;→ un avertissement au fil
 du lancement, une note au rapport, et la suite se déroule sans IA.
 
-{/* t:p d274a2a6c43c24b1906364b25391e9e731098247bad629b15b14586121beefb6 */}
+{/* t:p b9fa6fab21a1bcb04b9b3c933d9e86556cf90ba0a8f49145d8b5623d68a54246 */}
 #### Ce que l'IA a le droit de faire
 
 L'IA n'a **ni shell ni SSH libre**. Elle n'agit que par les outils de
@@ -413,6 +415,7 @@ qu'elle n'y voit pas, elle ne peut pas le demander.
 |---|---|
 | `passive` | État du lancement, diagnostic d'un hôte, journaux de construction et d'activation |
 | `active`, `analysis` | + lecture du code (projet et `dnf/`), unités et journaux des hôtes, en lecture seule |
+| `repair` | + une action sur les unités tombées d'un hôte, et rien de plus |
 
 Le niveau retenu est le **plus élevé des deux options**&nbsp;: `--ai-analysis
 passive --ai-error-action analysis` donne `active`. Les outils intégrés de
@@ -431,7 +434,7 @@ neutralisées&nbsp;: l'IA ne voit que ce qu'on lui montre.
 (`AI reads usr/modules/nginx.nix`) et une ligne dans `logs/ai.log` du dossier de
 lancement. Un appel refusé par un garde-fou est tracé aussi, avec sa raison.
 
-{/* t:p 80f98be2581ac03bf3e7fe5f76e399723c1b276caf73f2d0cedc8df0d44e78a0 */}
+{/* t:p 2d2fe48e84023feb6f2bab0e6f734ce79943b83295085a56bfbcb0a2e31d9c80 */}
 #### Quand elle intervient
 
 <Steps>
@@ -441,13 +444,56 @@ lancement. Un appel refusé par un garde-fou est tracé aussi, avec sa raison.
 4. **Touche `a`**, à tout moment : une question libre. Elle reçoit une réponse même sous `--ai-analysis none` — sans aucun outil : `none` supprime les outils et l'analyse automatique, pas la conversation.
 </Steps>
 
+{/* t:p 04a7e648e8b4f8cd3dbad62988b8e4d39fa02f539cfd69b83c6d43880d505dfb */}
+#### Réparer un service
+
+`--ai-error-action repair` ouvre une **seconde session** sur l'hôte, juste après
+l'analyse et dans l'état `AI repair`. Elle dispose d'un seul outil de plus, et
+son pouvoir s'arrête là&nbsp;: `systemctl start`, `stop`, `restart` ou
+`reset-failed` **sur les unités que le lancement a vues tomber**.
+
+```sh
+just fleet-update --ai-error-action repair
+```
+
+<Steps>
+1. Le redémarrage groupé déterministe a échoué : l'hôte reste en `error`.
+2. L'IA analyse, dans l'état `AI analysis`, en lecture seule.
+3. L'IA répare, dans l'état `AI repair` : elle agit, puis relit les unités en échec.
+4. Plus rien en échec → l'hôte reprend son cours et rejoint le switch. Sinon → la question habituelle, `revert` / `keep` / `stop` / `rollback`.
+</Steps>
+
+| Garde-fou | Effet |
+|---|---|
+| Unités | **Seules celles que la collecte a vues en échec** sur cet hôte&nbsp;; toute autre est refusée |
+| Hôte | Refusé s'il n'est pas en cours de réparation&nbsp;: une session de lecture n'agit jamais |
+| Essais | Trois actions par hôte, refus non compris&nbsp;; la quatrième est refusée |
+| Arrêt en cours | Un lancement qui s'arrête ne répare rien&nbsp;: c'est une opération nouvelle |
+| Confirmation | En interactif, une question à boutons avant chaque action&nbsp;: `apply` ou `skip` |
+
+En non interactif (timer de nuit, `--no-ui`), **l'action passe sans demander**.
+Elle est strictement moins risquée que ce que le lancement fait déjà sans
+témoin&nbsp;: la réparation déterministe redémarre **toutes** les unités en
+échec de l'hôte.
+
+Chaque action est **comptée**, pas seulement tracée&nbsp;: elle se retrouve dans
+`state.json` et dans la section **AI repair** du rapport, refus compris, avec sa
+raison. Un hôte réparé porte aussi une note au rapport.
+
+:::caution[Ce que la réparation IA n'est pas]
+Ce n'est ni la [réparation déterministe](#erreurs-diagnostic-et-réparation)
+(redémarrage groupé, une fois, sans IA), ni la relance d'une commande décidée
+par la table des signatures, ni une décision — exclure ou arrêter passe avant,
+sans question. L'IA n'arrive qu'après ce qui est déterministe.
+:::
+
 :::note[L'analyse s'ajoute, elle ne remplace rien]
 La raison brute d'un hôte, ses unités en échec et la trace entière de `logs/`
 restent ce qu'elles étaient. L'analyse les complète, comme le message en clair
 d'une erreur connue.
 :::
 
-{/* t:p 8cf3692c70ae697e1c42bbb59c8d13d66afc796254eec29630b3f89847187508 */}
+{/* t:p 455d1b3dd5145098156a44b42a42d7e3beda8ce26186884cbf08e3631cef2729 */}
 ### Rapport et alertes Matrix
 
 Chaque lancement écrit son dossier dans `var/deployments/<date>-<mode>/`&nbsp;:
@@ -466,6 +512,7 @@ Le rapport détaille ce que le lancement a réellement fait&nbsp;:
 | **Diagnostics** | Par hôte en échec : unités en échec, puis extrait de l'erreur |
 | **Notes** | Ce que le lancement a constaté : ordre d'activation probable après un redémarrage d'unités |
 | **AI analysis** | Analyse de l'IA : une entrée par hôte analysé, puis la synthèse du lancement |
+| **AI repair** | Actions de l'IA sur les services : hôte, action, issue, et la raison d'un refus |
 | **Known errors** | Pièges reconnus par la table de signatures, en clair |
 
 :::tip[Lire les compteurs de copie]
