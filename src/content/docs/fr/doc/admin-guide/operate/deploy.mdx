@@ -87,7 +87,7 @@ Avant un déploiement large, validez localement : `just check`, puis
 `just apply <hôte-pilote>` sur **un** hôte témoin.
 :::
 
-{/* t:p dddc02978fc2b35b332e6f081a018f5bdb9edcb97afda7002f5032954bd441c1 */}
+{/* t:p 7fbed97c79443cea8e11bec2046d8504585202c515372464fce0da46b4b3dfe0 */}
 ## Mettre à jour le parc avec fleet-update
 
 `fleet-update` enchaîne toute la mise à jour en une commande&nbsp;: flakes,
@@ -97,8 +97,10 @@ hôtes validés.
 
 ![Interface de fleet-update](../../../../../../assets/dfu-screenshot-01.png)
 
-:::caution[Options pas encore disponibles]
-Les options `--ai-*` sont acceptées, sans effet pour l'instant.
+:::caution[Ce qui n'est pas encore là]
+L'IA **analyse** (voir [Analyse par l'IA](#analyse-par-lia)), elle ne répare pas
+encore&nbsp;: `--ai-error-action repair` est accepté et se comporte comme
+`analysis`.
 :::
 
 {/* t:p 9a7e349addbc0b65573e6ae2095b537019c20f76d8d392c8884c3d2d566e9281 */}
@@ -364,7 +366,88 @@ d'activité&nbsp;: `under repair` en jaune pendant la réparation déterministe,
 `AI analysis` et `AI repair` en magenta quand l'IA prendra le relais.
 :::
 
-{/* t:p 65e6f15ec30d9e247975f8c9ad98983f38e4af0a3c28bd447c8feb9da45241b0 */}
+{/* t:p 3f783e040b51432ec3840a312ff6bf2fba1298f3d22d85350dfa9bf910cebab4 */}
+### Analyse par l'IA
+
+L'IA **explique** un échec, elle ne le répare pas&nbsp;: elle lit l'état du
+lancement, les journaux et, au besoin, le code, puis rend une analyse en clair.
+Le lancement n'attend jamais après elle&nbsp;— une analyse qui échoue, dépasse
+son délai ou son budget laisse l'hôte exactement où il était.
+
+Deux options la commandent, **toutes deux à `none` par défaut**&nbsp;: rien ne
+part vers une IA tant qu'on ne l'a pas demandé. Une troisième choisit l'outil.
+
+| Option | Défaut | Rôle |
+|---|---|---|
+| `--ai-analysis none\|passive\|active` | `none` | Profondeur d'analyse, et synthèse de fin de lancement au rapport |
+| `--ai-error-action none\|analysis\|repair` | `none` | Ce que l'IA fait quand un hôte échoue |
+| `--ai-model <outil>[:<modèle>][@<effort>]` | `claude:opus@high` | Outil et modèle, par exemple `opencode:ollama/qwen3:32b` |
+
+```sh
+just fleet-update --ai-analysis passive          # rapport enrichi, rien de plus
+just fleet-update --ai-error-action analysis     # chaque échec est expliqué
+```
+
+Le modèle par défaut du parc se pose dans `config.yaml`, l'option prime&nbsp;:
+
+```yaml
+# etc/config.yaml
+network:
+  fleetUpdate:
+    aiModel: "claude:opus@high"
+```
+
+**Les outils IA ne sont pas une dépendance de l'outil.** `claude` et `opencode`
+sont cherchés dans le `PATH`&nbsp;; l'option `aiPackages` du module les y met
+pour le lancement quotidien. Absents ou refusés&nbsp;→ un avertissement au fil
+du lancement, une note au rapport, et la suite se déroule sans IA.
+
+{/* t:p d274a2a6c43c24b1906364b25391e9e731098247bad629b15b14586121beefb6 */}
+#### Ce que l'IA a le droit de faire
+
+L'IA n'a **ni shell ni SSH libre**. Elle n'agit que par les outils de
+`fleet-update`, et le niveau demandé fixe la liste qu'on lui présente&nbsp;: ce
+qu'elle n'y voit pas, elle ne peut pas le demander.
+
+| Niveau | Outils présentés |
+|---|---|
+| `passive` | État du lancement, diagnostic d'un hôte, journaux de construction et d'activation |
+| `active`, `analysis` | + lecture du code (projet et `dnf/`), unités et journaux des hôtes, en lecture seule |
+
+Le niveau retenu est le **plus élevé des deux options**&nbsp;: `--ai-analysis
+passive --ai-error-action analysis` donne `active`. Les outils intégrés de
+`claude` et d'`opencode` sont coupés, et les instructions que ces outils
+ramasseraient dans le projet (`CLAUDE.md`, réglages utilisateur) sont
+neutralisées&nbsp;: l'IA ne voit que ce qu'on lui montre.
+
+| Garde-fou | Effet |
+|---|---|
+| Chemin de lecture | Confiné au projet et à `dnf/`, après résolution des liens&nbsp;; `usr/secrets/` et `.trash/` refusés |
+| Hôte, unité | Vérifiés contre la table du lancement avant toute commande |
+| Extraits | 200 lignes de journal, 400 lignes de source, tronqués par la fin&nbsp;: l'erreur est en bas |
+| Délai, budget | 300 secondes par analyse&nbsp;; budget en dollars pour `claude` |
+
+**Chaque appel d'outil laisse une trace** — une ligne au fil du lancement
+(`AI reads usr/modules/nginx.nix`) et une ligne dans `logs/ai.log` du dossier de
+lancement. Un appel refusé par un garde-fou est tracé aussi, avec sa raison.
+
+{/* t:p 80f98be2581ac03bf3e7fe5f76e399723c1b276caf73f2d0cedc8df0d44e78a0 */}
+#### Quand elle intervient
+
+<Steps>
+1. **Un hôte échoue**, avec `--ai-error-action` ≠ `none` : après la collecte déterministe et le redémarrage des unités, avant la question qui décide de son sort. L'hôte porte `AI analysis` en magenta pendant ce temps, puis revient à son état.
+2. **Un hôte se rétablit** après un redémarrage d'unités, avec `--ai-analysis` ≠ `none` : l'analyse explique l'ordre d'activation, sans toucher à l'état de l'hôte.
+3. **Fin de lancement**, avec `--ai-analysis` ≠ `none` : une synthèse de l'ensemble, écrite avant le rapport qui la porte.
+4. **Touche `a`**, à tout moment : une question libre. Elle reçoit une réponse même sous `--ai-analysis none` — sans aucun outil : `none` supprime les outils et l'analyse automatique, pas la conversation.
+</Steps>
+
+:::note[L'analyse s'ajoute, elle ne remplace rien]
+La raison brute d'un hôte, ses unités en échec et la trace entière de `logs/`
+restent ce qu'elles étaient. L'analyse les complète, comme le message en clair
+d'une erreur connue.
+:::
+
+{/* t:p 8cf3692c70ae697e1c42bbb59c8d13d66afc796254eec29630b3f89847187508 */}
 ### Rapport et alertes Matrix
 
 Chaque lancement écrit son dossier dans `var/deployments/<date>-<mode>/`&nbsp;:
@@ -382,6 +465,7 @@ Le rapport détaille ce que le lancement a réellement fait&nbsp;:
 | **Hosts not deployed** | Hôtes restés de côté, et la raison |
 | **Diagnostics** | Par hôte en échec : unités en échec, puis extrait de l'erreur |
 | **Notes** | Ce que le lancement a constaté : ordre d'activation probable après un redémarrage d'unités |
+| **AI analysis** | Analyse de l'IA : une entrée par hôte analysé, puis la synthèse du lancement |
 | **Known errors** | Pièges reconnus par la table de signatures, en clair |
 
 :::tip[Lire les compteurs de copie]
@@ -404,6 +488,10 @@ L'option `--send-report` envoie ce rapport aux salons du
 Un hôte est critique quand son profil figure dans `criticalProfiles`. Après un
 arrêt, les hôtes laissés en `test` complètent le message d'incident&nbsp;: un
 redémarrage les ramènerait à leur génération précédente.
+
+**Seule la synthèse de fin de lancement** rejoint le message, jamais les
+analyses par hôte, et elle y est bornée à six lignes&nbsp;: au-delà, le message
+renvoie à `report.md`. Un salon d'alertes n'est pas un rapport.
 
 Le message reprend l'en-tête du rapport, le code de sortie dans le titre&nbsp;:
 
