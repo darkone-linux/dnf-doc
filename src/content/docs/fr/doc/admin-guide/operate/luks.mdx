@@ -245,6 +245,18 @@ console (passphrase ou YubiKey), le déverrouillage à distance ne s'applique
 pas.
 :::
 
+:::caution[Un pilote de NIC ne suffit pas toujours]
+Une carte virtio ne se branche pas sur son emplacement PCI mais sur le
+périphérique `virtio0` que crée son **transport** (`virtio_pci`, `virtio_mmio`).
+Sans ce module dans l'initrd, `virtio_net` n'est jamais chargé : aucun lien,
+aucune IP, et le sshd du port 2222 écoute dans le vide — l'hôte attend
+indéfiniment sa passphrase, sans rien dans le journal pour le dire.
+
+Les deux transports sont désormais embarqués d'office, et
+`just luks <hôte> show` compare les pilotes réellement utilisés par les cartes
+filaires de la machine avec ceux que porte l'initrd construit.
+:::
+
 {/* t:p 578ded9bbb8ef7f0071213f215718c195144746346bc5d4ea1654aa246c4835e */}
 ## Vérifier un hôte
 
@@ -293,6 +305,7 @@ Un second bloc audite le **déverrouillage distant**, point par point&nbsp;:
 | Sauvegarde sops de même empreinte | Une réinstallation perdrait l'accès distant |
 | sshd d'initrd activé dans la configuration | `nix.pub` manquant, ou hôte hors manifeste |
 | Chargeur d'amorçage postérieur à la clé | **Le** piège&nbsp;: clé absente de l'initrd qui démarre |
+| Pilotes des cartes filaires présents dans l'initrd | Pas de réseau en stage 1&nbsp;: rien ne répond sur 2222 |
 | Système démarré = configuration auditée | Un apply en attente rendrait l'audit trompeur |
 | IP WAN relevée (passerelles) | Injoignable en initrd une fois le VPN tombé |
 
