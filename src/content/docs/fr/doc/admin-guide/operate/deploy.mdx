@@ -87,7 +87,7 @@ Avant un déploiement large, validez localement : `just check`, puis
 `just apply <hôte-pilote>` sur **un** hôte témoin.
 :::
 
-{/* t:p ed6e518acbbad4e1d1ac1b6008b7c4ade26cad58eee0f810674426cc0eb9b55a */}
+{/* t:p 2cdbcd7a50d418f11d3eb7e30616c624079a88dbfa9be11e66bb535efa337750 */}
 ## Mettre à jour le parc avec fleet-update
 
 `fleet-update` enchaîne toute la mise à jour en une commande&nbsp;: flakes,
@@ -97,10 +97,10 @@ hôtes validés.
 
 ![Interface de fleet-update](../../../../../../assets/dfu-screenshot-01.png)
 
-:::caution[Ce qui n'est pas encore là]
-L'IA analyse et **agit sur les services** (voir [Analyse par l'IA](#analyse-par-lia)
-et [Réparer un service](#réparer-un-service)). Elle ne touche pas encore au
-code&nbsp;: éditer, valider et commiter une correction viendra ensuite.
+:::note[L'IA au travail]
+L'IA analyse, agit sur les services et corrige le code&nbsp;— voir
+[Analyse par l'IA](#analyse-par-lia), [Réparer un service](#réparer-un-service)
+et [Réparer par le code](#réparer-par-le-code).
 :::
 
 {/* t:p 9a7e349addbc0b65573e6ae2095b537019c20f76d8d392c8884c3d2d566e9281 */}
@@ -404,7 +404,7 @@ sont cherchés dans le `PATH`&nbsp;; l'option `aiPackages` du module les y met
 pour le lancement quotidien. Absents ou refusés&nbsp;→ un avertissement au fil
 du lancement, une note au rapport, et la suite se déroule sans IA.
 
-{/* t:p b9fa6fab21a1bcb04b9b3c933d9e86556cf90ba0a8f49145d8b5623d68a54246 */}
+{/* t:p e30b3241ff8deb86eed7cb18c0767ceb6c9842b4f287929ff3625fa5d5da4c05 */}
 #### Ce que l'IA a le droit de faire
 
 L'IA n'a **ni shell ni SSH libre**. Elle n'agit que par les outils de
@@ -415,7 +415,7 @@ qu'elle n'y voit pas, elle ne peut pas le demander.
 |---|---|
 | `passive` | État du lancement, diagnostic d'un hôte, journaux de construction et d'activation |
 | `active`, `analysis` | + lecture du code (projet et `dnf/`), unités et journaux des hôtes, en lecture seule |
-| `repair` | + une action sur les unités tombées d'un hôte, et rien de plus |
+| `repair` | + une action sur les unités tombées d'un hôte, et l'édition du code qui les décrit |
 
 Le niveau retenu est le **plus élevé des deux options**&nbsp;: `--ai-analysis
 passive --ai-error-action analysis` donne `active`. Les outils intégrés de
@@ -444,13 +444,15 @@ lancement. Un appel refusé par un garde-fou est tracé aussi, avec sa raison.
 4. **Touche `a`**, à tout moment : une question libre. Elle reçoit une réponse même sous `--ai-analysis none` — sans aucun outil : `none` supprime les outils et l'analyse automatique, pas la conversation.
 </Steps>
 
-{/* t:p 04a7e648e8b4f8cd3dbad62988b8e4d39fa02f539cfd69b83c6d43880d505dfb */}
+{/* t:p 2cf96bc85ae42256523f7f27abb300866f40d4ceb9f6f5b61675cbe346b1c92e */}
 #### Réparer un service
 
 `--ai-error-action repair` ouvre une **seconde session** sur l'hôte, juste après
-l'analyse et dans l'état `AI repair`. Elle dispose d'un seul outil de plus, et
-son pouvoir s'arrête là&nbsp;: `systemctl start`, `stop`, `restart` ou
-`reset-failed` **sur les unités que le lancement a vues tomber**.
+l'analyse et dans l'état `AI repair`. Le premier de ses outils agit sur les
+services&nbsp;: `systemctl start`, `stop`, `restart` ou `reset-failed` **sur les
+unités que le lancement a vues tomber**. C'est le geste à préférer&nbsp;: il est
+local et réversible. Quand il ne suffit pas, l'IA corrige le code
+([Réparer par le code](#réparer-par-le-code)).
 
 ```sh
 just fleet-update --ai-error-action repair
@@ -480,6 +482,48 @@ Chaque action est **comptée**, pas seulement tracée&nbsp;: elle se retrouve da
 `state.json` et dans la section **AI repair** du rapport, refus compris, avec sa
 raison. Un hôte réparé porte aussi une note au rapport.
 
+{/* t:p 5c2b167471065366f42a2e7cb15fef0734b2b938c86cf13ea636fef7c7bf4483 */}
+#### Réparer par le code
+
+Quand aucun redémarrage ne peut aider, l'IA **écrit la correction** dans le
+projet, la valide, la commite, et **l'hôte seul** est reconstruit puis
+redéployé.
+
+<Steps>
+1. `edit_code` réécrit un fichier en entier. L'arbre git doit être propre avant la première édition, et le diff part dans `logs/ai.log`.
+2. `validate` lance le nettoyage du projet, puis réévalue et reconstruit **cet hôte seul**.
+3. `commit` écrit `fix(<hôte>): <sujet>` — `dnf/` d'abord en co-développement, puis le projet et son lock réaligné.
+4. L'hôte repasse en `built` avec son nouveau chemin&nbsp;; sa vague le sert une fois de plus : copie, activation, conclusion.
+</Steps>
+
+| Garde-fou | Effet |
+|---|---|
+| Chemins | Le projet, et `dnf/` en co-développement&nbsp;; jamais `usr/secrets/`, `.trash/`, `.git/`, `var/generated/`, `etc/config.yaml` ni un `*.lock` |
+| Hors co-développement | `dnf/` est un chemin du store&nbsp;: l'écrire est refusé, et n'aurait rien changé |
+| Arbre | Sale avant la première édition → refus&nbsp;: un commit de réparation ne porte que la correction |
+| Essais | **Un essai est un changement.** Valider et commiter n'en coûtent aucun, sinon corriger coûterait trois fois plus que redémarrer |
+| Hooks | Jamais contournés&nbsp;: le commit passe par la porte du dépôt comme n'importe quel autre |
+
+:::danger[Le parc se retrouve à cheval sur deux révisions]
+Seul l'hôte réparé est reconstruit&nbsp;: **tous les autres gardent le chemin
+que le lancement avait construit au départ**, et basculent avec. Jusqu'au
+lancement suivant, le parc tourne donc sur deux révisions. Le rapport et le
+message d'alerte le disent en toutes lettres&nbsp;: `Repaired in flight: <hôte>`.
+
+Conséquence sur la reprise&nbsp;: après un commit de réparation, `--resume`
+**reconstruit tout**. C'est la garantie elle-même — on ne redéploie pas des
+chemins construits avant la correction.
+:::
+
+:::caution[En non interactif aussi]
+Sous le timer de nuit, l'IA édite, commite et redéploie **sans demander**. Un
+commit non relu peut donc atterrir sur la branche. Ce qui rend la chose
+tenable&nbsp;: l'arbre propre exigé, les chemins confinés, le diff journalisé,
+les trois essais, et le retour arrière automatique qui reste armé. Si ce n'est
+pas ce que vous voulez, laissez `--ai-error-action` à `none` ou à `analysis`
+dans `timer.extraArgs`.
+:::
+
 :::caution[Ce que la réparation IA n'est pas]
 Ce n'est ni la [réparation déterministe](#erreurs-diagnostic-et-réparation)
 (redémarrage groupé, une fois, sans IA), ni la relance d'une commande décidée
@@ -493,7 +537,7 @@ restent ce qu'elles étaient. L'analyse les complète, comme le message en clair
 d'une erreur connue.
 :::
 
-{/* t:p 455d1b3dd5145098156a44b42a42d7e3beda8ce26186884cbf08e3631cef2729 */}
+{/* t:p b55420f2dacb15a69c5c6dfbfa25a4e29a859d498511bc668938947a6fd28d01 */}
 ### Rapport et alertes Matrix
 
 Chaque lancement écrit son dossier dans `var/deployments/<date>-<mode>/`&nbsp;:
@@ -512,7 +556,7 @@ Le rapport détaille ce que le lancement a réellement fait&nbsp;:
 | **Diagnostics** | Par hôte en échec : unités en échec, puis extrait de l'erreur |
 | **Notes** | Ce que le lancement a constaté : ordre d'activation probable après un redémarrage d'unités |
 | **AI analysis** | Analyse de l'IA : une entrée par hôte analysé, puis la synthèse du lancement |
-| **AI repair** | Actions de l'IA sur les services : hôte, action, issue, et la raison d'un refus |
+| **AI repair** | Actions de l'IA : hôte, action, issue, et la raison d'un refus. Un commit de réparation apparaît aussi dans l'en-tête, `Repaired in flight` |
 | **Known errors** | Pièges reconnus par la table de signatures, en clair |
 
 :::tip[Lire les compteurs de copie]
