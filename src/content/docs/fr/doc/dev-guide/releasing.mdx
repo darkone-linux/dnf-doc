@@ -173,8 +173,11 @@ seulement s'il a bougé depuis son dernier tag.
 8. **Boilerplate et exemple**&nbsp;: le tag du framework est écrit dans leur
    `flake.nix`, le `flake.lock` est **commité** (c'est lui qui rend un clone
    reproductible), puis changelog et tag identique à celui du framework.
-   `nix flake check` valide l'exemple ; le boilerplate, livré sans
-   `var/generated/`, n'a rien à évaluer avant `just generate`.
+   Chaque hôte de l'exemple est évalué jusqu'à `system.build.toplevel`
+   contre le nouveau framework, matériel et secrets remplacés par des
+   bouchons (`dnf/just/scripts/eval-template-hosts.nix`)&nbsp;: un modèle n'a
+   ni l'un ni l'autre. Le boilerplate, livré sans `var/generated/`, n'a rien
+   à évaluer avant `just generate`.
 
 9. **Racine**&nbsp;: `just update-dnf`, commit du seul `flake.lock`, puis
    poussée de la branche courante (sans tag), en tout dernier&nbsp;: son verrou
