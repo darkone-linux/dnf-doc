@@ -384,11 +384,16 @@ part vers une IA tant qu'on ne l'a pas demandé. Une troisième choisit l'outil.
 | `--ai-analysis none\|passive\|active` | `none` | Profondeur d'analyse, et synthèse de fin de lancement au rapport |
 | `--ai-error-action none\|analysis\|repair` | `none` | Ce que l'IA fait quand un hôte échoue |
 | `--ai-model <outil>[:<modèle>][@<effort>]` | `claude:opus@high` | Outil et modèle, par exemple `opencode:ollama/qwen3:32b` |
+| `--ai-context <texte>` | aucun | Consigne ou contexte ajouté à tous les prompts IA |
 
 ```sh
 just fleet-update --ai-analysis passive          # rapport enrichi, rien de plus
 just fleet-update --ai-error-action analysis     # chaque échec est expliqué
 ```
+
+Par exemple, `--ai-context "Répondre en français et rester concis."` guide le
+style des réponses. À la reprise, le contexte du lancement initial est repris ;
+un `--ai-context` explicite le remplace.
 
 Le modèle par défaut du parc se pose dans `config.yaml`, l'option prime&nbsp;:
 
@@ -620,6 +625,7 @@ lance chaque jour `fleet-update --no-ui`&nbsp;:
 darkone.admin.fleet-update = {
   enable = true;
   user = "admin";
+  aiContext = "Répondre en français et rester concis.";
   timer.enable = true;
 };
 ```
@@ -628,6 +634,7 @@ darkone.admin.fleet-update = {
 |---|---|---|
 | `user` | aucun | Propriétaire du projet : git, clé age, IA, Matrix |
 | `workDir` | `/etc/nixos` | Projet consommateur sur le disque |
+| `aiContext` | `null` | Contexte ajouté aux prompts IA du timer ; `timer.extraArgs` peut le remplacer |
 | `timer.onCalendar` | `*-*-* 04:00` | Heure de lancement |
 | `timer.extraArgs` | `[ ]` | Options ajoutées à `--no-ui`, `--send-report` par exemple |
 | `timer.timeout` | `6h` | Durée maximale d'un lancement |
