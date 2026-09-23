@@ -24,7 +24,9 @@ commande, depuis l'espace de co-développement.
 | `dnf-generator` | `Cargo.toml` | Version propre, épinglée par le framework |
 | `dnf-fleet-update` | `package.json` | Version propre, empaquetée par le framework |
 | `dnf-doc` | `package.json` | `MAJEUR.MINEUR` du framework, correctif propre |
-| `dnf-boilerplate`, `dnf-example` | tag seul | Miroir du framework |
+| `dnf-boilerplate`, `dnf-example` | dernier tag | Miroir du framework |
+
+Les six dépôts tiennent un `CHANGELOG.md` généré, modèles compris.
 
 Le projet privé consommateur n'est jamais taggué : il reste en
 co-développement et sert de banc d'intégration permanent.
@@ -58,8 +60,12 @@ Un scope n'est jamais un type&nbsp;: `feat(matrix): …`, jamais `matrix(admin):
 | `security` | Security |
 | `perf`, `refactor`, `revert` | Changed |
 | `docs` | Documentation |
+| `chore(deps)` | Dependencies |
 | sujet en `drop` ou `remove` | Removed |
-| `chore`, `ci`, `test`, `build` | non publié |
+| autres `chore`, `ci`, `test`, `build` | non publié |
+
+`chore(deps)` est le commit d'épinglage du train&nbsp;: l'entrée du framework
+nomme ainsi le générateur et le `fleet-update` qu'elle embarque.
 
 <Aside type="caution" title="Marquer une rupture">
 Une rupture porte un `!` après le scope, et son sujet nomme la surface cassée.
@@ -80,16 +86,21 @@ feat(idm)!: replace network.idm.replicas with zones.<zone>.idm
 | `just versions` | Version, dernier tag et branche de chaque dépôt |
 | `just changelog` | Aperçu de la prochaine entrée, n'écrit rien |
 | `just bump [niveau]` | Version, changelog, commit et tag d'**un** dépôt |
-| `just release [niveau]` | Le train complet sur les six dépôts |
+| `just release [niveau]` | Le train complet sur les six dépôts (+ la racine) |
 | `just version` | Version, révision et générateur épinglé du framework |
 
 Le niveau vaut `auto` par défaut&nbsp;: [git-cliff](https://git-cliff.org/) déduit
 le numéro suivant des commits. `patch`, `minor`, `major` ou un `X.Y.Z` littéral
-forcent la décision.
+forcent la décision. Des commits non publiés seuls (un `chore(deps)`, par
+exemple) donnent un correctif.
 
-`just bump` ne pousse jamais : il affiche la commande de poussée. Deux drapeaux
-passent au script&nbsp;: `--dry-run` montre l'entrée puis restaure le fichier sans
-rien commiter, `--yes` enchaîne sans confirmation.
+`just bump` ne pousse jamais : il affiche la commande de poussée. Il refuse de
+publier si `HEAD` porte déjà le dernier tag `v*`. Trois drapeaux passent au
+script&nbsp;:
+
+- `--dry-run` : montre l'entrée puis restaure le fichier, sans rien commiter ;
+- `--yes` : enchaîne sans confirmation ni passage dans `$EDITOR` ;
+- `--next` : affiche la version que prendrait la release, puis s'arrête.
 
 <Aside type="tip" title="Lancer depuis l'environnement de développement">
 `bump` et `changelog` appellent [git-cliff](https://git-cliff.org/), absent du
@@ -104,7 +115,8 @@ Le bloc généré ne contient que des messages de commit. Un préambule, un tabl
 de versions compagnes ou une note de migration s'écrivent sous
 `## [Unreleased]` dans le `CHANGELOG.md`&nbsp;: à la publication, le script vide
 cette section et replie son contenu en tête de l'entrée, avant les rubriques
-générées.
+générées. Le train ne s'arrête pas pour éditer&nbsp;: ces notes s'écrivent
+**avant** de le lancer.
 
 <Aside type="caution" title="Ne rien laisser après les notes">
 La section court jusqu'au titre `##` suivant. Si les liens de référence de bas
@@ -115,51 +127,80 @@ publiée. Les retirer, le script les régénère.
 <Aside type="note" title="La toute première release">
 Sans tag `v*`, `auto` n'a rien à déduire&nbsp;: le script reprend la version
 déclarée telle quelle, et git-cliff remonte jusqu'au premier commit du dépôt.
-L'entrée couvre alors tout l'historique, à élaguer avant la poussée.
+L'entrée couvre alors tout l'historique. Un modèle, sans fichier de version,
+exige un `X.Y.Z` explicite (le train passe celui du framework).
 </Aside>
 
 {/* t:p bef5a6791bc98c724629a3471b5fc6cdf21ecb46ff460096ef3a63f17d39e120 */}
 ## Le train de release
 
 `just release` s'exécute à la racine de l'espace de co-développement, qui doit
-contenir les six dépôts.
+contenir les six dépôts. Chaque dépôt part dans l'ordre de ses dépendances, et
+seulement s'il a bougé depuis son dernier tag.
 
 <Steps>
 
-1. **Barrière qualité**&nbsp;: `just check`, `just gen-test` et
-   `just simulate all`. Les tests en machine virtuelle ne tournent pas dans
-   l'intégration continue, donc un scénario rouge doit arrêter la publication
-   ici. `dnf-fleet-update` passe aussi ses barrières `ci` et `audit`, avec
-   l'outillage de son `nix develop`.
+1. **Contrôles préalables**&nbsp;: outils présents (`git-cliff`, `jq`,
+   `nix-update`), dépôts propres, sur `main`, à jour de `origin`. Rien de long
+   ne tourne avant.
 
-2. **Générateur**, s'il a bougé depuis son dernier tag. Il possède le schéma
-   `etc/config.yaml`, donc il part avant ce qui en dépend.
+2. **Plan**&nbsp;: version actuelle et prochaine de chaque dépôt, aperçu des
+   entrées de changelog, puis **une seule** confirmation. Refuser n'écrit rien.
+   Ensuite, tout est automatique.
 
-3. **Épinglage** du tag du générateur dans `dnf/flake.nix`, pour que le contrat
-   entre framework et générateur se lise dans un diff, pas seulement dans le
-   verrou.
+3. **Barrière globale**&nbsp;: `just check` (code et tests unitaires).
 
-4. **fleet-update**, s'il a bougé depuis son dernier tag. Le framework
-   l'empaquette, donc il part avant lui.
+4. **Générateur**, s'il a bougé&nbsp;: `just gen-test`, release et poussée. Il
+   possède le schéma `etc/config.yaml`, donc il part avant ce qui en dépend.
+   Son tag est ensuite épinglé dans `dnf/flake.nix` (commit `chore(deps)`),
+   pour que le contrat entre framework et générateur se lise dans un diff.
 
-5. **Épinglage** du tag de `fleet-update` dans `dnf/pkgs/fleet-update`, par
-   `just pkg-update fleet-update <version>`, puis construction du paquet. À la
-   première release, l'épinglage sur un commit de `main` devient un épinglage
-   sur le tag.
+5. **fleet-update**, s'il a bougé&nbsp;: barrières `ci` et `audit` avec
+   l'outillage de son `nix develop`, release et poussée. Son tag est ensuite
+   épinglé dans `dnf/pkgs/fleet-update` par `just pkg-update`, et le paquet
+   est construit (commit `chore(deps)`).
 
-6. **Framework**&nbsp;: `VERSION`, `CHANGELOG.md`, commit et tag, puis poussée
-   immédiate. Toute retouche de l'entrée après cette étape imposerait de forcer
-   un tag déjà consommé par `release.yml`, donc elle se fait avant.
+6. **Framework**&nbsp;: `just simulate all` tourne **après** les épinglages,
+   donc sur les dépendances réellement livrées. Les tests en machine virtuelle
+   ne tournent pas dans l'intégration continue&nbsp;: un scénario rouge arrête
+   le train ici. Puis `VERSION`, `CHANGELOG.md`, commit, tag et poussée.
 
-7. **Documentation**&nbsp;: `just codegen` régénère la référence depuis le
-   framework, puis la version s'aligne sur la ligne `MAJEUR.MINEUR`, puis le
-   site est construit et déployé.
+7. **Documentation**&nbsp;: `just codegen` régénère la référence, puis
+   traduction et normalisation. S'il y a quelque chose à publier, le site est
+   construit (avant le tag, pour qu'un lien cassé bloque), la version s'aligne
+   sur la ligne `MAJEUR.MINEUR` du framework, puis le site est déployé.
 
 8. **Boilerplate et exemple**&nbsp;: le tag du framework est écrit dans leur
-   `flake.nix`, `nix flake check` valide, et le `flake.lock` est **commité**.
-   C'est lui qui rend un clone reproductible.
+   `flake.nix`, `nix flake check` valide, le `flake.lock` est **commité**
+   (c'est lui qui rend un clone reproductible), puis changelog et tag
+   identique à celui du framework.
+
+9. **Racine**&nbsp;: `just update-dnf`, puis commit du seul `flake.lock`. La
+   racine n'est jamais tagguée ni poussée.
 
 </Steps>
+
+Seul le framework suit le `niveau` passé à la recette. Générateur et
+`fleet-update` restent en `auto`, la documentation suit la ligne du framework,
+les modèles son numéro.
+
+Chaque dépôt est poussé avec **son** tag seul (`git push --atomic origin main
+refs/tags/vX.Y.Z`), jamais avec `--tags`&nbsp;: les tags locaux de travail
+restent locaux.
+
+<Aside type="tip" title="Relancer le train">
+Le train est idempotent. Sans rien de nouveau, il s'arrête au plan&nbsp;:
+« Nothing to release ». Après un échec, il reprend là où il s'est arrêté&nbsp;:
+les dépôts déjà taggués sont sautés, les épinglages commités restent acquis.
+Seul un déploiement du site raté se relance à la main&nbsp;:
+`just --justfile doc/Justfile --working-directory doc deploy "Release vX.Y.Z"`.
+</Aside>
+
+<Aside type="caution" title="Un modèle ne précède jamais le framework">
+Un modèle porte le numéro du framework. S'il a bougé sans que le framework
+bouge, le train l'annonce et le laisse&nbsp;: il partira avec la prochaine
+release du framework.
+</Aside>
 
 {/* t:p 7640fffe4bd8ed144db0b0533dd7b901247f61496c7f0ddabfa09d8e068a2fa6 */}
 ## Les garde-fous d'intégration continue
@@ -178,8 +219,8 @@ la *release* GitHub.
 {/* t:p d87f2d9af5696ad41093b3f3cbdece53d78db1dc7bab2a515db8dcad09fed0c2 */}
 ## Configuration partagée
 
-Un seul [git-cliff](https://git-cliff.org/) pour les quatre dépôts qui
-produisent un changelog, dans `dnf/just/scripts/cliff.toml`. Le script
-`dnf/just/scripts/bump.sh` découvre la source de version du dépôt
-(`VERSION`, `Cargo.toml` ou `package.json`), assemble le fichier autour du bloc
-généré et préserve l'historique écrit à la main.
+Un seul [git-cliff](https://git-cliff.org/) pour les six dépôts, dans
+`dnf/just/scripts/cliff.toml`. Le script `dnf/just/scripts/bump.sh` découvre la
+source de version du dépôt (`VERSION`, `Cargo.toml`, `package.json`, ou à
+défaut le dernier tag), assemble le fichier autour du bloc généré et préserve
+l'historique écrit à la main.

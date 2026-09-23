@@ -23,8 +23,8 @@ test:
 check-links:
 	node scripts/check-anchors.mjs
 
-# Shares the framework's release script and git-cliff config, so the three repos
-# produce the same CHANGELOG from the same commit vocabulary.
+# Shares the framework's release script and git-cliff config, so every repo
+# produces the same CHANGELOG from the same commit vocabulary.
 #
 # dnf-doc shares MAJOR.MINOR with the framework and owns only PATCH: `--line X.Y`
 # jumps onto a new framework line, which `just release` at the workspace root
