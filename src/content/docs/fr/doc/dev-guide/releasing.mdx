@@ -171,9 +171,10 @@ seulement s'il a bougé depuis son dernier tag.
    sur la ligne `MAJEUR.MINEUR` du framework, puis le site est déployé.
 
 8. **Boilerplate et exemple**&nbsp;: le tag du framework est écrit dans leur
-   `flake.nix`, `nix flake check` valide, le `flake.lock` est **commité**
-   (c'est lui qui rend un clone reproductible), puis changelog et tag
-   identique à celui du framework.
+   `flake.nix`, le `flake.lock` est **commité** (c'est lui qui rend un clone
+   reproductible), puis changelog et tag identique à celui du framework.
+   `nix flake check` valide l'exemple ; le boilerplate, livré sans
+   `var/generated/`, n'a rien à évaluer avant `just generate`.
 
 9. **Racine**&nbsp;: `just update-dnf`, puis commit du seul `flake.lock`. La
    racine n'est jamais tagguée ni poussée.
