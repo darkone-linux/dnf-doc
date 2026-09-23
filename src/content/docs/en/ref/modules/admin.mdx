@@ -13,7 +13,7 @@ sidebar:
 **A administration module** deals with system-specific functionalities for administrators.
 :::
 
-{/* t:p a7fa833a756ad43ab70fd3f52eb56bdd74eb7a1a1c38512780f4ae3159941ac0 */}
+{/* t:p 9cd667d8d72c91716cca93f31f19c30564564a160cbc3eb3a00088e49c221b34 */}
 ### &#x1F451; darkone.admin.fleet-update
 
 Fleet update tool (`fleet-update`) and its unattended daily run.
@@ -59,6 +59,8 @@ darkone.admin.fleet-update = {
   Not a dependency of the package, because `pkgs.claude-code` is
   unfree and would force `allowUnfree` on every consumer.
   `pkgs.opencode` is MIT.
+* **aiContext** `nullOr str` Additional operator guidance included in every AI prompt of the
+  unattended run. `timer.extraArgs` can override it with `--ai-context`.
 * **user** `nullOr str` Account running the unattended update: owner of `workDir`, holding
   the git identity, the sops age key and the AI and Matrix credentials.
 * **workDir** `str` Consumer workspace on disk. Not the `workDir` module argument, which
@@ -75,6 +77,7 @@ darkone.admin.fleet-update = {
   enable = false;
   package = pkgs.fleet-update.override { nix-eval-jobs = nixEvalJobs; };
   aiPackages = [ ];
+  aiContext = "Answer in French and keep the response concise.";
   user = "admin";
   workDir = "/etc/nixos";
   timer.enable = false;

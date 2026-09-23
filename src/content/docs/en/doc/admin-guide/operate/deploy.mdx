@@ -355,32 +355,36 @@ indicator: `under repair` in yellow during deterministic repair,
 `AI analysis` and `AI repair` in magenta when the AI takes over.
 :::
 
-{/* t:p 693bd6a932ee750a71119e6898e6df88e85b7b27aa6c76e5268b9483369be2c5 */}
+{/* t:p b41c68e78cbcaae6b0b16a8bfa3991e7681520a62d3fd0393105a62bfa2d841d */}
 ### AI analysis
 
-The AI **explains** a failure: it reads the run state, the logs and, if needed,
-the code, then produces a plain-language analysis. With `--ai-error-action
+The AI **explains** a failure&nbsp;: it reads the run state, the logs and, if
+needed, the code, then produces a plain-language analysis. With `--ai-error-action
 repair` it can then **act on the failed units**, and nothing else
-(see [Repairing a service](#repairing-a-service)). The run never waits for
-it — an analysis that fails, exceeds its time or budget leaves the host
-exactly where it was.
+(see [Repair a service](#repairing-a-service)). The run never waits
+for it&nbsp;— an analysis that fails, exceeds its timeout or its budget leaves
+the host exactly where it was.
 
-Two options control it, **both set to `none` by default**: nothing goes to an
-AI until it is asked for. A third one chooses the tool.
+Two options control it, **both set to `none` by default**&nbsp;: nothing
+goes to an AI until asked. A third one chooses the tool.
 
 | Option | Default | Role |
 |---|---|---|
-| `--ai-analysis none\|passive\|active` | `none` | Analysis depth, and end-of-run summary in the report |
+| `--ai-analysis none\|passive\|active` | `none` | Analysis depth, and end-of-run summary to the report |
 | `--ai-error-action none\|analysis\|repair` | `none` | What the AI does when a host fails |
-| `--ai-model <tool>[:<model>][@<effort>]` | `claude:opus@high` | Tool and model, e.g. `opencode:ollama/qwen3:32b` |
+| `--ai-model <tool>[:<model>][@<effort>]` | `claude:opus@high` | Tool and model, for example `opencode:ollama/qwen3:32b` |
+| `--ai-context <text>` | none | Instruction or context added to all AI prompts |
 
 ```sh
-just fleet-update --ai-analysis passive          # enriched report, nothing more
-just fleet-update --ai-error-action analysis     # each failure is explained
+just fleet-update --ai-analysis passive          # rapport enrichi, rien de plus
+just fleet-update --ai-error-action analysis     # chaque échec est expliqué
 ```
 
-The fleet's default model is set in `config.yaml`, the option takes
-precedence:
+For example, `--ai-context "Répondre en français et rester concis."` guides the
+style of the replies. On resume, the context of the initial run is carried
+over; an explicit `--ai-context` replaces it.
+
+The fleet's default model is set in `config.yaml`, the option takes precedence&nbsp;:
 
 ```yaml
 # etc/config.yaml
@@ -390,9 +394,9 @@ network:
 ```
 
 **AI tools are not a dependency of the tool.** `claude` and `opencode`
-are looked up in the `PATH`; the module's `aiPackages` option puts them there
-for the daily run. Missing or refused → a warning along the run, a note in the
-report, and the rest proceeds without AI.
+are looked up in the `PATH`&nbsp;; the module's `aiPackages` option puts them
+there for the daily run. Missing or refused&nbsp;→ a warning along the run, a
+note in the report, and the rest proceeds without AI.
 
 {/* t:p e30b3241ff8deb86eed7cb18c0767ceb6c9842b4f287929ff3625fa5d5da4c05 */}
 #### What the AI is allowed to do
@@ -599,8 +603,8 @@ Nothing goes out if the bot is not provisioned, nor on an abort (`^C`, service
 stop).
 :::
 
-{/* t:p 8706c5bb5bdec3a788fc742bd40fed889c013d0c8b271a518d54639190589b94 */}
-### Daily execution
+{/* t:p db18aca61e174f7aa3bded2b41ab9260f32a9efbadba1117373ee039e1106776 */}
+### Daily run
 
 On the deployment host, the module installs the tool and, with `timer.enable`,
 runs `fleet-update --no-ui` every day&nbsp;:
@@ -610,33 +614,35 @@ runs `fleet-update --no-ui` every day&nbsp;:
 darkone.admin.fleet-update = {
   enable = true;
   user = "admin";
+  aiContext = "Répondre en français et rester concis.";
   timer.enable = true;
 };
 ```
 
 | Option | Default | Role |
 |---|---|---|
-| `user` | none | Project owner: git, age key, AI, Matrix |
+| `user` | none | Owner of the project: git, age key, AI, Matrix |
 | `workDir` | `/etc/nixos` | Consumer project on disk |
-| `timer.onCalendar` | `*-*-* 04:00` | Launch time |
-| `timer.extraArgs` | `[ ]` | Options added to `--no-ui`, `--send-report` for example |
-| `timer.timeout` | `6h` | Maximum duration of a launch |
+| `aiContext` | `null` | Context added to the timer's AI prompts; `timer.extraArgs` can replace it |
+| `timer.onCalendar` | `*-*-* 04:00` | Run time |
+| `timer.extraArgs` | `[ ]` | Options added to `--no-ui`, e.g. `--send-report` |
+| `timer.timeout` | `6h` | Maximum duration of a run |
 
 :::note[Exit codes and alerts]
-An already-running launch (code `4`) is not an error. Any other failure, or an
-overrun of `timer.timeout`, puts the unit into a failed state and triggers the
-[alert](/en/doc/admin-guide/operate/alerts/) `SystemdUnitFailed`.
+A run already in progress (code `4`) is not an error. Any other failure, or an
+exceeded `timer.timeout`, fails the unit and triggers the
+`SystemdUnitFailed` [alert](/en/doc/admin-guide/operate/alerts/).
 :::
 
-:::caution[Account and deployment host]
+:::caution[Deployment account and host]
 The timer requires `darkone.admin.nix` on the host, and a `user` account with
 passwordless `sudo`.
 :::
 
 :::note[Daily report]
 `--send-report` will become the default of `timer.extraArgs` when the packaged
-version of the tool knows how to send it. Until then, add it after checking the
-send manually.
+version of the tool knows how to send it. Add it until then, after verifying
+the sending manually.
 :::
 
 {/* t:p 333e4a36fb171ecc02ba4e561f232805b6736598cb272e45c16286eb2328a3df */}
