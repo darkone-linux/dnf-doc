@@ -15,7 +15,7 @@ import { Steps, Aside } from '@astrojs/starlight/components';
 Publier, c'est produire des tags cohérents sur les six dépôts en une seule
 commande, depuis l'espace de co-développement.
 
-{/* t:p b33cd56a1d8ed6bf187c30e0bb496fcd5679acc00e2e2b8b8a78d9fae4648f05 */}
+{/* t:p 96936cff8320908b54f65ae4e74908091c0e9cb3a616e39d38145b9f27448219 */}
 ## Ce que chaque dépôt versionne
 
 | Dépôt | Source de vérité | Règle |
@@ -31,7 +31,7 @@ Les six dépôts tiennent un `CHANGELOG.md` généré, modèles compris.
 Le projet privé consommateur n'est jamais taggué : il reste en
 co-développement et sert de banc d'intégration permanent.
 
-{/* t:p c5526368cab6502939c0a47cc4d89e6c3cd0b468e55ee46045a27daab9eb1be0 */}
+{/* t:p 979a18007162326baca0be6a9c968e7674a9ce2ff10e685308bb46edf925a66c */}
 ## Le vocabulaire de commit
 
 Le changelog est généré à partir des messages de commit. Un type hors liste
@@ -78,7 +78,7 @@ feat(idm)!: replace network.idm.replicas with zones.<zone>.idm
 ```
 </Aside>
 
-{/* t:p 345d376a3bfd92fbd014bf697a00af649b26d9cac2bb7298be351192b4777b6b */}
+{/* t:p 1e281edee19de556a723e0957936bf6bd2c9e130215828c75e5156994ac9b3b1 */}
 ## Les recettes
 
 | Recette | Effet |
@@ -108,7 +108,7 @@ script&nbsp;:
 publier.
 </Aside>
 
-{/* t:p f79dfe66bc6fe94590138851e9766c5c336240a057ad8b1ee3155539680050b2 */}
+{/* t:p 3d9c45f96d3f213ca75044194de59b29b5abba720663602ec59001c5a69c3049 */}
 ## Écrire à la main dans une entrée
 
 Le bloc généré ne contient que des messages de commit. Un préambule, un tableau
@@ -131,7 +131,7 @@ L'entrée couvre alors tout l'historique. Un modèle, sans fichier de version,
 exige un `X.Y.Z` explicite (le train passe celui du framework).
 </Aside>
 
-{/* t:p bef5a6791bc98c724629a3471b5fc6cdf21ecb46ff460096ef3a63f17d39e120 */}
+{/* t:p ff6489c1c1f9cd1ed7cb0f83b88324e1a9f5fdc2093daa15af89d52ffd990124 */}
 ## Le train de release
 
 `just release` s'exécute à la racine de l'espace de co-développement, qui doit
@@ -216,7 +216,7 @@ Les trois contrôles de `ci.yml` (tests unitaires, évaluation, lint) sont
 rejoués via `workflow_call`, puis la section du changelog devient les notes de
 la *release* GitHub.
 
-{/* t:p d87f2d9af5696ad41093b3f3cbdece53d78db1dc7bab2a515db8dcad09fed0c2 */}
+{/* t:p 76bf7c0ae965537388dc68bc0a93388c26f12d5dae428fd2ad7c9594d61c1900 */}
 ## Configuration partagée
 
 Un seul [git-cliff](https://git-cliff.org/) pour les six dépôts, dans

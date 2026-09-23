@@ -14,7 +14,7 @@ import { Steps, Aside } from '@astrojs/starlight/components';
 {/* t:p 21e9e904129f05cc5fc1b143b5ca76070b3da56ab805d160d910adbd32275923 */}
 Publishing means producing consistent tags on the six repositories with a single command, from the co-development workspace.
 
-{/* t:p b33cd56a1d8ed6bf187c30e0bb496fcd5679acc00e2e2b8b8a78d9fae4648f05 */}
+{/* t:p 96936cff8320908b54f65ae4e74908091c0e9cb3a616e39d38145b9f27448219 */}
 ## What each repository versions
 
 | Repository | Source of truth | Rule |
@@ -22,21 +22,29 @@ Publishing means producing consistent tags on the six repositories with a single
 | `darkone-nixos-framework` | `VERSION` | Train reference |
 | `dnf-generator` | `Cargo.toml` | Own version, pinned by the framework |
 | `dnf-fleet-update` | `package.json` | Own version, packaged by the framework |
-| `dnf-doc` | `package.json` | Framework `MAJOR.MINOR`, own patch |
-| `dnf-boilerplate`, `dnf-example` | tag only | Framework mirror |
+| `dnf-doc` | `package.json` | Framework's `MAJEUR.MINEUR`, own patch |
+| `dnf-boilerplate`, `dnf-example` | latest tag | Mirror of the framework |
+
+All six repositories keep a generated `CHANGELOG.md`, templates included.
 
 The private consumer project is never tagged: it stays in
-co-development and serves as a permanent integration bench.
+co-development and serves as a permanent integration testbed.
 
-{/* t:p c5526368cab6502939c0a47cc4d89e6c3cd0b468e55ee46045a27daab9eb1be0 */}
-## Commit vocabulary
+{/* t:p 979a18007162326baca0be6a9c968e7674a9ce2ff10e685308bb46edf925a66c */}
+## The commit vocabulary
 
-The changelog is generated from commit messages. A type not in the list is silently dropped from the release notes, so the format is enforced: a single line `<type>(<scope>): <subject>`, 80 characters max, type from the following list.
+The changelog is generated from commit messages. A type not in the list
+silently disappears from the release notes, so the format is checked:
+a single line `<type>(<scope>): <subject>`, 80 characters max, type from the
+following list.
 
 ```
-feat fix perf refactor docs test build ci chore security revert```
+feat fix perf refactor docs test build ci chore security revert
+```
 
-The same script, `scripts/check-commit-msg.sh`, checks every push to `main` and every pull request in continuous integration, and every local commit via the `commit-msg` hook, which needs to be installed once per clone:
+The same script, `scripts/check-commit-msg.sh`, checks every *push* to
+`main` and every *pull request* in continuous integration, and every commit
+locally via the `commit-msg` hook, installed once per clone:
 
 ```sh
 ln -s ../../scripts/check-commit-msg.sh .git/hooks/commit-msg
@@ -51,107 +59,145 @@ A scope is never a type: `feat(matrix): …`, never `matrix(admin): …`.
 | `security` | Security |
 | `perf`, `refactor`, `revert` | Changed |
 | `docs` | Documentation |
-| subject starts with `drop` or `remove` | Removed |
-| `chore`, `ci`, `test`, `build` | not published |
+| `chore(deps)` | Dependencies |
+| subject in `drop` or `remove` | Removed |
+| other `chore`, `ci`, `test`, `build` | not published |
+
+`chore(deps)` is the train's pinning commit: the framework entry names the
+generator and `fleet-update` it bundles this way.
 
 <Aside type="caution" title="Marking a breaking change">
-A breaking change carries a `!` after the scope, and its subject names the broken surface.
-No `BREAKING CHANGE:` footer: the message stays on one line, the migration is described in the documentation. The `!` is what triggers the **⚠ Breaking** section and the minor version bump.
+A breaking change carries a `!` after the scope, and its subject names the
+broken surface. No `BREAKING CHANGE:` footer: the message stays on one line,
+the migration is described in the documentation. It's the `!` that triggers
+the **⚠ Breaking** section and the minor version bump.
 
 ```
 feat(idm)!: replace network.idm.replicas with zones.<zone>.idm
 ```
 </Aside>
 
-{/* t:p 345d376a3bfd92fbd014bf697a00af649b26d9cac2bb7298be351192b4777b6b */}
+{/* t:p 1e281edee19de556a723e0957936bf6bd2c9e130215828c75e5156994ac9b3b1 */}
 ## The recipes
 
 | Recipe | Effect |
 | --- | --- |
-| `just versions` | Version, last tag and branch of each repository |
+| `just versions` | Version, latest tag and branch of each repository |
 | `just changelog` | Preview of the next entry, writes nothing |
-| `just bump [niveau]` | Version, changelog, commit and tag of **one** repository |
-| `just release [level]` | The full train across the six repositories |
+| `just bump [level]` | Version, changelog, commit and tag of **one** repository |
+| `just release [level]` | The full train across the six repositories (+ the root) |
 | `just version` | Version, revision and pinned generator of the framework |
 
-The level defaults to `auto`: [git-cliff](https://git-cliff.org/) deduces the
-next number from the commits. `patch`, `minor`, `major` or a literal `X.Y.Z`
-forces the decision.
+The level defaults to `auto`: [git-cliff](https://git-cliff.org/) deduces
+the next number from the commits. `patch`, `minor`, `major` or a literal
+`X.Y.Z` force the decision. Only unpublished commits (a `chore(deps)`, for
+example) give a patch.
 
-`just bump` never pushes: it prints the push command. Two flags are passed to
-the script: `--dry-run` shows the entry then restores the file without
-committing anything, `--yes` goes on without confirmation.
+`just bump` never pushes: it prints the push command. It refuses to publish
+if `HEAD` already carries the latest `v*` tag. Three flags pass to the
+script:
+
+- `--dry-run`: shows the entry then restores the file, committing nothing;
+- `--yes`: proceeds without confirmation or `$EDITOR`;
+- `--next`: prints the version the release would take, then stops.
 
 <Aside type="tip" title="Run from the development environment">
-`bump` and `changelog` call [git-cliff](https://git-cliff.org/), missing from
+`bump` and `changelog` call [git-cliff](https://git-cliff.org/), absent from
 the default `PATH`. Enter the environment with `just develop` before
 publishing.
 </Aside>
 
-{/* t:p f79dfe66bc6fe94590138851e9766c5c336240a057ad8b1ee3155539680050b2 */}
-## Writing by hand into an entry
+{/* t:p 3d9c45f96d3f213ca75044194de59b29b5abba720663602ec59001c5a69c3049 */}
+## Writing by hand in an entry
 
-The generated block only contains commit messages. A preamble, a table of
-companion versions or a migration note is written under
-`## [Unreleased]` in the `CHANGELOG.md`&nbsp;: at publication, the script empties
-this section and folds its content at the top of the entry, before the
-generated headings.
+The generated block only contains commit messages. A preamble, a companion
+versions table or a migration note are written under `## [Unreleased]` in the
+`CHANGELOG.md`: on publish, the script empties this section and folds its
+content at the head of the entry, before the generated sections. The train
+doesn't stop for editing: these notes are written **before** launching it.
 
 <Aside type="caution" title="Leave nothing after the notes">
-The section runs until the next `##` heading. If the reference links at the
-bottom of the page are the last content of the file, they get swallowed into the
-published entry. Remove them, the script regenerates them.
+The section runs until the next `##` title. If the footer reference links are
+the last content of the file, they are swallowed into the published entry.
+Remove them, the script regenerates them.
 </Aside>
 
 <Aside type="note" title="The very first release">
-Without a `v*` tag, `auto` has nothing to infer&nbsp;: the script reuses the
-declared version as is, and git-cliff goes back up to the first commit of the
-repository. The entry then covers the whole history, and must be trimmed before
-pushing.
+With no `v*` tag, `auto` has nothing to deduce: the script takes the
+declared version as-is, and git-cliff goes back to the first commit of the
+repository. The entry then covers the whole history. A template, with no
+version file, requires an explicit `X.Y.Z` (the train passes the framework's).
 </Aside>
 
-{/* t:p bef5a6791bc98c724629a3471b5fc6cdf21ecb46ff460096ef3a63f17d39e120 */}
+{/* t:p ff6489c1c1f9cd1ed7cb0f83b88324e1a9f5fdc2093daa15af89d52ffd990124 */}
 ## The release train
 
 `just release` runs at the root of the co-development workspace, which must
-contain the six repositories.
+contain the six repositories. Each repository goes in the order of its
+dependencies, and only if it has changed since its last tag.
 
 <Steps>
 
-1. **Quality gate**: `just check`, `just gen-test` and
-   `just simulate all`. Virtual machine tests do not run in
-   continuous integration, so a red scenario must stop the publication
-   here. `dnf-fleet-update` also passes its `ci` and `audit` gates,
-   with the tooling of its `nix develop`.
+1. **Preflight checks**: tools present (`git-cliff`, `jq`, `nix-update`),
+   repositories clean, on `main`, up to date with `origin`. Nothing long
+   runs before this.
 
-2. **Generator**, if it has moved since its last tag. It owns the
-   `etc/config.yaml` schema, so it goes first, before anything that depends on it.
+2. **Plan**: current and next version of each repository, preview of the
+   changelog entries, then **a single** confirmation. Refusing writes
+   nothing. After that, everything is automatic.
 
-3. **Pinning** of the generator tag in `dnf/flake.nix`, so the contract
-   between framework and generator can be read in a diff, not only in the
-   lock.
+3. **Global gate**: `just check` (code and unit tests).
 
-4. **fleet-update**, if it has moved since its last tag. The framework
-   packages it, so it goes before it.
+4. **Generator**, if it changed: `just gen-test`, release and push. It owns
+   the `etc/config.yaml` schema, so it goes before anything that depends on
+   it. Its tag is then pinned in `dnf/flake.nix` (commit `chore(deps)`), so
+   the contract between framework and generator reads in a diff.
 
-5. **Pinning** of the `fleet-update` tag in `dnf/pkgs/fleet-update`,
-   via `just pkg-update fleet-update <version>`, then packaging the build. At the
-   first release, pinning to a `main` commit becomes a pinning
-   to the tag.
+5. **fleet-update**, if it changed: `ci` and `audit` gates with the tooling
+   of its `nix develop`, release and push. Its tag is then pinned in
+   `dnf/pkgs/fleet-update` by `just pkg-update`, and the package is built
+   (commit `chore(deps)`).
 
-6. **Framework**: `VERSION`, `CHANGELOG.md`, commit and tag, then immediate
-   push. Any edit of the entry after this step would force
-   a tag already consumed by `release.yml`, so it happens before.
+6. **Framework**: `just simulate all` runs **after** the pinning, so on the
+   dependencies actually shipped. Virtual machine tests don't run in CI: a
+   red scenario stops the train here. Then `VERSION`, `CHANGELOG.md`,
+   commit, tag and push.
 
-7. **Documentation**: `just codegen` regenerates the reference from the
-   framework, then the version aligns on the `MAJOR.MINOR` line, then the
-   site is built and deployed.
+7. **Documentation**: `just codegen` regenerates the reference, then
+   translation and normalization. If there is something to publish, the site
+   is built (before the tag, so a broken link blocks), the version aligns on
+   the framework's `MAJEUR.MINEUR` line, then the site is deployed.
 
 8. **Boilerplate and example**: the framework tag is written into their
-   `flake.nix`, `nix flake check` validates, and the `flake.lock` is **committed**.
-   That is what makes a clone reproducible.
+   `flake.nix`, `nix flake check` validates, the `flake.lock` is
+   **committed** (it's what makes a clone reproducible), then changelog and
+   tag identical to the framework's.
+
+9. **Root**: `just update-dnf`, then commit of only the `flake.lock`. The
+   root is never tagged nor pushed.
 
 </Steps>
+
+Only the framework follows the `level` passed to the recipe. Generator and
+`fleet-update` stay on `auto`, the documentation follows the framework's
+line, the templates their number.
+
+Each repository is pushed with **its** tag alone (`git push --atomic origin
+main refs/tags/vX.Y.Z`), never with `--tags`: local work tags stay local.
+
+<Aside type="tip" title="Restarting the train">
+The train is idempotent. With nothing new, it stops at the plan:
+"Nothing to release". After a failure, it resumes where it stopped:
+already tagged repositories are skipped, committed pinning stays. Only a
+failed site deployment is relaunched by hand:
+`just --justfile doc/Justfile --working-directory doc deploy "Release vX.Y.Z"`.
+</Aside>
+
+<Aside type="caution" title="A template never precedes the framework">
+A template carries the framework's number. If it changed without the
+framework changing, the train announces it and leaves it: it will go with
+the framework's next release.
+</Aside>
 
 {/* t:p 7640fffe4bd8ed144db0b0533dd7b901247f61496c7f0ddabfa09d8e068a2fa6 */}
 ## Continuous integration safeguards
@@ -167,11 +213,11 @@ The three `ci.yml` checks (unit tests, evaluation, lint) are replayed via
 `workflow_call`, then the changelog section becomes the notes of the GitHub
 *release*.
 
-{/* t:p d87f2d9af5696ad41093b3f3cbdece53d78db1dc7bab2a515db8dcad09fed0c2 */}
+{/* t:p 76bf7c0ae965537388dc68bc0a93388c26f12d5dae428fd2ad7c9594d61c1900 */}
 ## Shared configuration
 
-A single [git-cliff](https://git-cliff.org/) for the four repositories that
-produce a changelog, in `dnf/just/scripts/cliff.toml`. The script
-`dnf/just/scripts/bump.sh` discovers the repository's version source
-(`VERSION`, `Cargo.toml` or `package.json`), assembles the file around the
-generated block and preserves the hand-written history.
+A single [git-cliff](https://git-cliff.org/) for the six repositories, in
+`dnf/just/scripts/cliff.toml`. The script `dnf/just/scripts/bump.sh` discovers
+the repository's version source (`VERSION`, `Cargo.toml`, `package.json`, or
+failing that the latest tag), assembles the file around the generated block
+and preserves the hand-written history.
