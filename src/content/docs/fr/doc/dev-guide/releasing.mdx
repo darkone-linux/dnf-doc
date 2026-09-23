@@ -176,8 +176,10 @@ seulement s'il a bougé depuis son dernier tag.
    `nix flake check` valide l'exemple ; le boilerplate, livré sans
    `var/generated/`, n'a rien à évaluer avant `just generate`.
 
-9. **Racine**&nbsp;: `just update-dnf`, puis commit du seul `flake.lock`. La
-   racine n'est jamais tagguée ni poussée.
+9. **Racine**&nbsp;: `just update-dnf`, commit du seul `flake.lock`, puis
+   poussée de la branche courante (sans tag), en tout dernier&nbsp;: son verrou
+   pointe sur les releases publiées juste avant. La racine n'est jamais
+   tagguée.
 
 </Steps>
 
