@@ -8,10 +8,15 @@ lang: fr
 
 import { Steps } from '@astrojs/starlight/components';
 
+{/* t:main */}
+{/* t:h e506d06d8db1291fadae56a4fdf1ca2b939c59019a25dbb2a25063f1c93fe557 */}
+
+{/* t:p c5c0027dc6163ea23dcb0e6db7ade87aada08d32db5782aa64ed9868ff211165 */}
 Chaque hôte a son dossier `usr/machines/<hôte>/`. Les fichiers y sont rangés
 selon **qui les écrit**&nbsp;: vous, l'installation, la machine elle-même ou le
 générateur. Le framework les importe un par un, il n'y a pas de `default.nix`.
 
+{/* t:p a3687532489409edbbd5123b248bae5116df96e9a9f3571e0def7677e0e3b64c */}
 ## Disposition
 
 ```text
@@ -39,6 +44,7 @@ var/generated/hosts/<hôte>.nix   # drapeaux de démarrage déduits du disque
 `var/generated/hosts/<hôte>.nix` n'existe que si le disque impose des réglages
 de démarrage (RAID logiciel, marqueurs `NEEDEDFORBOOT`).
 
+{/* t:p f63b3cf7af29822822fd5fa0fc020bc1b1b7efa90fe5ddd3f0d06fc4826d2a4d */}
 ## Le sceau de l'installation
 
 `install/state.nix` scelle l'hôte. `just install` l'écrit juste avant le
@@ -74,6 +80,7 @@ avertissement&nbsp;: déployé tel quel, il en changerait à chaque montée de
 nixpkgs.
 :::
 
+{/* t:p 1990d011b1e697fc373d384805caa26d9724e73af61843e6b574fcc9cd1f8d66 */}
 ## Migrer depuis l'ancienne disposition
 
 Changement cassant&nbsp;: l'ancienne disposition (`default.nix` importé comme

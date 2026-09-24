@@ -71,12 +71,12 @@ and a commented `etc/config.yaml` to fill in.
 
 </Steps>
 
-{/* t:p 5091c5cb7b19263fb67f1e5a0e1beaad51409801c4700b8dc904791ebfa65ab3 */}
-## Describe the configuration
+{/* t:p cb1d627adc4061817b67459b16b7dda54b88b7cc5af85121c04c215e18ce8888 */}
+## Describing the configuration
 
 Everything is declared in `etc/config.yaml` (network, zones, users, hosts).
-For a first machine, one zone, one user and one host are enough: every host
-belongs to a zone (or carries a public `ipv4` address).
+For a first workstation, one zone, one user and one host are enough : every
+host belongs to a zone (or carries a public `ipv4` address).
 
 ```yaml
 # etc/config.yaml
@@ -104,7 +104,7 @@ hosts:
         main: "/dev/nvme0n1"
 ```
 
-Then regenerate, verify and commit:
+Then regenerate, verify and commit :
 
 ```sh
 just generate      # produit var/generated/*.nix depuis etc/config.yaml
@@ -113,15 +113,16 @@ git add . && git commit -m "Premier hôte"
 ```
 
 :::caution[Generated files]
-`var/generated/` is produced by the tool: never edit it by hand. You edit
-`etc/config.yaml`, then regenerate. `just generate` also seeds the files the
-framework expects: `usr/users/<login>/` for each account and
-`usr/machines/<host>/` for each host with a `disko` block.
+`var/generated/` is produced by the tool : you never edit it by hand.
+You edit `etc/config.yaml`, then regenerate. `just generate` also seeds the
+files that the framework expects : `usr/users/<login>/` for each account and
+`usr/machines/<hôte>/` (`configuration.nix`, `install/disko.nix`) for each
+host with a `disko` block.
 :::
 
 :::danger[Commit before building]
-nix flakes only see files tracked by git. An uncommitted
-`var/generated/hosts.nix` or `usr/machines/<host>/` makes all builds fail.
+Nix flakes only see files tracked by git. An uncommitted
+`var/generated/hosts.nix` or `usr/machines/<hôte>/` makes every build fail.
 :::
 
 {/* t:p 1470ae27c10646bdfc5030eed8417f1aeaf4c61bf41b5c463b1cad902a81fe01 */}

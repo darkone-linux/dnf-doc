@@ -42,44 +42,48 @@ darkone.home.advanced = {
 
 <hr/>
 
-{/* t:p 2c073d8dcf1ab2cf24b11a5f9ae7e5ea7f96b2b76ce6fd7c221bec1bf3c9ba7f */}
+{/* t:p 592e6eb518c867d3bedc4a5cee1c1f6ab24aa02a8eb94805f2a35d2d6db84123 */}
 ### &#x1F3E0; darkone.home.ai
 
-Outils de codage IA et utilitaires associés.
+Outils d'IA de codage et utilitaires de support.
 
-:::note[Options]
-- `darkone.home.ai.enable` : interrupteur maître qui installe les paquets
-  utilitaires (aichat, llm, fabric-ai, gh, lazygit, direnv, outils de qualité
-  de code, etc.) et active le système de drapeaux par agent ci-dessous.
-- `darkone.home.ai.enable{Claude,OpenCode,Codex,Aider,Goose}` : installe et
-  configure chacun un agent de codage IA spécifique.
-- `darkone.home.ai.preferLocal` : combiné à un hôte ollama local
-  `darkone.service.ai`, les agents utilisent par défaut le modèle local plutôt que les API cloud.
+:::note[Flags]
+- `darkone.home.ai.enable` interrupteur principal qui installe les paquets
+  utilitaires (aichat, llm, fabric-ai, gh, lazygit, direnv, outils de
+  qualité de code, etc.) et active le système de flags par agent ci-dessous.
+- `darkone.home.ai.enable{Claude,OpenCode,Codex,Aider,Goose}` installe et
+  configure chacun un agent d'IA de codage spécifique.
+- `darkone.home.ai.preferLocal` combiné à un hôte `darkone.service.ai` local
+  ollama, les agents utilisent par défaut le modèle local au lieu des APIs cloud.
 :::
 
 :::tip[Câblage par hôte]
 Ce module lit `osConfig.darkone.service.ai.enable` pour détecter un
-hôte ollama local. Sur ces hôtes, `gollama`, la CLI `ollama` et les
+hôte ollama local. Sur ces hôtes, `gollama`, le CLI `ollama`, et les
 modèles locaux par défaut pour Aider / OpenCode sont activés automatiquement.
 
 `programs.gh` est activé avec l'extension `github-copilot-cli`.
-OpenCode dispose de deux serveurs MCP (filesystem, fetch) via `npx -y`.
-Claude Code applique une matrice de permissions allow/ask/deny et un hook
-de gouvernance RTK sur les appels Bash. Son `settings.json` n'est PAS épinglé
-comme un lien symbolique en lecture seule vers le store : le socle est fusionné
-dans un `~/.claude/settings.json` ÉCRIVABLE à chaque switch, afin que les
-plugins / add-ons (claude-mem, graphify, ...) puissent être installés et gérés
-à la main par-dessus.
+OpenCode obtient deux serveurs MCP (filesystem, fetch) via `npx -y`.
+Claude Code applique une matrice de permissions allow/ask/deny et un
+hook de gouvernance RTK sur les appels Bash.
 :::
 
-* **enable** `bool` Active les outils IA et les utilitaires associés
+:::caution[settings.json inscriptible]
+Claude Code et Antigravity CLI réécrivent leur propre `settings.json` :
+un magasin en lecture seule en symlink les casse, et fait échouer le
+prochain switch sur le `.bkp`. Le socle Nix est fusionné par jq dans un
+fichier INSCRIPTIBLE à chaque switch ; les clés d'exécution (plugins,
+espaces de travail de confiance) sont préservées.
+:::
+
+* **enable** `bool` Activer les outils d'IA et les utilitaires de support
 * **enableClaude** `bool` CLI Claude Code
-* **enableOpenCode** `bool` Agent IA de terminal OpenCode
+* **enableOpenCode** `bool` Agent d'IA terminal OpenCode
 * **enableCodex** `bool` CLI OpenAI Codex
 * **enableAntigravity** `bool` CLI Google Antigravity
-* **enableAider** `bool` Programmation en binôme IA avec Aider
+* **enableAider** `bool` Programmation en binôme avec Aider AI
 * **enableGoose** `bool` Agent de codage IA Goose (Block Inc.)
-* **preferLocal** `bool` Préfère les modèles locaux aux modèles cloud
+* **preferLocal** `bool` Préférer les modèles locaux plutôt que ceux du cloud
 
 ```nix
 darkone.home.ai = {
@@ -179,25 +183,26 @@ darkone.home.games = {
 
 <hr/>
 
-{/* t:p 8cc86b72cc50ff00f8cfc4576fb69487d652391b82246e554ecb33446336cdec */}
+{/* t:p aea352584c63177580944b2682107f9c683861bf52b1a419c598926e5ac8cd21 */}
 ### &#x1F3E0; darkone.home.gnome
 
-Ajustements Gnome pour home-manager.
+Réglages Gnome pour home-manager.
 
-Masque inconditionnellement le lanceur nu `xterm`, enregistre des
-entrées `.desktop` soignées pour `scrcpy` et `scrcpy-console` lorsque le
-package fait partie des `home.packages` de l'utilisateur, et (lorsque
-`hideTechnicalIcons` est défini) masque les icônes de Paramètres,
-Extensions, Imprimantes et File Roller pour les profils débutant/enfant.
+Masque sans condition les lanceurs `xterm` nu, les réglages Qt5/Qt6 et le
+manuel NixOS, les Extensions pour les profils non techniques, enregistre des
+entrées `.desktop` soignées pour `scrcpy` et `scrcpy-console` quand le paquet
+fait partie des `home.packages` de l'utilisateur, et (quand `hideTechnicalIcons`
+est défini) masque les icônes Paramètres, Imprimantes et File Roller pour les
+profils débutant / enfant.
 
 :::caution[Signets NFS]
-Ne pas déclarer `gtk.gtk3.bookmarks` depuis ce module — tant que les parts
-home NFS sont actives, `home/profiles/minimal/nfs.nix` possède ce fichier
+Ne pas déclarer `gtk.gtk3.bookmarks` depuis ce module : tant que les partages
+NFS du home sont actifs, `home/profiles/minimal/nfs.nix` possède ce fichier
 et l'écrase.
 :::
 
-* **enable** `bool` Activer les paramètres Gnome pour home-manager
-* **hideTechnicalIcons** `bool` Masquer certaines icônes pour débutants / enfants / bébés
+* **enable** `bool` Activer les réglages gnome pour home manager
+* **hideTechnicalIcons** `bool` Masquer certaines icônes pour les débutants / enfants / petits
 
 ```nix
 darkone.home.gnome = {

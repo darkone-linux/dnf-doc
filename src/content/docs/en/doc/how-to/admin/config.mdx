@@ -431,34 +431,42 @@ at `<domain>.domain.tld`. Catalog and details&nbsp;:
 [Services](/en/doc/admin-guide/operate/services/).
 :::
 
-{/* t:p 630c45d92d950d02bbd13c584a3cc9787a3dcb1d421e902078d0b2aed6e2e974 */}
-### Declaring partitioning
+{/* t:p 208b636cc39325735c6e46a3d5968c1dad03a7e6b89851f023e40f350705ec36 */}
+### Declaring the partitioning
 
-The `disko` key describes **partitioning** for automatic installation.
+The `disko` key describes the **partitioning** for the automatic installation.
 
-- `profile` designates a `(usr|dnf)/hosts/disko/<profile>.nix` file.
-- `devices` maps the profile's named disks to actual devices.
+- `profile` refers to a `usr/hosts/disko/<profile>.nix` file, otherwise
+  `dnf/hosts/disko/<profile>.nix` (the local profile overrides the framework's).
+- `devices` is **required**&nbsp;: one real device per disk named in the
+  profile, no more, no less, otherwise `just generate` fails.
 
 ```yaml
 # etc/config.yaml
     disko:
       profile: "btrfs-1-disk"
       devices:
-        main: "/dev/nvme0n1"
+        main: "/dev/disk/by-id/nvme-Samsung_SSD_990_PRO_2TB_S7DNNJ0W000000"
 ```
 
-:::caution[Installation only]
-`disko` is only read **during installation** (`just install` formats the
-disks). Once the machine is installed, you can comment out the `disko` block
-for safety. An accidental trigger of the installation could order a disk
-reformat.
+:::tip[Prefer `/dev/disk/by-id/`]
+A `/dev/sdX` name can change from one boot to another (installation USB key
+plugged in, disk added) and point to the wrong disk. Get the stable identifier
+with `ls -l /dev/disk/by-id/` from the ISO.
+:::
+
+:::note[Useful for installation only]
+`just generate` combines the profile and `devices` into
+`usr/machines/<hôte>/install/disko.nix`, which `just install` freezes. The
+`disko` block then has no further effect and can be removed. See [Machine
+directory](/en/doc/how-to/admin/machines-layout/).
 :::
 
 :::tip[Reinstalling a machine]
-The major advantage of a declarative configuration is being able to **reinstall a
-node with all its programs and configuration**, either to change hardware
-or after a serious issue. A good declaration combined with a complete
-data backup allows a full reinstallation.
+The big advantage of a declarative configuration is being able to **reinstall a
+node with all its programs and configuration**, either to change hardware,
+or after a serious problem. A good declaration combined with a complete data
+backup allows a full reinstallation.
 :::
 
 {/* t:p c972ae3a9b2c2401117fc3aecda32a253d1ad24a97c0b12e98ff4490e9348459 */}

@@ -86,13 +86,12 @@ machine, using the Tobii Experience app. Without this step, the tracker
 stays silent under Linux.
 :::
 
-{/* t:p 208a3aca634ff3f618adb98174a3c91ee5c87880d7a32ba3a103d190f0d0184b */}
+{/* t:p 45bfc590a6967410ff88a1e5f880196dc7d56756b10c4fc844893e874e167a2e */}
 ## Setting up a workstation
 
 <Steps>
 
-1. **Declare the host and its user** in `etc/config.yaml`, both with
-   the `umi` profile&nbsp;:
+1. **Declare the host and its user** in `etc/config.yaml`, both with the `umi` profile&nbsp;:
 
    ```yaml
    # etc/config.yaml
@@ -111,14 +110,12 @@ stays silent under Linux.
        users: ["alice"]
    ```
 
-   The user profile adds the account to the `input` and `uinput` groups,
-   without which Talon cannot inject events.
+   The user profile adds the account to the `input` and `uinput` groups, without which Talon cannot inject events.
 
-2. **Enable automatic login** in the machine's
-   configuration, if the user cannot use a keyboard to sign in&nbsp;:
+2. **Enable automatic login** in the machine's configuration, if the user cannot use a keyboard to sign in&nbsp;:
 
    ```nix
-   # usr/machines/umi-desktop/default.nix
+   # usr/machines/umi-desktop/configuration.nix
    darkone.host.umi.autoLoginUser = "alice";
    ```
 
@@ -132,35 +129,29 @@ stays silent under Linux.
 4. **Test and configure**
 
    :::caution[Eye tracker: calibrate on first launch]
-   Unplug then replug the tracker (the udev rules only apply at
-   plug-in), restart Talon, then run calibration from its menu.
+   Unplug then replug the tracker (the udev rules only apply on plug-in), restart Talon, then launch calibration from its menu.
    :::
 
 </Steps>
 
 :::tip[Multiple users on the same machine]
-Only the account listed in `autoLoginUser` opens its session by itself. The
-other UMI accounts are declared in `gazeUsers` to inherit
-the Cinnamon session. Regular accounts keep their usual GNOME
-Wayland session.
+Only the account listed in `autoLoginUser` opens its session by itself. The other UMI accounts declare themselves in `gazeUsers` to inherit the Cinnamon session. Ordinary accounts keep their usual GNOME Wayland session.
 :::
 
-{/* t:p 0edad830c1621af0cd9b10d4be0ca43ea35fb1e4c03de2c43d580093037abfb2 */}
+{/* t:p 91f9cdcda861e354cfe03cf5ac4a4e5104a11ca0cd7e6c5b93d1f52c970f6833 */}
 ## Configuring the host
 
-`darkone.host.umi` options, to set in `usr/machines/<host>/default.nix`.
+`darkone.host.umi` options, to set in `usr/machines/<host>/configuration.nix`.
 
 | Option | Default | Role |
 |---|---|---|
 | `enable` | enabled by the profile | Enables the host profile |
-| `autoLoginUser` | `null` | Account opened automatically at startup |
+| `autoLoginUser` | `null` | Account opened automatically at boot |
 | `gazeUsers` | `[ ]` | Other accounts whose GDM session is Cinnamon/X11 |
 | `package` | `pkgs.talon` | Talon package, or `null` to install it manually |
 
-:::note[Talon absent or not wanted]
-With `package = null`, everything else is configured (udev, uinput,
-accessibility) and Talon can be launched manually from the upstream archive,
-which preserves its automatic update.
+:::note[Talon missing or unwanted]
+With `package = null`, everything else is configured (udev, uinput, accessibility) and Talon can be launched manually from the upstream archive, which preserves its automatic update.
 :::
 
 {/* t:p 709e9bc89795b7865cbf37293e4ceb74278f0810e2eae35831824159682f5e89 */}

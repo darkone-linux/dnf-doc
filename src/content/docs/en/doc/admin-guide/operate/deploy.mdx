@@ -603,14 +603,14 @@ Nothing goes out if the bot is not provisioned, nor on an abort (`^C`, service
 stop).
 :::
 
-{/* t:p db18aca61e174f7aa3bded2b41ab9260f32a9efbadba1117373ee039e1106776 */}
-### Daily run
+{/* t:p a4bcf5db6759586551c4ecbc142982351d5ab529829cc6e2d847ebff25f36514 */}
+### Daily execution
 
 On the deployment host, the module installs the tool and, with `timer.enable`,
 runs `fleet-update --no-ui` every day&nbsp;:
 
 ```nix
-# usr/machines/<hôte>/default.nix
+# usr/machines/<hôte>/configuration.nix
 darkone.admin.fleet-update = {
   enable = true;
   user = "admin";
@@ -621,107 +621,107 @@ darkone.admin.fleet-update = {
 
 | Option | Default | Role |
 |---|---|---|
-| `user` | none | Owner of the project: git, age key, AI, Matrix |
+| `user` | none | Project owner: git, age key, AI, Matrix |
 | `workDir` | `/etc/nixos` | Consumer project on disk |
-| `aiContext` | `null` | Context added to the timer's AI prompts; `timer.extraArgs` can replace it |
-| `timer.onCalendar` | `*-*-* 04:00` | Run time |
-| `timer.extraArgs` | `[ ]` | Options added to `--no-ui`, e.g. `--send-report` |
+| `aiContext` | `null` | Context added to the timer's AI prompts; `timer.extraArgs` can override it |
+| `timer.onCalendar` | `*-*-* 04:00` | Start time |
+| `timer.extraArgs` | `[ ]` | Options added to `--no-ui`, `--send-report` for example |
 | `timer.timeout` | `6h` | Maximum duration of a run |
 
 :::note[Exit codes and alerts]
-A run already in progress (code `4`) is not an error. Any other failure, or an
-exceeded `timer.timeout`, fails the unit and triggers the
-`SystemdUnitFailed` [alert](/en/doc/admin-guide/operate/alerts/).
+A run already in progress (code `4`) is not an error. Any other failure, or
+exceeding `timer.timeout`, puts the unit in failure and triggers the
+[alert](/en/doc/admin-guide/operate/alerts/) `SystemdUnitFailed`.
 :::
 
-:::caution[Deployment account and host]
+:::caution[Account and deployment host]
 The timer requires `darkone.admin.nix` on the host, and a `user` account with
 passwordless `sudo`.
 :::
 
 :::note[Daily report]
 `--send-report` will become the default of `timer.extraArgs` when the packaged
-version of the tool knows how to send it. Add it until then, after verifying
-the sending manually.
+version of the tool knows how to send it. Add it until then, after verifying the
+sending manually.
 :::
 
-{/* t:p 333e4a36fb171ecc02ba4e561f232805b6736598cb272e45c16286eb2328a3df */}
+{/* t:p 53a65117f4b0aa9b06069bf828ec8a617dc5f76f1d45daf9f956e1bb20ada775 */}
 ## Binary cache
 
-Two services combine to avoid recompiling or re-downloading derivations at every
-deployment.
+Two services combine to avoid recompiling or re-downloading the derivations at
+each deployment.
 
 | Service | Role |
 |---|---|
-| `harmonia` | Serves the local `/nix/store`, signed, **directly** to hosts (LAN, or VPN if `global`). |
+| `harmonia` | Serves the local, signed `/nix/store` **directly** to the hosts (LAN, or VPN if it is `global`). |
 | `nix-cache` | Per-zone `nginx` proxy that caches the public `cache.nixos.org` cache on the gateway. |
 
 A `harmonia` host has a second role: it is the
-[elected builder](#distributed-build) of its zone, because it knows how to
-serve what it builds.
+[elected builder](#distributed-build) of its zone, because it can serve
+what it builds.
 
 A host queries these sources in the following priority order. The first fetch
-from the Internet is thus shared for the whole zone.
+from the Internet is thus shared across the whole zone.
 
 | Priority | Source | Scope |
 |---|---|---|
-| 20 | `harmonia` of the zone | LAN, what the zone compiled |
-| 35 | `nix-cache` proxy of the zone | LAN, shared mirror of the public cache |
+| 20 | zone `harmonia` | LAN, what the zone compiled |
+| 35 | zone `nix-cache` proxy | LAN, shared mirror of the public cache |
 | 40 | `cache.nixos.org` directly | safety net if the gateway is down |
 | 45 | `global` `harmonia` | last resort, over the VPN |
 
 :::note[How the order is guaranteed]
-Nix does not follow the order of the `substituters` list; it sorts caches
-according to the priority each announces in its `nix-cache-info`. Yet those
-announced values are equal: all `harmonia` declare 30, and the proxy relaying
-`cache.nixos.org` as is declares 40, like direct access to the public cache. DNF
-therefore fixes the priority in the substituter URL (`?priority=35`), which
-overrides the announced value and makes the table order explicit.
+Nix does not follow the order of the `substituters` list, it sorts the caches
+according to the priority each announces in its `nix-cache-info`. Yet these
+announced values are tied: all `harmonia` declare 30, and the proxy relaying
+`cache.nixos.org` as-is declares 40, like the direct access to the public cache.
+DNF therefore fixes the priority in the substituter URL (`?priority=35`), which
+overrides the announced value and makes the order in the table explicit.
 
-Two intended consequences. The zone proxy goes **ahead** of direct access to the
-public cache, otherwise zone sharing would never happen. And a `global`
-`harmonia` goes **behind** this public cache: `harmonia` serves a whole
+Two intended consequences. The zone proxy sits **ahead of** the direct access to
+the public cache, otherwise zone sharing would never happen. And a `global`
+`harmonia` sits **behind** this public cache: `harmonia` serves a whole
 `/nix/store`, without being able to tell what it compiled from the rest, so a
-well-stocked host would capture all the traffic that the public cache must
-serve. As a last resort, it is only consulted for what `cache.nixos.org` does
-not have, i.e. its own builds.
+well-stocked host would capture all the traffic the public cache must serve. As
+a last resort, it is only consulted for what `cache.nixos.org` does not have,
+that is, its own builds.
 :::
 
 :::note[A host does not use its own `harmonia`]
 This service serves its own `/nix/store`, so it can only provide paths already
-present locally. On that host, anything missing necessarily comes from another
-source: that's normal, its `harmonia` only benefits the **other** machines of
+present locally. On this host, everything missing necessarily comes from another
+source: that is normal, its `harmonia` only benefits the **other** machines of
 the zone.
 :::
 
-:::tip[Roaming host (multi-zone laptop)]
-A laptop that changes zone must not keep substituters frozen on its declared
-zone: unreachable elsewhere, they cost timeouts on every request. Enable
-*roaming* mode:
+:::tip[Nomadic host (multi-zone portable)]
+A laptop that changes zone must not keep substituters fixed on its declared
+zone: unreachable elsewhere, they cost timeouts on every request. Enable the
+*roaming* mode&nbsp;:
 
 ```nix
-# usr/machines/<hôte>/default.nix
+# usr/machines/<hôte>/configuration.nix
 darkone.service.nix-cache.roaming = true;
 ```
 
 Its substituters become **neutral** names (`harmonia.dnf.internal`,
-`nix-cache.dnf.internal`) that each zone's DNS resolves to its own caches → the
-cache follows the machine. Outside any zone, immediate NXDOMAIN answer → direct
-fallback on `cache.nixos.org`, without delay. Since signature keys are common to
-the whole network, nothing else to configure.
+`nix-cache.dnf.internal`) that the DNS of each zone resolves to its own caches →
+the cache follows the machine. Outside any zone, an immediate NXDOMAIN response
+→ direct fallback on `cache.nixos.org`, without delay. Signature keys being
+common to the whole network, nothing else to configure.
 :::
 
 :::note[Activation]
 `harmonia` and `nix-cache` are [services](/en/doc/admin-guide/operate/services/)
-to enable on a network host (`nix-cache` on the zone gateway). harmonia's
+to enable on a network host (`nix-cache` on the zone gateway). The harmonia
 signature key is managed by [sops](/en/doc/admin-guide/operate/secrets/)
 (`just configure-admin-host`).
 :::
 
 :::tip[Why a single-upstream proxy]
-`nix-cache` relays only **one** upstream (`cache.nixos.org`): it caches
-`narinfo` and `nar` as is, signatures intact. No URL rewriting or database,
-therefore no HTTP 500 "invalid nar hash" error from the old `ncps` relay.
+`nix-cache` only relays **one** upstream (`cache.nixos.org`)&nbsp;: it caches
+`narinfo` and `nar` as-is, signatures intact. No URL rewriting nor database,
+therefore no HTTP 500 "invalid nar hash" error like the old `ncps` relay.
 :::
 
 {/* t:p 54036d97ac85014a52079c024508dd3fbf02c05c1a43782ae13514626aaf9fa1 */}

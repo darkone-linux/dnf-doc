@@ -54,26 +54,32 @@ flake: flake.nix\n(framework → NixOS) {
 cfg -> gen -> out -> flake
 ```
 
-{/* t:p 24511c529b8d3bf1e9a30f520911728b56e0d2bf44426e0f52179f03e89b7039 */}
+{/* t:p b669124ecbb349fbbe5a8ee0a35913091bc047653db642203aaf19ae5c9ce873 */}
 ## Commands
 
-The generator exposes one command per target. `just generate` chains them all together; you can also invoke a single one.
+The generator exposes one command per target. `just generate` chains them all;
+you can also invoke a single one.
 
 | Command | Output | Content |
 |---|---|---|
 | `hosts` | `var/generated/hosts.nix` | Hosts: profiles, services, colmena tags. |
 | `users` | `var/generated/users.nix` | Users: profiles, groups. |
 | `network` | `var/generated/network.nix` | Topology: zones, DNS, VPN. |
-| `disko` | `usr/machines/<hôte>/disko.nix` | Per-host partitioning. |
-| `doc` | `*/ref/modules.mdx` | Module reference (documentation). |
+| `machines` | `usr/machines/<host>/install/disko.nix`, `var/generated/hosts/<host>.nix` | Disk layout (profile + devices, frozen at installation) and the boot flags it implies. |
+| `doc` | `*/ref/modules.mdx` | Modules reference (documentation). |
 
 ```sh
 just generate          # regenerate everything (via the Justfile)
-just codegen           # regenerate only the module reference (doc)
+just codegen           # regenerate only the modules reference (doc)
 ```
 
 :::note[Reading modules]
-The generator also reads `dnf/config/modules.nix` (service topology): it applies flags (reverse proxy, uniqueness…) and **validates `require` dependencies** → a required service must be enabled on the same host, otherwise generation fails. For the `doc` command, it **parses Nix sources** (the `rnix` parser) to extract options and headers. Documenting an option = describing it in the module, then `just codegen`.
+The generator also reads `dnf/config/modules.nix` (services topology): it applies
+the flags (reverse proxy, uniqueness…) there and **validates `require`
+dependencies** → a required service must be enabled on the same host, otherwise
+generation fails. For the `doc` command, it **parses the Nix sources** (`rnix`
+parser) to extract options and headers. Documenting an option = describing it in
+the module, then `just codegen`.
 :::
 
 {/* t:p 35896f9a3ec5e74a79bfaa399fa667a0c6b84f8cbf230b270288a8fdc362474f */}

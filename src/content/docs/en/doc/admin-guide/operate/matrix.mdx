@@ -187,43 +187,43 @@ The migration is not reversible&nbsp;: going back requires restoring the
 backup. Do not start it without completing step 1 first.
 :::
 
-{/* t:p 81b5f63b3dfd104ac8465459b2c0359b10a79e5866e75ba4831de9c7063091ff */}
-## Register friends
+{/* t:p c1c5401c17781f5466c712c66a223cf9d1f0dbf69ab8eb1f537325cb02758fe0 */}
+## Inviting friends
 
-Beyond SSO users, you can open **token-based** registration for local
-password accounts (friends). Without a token, registration is not possible.
+In addition to SSO users, you can open **token-based** registration for local
+password accounts (friends). Without a token, no registration is possible.
 
 ```nix
-# usr/machines/<host>/default.nix
+# usr/machines/<host>/configuration.nix
 darkone.service.matrix.friendRegistration.enable = true;
 ```
 
 <Steps>
 
-1. Create a token on the Matrix host. Here valid for **one use** and **7
-   days** (by default, the token is single-use and has no expiry)&nbsp;:
+1. Create a token on the Matrix host. Here it is valid **once** and for
+   **7 days** (without options, the token is single-use and never expires)&nbsp;:
 
    ```sh
    sudo dnf-mas manage issue-user-registration-token --usage-limit 1 --expires-in 604800
    ```
 
-   The response displays the token, e.g. `Created user registration token:
+   The response displays the token, for example `Created user registration token:
    9SwPTGIFGQPa`. Send it to the friend.
 
-2. The friend opens `https://matrix.domain.tld/register` and chooses password
-   creation.
+2. The friend opens `https://matrix.domain.tld/register` and chooses
+   password-based creation.
 
-3. They enter their username and password, **then** the token, which is
-   requested at the next step.
+3. They enter their username and password, **then** the token, requested at the
+   next step.
 
-4. They can then log in with that username/password pair from any client,
-   including Element X.
+4. They then sign in with this username / password pair from
+   any client, Element X included.
 
 </Steps>
 
 <Aside type="tip" title="Managing your account">
-A friend can change their password and revoke sessions from the
-`https://matrix.domain.tld/account/` portal, without any admin intervention.
+A friend can change their password and revoke their sessions from the portal
+`https://matrix.domain.tld/account/`, without administrator intervention.
 </Aside>
 
 {/* t:p 253a0cbbf33cc128fe5e17ad25c5c16671ce7f8490f327d97ce205ac35eabf89 */}
@@ -323,24 +323,24 @@ On a network where logins are assigned by hand, the risk is low but the gain
 is zero&nbsp;: the manual merge above does the same work, once, knowingly.
 </Aside>
 
-{/* t:p 2b1859ffedc75f4c9914a7b742b39741f19026b8adbf81992496506d36f991fd */}
+{/* t:p 627d6beb220f86dd139136cf2ab065cc6c07f1d5fd30ee99fa539ef659c59dbe */}
 ## Managing bridges
 
-WhatsApp, Signal, Telegram and Messenger bridges are **enabled by
-default** with Matrix&nbsp;; Discord is **disabled by default**. Per-host setting in
-the machine's nix configuration&nbsp;:
+The WhatsApp, Signal, Telegram and Messenger bridges are **enabled by
+default** with Matrix&nbsp;; Discord is **disabled by default**. Set per host in
+the Nix configuration of the machine&nbsp;:
 
 ```nix
-# usr/machines/<host>/default.nix
+# usr/machines/<host>/configuration.nix
 darkone.service.matrix.bridges = {
   discord.enable = true;     # opt-in
-  messenger.enable = false;  # disable a default bridge
+  messenger.enable = false;  # disable a bridge that is on by default
 };
 ```
 
 Each bridge has its own secrets&nbsp;:
 
-| Bridge | Sops keys | Note |
+| Bridge | sops keys | Note |
 |---|---|---|
 | WhatsApp | `mautrix-whatsapp-as-token`, `mautrix-whatsapp-hs-token`, `mautrix-whatsapp-encryption-pickle-key` | `openssl rand -hex 32` each |
 | Signal | `mautrix-signal-as-token`, `mautrix-signal-hs-token`, `mautrix-signal-encryption-pickle-key` | `openssl rand -hex 32` each |
@@ -348,18 +348,18 @@ Each bridge has its own secrets&nbsp;:
 | Telegram | `mautrix-telegram-api-id`, `mautrix-telegram-api-hash`, `mautrix-telegram-as-token`, `mautrix-telegram-hs-token` | API id/hash to create on [my.telegram.org](https://my.telegram.org) |
 | Discord | `mautrix-discord-as-token`, `mautrix-discord-hs-token` | `openssl rand -hex 32` each |
 
-The `as`/`hs` tokens make each bridge's appservice *registration*
-deterministic (see
+The `as`/`hs` tokens make each bridge's appservice *registration* deterministic
+(see
 [appservice tokens](/en/doc/admin-guide/understand/matrix/#appservice-tokens)).
 
 <Aside type="caution" title="Migrating an already deployed bridge">
 On a WhatsApp or Signal bridge deployed **before** these tokens were
 introduced, the existing registration keeps the old auto-generated tokens. To switch
-to sops tokens&nbsp;: delete `/var/lib/mautrix-<pont>/<pont>-registration.yaml`,
+to the sops tokens&nbsp;: delete `/var/lib/mautrix-<bridge>/<bridge>-registration.yaml`,
 restart the bridge (the registration is regenerated from the config), then
 restart `matrix-synapse`. For Messenger and Discord, a simple redeployment
 followed by a Synapse restart is enough&nbsp;: their modules rewrite the
-registration from the config at every start.
+registration from the config at every startup.
 </Aside>
 
 {/* t:p fdcd17e867f835107ff6b82c47796ac9d4dda473b637270fdd4678f01a21b99d */}
@@ -380,44 +380,44 @@ phone appear in Matrix as coming from the user's **real account**.
 This is automatic for all local accounts, no action per
 user.
 
-{/* t:p ffd06ebe65404e33e69324359624dcb6109d7a165151bf5bd4bc2f34faf78a4b */}
+{/* t:p 64ba2cb28da6a2f0eebafbf2839f905f73c3cca1f63feeab1a9ff2e5bd2da867 */}
 ## Audio and video calls
 
-Two stacks coexist, because neither covers all clients. They are enabled
-separately and do not replace each other&nbsp;:
+Two stacks coexist, because neither covers every client. They are
+activated separately and do not replace each other&nbsp;:
 
 | | Legacy WebRTC | MatrixRTC |
 |---|---|---|
 | Option | `darkone.service.turn.enable` | `darkone.service.matrix.matrixRtc.enable` |
 | Components | coturn | LiveKit (SFU) + authorization service |
-| One-on-one calls | yes | yes |
+| Two-person calls | yes | yes |
 | Group calls | no | yes |
 | Element Classic (Android) | **yes** | no |
 | Element Web / Desktop | yes | yes |
 | **Element X** (Android, iOS) | **no** | **yes** |
 
-Keep **both** enabled&nbsp;: Element Classic only speaks the first stack,
+Keep **both** enabled&nbsp;: Element Classic only speaks the first,
 Element X only the second.
 
-<Aside type="danger" title="The two stacks cannot talk to each other">
+<Aside type="danger" title="The two stacks do not interoperate">
 A call started from Element X is **invisible** in Element Classic, and
-vice versa&nbsp;: the two use different Matrix events (`m.call.*` vs
-`m.rtc.member`), and the legacy app contains no LiveKit code. No server
-configuration can reconcile them&nbsp;: upstream, the issue is
+vice versa&nbsp;: they signal through different Matrix events
+(`m.call.*` vs `m.rtc.member`), and the old app contains no LiveKit code.
+No server configuration reconciles them&nbsp;; upstream, the case is
 [classified "not planned"](https://github.com/element-hq/element-x-android/issues/3937).
 
-The only client that speaks **both** stacks is Element Web/Desktop&nbsp;: a
-user still on Element Classic can join an Element X call by opening
-`https://element.domain.tld` in their phone's browser. Otherwise, migrate
-to Element X&nbsp;: the classic app is in maintenance-only mode with no new
-features.
+The only client that speaks **both** is Element Web/Desktop&nbsp;: a
+user still on Element Classic can therefore join an Element X call
+by opening `https://element.domain.tld` in their phone's browser.
+Otherwise, migrate to Element X — the classic app is in maintenance
+mode only, with no new features.
 </Aside>
 
 <Aside type="caution" title="Element X: two separate prerequisites">
-Element X refuses to call with *"Call not supported"* (error
-`MISSING_MATRIX_RTC_TRANSPORT`) as long as MatrixRTC is absent, **even** if
-MAS is active. MAS gates the login, MatrixRTC gates the calls&nbsp;: enabling
-one does not grant the other.
+Element X refuses to call with *"The call is not supported"* (code
+`MISSING_MATRIX_RTC_TRANSPORT`) as long as MatrixRTC is missing, **even** if MAS
+is active. MAS gates the connection, MatrixRTC gates calls&nbsp;: enabling one
+does not give the other.
 </Aside>
 
 <Steps>
@@ -425,7 +425,7 @@ one does not grant the other.
 1. Enable the MatrixRTC stack in the host's Nix config&nbsp;:
 
    ```nix
-   # usr/machines/<host>/default.nix
+   # usr/machines/<host>/configuration.nix
    darkone.service.matrix.matrixRtc.enable = true;   # required by Element X
    ```
 
@@ -436,7 +436,7 @@ one does not grant the other.
    just apply <host> switch
    ```
 
-3. Verify that the server advertises a transport&nbsp;:
+3. Check that the server announces a transport&nbsp;:
 
    ```sh
    # must contain "org.matrix.msc4143.rtc_foci"
@@ -449,9 +449,9 @@ one does not grant the other.
 </Steps>
 
 No extra subdomain or certificate&nbsp;: the SFU and its authorization service
-are served on the Matrix vhost under `/livekit/sfu` and `/livekit/jwt`.
-Client-side, nothing to configure either&nbsp;— Element X and Element Web
-bundle Element Call and discover the transport automatically.
+are served on the Matrix vhost, under `/livekit/sfu` and
+`/livekit/jwt`. Nothing to configure client-side either&nbsp;— Element X and Element
+Web embed Element Call and discover the transport on their own.
 
 {/* t:p aa8d326eab9a9e5a1f4418e7f153c1f627cb4ab6bdf868611d4da9bf5cc6b11c */}
 ### Media ports
@@ -541,42 +541,42 @@ bound to the tailnet interface, with its own `relay-ip`. Both paths then stay
 symmetric.
 </Aside>
 
-{/* t:p 0f41ac433fa1137ed832a36a6ca0cd7b09466c8c17ef82ceed896991b4fb8656 */}
+{/* t:p ea2846225b88f4da7cbaebbfd74dea16a78c2248dd1663d4aea0fcdfef84d3fc */}
 ## Opening the network to federation
 
-By default, the server federates with **all** Matrix servers, while remaining
-**invisible in searches** (directories not exposed). To control the scope, set
-`darkone.service.matrix.federation` in the host's nix config:
+By default, the server federates with **all** Matrix servers, while staying
+**invisible in search results** (directories not exposed). To control the
+scope, set `darkone.service.matrix.federation` in the host's Nix config&nbsp;:
 
 ```nix
-# usr/machines/<host>/default.nix
+# usr/machines/<host>/configuration.nix
 darkone.service.matrix.federation = {
-  enable = true;       # false = federation fully blocked
-  whitelist = [ ];     # empty = open ; otherwise whitelist
+  enable = true;       # false = federation totally blocked
+  whitelist = [ ];     # empty = open ; otherwise a whitelist
 };
 ```
 
 | Goal | Setting |
 |---|---|
 | Isolated network (no federation) | `enable = false;` |
-| Open to the entire Matrix ecosystem | `enable = true; whitelist = [ ];` |
+| Open to the whole Matrix ecosystem | `enable = true; whitelist = [ ];` |
 | Restricted to trusted servers | `enable = true; whitelist = [ "ami.org" "matrix.org" ];` |
 
 <Aside type="caution" title="Family network">
-The whitelist is **bidirectional**: an unlisted server can neither write to
-your users nor receive from them. For a network used by children, fill in
-`whitelist` rather than leaving federation open.
+The whitelist is **bidirectional**&nbsp;: a server not listed can neither
+write to your users nor receive from them. For a network used by children,
+fill in `whitelist` instead of leaving federation open.
 </Aside>
 
-Verify after deployment:
+Check after deployment&nbsp;:
 
 <Steps>
 
 1. Test incoming federation with
    [federationtester.matrix.org](https://federationtester.matrix.org/) on
-   `domain.tld` → all green lights.
+   `domain.tld` → all indicators green.
 
-2. With a whitelist, an **unlisted** server is denied (Synapse log:
+2. With a whitelist, a **non-listed** server is refused (Synapse log&nbsp;:
    `Federation denied`), a listed domain works.
 
 </Steps>

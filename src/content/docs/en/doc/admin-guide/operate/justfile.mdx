@@ -93,11 +93,13 @@ co-development, also formats `dnf/`.
 just format
 ```
 
-{/* t:p 68ab2120accf9872167017ad6862d92b9cb1ef3c6083161023dd23265f05e0a5 */}
+{/* t:p ae4e7f74d160a10119a0d16e2995a9313034e42c0b8e712b12ce0d85b2486211 */}
 ### 💠 `generate`
 
-Regenerates the `default.nix` files for module directories and, in a project,
-the `var/generated/*.nix` files from `etc/config.yaml`.
+Regenerates the `default.nix` files of module folders and, in a project, the
+`var/generated/*.nix` files from `etc/config.yaml`. It also seeds
+`usr/machines/<host>/` for each host with a `disko` block (see [Machine
+folder](/en/doc/how-to/admin/machines-layout/)).
 
 :::note[Two modes]
 - **Generator sources present** (`src/generator/`): `cargo run`.
@@ -278,29 +280,45 @@ just bump          # level inferred from commits
 
 Installing a new host follows a precise sequence.
 
-{/* t:p 26ad8f4341e8d4b7a67a0c437f484feb81b4b1cba7bc9705cd22c18186860e3e */}
+{/* t:p 4a9315d11ba05a8997b84fdfcd785d2cf15c52f7f77e1776597a521dbfc348c2 */}
 ### ✳️ `install <host> [user] [ip]`
 
 Formats disks via **disko** and installs NixOS via **nixos-anywhere**.
 
 :::danger[Destructive]
-All data on the target host is erased. A confirmation is requested before executing.
+All data on the target host is wiped. A confirmation is requested before
+running.
 :::
 
-:::note[Configuration required]
-The host must have a disko configuration in `etc/config.yaml`, a `usr/machines/<host>/default.nix` directory, a `mac` key, and a fixed address (`zone: "<zone>:<x.y>"`). The last two are checked before any formatting: without them, the machine changes address on the reboot following installation. See [Initial
+:::note[Required configuration]
+The host must have a complete `disko` block in `etc/config.yaml` (profile and
+`devices`, hence `usr/machines/<host>/install/disko.nix`), a `mac` key and a
+fixed address (`zone: "<zone>:<x.y>"`). The last two points are checked before
+any formatting: without them, the machine changes address at the reboot that
+follows installation. See [Initial
 installation](/en/doc/admin-guide/install/first-network-installation/#install-a-machine).
 :::
 
-The `ip` argument defaults to `auto`: the address is calculated as for `full-install`, no need to look it up.
+The `ip` argument defaults to `auto`: the address is computed the same way as
+for `full-install`, no need to look it up.
 
 :::caution[The address must be the one the machine keeps]
-`nixos-anywhere` freezes its target address for the entire run and cannot follow a renumbering. But the installer renews DHCP: if the machine was running on a dynamic lease older than its reservation (the typical case of an installation **over another system**), it switches to its reserved address mid-installation and the run talks to thin air.
+`nixos-anywhere` pins its target address for the whole run and cannot track a
+renumbering. Yet the installer performs a new DHCP: if the machine was running
+on a dynamic lease older than its reservation until now (the typical case of an
+installation **on top of another system**), it switches to its reserved address
+mid-installation and the run talks into the void.
 
-The recipe therefore refuses to start on an address the host does not keep, and displays the ones it accepts. Before installing over an existing OS, reboot the machine so it takes its reserved address.
+The recipe therefore refuses to start on an address the host does not keep, and
+shows the ones it accepts. Before installing over an existing OS, reboot the
+machine so it takes its reserved address.
 :::
 
-The recipe also drops on the target, **before** system installation, the age key `/etc/sops/age/infra.key` and, on an encrypted host, its initrd SSH host key: sops works from the first activation and the very first boot already listens on port 2222. The volume is formatted with the fleet's shared passphrase, so there is nothing to enter.
+The recipe also drops on the target, **before** the system installation, the
+age key `/etc/sops/age/infra.key` and, on an encrypted host, the SSH host key
+of its initrd: sops works from the first activation and the very first boot
+already listens on port 2222. The volume is formatted with the shared fleet
+passphrase, so there is nothing to type.
 
 ```sh
 just install myserver
@@ -308,8 +326,18 @@ just install myserver nixos 10.0.0.5     # custom IP
 just install myserver nix auto test      # test VM only
 ```
 
+:::note[Installation seals the host]
+Just before formatting, `install` writes `usr/machines/<host>/install/state.nix`
+(`stateVersion` of the current nixpkgs release): the disk layout and the
+`stateVersion` are now frozen, even in case of reinstallation. The hardware
+survey (`hardware/`) is committed as soon as `nixos-anywhere` finishes. See
+[Machine folder](/en/doc/how-to/admin/machines-layout/).
+:::
+
 :::caution[LUKS and `do=test`]
-`nixos-anywhere` rejects `--vm-test` along with options that drop files and the formatting key: test mode therefore cannot format an encrypted volume. The recipe flags this.
+`nixos-anywhere` refuses `--vm-test` together with the options that drop files
+and the formatting key: the test mode therefore cannot format an encrypted
+volume. The recipe reports it.
 :::
 
 {/* t:p 332f678ae6aba4cf91ff9de59d833c42c4410666cb70c507792612466a979694 */}
@@ -329,10 +357,11 @@ just full-install myserver
 just full-install myserver nixos 10.0.3.42   # forced address
 ```
 
-{/* t:p c35851dd84a1ba4918b713d16e21603553a1b6ba8b087a32612bc98d8c64de97 */}
+{/* t:p 6aadc92efaf428e74d94138d2bc11288a0c13f2abe5d06c27d739da8f10734f4 */}
 ### ✳️ `install-key <host>`
 
-Formats a USB device with disko and installs NixOS on it.
+Formats a USB device with disko and installs NixOS on it. Seals the host like
+`install`.
 
 ```sh
 just install-key myusbhost
@@ -371,14 +400,28 @@ initrd LUKS on port 2222).
 just copy-id myserver
 ```
 
-{/* t:p b2fbc800fe07314f2fcfebb0e022519bd8c4e2e9066df1e527873554d0f53b5c */}
+{/* t:p f68b11e86fb7e533c456299644010822eef4ab835bd8e69d7b82e0d004d0d9ea */}
 ### ✳️ `copy-hw <host>`
 
-Runs `nixos-generate-config --show-hardware-config` remotely and saves
-the result into `usr/machines/<host>/hardware-configuration.nix`.
+Runs `nixos-generate-config --show-hardware-config` remotely and saves the
+result in `usr/machines/<host>/hardware/hardware-configuration.nix`,
+then chains `detect-hw`.
 
 ```sh
 just copy-hw myserver
+```
+
+{/* t:p 7d3b497597bd716e7a910b1a40033c41a74fbf6bfa83d6311d1f75b4a81e9a1c */}
+### ✳️ `detect-hw <host> [ip] [user]`
+
+Gathers on the machine the kernel modules of its wired network cards and writes
+them to `usr/machines/<host>/hardware/detected-hardware.nix` (generated file,
+imported automatically). They only join the initrd if it has network, for
+[remote LUKS unlock](/en/doc/admin-guide/operate/luks/). Called by `install`
+(`nixos` user of the ISO) and by `copy-hw`.
+
+```sh
+just detect-hw myserver
 ```
 
 {/* t:p bb952125c6373caa2bd08e413b62d65d906bb079653af1e5a91e8a718b2ec038 */}

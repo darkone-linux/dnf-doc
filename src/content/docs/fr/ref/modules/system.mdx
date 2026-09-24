@@ -551,77 +551,75 @@ darkone.system.testing = {
 
 <hr/>
 
-{/* t:p ff2516da07c14ee2904dd4985a057e73dfb5e3c0b270c1c74d809b078aa8c6a8 */}
+{/* t:p 9756d9cf6ffd16c6f4ae056a30b70b4b2acd604a82f648ca05884b87641b5bff */}
 ### &#x2699; darkone.system.yubikey
 
-Authentification forte YubiKey : PAM U2F + FIDO2 LUKS déclaratif sur toute la flotte.
+Authentification forte par YubiKey&nbsp;: PAM U2F à l'échelle du parc + déchiffrement LUKS déclaratif par FIDO2.
 
-Un inscription physique par (utilisateur, clé) sur l'administrateur — `just yubikey
-<user> [key] [action]` — alimente :
+Un seul enrôlement physique par (utilisateur, clé) sur l'hôte admin&nbsp;: `just
+yubikey <user> [key] [action]` alimente&nbsp;:
 
 - un registre **public** `usr/secrets/yubikeys.json` dans l'espace de travail
-  consommateur : identifiant pamu2fcfg, identifiant et sel du FIDO2 hmac-secret
-  (inutilisable sans la clé physique, donc commitable) ;
-- un secret sops `yubikey/<user>/<key>/luks-secret` (la phrase secrète LUKS dérivée
-  du FIDO2) ainsi que le `luks-passphrase` partagé (la phrase secrète saisie lors
-  de l'installation disko, nécessaire pour autoriser de nouveaux keyslots).
+  consommateur&nbsp;: l'identifiant de l'attestation pamu2fcfg, l'id du
+  credential FIDO2 hmac-secret et le sel (inutilisables sans la clé physique,
+  donc committables)&nbsp;;
+- un secret sops `yubikey/<user>/<key>/luks-secret` (le mot de passe LUKS
+  dérivé de FIDO2) ainsi que le `luks-passphrase` partagé (le mot de passe
+  saisi à l'installation disko, requis pour autoriser de nouveaux keyslots).
 
-Le module propage ensuite tout de façon déclarative (`just apply`), sans jamais
-brancher la clé sur les hôtes cible :
+Le module propage ensuite tout déclarativement (`just apply`), sans jamais
+brancher la clé sur les hôtes cibles&nbsp;:
 
-- **login / sudo / greeter** : pam_u2f en *alternative* au mot de passe
-  (`sufficient`) : toucher la clé connecte, le mot de passe sops reste le
-  repli automatique. Un identifiant est valide sur toute la flotte grâce à
-  l'origine fixe (`pam://<network.domain>`).
-- **hôtes chiffrés** : un service oneshot inscrit automatiquement chaque clé
-  déclarée dans chaque en-tête LUKS2 déclaré par disko (keyslot +
-  `systemd-fido2` token, le format exact écrit par `systemd-cryptenroll`) et
-  purge les clés révoquées. La clé physique n'est nécessaire qu'au démarrage
-  pour déverrouiller le disque.
+- **connexion / sudo / greeter**&nbsp;: pam_u2f comme *alternative* au mot de
+  passe (`sufficient`)&nbsp;: toucher la clé connecte, le mot de passe sops
+  reste le repli automatique. Un seul credential est valable sur tout le parc
+  grâce à l'origine fixe (`pam://<network.domain>`).
+- **hôtes chiffrés**&nbsp;: un service oneshot auto-enrôle chaque clé déclarée
+  dans chaque en-tête LUKS2 déclaré par disko (keyslot + jeton `systemd-fido2`,
+  le format exact écrit par `systemd-cryptenroll`) et retire les révoquées. La
+  clé physique n'est nécessaire qu'au démarrage, pour déverrouiller le disque.
 
-:::note[Configuration zéro]
-Activé par défaut, mais totalement inerte tant que le fichier registre
-n'existe pas. Le support LUKS cible les volumes LUKS trouvés dans la
-configuration disko de l'hôte (`usr/machines/<host>/disko.nix`, importée au
-moment de l'exécution).
+:::note[Zéro configuration]
+Activé par défaut, mais totalement inerte jusqu'à ce que le fichier du
+registre existe. Le support LUKS porte sur les volumes LUKS trouvés dans la
+config disko de l'hôte (`usr/machines/<host>/install/disko.nix`, importée au
+runtime).
 :::
 
 :::caution[Aucun verrouillage par conception]
-Le keyslot de la phrase secrète d'installation et les mots de passe de
-session sops ne sont jamais modifiés : perdre une clé revient au pire à
-revenir sur la phrase secrète/mot de passe. Cela vaut aussi au démarrage :
-la tentative FIDO2 s'exécute dans sa propre unité autorisée à échouer, si
-bien qu'une clé inutilisable, intouchée ou absente aboutit toujours à
-l'invite de la phrase secrète — voir le commentaire sur le bloc initrd
-ci-dessous.
+Le keyslot du mot de passe d'installation et les mots de passe de session sops
+ne sont jamais touchés&nbsp;: perdre une clé retombe au pire sur
+mot de passe/secret. C'est vrai aussi au démarrage&nbsp;: la tentative FIDO2
+tourne dans une unité dédiée autorisée à échouer, si bien qu'une clé absente,
+inutilisable ou non retirée aboutit toujours à la requête de mot de passe&nbsp;;
+voir le commentaire sur le bloc initrd ci-dessous.
 :::
 
-:::caution[Le toucher au démarrage ne peut être contourné]
-Les YubiKeys imposent la présence utilisateur pour l'extension
-`hmac-secret` : une assertion demandant `up=false` est refusée avec
-`FIDO_ERR_UP_REQUIRED` avant même que l'identifiant ne soit comparé. Le
-toucher est une règle matérielle, pas un paramètre du token, et aucun
-drapeau d'en-tête ne peut le lever. Le déverrouillage sans intervention
-(passerelles, hôtes sans interface) est du ressort du TPM2
-(`systemd-cryptenroll --tpm2-device=auto`), qui coexiste avec ces keyslots
+:::caution[Le toucher au démarrage ne peut être levé]
+Les YubiKeys imposent la présence utilisateur pour l'extension `hmac-secret`&nbsp;:
+une assertion demandant `up=false` est refusée avec `FIDO_ERR_UP_REQUIRED`
+avant même que le credential soit confronté. Le toucher est une règle
+matérielle, pas un réglage du jeton, et aucun flag d'en-tête ne peut le lever.
+Le déverrouillage sans intervention (passerelles, hôtes sans tête) relève du
+TPM2 (`systemd-cryptenroll --tpm2-device=auto`), qui coexiste avec ces keyslots
 FIDO2 dans le même en-tête LUKS.
 :::
 
 :::caution[Le trousseau GNOME reste verrouillé lors d'une connexion par clé]
-`sufficient` court-circuite la pile d'authentification : toucher la clé la
-termine avant l'exécution de `pam_gnome_keyring`, si bien que le démon démarre
-sans mot de passe et GNOME demande le trousseau une fois au démarrage de la
-session (GNOME Online Accounts et evolution-data-server sollicitent le service
-de secrets immédiatement). Une connexion par mot de passe n'est pas affectée.
-Solution sur les postes de bureau concernés : donner une phrase secrète vide au
-trousseau de *connexion* dans Seahorse — il se déverrouille alors de lui-même,
-les secrets tombant en clair sur un disque déjà chiffré par LUKS. Voir
+`sufficient` court-circuite la pile d'authentification&nbsp;: le toucher de la
+clé y met fin avant que `pam_gnome_keyring` ne s'exécute, si bien que le démon
+démarre sans mot de passe et que GNOME demande celui du trousseau à l'ouverture
+de session (GNOME Online Accounts et evolution-data-server sollicitent
+immédiatement le service de secret). Une connexion par mot de passe n'est pas
+affectée. Remède sur les postes concernés&nbsp;: donner un mot de passe vide au
+trousseau *login* dans Seahorse — il se déverrouille alors tout seul, les
+secrets atterrissant en clair sur un disque déjà chiffré par LUKS. Voir
 `doc/admin-guide/operate/yubikey`.
 :::
 
-* **enable** `bool` Authentification YubiKey (désactivé par défaut ; activé quand usr/secrets/yubikeys.json existe)
-* **origin** `str` Origine/appid pam_u2f fixe : une inscription est valide sur toute la flotte
-* **luks.enable** `bool` Déverrouillage FIDO2 des volumes LUKS de l'hôte (inerte sans disko LUKS + clés inscrites)
+* **enable** `bool` Authentification par YubiKey (défaut&nbsp;: activée si usr/secrets/yubikeys.json existe)
+* **origin** `str` Origine/appid pam_u2f fixe&nbsp;: un seul enrôlement est valable sur tout le parc
+* **luks.enable** `bool` Déverrouillage FIDO2 des volumes LUKS de l'hôte (inerte sans LUKS disko + clés enrôlées)
 
 ```nix
 darkone.system.yubikey = {

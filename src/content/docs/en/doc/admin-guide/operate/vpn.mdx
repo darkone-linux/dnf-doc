@@ -18,8 +18,8 @@ The VPN meshes the zones, the coordination server and remote devices&nbsp;:
 the operational workflows. Routing, DNS, MagicDNS, access policy and keys are
 explained in [Tailnet operation](/en/doc/admin-guide/understand/tailnet/).
 
-{/* t:p f18805f3a171bae6f3f9d0fa75ecf4dd6b5a86138e3e43925e31e6ec8591a553 */}
-## Enabling the VPN
+{/* t:p 547e4b30ce1969dd37e7a9de994d22365c893599114ca3b2dae3fc45f7618b1b */}
+## Enable the VPN
 
 Enabling coordination and declaring the HCS (`profile: hcs`) is enough&nbsp;:
 
@@ -32,20 +32,20 @@ network:
     domain: "headscale"
 ```
 
-The role of each node follows from the topology&nbsp;:
+Each node's role is derived from the topology&nbsp;:
 
 | Node | Identity | Role |
 |---|---|---|
 | HCS | `tag:hcs` | coordination, DNS pivot, global services, exit node (closed) |
-| Gateway | `tag:gw-<zone>` | subnet router&nbsp;: publishes its zone's `/16` |
-| Admin machine | `tag:admin` | SSH to all machines |
-| Personal device | its owner | services, according to their groups |
+| Gateway | `tag:gw-<zone>` | subnet router: publishes its zone's `/16` |
+| Admin workstation | `tag:admin` | SSH to all machines |
+| Personal device | its owner | services, per its groups |
 
-An admin machine is a host whose `groups` contains `admin` and whose
-host file enables the client&nbsp;:
+An admin workstation is a host whose `groups` contains `admin` and whose host
+file enables the client&nbsp;:
 
 ```nix
-# usr/machines/portable/default.nix
+# usr/machines/portable/configuration.nix
 darkone.service.tailscale.enable = true;
 darkone.service.tailscale.autoPauseOnLan.enable = true;
 ```
@@ -179,8 +179,8 @@ browser cannot resolve them. Workaround&nbsp;: disable “Use Tailscale DNS”
 in the app while connecting, then enable it again.
 :::
 
-{/* t:p be58a7b8cf40a417c5a1a5d34d2a33875721e8c923f0b088fcb77cdde366d574 */}
-## Adjusting the access policy
+{/* t:p 97840bc78749ac8e5241630ecf6230d826437c509c436faa6d19f8a5469a4b3a */}
+## Adjust the access policy
 
 The policy is generated from the topology&nbsp;: its rules are detailed in
 [Access policy](/en/doc/admin-guide/understand/tailnet/#access-policy-acl).
@@ -189,14 +189,14 @@ Options adjust it, on the HCS&nbsp;:
 | Option `darkone.service.headscale.` | Default | Effect |
 |---|---|---|
 | `policy.adminDevices` | `{ }` | personal devices allowed in SSH&nbsp;: name → tailnet IPv4 |
-| `policy.exitNodeSources` | `[ ]` | sources allowed to exit to the Internet through the HCS |
-| `policy.extraHosts` | `{ }` | extra aliases&nbsp;: name → CIDR |
+| `policy.exitNodeSources` | `[ ]` | sources allowed to reach the Internet via the HCS |
+| `policy.extraHosts` | `{ }` | additional aliases&nbsp;: name → CIDR |
 | `policy.extraAcls` | `[ ]` | rules appended after the generated rules |
-| `policy.enforce` | `true` | `false`&nbsp;: everything allowed, for a migration only |
-| `nodeExpiry` | `"180d"` | personal devices expiration (`0`&nbsp;: never) |
+| `policy.enforce` | `true` | `false`&nbsp;: everything allowed, migration only |
+| `nodeExpiry` | `"180d"` | expiration of personal devices (`0`&nbsp;: never) |
 
 ```nix
-# usr/machines/hcs/default.nix
+# usr/machines/hcs/configuration.nix
 darkone.service.headscale.policy = {
 
   # SSH depuis le téléphone d'Alice (adresse lue dans `headscale nodes list`)
@@ -220,13 +220,13 @@ darkone.service.headscale.policy = {
 Then `just apply hcs`&nbsp;: the policy is checked at build time, and Headscale
 reloads it without restarting.
 
-:::caution[Address of a declared device]
+:::caution[Declared device address]
 `adminDevices` targets an IPv4 address. A device re-registered as a new node
 changes address&nbsp;: `HeadscaleNodeDrift` reports it, report the new one.
 :::
 
 :::note[Exit node]
-Opening `exitNodeSources` is not enough&nbsp;: the user selects the HCS as exit
+Opening `exitNodeSources` is not enough&nbsp;: the user picks the HCS as exit
 node in their application.
 :::
 

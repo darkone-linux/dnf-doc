@@ -73,6 +73,24 @@ A usage-oriented overview is available in the
 [user guide](/en/doc/user-guide/understand/profiles/).
 :::
 
+{/* t:p 4095d8f12d8b119e486adef9d7d18f42aa5a001e6e111979f4ac3bbda92bd83f */}
+## The GNOME desktop
+
+| Element | Profiles | Behavior |
+|---|---|---|
+| Qt5 / Qt6 settings, NixOS manual | all | Icons hidden (manual accessible via `nixos-help`) |
+| "Support GNOME" notification | all | Disabled |
+| Document viewer | all | Papers, default PDF application (replaces Evince) |
+| Image viewer | all | Geeqie by default, if the `imagery` module is active |
+| GNOME extensions | non-technical | Icon hidden |
+| Terminal | non-technical | Console, absent from the dash, present in the applications grid |
+| Terminal | technical | Ghostty in the dash, if `darkone.home.advanced.enableTools` is active |
+
+:::note[Locked dash]
+The favorites list (`favorite-apps`) is locked for the whole host: a
+technical profile without Ghostty therefore does not have Console in its dash either.
+:::
+
 {/* t:p a457e1b1c9e9a250f11800283e6121e4738416e7bd4434b723a7be4fb49a4a57 */}
 ## Assigning a profile
 

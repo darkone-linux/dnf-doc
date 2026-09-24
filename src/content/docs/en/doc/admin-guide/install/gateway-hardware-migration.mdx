@@ -32,10 +32,10 @@ That is where almost all the pitfalls on this page come from.
 Secrets are not tied to the hostname&nbsp;: the sops rules file only knows the
 administration key and the infrastructure key. Renaming changes nothing here.
 
-{/* t:p 15cff55278b3a0351383cfe400ed96008b880c08922e038b6422dcb57f8d3a88 */}
-## Record the new hardware
+{/* t:p 49ef2511fe3a3f71697231aa32dab9a63ac1e048bc5c8a55cb4a93869f6442a0 */}
+## Surveying the new hardware
 
-Nothing is modified at this stage&nbsp;: you collect what will need to be
+Nothing is modified at this stage&nbsp;: you only collect what will need to be
 written into the configuration.
 
 <Steps>
@@ -50,24 +50,24 @@ written into the configuration.
    lsblk -o NAME,SIZE,MODEL,SERIAL,TYPE
    ```
 
-   A Wi-Fi card's permanent MAC differs from its current, often random, MAC. The
-   permanent one is what matters, visible in the `permaddr` field.
+   The permanent MAC of a Wi-Fi card differs from its current MAC, which is
+   often random. The permanent one matters, visible in the `permaddr` field.
 
-3. **Physically identify** which port will be the WAN and which the LAN, by
-   unplugging and replugging. Label the sockets.
+3. **Physically identify** which port will be the WAN and which ones the LAN,
+   by unplugging and replugging. Label the ports.
 
 </Steps>
 
-:::tip[Freezing the USB Wi-Fi card name]
+:::tip[Freeze the USB Wi-Fi card name]
 A USB card is named after the hub chain that carries it
 (`wlp0s20f0u5u1u3`)&nbsp;: moving it to another port renames it, and the
-configuration no longer finds it. Built-in cards, for their part, keep stable
-names (`eno0`, `wlp4s0`) tied to the physical socket.
+configuration can no longer find it. Integrated cards, on the other hand, keep
+stable names (`eno0`, `wlp4s0`) tied to the physical port.
 
-Freeze the only USB card, using its permanent MAC&nbsp;:
+Freeze the only USB card, based on its permanent MAC&nbsp;:
 
 ```nix
-# usr/machines/gw/default.nix
+# usr/machines/gw/configuration.nix
 systemd.network.links."10-wl-ext" = {
   matchConfig.PermanentMACAddress = "00:00:5e:00:53:01";
   linkConfig.Name = "wl-ext";
@@ -76,17 +76,17 @@ systemd.network.links."10-wl-ext" = {
 
 Avoid `lan0` (already the bridge) and the `eth`/`wlan` prefixes (kernel
 namespace). NixOS copies the `.link` files into the initrd, so the names are
-identical at disk unlock.
+identical at disk unlock time.
 :::
 
-{/* t:p 09802bcc8b11d9282c8b8e771d34bc8f6ebc36e5885aa0cd03bd890a72d1b4b8 */}
+{/* t:p 95d1f7c39c957a823715010ce2b9431ca37d192a8201d9767e5604a360d8cbdd */}
 ## Preparing the configuration
 
-Wi-Fi interfaces don't need to appear in `gateway.lan.interfaces`&nbsp;:
-`hostapd` places its own interface in the bridge. If you list one anyway, the
-framework removes it from the `networkd` bridge — otherwise `networkd` would try
-to attach it before `hostapd` had put it in AP mode, fail in a loop, then give
-up managing the link.
+Wi-Fi interfaces do not need to appear in `gateway.lan.interfaces`&nbsp;:
+`hostapd` places its interface in the bridge by itself. If you list one
+anyway, the framework removes it from the `networkd` bridge — otherwise
+`networkd` would try to attach it before `hostapd` has switched it to AP mode,
+fail in a loop, then give up managing the link.
 
 ```yaml
 # etc/config.yaml
@@ -109,23 +109,25 @@ hosts:
         main: "/dev/nvme0n1"
 ```
 
-Renaming the host along the way is the right moment, since the machine is being
-reinstalled anyway. Any **alias carrying the new name must then be deleted**&nbsp;:
-the generator refuses to let a name be both an alias and a host name.
+Renaming the host along the way is the right time to do it, since the machine
+is reinstalled anyway. An **alias carrying the new name must then be deleted**&nbsp;:
+the generator refuses a name that is both an alias and a hostname.
 
-On the machine folder side, `git mv usr/machines/<old> usr/machines/gw`, then
-import `./generated-configuration.nix` and `./disko.nix` into `default.nix`.
+On the [machine folder](/en/doc/how-to/admin/machines-layout/) side, `git mv
+usr/machines/<old> usr/machines/gw`, then delete `install/disko.nix`
+(deleting the old disk) and **keep** `install/state.nix`. `just generate`
+recreates `install/disko.nix` from the `disko` block above.
 
-:::danger[`stateVersion` is that of the OLD machine]
-The reflex is to take the value from the fresh installation template. That's
-the wrong move here&nbsp;: the option sets the defaults related to the
-**persistent data**, not the hardware purchase date. Yet this data comes from
+:::danger[The `stateVersion` is the one of the OLD machine]
+The reflex is to delete `install/state.nix` to start from a fresh
+installation. That is wrong here&nbsp;: the option fixes the defaults
+related to **persistent data**, not the purchase date of the hardware. And these data are those of
 the old machine.
 
-The PostgreSQL major version depends on it directly. A `stateVersion` that's too
-recent selects a newer major, which creates an **empty** cluster next to the
-restored one. Symptom&nbsp;: the service starts perfectly and responds, but no
-longer knows any account.
+The PostgreSQL major version depends directly on it. A `stateVersion` that is
+too recent selects a more recent major, which creates an **empty** cluster
+next to the restored cluster. Symptom&nbsp;: the service starts perfectly and
+responds, but no longer knows any account.
 
 ```sh
 ls /var/lib/postgresql     # two majors side by side = alert
@@ -133,12 +135,12 @@ ls /var/lib/postgresql     # two majors side by side = alert
 :::
 
 :::caution[A missing mount can lock the machine]
-A mount without `nofail` that fails makes `local-fs.target` fail, which switches
-the boot to emergency mode&nbsp;: no more `multi-user.target`, therefore no more
-SSH. Combined with the absence of a root password and the disabled bootloader
-editor, the machine becomes inaccessible, console included.
+A mount without `nofail` that fails makes `local-fs.target` fail, which
+switches the boot to emergency mode&nbsp;: no more `multi-user.target`, hence no
+SSH. Combined with the absence of a root password and the bootloader editor
+disabled, the machine becomes inaccessible, console included.
 
-Any mount whose source can be missing at boot (external disk, link to a
+Any mount whose source may be missing at boot (external disk, link on a
 directory created afterwards) must carry `nofail`.
 :::
 
@@ -303,27 +305,28 @@ Do this only once the old machine is permanently shut down, never with both runn
 gateway](/en/doc/admin-guide/operate/vpn/#registering-a-gateway).
 :::
 
-{/* t:p 1e0eab87c92bcdffc5edf54bf44fe1c65ce899a9dc29733e8ab4225a4bb5d99d */}
-## Verify before concluding
+{/* t:p 90bd5dbe10c5ce86f1cf53aeec9c966ecdadb08e23250410493bdb2bb5279ff9 */}
+## Checking before concluding
 
 | Contrôle | Attendu |
 |---|---|
-| `systemctl --failed` | no failed units |
-| `ls /var/lib/postgresql` | a single major version |
-| Application accounts and repositories | the ones from before the migration |
-| `restic-system-main snapshots` | full history |
-| Address on the VPN mesh | unchanged |
-| Wi-Fi access points | present, clients served |
-| Cold reboot | the machine comes back on its own |
+| `systemctl --failed` | aucune unité |
+| `ls /var/lib/postgresql` | une seule majeure |
+| Comptes et dépôts applicatifs | ceux d'avant la migration |
+| `restic-system-main snapshots` | historique complet |
+| Adresse sur le maillage VPN | inchangée |
+| Points d'accès Wi-Fi | présents, clients servis |
+| Redémarrage à froid | la machine remonte seule |
 
 :::caution[Hardware keys do not enroll by themselves]
-On an encrypted disk, the enrollment service runs at boot, before secrets can
-be decrypted. It does nothing and **exits successfully**, so it is never
-replayed. `just luks` only reruns it if it had to boot a key slot.
+On an encrypted disk, the enrollment service runs at boot, before
+the secrets can be decrypted. It does nothing and **exits with
+success**, so it is never replayed. `just luks` only reruns it if it had to
+boot a key slot.
 
-Result&nbsp;: no enrolled key, and a manual unlock at every boot. Count the
-tokens after the first deployment, then restart both services if the count is
-zero.
+Result&nbsp;: no key enrolled, and a manual unlock at every
+boot. Count the tokens after the first deployment, then rerun the
+two services if the count is zero.
 
 ```sh
 cryptsetup luksDump /dev/disk/by-partlabel/disk-main-luks | grep -c systemd-fido2
@@ -333,7 +336,8 @@ See [Chiffrement des disques](/en/doc/admin-guide/operate/luks/) and
 [YubiKey](/en/doc/admin-guide/operate/yubikey/).
 :::
 
-The `disko` block in `etc/config.yaml` is only read at install time, comment
-it out once the migration is complete. Recipes detail in
-[Justfile](/en/doc/admin-guide/operate/justfile/) and configuration keys in
-[Le fichier config.yaml](/en/doc/how-to/admin/config/).
+The `disko` block of `etc/config.yaml` is only read at installation&nbsp;: once
+the migration is complete, it is frozen in `install/disko.nix` and can be
+removed. Details of the recipes in
+[Justfile](/en/doc/admin-guide/operate/justfile/) and of the configuration
+keys in [Le fichier config.yaml](/en/doc/how-to/admin/config/).

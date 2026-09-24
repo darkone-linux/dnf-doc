@@ -16,15 +16,14 @@ The script `dnf/scripts/vm-start.sh` starts a QEMU virtual machine on
 the DNF installation image. The VM is **bridged to the LAN**: it
 receives its address from the zone gateway, just like a physical machine.
 
-{/* t:p d71ec20e2a9c33ba5ca8a4b1ff359d8f35924b689f081d858900ecf9e1f50a27 */}
-## Preparing the Administration Machine
+{/* t:p 636be9121626b29bc5622f8fd97ab5ef9a9f5759bbdf62e060765b587c4525d6 */}
+## Prepare the administration workstation
 
 The network bridge and `qemu-bridge-helper` come from the
-`darkone.graphic.qemu` module, which must be enabled on the machine
-that launches VMs:
+`darkone.graphic.qemu` module, to enable on the workstation that runs the VMs&nbsp;:
 
 ```nix
-# usr/machines/poste/default.nix
+# usr/machines/poste/configuration.nix
 darkone.graphic.qemu = {
   enable = true;
   bridge.interface = "enp2s0";
@@ -33,13 +32,13 @@ darkone.graphic.qemu = {
 ```
 
 :::caution[Bridge MAC]
-`bridge.macAddress` must be the MAC of the network card (`ip link`): the
-bridge takes over the machine's IP address, and the zone's DHCP
-reservation is based on this MAC.
+`bridge.macAddress` must be the MAC of the network card (`ip link`)&nbsp;: the
+bridge takes over the workstation's IP address, and the zone's DHCP reservation
+applies to this MAC.
 :::
 
-Deployment loads the bridge without activating it. Reboot the machine
-(or run `nmcli connection up br0`) to switch its IP address to the bridge.
+The deployment loads the bridge without activating it. Reboot the workstation
+(or run `nmcli connection up br0`) to move its IP address onto the bridge.
 
 {/* t:p 0ce5947705bcd9fd29e6e6d8de6ddacfb94e4fbfd9add5fc4b9d05205f7a197b */}
 ## Starting a VM

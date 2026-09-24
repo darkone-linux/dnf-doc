@@ -102,7 +102,7 @@ Renaming within the same filesystem is instant, moves no data, and
 preserves history and incrementality.
 </Aside>
 
-{/* t:p 6be2ed671644e9e2d079bb5dbba36767dcf608f4453e2cbc83669b8702024c87 */}
+{/* t:p 3791cfddd3a7c7e18000a71e654779511d9adb6c896a93ceac826a86b6814993 */}
 ## Setting up a backup server
 
 <Steps>
@@ -114,8 +114,9 @@ preserves history and incrementality.
      restic:
    ```
 
-2. Plug in the backup disk and mount it on `/mnt/backup` in the host
-   configuration (`usr/machines/<host>/`), with the `nofail` option:
+2. Plug in the backup disk and mount it on `/mnt/backup` in the host's
+   configuration (`usr/machines/<host>/configuration.nix`), with the
+   `nofail` option:
 
    ```nix
    fileSystems."/mnt/backup" = {
@@ -132,11 +133,11 @@ preserves history and incrementality.
    ```
 
 3. The repository is stored under `serverDataDir` (default `/mnt/backup/restic`).
-   The firewall opens the REST port on the internal interface automatically.
+   The firewall automatically opens the REST port on the internal interface.
 
-4. If **other zone** clients need to access it via the tailnet, add
-   `listenAll`: by default the server only listens on the host's LAN address,
-   invisible from the VPN.
+4. If clients from **other zones** must reach it through the tailnet, add
+   `listenAll` : the server only listens on the host's LAN address by default,
+   which is invisible from the VPN.
 
    ```nix
    darkone.service.restic = {
@@ -149,17 +150,17 @@ preserves history and incrementality.
 </Steps>
 
 <Aside type="note" title="Server = client too">
-A server can back up its own data by pointing a `target` to its local disk
+A server can back up its own data by pointing a `target` at its local disk
 (`root = "/mnt/backup/restic"`).
 </Aside>
 
-<Aside type="caution" title="restic-rest-server.service inactive: it's normal">
-The REST server is socket-activated. `restic-rest-server.service` therefore
-remains `inactive` until a client connects — after every boot, and as long as
-a disk using `x-systemd.automount` stays unused (the `requires` on the mount
-then stops the daemon so it can be unmounted). It is `restic-rest-server.socket`,
-always listening, that carries the `ServiceDown` monitoring; a crashed daemon
-is still covered by `SystemdUnitFailed`.
+<Aside type="caution" title="restic-rest-server.service inactive: this is normal">
+The REST server is enabled by socket. `restic-rest-server.service` therefore
+stays `inactive` until a client connects — after every boot, and as long as a
+disk in `x-systemd.automount` remains unused (the `requires` on the mount then
+stops the daemon to unmount). It is `restic-rest-server.socket`, always
+listening, that carries the `ServiceDown` monitoring; a crashing daemon stays
+covered by `SystemdUnitFailed`.
 </Aside>
 
 {/* t:p 9539ab1ebf11ddd0e6f8bc2cced794dc206949e6251fa1fd1166711a0eb1d856 */}

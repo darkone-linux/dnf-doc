@@ -49,20 +49,20 @@ Each level builds on the previous one: the base system serves the modules, which
 | **Packages** | `dnf/pkgs/` | Programs [absent from nixpkgs](/en/doc/dev-guide/packages/), exposed as `pkgs.<name>`. |
 | **Generation** | `src/generator/` | Transform `etc/config.yaml` → `var/generated/`. |
 
-{/* t:p 472d57dc0d807d5acb57d0d9631fc00f1d36262b93f2a8519dd5513e77add8db */}
+{/* t:p 2afbebe6aedb4e4c5b04e5100d2e2a8b7b3753414a47bae256d11f60205cdfdf */}
 ## Framework vs local project
 
-The framework (`dnf/`) is **reusable and rarely changed**; the project (`usr/`)
+The framework (`dnf/`) is **reusable and rarely modified**; the project (`usr/`)
 **overrides** it without touching it.
 
-- `usr/modules/` mirrors `dnf/modules/`: a file at the same path **overrides** or **complements** the framework module.
+- `usr/modules/` mirrors `dnf/modules/`: a file at the same path **overrides** or **completes** the framework module.
 - `usr/home/` mirrors `dnf/home/` for user profiles and modules.
-- `usr/machines/<host>/` holds hardware (`hardware-configuration.nix`, `disko.nix`) and specific settings.
+- `usr/machines/<hôte>/` carries the host, sorted by origin ([detail](/en/doc/how-to/admin/machines-layout/)): `configuration.nix` (specific settings, the only file to edit), `install/` (disk and `stateVersion`, frozen at installation), `hardware/` (recorded on the machine).
 - `usr/secrets/` contains encrypted secrets ([sops](/en/doc/admin-guide/operate/secrets/)).
 
 :::tip[Golden rule]
-Edit `dnf/` to evolve **the framework** (useful to everyone), `usr/` to adapt
-**a specific network**. Never edit `var/generated/`.
+We modify `dnf/` to evolve **the framework** (useful to everyone), `usr/` to
+adapt **a specific network**. Never edit `var/generated/`.
 :::
 
 {/* t:p c314d006e46e028eb49f62ccd76d0a7b101136458329a816a554828f52e7fb57 */}

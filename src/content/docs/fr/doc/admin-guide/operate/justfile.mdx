@@ -102,7 +102,7 @@ co-développement, formate aussi `dnf/`.
 just format
 ```
 
-{/* t:p 68ab2120accf9872167017ad6862d92b9cb1ef3c6083161023dd23265f05e0a5 */}
+{/* t:p ae4e7f74d160a10119a0d16e2995a9313034e42c0b8e712b12ce0d85b2486211 */}
 ### 💠 `generate`
 
 Régénère les `default.nix` des dossiers de modules et, dans un projet, les
@@ -294,7 +294,7 @@ just bump          # niveau déduit des commits
 
 L'installation d'un nouvel hôte suit un enchaînement précis.
 
-{/* t:p 26ad8f4341e8d4b7a67a0c437f484feb81b4b1cba7bc9705cd22c18186860e3e */}
+{/* t:p 4a9315d11ba05a8997b84fdfcd785d2cf15c52f7f77e1776597a521dbfc348c2 */}
 ### ✳️ `install <hôte> [user] [ip]`
 
 Formate les disques via **disko** et installe NixOS via **nixos-anywhere**.
@@ -382,7 +382,7 @@ just full-install myserver
 just full-install myserver nixos 10.0.3.42   # adresse forcée
 ```
 
-{/* t:p c35851dd84a1ba4918b713d16e21603553a1b6ba8b087a32612bc98d8c64de97 */}
+{/* t:p 6aadc92efaf428e74d94138d2bc11288a0c13f2abe5d06c27d739da8f10734f4 */}
 ### ✳️ `install-key <hôte>`
 
 Formate un périphérique USB avec disko et installe NixOS dessus. Scelle l'hôte
@@ -433,7 +433,7 @@ d'initrd LUKS sur le port 2222).
 just copy-id myserver
 ```
 
-{/* t:p b2fbc800fe07314f2fcfebb0e022519bd8c4e2e9066df1e527873554d0f53b5c */}
+{/* t:p f68b11e86fb7e533c456299644010822eef4ab835bd8e69d7b82e0d004d0d9ea */}
 ### ✳️ `copy-hw <hôte>`
 
 Exécute `nixos-generate-config --show-hardware-config` à distance et sauvegarde
@@ -444,6 +444,7 @@ puis enchaîne `detect-hw`.
 just copy-hw myserver
 ```
 
+{/* t:p 7d3b497597bd716e7a910b1a40033c41a74fbf6bfa83d6311d1f75b4a81e9a1c */}
 ### ✳️ `detect-hw <hôte> [ip] [user]`
 
 Relève sur la machine les modules noyau de ses cartes réseau filaires et les

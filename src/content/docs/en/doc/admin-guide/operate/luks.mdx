@@ -153,60 +153,122 @@ The synchronization service detects changes thanks to a local registry
 passphrase **then** kills the old slot. Slots absent from the registry (FIDO2,
 manual enrollments) are never touched.
 
-{/* t:p bbf783e276b624ed050b1c5db6b955e302d82012e3b610b86dace0c2d0c58b4b */}
-## Unlocking at boot
+{/* t:p 91e5f7832e3bace3b60bb828aacddce3b942c2d4f7e2f390f934699bd215b2c5 */}
+## Unlocking at boot time
 
-Every encrypted host follows the same sequence, with nothing to configure:
+Any encrypted host follows the same sequence, with nothing to configure:
 
-1. **YubiKey** — an enrolled key already plugged in blinks its diode: touching it opens the volume, nothing to type. No key plugged in, the step takes ~6 s; a key nobody touches, ~30 s (firmware limit).
-2. **Passphrase** — a prompt is then shown, **with no time limit**. It accepts the per-host passphrase, the shared one or the installation one.
+1. **YubiKey** — an enrolled, plugged-in key flashes its LED: touching it opens
+   the volume, no typing required. With no key plugged in the step lasts ~6 s; a
+   key nobody touches, ~30 s (firmware limit).
+2. **Passphrase** — a prompt is then shown, with **no time limit**. It accepts
+   the per-host passphrase, the shared one, or the install one.
 
-Step 2's prompt is **a single request**, served in parallel on the physical console (`/dev/tty1`) and over ssh on port 2222. Nothing to choose, no window to miss: whoever answers first opens the volume.
+The step 2 prompt is **one single request**, served in parallel on the physical
+console (`/dev/tty1`) and over SSH on port 2222. Nothing to choose, no window to
+miss: whoever answers first opens the volume.
 
 :::note[How the key is tried]
-`fido2-device=` is not written into the `crypttab` entry but into a **separate initrd unit**, `yubikey-luks-unlock-<volume>`, ordered before `systemd-cryptsetup@<volume>` and only tied to it by a `Wants=`: it is allowed to fail, and its failure changes nothing about boot.
+`fido2-device=` is not written in the `crypttab` entry but in a **separate
+initrd unit**, `yubikey-luks-unlock-<volume>`, ordered before
+`systemd-cryptsetup@<volume>` and only linked to it via `Wants=`:
+it is allowed to fail, and its failure changes nothing at boot time.
 
-This separation avoids two conflicting flaws:
+This separation avoids two flaws that contradict each other:
 
-- **the option in the `crypttab` kills boot** when a key is plugged in without anybody touching it: `systemd-cryptsetup` exits with an error instead of offering the passphrase, no prompt is shown — neither console, nor port 2222 — and the initrd falls back to `emergency`. A power outage on an unattended host was enough to immobilize it;
-- **without the option, the token is only tried if it is already enumerated**. Yet `hidraw0` appears roughly one second after `systemd-cryptsetup` starts: never in time. The key then silently stops unlocking anything, with nothing in the journal.
+- **the option in `crypttab` kills the boot** when a key is plugged in without
+  anyone touching it: `systemd-cryptsetup` exits with an error instead of
+  offering the passphrase, no prompt is shown — neither console nor port 2222 —
+  and the initrd falls back to `emergency`. A power cut on a host with nobody in
+  front of it was enough to stall it;
+- **without the option, the token is only tried if it is already enumerated**.
+  Yet `hidraw0` appears about one second after `systemd-cryptsetup` starts:
+  never in time. The key then silently stops unlocking anything, with nothing in
+  the journal.
 
-What the option really brings is the **wait** for the device (`token-timeout=`, set to 5 s).
+What the option actually brings is the **waiting** for the device
+(`token-timeout=`, set to 5 s).
 :::
 
-Remotely, the initrd starts a **dedicated sshd on port 2222**, with its own persistent host key, reachable only with the `nix` deployment key. Two ways to answer&nbsp;:
+Remotely, the initrd starts a **dedicated sshd on port 2222**, with its own
+persistent host key, reachable only with the `nix` deployment key. Two ways to
+answer:
 
 ```sh
 just unlock <hôte>     # sans humain : la passphrase est lue dans sops
 just enter <hôte>      # interactif : le prompt est présenté au terminal
 ```
 
-`just unlock` waits for port 2222 to appear (a dot per attempt), reads the **shared** passphrase from sops and pushes it into the initrd, then checks that the machine has actually left its initrd before announcing success. If it is refused, it retries with the per-host passphrase. That is what `just full-install` calls on its own after the first reboot. On an unencrypted host, it is a logged no-op.
+`just unlock` waits for port 2222 to appear (one dot per attempt), reads the
+**shared** passphrase from sops and pushes it into the initrd, then checks that
+the machine has actually left its initrd before announcing success. If it is
+refused, it retries with the per-host passphrase. That is what
+`just full-install` calls on its own after the first reboot. On a non-encrypted
+host, it is a logged no-op.
 
 :::note[Why the shared one first]
-On the very first boot, the per-host slot does not exist yet: disko formats with the shared passphrase, and `luks-passphrase-sync` only adds the per-host slot from the running system, therefore *after* unlocking. The shared passphrase is the only way in at that point.
+At the very first boot, the per-host slot does not exist yet: disko formats with
+the shared passphrase, and `luks-passphrase-sync` only adds the per-host slot
+from the booted system, i.e. *after* the unlock. The shared one is the only way
+in at that point.
 
-Moreover, `dnf-unlock` only knows that it **answered** the request, never whether the passphrase was accepted: systemd just asks again. The only reliable witness is therefore the machine leaving its initrd and answering on port 22, and that is what `just unlock` observes from the administration station.
+Besides, `dnf-unlock` only knows that it has **answered** the request, never
+whether the passphrase was accepted: systemd just asks again. The only reliable
+witness, therefore, is the machine leaving its initrd and answering on port 22,
+and that is what `just unlock` observes from the administration workstation.
 :::
 
-`just enter` does the same thing interactively&nbsp;: when port 22 does not answer, it probes 2222 on the explicit IP (if given), the host name, then the **WAN IP recorded in the manifest**, and presents the LUKS prompt through `systemd-tty-ask-password-agent`. In both cases, once the passphrase is accepted, boot continues and port 22 comes back.
+`just enter` does the same thing interactively: when port 22 does not answer,
+it probes port 2222 on the explicit IP (if given), the host name, then the
+**WAN IP recorded in the manifest**, and presents the LUKS prompt via
+`systemd-tty-ask-password-agent`. In both cases, once the passphrase is
+accepted, boot continues and port 22 comes back.
 
 :::note[Why two paths]
-`systemd-tty-ask-password-agent` only talks to a terminal&nbsp;: no script can drive it. The initrd therefore ships a small `dnf-unlock` utility that takes the passphrase from a pipe and answers every pending request. That is the one `just unlock` calls.
+`systemd-tty-ask-password-agent` only talks to a terminal: no script can drive
+it. The initrd therefore ships a small `dnf-unlock` utility that takes the
+passphrase on a pipe and answers every pending request. That is what
+`just unlock` calls.
 :::
 
 :::note[Why the WAN IP?]
-A zone's VPN dies with its gateway: when the latter waits for its passphrase, only its WAN leg is reachable. Its initrd moreover replicates production addressing (static IP on the `lan0` bridge, DHCP on the WAN side), since it is itself the DHCP server that its initrd would otherwise wait for. The other hosts simply do DHCP on their wired interfaces.
+A zone's VPN dies with its gateway: when the gateway is waiting for its
+passphrase, only its WAN leg is reachable. Its initrd moreover replicates the
+production addressing (static IP on the `lan0` bridge, DHCP on the WAN side),
+since it is itself the DHCP server its initrd would otherwise wait for.
+The other hosts do plain DHCP on their wired interfaces.
 :::
 
 :::note[Laptops on Wi-Fi]
-No networking in initrd without a cable: an encrypted laptop is unlocked at the console (passphrase or YubiKey); remote unlocking does not apply.
+No network in initrd without a cable: an encrypted laptop is unlocked at the
+console (passphrase or YubiKey), remote unlocking does not apply.
 :::
 
 :::caution[A NIC driver is not always enough]
-A virtio card does not plug into its PCI slot but onto the `virtio0` device created by its **transport** (`virtio_pci`, `virtio_mmio`). Without this module in the initrd, `virtio_net` is never loaded: no link, no IP, and the port-2222 sshd listens into the void — the host waits indefinitely for its passphrase, with nothing in the journal to say so.
+A virtio NIC does not plug into its PCI slot but onto the `virtio0` device
+created by its **transport** (`virtio_pci`, `virtio_mmio`). Without that module
+in the initrd, `virtio_net` is never loaded: no link, no IP, and the port 2222
+sshd listens into the void — the host waits forever for its passphrase, with
+nothing in the journal to say so.
 
-Both transports are now bundled by default, and `just luks <hôte> show` compares the drivers actually used by the machine's wired cards with those the built initrd carries.
+Both transports are now bundled by default, and `just luks <hôte> show`
+compares the drivers actually used by the machine's wired NICs with those the
+built initrd carries.
+:::
+
+:::note[Network drivers detected at install time]
+`nixos-generate-config` never puts a network driver in the initrd. A NIC not on
+the bundled-by-default list (Broadcom `tg3` for example) therefore leaves the
+host unreachable in initrd.
+
+`just install` and `just copy-hw` run `just detect-hw`: it collects the wired
+NIC modules on the machine and writes them into
+`usr/machines/<hôte>/hardware/detected-hardware.nix`, imported automatically.
+These modules are only added to the initrd if it has networking (remote
+unlock).
+
+On an already-installed host, if `just luks <hôte> show` reports a missing
+driver: `just detect-hw <hôte>`, then `just apply <hôte>`.
 :::
 
 {/* t:p 1539a3a233d9dca4cb824aa2c0957ab946727829d4ea2da6aa74458c51b27413 */}

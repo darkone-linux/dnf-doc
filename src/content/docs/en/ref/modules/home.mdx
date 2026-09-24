@@ -42,7 +42,7 @@ darkone.home.advanced = {
 
 <hr/>
 
-{/* t:p 2c073d8dcf1ab2cf24b11a5f9ae7e5ea7f96b2b76ce6fd7c221bec1bf3c9ba7f */}
+{/* t:p 592e6eb518c867d3bedc4a5cee1c1f6ab24aa02a8eb94805f2a35d2d6db84123 */}
 ### &#x1F3E0; darkone.home.ai
 
 AI coding tools and supporting utilities.
@@ -65,10 +65,14 @@ local-model defaults for Aider / OpenCode are activated automatically.
 `programs.gh` is enabled with the `github-copilot-cli` extension.
 OpenCode gets two MCP servers (filesystem, fetch) via `npx -y`.
 Claude Code enforces an allow/ask/deny permission matrix and an RTK
-governance hook on Bash calls. Its `settings.json` is NOT pinned as a
-read-only store symlink: the socle is merged into a WRITABLE
-`~/.claude/settings.json` on every switch, so plugins/add-ons
-(claude-mem, graphify, ...) can be installed and managed by hand on top.
+governance hook on Bash calls.
+:::
+
+:::caution[Writable settings.json]
+Claude Code and Antigravity CLI rewrite their own `settings.json`: a
+read-only store symlink breaks them, and fails the next switch on the
+`.bkp`. The Nix socle is jq-merged into a WRITABLE file on every switch
+instead; runtime keys (plugins, trusted workspaces) are preserved.
 :::
 
 * **enable** `bool` Enable AI tools and supporting utilities
@@ -182,16 +186,16 @@ darkone.home.games = {
 
 <hr/>
 
-{/* t:p 8cc86b72cc50ff00f8cfc4576fb69487d652391b82246e554ecb33446336cdec */}
+{/* t:p aea352584c63177580944b2682107f9c683861bf52b1a419c598926e5ac8cd21 */}
 ### &#x1F3E0; darkone.home.gnome
 
 Gnome tweaks for home-manager.
 
-Hides the bare `xterm` launcher unconditionally, registers polished
-`.desktop` entries for `scrcpy` and `scrcpy-console` when the package
-is part of the user's `home.packages`, and (when `hideTechnicalIcons`
-is set) hides Settings, Extensions, Printers and File Roller icons for
-beginner / child profiles.
+Hides the bare `xterm`, Qt5/Qt6 settings and NixOS manual launchers
+unconditionally, Extensions for non-technical profiles, registers polished
+`.desktop` entries for `scrcpy` and `scrcpy-console` when the package is
+part of the user's `home.packages`, and (when `hideTechnicalIcons` is set)
+hides Settings, Printers and File Roller icons for beginner / child profiles.
 
 :::caution[NFS bookmarks]
 Do not declare `gtk.gtk3.bookmarks` from this module — while NFS home shares
