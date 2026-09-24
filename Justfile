@@ -127,10 +127,13 @@ deploy msg="":
 	    echo "Error: no commit message found. Use: just deploy \"your message\""
 	    exit 1
 	fi
+
+	# Unchanged site: skip the commit, `git commit` exits 1 and would stop
+	# `just release` (dnf/just/codev/release.just).
 	cd darkone-linux.github.io && \
 	    git pull --rebase --autostash && \
 	    git add . && \
-	    git commit -m "$MESG" && \
+	    { git diff --cached --quiet || git commit -m "$MESG"; } && \
 	    git push -u origin main
 
 # Pull built site from remote
