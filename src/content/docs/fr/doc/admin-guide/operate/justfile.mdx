@@ -426,10 +426,23 @@ just copy-id myserver
 ### ✳️ `copy-hw <hôte>`
 
 Exécute `nixos-generate-config --show-hardware-config` à distance et sauvegarde
-le résultat dans `usr/machines/<hôte>/hardware-configuration.nix`.
+le résultat dans `usr/machines/<hôte>/hardware-configuration.nix`, puis
+enchaîne `detect-hw`.
 
 ```sh
 just copy-hw myserver
+```
+
+### ✳️ `detect-hw <hôte> [ip] [user]`
+
+Relève sur la machine les modules noyau de ses cartes réseau filaires et les
+écrit dans `usr/machines/<hôte>/detected-hardware.nix` (fichier généré,
+importé automatiquement). Ils ne rejoignent l'initrd que s'il a du réseau,
+pour le [déverrouillage LUKS à distance](/fr/doc/admin-guide/operate/luks/).
+Appelé par `install` (utilisateur `nixos` de l'ISO) et par `copy-hw`.
+
+```sh
+just detect-hw myserver
 ```
 
 {/* t:p bb952125c6373caa2bd08e413b62d65d906bb079653af1e5a91e8a718b2ec038 */}

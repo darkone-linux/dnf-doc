@@ -58,7 +58,7 @@ le **surcharge** sans le toucher.
 
 - `usr/modules/` reflète `dnf/modules/` : un fichier de même chemin **surcharge** ou **complète** le module du framework.
 - `usr/home/` reflète `dnf/home/` pour les profils et modules utilisateur.
-- `usr/machines/<hôte>/` porte le matériel (`hardware-configuration.nix`, `disko.nix`) et les réglages spécifiques.
+- `usr/machines/<hôte>/` porte le matériel (`hardware-configuration.nix`, `disko.nix`, `detected-hardware.nix` généré par `just detect-hw`) et les réglages spécifiques.
 - `usr/secrets/` contient les secrets chiffrés ([sops](/fr/doc/admin-guide/operate/secrets/)).
 
 :::tip[Règle d'or]
