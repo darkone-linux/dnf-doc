@@ -74,6 +74,22 @@ Une présentation orientée usage figure dans le
 [guide de l'utilisateur](/fr/doc/user-guide/understand/profiles/).
 :::
 
+## Le bureau GNOME
+
+| Élément | Profils | Comportement |
+|---|---|---|
+| Paramètres Qt5 / Qt6, manuel NixOS | tous | Icônes masquées (manuel accessible via `nixos-help`) |
+| Notification « Soutenir GNOME » | tous | Désactivée |
+| Visionneur de documents | tous | Papers, application PDF par défaut (remplace Evince) |
+| Visionneur d'images | tous | Geeqie par défaut, si le module `imagery` est actif |
+| Terminal | non techniques | Console, absente du dash, présente dans la grille d'applications |
+| Terminal | techniques | Ghostty dans le dash, si `darkone.home.advanced.enableTools` est actif |
+
+:::note[Dash verrouillé]
+La liste des favoris (`favorite-apps`) est verrouillée pour tout l'hôte&nbsp;:
+un profil technique sans Ghostty n'a donc pas non plus Console dans son dash.
+:::
+
 {/* t:p a457e1b1c9e9a250f11800283e6121e4738416e7bd4434b723a7be4fb49a4a57 */}
 ## Affecter un profil
 
