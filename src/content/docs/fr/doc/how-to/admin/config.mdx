@@ -449,22 +449,30 @@ en `<domain>.domain.tld`. Catalogue et détails&nbsp;:
 
 La clé `disko` décrit le **partitionnement** pour l'installation automatique.
 
-- `profile` désigne un fichier `(usr|dnf)/hosts/disko/<profile>.nix`.
-- `devices` associe les disques nommés du profil à des périphériques réels.
+- `profile` désigne un fichier `usr/hosts/disko/<profile>.nix`, sinon
+  `dnf/hosts/disko/<profile>.nix` (le profil local masque celui du framework).
+- `devices` est **obligatoire**&nbsp;: un périphérique réel par disque nommé du
+  profil, ni plus ni moins, sinon `just generate` échoue.
 
 ```yaml
 # etc/config.yaml
     disko:
       profile: "btrfs-1-disk"
       devices:
-        main: "/dev/nvme0n1"
+        main: "/dev/disk/by-id/nvme-Samsung_SSD_990_PRO_2TB_S7DNNJ0W000000"
 ```
 
-:::caution[Utile pour l'installation seulement]
-`disko` n'est consulté **qu'à l'installation** (`just install` formate les
-disques). Une fois la machine installée, on peut commenter le bloc `disko` par
-sécurité. Un déclenchement accidentel de l'installation pourrait ordonner de
-reformatter le disque.
+:::tip[Préférer `/dev/disk/by-id/`]
+Un nom `/dev/sdX` peut changer d'un démarrage à l'autre (clé USB d'installation
+branchée, disque ajouté) et désigner le mauvais disque. Relever l'identifiant
+stable avec `ls -l /dev/disk/by-id/` depuis l'ISO.
+:::
+
+:::note[Utile pour l'installation seulement]
+`just generate` combine profil et `devices` dans
+`usr/machines/<hôte>/install/disko.nix`, que `just install` fige. Le bloc
+`disko` n'a ensuite plus d'effet et peut être retiré. Voir [Dossier
+machine](/fr/doc/how-to/admin/machines-layout/).
 :::
 
 :::tip[Réinstaller une machine]

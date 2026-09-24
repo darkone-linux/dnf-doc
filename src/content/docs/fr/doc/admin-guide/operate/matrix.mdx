@@ -198,7 +198,7 @@ pour des comptes locaux à mot de passe (les amis). Sans jeton, aucune
 inscription n'est possible.
 
 ```nix
-# usr/machines/<host>/default.nix
+# usr/machines/<host>/configuration.nix
 darkone.service.matrix.friendRegistration.enable = true;
 ```
 
@@ -337,7 +337,7 @@ défaut** avec Matrix&nbsp;; Discord est **désactivé par défaut**. Réglage p
 configuration nix de la machine&nbsp;:
 
 ```nix
-# usr/machines/<host>/default.nix
+# usr/machines/<host>/configuration.nix
 darkone.service.matrix.bridges = {
   discord.enable = true;     # opt-in
   messenger.enable = false;  # désactiver un pont par défaut
@@ -432,7 +432,7 @@ appels&nbsp;: activer l'un ne donne pas l'autre.
 1. Activer la pile MatrixRTC dans la config nix de l'hôte&nbsp;:
 
    ```nix
-   # usr/machines/<host>/default.nix
+   # usr/machines/<host>/configuration.nix
    darkone.service.matrix.matrixRtc.enable = true;   # requis par Element X
    ```
 
@@ -558,7 +558,7 @@ portée, régler `darkone.service.matrix.federation` dans la config nix de
 l'hôte&nbsp;:
 
 ```nix
-# usr/machines/<host>/default.nix
+# usr/machines/<host>/configuration.nix
 darkone.service.matrix.federation = {
   enable = true;       # false = fédération totalement bloquée
   whitelist = [ ];     # vide = ouverte ; sinon liste blanche

@@ -117,7 +117,8 @@ git add . && git commit -m "Premier hôte"
 `var/generated/` est produit par l'outil : on ne l'édite jamais à la main.
 On édite `etc/config.yaml`, puis on régénère. `just generate` sème aussi les
 fichiers que le framework attend : `usr/users/<login>/` pour chaque compte et
-`usr/machines/<hôte>/` pour chaque hôte doté d'un bloc `disko`.
+`usr/machines/<hôte>/` (`configuration.nix`, `install/disko.nix`) pour chaque
+hôte doté d'un bloc `disko`.
 :::
 
 :::danger[Commiter avant de construire]

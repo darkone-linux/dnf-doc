@@ -115,7 +115,8 @@ déplacée, historique et incrémentalité préservés.
    ```
 
 2. Brancher le disque de sauvegarde et le monter sur `/mnt/backup` dans la
-   configuration de l'hôte (`usr/machines/<hôte>/`), avec l'option `nofail` :
+   configuration de l'hôte (`usr/machines/<hôte>/configuration.nix`), avec
+   l'option `nofail` :
 
    ```nix
    fileSystems."/mnt/backup" = {

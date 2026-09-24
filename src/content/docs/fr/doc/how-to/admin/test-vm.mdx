@@ -23,7 +23,7 @@ Le pont réseau et `qemu-bridge-helper` viennent du module
 `darkone.graphic.qemu`, à activer sur le poste qui lance les VM&nbsp;:
 
 ```nix
-# usr/machines/poste/default.nix
+# usr/machines/poste/configuration.nix
 darkone.graphic.qemu = {
   enable = true;
   bridge.interface = "enp2s0";

@@ -45,7 +45,7 @@ Un poste d'administration est un hôte dont `groups` contient `admin` et dont le
 fichier d'hôte active le client&nbsp;:
 
 ```nix
-# usr/machines/portable/default.nix
+# usr/machines/portable/configuration.nix
 darkone.service.tailscale.enable = true;
 darkone.service.tailscale.autoPauseOnLan.enable = true;
 ```
@@ -195,7 +195,7 @@ Des options l'ajustent, sur le HCS&nbsp;:
 | `nodeExpiry` | `"180d"` | expiration des appareils personnels (`0`&nbsp;: jamais) |
 
 ```nix
-# usr/machines/hcs/default.nix
+# usr/machines/hcs/configuration.nix
 darkone.service.headscale.policy = {
 
   # SSH depuis le téléphone d'Alice (adresse lue dans `headscale nodes list`)

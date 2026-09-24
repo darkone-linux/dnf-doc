@@ -1,0 +1,144 @@
+---
+title: Dossier machine, disposition et migration
+sidebar:
+  label: Dossier machine
+  order: 9
+lang: fr
+---
+
+import { Steps } from '@astrojs/starlight/components';
+
+Chaque hôte a son dossier `usr/machines/<hôte>/`. Les fichiers y sont rangés
+selon **qui les écrit**&nbsp;: vous, l'installation, la machine elle-même ou le
+générateur. Le framework les importe un par un, il n'y a pas de `default.nix`.
+
+## Disposition
+
+```text
+usr/machines/<hôte>/
+  configuration.nix              # vous : seul fichier à éditer
+  <autres>.nix                   # vous : importés depuis configuration.nix
+  install/
+    disko.nix                    # disposition du disque, figée à l'installation
+    state.nix                    # system.stateVersion, figé à l'installation
+  hardware/
+    hardware-configuration.nix   # relevé sur la machine
+    detected-hardware.nix        # pilotes réseau relevés (just detect-hw)
+
+var/generated/hosts/<hôte>.nix   # drapeaux de démarrage déduits du disque
+```
+
+| Fichier | Écrit par | Réécrit | Si perdu |
+|---|---|---|---|
+| `configuration.nix` | vous (semé par `just generate`) | jamais | travail perdu |
+| `install/disko.nix` | `just generate` (profil et `devices`) | tant que l'hôte n'est pas installé | disposition réelle du disque inconnue |
+| `install/state.nix` | `just install`, `just install-key` | jamais | données des services incohérentes |
+| `hardware/` | `just install`, `copy-hw`, `detect-hw` | à chaque relevé | relevé à refaire sur la machine |
+| `var/generated/hosts/<hôte>.nix` | `just generate` | à chaque génération | rien, il est recalculé |
+
+`var/generated/hosts/<hôte>.nix` n'existe que si le disque impose des réglages
+de démarrage (RAID logiciel, marqueurs `NEEDEDFORBOOT`).
+
+## Le sceau de l'installation
+
+`install/state.nix` scelle l'hôte. `just install` l'écrit juste avant le
+formatage, avec la release nixpkgs du moment (la valeur qu'écrirait
+`nixos-generate-config`).
+
+- **Avant** : `install/disko.nix` suit `etc/config.yaml` à chaque `just generate`.
+- **Après** : `install/disko.nix` ne bouge plus. Le bloc `disko` d'`etc/config.yaml` n'a plus d'effet.
+
+| Besoin | Action |
+|---|---|
+| Réinstaller à l'identique (restauration, bases de données) | ne rien toucher |
+| Changer de disque en gardant les données | supprimer `install/disko.nix`, puis `just generate` |
+| Repartir d'une machine neuve, sans reprise | supprimer `install/state.nix` |
+
+:::danger[Ne pas supprimer `state.nix` d'un hôte à données]
+`system.stateVersion` fixe les défauts liés aux données persistantes (majeure
+PostgreSQL par exemple). Une valeur plus récente sur des données restaurées
+crée un cluster vide à côté de l'ancien. Voir [Migrer le matériel d'une
+passerelle](/fr/doc/admin-guide/install/gateway-hardware-migration/).
+:::
+
+:::caution[Ne pas éditer `install/disko.nix` avant l'installation]
+`just generate` le réécrit. Une disposition spécifique va dans un profil
+`usr/hosts/disko/<nom>.nix`, référencé par `disko.profile`. Un profil local
+masque le profil du framework de même nom.
+:::
+
+:::note[Hôte sans `state.nix`]
+Un hôte doté d'un dossier machine mais sans `install/state.nix` prend la
+release nixpkgs courante comme `stateVersion`, et l'évaluation affiche un
+avertissement&nbsp;: déployé tel quel, il en changerait à chaque montée de
+nixpkgs.
+:::
+
+## Migrer depuis l'ancienne disposition
+
+Changement cassant&nbsp;: l'ancienne disposition (`default.nix` importé comme
+point d'entrée) n'est plus lue.
+
+| Ancien | Nouveau |
+|---|---|
+| `default.nix` | `configuration.nix`, sans les imports ni `stateVersion` |
+| `system.stateVersion` de `default.nix` | `install/state.nix` |
+| `disko.nix` | `install/disko.nix` |
+| `hardware-configuration.nix` | `hardware/hardware-configuration.nix` |
+| `detected-hardware.nix` | `hardware/detected-hardware.nix` |
+| `generated-configuration.nix` | `var/generated/hosts/<hôte>.nix`, généré |
+
+<Steps>
+
+1. **Relever les devices forcés** par l'ancien `generated-configuration.nix`
+   (lignes `disko.devices.disk.<disque>.device = lib.mkForce "…"`). Ils ne
+   sont plus générés.
+
+2. **Déplacer les fichiers**
+
+   ```sh
+   cd usr/machines/<hôte>
+   mkdir -p install hardware
+   git mv disko.nix install/disko.nix
+   git mv hardware-configuration.nix hardware/   # si présent
+   git mv detected-hardware.nix hardware/        # si présent
+   git mv default.nix configuration.nix
+   git rm generated-configuration.nix
+   ```
+
+3. **Reporter les devices** relevés à l'étape 1 dans `install/disko.nix`,
+   quand ils diffèrent de la valeur `device` du fichier.
+
+4. **Créer `install/state.nix`** avec la valeur exacte de l'ancien
+   `system.stateVersion`&nbsp;:
+
+   ```nix
+   # usr/machines/<hôte>/install/state.nix
+   { system.stateVersion = "25.11"; }
+   ```
+
+5. **Alléger `configuration.nix`**&nbsp;: retirer les imports de
+   `not-detected.nix`, `generated-configuration.nix`,
+   `hardware-configuration.nix`, `disko.nix`, `detected-hardware.nix` et la
+   ligne `system.stateVersion`. Garder tout le reste.
+
+6. **Régénérer et commiter**
+
+   ```sh
+   just clean
+   git add usr/machines var/generated
+   ```
+
+</Steps>
+
+:::caution[`state.nix` avant tout `just generate`]
+Sans `install/state.nix`, un hôte dont le bloc `disko` est encore présent n'est
+pas scellé&nbsp;: `just generate` réécrit son `install/disko.nix` depuis le
+profil.
+:::
+
+:::note[Profils locaux]
+Les profils du framework remplacent les chemins de disques en dur par des
+jetons `@DEVICE:<disque>@`, remplis depuis `disko.devices`. Un profil de
+`usr/hosts/disko/` doit faire de même, ou être utilisé sans `devices`.
+:::

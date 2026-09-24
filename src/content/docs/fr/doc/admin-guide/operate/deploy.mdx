@@ -621,7 +621,7 @@ Sur l'hôte de déploiement, le module installe l'outil et, avec `timer.enable`,
 lance chaque jour `fleet-update --no-ui`&nbsp;:
 
 ```nix
-# usr/machines/<hôte>/default.nix
+# usr/machines/<hôte>/configuration.nix
 darkone.admin.fleet-update = {
   enable = true;
   user = "admin";
@@ -711,7 +711,7 @@ zone déclarée&nbsp;: injoignables ailleurs, ils coûtent des timeouts à chaqu
 requête. Activez le mode *roaming*&nbsp;:
 
 ```nix
-# usr/machines/<hôte>/default.nix
+# usr/machines/<hôte>/configuration.nix
 darkone.service.nix-cache.roaming = true;
 ```
 

@@ -68,7 +68,7 @@ toutes ; on peut aussi en invoquer une seule.
 | `hosts` | `var/generated/hosts.nix` | Hôtes : profils, services, tags colmena. |
 | `users` | `var/generated/users.nix` | Utilisateurs : profils, groupes. |
 | `network` | `var/generated/network.nix` | Topologie : zones, DNS, VPN. |
-| `disko` | `usr/machines/<hôte>/disko.nix` | Partitionnement par hôte. |
+| `machines` | `usr/machines/<hôte>/install/disko.nix`, `var/generated/hosts/<hôte>.nix` | Disposition disque (profil + devices, figée à l'installation) et drapeaux de démarrage qu'elle implique. |
 | `doc` | `*/ref/modules.mdx` | Référence des modules (documentation). |
 
 ```sh

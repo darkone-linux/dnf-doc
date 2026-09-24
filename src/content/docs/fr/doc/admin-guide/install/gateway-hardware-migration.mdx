@@ -68,7 +68,7 @@ stables (`eno0`, `wlp4s0`) liés à la prise physique.
 Figer la seule carte USB, sur sa MAC permanente&nbsp;:
 
 ```nix
-# usr/machines/gw/default.nix
+# usr/machines/gw/configuration.nix
 systemd.network.links."10-wl-ext" = {
   matchConfig.PermanentMACAddress = "00:00:5e:00:53:01";
   linkConfig.Name = "wl-ext";
@@ -114,13 +114,15 @@ Renommer l'hôte au passage est le bon moment, la machine étant de toute façon
 réinstallée. Un **alias portant le nouveau nom doit alors être supprimé**&nbsp;:
 le générateur refuse qu'un nom soit à la fois alias et nom d'hôte.
 
-Côté dossier machine, `git mv usr/machines/<ancien> usr/machines/gw`, puis
-importer `./generated-configuration.nix` et `./disko.nix` dans `default.nix`.
+Côté [dossier machine](/fr/doc/how-to/admin/machines-layout/), `git mv
+usr/machines/<ancien> usr/machines/gw`, puis supprimer `install/disko.nix`
+(l'ancien disque) et **garder** `install/state.nix`. `just generate` recrée
+`install/disko.nix` depuis le bloc `disko` ci-dessus.
 
 :::danger[Le `stateVersion` est celui de l'ANCIENNE machine]
-Le réflexe est de reprendre la valeur du modèle d'installation neuve. C'est un
-contresens ici&nbsp;: l'option fixe les défauts liés aux **données
-persistantes**, pas la date d'achat du matériel. Or ces données sont celles de
+Le réflexe est de supprimer `install/state.nix` pour repartir d'une
+installation neuve. C'est un contresens ici&nbsp;: l'option fixe les défauts
+liés aux **données persistantes**, pas la date d'achat du matériel. Or ces données sont celles de
 l'ancienne machine.
 
 La majeure PostgreSQL en dépend directement. Un `stateVersion` trop récent
@@ -352,7 +354,8 @@ Voir [Chiffrement des disques](/fr/doc/admin-guide/operate/luks/) et
 [YubiKey](/fr/doc/admin-guide/operate/yubikey/).
 :::
 
-Le bloc `disko` d'`etc/config.yaml` n'est lu qu'à l'installation, le commenter
-une fois la migration terminée. Détail des recettes dans
+Le bloc `disko` d'`etc/config.yaml` n'est lu qu'à l'installation&nbsp;: une
+fois la migration terminée, il est figé dans `install/disko.nix` et peut être
+retiré. Détail des recettes dans
 [Justfile](/fr/doc/admin-guide/operate/justfile/) et des clés de configuration
 dans [Le fichier config.yaml](/fr/doc/how-to/admin/config/).
