@@ -13,7 +13,7 @@ sidebar:
 **A administration module** deals with system-specific functionalities for administrators.
 :::
 
-{/* t:p 9cd667d8d72c91716cca93f31f19c30564564a160cbc3eb3a00088e49c221b34 */}
+{/* t:p 217f3ac7c56cb2d4e975091a20595c6376b06b68ec1d387880f10cc238b781c9 */}
 ### &#x1F451; darkone.admin.fleet-update
 
 Fleet update tool (`fleet-update`) and its unattended daily run.
@@ -32,6 +32,11 @@ permissions, `nix` deploy identity whose key lives in `~nix/.ssh`).
 `--ai-model` launches `claude` or `opencode` from `PATH`. Declare what the
 unattended run may reach in `aiPackages`; without it the run warns once and
 carries on without AI.
+:::
+
+:::tip[AI context]
+`aiContext` (language, style) is written to `/etc/fleet-update/ai-context`:
+every run on the host reads it, `just fleet-update` as well as the timer.
 :::
 
 :::note[Exit codes]
@@ -59,8 +64,11 @@ darkone.admin.fleet-update = {
   Not a dependency of the package, because `pkgs.claude-code` is
   unfree and would force `allowUnfree` on every consumer.
   `pkgs.opencode` is MIT.
-* **aiContext** `nullOr str` Additional operator guidance included in every AI prompt of the
-  unattended run. `timer.extraArgs` can override it with `--ai-context`.
+* **aiContext** `nullOr str` Operator guidance (language, style) included in every AI prompt of a
+  run on this host, `just fleet-update` and the timer alike. Written to
+  `/etc/fleet-update/ai-context`, even without `enable`: in
+  co-development the recipe runs the sources. `--ai-context`, on the
+  command line or in `timer.extraArgs`, overrides it.
 * **user** `nullOr str` Account running the unattended update: owner of `workDir`, holding
   the git identity, the sops age key and the AI and Matrix credentials.
 * **workDir** `str` Consumer workspace on disk. Not the `workDir` module argument, which

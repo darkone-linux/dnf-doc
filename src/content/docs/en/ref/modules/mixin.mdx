@@ -26,7 +26,7 @@ darkone.host.desktop.enable = false;
 
 <hr/>
 
-{/* t:p c00777349e760959c2f68e6e8b765bfadfa4e453d65d12814a7f33bd24681763 */}
+{/* t:p b834c10ded96582df7e8839d0022e26561f63bb5daea0326b6908ebc34fc0c75 */}
 ### &#x1F4E6; darkone.host.gateway
 
 The main gateway / router of a local network zone.
@@ -57,14 +57,18 @@ darkone.host.gateway.backupLinks.phone = {
 ```
 
 Route metrics steer the default route; `dnf-uplink-monitor` pings through
-each link and penalises one without Internet. Details: `lib/uplinks.nix`.
+each link, penalises one without Internet and keeps one back from an outage
+on probation until it answers. A wifi backup keeps its radio
+off until no preferred link reaches the Internet; an ethernet one stays up,
+idle. Details: `lib/uplinks.nix`.
 :::
 
 * **enable** `bool` Enable gateway features for the current host (dhcp, dns, proxy, etc.)
 * **backupLinks** `attrs` Fallback uplinks, used when the WAN has no link, no lease or no
   Internet. Name: `[a-z][a-z0-9-]*`.
-  * **type** `enum [ "ethernet" "wifi" ]` `ethernet`: DHCP client on a spare port. `wifi`: WPA2/WPA3
-    client; SSID and passphrase are read from sops
+  * **type** `enum [ "ethernet" "wifi" ]` `ethernet`: DHCP client on a spare port, always up. `wifi`:
+    WPA2/WPA3 client, radio off (rfkill) until no preferred link
+    reaches the Internet; SSID and passphrase are read from sops
     (`backup-link/&lt;name&gt;/ssid`, `backup-link/&lt;name&gt;/psk`).
   * **interface** `str` Interface carrying the link: neither the WAN, a LAN port nor a hostapd radio.
   * **priority** `ints.between 1 99` Lower is preferred among backup links (route metric

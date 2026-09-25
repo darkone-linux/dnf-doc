@@ -16,32 +16,52 @@ When the box goes down, the gateway switches by itself to a **backup link**&nbsp
 a free ethernet port, a phone's connection sharing over wifi… The zone stays on
 Internet in degraded mode, then goes back to the box as soon as it responds.
 
-{/* t:p 75ae77c427bc36dbb68c131b3b0cb2d68d1d7f0b8dc0795472b8f5272e5d28ba */}
+{/* t:p 0d346ed52d90fe2250f8398c840f201fdab4e237d379e1bb79c67dd37f20d850 */}
 ## Principle
 
-Every link to Internet (the WAN, then the backups) carries its own default
-route. The lowest **metric** wins.
+Every Internet link (the WAN, then the backups) carries its own default route.
+The lowest **metric** wins.
 
 | Link | Metric |
 |---|---|
 | WAN (the box) | 100 |
 | Backup link | 200 + 10 × `priority` (300 by default) |
+| Return link, in probation | metric + 10000 |
 | Link without Internet | metric + 20000 |
 
 Three situations are covered&nbsp;:
 
 | Situation | Detection | Effect |
 |---|---|---|
-| Cable unplugged, box powered off, no DHCP lease left | the WAN route disappears | the kernel takes the next route |
-| Box powered on but Internet cut off | the `dnf-uplink-monitor` probe fails 3 times | the WAN goes to 20100, the backup takes over |
-| Internet back on the box | 6 successful probes | back to the WAN |
+| Unplugged cable, box powered off, no DHCP lease anymore | the WAN route disappears | the kernel takes the next route |
+| Box powered on but Internet cut off | the `dnf-uplink-monitor` probe fails 3 times (about 40 seconds) | the WAN goes to 20100, the backup takes over |
+| Internet back on the box | 6 successful probes | switch back to the WAN |
+| Unplugged or changed cable, box restarted, 3 rounds without a route | loss of carrier or of route | the link returns to probation (10100), then finds its place back after 6 successful probes |
 
-The probe sends a ping **on every link** (1.1.1.1 and 9.9.9.9, every 10
+:::tip[Why probation]
+A box that restarts often hands out a lease before having Internet. Without
+probation, the zone would go back there immediately, for an outage of about 40
+seconds. Same effect with a cable changed from one box to another within a few
+seconds.
+A link in probation goes behind healthy links, but ahead of dead links.
+:::
+
+The probe sends a ping **through each link** (1.1.1.1 and 9.9.9.9, every 10
 seconds). It does not depend on DNS&nbsp;: it targets IP addresses.
 
-:::note[Hot standby]
-A backup link stays connected while it is available (phone sharing switched
-on, cable plugged in). The metric keeps traffic on the box as long as it works.
+The two link types do not wait the same way&nbsp;:
+
+| Type | While waiting | Wake-up |
+|---|---|---|
+| `ethernet` | connected, without traffic (the metric keeps everything on the box) | immediate |
+| `wifi` | radio off (`rfkill`)&nbsp;: no connection to the sharing | as soon as no preferred link reaches the Internet |
+
+:::note[Wifi in radio standby]
+A phone hotspot is billed by volume and drains the battery. The radio therefore
+only turns on if the WAN **and** the higher priority links are down (3 failed
+probes or no route). It turns off again as soon as a preferred link has
+succeeded 6 probes in a row. Count about one minute between the outage and the
+traffic on the wifi.
 :::
 
 {/* t:p 9df2c07b1c05de89e259c5363ccc8afa77d3c79648e4f9da628bc6fbc4c5c73b */}
@@ -101,13 +121,14 @@ on, cable plugged in). The metric keeps traffic on the box as long as it works.
 
 </Steps>
 
-{/* t:p 97b02508067c36ea46e004a6fab9a9ed01763570cc19cc3aa46195de51f25225 */}
+{/* t:p 0efaa313978240c0518ffcaeffda2d5cb1db8e16729985a37e5304729a6682e1 */}
 ## Verify
 
 ```sh
-networkctl list                       # the link is "routable" when it is active
+networkctl list                       # the link is “routable” when it is active
 ip -4 route show default              # the first line is the link in use
-journalctl -u dnf-uplink-monitor -f   # switches, live
+rfkill                                # backup wifi radio “blocked” in standby
+journalctl -u dnf-uplink-monitor -f   # radio switches and wake-ups, live
 ```
 
 With the box down and the phone sharing its connection&nbsp;:
@@ -127,15 +148,16 @@ default via 192.168.43.1 dev wlp4s0 proto dhcp src 192.168.43.20 metric 300
 | `darkone.host.gateway.linkCheck.failAfter` | 3 | failures before penalizing a link |
 | `darkone.host.gateway.linkCheck.recoverAfter` | 6 | successes before restoring it |
 
-{/* t:p a487622ca955a75619da6a68e613ac1502fda37304f542eea5f0d42a8d77c4c1 */}
+{/* t:p 58f0f53d3ebac106aa0b990a35f339506b6c2fdbee52ad218b73e1c075dde0d7 */}
 ## Monitoring
 
-The probe publishes two metrics for Prometheus&nbsp;:
+The probe publishes three metrics for Prometheus&nbsp;:
 
 | Metric | Value |
 |---|---|
-| `dnf_gateway_link_up` | 1 if the link has a route and reaches Internet |
-| `dnf_gateway_link_active` | 1 on the link that carries the default route |
+| `dnf_gateway_link_up` | 1 if the link has a route and reaches the Internet |
+| `dnf_gateway_link_active` | 1 on the link carrying the default route |
+| `dnf_gateway_link_standby` | 1 on a backup wifi radio turned off and waiting |
 
 The `GatewayOnBackupLink` alert (warning) triggers after 2 minutes on a backup
 link.

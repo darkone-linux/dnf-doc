@@ -118,7 +118,7 @@ Markdown is converted to HTML before sending; otherwise Matrix clients would dis
 `fleet-update --send-report` sends its report through this recipe (see [Déploiement](/en/doc/admin-guide/operate/deploy/#report-and-matrix-alerts)). Exit code `10` is enough for it to know that retrying is pointless.
 :::
 
-{/* t:p f32c7b8dcfd6d535fabe1e784c4eeddba81543756385f6400ccad5babc2fa83d */}
+{/* t:p 127cbf713b9551c844b2fe7615b8790b71e33dfeee1289abf1528af2a6d38736 */}
 ## Testing an alert
 
 <Steps>
@@ -126,7 +126,7 @@ Markdown is converted to HTML before sending; otherwise Matrix clients would dis
 1. On a supervised node, stop a monitored service:
 
    ```sh
-   sudo systemctl stop <unité>
+   sudo systemctl stop <unit>
    ```
 
 2. Within a minute, a `ServiceDown` (or `SystemdUnitFailed`) message appears
@@ -134,9 +134,11 @@ Markdown is converted to HTML before sending; otherwise Matrix clients would dis
    critical. The alert link points to `https://prometheus.<zone>.domain.tld`.
 
 3. Restart the service: the alert resolves (resolution notification).
+   For `SystemdUnitFailed`, resolution only comes after 30 minutes without
+   failure ([why](/en/doc/admin-guide/understand/monitoring-alerts/#the-alert-flow)).
 
    ```sh
-   sudo systemctl start <unité>
+   sudo systemctl start <unit>
    ```
 
 </Steps>

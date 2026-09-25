@@ -87,7 +87,7 @@ Avant un déploiement large, validez localement : `just check`, puis
 `just apply <hôte-pilote>` sur **un** hôte témoin.
 :::
 
-{/* t:p 2cdbcd7a50d418f11d3eb7e30616c624079a88dbfa9be11e66bb535efa337750 */}
+{/* t:p 647d28d621ce0ff0331a1e23a1a8b90c6d3627078081db6f129e515d4fc412a1 */}
 ## Mettre à jour le parc avec fleet-update
 
 `fleet-update` enchaîne toute la mise à jour en une commande&nbsp;: flakes,
@@ -377,7 +377,7 @@ d'activité&nbsp;: `under repair` en jaune pendant la réparation déterministe,
 `AI analysis` et `AI repair` en magenta quand l'IA prendra le relais.
 :::
 
-{/* t:p b41c68e78cbcaae6b0b16a8bfa3991e7681520a62d3fd0393105a62bfa2d841d */}
+{/* t:p 7d3d3b7e3cefcffb201ee5eeff485ccaa471ecd641b3a52191b96c787fca1056 */}
 ### Analyse par l'IA
 
 L'IA **explique** un échec&nbsp;: elle lit l'état du lancement, les journaux et,
@@ -429,7 +429,7 @@ sont cherchés dans le `PATH`&nbsp;; l'option `aiPackages` du module les y met
 pour le lancement quotidien. Absents ou refusés&nbsp;→ un avertissement au fil
 du lancement, une note au rapport, et la suite se déroule sans IA.
 
-{/* t:p e30b3241ff8deb86eed7cb18c0767ceb6c9842b4f287929ff3625fa5d5da4c05 */}
+{/* t:p 87d4ecb9ebf39f82061d809939d8bbe237c715f4c58321f41b1183c88baf5313 */}
 #### Ce que l'IA a le droit de faire
 
 L'IA n'a **ni shell ni SSH libre**. Elle n'agit que par les outils de
@@ -459,7 +459,7 @@ neutralisées&nbsp;: l'IA ne voit que ce qu'on lui montre.
 (`AI reads usr/modules/nginx.nix`) et une ligne dans `logs/ai.log` du dossier de
 lancement. Un appel refusé par un garde-fou est tracé aussi, avec sa raison.
 
-{/* t:p 2d2fe48e84023feb6f2bab0e6f734ce79943b83295085a56bfbcb0a2e31d9c80 */}
+{/* t:p c4c33a450d18233e2d487a22438877c147d3cce40fd921b3db29ce11f3658efc */}
 #### Quand elle intervient
 
 <Steps>
@@ -508,7 +508,7 @@ Chaque action est **comptée**, pas seulement tracée&nbsp;: elle se retrouve da
 `state.json` et dans la section **AI repair** du rapport, refus compris, avec sa
 raison. Un hôte réparé porte aussi une note au rapport.
 
-{/* t:p 5c2b167471065366f42a2e7cb15fef0734b2b938c86cf13ea636fef7c7bf4483 */}
+{/* t:p e025206fe401ec49904350edac3aa2b95d5137268e783a96f53e4be264d3baa6 */}
 #### Réparer par le code
 
 Quand aucun redémarrage ne peut aider, l'IA **écrit la correction** dans le
@@ -564,6 +564,7 @@ restent ce qu'elles étaient. L'analyse les complète, comme le message en clair
 d'une erreur connue.
 :::
 
+{/* t:p 4aa701759fa2970a3e20435506d8cb3b5518cae075ba892c1b4b7607530a92da */}
 #### Suggestions d'amélioration
 
 Avec `--ai-analysis active`, le lancement se termine par une **revue de ses
@@ -603,7 +604,7 @@ La portée suit le mode&nbsp;: en co-développement, le projet et `dnf/`&nbsp;;
 sinon, le projet seul (un constat que seul le framework corrige n'est pas
 déposé).
 
-{/* t:p b55420f2dacb15a69c5c6dfbfa25a4e29a859d498511bc668938947a6fd28d01 */}
+{/* t:p 5cf462f3f0d73201d9b95d814d866b6040ee4466f8a2d4d63fc174896ae49ee6 */}
 ### Rapport et alertes Matrix
 
 Chaque lancement écrit son dossier dans `var/deployments/<date>-<mode>/`&nbsp;:
@@ -676,7 +677,7 @@ Rien ne part si le bot n'est pas provisionné, ni sur un abandon (`^C`, arrêt d
 service).
 :::
 
-{/* t:p a4bcf5db6759586551c4ecbc142982351d5ab529829cc6e2d847ebff25f36514 */}
+{/* t:p 826bb022475cb8d9781021ef6fd0bc3511cbb2f47710deaa651789017a429b58 */}
 ### Exécution quotidienne
 
 Sur l'hôte de déploiement, le module installe l'outil et, avec `timer.enable`,

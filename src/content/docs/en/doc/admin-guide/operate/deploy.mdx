@@ -83,19 +83,22 @@ Before a wide rollout, validate locally: `just check`, then
 `just apply <pilot-host>` on **a** single test host.
 :::
 
-{/* t:p 2cdbcd7a50d418f11d3eb7e30616c624079a88dbfa9be11e66bb535efa337750 */}
+{/* t:p 647d28d621ce0ff0331a1e23a1a8b90c6d3627078081db6f129e515d4fc412a1 */}
 ## Updating the fleet with fleet-update
 
-`fleet-update` runs the whole update in a single command: flakes, building all
-hosts, publishing closures to the fleet, testing in waves (hosts the network
-depends on first), then the definitive activation of validated hosts.
+`fleet-update` chains the entire update into a single command&nbsp;: flakes,
+building all hosts, publishing the locks across the fleet, testing in waves
+(hosts the network depends on first), then final activation of the approved
+hosts.
 
 ![fleet-update interface](../../../../../../assets/dfu-screenshot-01.png)
 
-:::note[The AI at work]
-The AI analyses, acts on services and fixes the code — see
-[AI analysis](#ai-analysis), [Repairing a service](#repairing-a-service)
-and [Repairing through code](#repairing-through-code).
+:::note[AI at work]
+AI **analyzes**, acts on services, fixes code and proposes
+improvements&nbsp;: see [AI analysis](#ai-analysis),
+[Repairing a service](#repairing-a-service),
+[Repairing through code](#repairing-through-code) and
+[Improvement suggestions](#improvement-suggestions).
 :::
 
 {/* t:p 9a7e349addbc0b65573e6ae2095b537019c20f76d8d392c8884c3d2d566e9281 */}
@@ -364,36 +367,46 @@ indicator: `under repair` in yellow during deterministic repair,
 `AI analysis` and `AI repair` in magenta when the AI takes over.
 :::
 
-{/* t:p b41c68e78cbcaae6b0b16a8bfa3991e7681520a62d3fd0393105a62bfa2d841d */}
+{/* t:p 7d3d3b7e3cefcffb201ee5eeff485ccaa471ecd641b3a52191b96c787fca1056 */}
 ### AI analysis
 
-The AI **explains** a failure&nbsp;: it reads the run state, the logs and, if
-needed, the code, then produces a plain-language analysis. With `--ai-error-action
-repair` it can then **act on the failed units**, and nothing else
-(see [Repair a service](#repairing-a-service)). The run never waits
-for it&nbsp;— an analysis that fails, exceeds its timeout or its budget leaves
-the host exactly where it was.
+AI **explains** a failure&nbsp;: it reads the deployment state, the logs and,
+when needed, the code, then returns a plain-language analysis. With
+`--ai-error-action repair` it can then **act on the failed units**, and nothing
+else (see [Repairing a service](#repairing-a-service)). The deployment never
+waits for it&nbsp;— an analysis that fails, times out or exceeds its budget
+leaves the host exactly where it was.
 
-Two options control it, **both set to `none` by default**&nbsp;: nothing
-goes to an AI until asked. A third one chooses the tool.
+Two options drive it, **both set to `none` by default**&nbsp;: nothing goes to
+an AI until you ask for it. A third one selects the tool.
 
 | Option | Default | Role |
 |---|---|---|
-| `--ai-analysis none\|passive\|active` | `none` | Analysis depth, and end-of-run summary to the report |
-| `--ai-error-action none\|analysis\|repair` | `none` | What the AI does when a host fails |
-| `--ai-model <tool>[:<model>][@<effort>]` | `claude:opus@high` | Tool and model, for example `opencode:ollama/qwen3:32b` |
-| `--ai-context <text>` | none | Instruction or context added to all AI prompts |
+| `--ai-analysis none\|passive\|active` | `none` | Analysis depth, plus an end-of-deployment summary in the report |
+| `--ai-error-action none\|analysis\|repair` | `none` | What AI does when a host fails |
+| `--ai-model <tool>[:<model>][@<effort>]` | `claude:opus@high` | Tool and model, for instance `opencode:ollama/qwen3:32b` |
+| `--ai-context <text>` | none | Instruction or context added to every AI prompt |
 
 ```sh
-just fleet-update --ai-analysis passive          # rapport enrichi, rien de plus
-just fleet-update --ai-error-action analysis     # chaque échec est expliqué
+just fleet-update --ai-analysis passive          # enriched report, nothing more
+just fleet-update --ai-error-action analysis     # every failure is explained
 ```
 
-For example, `--ai-context "Répondre en français et rester concis."` guides the
-style of the replies. On resume, the context of the initial run is carried
-over; an explicit `--ai-context` replaces it.
+For instance, `--ai-context "Answer in French and stay concise."` guides the
+style of the answers. To avoid repeating it on every deployment, set it once
+per host with the module's `aiContext` option&nbsp;: it writes it to
+`/etc/fleet-update/ai-context`, which every deployment reads, `just fleet-update`
+as well as the timer. The `--ai-context` option takes precedence over that file.
+When resuming, the context of the initial deployment is picked up&nbsp;; an
+explicit `--ai-context` replaces it.
 
-The fleet's default model is set in `config.yaml`, the option takes precedence&nbsp;:
+```nix
+# usr/machines/<host>/configuration.nix
+darkone.admin.fleet-update.aiContext = "Answer in French and stay concise.";
+```
+
+The fleet's default model is set in `config.yaml`, the option takes
+precedence&nbsp;:
 
 ```yaml
 # etc/config.yaml
@@ -402,49 +415,52 @@ network:
     aiModel: "claude:opus@high"
 ```
 
-**AI tools are not a dependency of the tool.** `claude` and `opencode`
-are looked up in the `PATH`&nbsp;; the module's `aiPackages` option puts them
-there for the daily run. Missing or refused&nbsp;→ a warning along the run, a
-note in the report, and the rest proceeds without AI.
+**AI tools are not a dependency of the tool.** `claude` and `opencode` are
+looked up in the `PATH`&nbsp;; the module's `aiPackages` option puts them there
+for the daily deployment. Missing or declined&nbsp;→ a warning in the
+deployment log, a note in the report, and the rest of the run proceeds without
+AI.
 
-{/* t:p e30b3241ff8deb86eed7cb18c0767ceb6c9842b4f287929ff3625fa5d5da4c05 */}
-#### What the AI is allowed to do
+{/* t:p 87d4ecb9ebf39f82061d809939d8bbe237c715f4c58321f41b1183c88baf5313 */}
+#### What AI is allowed to do
 
-The AI has **neither shell nor free SSH**. It only acts through the
-`fleet-update` tools, and the requested level sets the list presented to it: what
-it does not see there, it cannot ask for.
+AI has **neither a shell nor free-form SSH**. It only acts through
+`fleet-update` tools, and the requested level determines the list it is
+shown&nbsp;: what it does not see there, it cannot ask for.
 
 | Level | Tools presented |
 |---|---|
-| `passive` | Run state, host diagnosis, build and activation logs |
-| `active`, `analysis` | + code reading (project and `dnf/`), host units and logs, read-only |
+| `passive` | Deployment state, host diagnostics, build and activation logs, grouped deployment warnings |
+| `active`, `analysis` | + reading, searching and listing code (project and `dnf/`), host units and logs (including user units), read-only |
 | `repair` | + one action on a host's failed units, and editing the code that describes them |
 
-The retained level is the **highest of the two options**: `--ai-analysis
+The effective level is the **highest of the two options**&nbsp;: `--ai-analysis
 passive --ai-error-action analysis` gives `active`. The built-in tools of
 `claude` and `opencode` are cut off, and the instructions those tools would
-pick up in the project (`CLAUDE.md`, user settings) are
-neutralized: the AI only sees what is shown to it.
+pick up in the project (`CLAUDE.md`, user settings) are neutralized&nbsp;: AI
+only sees what we show it.
 
-| Guard-rail | Effect |
+| Guardrail | Effect |
 |---|---|
-| Read path | Confined to the project and `dnf/`, after link resolution; `usr/secrets/` and `.trash/` refused |
-| Host, unit | Checked against the run table before any command |
-| Excerpts | 200 lines of log, 400 lines of source, truncated from the end: the error is at the bottom |
-| Time, budget | 300 seconds per analysis; dollar budget for `claude` |
+| Read path | Confined to the project and `dnf/`, after symlink resolution&nbsp;; `usr/secrets/` and `.trash/` refused |
+| Host, unit | Checked against the deployment table before any command |
+| Excerpts | 200 log lines, 400 source lines, truncated at the end&nbsp;: the error is at the bottom |
+| Timeout, budget | 300 seconds per analysis&nbsp;; dollar budget for `claude` |
 
-**Every tool call leaves a trace** — one line along the run
-(`AI reads usr/modules/nginx.nix`) and one line in `logs/ai.log` of the run
-folder. A call refused by a guard-rail is traced too, with its reason.
+**Every tool call leaves a trace** — one line in the deployment log
+(`AI reads usr/modules/nginx.nix`) and one line in `logs/ai.log` of the
+deployment directory. A call refused by a guardrail is traced too, along with
+its reason.
 
-{/* t:p 2d2fe48e84023feb6f2bab0e6f734ce79943b83295085a56bfbcb0a2e31d9c80 */}
-#### When it intervenes
+{/* t:p c4c33a450d18233e2d487a22438877c147d3cce40fd921b3db29ce11f3658efc */}
+#### When it steps in
 
 <Steps>
-1. **A host fails**, with `--ai-error-action` ≠ `none`: after the deterministic collection and unit restart, before the question that decides its fate. The host carries `AI analysis` in magenta during this time, then returns to its state.
-2. **A host recovers** after a unit restart, with `--ai-analysis` ≠ `none`: the analysis explains the activation order, without touching the host's state.
-3. **End of run**, with `--ai-analysis` ≠ `none`: a summary of the whole, written before the report that carries it.
-4. **Pressing `a`**, at any time: a free-form question. It receives an answer even under `--ai-analysis none` — without any tool: `none` removes the tools and automatic analysis, not the conversation.
+1. **A host fails**, with `--ai-error-action` ≠ `none` : after deterministic collection and unit restart, before the question that decides its fate. The host shows `AI analysis` in magenta during that time, then returns to its state.
+2. **A host recovers** after a unit restart, with `--ai-analysis` ≠ `none` : the analysis explains the activation order, without touching the host's state.
+3. **End of deployment**, with `--ai-analysis` ≠ `none` : a summary of everything, written before the report that carries it.
+4. **End of deployment**, with `--ai-analysis active` : a review of the warnings, which files [improvement suggestions](#improvement-suggestions).
+5. **`a` key**, at any time : a free-form question. It gets an answer even under `--ai-analysis none` — with no tool at all: `none` removes the tools and automatic analysis, not the conversation.
 </Steps>
 
 {/* t:p 2cf96bc85ae42256523f7f27abb300866f40d4ceb9f6f5b61675cbe346b1c92e */}
@@ -485,109 +501,151 @@ Each action is **counted**, not just traced: it ends up in
 `state.json` and in the **AI repair** section of the report, refusals included, with its
 reason. A repaired host also carries a note in the report.
 
-{/* t:p 5c2b167471065366f42a2e7cb15fef0734b2b938c86cf13ea636fef7c7bf4483 */}
+{/* t:p e025206fe401ec49904350edac3aa2b95d5137268e783a96f53e4be264d3baa6 */}
 #### Repairing through code
 
-When no restart can help, the AI **writes the fix** in the
-project, validates it, commits it, and **the sole host** is then rebuilt and
-redeployed.
+When no restart can help, AI **writes the fix** in the project, validates it,
+commits it, and **that host alone** is rebuilt then redeployed.
 
 <Steps>
-1. `edit_code` rewrites a whole file. The git tree must be clean before the first edit, and the diff goes into `logs/ai.log`.
-2. `validate` runs the project cleanup, then re-evaluates and rebuilds **this host alone**.
-3. `commit` writes `fix(<host>): <subject>` — `dnf/` first in co-development, then the project with its realigned lock.
-4. The host returns to `built` with its new path; its wave serves it once more: copy, activation, conclusion.
+1. `edit_code` replaces an exact passage (present only once), or rewrites an entire file. The git tree must be clean before the first edit, and the diff goes into `logs/ai.log`.
+2. `validate` runs the project cleanup, then re-evaluates and rebuilds **that host alone**.
+3. `commit` writes `fix(<scope>): <subject>`, the scope naming what the fix touches (`fix(nginx): …`). In co-development, `dnf/` is committed first, then the project and its realigned lock.
+4. The host goes back to `built` with its new path&nbsp;; its wave serves it one more time: copy, activation, conclusion.
 </Steps>
 
-| Guard-rail | Effect |
+| Guardrail | Effect |
 |---|---|
-| Paths | The project, and `dnf/` in co-development; never `usr/secrets/`, `.trash/`, `.git/`, `var/generated/`, `etc/config.yaml` nor a `*.lock` |
-| Outside co-development | `dnf/` is a store path: writing it is refused, and would have changed nothing |
-| Tree | Dirty before the first edit → refused: a repair commit only carries the fix |
+| Paths | The project, and `dnf/` in co-development&nbsp;; never `usr/secrets/`, `.trash/`, `.git/`, `var/generated/`, `etc/config.yaml` nor a `*.lock` |
+| Outside co-development | `dnf/` is a store path&nbsp;: writing to it is refused, and would have changed nothing anyway |
+| Tree | Dirty before the first edit → refusal&nbsp;: a repair commit carries only the fix |
 | Attempts | **One attempt is a change.** Validating and committing cost none, otherwise fixing would cost three times more than restarting |
-| Hooks | Never bypassed: the commit goes through the repository gate like any other |
+| Hooks | Never bypassed&nbsp;: the commit goes through the repository gate like any other |
+| Message | `dnf/` is published&nbsp;: a framework commit naming a fleet host is refused |
 
 :::danger[The fleet ends up straddling two revisions]
-Only the repaired host is rebuilt: **all the others keep the path
-the run had built at the start** and switch with it. Until the
-next run, the fleet therefore runs on two revisions. The report and the
-alert message say it in plain words: `Repaired in flight: <host>`.
+Only the repaired host is rebuilt&nbsp;: **all the others keep the path the
+deployment built at the start**, and switch over with it. Until the next
+deployment, the fleet therefore runs on two revisions. The report and the
+alert message say so in plain words&nbsp;: `Repaired in flight: <host>`.
 
-Consequence on resume: after a repair commit, `--resume`
-**rebuilds everything**. That is the guarantee itself — one does not redeploy
+Consequence on resume&nbsp;: after a repair commit, `--resume`
+**rebuilds everything**. That is the guarantee itself — you do not redeploy
 paths built before the fix.
 :::
 
-:::caution[In non-interactive mode too]
-Under the night timer, the AI edits, commits and redeploys **without asking**. An
-unreviewed commit can therefore land on the branch. What makes it
-bearable: the required clean tree, the confined paths, the logged diff,
-the three attempts, and the automatic rollback that stays armed. If that is not
-what you want, leave `--ai-error-action` at `none` or at `analysis`
+:::caution[Non-interactive too]
+Under the night timer, AI edits, commits and redeploys **without asking**. An
+unreviewed commit can therefore land on the branch. What makes this
+acceptable&nbsp;: the required clean tree, the confined paths, the logged diff,
+the three attempts, and the automatic rollback that stays armed. If this is
+not what you want, leave `--ai-error-action` at `none` or at `analysis`
 in `timer.extraArgs`.
 :::
 
 :::caution[What AI repair is not]
-It is neither the [deterministic repair](#errors-diagnostics-and-repair)
-(grouped restart, once, without AI), nor the retrying of a command decided
-by the signature table, nor a decision — excluding or stopping comes first,
-without a question. The AI only arrives after what is deterministic.
+It is neither [deterministic repair](#errors-diagnostics-and-repair)
+(grouped restart, once, without AI), nor the re-run of a command decided by
+the signature table, nor a decision — excluding or stopping happens first,
+without questions. AI only arrives after what is deterministic.
 :::
 
-:::note[The analysis adds, it replaces nothing]
-A host's raw reason, its failed units and the whole `logs/` trace remain
-what they were. The analysis completes them, like the plain-language message
-of a known error.
+:::note[Analysis adds, it replaces nothing]
+A host's raw reason, its failed units and the entire trail of `logs/`
+remain what they were. The analysis complements them, like the plain-language
+message of a known error.
 :::
 
-{/* t:p b55420f2dacb15a69c5c6dfbfa25a4e29a859d498511bc668938947a6fd28d01 */}
+{/* t:p 4aa701759fa2970a3e20435506d8cb3b5518cae075ba892c1b4b7607530a92da */}
+#### Improvement suggestions
+
+With `--ai-analysis active`, the deployment ends with a **review of its
+warnings**&nbsp;: renamed or deprecated option, a change that would silence a
+warning, an issue to investigate. AI proposes, it changes **neither the code
+nor the fleet**.
+
+<Steps>
+1. The warnings from all deployment logs are grouped by shape&nbsp;: the same one on ten hosts counts once. No warning → no review, nothing is paid.
+2. AI reads the suggestions already filed, then searches the code for where each warning comes from.
+3. Every useful finding becomes a `var/deployments/suggestions/<slug>.md` file&nbsp;: what, where (`file:line`), why, and the proposed improvement.
+4. The report's **Suggestions** section lists what the deployment filed or reviewed. Nothing goes to Matrix&nbsp;: this is not an alert.
+</Steps>
+
+The files **survive deployments**. A finding that comes back does not rewrite
+its file&nbsp;: only the `Last seen` and `Runs` header lines change.
+
+```markdown title="var/deployments/suggestions/nginx-deprecated-option.md"
+# Replace a deprecated nginx option
+
+- Status: open
+- First seen: 20260101T020000Z-full
+- Last seen: 20260108T020000Z-full
+- Runs: 4
+
+The option is deprecated upstream: `usr/modules/web.nix:12`, …
+```
+
+| To | Do |
+|---|---|
+| Silence a suggestion | Write `Status: ignored` in its header&nbsp;: it stays tracked, out of the report |
+| Forget it | Delete the file&nbsp;: a finding that comes back starts from scratch |
+| Apply it | Fix the code, then delete the file |
+
+The scope follows the mode&nbsp;: in co-development, the project and `dnf/`&nbsp;;
+otherwise the project alone (a finding that only the framework can fix is not
+filed).
+
+{/* t:p 5cf462f3f0d73201d9b95d814d866b6040ee4466f8a2d4d63fc174896ae49ee6 */}
 ### Report and Matrix alerts
 
-Each run writes its folder in `var/deployments/<date>-<mode>/`:
+Each deployment writes its directory under
+`var/deployments/<date>-<mode>/`&nbsp;:
 `report.md` (the report), `state.json` (the state `--resume` picks up),
-`events.jsonl` and the per-host logs. The path is shown at the end of the run.
+`events.jsonl` and the per-host logs. The path is displayed at the end of the
+deployment.
 
-The report details what the run actually did:
+The report details what the deployment actually did&nbsp;:
 
 | Section | What it gives |
 |---|---|
 | **Steps**, **Waves** | Duration of each step, composition and duration of each wave |
-| **Builders** | Who built what, fallbacks included |
-| **Copies** | Per host: paths pulled and by which substituter, paths pushed, volume |
-| **Zones without a cache** | Run zones that no `harmonia` serves |
+| **Builders** | Who built what, including fallbacks |
+| **Copies** | Per host: pulled paths and by which substituter, pushed paths, volume |
+| **Zones without a cache** | Deployment zones that no `harmonia` serves |
 | **Hosts not deployed** | Hosts left aside, and the reason |
 | **Diagnostics** | Per failed host: failed units, then an excerpt of the error |
-| **Notes** | What the run observed: probable activation order after a unit restart |
-| **AI analysis** | AI analysis: one entry per analysed host, then the run summary |
+| **Notes** | What the deployment observed: probable activation order after a unit restart |
+| **AI analysis** | AI analysis: one entry per analyzed host, then the deployment summary |
 | **AI repair** | AI actions: host, action, outcome, and the reason for a refusal. A repair commit also appears in the header, `Repaired in flight` |
-| **Known errors** | Known traps from the signature table, in plain language |
+| **Suggestions** | Improvement suggestions filed or reviewed by the deployment, except the ignored ones |
+| **Known errors** | Pitfalls recognized by the signature table, in plain language |
 
 :::tip[Reading the copy counters]
-A host pulling most of its content from `harmonia <zone>` proves that its zone's
-cache plays its role. A host that gets a lot of volume **pushed** to it is on the
-contrary a candidate for a `harmonia` in its zone, or for `auto-build`. No copy
-line for a host → it already held everything, nothing travelled.
+A host that pulls most of its data from `harmonia <zone>` proves that its
+zone's cache does its job. A host that gets **pushed** a lot of volume is
+instead a candidate for a `harmonia` in its zone, or for `auto-build`. No copy
+line for a host&nbsp;→ it already had everything, nothing travelled.
 :::
 
-The `--send-report` option sends this report to the rooms of the
-[alerts bot](/en/doc/admin-guide/operate/alerts/), installed beforehand via
+The `--send-report` option sends this report to the
+[alert bot](/en/doc/admin-guide/operate/alerts/) rooms, installed beforehand by
 `just configure-alert-bot`.
 
 | Situation | Room | Content |
 |---|---|---|
-| Run finished | warnings | Summary: hosts by state, duration, known errors |
-| Critical hosts not deployed | incidents | Separate message: affected hosts, reasons and failed units |
-| Stop on error | incidents | Error that stopped the run, then summary |
+| Deployment finished | warnings | Summary&nbsp;: hosts by state, duration, known errors |
+| Critical hosts not deployed | incidents | Separate message&nbsp;: hosts concerned, reasons and failed units |
+| Stopped on error | incidents | Error that stopped the deployment, then the summary |
 
-A host is critical when its profile appears in `criticalProfiles`. After a
-stop, the hosts left in `test` complete the incident message: a
-restart would bring them back to their previous generation.
+A host is critical when its profile is listed in `criticalProfiles`. After a
+stop, the hosts left in `test` complete the incident message&nbsp;: a restart
+would bring them back to their previous generation.
 
-**Only the end-of-run summary** reaches the message, never the
-per-host analyses, and it is capped there at six lines: beyond that, the message
-points to `report.md`. An alerts room is not a report.
+**Only the end-of-deployment summary** joins the message, never the per-host
+analyses, and it is capped at six lines there&nbsp;: beyond that, the message
+refers to `report.md`. An alert room is not a report.
 
-The message repeats the report header, the exit code in the title:
+The message reuses the report's header, with the exit code in the title&nbsp;:
 
 ```markdown
 **Fleet Update Report** (1)
@@ -600,23 +658,22 @@ Error: srv-ag: activation failed
 - Run stopped on error
 ```
 
-:::note[Send impossible]
-The run remains valid and the report is written, but the command exits with `3`.
-Under the timer, the unit fails, therefore the `SystemdUnitFailed` alert.
+:::note[Sending not possible]
+The deployment remains valid and the report is written, but the command exits
+with `3`. Under the timer, the unit fails, hence the `SystemdUnitFailed` alert.
 :::
 
 :::caution[What sending requires]
-Sending goes through the [`just send-msg`](/en/doc/admin-guide/operate/alerts/#sending-a-message-to-a-room) recipe:
-rooms and token remain the framework's concern, the tool only writes the text.
-Nothing goes out if the bot is not provisioned, nor on an abort (`^C`, service
-stop).
+Sending goes through the [`just send-msg`](/en/doc/admin-guide/operate/alerts/#sending-a-message-to-a-room)
+recipe&nbsp;: rooms and token remain the framework's business, the tool only
+writes the text. Nothing goes out if the bot is not provisioned, nor on an
+abort (`^C`, service stop).
 :::
 
-{/* t:p a4bcf5db6759586551c4ecbc142982351d5ab529829cc6e2d847ebff25f36514 */}
-### Daily execution
+{/* t:p 826bb022475cb8d9781021ef6fd0bc3511cbb2f47710deaa651789017a429b58 */}
+### Daily run
 
-On the deployment host, the module installs the tool and, with `timer.enable`,
-runs `fleet-update --no-ui` every day&nbsp;:
+On the deployment host, the module installs the tool and, with `timer.enable`, runs `fleet-update --no-ui` every day&nbsp;:
 
 ```nix
 # usr/machines/<hôte>/configuration.nix
@@ -632,26 +689,26 @@ darkone.admin.fleet-update = {
 |---|---|---|
 | `user` | none | Project owner: git, age key, AI, Matrix |
 | `workDir` | `/etc/nixos` | Consumer project on disk |
-| `aiContext` | `null` | Context added to the timer's AI prompts; `timer.extraArgs` can override it |
-| `timer.onCalendar` | `*-*-* 04:00` | Start time |
+| `aiContext` | `null` | Context added to the AI prompts of every run on the host, written to `/etc/fleet-update/ai-context`, even without `enable`&nbsp;; `--ai-context` overrides it |
+| `timer.onCalendar` | `*-*-* 04:00` | Run time |
 | `timer.extraArgs` | `[ ]` | Options added to `--no-ui`, `--send-report` for example |
 | `timer.timeout` | `6h` | Maximum duration of a run |
 
 :::note[Exit codes and alerts]
-A run already in progress (code `4`) is not an error. Any other failure, or
-exceeding `timer.timeout`, puts the unit in failure and triggers the
-[alert](/en/doc/admin-guide/operate/alerts/) `SystemdUnitFailed`.
+A run already in progress (code `4`) is not an error. Any other failure,
+or a `timer.timeout` overrun, fails the unit and triggers
+the `SystemdUnitFailed` [alert](/en/doc/admin-guide/operate/alerts/).
 :::
 
-:::caution[Account and deployment host]
+:::caution[Deployment account and host]
 The timer requires `darkone.admin.nix` on the host, and a `user` account with
 passwordless `sudo`.
 :::
 
 :::note[Daily report]
-`--send-report` will become the default of `timer.extraArgs` when the packaged
-version of the tool knows how to send it. Add it until then, after verifying the
-sending manually.
+`--send-report` will become the default for `timer.extraArgs` when the packaged
+version of the tool knows how to send it. Add it in the meantime, after checking
+the delivery by hand.
 :::
 
 {/* t:p 53a65117f4b0aa9b06069bf828ec8a617dc5f76f1d45daf9f956e1bb20ada775 */}

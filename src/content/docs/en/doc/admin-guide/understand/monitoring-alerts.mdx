@@ -37,10 +37,11 @@ Only one host runs `prometheus`/`monitoring` per zone. It monitors nodes whose
 `monitoring-node` tag points to **its** zone.
 </Aside>
 
-{/* t:p a868a1c44b12e42b2b7877dc06b04841d899b369c6f90319c848d2ea33854689 */}
+{/* t:p ffbdd840ce60418885876a67c7a69f5ef828c2d15cc2e53859a1456a027a3a5e */}
 ## The alert flow
 
-Prometheus evaluates rules **generated from the topology**; when one triggers, Alertmanager routes the notification according to its **severity**.
+Prometheus evaluates rules **generated from the topology**; when one fires,
+Alertmanager routes the notification according to its **severity**.
 
 ```d2
 style.fill: transparent
@@ -51,7 +52,7 @@ prom: "Prometheus\nrules + probes" { shape: hexagon }
 am: Alertmanager { shape: diamond }
 warn: "Matrix #warnings" { shape: rectangle }
 inc: "Matrix #incidents" { shape: rectangle }
-mail: "Email" { shape: rectangle }
+mail: "E-mail" { shape: rectangle }
 
 nodes -> prom
 prom -> am
@@ -60,7 +61,15 @@ am -> inc
 am -> mail
 ```
 
-Alertmanager **deduplicates**, **groups** (by alert and instance) and **inhibits** redundant alerts: a `critical` silences the `warning` of the same incident.
+Alertmanager **deduplicates**, **groups** (by alert and instance) and **inhibits**
+redundant alerts: a `critical` silences the `warning` of the same incident.
+
+:::note[A unit failing in a loop]
+A unit restarted by a timer alternates between `failed` and `activating` on each
+attempt. `SystemdUnitFailed` therefore stays firing for 30 minutes after the last
+failure (`keep_firing_for`) → a single message, then a reminder every 4 hours,
+instead of one alert and one resolution per attempt.
+:::
 
 {/* t:p 5dc4cfaa330b2c80a473b77f938563dee528b9bcb45fe106255bf005957ca0a3 */}
 ## Severity and escalation

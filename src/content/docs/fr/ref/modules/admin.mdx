@@ -13,26 +13,39 @@ sidebar:
 **Un module d'administration** s'occupe des fonctionnalités spécifiques au système pour les administrateurs.
 :::
 
-{/* t:p 9cd667d8d72c91716cca93f31f19c30564564a160cbc3eb3a00088e49c221b34 */}
+{/* t:p 217f3ac7c56cb2d4e975091a20595c6376b06b68ec1d387880f10cc238b781c9 */}
 ### &#x1F451; darkone.admin.fleet-update
 
-Outil de mise à jour de la flotte (`fleet-update`) et son exécution quotidienne sans intervention.
+Outil de mise à jour de la flotte (`fleet-update`) et son exécution quotidienne sans surveillance.
 
-`enable` installe l'outil sur un hôte de déploiement ; `just fleet-update` le lance ensuite. `timer.enable` ajoute une exécution quotidienne de `fleet-update --no-ui` : mise à jour du flake, build, test par vagues, switch.
+`enable` installe l'outil sur un hôte de déploiement&nbsp;; `just fleet-update` l'exécute ensuite.
+`timer.enable` ajoute une exécution quotidienne `fleet-update --no-ui`&nbsp;: mise à jour du
+flake, build, tests par vagues, switch.
 
-:::caution[Identité du service]
-L'exécution appartient à `user`, propriétaire de `workDir` : identité git, clé age sops, identifiants AI et Matrix. Elle requiert un `sudo` sans mot de passe (permissions `just clean`, identité de déploiement `nix` dont la clé vit dans `~nix/.ssh`).
+:::caution[Identité de service]
+L'exécution appartient à `user`, propriétaire de `workDir`&nbsp;: identité git, clé age sops,
+identifiants IA et Matrix. Elle a besoin d'un `sudo` sans mot de passe (permissions de
+`just clean`, identité de déploiement `nix` dont la clé se trouve dans `~nix/.ssh`).
 :::
 
 :::tip[Outils IA]
-`--ai-model` lance `claude` ou `opencode` depuis `PATH`. Déclarez dans `aiPackages` ce que l'exécution sans intervention peut atteindre ; sans cela, elle émet un avertissement puis continue sans IA.
+`--ai-model` lance `claude` ou `opencode` depuis le `PATH`. Déclarez ce que l'exécution non
+supervisée peut atteindre dans `aiPackages`&nbsp;; sans cela, l'exécution avertit une fois et
+continue sans IA.
+:::
+
+:::tip[Contexte IA]
+`aiContext` (langue, style) est écrit dans `/etc/fleet-update/ai-context`&nbsp;:
+chaque exécution sur l'hôte le lit, `just fleet-update` comme le timer.
 :::
 
 :::note[Codes de sortie]
-`4` (une exécution détient déjà le verrou) compte comme un succès : aucune alerte. Toute autre panne fait échouer l'unité et déclenche l'alerte existante `SystemdUnitFailed`, de même qu'une exécution encore active après `timer.timeout`.
+`4` (une exécution détient déjà le verrou) compte comme un succès&nbsp;: aucune alerte.
+Toute autre défaillance fait échouer l'unité et déclenche l'alerte `SystemdUnitFailed`
+existante, tout comme une exécution toujours en cours après `timer.timeout`.
 :::
 
-:::tip[Activer sur l'hôte admin]
+:::tip[Activation sur l'hôte d'administration]
 ```nix
 darkone.admin.fleet-update = {
   enable = true;
@@ -42,19 +55,30 @@ darkone.admin.fleet-update = {
 ```
 :::
 
-* **enable** `bool` Active fleet-update, l'outil de mise à jour et de déploiement de la flotte
-* **package** `package` Le paquet fleet-update. Son `nix-eval-jobs` est apparié au Nix du système : l'outil évalue le flake consommateur avec lui.
-* **aiPackages** `listOf package` Outils IA accessibles depuis l'exécution sans intervention (`--ai-model`). Facultatif : l'outil avertit et continue sans IA quand aucun n'est trouvé.
+* **enable** `bool` fleet-update, l'outil de mise à jour et de déploiement de la flotte
+* **package** `package` Le paquet fleet-update. Son `nix-eval-jobs` est aligné sur le Nix du
+  système&nbsp;: l'outil évalue le flake consommateur avec celui-ci.
+* **aiPackages** `listOf package` Outils IA accessibles depuis l'exécution non supervisée (`--ai-model`). Facultatif&nbsp;:
+  l'outil avertit et continue sans IA quand aucun n'est trouvé.
 
-  Pas une dépendance du paquet, car `pkgs.claude-code` est non-libre et forcerait `allowUnfree` chez chaque consommateur.
-  `pkgs.opencode` est sous licence MIT.
-* **aiContext** `nullOr str` Consignes supplémentaires de l'opérateur incluses dans chaque prompt IA de l'exécution sans intervention. `timer.extraArgs` peut les remplacer avec `--ai-context`.
-* **user** `nullOr str` Compte exécutant la mise à jour sans intervention : propriétaire de `workDir`, détenteur de l'identité git, de la clé age sops et des identifiants IA et Matrix.
-* **workDir** `str` Espace de travail du consommateur sur disque. Pas l'argument de module `workDir`, qui en est une copie dans le store nix.
-* **timer.enable** `bool` l'exécution quotidienne sans intervention (`fleet-update --no-ui`)
+  Ce n'est pas une dépendance du paquet, car `pkgs.claude-code` est
+  non libre et imposerait `allowUnfree` à chaque consommateur.
+  `pkgs.opencode` est en MIT.
+* **aiContext** `nullOr str` Consignes opérateur (langue, style) incluses dans chaque prompt IA d'une
+  exécution sur cet hôte, `just fleet-update` comme le timer. Écrit dans
+  `/etc/fleet-update/ai-context`, même sans `enable`&nbsp;: en
+  co-développement, la recette exécute les sources. `--ai-context`, sur la
+  ligne de commande ou dans `timer.extraArgs`, le remplace.
+* **user** `nullOr str` Compte exécutant la mise à jour non supervisée&nbsp;: propriétaire de `workDir`, détenant
+  l'identité git, la clé age sops et les identifiants IA et Matrix.
+* **workDir** `str` Espace de travail consommateur sur disque. Pas l'argument de module `workDir`, qui
+  est sa copie dans le store nix.
+* **timer.enable** `bool` l'exécution quotidienne non supervisée (`fleet-update --no-ui`)
 * **timer.onCalendar** `str` Quand l'exécution démarre (systemd `OnCalendar`).
 * **timer.extraArgs** `listOf str` Options passées après `--no-ui`, que le module définit toujours.
-* **timer.timeout** `str` Durée maximale avant que systemd ne l'arrête (`TimeoutStartSec`). Sans cela, une exécution bloquée retiendrait le verrou et chaque exécution suivante sortirait avec `4` sans aucune alerte.
+* **timer.timeout** `str` Durée maximale d'une exécution avant que systemd l'arrête (`TimeoutStartSec`). Une exécution
+  bloquée détiendrait sinon le verrou, et toute exécution ultérieure sortirait
+  avec `4` sans aucune alerte.
 
 ```nix
 darkone.admin.fleet-update = {

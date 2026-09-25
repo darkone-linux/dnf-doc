@@ -24,28 +24,27 @@ Une configuration de bureau complète avec gnome, outils multimédias et outils 
 darkone.host.desktop.enable = false;
 ```
 
-{/* t:p c00777349e760959c2f68e6e8b765bfadfa4e453d65d12814a7f33bd24681763 */}
+{/* t:p b834c10ded96582df7e8839d0022e26561f63bb5daea0326b6908ebc34fc0c75 */}
 ### &#x1F4E6; darkone.host.gateway
 
 La passerelle / routeur principal d'une zone de réseau local.
 
 :::tip[Une passerelle prête à l'emploi !]
-La passerelle se configure dans le fichier `usr/config.yaml`.
-Les services activés additionnels (homepage, adguardhome, forgejo, nix-cache...)
+La passerelle est configurée dans le fichier `usr/config.yaml`.
+Les services activés supplémentaires (homepage, adguardhome, forgejo, nix-cache...)
 sont automatiquement configurés avec une connectique réseau cohérente sur la
-passerelle et sur toutes les machines du réseau local.
+passerelle et toutes les machines du réseau local.
 :::
 
 :::caution[Le trafic routé est filtré]
-`filterForward = true` : seuls les échanges LAN &lt;-&gt; WAN et LAN &lt;-&gt; tailnet
-passent. Tout le reste est supprimé → ajoutez-le à
-`networking.firewall.extraForwardRules`.
+`filterForward = true` : seuls les passages LAN &lt;-&gt; WAN et LAN &lt;-&gt; tailnet sont autorisés. Tout
+le reste est abandonné — ajoutez-le à `networking.firewall.extraForwardRules`.
 :::
 
 :::tip[Liens de secours : Internet en mode dégradé]
-`backupLinks` ajoute des liens de secours (port Ethernet libre, client Wi-Fi
-comme un partage de connexion de téléphone) vers lesquels la zone se replie
-lorsque le WAN perd sa liaison, son bail ou Internet :
+`backupLinks` ajoute des liens de sortie (port ethernet de secours, client wifi comme un partage
+de connexion de téléphone) vers lesquels la zone se replie lorsque le WAN perd sa liaison, son bail ou
+l'Internet :
 
 ```nix
 darkone.host.gateway.backupLinks.phone = {
@@ -55,24 +54,27 @@ darkone.host.gateway.backupLinks.phone = {
 };
 ```
 
-Les métriques de routage orientent la route par défaut ; `dnf-uplink-monitor`
-effectue des ping via chaque lien et pénalise celui qui n'a pas Internet.
-Détails : `lib/uplinks.nix`.
+Les métriques de routage orientent la route par défaut ; `dnf-uplink-monitor` sonde via
+chaque lien, pénalise ceux qui n'ont pas Internet et retient en période de probation un lien
+touché par une panne jusqu'à ce qu'il réponde. Un secours wifi garde sa radio
+éteinte tant qu'aucun lien préféré n'atteint Internet ; un secours ethernet reste actif,
+au repos. Détails : `lib/uplinks.nix`.
 :::
 
 * **enable** `bool` Active les fonctionnalités de passerelle pour l'hôte courant (dhcp, dns, proxy, etc.)
-* **backupLinks** `attrs` Liens de secours, utilisés quand le WAN n'a pas de liaison, pas de bail ou pas
-  d'Internet. Nom : `[a-z][a-z0-9-]*`.
-  * **type** `enum [ "ethernet" "wifi" ]` `ethernet` : client DHCP sur un port libre. `wifi` : client WPA2/WPA3 ;
-    le SSID et la phrase de passe sont lus depuis sops
+* **backupLinks** `attrs` Liens de sortie de secours, utilisés quand le WAN n'a ni liaison, ni bail, ni
+  Internet. Nom : `[a-z][a-z0-9-]*`.
+  * **type** `enum [ "ethernet" "wifi" ]` `ethernet` : client DHCP sur un port de secours, toujours actif. `wifi` :
+    client WPA2/WPA3, radio éteinte (rfkill) tant qu'aucun lien préféré
+    n'atteint Internet ; le SSID et la phrase secrète sont lus depuis sops
     (`backup-link/&lt;name&gt;/ssid`, `backup-link/&lt;name&gt;/psk`).
-  * **interface** `str` Interface qui porte le lien : ni le WAN, ni un port LAN, ni une radio hostapd.
-  * **priority** `ints.between 1 99` Plus la valeur est basse, plus le lien est préféré parmi les liens de
-    secours (métrique de route 200 + 10 × priority, le WAN restant à 100).
-* **linkCheck.targets** `nonEmptyListOf str` Adresses IP pingées via chaque lien de secours ; une seule réponse suffit. Uniquement des IP littérales : la sonde ne doit pas dépendre du DNS.
+  * **interface** `str` Interface portant le lien : ni le WAN, ni un port LAN, ni une radio hostapd.
+  * **priority** `ints.between 1 99` Plus la valeur est basse, plus le lien est préféré parmi les liens de secours (métrique
+    de route 200 + 10 × priorité, le WAN restant à 100).
+* **linkCheck.targets** `nonEmptyListOf str` Adresses IP pingées via chaque lien de sortie ; une seule réponse suffit. Uniquement des IP littérales : la sonde ne doit pas dépendre du DNS.
 * **linkCheck.interval** `ints.positive` Secondes entre deux tours de sonde.
-* **linkCheck.failAfter** `ints.positive` Nombre de tours échoués avant qu'un lien de secours soit pénalisé.
-* **linkCheck.recoverAfter** `ints.positive` Nombre de tours réussis avant qu'un lien de secours pénalisé soit rétabli (hystérésis).
+* **linkCheck.failAfter** `ints.positive` Tours échoués avant qu'un lien de sortie soit pénalisé.
+* **linkCheck.recoverAfter** `ints.positive` Tours réussis avant qu'un lien de sortie pénalisé soit rétabli (hystérésis).
 
 ```nix
 darkone.host.gateway = {
