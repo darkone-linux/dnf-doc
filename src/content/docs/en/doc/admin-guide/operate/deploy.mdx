@@ -173,13 +173,13 @@ of the project and of `dnf/` have not moved and the paths are still in the
 store; otherwise they are redone. Nothing to resume: exit code `2`, no run.
 :::
 
-{/* t:p 714bc89ae272bae239a43508b13fd5a274631075ab25dd113b1e9ac24701388d */}
+{/* t:p 9ad52175ec4d6348bd727913124244bc3668b1ccda0da23d300570b9b8b1e965 */}
 ### Distributed build
 
-The deployment machine must not be the fleet's bottleneck. Each host is
-therefore built by the **builder elected** for it. The election is recomputed at
-every run from `var/generated/`, never declared: changing the deployment
-topology must not rebuild the fleet.
+The deployment machine must not be the bottleneck of the fleet. Each host is
+therefore built by the **elected builder** for it. The election is recomputed at
+each run from `var/generated/`, never declared: changing the deployment topology
+must not rebuild the fleet.
 
 | Order | Builder kept | Condition |
 |---|---|---|
@@ -189,12 +189,21 @@ topology must not rebuild the fleet.
 | 4 | The deployment machine | Default |
 
 The rule fits in one sentence: **a builder must be able to serve what it
-builds**. Hence the choice of `harmonia` hosts, whose `/nix/store` is already
-the cache of their zone, with nothing to bootstrap. A gateway without `harmonia`
-is not suitable: its paths are in no substituter.
+builds**. Hence the choice of `harmonia` hosts, whose `/nix/store` is already the
+cache of their zone, with nothing to bootstrap. A gateway without `harmonia`
+does not fit: its paths are not in any substitute.
 
-The result stays at the builder's. It is publication that then brings it to the
-zone's hosts, over LAN, through their usual substituter.
+The result stays on the builder. Publication then brings it to the hosts of the
+zone, over LAN, through their usual substitute.
+
+:::note[`nixpkgs` sources downloaded by the builder]
+Each system embeds the `nixpkgs` source (about 200&nbsp;MiB), new at each update
+and absent from any cache. Before sending it the derivations, the tool therefore
+asks the builder to download itself, from GitHub, the sources locked in
+`flake.lock` that its builds need: they no longer go through the upstream link of
+the deployment machine. A builder that cannot reach `github.com` receives them
+pushed, as before, without failure.
+:::
 
 ```yaml
 # etc/config.yaml
@@ -203,19 +212,19 @@ zone's hosts, over LAN, through their usual substituter.
 
 :::tip[When to declare `auto-build`]
 A host that builds itself no longer receives any closure. This is decisive for a
-host isolated behind a slow link that embeds a large package missing from the
-public cache, and it is the answer for a host of a different architecture.
+host isolated behind a slow link that carries a large package absent from the
+public cache, and it is the answer for a host of another architecture.
 
 The choice is made **per host**, never per zone: RAM and disk are properties of
 the machine. Counterpart to weigh: the closure of derivations, several hundred
-MiB, moves up to it at each run that moves `nixpkgs`. It is the copy counters of
-the report that settle the case, not intuition.
+MiB, goes up to it at each run that moves `nixpkgs`. It is the report's copy
+counters that settle the case, not intuition.
 :::
 
 :::note[Automatic fallback]
-Builder unreachable, failed, or of an architecture incompatible with its
-target → the build falls back to the deployment machine. No host fails because
-of a delegation, and the report names the builder that actually built.
+Builder unreachable, failing, or of an architecture incompatible with its
+target&nbsp;→ the build falls back to the deployment machine. No host fails
+because of a delegation, and the report names the builder that actually built.
 :::
 
 The `--no-distributed-build` option brings everything back to the center,
@@ -223,9 +232,9 @@ whatever the election. It is a debugging escape hatch: the rule comes from the
 fleet, the exception from the command line.
 
 :::caution[A zone without `harmonia` is expensive]
-Without a zone cache, there is neither a local builder nor a common source: each
-host gets its closure pushed to it, one by one, from the deployment machine. The
-report lists these zones and the pushed byte count shows it. Declare a
+Without a zone cache, there is neither local builder nor common source: each
+host gets its closure pushed, one by one, from the deployment machine. The
+report lists these zones and the number of pushed bytes shows it. Declare a
 [`harmonia`](#binary-cache) on a host of the zone.
 :::
 
