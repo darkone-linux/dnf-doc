@@ -130,11 +130,12 @@ Une passerelle route, et un paquet routé ne passe **jamais** par les règles
 d'ouverture de ports&nbsp;: celles-ci ne concernent que ce qui lui est adressé à
 elle. Les deux filtrages sont indépendants.
 
-Trois flux seulement traversent une passerelle&nbsp;:
+Seuls ces flux traversent une passerelle&nbsp;:
 
 | Flux | Usage |
 |---|---|
 | Zone → WAN | Partage d'Internet (NAT) |
+| Zone → liaison de secours | Partage d'Internet quand la box tombe ([liaisons de secours](/fr/doc/how-to/admin/gateway-backup-links/)) |
 | Zone ↔ VPN | Les autres zones, les machines distantes |
 | Réponses et redirections de ports | Retour du trafic sortant, `forwardPorts` |
 
