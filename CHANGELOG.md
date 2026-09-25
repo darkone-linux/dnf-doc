@@ -5,6 +5,32 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-09-25
+
+### Added
+
+- **gateway**: Backup links with health-checked failover
+- **gateway**: Backup links with health-checked failover (en)
+- **gateway**: Standby wifi backup radios until preferred links fail
+- **gateway**: Uplinks back from an outage stay on probation until proven
+- **gateway**: Carrier bounce puts an uplink on probation
+
+### Fixed
+
+- **just**: Deploy no longer fails when the built site is unchanged
+- **alerts**: Keep SystemdUnitFailed firing 30m across oneshot retries
+
+### Changed
+
+- **engine**: Builders fetch locked flake sources from GitHub
+- **engine**: Builders fetch locked flake sources from GitHub (en)
+
+### Documentation
+
+- **deploy**: AI code search, user journals and improvement suggestions
+- **deploy**: AiContext applies to interactive runs too
+- **deploy-alerts-gateway**: Translation en
+
 ## [0.3.0] - 2026-09-24
 
 ### ⚠ Breaking
@@ -358,7 +384,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Initial Astro/Starlight documentation site for Darkone NixOS Framework.
 - Upgrade to Astro 6.
 
-[Unreleased]: https://github.com/darkone-linux/dnf-doc/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/darkone-linux/dnf-doc/compare/v0.3.1...HEAD
+[0.3.1]: https://github.com/darkone-linux/dnf-doc/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/darkone-linux/dnf-doc/compare/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/darkone-linux/dnf-doc/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/darkone-linux/dnf-doc/compare/v0.1.2...v0.2.0
