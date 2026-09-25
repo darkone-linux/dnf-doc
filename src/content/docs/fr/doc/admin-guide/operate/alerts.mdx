@@ -143,6 +143,8 @@ Le code `10` lui suffit pour savoir qu'insister est inutile.
    critique. Le lien de l'alerte pointe vers `https://prometheus.<zone>.domain.tld`.
 
 3. Relancer le service : l'alerte se résout (notification de résolution).
+   Pour `SystemdUnitFailed`, la résolution n'arrive qu'après 30 minutes sans
+   échec ([pourquoi](/fr/doc/admin-guide/understand/monitoring-alerts/#le-flux-dalerte)).
 
    ```sh
    sudo systemctl start <unité>

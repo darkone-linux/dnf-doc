@@ -64,6 +64,13 @@ am -> mail
 Alertmanager **déduplique**, **regroupe** (par alerte et instance) et **inhibe**
 les alertes redondantes : un `critical` éteint le `warning` du même incident.
 
+:::note[Unité qui échoue en boucle]
+Une unité relancée par un timer alterne `failed` et `activating` à chaque
+essai. `SystemdUnitFailed` reste donc active 30 minutes après le dernier échec
+(`keep_firing_for`) → un seul message, puis un rappel toutes les 4 heures,
+au lieu d'une alerte et d'une résolution à chaque essai.
+:::
+
 {/* t:p 5dc4cfaa330b2c80a473b77f938563dee528b9bcb45fe106255bf005957ca0a3 */}
 ## Sévérité et escalade
 
