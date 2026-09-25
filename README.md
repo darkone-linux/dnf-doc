@@ -18,7 +18,8 @@ Published at: <https://darkone-linux.github.io>
 ```sh
 just dev        # start dev server (npm run dev)
 just build      # production build → dist/
-just update     # codegen + build + deploy
+just build-fix  # build + AI repair of invalid link #anchors (FIXLINKS_MODEL)
+just update     # codegen + translate + build-fix + deploy
 just upgrade    # upgrade Astro, Starlight and all npm deps
 ```
 

@@ -80,6 +80,8 @@ réécrit par `just translate`. On édite la source `fr/` (`t:main`).
 - Une **ancre** = slug *github-slugger* du texte du titre cible
   (`## Mon Titre` → `#mon-titre`).
 - Vérifier : `just build` (échoue sur un lien mort) ou `just check-links`.
+- Ancre cassée au build (`invalid hash`) → réparée par `just build-fix` (agent
+  IA, 3 tours max), que lance `just update`.
 
 {/* t:p 10421bb3b19dc1b30577c0ffbacc0dbffc4e8322281950668400eba061ab61d1 */}
 ## Faire de belles pages

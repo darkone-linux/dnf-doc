@@ -1,4 +1,5 @@
-// Single configuration for the incremental documentation translation task.
+// Single configuration for the AI-assisted documentation tasks: incremental
+// translation (translate.mjs) and build link repair (fix-build-links.mjs).
 // Every value can be overridden via environment variables (see below).
 const env = process.env;
 
@@ -59,6 +60,19 @@ export default {
     retryBaseMs: Number(env.TRANSLATE_RETRY_BASE || 500), // back-off de base (exponentiel + jitter)
   },
 
+  // Repair of the "invalid hash" links that fail the build (fix-build-links.mjs,
+  // `just build-fix`, run by `just update`). Same agent mechanism as the
+  // translation, with its own tool/model.
+  fixLinks: {
+    tool: env.FIXLINKS_TOOL || 'opencode', // 'claude' | 'opencode'
+    model: env.FIXLINKS_MODEL || 'opencode/muse-spark-1.3-contributor-free',
+    maxRounds: Number(env.FIXLINKS_ROUNDS || 3), // agent rounds, each followed by a rebuild
+    timeoutMs: Number(env.FIXLINKS_TIMEOUT || 300000),
+    retries: Number(env.FIXLINKS_RETRIES || 4), // retries on transient agent errors
+    retryBaseMs: Number(env.FIXLINKS_RETRY_BASE || 500),
+    buildCmd: ['just', 'build'], // rerun after each round of fixes
+  },
+
   // Command builder: returns { cmd, args }; the prompt is piped on stdin.
   command(tool, model) {
     if (tool === 'opencode') return { cmd: 'opencode', args: ['run', '-m', model] };
@@ -66,6 +80,32 @@ export default {
   },
 
   prompts: {
+    // Placeholder: {{body}} (one <<<L id>>> block per broken link, lib/link-fix.mjs).
+    fixLinks: `You repair broken "#anchor" links of an Astro/Starlight documentation site.
+The build's link validator flagged each link below as "invalid hash": its page
+exists but has no heading with that anchor. Anchors are github-slugger slugs of
+heading texts, already computed for you: the right anchor is ALWAYS one of the
+"valid anchors" listed for that link, copied exactly.
+
+How to choose, for each link:
+1. A "main-language hint" gives the anchor that the source-language version of
+   the same paragraph points to, mapped by heading position onto the target page.
+   Take it unless its heading clearly contradicts the link text and context.
+2. Otherwise, pick the heading that best matches the broken anchor words and the
+   link text: same or translated words (the broken anchor is often the slug of the
+   heading in the other language, e.g. French "organisation-des-fichiers" for an
+   English heading "File layout"), typos, reordered words.
+3. Never invent, translate or adapt an anchor: copy one from the list.
+
+Do NOT edit files and do NOT run commands: the tooling applies your answer.
+Output ONLY one line per link, nothing else:
+FIX <id> <anchor>
+or, when no listed anchor fits at all:
+SKIP <id> <short reason>
+
+Links:
+{{body}}`,
+
     // Placeholders: {{srcLang}} {{tgtLang}} {{srcName}} {{tgtName}} {{body}}
     translate: `You are a professional technical-documentation translator for an Astro/Starlight site.
 Translate from {{srcName}} ({{srcLang}}) to {{tgtName}} ({{tgtLang}}).

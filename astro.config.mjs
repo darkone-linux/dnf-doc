@@ -53,6 +53,8 @@ export default defineConfig({
       plugins: [
         starlightLinksValidator({
           errorOnInconsistentLocale: false,
+          // .starlight-links-validator/errors.json, read by `just build-fix`.
+          reporters: { json: true },
         }),
       ],
       title: "Darkone NixOS Framework",

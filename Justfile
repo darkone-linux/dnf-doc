@@ -51,7 +51,7 @@ upgrade:
 
 # ── update ───────────────────────────────────────────────────────────────────
 
-# Codegen + tags/translate + clean/fix + build + deploy (skips build/deploy if no changes)
+# Codegen + tags/translate + clean/fix + build (+ link fixes) + deploy (skips deploy if no changes)
 [group('update')]
 update msg="":
 	#!/usr/bin/env bash
@@ -59,7 +59,7 @@ update msg="":
 	just codegen
 	just translate
 	just clean
-	just build
+	just build-fix
 	if [ -n "$(git -C darkone-linux.github.io status --porcelain)" ]; then
 	    just deploy "{{ msg }}"
 	else
@@ -112,6 +112,12 @@ build:
 	fi
 	npm run build
 	rsync -rv --delete --exclude README.md --exclude .nojekyll --exclude .git dist/ darkone-linux.github.io/
+
+# Build, repairing "invalid hash" links with an AI agent (max 3 rounds, model:
+# FIXLINKS_MODEL, see scripts/translate.config.mjs). Flag: --check (dry-run).
+[group('update')]
+build-fix *args:
+	node scripts/fix-build-links.mjs {{ args }}
 
 # ── git ──────────────────────────────────────────────────────────────────────
 
