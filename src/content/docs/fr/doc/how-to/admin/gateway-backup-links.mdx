@@ -39,10 +39,19 @@ Trois situations sont couvertes&nbsp;:
 La sonde envoie un ping **par chaque lien** (1.1.1.1 et 9.9.9.9, toutes les 10
 secondes). Elle ne dépend pas du DNS&nbsp;: elle vise des adresses IP.
 
-:::note[Veille chaude]
-Une liaison de secours reste connectée quand elle est disponible (partage du
-téléphone allumé, câble branché). La métrique garde le trafic sur la box tant
-qu'elle fonctionne.
+Les deux types de liaison n'attendent pas de la même façon&nbsp;:
+
+| Type | En attente | Réveil |
+|---|---|---|
+| `ethernet` | connecté, sans trafic (la métrique garde tout sur la box) | immédiat |
+| `wifi` | radio coupée (`rfkill`)&nbsp;: aucune connexion au partage | dès qu'aucun lien préféré n'atteint Internet |
+
+:::note[Wifi en veille radio]
+Un partage de téléphone est facturé au volume et vide la batterie. La radio ne
+s'allume donc que si la WAN **et** les liaisons de meilleure priorité sont en
+panne (3 sondes ratées ou plus de route). Elle se recoupe dès qu'un lien
+préféré a réussi 6 sondes d'affilée. Compter 30 à 60 secondes entre la panne
+et le trafic sur le wifi.
 :::
 
 {/* t:p 9df2c07b1c05de89e259c5363ccc8afa77d3c79648e4f9da628bc6fbc4c5c73b */}
@@ -108,7 +117,8 @@ qu'elle fonctionne.
 ```sh
 networkctl list                       # le lien est « routable » quand il est actif
 ip -4 route show default              # la première ligne est le lien utilisé
-journalctl -u dnf-uplink-monitor -f   # bascules, en direct
+rfkill                                # radio wifi de secours « bloqué » en veille
+journalctl -u dnf-uplink-monitor -f   # bascules et réveils radio, en direct
 ```
 
 Avec la box en panne et le téléphone en partage de connexion&nbsp;:
@@ -131,12 +141,13 @@ default via 192.168.43.1 dev wlp4s0 proto dhcp src 192.168.43.20 metric 300
 {/* t:p a487622ca955a75619da6a68e613ac1502fda37304f542eea5f0d42a8d77c4c1 */}
 ## Supervision
 
-La sonde publie deux métriques pour Prometheus&nbsp;:
+La sonde publie trois métriques pour Prometheus&nbsp;:
 
 | Métrique | Valeur |
 |---|---|
 | `dnf_gateway_link_up` | 1 si le lien a une route et atteint Internet |
 | `dnf_gateway_link_active` | 1 sur le lien qui porte la route par défaut |
+| `dnf_gateway_link_standby` | 1 sur une radio wifi de secours coupée en attente |
 
 L'alerte `GatewayOnBackupLink` (avertissement) se déclenche après 2 minutes sur
 une liaison de secours.
