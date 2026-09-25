@@ -34,13 +34,14 @@ Trois situations sont couvertes&nbsp;:
 | Situation | Détection | Effet |
 |---|---|---|
 | Câble débranché, box éteinte, plus de bail DHCP | la route de la WAN disparaît | le noyau prend la route suivante |
-| Box allumée mais Internet coupé | la sonde `dnf-uplink-monitor` échoue 3 fois | la WAN passe à 20100, le secours prend le relais |
+| Box allumée mais Internet coupé | la sonde `dnf-uplink-monitor` échoue 3 fois (environ 40 secondes) | la WAN passe à 20100, le secours prend le relais |
 | Internet revenu sur la box | 6 sondes réussies | retour sur la WAN |
-| Lien revenu après 3 tours sans route (box redémarrée, câble rebranché) | nouveau bail | le lien revient en probation (10100), puis retrouve sa place après 6 sondes réussies |
+| Câble débranché ou changé, box redémarrée, 3 tours sans route | perte de porteuse ou de route | le lien revient en probation (10100), puis retrouve sa place après 6 sondes réussies |
 
 :::tip[Pourquoi la probation]
 Une box qui redémarre distribue souvent un bail avant d'avoir Internet. Sans
-probation, la zone y retournerait aussitôt, pour une coupure de 30 secondes.
+probation, la zone y retournerait aussitôt, pour une coupure d'environ 40
+secondes. Même effet avec un câble changé de box en quelques secondes.
 Un lien en probation passe derrière les liens sains, mais devant les liens
 morts.
 :::
@@ -59,7 +60,7 @@ Les deux types de liaison n'attendent pas de la même façon&nbsp;:
 Un partage de téléphone est facturé au volume et vide la batterie. La radio ne
 s'allume donc que si la WAN **et** les liaisons de meilleure priorité sont en
 panne (3 sondes ratées ou plus de route). Elle se recoupe dès qu'un lien
-préféré a réussi 6 sondes d'affilée. Compter 30 à 60 secondes entre la panne
+préféré a réussi 6 sondes d'affilée. Compter environ une minute entre la panne
 et le trafic sur le wifi.
 :::
 
