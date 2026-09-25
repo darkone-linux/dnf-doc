@@ -202,6 +202,15 @@ convient pas&nbsp;: ses chemins ne sont dans aucun substituteur.
 Le résultat reste chez le builder. C'est la publication qui l'amène ensuite aux
 hôtes de la zone, en LAN, par leur substituteur habituel.
 
+:::note[Sources `nixpkgs` téléchargées par le builder]
+Chaque système embarque la source de `nixpkgs` (environ 200&nbsp;Mio), nouvelle à
+chaque mise à jour et absente de tout cache. Avant de lui envoyer les dérivations,
+l'outil demande donc au builder de télécharger lui-même, depuis GitHub, les
+sources verrouillées dans `flake.lock` dont ses constructions ont besoin&nbsp;:
+elles ne passent plus par le lien montant de la machine de déploiement. Un builder
+qui ne joint pas `github.com` les reçoit poussées, comme avant, sans échec.
+:::
+
 ```yaml
 # etc/config.yaml
     features: ["auto-build"]
