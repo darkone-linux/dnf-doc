@@ -98,9 +98,11 @@ hôtes validés.
 ![Interface de fleet-update](../../../../../../assets/dfu-screenshot-01.png)
 
 :::note[L'IA au travail]
-L'IA analyse, agit sur les services et corrige le code&nbsp;— voir
-[Analyse par l'IA](#analyse-par-lia), [Réparer un service](#réparer-un-service)
-et [Réparer par le code](#réparer-par-le-code).
+L'IA analyse, agit sur les services, corrige le code et propose des
+améliorations&nbsp;: voir [Analyse par l'IA](#analyse-par-lia),
+[Réparer un service](#réparer-un-service),
+[Réparer par le code](#réparer-par-le-code) et
+[Suggestions d'amélioration](#suggestions-damélioration).
 :::
 
 {/* t:p 9a7e349addbc0b65573e6ae2095b537019c20f76d8d392c8884c3d2d566e9281 */}
@@ -427,8 +429,8 @@ qu'elle n'y voit pas, elle ne peut pas le demander.
 
 | Niveau | Outils présentés |
 |---|---|
-| `passive` | État du lancement, diagnostic d'un hôte, journaux de construction et d'activation |
-| `active`, `analysis` | + lecture du code (projet et `dnf/`), unités et journaux des hôtes, en lecture seule |
+| `passive` | État du lancement, diagnostic d'un hôte, journaux de construction et d'activation, avertissements du lancement regroupés |
+| `active`, `analysis` | + lecture, recherche et liste du code (projet et `dnf/`), unités et journaux des hôtes (unités utilisateur comprises), en lecture seule |
 | `repair` | + une action sur les unités tombées d'un hôte, et l'édition du code qui les décrit |
 
 Le niveau retenu est le **plus élevé des deux options**&nbsp;: `--ai-analysis
@@ -455,7 +457,8 @@ lancement. Un appel refusé par un garde-fou est tracé aussi, avec sa raison.
 1. **Un hôte échoue**, avec `--ai-error-action` ≠ `none` : après la collecte déterministe et le redémarrage des unités, avant la question qui décide de son sort. L'hôte porte `AI analysis` en magenta pendant ce temps, puis revient à son état.
 2. **Un hôte se rétablit** après un redémarrage d'unités, avec `--ai-analysis` ≠ `none` : l'analyse explique l'ordre d'activation, sans toucher à l'état de l'hôte.
 3. **Fin de lancement**, avec `--ai-analysis` ≠ `none` : une synthèse de l'ensemble, écrite avant le rapport qui la porte.
-4. **Touche `a`**, à tout moment : une question libre. Elle reçoit une réponse même sous `--ai-analysis none` — sans aucun outil : `none` supprime les outils et l'analyse automatique, pas la conversation.
+4. **Fin de lancement**, avec `--ai-analysis active` : une revue des avertissements, qui dépose des [suggestions d'amélioration](#suggestions-damélioration).
+5. **Touche `a`**, à tout moment : une question libre. Elle reçoit une réponse même sous `--ai-analysis none` — sans aucun outil : `none` supprime les outils et l'analyse automatique, pas la conversation.
 </Steps>
 
 {/* t:p 2cf96bc85ae42256523f7f27abb300866f40d4ceb9f6f5b61675cbe346b1c92e */}
@@ -504,9 +507,9 @@ projet, la valide, la commite, et **l'hôte seul** est reconstruit puis
 redéployé.
 
 <Steps>
-1. `edit_code` réécrit un fichier en entier. L'arbre git doit être propre avant la première édition, et le diff part dans `logs/ai.log`.
+1. `edit_code` remplace un passage exact (présent une seule fois), ou réécrit un fichier en entier. L'arbre git doit être propre avant la première édition, et le diff part dans `logs/ai.log`.
 2. `validate` lance le nettoyage du projet, puis réévalue et reconstruit **cet hôte seul**.
-3. `commit` écrit `fix(<hôte>): <sujet>` — `dnf/` d'abord en co-développement, puis le projet et son lock réaligné.
+3. `commit` écrit `fix(<scope>): <sujet>`, le scope nommant ce que la correction touche (`fix(nginx): …`). En co-développement, `dnf/` est commité d'abord, puis le projet et son lock réaligné.
 4. L'hôte repasse en `built` avec son nouveau chemin&nbsp;; sa vague le sert une fois de plus : copie, activation, conclusion.
 </Steps>
 
@@ -517,6 +520,7 @@ redéployé.
 | Arbre | Sale avant la première édition → refus&nbsp;: un commit de réparation ne porte que la correction |
 | Essais | **Un essai est un changement.** Valider et commiter n'en coûtent aucun, sinon corriger coûterait trois fois plus que redémarrer |
 | Hooks | Jamais contournés&nbsp;: le commit passe par la porte du dépôt comme n'importe quel autre |
+| Message | `dnf/` est publié&nbsp;: un commit du framework qui nomme un hôte du parc est refusé |
 
 :::danger[Le parc se retrouve à cheval sur deux révisions]
 Seul l'hôte réparé est reconstruit&nbsp;: **tous les autres gardent le chemin
@@ -551,6 +555,45 @@ restent ce qu'elles étaient. L'analyse les complète, comme le message en clair
 d'une erreur connue.
 :::
 
+#### Suggestions d'amélioration
+
+Avec `--ai-analysis active`, le lancement se termine par une **revue de ses
+avertissements**&nbsp;: option renommée ou dépréciée, changement qui ferait
+taire un avertissement, problème à investiguer. L'IA propose, elle ne change
+**ni le code ni le parc**.
+
+<Steps>
+1. Les avertissements de tous les journaux du lancement sont regroupés par forme&nbsp;: le même sur dix hôtes compte une fois. Aucun avertissement → aucune revue, rien n'est payé.
+2. L'IA lit les suggestions déjà déposées, puis cherche dans le code d'où vient chaque avertissement.
+3. Chaque constat utile devient un fichier `var/deployments/suggestions/<slug>.md`&nbsp;: quoi, où (`fichier:ligne`), pourquoi, et l'amélioration proposée.
+4. La section **Suggestions** du rapport liste ce que le lancement a déposé ou revu. Rien ne part dans Matrix&nbsp;: ce n'est pas une alerte.
+</Steps>
+
+Les fichiers **survivent aux lancements**. Un constat qui revient ne réécrit
+pas son fichier&nbsp;: seules les lignes `Last seen` et `Runs` de l'en-tête
+bougent.
+
+```markdown title="var/deployments/suggestions/nginx-deprecated-option.md"
+# Replace a deprecated nginx option
+
+- Status: open
+- First seen: 20260101T020000Z-full
+- Last seen: 20260108T020000Z-full
+- Runs: 4
+
+The option is deprecated upstream: `usr/modules/web.nix:12`, …
+```
+
+| Pour | Faire |
+|---|---|
+| Faire taire une suggestion | Écrire `Status: ignored` dans son en-tête&nbsp;: elle reste suivie, hors du rapport |
+| L'oublier | Supprimer le fichier&nbsp;: un constat qui revient repart de zéro |
+| L'appliquer | Corriger le code, puis supprimer le fichier |
+
+La portée suit le mode&nbsp;: en co-développement, le projet et `dnf/`&nbsp;;
+sinon, le projet seul (un constat que seul le framework corrige n'est pas
+déposé).
+
 {/* t:p b55420f2dacb15a69c5c6dfbfa25a4e29a859d498511bc668938947a6fd28d01 */}
 ### Rapport et alertes Matrix
 
@@ -571,6 +614,7 @@ Le rapport détaille ce que le lancement a réellement fait&nbsp;:
 | **Notes** | Ce que le lancement a constaté : ordre d'activation probable après un redémarrage d'unités |
 | **AI analysis** | Analyse de l'IA : une entrée par hôte analysé, puis la synthèse du lancement |
 | **AI repair** | Actions de l'IA : hôte, action, issue, et la raison d'un refus. Un commit de réparation apparaît aussi dans l'en-tête, `Repaired in flight` |
+| **Suggestions** | Suggestions d'amélioration déposées ou revues par le lancement, hors celles ignorées |
 | **Known errors** | Pièges reconnus par la table de signatures, en clair |
 
 :::tip[Lire les compteurs de copie]
