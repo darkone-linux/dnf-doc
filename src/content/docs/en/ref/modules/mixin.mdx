@@ -26,7 +26,7 @@ darkone.host.desktop.enable = false;
 
 <hr/>
 
-{/* t:p a05ca5d098fcc8e815855a6859b90b7417a4b5e4d55e9eabdbfba6edf3671369 */}
+{/* t:p c00777349e760959c2f68e6e8b765bfadfa4e453d65d12814a7f33bd24681763 */}
 ### &#x1F4E6; darkone.host.gateway
 
 The main gateway / router of a local network zone.
@@ -43,10 +43,48 @@ gateway and all machines on the local network.
 else is dropped — add it to `networking.firewall.extraForwardRules`.
 :::
 
-* **enable** `bool` Enable gateway features for the current host (dhcp, dns, proxy, etc.)
+:::tip[Backup links: Internet in degraded mode]
+`backupLinks` adds uplinks (spare ethernet port, wifi client such as a phone
+hotspot) the zone falls back to when the WAN loses its link, its lease or
+the Internet:
 
 ```nix
-darkone.host.gateway.enable = false;
+darkone.host.gateway.backupLinks.phone = {
+  type = "wifi";          # SSID + passphrase: sops `backup-link/phone/{ssid,psk}`
+  interface = "wlp4s0";
+  priority = 10;          # lower = preferred among backups
+};
+```
+
+Route metrics steer the default route; `dnf-uplink-monitor` pings through
+each link and penalises one without Internet. Details: `lib/uplinks.nix`.
+:::
+
+* **enable** `bool` Enable gateway features for the current host (dhcp, dns, proxy, etc.)
+* **backupLinks** `attrs` Fallback uplinks, used when the WAN has no link, no lease or no
+  Internet. Name: `[a-z][a-z0-9-]*`.
+  * **type** `enum [ "ethernet" "wifi" ]` `ethernet`: DHCP client on a spare port. `wifi`: WPA2/WPA3
+    client; SSID and passphrase are read from sops
+    (`backup-link/&lt;name&gt;/ssid`, `backup-link/&lt;name&gt;/psk`).
+  * **interface** `str` Interface carrying the link: neither the WAN, a LAN port nor a hostapd radio.
+  * **priority** `ints.between 1 99` Lower is preferred among backup links (route metric
+    200 + 10 × priority, the WAN staying at 100).
+* **linkCheck.targets** `nonEmptyListOf str` IP addresses pinged through each uplink; one answer is enough. IP literals only: the probe must not depend on DNS.
+* **linkCheck.interval** `ints.positive` Seconds between two probe rounds.
+* **linkCheck.failAfter** `ints.positive` Failed rounds before an uplink is penalised.
+* **linkCheck.recoverAfter** `ints.positive` Good rounds before a penalised uplink is restored (hysteresis).
+
+```nix
+darkone.host.gateway = {
+  enable = false;
+  backupLinks.type = null;
+  backupLinks.interface = "wlp4s0";
+  backupLinks.priority = 10;
+  linkCheck.targets = internetProbeTargets;
+  linkCheck.interval = 10;
+  linkCheck.failAfter = 3;
+  linkCheck.recoverAfter = 6;
+};
 ```
 
 <hr/>

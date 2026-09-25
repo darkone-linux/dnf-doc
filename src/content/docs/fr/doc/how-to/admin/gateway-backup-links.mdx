@@ -8,10 +8,15 @@ lang: fr
 
 import { Steps } from '@astrojs/starlight/components';
 
+{/* t:main */}
+{/* t:h d18b5f6fb159e6851ac201abbbf709eff2f535194f3eef386781c1cab0cfae92 */}
+
+{/* t:p 3eabebe436b68d84ff0d71ce932cb8a1f4ce0291b8e966d82c891a6210ee186f */}
 Quand la box tombe, la passerelle bascule seule sur une **liaison de secours**&nbsp;:
 un port ethernet libre, le partage de connexion d'un téléphone en wifi… La zone
 garde Internet en mode dégradé, puis revient sur la box dès qu'elle répond.
 
+{/* t:p 75ae77c427bc36dbb68c131b3b0cb2d68d1d7f0b8dc0795472b8f5272e5d28ba */}
 ## Principe
 
 Chaque lien vers Internet (la WAN, puis les secours) porte sa propre route par
@@ -40,6 +45,7 @@ téléphone allumé, câble branché). La métrique garde le trafic sur la box t
 qu'elle fonctionne.
 :::
 
+{/* t:p 9df2c07b1c05de89e259c5363ccc8afa77d3c79648e4f9da628bc6fbc4c5c73b */}
 ## Déclarer une liaison de secours
 
 <Steps>
@@ -96,6 +102,7 @@ qu'elle fonctionne.
 
 </Steps>
 
+{/* t:p 97b02508067c36ea46e004a6fab9a9ed01763570cc19cc3aa46195de51f25225 */}
 ## Vérifier
 
 ```sh
@@ -111,6 +118,7 @@ default via 192.168.1.254 dev enp1s0 proto dhcp src 192.168.1.10 metric 20100
 default via 192.168.43.1 dev wlp4s0 proto dhcp src 192.168.43.20 metric 300
 ```
 
+{/* t:p 77e21fb6becdbf8f2934067be3c8ce7f8e00c4880b16b37637f7087bd8c00673 */}
 ## Régler la sonde
 
 | Option | Défaut | Rôle |
@@ -120,6 +128,7 @@ default via 192.168.43.1 dev wlp4s0 proto dhcp src 192.168.43.20 metric 300
 | `darkone.host.gateway.linkCheck.failAfter` | 3 | échecs avant de pénaliser un lien |
 | `darkone.host.gateway.linkCheck.recoverAfter` | 6 | succès avant de le rétablir |
 
+{/* t:p a487622ca955a75619da6a68e613ac1502fda37304f542eea5f0d42a8d77c4c1 */}
 ## Supervision
 
 La sonde publie deux métriques pour Prometheus&nbsp;:
@@ -132,6 +141,7 @@ La sonde publie deux métriques pour Prometheus&nbsp;:
 L'alerte `GatewayOnBackupLink` (avertissement) se déclenche après 2 minutes sur
 une liaison de secours.
 
+{/* t:p 5f01b4e93c7bd1c2e10b289385898abe39860c012f4f58b95af49a9b23db966e */}
 ## Limites à connaître
 
 :::caution[Une radio par rôle]

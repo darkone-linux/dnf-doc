@@ -264,7 +264,7 @@ darkone.security.kernel-build.enable = false;
 
 <hr/>
 
-{/* t:p 79ce68cfa0f93382523cdb98f747993cc9bdaad26ae7a58b714b211e3c15c0e4 */}
+{/* t:p 9b354bd27bc5eae038990da769ad0e8a8a26b927f4da6d49155bef0d096a21c6 */}
 ### &#x1F511; darkone.security.kernel-params
 
 Dynamic kernel configuration: boot parameters and sysctls (R8–R14). (wip)
@@ -305,7 +305,8 @@ Podman, hence `restrictUserns` — off by default.
 :::caution[R12 — reverse path filtering]
 Strict mode (`rp_filter = 1`) drops any asymmetric return path. A tailscale
 subnet router advertising routes with `--snat-subnet-routes=false` is exactly
-that case, so routers fall back to loose mode (2).
+that case, so routers fall back to loose mode (2). So does a gateway with
+backup links: probe replies arrive on a link that is not the preferred route.
 :::
 
 :::caution[R10 — Modules disabled]

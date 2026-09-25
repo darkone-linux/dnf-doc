@@ -260,71 +260,73 @@ R18 (modules signés) rend la signature de tout module externe obligatoire
 darkone.security.kernel-build.enable = false;
 ```
 
-{/* t:p 79ce68cfa0f93382523cdb98f747993cc9bdaad26ae7a58b714b211e3c15c0e4 */}
+{/* t:p 9b354bd27bc5eae038990da769ad0e8a8a26b927f4da6d49155bef0d096a21c6 */}
 ### &#x1F511; darkone.security.kernel-params
 
 Configuration dynamique du noyau : paramètres de démarrage et sysctls (R8–R14). (wip)
 
-Règles applicables sans recompilation du noyau. Couvre les options mémoire (R8),
+Règles applicables sans recompiler le noyau. Couvre les options mémoire (R8),
 les sysctls système (R9), la désactivation du chargement de modules (R10), Yama/ptrace (R11),
 les sysctls réseau IPv4 (R12), la désactivation d'IPv6 (R13)
-et les sysctls du système de fichiers (R14).
+et les sysctls des systèmes de fichiers (R14).
 
 :::caution[Activation]
 L'option `enable` suit `darkone.system.security.enable` par défaut.
-Les règles (Rxx/Cxx) sont activées en fonction du niveau, de la catégorie et des exclusions
-définies dans `darkone.system.security` (via `isActive`).
+Les règles (Rxx/Cxx) sont activées selon le niveau, la catégorie et les exclusions
+définis dans `darkone.system.security` (via `isActive`).
 :::
 
 :::caution[R8 — SMT désactivé]
 `l1tf=full,force`, `mds=full,nosmt` et `mitigations=auto,nosmt` désactivent
-l'hyperthreading, ce qui représente environ 30 % du débit multi-thread — un prix qu'une
-ferme de build ne peut pas toujours payer. `disableSmt = false` conserve le reste de R8.
+l'hyperthreading, qui représente environ 30 % du débit multi-thread — un prix qu'une
+ferme de compilation ne peut pas toujours payer. `disableSmt = false` conserve le reste de R8.
 :::
 
-:::caution[R8 — les extras de l'allocateur remplacent le nettoyage demandé par l'ANSSI]
-`page_poison=on` a priorité sur `init_on_alloc`/`init_on_free` — le noyau
-l'indique au démarrage — R8 fournit donc une fonctionnalité de débogage là où l'ANSSI
-demande un nettoyage mémoire, et `slub_debug=FZP` profite de chaque cache slab.
-`memoryDebug = false` supprime les trois et restitue `init_on_*` ; mesuré à
-7 % d'une compilation (95 s à 88 s, ms-a2, SMT activé), donc la raison est la conformité
-plutôt que la vitesse.
+:::caution[R8 — les extras de l'allocateur remplacent l'effacement demandé par l'ANSSI]
+`page_poison=on` est prioritaire sur `init_on_alloc`/`init_on_free` — le noyau
+l'indique au démarrage — R8 livre donc une fonctionnalité de débogage là où l'ANSSI
+demande un effacement mémoire, et `slub_debug=FZP` accompagne chaque cache slab.
+`memoryDebug = false` supprime les trois et rend la main à `init_on_*` ; mesuré à
+7 % d'une compilation (95 s à 88 s, ms-a2, SMT activé), la raison est donc la conformité
+plutôt que la performance.
 :::
 
-:::caution[R9 — la restriction des namespaces utilisateur est optionnelle]
+:::caution[R9 — restreindre les namespaces utilisateur est optionnel]
 `kernel.unprivileged_userns_clone` est une clé Debian / linux-hardened, absente
-du noyau principal : l'échec de l'écriture fait échouer `systemd-sysctl`. L'équivalent
-principal (`user.max_user_namespaces = 0`) casse Flatpak, bubblewrap et Podman
+du noyau principal : l'écrire fait échouer `systemd-sysctl`. L'équivalent
+du noyau principal (`user.max_user_namespaces = 0`) casse Flatpak, bubblewrap et Podman
 sans root, d'où `restrictUserns` — désactivé par défaut.
 :::
 
 :::caution[R12 — filtrage du chemin inverse]
-Le mode strict (`rp_filter = 1`) rejette tout chemin de retour asymétrique. Un routeur
+Le mode strict (`rp_filter = 1`) supprime tout chemin de retour asymétrique. Un routeur
 de sous-réseau Tailscale annonçant des routes avec `--snat-subnet-routes=false`
-correspond exactement à ce cas, les routeurs basculent donc en mode souple (2).
+correspond exactement à ce cas, les routeurs retombent donc en mode souple (2). C'est
+aussi le cas d'une passerelle avec des liens de secours : les réponses aux sondes
+arrivent sur un lien qui n'est pas la route préférée.
 :::
 
 :::caution[R10 — Modules désactivés]
-Tout nouvel appareil nécessitant un module non pré-chargé nécessite un redémarrage.
+Tout nouveau périphérique nécessitant un module non préchargé impose un redémarrage.
 Mutuellement exclusif avec `nixos-rebuild switch` côté pilote.
 :::
 
-* **enable** `bool` Activer les paramètres dynamiques ANSSI du noyau (R8–R14).
-* **restrictUserns** `bool` R9 : interdire les namespaces utilisateur privilégiés (`user.max_user_namespaces`).
-  Casse Flatpak, bubblewrap et Podman sans root, donc reste optionnel et
-  concerne les serveurs qui n'en exécutent aucun.
+* **enable** `bool` Activer les paramètres noyau dynamiques ANSSI (R8–R14).
+* **restrictUserns** `bool` R9 : interdire les namespaces utilisateur non privilégiés (`user.max_user_namespaces`).
+  Casse Flatpak, bubblewrap et Podman sans root, reste donc optionnel et
+  convient aux serveurs qui n'en utilisent aucun.
 * **disableSmt** `bool` R8 : désactiver l'hyperthreading. Trois paramètres le portent ; `false` les
   ramène chacun à sa forme préservant le SMT et laisse les quatorze autres
-  inchangés. Attention, `l1tf=full` supprime le SMT même sans `force` — il ne laisse
-  que le paramètre sysfs derrière — donc le repli est `flush`.
+  inchangés. À noter : `l1tf=full` supprime le SMT même sans `force` — il ne laisse
+  que le paramètre sysfs — le repli est donc `flush`.
 * **memoryDebug** `bool` R8 : les extras de l'allocateur — `slub_debug=FZP`, `page_poison=on` et
   `slab_nomerge=yes`. Aucun des trois ne figure dans la liste ANSSI R8, et
-  `page_poison` déplace `init_on_alloc`/`init_on_free`, qui sont pourtant :
+  `page_poison` évince `init_on_alloc`/`init_on_free`, que l'ANSSI demande pourtant :
   le noyau le précise au démarrage et privilégie la fonctionnalité de débogage.
-  La désactivation restaure le nettoyage spécifié et récupère 7 % d'une
+  La désactivation restaure l'effacement spécifié et rend 7 % d'une
   compilation (95 s à 88 s, ms-a2, SMT activé).
-* **disableIpv6** `bool` R13 : désactiver IPv6 entièrement. Désactivé par défaut — l'ANSSI elle-même
-  préfère durcir IPv6 plutôt que le supprimer, et un hôte public en a généralement besoin.
+* **disableIpv6** `bool` R13 : désactiver complètement IPv6. Désactivé par défaut — l'ANSSI elle-même
+  préfère durcir IPv6 plutôt que de le supprimer, et un hôte public en a généralement besoin.
 
 ```nix
 darkone.security.kernel-params = {

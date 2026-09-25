@@ -259,34 +259,34 @@ Ce module définit les applications par défaut selon le profil utilisateur. Par
 darkone.home.mime.enable = false;
 ```
 
-{/* t:p 4d5ba9efe2876512ee41d5b3d5f76ba1f24686bccc1d1c9cbf6878ec3736ca31 */}
+{/* t:p e9003f91f616b99c5c4df40e54ed03f1e4b439e82bb3344150764e2fdf41c934 */}
 ### &#x1F3E0; darkone.home.music
 
 Applications graphiques de création musicale et sonore.
 
-Catégorisées par audience : `enablePro` (ardour, reaper, renoise,
+Classées par audience&nbsp;: `enablePro` (ardour, reaper, renoise,
 rosegarden), `enableCreator` (decibels, hydrogen), `enableScore`
 (musescore, muse-sounds-manager), `enableFun` (mixxx, mousai),
 `enableCli` (mpg123, cmus, lilypond), `enableEasy` (gnome-music vs.
-audacious), `enableMpd` (daemon MPD, ncmpcpp, mpdris2) et
+audacious), `enableMpd` (MPD daemon, ncmpcpp, mpd-mpris), et
 `enableDev` (lilypond).
 
-:::note[Bibliothèque musicale consciente NFS]
-Lorsque l'hôte est un client NFS et que le réseau expose un service `nfs`
-dans la même zone, MPD lit son répertoire musical à partir du montage NFS
-(`/mnt/nfs/homes/$USER/Music`). Sinon, il revient à la
-valeur `srv-dirs.homes`, puis à `~/Music`.
+:::note[Bibliothèque musicale compatible NFS]
+Quand l'hôte est un client NFS et que le réseau expose un service `nfs`
+dans la même zone, MPD lit son répertoire musical depuis le montage NFS
+(`/mnt/nfs/homes/$USER/Music`). Sinon il bascule sur la valeur locale
+`srv-dirs.homes`, puis sur `~/Music`.
 :::
 
-* **enable** `bool` Module home de création musicale
-* **enablePro** `bool` Outils difficiles pour les professionnels (rose, ardour...)
+* **enable** `bool` Module d'accueil de création musicale
+* **enablePro** `bool` Outils lourds pour professionnels (rose, ardour...)
 * **enableFun** `bool` Outils audio amusants (mixxx...)
-* **enableCli** `bool` Outils audio de ligne de commande (mpg123, cmus, moc...)
-* **enableDev** `bool` Logiciels audio pour les développeurs (lilypond...)
-* **enableMpd** `bool` Daemon et lecteurs MPD (mpd, ncmpcpp...)
-* **enableEasy** `bool` Outils faciles au lieu d'efficaces (gnome-music vs audacious...)
-* **enableScore** `bool` Logiciels de partition (musescore...)
-* **enableCreator** `bool` Outils de création pour les débutants (lmms, hydrogen...)
+* **enableCli** `bool` Outils audio en ligne de commande (mpg123, cmus, moc...)
+* **enableDev** `bool` Logiciels audio pour développeurs (lilypond...)
+* **enableMpd** `bool` Démon MPD et lecteurs (mpd, ncmpcpp...)
+* **enableEasy** `bool` Outils faciles plutôt qu'efficaces (gnome-music vs audacious...)
+* **enableScore** `bool` Logiciels de partitions (musescore...)
+* **enableCreator** `bool` Outils de création pour débutants (lmms, hydrogen...)
 
 ```nix
 darkone.home.music = {
@@ -301,6 +301,8 @@ darkone.home.music = {
   enableCreator = false;
 };
 ```
+
+<hr/>
 
 {/* t:p ded5ad9f99e27d7640344f065f7d7b5d9dd322fbe27e9e17904d1896f523e969 */}
 ### &#x1F3E0; darkone.home.office

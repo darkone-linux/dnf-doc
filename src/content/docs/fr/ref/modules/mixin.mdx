@@ -24,27 +24,67 @@ Une configuration de bureau complète avec gnome, outils multimédias et outils 
 darkone.host.desktop.enable = false;
 ```
 
-{/* t:p a05ca5d098fcc8e815855a6859b90b7417a4b5e4d55e9eabdbfba6edf3671369 */}
+{/* t:p c00777349e760959c2f68e6e8b765bfadfa4e453d65d12814a7f33bd24681763 */}
 ### &#x1F4E6; darkone.host.gateway
 
-Passerelle / routeur principal d'une zone de réseau local.
+La passerelle / routeur principal d'une zone de réseau local.
 
-:::tip[Une passerelle prête à l'emploi&nbsp;!]
-La passerelle est configurée dans le fichier `usr/config.yaml`.
-Les services supplémentaires activés (homepage, adguardhome, forgejo, nix-cache...)
-sont automatiquement configurés avec une connectivité réseau cohérente sur
-la passerelle et toutes les machines du réseau local.
+:::tip[Une passerelle prête à l'emploi !]
+La passerelle se configure dans le fichier `usr/config.yaml`.
+Les services activés additionnels (homepage, adguardhome, forgejo, nix-cache...)
+sont automatiquement configurés avec une connectique réseau cohérente sur la
+passerelle et sur toutes les machines du réseau local.
 :::
 
 :::caution[Le trafic routé est filtré]
-`filterForward = true`&nbsp;: seuls les échanges LAN &lt;-&gt; WAN et LAN &lt;-&gt; tailnet sont autorisés.
-Tout le reste est abandonné — à ajouter dans `networking.firewall.extraForwardRules`.
+`filterForward = true` : seuls les échanges LAN &lt;-&gt; WAN et LAN &lt;-&gt; tailnet
+passent. Tout le reste est supprimé → ajoutez-le à
+`networking.firewall.extraForwardRules`.
 :::
 
-* **enable** `bool` Activer les fonctionnalités de passerelle pour l'hôte courant (dhcp, dns, proxy, etc.)
+:::tip[Liens de secours : Internet en mode dégradé]
+`backupLinks` ajoute des liens de secours (port Ethernet libre, client Wi-Fi
+comme un partage de connexion de téléphone) vers lesquels la zone se replie
+lorsque le WAN perd sa liaison, son bail ou Internet :
 
 ```nix
-darkone.host.gateway.enable = false;
+darkone.host.gateway.backupLinks.phone = {
+  type = "wifi";          # SSID + passphrase: sops `backup-link/phone/{ssid,psk}`
+  interface = "wlp4s0";
+  priority = 10;          # lower = preferred among backups
+};
+```
+
+Les métriques de routage orientent la route par défaut ; `dnf-uplink-monitor`
+effectue des ping via chaque lien et pénalise celui qui n'a pas Internet.
+Détails : `lib/uplinks.nix`.
+:::
+
+* **enable** `bool` Active les fonctionnalités de passerelle pour l'hôte courant (dhcp, dns, proxy, etc.)
+* **backupLinks** `attrs` Liens de secours, utilisés quand le WAN n'a pas de liaison, pas de bail ou pas
+  d'Internet. Nom : `[a-z][a-z0-9-]*`.
+  * **type** `enum [ "ethernet" "wifi" ]` `ethernet` : client DHCP sur un port libre. `wifi` : client WPA2/WPA3 ;
+    le SSID et la phrase de passe sont lus depuis sops
+    (`backup-link/&lt;name&gt;/ssid`, `backup-link/&lt;name&gt;/psk`).
+  * **interface** `str` Interface qui porte le lien : ni le WAN, ni un port LAN, ni une radio hostapd.
+  * **priority** `ints.between 1 99` Plus la valeur est basse, plus le lien est préféré parmi les liens de
+    secours (métrique de route 200 + 10 × priority, le WAN restant à 100).
+* **linkCheck.targets** `nonEmptyListOf str` Adresses IP pingées via chaque lien de secours ; une seule réponse suffit. Uniquement des IP littérales : la sonde ne doit pas dépendre du DNS.
+* **linkCheck.interval** `ints.positive` Secondes entre deux tours de sonde.
+* **linkCheck.failAfter** `ints.positive` Nombre de tours échoués avant qu'un lien de secours soit pénalisé.
+* **linkCheck.recoverAfter** `ints.positive` Nombre de tours réussis avant qu'un lien de secours pénalisé soit rétabli (hystérésis).
+
+```nix
+darkone.host.gateway = {
+  enable = false;
+  backupLinks.type = null;
+  backupLinks.interface = "wlp4s0";
+  backupLinks.priority = 10;
+  linkCheck.targets = internetProbeTargets;
+  linkCheck.interval = 10;
+  linkCheck.failAfter = 3;
+  linkCheck.recoverAfter = 6;
+};
 ```
 
 <hr/>

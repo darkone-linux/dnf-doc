@@ -123,22 +123,27 @@ Meshing is only enabled when `network.coordination.enable` is true in
 `etc/config.yaml`. Without it, zones remain local and independent.
 </Aside>
 
-{/* t:p a7e441217d0e188582dc5d20715621986179ee7fd3dad299038feb1cf36ebd74 */}
-## What traverses a gateway
+{/* t:p d3baa9636721e80f5cb6e30b6e22c3ff156d6ddc37606dcb00ff71faecc259cd */}
+## What goes through a gateway
 
-A gateway routes, and a routed packet **never** goes through port opening rules: those only apply to traffic addressed to the gateway itself. The two filtering mechanisms are independent.
+A gateway routes, and a routed packet **never** goes through the port opening
+rules&nbsp;: those only concern what is addressed to it. The two filters are
+independent.
 
-Only three flows traverse a gateway:
+Only the following traffic goes through a gateway&nbsp;:
 
-| Flow | Usage |
+| Traffic | Usage |
 |---|---|
 | Zone → WAN | Internet sharing (NAT) |
-| Zone ↔ VPN | Other zones, remote machines |
-| Responses and port forwards | Return traffic for outbound flows, `forwardPorts` |
+| Zone → backup link | Internet sharing when the box goes down ([backup links](/en/doc/how-to/admin/gateway-backup-links/)) |
+| Zone ↔ VPN | The other zones, remote machines |
+| Port replies and redirections | Return of outbound traffic, `forwardPorts` |
 
-Everything else is dropped. In particular, a machine on the Internet that would set a static route toward a zone's subnet reaches nothing: without this filtering, a gateway with a public address would let the traffic through.
+Everything else is dropped. In particular, an Internet machine that set up a
+static route to a zone subnet reaches nothing&nbsp;: without this filtering, a
+gateway with a public address would let everything through.
 
-Additional routing needs are added in the host's configuration file:
+Any extra routing requirement goes into the host file&nbsp;:
 
 ```nix
 networking.firewall.extraForwardRules = ''

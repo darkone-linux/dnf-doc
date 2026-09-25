@@ -27,7 +27,7 @@ For example, a [Protectli](https://eu.protectli.com/) box or equivalent:
 - Optional wifi card
 :::
 
-{/* t:p 9eda89ad99379781ff4716c738bbf109865427c99803a763adb69870d7766795 */}
+{/* t:p ab900321052e1846b5335348ec04ddc592a4297650c4cadc3506474e358e1591 */}
 ## Declare the zone
 
 The zone and its gateway are described in `etc/config.yaml`:
@@ -36,22 +36,22 @@ The zone and its gateway are described in `etc/config.yaml`:
 # etc/config.yaml
 zones:
   maison:
-    description: "Home network"
-    ipPrefix: "10.0"             # zone in 10.0.0.0/16
+    description: "Réseau de la maison"
+    ipPrefix: "10.0"             # zone en 10.0.0.0/16
     gateway:
       wan:
-        interface: "enp1s0"      # to the ISP box
+        interface: "enp1s0"      # vers la box
       lan:
-        interfaces: ["enp2s0"]   # to the local network
+        interfaces: ["enp2s0"]   # vers le réseau local
 
 hosts:
   - hostname: "gw"
-    name: "Gateway"
-    zone: "maison:1.1"           # fixed IP 10.0.1.1
+    name: "Passerelle"
+    zone: "maison:1.1"           # IP fixe 10.0.1.1
     profile: "gateway"
     services:
-      adguardhome:               # DNS + ad blocking
-      homepage:                  # service portal
+      adguardhome:               # DNS + anti-pub
+      homepage:                  # portail des services
     disko:
       profile: "server-1-disk"
       devices:
@@ -59,9 +59,14 @@ hosts:
 ```
 
 :::tip[Automatic services]
-The `gateway` profile wires the router, firewall, DNS/DHCP (`dnsmasq`) and the
-VPN client. Declared services (homepage, adguardhome…) are configured
-automatically. See [Network](/en/doc/admin-guide/understand/network/).
+The `gateway` profile wires up the router, the firewall, DNS/DHCP (`dnsmasq`) and
+the VPN client. The declared services (homepage, adguardhome…) are configured
+on their own. See [Network](/en/doc/admin-guide/understand/network/).
+:::
+
+:::tip[Internet even when the box goes down]
+A free port or a wifi card can serve as a backup link (phone tethering, 4G). See
+[Backup links](/en/doc/how-to/admin/gateway-backup-links/).
 :::
 
 {/* t:p 1d165317914e3e8c08a28c2cbf73859d95db13fdcffe6b05e4722a4e51c20b12 */}

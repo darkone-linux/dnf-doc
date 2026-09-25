@@ -1,0 +1,162 @@
+---
+title: Gateway Backup Links
+sidebar:
+  label: Backup Links
+  order: 10
+lang: en
+---
+
+import { Steps } from '@astrojs/starlight/components';
+
+{/* t:translated-from fr */}
+{/* t:h d18b5f6fb159e6851ac201abbbf709eff2f535194f3eef386781c1cab0cfae92 */}
+
+{/* t:p 3eabebe436b68d84ff0d71ce932cb8a1f4ce0291b8e966d82c891a6210ee186f */}
+When the box goes down, the gateway switches by itself to a **backup link**&nbsp;:
+a free ethernet port, a phone's connection sharing over wifi… The zone stays on
+Internet in degraded mode, then goes back to the box as soon as it responds.
+
+{/* t:p 75ae77c427bc36dbb68c131b3b0cb2d68d1d7f0b8dc0795472b8f5272e5d28ba */}
+## Principle
+
+Every link to Internet (the WAN, then the backups) carries its own default
+route. The lowest **metric** wins.
+
+| Link | Metric |
+|---|---|
+| WAN (the box) | 100 |
+| Backup link | 200 + 10 × `priority` (300 by default) |
+| Link without Internet | metric + 20000 |
+
+Three situations are covered&nbsp;:
+
+| Situation | Detection | Effect |
+|---|---|---|
+| Cable unplugged, box powered off, no DHCP lease left | the WAN route disappears | the kernel takes the next route |
+| Box powered on but Internet cut off | the `dnf-uplink-monitor` probe fails 3 times | the WAN goes to 20100, the backup takes over |
+| Internet back on the box | 6 successful probes | back to the WAN |
+
+The probe sends a ping **on every link** (1.1.1.1 and 9.9.9.9, every 10
+seconds). It does not depend on DNS&nbsp;: it targets IP addresses.
+
+:::note[Hot standby]
+A backup link stays connected while it is available (phone sharing switched
+on, cable plugged in). The metric keeps traffic on the box as long as it works.
+:::
+
+{/* t:p 9df2c07b1c05de89e259c5363ccc8afa77d3c79648e4f9da628bc6fbc4c5c73b */}
+## Declare a backup link
+
+<Steps>
+
+1. Identify the interface on the gateway&nbsp;:
+
+   ```sh
+   ip -br link
+   ```
+
+   It must be free&nbsp;: neither the WAN, nor a LAN port, nor a wifi access
+   point's radio.
+
+2. Declare the link in the host's file&nbsp;:
+
+   ```nix
+   # usr/machines/gw/configuration.nix
+   darkone.host.gateway.backupLinks = {
+     phone = {
+       type = "wifi";
+       interface = "wlp4s0";
+     };
+     voisin = {
+       type = "ethernet";
+       interface = "enp3s0";
+       priority = 20;
+     };
+   };
+   ```
+
+   | Option | Role |
+   |---|---|
+   | `type` | `ethernet` (DHCP client) or `wifi` (WPA2/WPA3 client) |
+   | `interface` | interface that carries the link |
+   | `priority` | 1 to 99, the lowest is preferred among the backups |
+
+3. For a wifi link, enter the SSID and the passphrase in sops with `just sops`&nbsp;:
+
+   ```yaml
+   # usr/secrets/secrets.yaml
+   backup-link:
+     phone:
+       ssid: "Partage du téléphone"
+       psk: "passphrase-du-partage"
+   ```
+
+   The SSID and the passphrase never go through the Nix store.
+
+4. Deploy&nbsp;:
+
+   ```sh
+   just apply gw
+   ```
+
+</Steps>
+
+{/* t:p 97b02508067c36ea46e004a6fab9a9ed01763570cc19cc3aa46195de51f25225 */}
+## Verify
+
+```sh
+networkctl list                       # the link is "routable" when it is active
+ip -4 route show default              # the first line is the link in use
+journalctl -u dnf-uplink-monitor -f   # switches, live
+```
+
+With the box down and the phone sharing its connection&nbsp;:
+
+```
+default via 192.168.1.254 dev enp1s0 proto dhcp src 192.168.1.10 metric 20100
+default via 192.168.43.1 dev wlp4s0 proto dhcp src 192.168.43.20 metric 300
+```
+
+{/* t:p 77e21fb6becdbf8f2934067be3c8ce7f8e00c4880b16b37637f7087bd8c00673 */}
+## Tune the probe
+
+| Option | Default | Role |
+|---|---|---|
+| `darkone.host.gateway.linkCheck.targets` | `1.1.1.1`, `9.9.9.9` | pinged addresses, a single reply is enough |
+| `darkone.host.gateway.linkCheck.interval` | 10 | seconds between two rounds |
+| `darkone.host.gateway.linkCheck.failAfter` | 3 | failures before penalizing a link |
+| `darkone.host.gateway.linkCheck.recoverAfter` | 6 | successes before restoring it |
+
+{/* t:p a487622ca955a75619da6a68e613ac1502fda37304f542eea5f0d42a8d77c4c1 */}
+## Monitoring
+
+The probe publishes two metrics for Prometheus&nbsp;:
+
+| Metric | Value |
+|---|---|
+| `dnf_gateway_link_up` | 1 if the link has a route and reaches Internet |
+| `dnf_gateway_link_active` | 1 on the link that carries the default route |
+
+The `GatewayOnBackupLink` alert (warning) triggers after 2 minutes on a backup
+link.
+
+{/* t:p 5f01b4e93c7bd1c2e10b289385898abe39860c012f4f58b95af49a9b23db966e */}
+## Limits to know about
+
+:::caution[One radio per role]
+A wifi card cannot be both an access point and a client. A second card (or a
+USB dongle) is needed for a wifi backup link.
+:::
+
+:::caution[Link billed by volume]
+On a phone's connection sharing or 4G, the whole zone consumes data&nbsp;:
+updates, backups, caches. Monitor the consumption.
+:::
+
+| Limit | Detail |
+|---|---|
+| Streams cut on switchover | in-progress connections restart over the new link (call or download to relaunch) |
+| Subnet in conflict | a link that hands out addresses from the zone network (e.g. `10.0.0.0/16`) breaks routing; a phone's connection sharing uses a small, distinct network (`/24`), so no conflict in practice |
+| SSID and passphrase | without double quotes (`"`) |
+| Remote LUKS unlock | over the WAN or the LAN only |
+| Removed links | a running penalty stays until reboot&nbsp;: delete `/run/systemd/network/*.network.d/90-dnf-penalty.conf`, then `networkctl reload` |
