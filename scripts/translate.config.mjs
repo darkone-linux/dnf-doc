@@ -1,5 +1,6 @@
 // Single configuration for the AI-assisted documentation tasks: incremental
-// translation (translate.mjs) and build link repair (fix-build-links.mjs).
+// translation (translate.mjs), build link repair (fix-build-links.mjs) and
+// changelog pages (update-changelog.mjs).
 // Every value can be overridden via environment variables (see below).
 const env = process.env;
 
@@ -23,13 +24,17 @@ export default {
     // the (stub) main so the rich EN file is never overwritten nor translated.
     'doc/specifications.mdx': 'fr',
     'index.mdx': 'fr',
+    // Generated in English from the framework CHANGELOG (update-changelog.mjs).
+    'changelog/index.mdx': 'en',
   },
 
   // Logical paths whose existing translation should be regenerated from the
-  // main even though it diverges (overrides the conflict guard for these only).
+  // main even though it diverges (overrides the conflict guard for these only,
+  // and never adopts their untracked content as an up-to-date translation).
   regenerate: [
     'doc/how-to.mdx',
     'doc/introduction.mdx',
+    'changelog/index.mdx',
   ],
 
   // Logical paths (language-stripped) excluded from tagging/translation.
@@ -73,6 +78,24 @@ export default {
     buildCmd: ['just', 'build'], // rerun after each round of fixes
   },
 
+  // Changelog pages generated from the framework CHANGELOG
+  // (update-changelog.mjs, `just update-changelog`, run by `just update` before
+  // the translation). One page per release plus the home page, written in
+  // `lang` only: the other languages follow through `just translate`. An agent
+  // writes each new release's one-line headline (fallback: dominant scopes).
+  changelog: {
+    source: env.CHANGELOG_SOURCE || '../dnf/CHANGELOG.md', // relative to doc/
+    repoUrl: 'https://github.com/darkone-linux/darkone-nixos-framework',
+    dir: 'changelog', // under <docsDir>/<lang>/
+    lang: 'en',
+    versionsPage: '/en/doc/admin-guide/maintain/versions/', // linked from the home page
+    tool: env.CHANGELOG_TOOL || 'opencode', // 'claude' | 'opencode'
+    model: env.CHANGELOG_MODEL || 'opencode/big-pickle',
+    timeoutMs: Number(env.CHANGELOG_TIMEOUT || 300000),
+    retries: Number(env.CHANGELOG_RETRIES || 4),
+    retryBaseMs: Number(env.CHANGELOG_RETRY_BASE || 500),
+  },
+
   // Command builder: returns { cmd, args }; the prompt is piped on stdin.
   command(tool, model) {
     if (tool === 'opencode') return { cmd: 'opencode', args: ['run', '-m', model] };
@@ -80,6 +103,24 @@ export default {
   },
 
   prompts: {
+    // Placeholder: {{body}} (one <<<R version>>> block per release, lib/changelog.mjs).
+    changelogHeadlines: `You write the release headlines of the changelog of the Darkone NixOS
+Framework (a NixOS framework to deploy and run a fleet of hosts and services).
+
+For each release below, write ONE headline in English naming its main topic:
+- a few keywords, 3 to 8 words, 60 characters max, on one line;
+- what matters most first: breaking changes, then notable additions, then the
+  dominant theme of the fixes;
+- sentence case; no version number, no date, no trailing period;
+- plain text only: no Markdown, no quotes, no "—", "<", "{" or "}".
+
+Do NOT edit files and do NOT run commands.
+Output ONLY one line per release, nothing else:
+H <version> <headline>
+
+Releases:
+{{body}}`,
+
     // Placeholder: {{body}} (one <<<L id>>> block per broken link, lib/link-fix.mjs).
     fixLinks: `You repair broken "#anchor" links of an Astro/Starlight documentation site.
 The build's link validator flagged each link below as "invalid hash": its page

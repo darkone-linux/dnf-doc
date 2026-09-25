@@ -1,0 +1,48 @@
+---
+title: "Version 0.3.0"
+description: "Machines split by provenance, hardware detection on install"
+sidebar:
+  label: "0.3.0"
+lang: en
+prev:
+  link: /en/changelog/v0-2-2/
+  label: "Version 0.2.2"
+next:
+  link: /en/changelog/v0-3-1/
+  label: "Version 0.3.1"
+---
+
+{/* t:main */}
+{/* t:h ed68c8a142b41a39f330dfe8ada83040ce7b8d88fccf491cf3d90ad03e32c3cb */}
+
+{/* t:p be22c644f4d8a9fe4cf127fe80ef87adfcce01a69723ffaeeaf0801348de854d */}
+Released on **2026-09-24**: Machines split by provenance, hardware detection on install.
+
+[Changes on GitHub](https://github.com/darkone-linux/darkone-nixos-framework/compare/v0.2.2...v0.3.0) · [All versions](/en/changelog/)
+
+:::caution[Breaking changes]
+- **machines**: Split usr/machines by provenance
+:::
+
+{/* t:p 931b3194e11ee167d9cd04822470dde77550c0938ff1b2583295793e581b3fac */}
+## Added
+
+- **install**: Detect wired NIC drivers into detected-hardware.nix
+- **home**: Delta as git pager, difftastic on demand via aliases
+- **gnome**: Hide qt/manual icons, papers as pdf viewer, no donation nag
+- **gnome**: Hide extensions icon for non-technical profiles
+
+{/* t:p 65385859c89b623b828347a8a9f42fce6fa43bb74e3d773c613a4e3ca6f75435 */}
+## Fixed
+
+- **release**: Evaluate template hosts with stubbed hardware
+- **smtp**: Network.smtp optional for mail-sending services
+- **install**: Commit messages update (just installs)
+- **tools**: HM advanced refactorings + new tools for AIs
+- **ai**: Merge antigravity settings into a writable file
+- **gnome**: Hide extensions icon via XDG_DATA_HOME, shadowed by gnome-shell
+
+{/* t:p 0edbea13daee280205a1f4c14292f7b6acdf9e4ec4c8e7e99261f49c13ba6d56 */}
+## Dependencies
+
+- dnf-generator v0.2.0

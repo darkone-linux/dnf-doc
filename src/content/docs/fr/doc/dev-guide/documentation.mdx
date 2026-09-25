@@ -47,7 +47,7 @@ Les marqueurs `{/* t:* */}` et les pages générées (`*/ref/modules.mdx`) sont
 gérés par les scripts. Voir `AGENTS.md`.
 :::
 
-{/* t:p 4e3e70428dca276ff16231c600da69320ade5d62fc3d5b1a0275eeb17ba6d1d7 */}
+{/* t:p 9eef01ab0f1f81b1bd1afec6eb431dcd070bc9746433a830216a9d76db2cc8f0 */}
 ## Langues et traduction
 
 On écrit **uniquement en français** (`fr/`) ; l'anglais (`en/`) est **produit**
@@ -73,7 +73,14 @@ Un fichier portant `t:translated-from` ne se modifie **jamais** : il est
 réécrit par `just translate`. On édite la source `fr/` (`t:main`).
 :::
 
-{/* t:p 091c2721f294a4aed8fdf11b6b3bb7aa3b0789b29af5a1ba3ca31433cbe306b1 */}
+:::note[Exception : le changelog]
+Les pages `changelog/` sont **générées en anglais** par `just update-changelog`
+depuis le `CHANGELOG.md` du framework (une page par version, un intitulé écrit
+par un agent IA), puis traduites en français par `just translate`. Les deux
+recettes tournent dans `just update`. Ne pas éditer ces pages.
+:::
+
+{/* t:p 76b470c7aa7f2db703ea3290464fef43e678323d695306cf797580bbadd9b687 */}
 ## Liens et ancres
 
 - Liens internes en `/fr/...` ; validés au build par `starlight-links-validator`.

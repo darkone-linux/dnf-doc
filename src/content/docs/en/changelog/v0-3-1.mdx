@@ -1,0 +1,47 @@
+---
+title: "Version 0.3.1"
+description: "Gateway link failover and standby wifi backups"
+sidebar:
+  label: "0.3.1"
+lang: en
+prev:
+  link: /en/changelog/v0-3-0/
+  label: "Version 0.3.0"
+---
+
+{/* t:main */}
+{/* t:h 78d54ed7100f318476e9a2a505031860ba42284e70b66bd5f09b3cffa6933409 */}
+
+{/* t:p b674402cd089abb3bcda7cc0bb7d7e1631bee9d0c7d9fe4c8b7983fc8150681a */}
+Released on **2026-09-25**: Gateway link failover and standby wifi backups.
+
+[Changes on GitHub](https://github.com/darkone-linux/darkone-nixos-framework/compare/v0.3.0...v0.3.1) · [All versions](/en/changelog/)
+
+{/* t:p 01edeaf9d9879e86aebb2a939473101970eeb71c354fa7f707414ce56d37cfb0 */}
+## Added
+
+- **gateway**: Backup links with health-checked failover
+- **gateway**: Standby wifi backup radios until preferred links fail
+- **gateway**: Uplinks back from an outage stay on probation until proven
+- **gateway**: Carrier bounce puts an uplink on probation
+- **fleet-update**: AiContext reaches interactive runs through /etc
+
+{/* t:p d9f50f6d285bfebe3b8a3bffa47db3c917219564fdda727eb50708e1c3ada70f */}
+## Fixed
+
+- **alerts**: Keep SystemdUnitFailed firing 30m across oneshot retries
+
+{/* t:p 9cf814899a12fb727d4b7c6b3909c2344160c55028b35fe3e0a7e52e6d79e19c */}
+## Removed
+
+- **music**: Drop mpdris2, clashes with mpd-mpris on MPRIS bus name
+
+{/* t:p 51df0057d20ad969cc47c7ae6acd3dfecdeaeb774441aec179998869fe587b5d */}
+## Changed
+
+- **admin**: Stop copying nixpkgs twice into admin host closures
+
+{/* t:p 9d1bf0920fc6fea77731e4f85b2e43cef3cf2d8d896ea7058d80ecffcec598a4 */}
+## Dependencies
+
+- fleet-update v0.7.3

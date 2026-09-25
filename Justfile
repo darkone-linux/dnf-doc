@@ -51,12 +51,13 @@ upgrade:
 
 # ── update ───────────────────────────────────────────────────────────────────
 
-# Codegen + tags/translate + clean/fix + build (+ link fixes) + deploy (skips deploy if no changes)
+# Codegen + changelog + tags/translate + clean/fix + build (+ link fixes) + deploy (skips deploy if no changes)
 [group('update')]
 update msg="":
 	#!/usr/bin/env bash
 	set -euo pipefail
 	just codegen
+	just update-changelog
 	just translate
 	just clean
 	just build-fix
@@ -73,6 +74,13 @@ codegen:
 	cd ../src/generator && cargo run --release --quiet -- doc --workdir ../..
 	just clean
 	@echo Done.
+
+# An AI agent writes each new release's headline (CHANGELOG_MODEL); FR pages
+# follow through `just translate`. Flags: --check (dry-run), --force.
+# Changelog pages (EN) from the framework CHANGELOG.md, when it has new releases
+[group('update')]
+update-changelog *args:
+	node scripts/update-changelog.mjs {{ args }}
 
 # Clean markdown files (call fix: normalize whitespace, blank lines, tabs)
 [group('update')]

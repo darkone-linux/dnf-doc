@@ -19,7 +19,8 @@ Published at: <https://darkone-linux.github.io>
 just dev        # start dev server (npm run dev)
 just build      # production build → dist/
 just build-fix  # build + AI repair of invalid link #anchors (FIXLINKS_MODEL)
-just update     # codegen + translate + build-fix + deploy
+just update-changelog  # changelog pages (EN) from the framework CHANGELOG.md
+just update     # codegen + update-changelog + translate + build-fix + deploy
 just upgrade    # upgrade Astro, Starlight and all npm deps
 ```
 
@@ -38,7 +39,7 @@ src/content/docs/
   en/
     doc/          Introduction, specifications, user guide, admin guide, how-to
     ref/          Module reference (partly auto-generated)
-    changelog/    Release notes
+    changelog/    Release notes, generated (just update-changelog)
   fr/             French translations (mirrors en/ structure)
 src/assets/       Images and diagrams
 src/plugins/      Custom rehype/remark plugins
