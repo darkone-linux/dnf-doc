@@ -403,8 +403,17 @@ just fleet-update --ai-error-action analysis     # chaque échec est expliqué
 ```
 
 Par exemple, `--ai-context "Répondre en français et rester concis."` guide le
-style des réponses. À la reprise, le contexte du lancement initial est repris ;
-un `--ai-context` explicite le remplace.
+style des réponses. Pour ne pas le répéter à chaque lancement, posez-le une fois
+pour l'hôte avec l'option `aiContext` du module&nbsp;: elle l'écrit dans
+`/etc/fleet-update/ai-context`, que tout lancement lit, `just fleet-update`
+comme le timer. L'option `--ai-context` prime sur ce fichier. À la reprise, le
+contexte du lancement initial est repris&nbsp;; un `--ai-context` explicite le
+remplace.
+
+```nix
+# usr/machines/<hôte>/configuration.nix
+darkone.admin.fleet-update.aiContext = "Répondre en français et rester concis.";
+```
 
 Le modèle par défaut du parc se pose dans `config.yaml`, l'option prime&nbsp;:
 
@@ -687,7 +696,7 @@ darkone.admin.fleet-update = {
 |---|---|---|
 | `user` | aucun | Propriétaire du projet : git, clé age, IA, Matrix |
 | `workDir` | `/etc/nixos` | Projet consommateur sur le disque |
-| `aiContext` | `null` | Contexte ajouté aux prompts IA du timer ; `timer.extraArgs` peut le remplacer |
+| `aiContext` | `null` | Contexte ajouté aux prompts IA de tout lancement sur l'hôte, écrit dans `/etc/fleet-update/ai-context`, même sans `enable`&nbsp;; `--ai-context` le remplace |
 | `timer.onCalendar` | `*-*-* 04:00` | Heure de lancement |
 | `timer.extraArgs` | `[ ]` | Options ajoutées à `--no-ui`, `--send-report` par exemple |
 | `timer.timeout` | `6h` | Durée maximale d'un lancement |
