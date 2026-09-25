@@ -1,0 +1,49 @@
+---
+title: "Version 0.1.0"
+description: "Première versionnée establishing un contrat SemVer figé"
+sidebar:
+  label: "0.1.0"
+lang: fr
+next:
+  link: /fr/changelog/v0-2-0/
+  label: "Version 0.2.0"
+---
+
+{/* t:translated-from en */}
+{/* t:h 45613caaf9691596a9f8380bf6f9238f70f433140979569b17932fda52166dfd */}
+
+{/* t:p bb10bc6ea7ae9aac17cbe839943547e5325ea7a57ad36e13efd28179b1af25a7 */}
+Publié le **2026-09-09** : première versionnée establishing un contrat SemVer figé.
+
+[Modifications sur GitHub](https://github.com/darkone-linux/darkone-nixos-framework/releases/tag/v0.1.0) · [Toutes les versions](/fr/changelog/)
+
+Première version versionnée. Le framework et son écosystème existaient avant cette balise ; ce qui est nouveau, c'est le contrat (une version que les consommateurs peuvent figer, un journal des modifications et des versions compagniennes connues pour fonctionner ensemble). L'entrée ci-dessous inventorie le framework tel qu'il est aujourd'hui, pas les commits qui l'ont construit.
+
+{/* t:p 39d95bdde1321057e87b096af70a49c0a7cb41f01af69ea1fca99b4643672bf8 */}
+## Ajouts
+
+- **Cœur déclaratif** : `etc/config.yaml` comme source de vérité unique ; le crate Rust `dnf-generator` génère `var/generated/{hosts,users,network}.nix` ; les gabarits d'hôtes se déploient depuis des plages numérotées et des listes indexées.
+- **Profils** : profils d'hôtes (`minimal`, `server`, `desktop`, `laptop`, `gateway`, `hcs`, `vm`, `portable`, `umi`) et onze profils d'utilisateurs qui s'héritent (`minimal` → `normal` → `advanced` → `admin` → `nix-admin`, plus `student`, `teenager`, `gamer`, `child`, `baby`, `umi`) ; couches de fonctionnalités par hôte.
+- **Système de modules** : espaces de noms `darkone.{system,admin,console,graphic,service,security,user,mixin,home}.*`, avec des imports `modules/default.nix` générés depuis l'arborescence.
+- **Home Manager** : douze modules de bundles (advanced, ai, audio, education, games, gnome, imagery, mime, music, office, umi, video) ; bureau GNOME allégé.
+- **Services** : une quarantaine de daemons prêts à l'emploi derrière Caddy (Nextcloud, Forgejo, Immich, Vaultwarden, Matrix/Element, Jitsi Meet, Mattermost, Jellyfin, Mealie, Outline, LaSuite Docs, Searx, Homepage, Home Assistant, Geneweb, Open WebUI + Ollama, Garage/MinIO, nix-cache (Harmonia)).
+- **Authentification unique** : Kanidm comme fournisseur OIDC pour plus d'une quinzaine de services, `oauth2-proxy` devant ceux qui n'ont pas d'OIDC natif.
+- **Réseau** : zones `/16` avec une passerelle chacune, DNS/DHCP dnsmasq zero-conf, pare-feu nftables, AdGuard Home, maillage complet headscale/tailscale, réservations DHCP itinérantes entre zones.
+- **Déploiement** : installation automatisée avec nixos-anywhere, disko et colmena (`just full-install`, `just build-iso`, `just apply`) ; cache binaire pour tout le parc.
+- **Sécurité** : secrets sops-nix sur clés age, paliers de durcissement ANSSI, LUKS avec déverrouillage initrd, durcissement noyau/systemd/PAM, fail2ban, SSH durci, 2FA YubiKey.
+- **Supervision et sauvegarde** : Prometheus, Grafana, Loki et Alertmanager avec alertes via Matrix ; sauvegardes Restic selon une stratégie 3-2-1.
+- **Outillage** : plus d'une centaine de recettes `just` (`clean`, `generate`, `check`, `apply`, `enter`, `luks`…), un shell de développement, lint deadnix/statix, formatage, CI GitHub Actions.
+- **Tests** : trois paliers (tests unitaires nix-unit, scénarios VM auto-découverts, tests d'installation).
+- **Documentation** : site Astro/Starlight avec guides utilisateur, administrateur et développeur, en français et en anglais, référence des modules générée depuis le code.
+- **Surface consommateur** : `lib.mkConfigurations`, l'overlay `usr/`, et les points de départ `dnf-boilerplate` et `dnf-example`.
+- **Contrat de version** : `VERSION`, balises SemVer, `just bump` / `just release`, journal des modifications généré, `/etc/dnf-release` et une étiquette de démarrage `dnf-<version>` sur chaque hôte déployé, garde-fous de balises en CI.
+
+{/* t:p 3f3ffa3a8f3d8931fedfe59cdd04caf4f8ad3ca78efbb23f6d0b86aa50a29b28 */}
+## Versions compagnonnes
+
+| Projet | Version |
+|---|---|
+| [dnf-generator](https://github.com/darkone-linux/dnf-generator) | `v0.1.0` |
+| [dnf-doc](https://github.com/darkone-linux/dnf-doc) | `0.1.x` |
+| [dnf-boilerplate](https://github.com/darkone-linux/dnf-boilerplate) | `v0.1.0` |
+| [dnf-example](https://github.com/darkone-linux/dnf-example) | `v0.1.0` |

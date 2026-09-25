@@ -1,0 +1,47 @@
+---
+title: "Version 0.3.1"
+description: "Bascule de lien de la passerelle et sauvegardes wifi de secours"
+sidebar:
+  label: "0.3.1"
+lang: fr
+prev:
+  link: /fr/changelog/v0-3-0/
+  label: "Version 0.3.0"
+---
+
+{/* t:translated-from en */}
+{/* t:h 78d54ed7100f318476e9a2a505031860ba42284e70b66bd5f09b3cffa6933409 */}
+
+{/* t:p b674402cd089abb3bcda7cc0bb7d7e1631bee9d0c7d9fe4c8b7983fc8150681a */}
+Publié le **2026-09-25** : bascule de lien de la passerelle et sauvegardes wifi de secours.
+
+[Modifications sur GitHub](https://github.com/darkone-linux/darkone-nixos-framework/compare/v0.3.0...v0.3.1) · [Toutes les versions](/fr/changelog/)
+
+{/* t:p 01edeaf9d9879e86aebb2a939473101970eeb71c354fa7f707414ce56d37cfb0 */}
+## Ajouts
+
+- **gateway** : liaisons de secours avec bascule vérifiée par sonde de santé
+- **gateway** : radios wifi de secours jusqu'à l'échec des liaisons préférées
+- **gateway** : les liens de remontée retrouvés après une panne restent en période d'essai
+- **gateway** : un rebond du fournisseur de liaison place un lien de remontée en période d'essai
+- **fleet-update** : AiContext atteint les exécutions interactives via /etc
+
+{/* t:p d9f50f6d285bfebe3b8a3bffa47db3c917219564fdda727eb50708e1c3ada70f */}
+## Corrections
+
+- **alerts** : maintenir le déclenchement de SystemdUnitFailed pendant 30m malgré les nouvelles tentatives oneshot
+
+{/* t:p 9cf814899a12fb727d4b7c6b3909c2344160c55028b35fe3e0a7e52e6d79e19c */}
+## Suppressions
+
+- **music** : retrait de mpdris2, en conflit avec mpd-mpris sur le nom de bus MPRIS
+
+{/* t:p 51df0057d20ad969cc47c7ae6acd3dfecdeaeb774441aec179998869fe587b5d */}
+## Modifications
+
+- **admin** : arrêt de la double copie de nixpkgs dans les fermetures des hôtes d'administration
+
+{/* t:p 9d1bf0920fc6fea77731e4f85b2e43cef3cf2d8d896ea7058d80ecffcec598a4 */}
+## Dépendances
+
+- fleet-update v0.7.3

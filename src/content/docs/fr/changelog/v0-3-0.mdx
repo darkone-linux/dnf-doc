@@ -1,0 +1,48 @@
+---
+title: "Version 0.3.0"
+description: "Machines séparées par provenance, détection du matériel à l'installation"
+sidebar:
+  label: "0.3.0"
+lang: fr
+prev:
+  link: /fr/changelog/v0-2-2/
+  label: "Version 0.2.2"
+next:
+  link: /fr/changelog/v0-3-1/
+  label: "Version 0.3.1"
+---
+
+{/* t:translated-from en */}
+{/* t:h ed68c8a142b41a39f330dfe8ada83040ce7b8d88fccf491cf3d90ad03e32c3cb */}
+
+{/* t:p be22c644f4d8a9fe4cf127fe80ef87adfcce01a69723ffaeeaf0801348de854d */}
+Publié le **2026-09-24** : machines séparées par provenance, détection du matériel à l'installation.
+
+[Changes on GitHub](https://github.com/darkone-linux/darkone-nixos-framework/compare/v0.2.2...v0.3.0) · [All versions](/fr/changelog/)
+
+:::caution[Breaking changes]
+- **machines** : séparation de usr/machines par provenance
+:::
+
+{/* t:p 931b3194e11ee167d9cd04822470dde77550c0938ff1b2583295793e581b3fac */}
+## Ajouts
+
+- **install** : détection des pilotes des cartes réseau filaires dans detected-hardware.nix
+- **home** : Delta comme pager git, difftastic à la demande via des alias
+- **gnome** : masquage des icônes qt/manual, Papers comme lecteur PDF, plus de demande de don
+- **gnome** : masquage de l'icône des extensions pour les profils non techniques
+
+{/* t:p 65385859c89b623b828347a8a9f42fce6fa43bb74e3d773c613a4e3ca6f75435 */}
+## Corrections
+
+- **release** : évaluation des hôtes du template avec du matériel simulé
+- **smtp** : Network.smtp optionnel pour les services d'envoi de courrier
+- **install** : mise à jour des messages de commit (just installs)
+- **tools** : refactorings HM avancés + nouveaux outils pour les IA
+- **ai** : fusion des réglages antigravity dans un fichier inscriptible
+- **gnome** : masquage de l'icône des extensions via XDG_DATA_HOME, masqué par gnome-shell
+
+{/* t:p 0edbea13daee280205a1f4c14292f7b6acdf9e4ec4c8e7e99261f49c13ba6d56 */}
+## Dépendances
+
+- dnf-generator v0.2.0

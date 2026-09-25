@@ -47,39 +47,49 @@ The `{/* t:* */}` markers and generated pages (`*/ref/modules.mdx`) are managed
 by scripts. See `AGENTS.md`.
 :::
 
-{/* t:p 4e3e70428dca276ff16231c600da69320ade5d62fc3d5b1a0275eeb17ba6d1d7 */}
+{/* t:p 9eef01ab0f1f81b1bd1afec6eb431dcd070bc9746433a830216a9d76db2cc8f0 */}
 ## Languages and translation
 
-Write **only in French** (`fr/`) ; English (`en/`) is **produced**
-by `just translate`. Never edit `en/` manually.
+We write **only in French** (`fr/`); English (`en/`) is **produced** by
+`just translate`. Never edit `en/` by hand.
 
-| Action | To do |
+| Action | What to do |
 |---|---|
-| **Create** a page | In `fr/` only ; do not run `just translate`. |
+| **Create** a page | In `fr/` only; do not run `just translate`. |
 | **Move** a page | Move **both** languages together (files, verbatim), then `just tags`. |
 | **Translate** | At the end of the work: `just tags` then `just translate`. |
 
-Translation markers are managed by the scripts, **never manually**:
+Translation markers are managed by the scripts, **never by hand**:
 
 | Marker | Role |
 |---|---|
-| `{/* t:main */}` | Source-of-truth file for a page. |
+| `{/* t:main */}` | Source-of-truth file of a page. |
 | `{/* t:translated-from <lang> */}` | Translated file (do not modify). |
 | `{/* t:h <hash> */}` | Frontmatter hash. |
 | `{/* t:p <hash> */}` | Paragraph hash (before each block). |
 
-:::caution[Translated file = read-only]
-A file bearing `t:translated-from` is **never** modified: it is
-overwritten by `just translate`. Edit the `fr/` source (`t:main`).
+:::caution[Translated file = read only]
+A file carrying `t:translated-from` is **never** modified: it is rewritten by
+`just translate`. You edit the `fr/` source (`t:main`).
 :::
 
-{/* t:p 091c2721f294a4aed8fdf11b6b3bb7aa3b0789b29af5a1ba3ca31433cbe306b1 */}
+:::note[Exception: the changelog]
+`changelog/` pages are **generated in English** by `just update-changelog`
+from the framework's `CHANGELOG.md` (one page per version, with a title written
+by an AI agent), then translated into French by `just translate`. Both recipes
+run within `just update`. Do not edit these pages.
+:::
+
+{/* t:p 76b470c7aa7f2db703ea3290464fef43e678323d695306cf797580bbadd9b687 */}
 ## Links and anchors
 
-- Internal links in `/fr/...`; validated at build by `starlight-links-validator`.
+- Internal links use `/fr/...`; they are validated at build time by
+  `starlight-links-validator`.
 - An **anchor** = *github-slugger* slug of the target heading text
   (`## Mon Titre` → `#mon-titre`).
 - Check: `just build` (fails on a dead link) or `just check-links`.
+- Broken anchor at build time (`invalid hash`) → fixed by `just build-fix`
+  (AI agent, 3 attempts max), which `just update` runs.
 
 {/* t:p 10421bb3b19dc1b30577c0ffbacc0dbffc4e8322281950668400eba061ab61d1 */}
 ## Making beautiful pages
