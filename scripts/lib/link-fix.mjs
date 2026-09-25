@@ -4,12 +4,12 @@
 // page and the raw link. From there we compute what an agent needs to pick the
 // right anchor WITHOUT guessing slugs: the target page's real anchors (same
 // github-slugger as Astro) and, for a translated page, the anchor its
-// main-language paragraph points to, mapped by heading position.
+// main-language paragraph points to, mapped onto the target's paired heading.
 
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { parseDoc } from './mdx-doc.mjs';
-import { headingSlugs } from './anchors.mjs';
+import { headingSlugs, mapAnchor } from './anchors.mjs';
 
 const P_TAG_RE = /^\s*\{\/\*\s*t:p\s+(\S+)\s*\*\/\}\s*$/;
 const ANY_TAG_RE = /^\s*\{\/\*\s*t:[a-z-]+.*\*\/\}\s*$/;
@@ -80,8 +80,8 @@ function contextAt(text, line) {
 
 // Main-language counterpart of a broken link in a translated page: the same
 // paragraph (shared t:p hash) of the main file, the link at the same rank among
-// those aiming at the same page, and its anchor mapped onto the target page by
-// heading position. Null when the page is not a translation or nothing matches.
+// those aiming at the same page, and its anchor mapped onto the target page
+// (paired heading, see mapAnchor). Null when not a translation or no match.
 function mainHint(item, srcText, ctx) {
   const { docsDir, fallbackLang, headingsOf } = ctx;
   const doc = parseDoc(srcText);
@@ -107,8 +107,7 @@ function mainHint(item, srcText, ctx) {
   const hint = { lang: doc.translatedFrom, link: mainLink, targetPage: mainTarget, index };
   if (index < 0) return { ...hint, suggestion: null }; // the main link is broken too
   hint.heading = mainHeadings[index].text;
-  hint.sameCount = mainHeadings.length === item.headings.length;
-  hint.suggestion = mainTarget === item.target ? mainAnchor : item.headings[index]?.slug ?? null;
+  hint.suggestion = mainTarget === item.target ? mainAnchor : mapAnchor(mainHeadings, item.headings, mainAnchor);
   return hint;
 }
 
@@ -165,12 +164,12 @@ export function renderItem(item, rejected = []) {
   if (h && h.suggestion) {
     out.push(
       `main-language hint: the ${h.lang} version of this paragraph links to ${h.link}, ` +
-      `heading ${h.index + 1} ("${h.heading}") of ${h.targetPage}; ` +
-      `heading ${h.index + 1} of the target page is #${h.suggestion}` +
-      (h.sameCount ? '.' : ' (heading counts differ between both pages: check the heading text).'),
+      `heading ${h.index + 1} ("${h.heading}") of ${h.targetPage}, ` +
+      `whose translation in the target page is #${h.suggestion}.`,
     );
   } else if (h) {
-    out.push(`main-language hint: the ${h.lang} version links to ${h.link}, which is broken too: no positional hint.`);
+    const why = h.index < 0 ? 'which is broken too' : 'whose heading has no sure translation in the target page';
+    out.push(`main-language hint: the ${h.lang} version links to ${h.link}, ${why}: no hint.`);
   }
   if (rejected.length) out.push(`rejected earlier (not in the list): ${rejected.map((a) => `#${a}`).join(', ')}`);
   out.push(`<<<E ${item.id}>>>`);

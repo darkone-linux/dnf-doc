@@ -64,6 +64,14 @@ test('mapAnchor: positional source→target mapping', () => {
   assert.equal(mapAnchor(src, tgt, 'modules-de-service'), 'service-modules');
 });
 
+test('mapAnchor: pairs headings by paragraph hash, not position', () => {
+  const tagged = (...paras) => headingSlugs({ paragraphs: paras.map(([hash, content]) => ({ hash, content })) });
+  const src = tagged(['h1', '## Un'], ['h2', '## Deux'], ['h3', '## Trois']);
+  const tgt = tagged(['h1', '## One'], ['h3', '## Three']); // h2 not translated yet
+  assert.equal(mapAnchor(src, tgt, 'trois'), 'three');
+  assert.equal(mapAnchor(src, tgt, 'deux'), null);
+});
+
 test('mapAnchor: returns null when anchor unknown or target shorter', () => {
   const src = headingSlugs(doc('## A', '## B'));
   const tgt = headingSlugs(doc('## X')); // only one heading

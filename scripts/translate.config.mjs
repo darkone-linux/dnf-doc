@@ -89,8 +89,8 @@ heading texts, already computed for you: the right anchor is ALWAYS one of the
 
 How to choose, for each link:
 1. A "main-language hint" gives the anchor that the source-language version of
-   the same paragraph points to, mapped by heading position onto the target page.
-   Take it unless its heading clearly contradicts the link text and context.
+   the same paragraph points to, mapped onto the translation of that heading in
+   the target page. Take it unless it clearly contradicts the link text/context.
 2. Otherwise, pick the heading that best matches the broken anchor words and the
    link text: same or translated words (the broken anchor is often the slug of the
    heading in the other language, e.g. French "organisation-des-fichiers" for an

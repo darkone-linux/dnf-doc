@@ -58,10 +58,9 @@ test('analyzeErrors: target anchors + main-language positional hint', (t) => {
   assert.equal(item.target, 'en/doc/index.mdx');
   assert.deepEqual(item.headings.map((h) => h.slug), ['under-the-hood', 'file-layout']);
   assert.equal(item.hint.suggestion, 'file-layout');
-  assert.equal(item.hint.sameCount, true);
   const block = renderItem(item, ['bogus']);
   assert.match(block, /^<<<L 1>>>/);
-  assert.match(block, /heading 2 of the target page is #file-layout/);
+  assert.match(block, /whose translation in the target page is #file-layout/);
   assert.match(block, /rejected earlier \(not in the list\): #bogus/);
 
   const [missing] = analyzeErrors(

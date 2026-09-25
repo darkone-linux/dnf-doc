@@ -6,7 +6,9 @@
 //   - reconcile paragraphs by hash: keep up-to-date ones, queue missing ones,
 //     drop stale ones, reorder to follow the main,
 //   - ask one AI agent per file to translate the queued paragraphs (+ header),
-//   - write the translated file so its tags match the main exactly.
+//   - write the translated file so its tags match the main exactly,
+//   - once all are written, re-point the #anchors of every translated page at
+//     the current headings of their target pages (lib/relink.mjs).
 //
 // Agents run in parallel (config.agent.concurrency, 1 per file).
 // Use --check / -n for a dry run that lists work without calling any agent.
@@ -19,7 +21,8 @@ import { listLangs, buildFileMap, targetPath } from './lib/fsmap.mjs';
 import { parseDoc, serializeDoc, computeMainHashes, preambleForTranslation } from './lib/mdx-doc.mjs';
 import { reconcile } from './lib/reconcile.mjs';
 import { runAgent, pMap, commandExists } from './lib/agent.mjs';
-import { headingSlugs, mapAnchor } from './lib/anchors.mjs';
+import { headingSlugs } from './lib/anchors.mjs';
+import { relinkFile } from './lib/relink.mjs';
 
 const argv = process.argv.slice(2);
 const DRY = argv.some((a) => ['--check', '-n', '--dry-run'].includes(a));
@@ -47,51 +50,47 @@ function swapLang(frontmatter, tgt) {
   return frontmatter.replace(/^lang:[ \t].*$/m, `lang: ${tgt}`);
 }
 
-// Heading slugs of a page on disk, cached by absolute path.
-const slugCache = new Map();
-function slugsForFile(absPath) {
-  if (slugCache.has(absPath)) return slugCache.get(absPath);
-  let slugs = [];
-  try { slugs = headingSlugs(parseDoc(readFileSync(absPath, 'utf8'))); } catch { /* missing → no slugs */ }
-  slugCache.set(absPath, slugs);
-  return slugs;
-}
-
-// Resolve a logical link path to its source file, mirroring how Astro/Starlight
-// serves a directory URL: `/lang/doc/` → `lang/doc.mdx` OR `lang/doc/index.mdx`.
-// Prefer the direct file, fall back to the directory's index.mdx.
-function fileForLogical(lang, logical) {
-  const direct = join(docsDir, lang, `${logical}.mdx`);
-  if (existsSync(direct)) return direct;
-  return join(docsDir, lang, logical, 'index.mdx');
-}
-
-// Rewrite `#anchor` targets deterministically (the agent must NOT guess them).
-// Two cases handled; everything else (cross-language links, external URLs, an
-// unknown anchor) is left untouched for the link validator to flag.
-//   - same page  ](#a)            : map via the current file's src↔tgt headings
-//   - cross page  ](/<tgt>/p/#a)  : map via <mainLang>/p ↔ <tgt>/p headings
-function resolveAnchors(text, ctx) {
-  const { mainLang, tgt, srcSlugs, tgtSlugs } = ctx;
-  return text.replace(/\]\((#[^)\s]+|\/[a-z]{2}\/[^)\s]*?#[^)\s]+)\)/g, (full, target) => {
-    if (target.startsWith('#')) {
-      if (srcSlugs.length !== tgtSlugs.length) return full; // partial file → don't risk a mismap
-      const mapped = mapAnchor(srcSlugs, tgtSlugs, target.slice(1));
-      return mapped ? `](#${mapped})` : full;
+// Page file served at /<lang>/<logical>/, mirroring Astro/Starlight:
+// <logical>.mdx or <logical>/index.mdx, else the main language's page (the
+// content Starlight falls back to).
+function pageFile(lang, logical) {
+  for (const l of [lang, config.mainLang]) {
+    for (const f of [`${logical || 'index'}.mdx`, join(logical, 'index.mdx')]) {
+      const p = join(docsDir, l, f);
+      if (existsSync(p)) return p;
     }
-    const m = target.match(/^\/([a-z]{2})\/(.*?)#(.+)$/);
-    if (!m) return full;
-    const [, lang, pathPart, anchor] = m;
-    if (lang !== tgt) return full; // intentional cross-language reference
-    const logical = pathPart.replace(/\/$/, '');
-    if (!logical) return full;
-    const mapped = mapAnchor(
-      slugsForFile(fileForLogical(mainLang, logical)),
-      slugsForFile(fileForLogical(tgt, logical)),
-      anchor,
-    );
-    return mapped ? `](/${tgt}/${pathPart}#${mapped})` : full;
-  });
+  }
+  return null;
+}
+
+// Final pass (lib/relink.mjs): once every file of this run is written, re-point
+// the #anchors of ALL translated pages at their target pages' current headings.
+// Deterministic: the agent never guesses anchors, it keeps the source ones.
+function relinkAll(langs) {
+  const fileMap = buildFileMap(docsDir, langs, config.exclude);
+  const cache = new Map();
+  const headingsAt = (file) => {
+    if (!file) return [];
+    if (!cache.has(file)) cache.set(file, headingSlugs(parseDoc(readFileSync(file, 'utf8'))));
+    return cache.get(file);
+  };
+  let fixed = 0;
+  for (const [logical, byLang] of fileMap) {
+    for (const [tgt, path] of Object.entries(byLang)) {
+      const text = readFileSync(path, 'utf8');
+      const { role, translatedFrom: mainLang } = parseDoc(text);
+      const mainPath = role === 'translated' && byLang[mainLang];
+      if (!mainPath) continue;
+      const self = { [tgt]: path, [mainLang]: mainPath }; // same-page links
+      const headings = (lang, p) => headingsAt(p === null ? self[lang] : pageFile(lang, p));
+      const next = relinkFile(text, readFileSync(mainPath, 'utf8'), { tgt, mainLang, headings });
+      if (next === text) continue;
+      fixed++;
+      if (!DRY) writeFileSync(path, next);
+      console.log(`  ⚓ ${tgt}/${logical}: anchor(s) re-pointed`);
+    }
+  }
+  if (fixed) console.log(`[translate] anchors: ${fixed} file(s) re-pointed${DRY ? ' (dry-run, not written)' : ''}.`);
 }
 
 // Replace <-> with ↔ in prose text. The translation agent often renders the
@@ -224,15 +223,6 @@ function writeTranslated(job, got) {
     // else: omit -> stays "missing", retried next run (self-healing).
   }
 
-  // Deterministic anchor resolution (after locale rewrite): src↔tgt headings are
-  // positionally aligned, so #anchors map exactly instead of being guessed.
-  const anchorCtx = {
-    mainLang, tgt,
-    srcSlugs: headingSlugs(mainDoc),
-    tgtSlugs: headingSlugs({ paragraphs }),
-  };
-  for (const p of paragraphs) p.content = resolveAnchors(p.content, anchorCtx);
-
   const preamble = preambleForTranslation(mainDoc);
   const doc = {
     hasFrontmatter: true, frontmatter, role: 'translated', translatedFrom: mainLang,
@@ -277,8 +267,8 @@ async function main() {
   let written = 0;
   for (const j of writeOnly) if (writeTranslated(j, null)) { written++; if (!DRY) console.log(`  ✓ ${j.tgt}/${j.logical} (no agent)`); }
 
-  if (DRY) { console.log(`[translate] dry-run: ${written} file(s) would change without agent.`); return; }
-  if (!agentJobs.length) { console.log(`[translate] up to date. ${written} file(s) updated.`); return; }
+  if (DRY) { console.log(`[translate] dry-run: ${written} file(s) would change without agent.`); relinkAll(langs); return; }
+  if (!agentJobs.length) { console.log(`[translate] up to date. ${written} file(s) updated.`); relinkAll(langs); return; }
 
   const { tool, model, d2Model, concurrency, timeoutMs, maxParasPerCall, retries, retryBaseMs } = config.agent;
   if (!commandExists(tool)) {
@@ -323,6 +313,7 @@ async function main() {
   }
 
   console.log(`[translate] done. ${written} file(s) updated.`);
+  relinkAll(langs);
 }
 
 main();

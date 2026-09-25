@@ -48,9 +48,9 @@ export function headingText(line) {
 const FENCE_RE = /^(\s*)(```+|~~~+)(.*)$/;
 
 // Ordered [{ text, slug }] for every ATX heading in a Markdown/MDX body, using a
-// single github-slugger so duplicates get `-1`, `-2`… exactly like Astro.
-export function slugsFromMarkdown(body) {
-  const slugger = new GithubSlugger();
+// single github-slugger so duplicates get `-1`, `-2`… exactly like Astro (pass
+// the document's slugger when scanning it block by block).
+export function slugsFromMarkdown(body, slugger = new GithubSlugger()) {
   const out = [];
   let inFence = false;
   for (const line of body.split('\n')) {
@@ -67,11 +67,15 @@ export function slugsFromMarkdown(body) {
   return out;
 }
 
-// Ordered [{ text, slug }] for a parsed doc (lib/mdx-doc.mjs). The body is
-// reconstructed from its paragraph blocks so heading extraction stays correct
-// even where the doc parser merged blocks (it never drops heading lines).
+// Ordered [{ text, slug, key }] for a parsed doc (lib/mdx-doc.mjs), scanned
+// block by block with one slugger (the parser never drops heading lines). `key`
+// = t:p hash of the paragraph holding the heading + its rank in it: the hash is
+// shared by a main file and its translations, so headings pair up exactly
+// across languages. Null for an untagged paragraph.
 export function headingSlugs(doc) {
-  return slugsFromMarkdown(doc.paragraphs.map((p) => p.content).join('\n\n'));
+  const slugger = new GithubSlugger();
+  return doc.paragraphs.flatMap((p) => slugsFromMarkdown(p.content, slugger)
+    .map((h, k) => ({ ...h, key: p.hash ? `${p.hash}:${k}` : null })));
 }
 
 // Set of valid anchors for a parsed doc (for the link validator).
@@ -79,12 +83,16 @@ export function anchorSet(doc) {
   return new Set(headingSlugs(doc).map((h) => h.slug));
 }
 
-// Map a source-language anchor to the target-language one by heading position.
-// Returns the target slug, or null when the anchor is unknown in the source or
-// the target has no heading at that index (caller leaves the link untouched and
-// lets the validator flag it).
+// Map a source-language anchor to the target-language one: the target heading
+// of the same paragraph (shared t:p key), whatever the headings order or a
+// missing translated paragraph. Untagged/unpaired heading → by position, only
+// when both sides have as many headings. Null when unknown in the source or
+// without a sure counterpart (caller leaves the link to the validator).
 export function mapAnchor(srcSlugs, tgtSlugs, anchor) {
   const i = srcSlugs.findIndex((h) => h.slug === anchor);
   if (i === -1) return null;
-  return tgtSlugs[i] ? tgtSlugs[i].slug : null;
+  const { key } = srcSlugs[i];
+  const paired = key && tgtSlugs.find((h) => h.key === key);
+  if (paired) return paired.slug;
+  return srcSlugs.length === tgtSlugs.length ? tgtSlugs[i].slug : null;
 }
