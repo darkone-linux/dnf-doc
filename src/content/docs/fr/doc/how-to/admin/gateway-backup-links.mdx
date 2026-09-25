@@ -26,6 +26,7 @@ défaut. La plus basse **métrique** l'emporte.
 |---|---|
 | WAN (la box) | 100 |
 | Liaison de secours | 200 + 10 × `priority` (300 par défaut) |
+| Lien de retour, en probation | métrique + 10000 |
 | Lien sans Internet | métrique + 20000 |
 
 Trois situations sont couvertes&nbsp;:
@@ -35,6 +36,14 @@ Trois situations sont couvertes&nbsp;:
 | Câble débranché, box éteinte, plus de bail DHCP | la route de la WAN disparaît | le noyau prend la route suivante |
 | Box allumée mais Internet coupé | la sonde `dnf-uplink-monitor` échoue 3 fois | la WAN passe à 20100, le secours prend le relais |
 | Internet revenu sur la box | 6 sondes réussies | retour sur la WAN |
+| Lien revenu après 3 tours sans route (box redémarrée, câble rebranché) | nouveau bail | le lien revient en probation (10100), puis retrouve sa place après 6 sondes réussies |
+
+:::tip[Pourquoi la probation]
+Une box qui redémarre distribue souvent un bail avant d'avoir Internet. Sans
+probation, la zone y retournerait aussitôt, pour une coupure de 30 secondes.
+Un lien en probation passe derrière les liens sains, mais devant les liens
+morts.
+:::
 
 La sonde envoie un ping **par chaque lien** (1.1.1.1 et 9.9.9.9, toutes les 10
 secondes). Elle ne dépend pas du DNS&nbsp;: elle vise des adresses IP.
