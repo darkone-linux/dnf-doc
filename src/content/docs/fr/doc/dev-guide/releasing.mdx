@@ -222,6 +222,15 @@ Les trois contrôles de `ci.yml` (tests unitaires, évaluation, lint) sont
 rejoués via `workflow_call`, puis la section du changelog devient les notes de
 la *release* GitHub.
 
+<Aside type="caution" title="Tag poussé, release absente">
+Ne jamais déplacer ni recréer le tag&nbsp;: FlakeHub l'a déjà publié.
+
+- Échec passager (runner coupé, réseau)&nbsp;: `gh run rerun <id> --failed`
+  rejoue les *jobs* en échec avec les *workflows* du tag.
+- Défaut dans l'arbre taggué&nbsp;: le numéro est perdu. Corriger sur `main`,
+  puis `just release patch`.
+</Aside>
+
 {/* t:p 76bf7c0ae965537388dc68bc0a93388c26f12d5dae428fd2ad7c9594d61c1900 */}
 ## Configuration partagée
 
