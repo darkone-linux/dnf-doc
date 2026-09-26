@@ -67,22 +67,19 @@ range tous ses autres accès dans une collection partagée du coffre-fort.
    Une collection permet de partager des accès entre plusieurs utilisateurs.
    :::
 
-2. **Session Linux** (compte Linux seulement)
+2. **Préparer les accès**
 
-   1. Créer la fiche "identifiant" avec un mot de passe (Vaultwarden)
-   2. La ranger dans la Collection (Vaultwarden)
-   3. [Enregistrer le mot de passe dans SOPS](/fr/doc/admin-guide/operate/users/#définir-le-mot-de-passe) (CLI)
+   ```sh
+   just invite alice
+   ```
+
+   - Session Linux (compte Linux seulement) : saisir un mot de passe généré dans une fiche de la collection.
+   - Affiche la fiche d'accueil, un lien Kanidm valable 1 h et la liste des tâches restantes.
+   - Puis [valider et déployer](/fr/doc/admin-guide/operate/users/#définir-le-mot-de-passe) le mot de passe.
 
 3. **Identité Kanidm**
 
-   Créer un lien de réinitialisation sur le HCS et l'ouvrir&nbsp;:
-
-   ```sh
-   just enter hcs
-   kanidm person credential create-reset-token alice --name idm_admin
-   ```
-
-   - Y définir un mot de passe généré par Bitwarden, une clé et un code TOTP.
+   - Ouvrir le lien : y définir un mot de passe généré par Bitwarden, une clé et un code TOTP.
    - Ranger le tout dans un élément de la collection.
 
 4. **Inviter** l'utilisateur dans l'organisation (*Membres → Inviter un membre*)
@@ -90,7 +87,7 @@ range tous ses autres accès dans une collection partagée du coffre-fort.
    - Utiliser l'e-mail défini dans `config.yaml`.
    - Lui donner accès en écriture à la collection `alice`.
 
-5. **L'utilisateur** reçoit l'e-mail
+5. **L'utilisateur** reçoit l'e-mail et la fiche d'accueil
 
    Il crée son coffre en définissant son mot de passe principal. C'est sa seule action.
 
@@ -118,35 +115,29 @@ L'administrateur fournit les points d'entrée et l'utilisateur définit ses acc�
 
 <Steps>
 
-1. **Session Linux** (compte Linux seulement)
-
-   L'utilisateur [définit lui-même son mot de passe](/fr/doc/admin-guide/operate/users/#définir-le-mot-de-passe),
-   sur place ou par son empreinte.
-
-2. **Création du coffre-fort**
-
-   - L'inviter depuis l'administration Vaultwarden (`/admin`, *Invite User*).
-   - Il crée son coffre dans lequel il pourra stocker ses accès.
-   - Il pourra également définir sa 2FA et ses paramètres de sécurité.
-
-3. **Identité Kanidm**
-
-   Créer le lien de réinitialisation et le transmettre (lien ou QR-code)&nbsp;:
+1. **Préparer les accès**
 
    ```sh
-   just enter hcs
-   kanidm person credential create-reset-token alice --name idm_admin
+   just invite alice advanced
    ```
 
-   L'utilisateur y définit son mot de passe, son TOTP et ses clés d'accès.
+   - Session Linux (compte Linux seulement) : l'utilisateur tape son mot de passe.
+   - À distance, il envoie son [empreinte](/fr/doc/admin-guide/operate/users/#définir-le-mot-de-passe) → `just invite alice a '<empreinte>'`.
+   - Envoie l'invitation au coffre-fort.
+   - Affiche la fiche d'accueil à lui transmettre, avec un lien Kanidm valable 24 h et son QR code.
 
-4. **Clé YubiKey** (facultatif)
+2. **L'utilisateur** suit la fiche
+
+   - Il crée son coffre et sa 2FA.
+   - Il définit son identité Kanidm : mot de passe, TOTP, clés d'accès.
+
+3. **Clé YubiKey** (facultatif)
 
    Enrôler avec `just yubikey alice` et la clé de l'utilisateur, qui saisit lui-même son PIN.
 
    - Voir [Ordre d'enrôlement des passkeys](/fr/doc/admin-guide/operate/yubikey/#ordre-denrôlement-des-passkeys).
 
-5. **Paramétrages par l'utilisateur**
+4. **Paramétrages par l'utilisateur**
 
    L'utilisateur peut installer Bitwarden sur ses navigateurs et son smartphone.
 
@@ -159,7 +150,9 @@ Quelques informations et astuces utiles, à connaître.
 
 ### Comment réinitialiser un accès ?
 
-Voir [Réinitialiser le mot de passe d'un utilisateur](/fr/doc/how-to/admin/reset-user-password/).
+Relancer `just invite alice` (ou `advanced`) : un accès déjà défini n'est
+remplacé qu'après confirmation. Voir aussi
+[Réinitialiser le mot de passe d'un utilisateur](/fr/doc/how-to/admin/reset-user-password/).
 
 ### Oubli de mot de passe principal ?
 

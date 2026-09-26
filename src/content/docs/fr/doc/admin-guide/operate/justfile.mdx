@@ -795,6 +795,25 @@ just sops
 ```
 
 {/* t:p 69245d1df6a76baa409e908bab2818947b89d962cd041c354fffc0780a336cd4 */}
+### ✳️ `invite <utilisateur> [mode] [empreinte]` ⭐
+
+Accueille un utilisateur ou réinitialise ses accès : mot de passe de session,
+lien Kanidm, invitation au coffre-fort, fiche d'accueil à copier. Un accès déjà
+défini n'est remplacé qu'après confirmation.
+
+| Mode | Pour | Lien Kanidm |
+|---|---|---|
+| `normal` / `n` (défaut) | Non technicien | 1 h, pour l'admin |
+| `advanced` / `a` | Technicien | 24 h, pour l'utilisateur |
+
+```sh
+just invite alice                  # non technicien
+just invite alice advanced         # technicien
+just invite alice a '<empreinte>'  # technicien, empreinte envoyée à distance
+```
+
+Voir [Créer un compte utilisateur](/fr/doc/admin-guide/operate/onboarding/).
+
 ### ✳️ `passwd-default`
 
 Enregistre le mot de passe de référence du parc (empreinte bcrypt dans sops).
@@ -805,12 +824,14 @@ just passwd-default
 ```
 
 {/* t:p 349eebd72e333582fbe3884c17581bea46ade2cd62e5c0ce8332b5b32d557c9c */}
-### ✳️ `passwd <utilisateur>` ⭐
+### ✳️ `passwd <utilisateur> [empreinte]` ⭐
 
-Met à jour le mot de passe d'un utilisateur spécifique.
+Met à jour le mot de passe de session d'un utilisateur, ou enregistre
+l'empreinte qu'il a envoyée (`mkpasswd -m sha-512`, entre apostrophes).
 
 ```sh
 just passwd darkone
+just passwd darkone '<empreinte>'
 ```
 
 {/* t:p 492a5aa3b45a9f68964c089348bdb4f0284b5dd11ec4ad7a6c1922473d97cb9d */}
