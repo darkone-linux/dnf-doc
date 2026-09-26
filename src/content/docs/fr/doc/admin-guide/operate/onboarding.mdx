@@ -24,12 +24,7 @@ Deux alternatives, selon l'autonomie de l'utilisateur&nbsp;:
 |---|---|---|
 | **Linux** | `config.yaml` | Postes Linux (posix), services et coffre-fort, Matrix |
 | **Services** | Vaultwarden, Kanidm | services et coffre-fort, Matrix |
-| **Ami Matrix** | Via jeton Matrix | Matrix seul |
-
-:::note[À savoir]
-- Les utilisateurs déclarés dans `config.yaml` ont automatiquement un compte Kanidm.
-- [Les amis Matrix s'inscrivent avec un jeton](/fr/doc/admin-guide/operate/matrix/#inscrire-des-amis).
-:::
+| **Ami Matrix** | [Jeton Matrix](/fr/doc/admin-guide/operate/matrix/#inscrire-des-amis) | Matrix seul |
 
 {/* t:p 00210d7bb53801c736daf1f1a1cb644b3a25428277c833a674cf4da16a1ae441 */}
 ## Choisir une alternative
@@ -50,46 +45,17 @@ avec un contact de confiance. Il est utile de&nbsp;:
 - ou conseiller l'activation de cette option aux utilisateurs techniciens.
 :::
 
-:::note[Non technicien : un seul secret à retenir]
-L'utilisateur ne retient que son **mot de passe principal**. Tous les autres
-identifiants, mots de passe et codes sont accessibles via Bitwarden ou Vaultwarden.
-:::
-
 {/* t:p 187c07cfb578ef84a2545397ecd52afcb7d71085ebdbdc5110cd542883a1beaf */}
 ## Déclaration initiale (Linux)
 
-Étape commune aux deux parcours.
-
-<Steps>
-
-1. **Déclarer** l'utilisateur dans `etc/config.yaml` et le
-   rattacher à ses hôtes s'il a un compte Linux.
-
-   - [Déclarer un utilisateur](/fr/doc/admin-guide/operate/users/#déclarer-un-utilisateur)
-     et [le rattacher à un hôte](/fr/doc/admin-guide/operate/users/#rattacher-à-un-hôte).
-
-2. **Déployer** le HCS (compte Kanidm) et les hôtes de l'utilisateur&nbsp;:
-
-   ```sh
-   just clean
-   just commit "user(new): alice"
-   just apply @user-alice,hcs     # compte Services : just apply hcs
-   ```
-
-</Steps>
-
-:::note[Rappel]
-Cette étape crée le compte Kanidm.
-:::
+Commune aux deux alternatives&nbsp;: [déclarer, rattacher et déployer](/fr/doc/admin-guide/operate/users/#créer-un-compte-linux-posix)
+l'utilisateur. Le déploiement du HCS crée aussi son compte Kanidm.
 
 {/* t:p c90d4980926cf174558cd55394e1774e62db46485a469e3984d0c9ab7ef19d06 */}
 ## Alternative pour non technicien
 
-:::note[Résumé]
-- L'administrateur crée tous les accès dans Vaultwarden.
-- L'utilisateur définit le mot de passe principal (crée son coffre).
-- L'administrateur partage les accès.
-:::
+L'utilisateur ne retient que son **mot de passe principal**&nbsp;: l'administrateur
+range tous ses autres accès dans une collection partagée du coffre-fort.
 
 <Steps>
 
@@ -152,13 +118,10 @@ L'administrateur fournit les points d'entrée et l'utilisateur définit ses acc�
 
 <Steps>
 
-1. **Accès Linux**, 2 alternatives :
+1. **Session Linux** (compte Linux seulement)
 
-   - **Sur place**, l'utilisateur saisit lui-même son mot de passe à l'invite de `just passwd alice`.
-     Seule l'empreinte (hash) est enregistrée.
-   - **À distance**, il envoie plutôt l'empreinte (`mkpasswd -m sha-512`), que
-     l'administrateur colle avec `just sops` sous `user.alice.password-hash`.
-     Puis [valider et déployer](/fr/doc/admin-guide/operate/users/#définir-le-mot-de-passe).
+   L'utilisateur [définit lui-même son mot de passe](/fr/doc/admin-guide/operate/users/#définir-le-mot-de-passe),
+   sur place ou par son empreinte.
 
 2. **Création du coffre-fort**
 
@@ -217,6 +180,10 @@ clé d'accès alternative...
 
 Par défaut oui. Il faut un code TOTP ou une clé d'accès. Rangés dans un élément, la clé ou le TOTP
 peuvent être proposés par la saisie automatique de Bitwarden.
+
+### Et le compte Matrix ?
+
+Il se crée à la première connexion dans Element (bouton **IDM**)&nbsp;: rien à préparer.
 
 ### Problème de connexion Bitwarden
 

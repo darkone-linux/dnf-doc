@@ -1,5 +1,5 @@
 ---
-title: Utilisateurs et identités
+title: Gérer les utilisateurs
 sidebar:
   label: Utilisateurs (gestion)
   order: 6
@@ -13,7 +13,7 @@ import { Steps } from '@astrojs/starlight/components';
 
 {/* t:p 804d3709cd49a92617588d36d9d06edc37b6514b2d9f36403db0f3d67b21012f */}
 Cette page concerne le compte POSIX déclaré dans `etc/config.yaml`&nbsp;: déclaration,
-rattachement aux hôtes, accès SSH, désactivation.
+rattachement aux hôtes, mot de passe, accès SSH, désactivation.
 
 {/* t:p 1156a0686209d54e9f12811173f61e73c611eb3ec899c9961192361308eab2dc */}
 ## Créer un compte Linux (POSIX)
@@ -22,9 +22,9 @@ Les utilisateurs sont déclarés **une fois** dans `etc/config.yaml`, puis
 **rattachés** aux hôtes où ils doivent ouvrir une session. Le même compte peut
 exister sur plusieurs machines.
 
-:::tip[Créer un compte utilisateur de bout en bout]
-Aller sur la page [Créer un compte utilisateur](/fr/doc/admin-guide/operate/onboarding/)
-pour une procédure complète de création du compte avec accès aux services.
+:::tip[Création de bout en bout]
+Coffre-fort, identité Kanidm, alternatives&nbsp;: voir
+[Créer un compte utilisateur](/fr/doc/admin-guide/operate/onboarding/).
 :::
 
 {/* t:p 875f3ee8246831006547317554684773380c9a7fdc858a07ebba456a2770e30e */}
@@ -48,7 +48,10 @@ users:
 | `name` | Nom affiché |
 | `email` | Adresse (sert aussi à l'identité SSO) |
 | `profile` | [Profil utilisateur](/fr/doc/admin-guide/understand/user-profiles/) (environnement) |
-| `groups` | Groupes (accès réseau et services) |
+| `groups` | Groupes (accès réseau et [services](/fr/doc/admin-guide/operate/sso/#identités-et-groupes)) |
+
+Le déploiement du HCS lui crée aussi un compte [Kanidm](/fr/doc/admin-guide/operate/sso/),
+sans identifiant.
 
 {/* t:p f93adb95d0c4124c98ae91d5835b63faf346221b89bc26b732dea3d70af6ffd4 */}
 ### Rattacher à un hôte
@@ -93,7 +96,7 @@ Toute modification de `etc/config.yaml` suit le **même cycle** :
 4. **Déployer**
 
    ```sh
-   just apply poste-alice     # crée le compte sur l'hôte
+   just apply @user-alice,hcs     # postes d'alice + compte Kanidm
    ```
 
 </Steps>
@@ -114,6 +117,10 @@ déploiement part d'un état incohérent ou non versionné.
    just passwd alice
    ```
 
+   L'utilisateur peut saisir lui-même son mot de passe. À distance, il envoie
+   son empreinte (`mkpasswd -m sha-512`), à coller avec `just sops` sous
+   `user.alice.password-hash`.
+
 2. **Valider dans git**
 
    ```sh
@@ -128,25 +135,13 @@ déploiement part d'un état incohérent ou non versionné.
 
 </Steps>
 
-:::tip[Un compte n'a pas de mot de passe tant qu'on ne lui en donne pas]
-`just passwd <login>` est ce qui ouvre la session ; `just passwd-default`
-n'enregistre que le mot de passe de référence du parc. Voir
-[Secrets](/fr/doc/admin-guide/operate/secrets/).
-:::
-
-:::note[Redéfinition de mot de passe]
-Redéfinir le mot de passe POSIX de l'utilisateur se fait uniquement via
-`just passwd`, car le hash est intégré à la configuration et propagé. Un
-utilisateur ne doit pas redéfinir son mot de passe directement sur un hôte.
+:::note[Seul `just passwd` fait foi]
+- Pas de session avant `just passwd <login>`.
+- Changé sur un hôte, le mot de passe est écrasé au déploiement suivant.
+- `just passwd-default` n'enregistre que le mot de passe de référence du parc ([Secrets](/fr/doc/admin-guide/operate/secrets/)).
 :::
 
 {/* t:p 826c743d502cbe04e1801b699399ff776c2dd133ddab867da113c250b26a4015 */}
-### Accès aux services et à Matrix
-
-- Le compte Kanidm est créé au déploiement du HCS, sans identifiant.
-- Le compte Matrix se crée à la première connexion dans Element.
-- Identifiants et coffre-fort&nbsp;: rendez-vous sur [créer un compte utilisateur](/fr/doc/admin-guide/operate/onboarding/#choisir-une-alternative).
-
 {/* t:p 933885347c28a0e97bb028dbb55fad18f18efa9daf282a64ef33790217809ce9 */}
 ## Accès SSH
 
@@ -178,20 +173,6 @@ darkone.user.build.sshDeniedGroups = [ "guests" ];
 ```
 
 {/* t:p e810bab6404082f8aff35030cfc7b52e224eb5ce5d5f52ca94fe67d17f86d3ff */}
-## Identités et SSO
-
-Au-delà du compte système, l'utilisateur dispose d'une **identité unique**
-(Kanidm) qui ouvre les services du réseau.
-
-- Les `groups` pilotent l'accès aux services.
-- `idm-admins` / `idm-devs` sont les groupes d'administration et de développement.
-- Le détail : [SSO et identités](/fr/doc/admin-guide/operate/sso/).
-
-:::note[Créer ou réinitialiser un compte]
-Voir [Créer un compte utilisateur](/fr/doc/admin-guide/operate/onboarding/) et
-[Réinitialiser un mot de passe](/fr/doc/how-to/admin/reset-user-password/).
-:::
-
 {/* t:p d929a47941fb703dd34d9ac49a678dc511433d466b60b6ab033b9f661944261d */}
 ## Désactiver un compte
 
