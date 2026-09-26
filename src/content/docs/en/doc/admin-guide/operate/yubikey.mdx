@@ -56,26 +56,28 @@ without a human, so stolen **with** its motherboard it remains
 decryptable.
 :::
 
-{/* t:p 69faf7b1a2bcb653da68196a60f99592f1b49ab2266ac784f8365d0d41d1a09c */}
+{/* t:p 42e908bb9e54804ac5ca92ca06a47b4a453ff777497fa97228ca04dfbc45c6c8 */}
 ## The four Kanidm authentication methods
 
-A Kanidm account exposes several authentication methods, independent from one
-another. The goal is that no key loss locks an account.
+A Kanidm account exposes several authentication methods, independent of each
+other. The goal is that no key loss can lock an account out.
 
 | Method | Kanidm nature | Support |
 |---|---|---|
-| **Primary YubiKey** | Passkey WebAuthn | Physical key (PIN + touch) |
-| **Backup YubiKey** | Passkey WebAuthn | Physical key stored separately |
-| **Software key** | Passkey WebAuthn | Vault (Bitwarden, KeePassXC) |
-| **Password + TOTP** | Primary credential | Safety net, never deleted |
+| **Primary YubiKey** | WebAuthn passkey | Physical key (PIN + touch) |
+| **Backup YubiKey** | WebAuthn passkey | Physical key stored separately |
+| **Software key** | WebAuthn passkey | Vault (Bitwarden, KeePassXC) |
+| **Password + TOTP** | Primary credential | Safety net, never removed |
 
-The first three are **passkeys**: Kanidm stores them side by side and offers
-them together to the browser. The fourth lives elsewhere (the primary
-credential) and cannot be overwritten by a WebAuthn ceremony.
+The first three are **passkeys**: Kanidm stores them side by side and offers them
+together to the browser. The fourth lives elsewhere (the primary credential) and
+cannot be overwritten by a WebAuthn ceremony.
 
-:::note[Enrollment is an admin action]
-Users do not create their own passkeys. Each web ceremony includes a choice
-(vault or physical key) where an error destroys an existing key.
+:::note[Enrolment is an administrator action]
+Users do not create their own passkeys, except those of the
+[technical path](/en/doc/admin-guide/operate/onboarding/#technical-path),
+which follow the order below. Each web ceremony includes a choice (vault or
+physical key) whose wrong selection destroys an existing key.
 :::
 
 {/* t:p a77982213590f9a3866896150357f92a6ef31720ee0461dff55a55700597bac3 */}

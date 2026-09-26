@@ -8,28 +8,28 @@ lang: en
 {/* t:translated-from fr */}
 {/* t:h 681e6c971869b915c25419c494c195abd02ef902d1819633ce1477192f0436b5 */}
 
-{/* t:p 9943749794d515493a488210123bf9f747acd3cbdda69b56de75bed86f33184b */}
-## Logging in
+{/* t:p 0c63c9e6a3c7fe3003fddcb68e8fec6e654ef1b920a7603da63e18cebe0819fb */}
+## Identifying myself
 
 I need:
 
 * **A master password** for my vault (vaultwarden).
-* **A unique identity** for all cloud services (kanidm / IDM).
+* **A single identity** for all the cloud services (kanidm / IDM).
 
-My administrator must follow a procedure so I can set up these credentials.
+My administrator offers me one of these two options&nbsp;:
 
-* **Master password**: an email containing a link to enter the password.
-* **Identity**: a QR code or a link to set a key and a "2FA" password.
+* **Ready-made**: I only choose my master password, thanks to an email. My identity is already stored in my vault.
+* **Self-service**: I also define my identity myself, thanks to a link or a QR code.
 
 :::tip[Good to know!]
-- 🔒 **My master password** (Vaultwarden / Bitwarden)<br/>allows me to log in to my vault.
-- 🔑 **An authentication key** (IDM Key or [YubiKey](#using-my-yubikey))<br/>allows me to log in to all cloud applications.
-- 🔐 **A 2nd authentication factor** ([2FA](#adding-a-second-factor))<br/>allows strengthening a password-based access with an additional step.
+- 🔒 **My master password** (Vaultwarden / Bitwarden)<br/>lets me log in to my vault.
+- 🔑 **An authentication key** (IDM Key or [YubiKey](#using-my-yubikey))<br/>lets me log in to all the cloud applications.
+- 🔐 **A 2nd authentication factor** ([2FA](#adding-a-second-factor))<br/>lets me strengthen a password-based access with an additional step.
 :::
 
-The **master password** is essential, it's the only one you **must absolutely remember**.
+The **master password** is paramount, it is the only one you must **absolutely remember**.
 
-My login follows this diagram:
+My identification follows the diagram below:
 
 ```d2
 style.fill: transparent
@@ -39,7 +39,7 @@ user: User {
   shape: person
 }
 
-master: Master\npassword {
+master: Master\nPassword {
   shape: hexagon
 }
 2fac: 2FA\n(vault) {

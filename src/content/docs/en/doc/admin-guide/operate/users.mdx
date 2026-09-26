@@ -11,25 +11,6 @@ import { Steps } from '@astrojs/starlight/components';
 {/* t:translated-from fr */}
 {/* t:h a16a904ba4cebc0eb0b300d71e8fdf2acdb7a6b7b8b5ee282b9fb96b6d721679 */}
 
-{/* t:p f4e56a74e962230e926f93991fa077d96bd0f6018dfd04ddc8bb0c631bf3132d */}
-:::danger[Important]
-A user can have up to 3 linked accounts, each of which can be declared
-independently.
-
-* **Linux (POSIX)** : Linux & SSH session, declared in config.yaml.
-* **Kanidm (IDM)** : access to services, SSO, declared with kanidm.
-* **Matrix** : access to the Matrix messaging.
-:::
-
-:::tip[The creation order and the links between accounts are important]
-
-- A Linux account `alice`
-  - implies the creation of a Kanidm account `alice` / `alice@domain.tld`
-  - which implies the creation of a Matrix account `alice:domain.tld`.
-- Conversely, creating a Matrix account alone, without a linked IDM or POSIX account, is consistent.
-  - For example, a friend's `john.doe:domain.tld` account.
-:::
-
 {/* t:p 1156a0686209d54e9f12811173f61e73c611eb3ec899c9961192361308eab2dc */}
 ## Create a Linux (POSIX) account
 
@@ -147,12 +128,6 @@ only records the reference password of the fleet. See
 For now, a user cannot redefine their POSIX password for the whole fleet.
 :::
 
-{/* t:p 82e591259013b8ec44c9f0e307b03860ec5e9853c0dc6affaa993da145a7e023 */}
-### Enable Kanidm (services) and Matrix access
-
-- So the user can access the services, [enable their Kanidm account](/en/doc/admin-guide/operate/sso/#connect-a-service-oidc).
-- So they can communicate with Matrix, [enable their Matrix account](/en/doc/admin-guide/operate/matrix/#authentication-mas).
-
 {/* t:p 933885347c28a0e97bb028dbb55fad18f18efa9daf282a64ef33790217809ce9 */}
 ## SSH access
 
@@ -191,22 +166,6 @@ on a per-host basis:
 # Default: guest accounts keep their local session, no SSH.
 darkone.user.build.sshDeniedGroups = [ "guests" ];
 ```
-
-{/* t:p 201b895a3fe4bc096c9396e3303466b4147f3dae7ccc53c7b49e2111e7cd37f5 */}
-## Identities and SSO
-
-Beyond the system account, the user has a **single identity**
-(Kanidm) that opens the network's services.
-
-- `groups` control access to services.
-- `idm-admins` / `idm-devs` are the administration and development groups.
-- Details: [SSO and identities](/en/doc/admin-guide/operate/sso/).
-
-:::note[Create an end-to-end account]
-The full journey (account + identity + first password) is described in
-[Create a user account](/en/doc/admin-guide/operate/sso/#create-a-user-account).
-To reset: [Reset a password](/en/doc/how-to/admin/reset-user-password/).
-:::
 
 {/* t:p d929a47941fb703dd34d9ac49a678dc511433d466b60b6ab033b9f661944261d */}
 ## Disable an account
