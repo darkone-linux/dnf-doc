@@ -12,22 +12,13 @@ import { Steps } from '@astrojs/starlight/components';
 {/* t:h a16a904ba4cebc0eb0b300d71e8fdf2acdb7a6b7b8b5ee282b9fb96b6d721679 */}
 
 {/* t:p f4e56a74e962230e926f93991fa077d96bd0f6018dfd04ddc8bb0c631bf3132d */}
-:::danger[Important]
-Un utilisateur peut avoir 3 comptes liés, qu'il est possible de déclarer
-indépendamment.
+Cette page décrit le compte déclaré dans `etc/config.yaml`&nbsp;: déclaration,
+hôtes, mot de passe de session, SSH.
 
-* **Linux (POSIX)** : session Linux & SSH, déclaré dans config.yaml.
-* **Kanidm (IDM)** : accès aux services, SSO, déclaré avec kanidm.
-* **Matrix** : accès à la messagerie Matrix.
-:::
-
-:::tip[L'ordre de création et les liaisons entre compte sont importants]
-
-- Un compte Linux `alice`
-  - implique la création d'un compte Kanidm `alice` / `alice@domain.tld`
-  - qui implique la création d'un compte Matrix `alice:domain.tld`.
-- A l'inverse, créer un compte Matrix seul, sans compte IDM ou POSIX lié, est cohérent.
-  - Par exemple, le compte `john.doe:domain.tld` d'un ami.
+:::tip[Créer un compte de bout en bout]
+Types de comptes (Linux, Services, ami Matrix) et parcours complets (non
+technique ou technique)&nbsp;: voir
+[Créer un compte utilisateur](/fr/doc/admin-guide/operate/onboarding/).
 :::
 
 {/* t:p 1156a0686209d54e9f12811173f61e73c611eb3ec899c9961192361308eab2dc */}
@@ -150,10 +141,11 @@ mot de passe POSIX pour l'ensemble du parc.
 :::
 
 {/* t:p 82e591259013b8ec44c9f0e307b03860ec5e9853c0dc6affaa993da145a7e023 */}
-### Activer les accès Kanidm (services) et Matrix
+### Accès aux services et à Matrix
 
-- Pour que l'utilisateur ait accès aux services, [activez son compte Kanidm](/fr/doc/admin-guide/operate/sso/#créer-un-compte-utilisateur).
-- Pour qu'il puisse communiquer avec Matrix, [activez son compte Matrix](/fr/doc/admin-guide/operate/matrix/#authentification-mas).
+- Le compte Kanidm est créé au déploiement du HCS, sans identifiant.
+- Le compte Matrix se crée à la première connexion dans Element.
+- Identifiants et coffre-fort&nbsp;: suivre l'un des deux [parcours de création](/fr/doc/admin-guide/operate/onboarding/#choisir-un-parcours).
 
 {/* t:p 933885347c28a0e97bb028dbb55fad18f18efa9daf282a64ef33790217809ce9 */}
 ## Accès SSH
@@ -204,10 +196,9 @@ Au-delà du compte système, l'utilisateur dispose d'une **identité unique**
 - `idm-admins` / `idm-devs` sont les groupes d'administration et de développement.
 - Le détail : [SSO et identités](/fr/doc/admin-guide/operate/sso/).
 
-:::note[Créer un compte de bout en bout]
-Le parcours complet (compte + identité + premier mot de passe) est décrit dans
-[Créer un compte utilisateur](/fr/doc/admin-guide/operate/sso/#créer-un-compte-utilisateur).
-Pour réinitialiser : [Réinitialiser un mot de passe](/fr/doc/how-to/admin/reset-user-password/).
+:::note[Créer ou réinitialiser un compte]
+Voir [Créer un compte utilisateur](/fr/doc/admin-guide/operate/onboarding/) et
+[Réinitialiser un mot de passe](/fr/doc/how-to/admin/reset-user-password/).
 :::
 
 {/* t:p d929a47941fb703dd34d9ac49a678dc511433d466b60b6ab033b9f661944261d */}

@@ -1,0 +1,177 @@
+---
+title: Créer un compte utilisateur
+sidebar:
+  label: Nouveau compte
+  order: 6.5
+lang: fr
+---
+
+import { Steps } from '@astrojs/starlight/components';
+
+Deux parcours, selon l'autonomie de l'utilisateur&nbsp;: **non technique** (on
+lui demande le moins possible) ou **technique** (il définit tous ses secrets,
+l'administrateur n'en connaît aucun).
+
+## Trois types de comptes
+
+| Type | Déclaration | Accès |
+|---|---|---|
+| **Linux** | `users` + rattaché à un hôte | Session, services, coffre-fort, Matrix |
+| **Services** | `users`, rattaché à aucun hôte | Services (SSO), coffre-fort, Matrix |
+| **Ami Matrix** | Aucune | Matrix seul |
+
+- Tout utilisateur déclaré reçoit un compte [Kanidm](/fr/doc/admin-guide/operate/sso/) **automatiquement**. Seuls ses identifiants se définissent à la main.
+- Le compte Matrix se crée à la première connexion dans Element, bouton **IDM**.
+- Un ami Matrix s'inscrit seul avec un jeton&nbsp;: voir [Inscrire des amis](/fr/doc/admin-guide/operate/matrix/#inscrire-des-amis).
+
+## Choisir un parcours
+
+| Secret | Non technique | Technique |
+|---|---|---|
+| **Session Linux** | Défini par l'admin | Saisi par l'utilisateur |
+| **Identité Kanidm** | Définie par l'admin, rangée dans le coffre | Définie par l'utilisateur |
+| **Mot de passe principal** | Défini par l'utilisateur | Défini par l'utilisateur |
+| **2FA du coffre** | Facultative | Au choix de l'utilisateur |
+| **Mot de passe principal oublié** | L'admin le réinitialise | Coffre perdu |
+
+:::tip[Non technique : un seul secret à retenir]
+L'utilisateur ne retient que son **mot de passe principal**. Bitwarden remplit
+pour lui l'identifiant, le mot de passe et le code 2FA de Kanidm.
+:::
+
+## Déclarer le compte
+
+Étape commune aux deux parcours.
+
+<Steps>
+
+1. **Déclarer** l'utilisateur dans `etc/config.yaml`, avec son `email`, et le
+   rattacher à ses hôtes s'il a un compte Linux. Voir
+   [Déclarer un utilisateur](/fr/doc/admin-guide/operate/users/#déclarer-un-utilisateur).
+
+2. **Déployer** le HCS (compte Kanidm) et les hôtes de l'utilisateur&nbsp;:
+
+   ```sh
+   just clean
+   just commit "user(new): alice"
+   just apply @user-alice,hcs     # compte Services : just apply hcs
+   ```
+
+</Steps>
+
+Le compte Kanidm existe, sans aucun identifiant.
+
+## Parcours non technique
+
+L'administrateur prépare tous les accès et les range dans une **collection
+partagée** de son coffre-fort. L'utilisateur définit seulement son mot de passe
+principal.
+
+:::note[Une fois pour toutes : l'organisation]
+Créer une organisation Vaultwarden (ex. `Famille`), puis y activer
+*Politiques de sécurité → Administration de récupération du compte*, avec
+*Inscription automatique*. Chaque nouveau membre y est inscrit&nbsp;:
+l'administrateur pourra réinitialiser son mot de passe principal.
+:::
+
+<Steps>
+
+1. **Collection** : dans l'organisation, créer la collection `alice`.
+
+2. **Session Linux** (compte Linux seulement) : choisir le mot de passe, le
+   ranger dans la collection, puis
+   [le définir et le déployer](/fr/doc/admin-guide/operate/users/#définir-le-mot-de-passe).
+
+3. **Identité Kanidm** : créer un lien de réinitialisation sur le HCS, et
+   l'ouvrir **soi-même**&nbsp;:
+
+   ```sh
+   just enter hcs
+   kanidm person credential create-reset-token alice --name idm_admin
+   ```
+
+   Y définir un mot de passe généré par Bitwarden et un code TOTP. Ranger les
+   deux dans un élément de la collection (identifiant, mot de passe,
+   *Clé d'authentification (TOTP)*).
+
+4. **Inviter** l'utilisateur dans l'organisation (*Membres → Inviter un
+   membre*), avec l'e-mail de `config.yaml` et l'accès à sa collection.
+
+5. **L'utilisateur** reçoit l'e-mail, crée son coffre et définit son **mot de
+   passe principal**. C'est sa seule action.
+
+6. **Confirmer** le membre (*Membres → Confirmer*) : la collection apparaît
+   dans son coffre.
+
+7. **Installer Bitwarden** sur ses navigateurs et son smartphone.
+
+</Steps>
+
+:::note[Kanidm impose une 2FA]
+Kanidm refuse par défaut un mot de passe seul&nbsp;: il faut un code TOTP ou une
+clé d'accès. Rangé dans l'élément, le TOTP est rempli par Bitwarden.
+:::
+
+:::caution[Choisir « self-hosted » dans Bitwarden]
+Bitwarden se connecte par défaut à bitwarden.com. Saisir l'URL du Vaultwarden du
+réseau **avant** le mot de passe principal.
+:::
+
+:::tip[YubiKey]
+Une [YubiKey](/fr/doc/admin-guide/operate/yubikey/) remplace le mot de passe de
+session par un toucher. C'est le seul accès que le coffre ne peut pas remplir,
+puisque la session s'ouvre avant lui.
+:::
+
+:::caution[Un compromis de confiance]
+L'administrateur connaît les accès Kanidm et session, et peut réinitialiser le
+mot de passe principal. Pour rendre l'utilisateur autonome plus tard&nbsp;: il
+redéfinit ses accès selon le parcours technique, puis quitte l'organisation.
+:::
+
+## Parcours technique
+
+L'administrateur ne fournit que des points d'entrée&nbsp;: il ne connaît aucun
+secret.
+
+<Steps>
+
+1. **Session Linux** (compte Linux seulement) : l'utilisateur saisit lui-même
+   son mot de passe à l'invite de `just passwd alice`. Seule l'empreinte est
+   enregistrée.
+
+   À distance, il envoie plutôt l'empreinte (`mkpasswd -m sha-512`), que
+   l'administrateur colle avec `just sops` sous `user.alice.password-hash`.
+   Puis [valider et déployer](/fr/doc/admin-guide/operate/users/#définir-le-mot-de-passe).
+
+2. **Identité Kanidm** : créer le lien de réinitialisation, et le transmettre
+   (lien ou QR-code)&nbsp;:
+
+   ```sh
+   just enter hcs
+   kanidm person credential create-reset-token alice --name idm_admin
+   ```
+
+   L'utilisateur y définit son mot de passe, son TOTP et ses clés d'accès.
+
+3. **YubiKey** (facultatif) : `just yubikey alice`, avec la clé de
+   l'utilisateur, qui saisit lui-même son PIN. Voir
+   [Ordre d'enrôlement des passkeys](/fr/doc/admin-guide/operate/yubikey/#ordre-denrôlement-des-passkeys).
+
+4. **Coffre-fort** : l'inviter depuis l'administration Vaultwarden
+   (`/admin`, *Invite User*). Il crée son coffre, puis active sa 2FA
+   (*Authentification à deux facteurs*).
+
+5. **Installer Bitwarden** sur ses navigateurs et son smartphone.
+
+</Steps>
+
+:::danger[Pas dans l'organisation de récupération]
+Avec l'*Inscription automatique*, y inviter l'utilisateur donne à
+l'administrateur le pouvoir de réinitialiser son mot de passe principal. Pour
+partager des éléments, utiliser une autre organisation, sans cette politique.
+:::
+
+## Réinitialiser un accès
+
+Voir [Réinitialiser le mot de passe d'un utilisateur](/fr/doc/how-to/admin/reset-user-password/).
