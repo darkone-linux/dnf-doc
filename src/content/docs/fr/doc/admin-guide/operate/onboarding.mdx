@@ -26,7 +26,7 @@ Deux alternatives, selon l'autonomie de l'utilisateur&nbsp;:
 | **Services** | Vaultwarden, Kanidm | services et coffre-fort, Matrix |
 | **Ami Matrix** | Via jeton Matrix | Matrix seul |
 
-:::note[A savoir]
+:::note[À savoir]
 - Les utilisateurs déclarés dans `config.yaml` ont automatiquement un compte Kanidm.
 - [Les amis Matrix s'inscrivent avec un jeton](/fr/doc/admin-guide/operate/matrix/#inscrire-des-amis).
 :::
@@ -46,13 +46,13 @@ Deux alternatives, selon l'autonomie de l'utilisateur&nbsp;:
 Vaultwarden dispose d’un [mécanisme d’« Accès d’urgence »](https://bitwarden.com/help/emergency-access/)
 avec un contact de confiance. Il est utile de&nbsp;:
 
-- définir l'admin comme personne de confiance pour les utilisateurs non technicien
+- définir l'admin comme personne de confiance pour les utilisateurs non techniciens
 - ou conseiller l'activation de cette option aux utilisateurs techniciens.
 :::
 
 :::note[Non technicien : un seul secret à retenir]
 L'utilisateur ne retient que son **mot de passe principal**. Tous les autres
-identifiants, mots de passe et codes sont accessible via Bitwarden ou Vaultwarden.
+identifiants, mots de passe et codes sont accessibles via Bitwarden ou Vaultwarden.
 :::
 
 {/* t:p 187c07cfb578ef84a2545397ecd52afcb7d71085ebdbdc5110cd542883a1beaf */}
@@ -130,11 +130,11 @@ Cette étape crée le compte Kanidm.
 
 6. **Confirmer** le membre (*Membres → Confirmer*)
 
-   Les éléments de la collection apparaît dans son coffre.
+   Les éléments de la collection apparaissent dans son coffre.
 
 7. **Installer et configurer Bitwarden** sur ses navigateurs et son smartphone.
 
-   Sur les postes Linux, l'accès est pré-défini. Sur les autres hôtes, l'utilisateur 
+   Sur les postes Linux, l'accès est pré-défini. Sur les autres hôtes, l'utilisateur
    aura besoin d'un peu d'aide pour paramétrer ses accès.
 
 </Steps>
@@ -179,8 +179,8 @@ L'administrateur fournit les points d'entrée et l'utilisateur définit ses acc�
 
 4. **Clé YubiKey** (facultatif)
 
-   Enroller avec `just yubikey alice` et la clé de l'utilisateur, qui saisit lui-même son PIN.
-   
+   Enrôler avec `just yubikey alice` et la clé de l'utilisateur, qui saisit lui-même son PIN.
+
    - Voir [Ordre d'enrôlement des passkeys](/fr/doc/admin-guide/operate/yubikey/#ordre-denrôlement-des-passkeys).
 
 5. **Paramétrages par l'utilisateur**
@@ -201,12 +201,13 @@ Voir [Réinitialiser le mot de passe d'un utilisateur](/fr/doc/how-to/admin/rese
 ### Oubli de mot de passe principal ?
 
 :::danger[L'accès au coffre peut être définitivement perdu]
-Si aucun système de récupération n'a été configuré. Cette étape préventive est importante.
+Sans récupération configurée **à l'avance**, le contenu du coffre est perdu.
 :::
 
-**Activer la récupération des comptes** : dans les paramètres d'administration de Vaultwarden, 
-"Politiques de sécurité", "Authentification", il est possible d'activer la [récupération du 
-compte via une personne de confiance](https://bitwarden.com/help/emergency-access/).
+**Activer l'[accès d'urgence](https://bitwarden.com/help/emergency-access/)** :
+dans son coffre, l'utilisateur ouvre *Paramètres → Accès d'urgence* et invite
+un contact de confiance, avec l'accès *Prise de contrôle*. Une fois l'invitation
+acceptée, il confirme ce contact.
 
 D'autres [mécanismes de prévention existent](https://bitwarden.com/fr-fr/help/forgot-master-password/)&nbsp;:
 indice du mot de passe, accès d'urgence par personne de confiance, connexion avec un appareil connu,
@@ -214,16 +215,15 @@ clé d'accès alternative...
 
 ### Kanidm impose-t-il une 2FA ?
 
-Par défaut oui. Il faut un code TOTP ou une clé d'accès. Rangé dans un élément, la clé ou le TOTP
+Par défaut oui. Il faut un code TOTP ou une clé d'accès. Rangés dans un élément, la clé ou le TOTP
 peuvent être proposés par la saisie automatique de Bitwarden.
 
 ### Problème de connexion Bitwarden
 
 **Choisir « self-hosted »** dans Bitwarden est requis. Par défaut, le client Bitwarden se connecte
 à bitwarden.com. Saisir l'URL du Vaultwarden du réseau, puis son mot de passe principal.
-:::
 
-### Puis-je utiliser ma Yubikey ?
+### Puis-je utiliser ma YubiKey ?
 
 Oui ! C'est même recommandé, c'est plus simple et plus sécurisé.
 
