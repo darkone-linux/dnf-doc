@@ -1,7 +1,7 @@
 ---
 title: Utilisateurs et identités
 sidebar:
-  label: Utilisateurs
+  label: Utilisateurs (gestion)
   order: 6
 lang: fr
 ---
@@ -12,14 +12,8 @@ import { Steps } from '@astrojs/starlight/components';
 {/* t:h a16a904ba4cebc0eb0b300d71e8fdf2acdb7a6b7b8b5ee282b9fb96b6d721679 */}
 
 {/* t:p 804d3709cd49a92617588d36d9d06edc37b6514b2d9f36403db0f3d67b21012f */}
-Cette page décrit le compte déclaré dans `etc/config.yaml`&nbsp;: déclaration,
-hôtes, mot de passe de session, SSH.
-
-:::tip[Créer un compte de bout en bout]
-Types de comptes (Linux, Services, ami Matrix) et parcours complets (non
-technique ou technique)&nbsp;: voir
-[Créer un compte utilisateur](/fr/doc/admin-guide/operate/onboarding/).
-:::
+Cette page concerne le compte POSIX déclaré dans `etc/config.yaml`&nbsp;: déclaration,
+rattachement aux hôtes, accès SSH, désactivation.
 
 {/* t:p 1156a0686209d54e9f12811173f61e73c611eb3ec899c9961192361308eab2dc */}
 ## Créer un compte Linux (POSIX)
@@ -27,6 +21,11 @@ technique ou technique)&nbsp;: voir
 Les utilisateurs sont déclarés **une fois** dans `etc/config.yaml`, puis
 **rattachés** aux hôtes où ils doivent ouvrir une session. Le même compte peut
 exister sur plusieurs machines.
+
+:::tip[Créer un compte utilisateur de bout en bout]
+Aller sur la page [Créer un compte utilisateur](/fr/doc/admin-guide/operate/onboarding/)
+pour une procédure complète de création du compte avec accès aux services.
+:::
 
 {/* t:p 875f3ee8246831006547317554684773380c9a7fdc858a07ebba456a2770e30e */}
 ### Déclarer un utilisateur
@@ -135,9 +134,10 @@ n'enregistre que le mot de passe de référence du parc. Voir
 [Secrets](/fr/doc/admin-guide/operate/secrets/).
 :::
 
-:::note[Redéfinition de mot de passe (todo)]
-Pour le moment il n'est pas possible pour un utilisateur de redéfinir son
-mot de passe POSIX pour l'ensemble du parc.
+:::note[Redéfinition de mot de passe]
+Redéfinir le mot de passe POSIX de l'utilisateur se fait uniquement via 
+`just passwd`, car le hash est intégré à la configuration et propagé. Un 
+utilisateur ne doit pas redéfinir son mot de passe directement sur un hôte.
 :::
 
 {/* t:p 826c743d502cbe04e1801b699399ff776c2dd133ddab867da113c250b26a4015 */}
@@ -145,33 +145,24 @@ mot de passe POSIX pour l'ensemble du parc.
 
 - Le compte Kanidm est créé au déploiement du HCS, sans identifiant.
 - Le compte Matrix se crée à la première connexion dans Element.
-- Identifiants et coffre-fort&nbsp;: suivre l'un des deux [parcours de création](/fr/doc/admin-guide/operate/onboarding/#choisir-un-parcours).
+- Identifiants et coffre-fort&nbsp;: rendez-vous sur [créer un compte utilisateur](/fr/doc/admin-guide/operate/onboarding/#choisir-un-parcours).
 
 {/* t:p 933885347c28a0e97bb028dbb55fad18f18efa9daf282a64ef33790217809ce9 */}
 ## Accès SSH
 
 L'accès SSH est **par clé uniquement** et **entièrement déclaratif**, sur toute
-la flotte :
+la flotte&nbsp;:
 
-- mot de passe et clavier-interactif désactivés (`darkone.system.core`) ;
-- seules les clés déclarées comptent
-  (`users.users.<login>.openssh.authorizedKeys`) : `~/.ssh/authorized_keys`
-  n'est plus lu ;
-- un compte sans clé déclarée ouvre sa session locale, jamais SSH.
+- Mot de passe et clavier interactif sont désactivés.
+- Déclarer les clés dans `users.users.<login>.openssh.authorizedKeys`.
+- Un compte sans clé déclarée peut ouvrir une session locale, hors SSH.
 
 :::note[La forge fait exception]
 Le compte `forgejo` sert le `git push` de tous les dépôts : ses clés sont
 celles que chaque utilisateur dépose dans l'interface web de la forge, pas
 celles de la configuration NixOS. `sshd` les lui demande par
-`AuthorizedKeysCommand`, et non par un fichier. Une clé s'ajoute donc dans
-Forgejo (**Paramètres → Clés SSH / GPG**), jamais dans `config.yaml`.
-:::
-
-:::caution[Plus d'amorçage par ssh-copy-id]
-Sans canal mot de passe ni fichier `~/.ssh/authorized_keys`, `ssh-copy-id` n'a
-plus ni porte d'entrée ni cible. Toute clé passe par la configuration puis
-`just apply`. Gardez un accès de secours (console, ou sshd d'initrd LUKS sur le
-port 2222) avant de déployer sur un hôte distant.
+`AuthorizedKeysCommand` et non par un fichier. Une clé s'ajoute donc dans
+Forgejo (**Paramètres → Clés SSH / GPG**).
 :::
 
 {/* t:p d5b50329c05599139e966e6f3e3280df40356023c90d591921e3462adfa308b4 */}
