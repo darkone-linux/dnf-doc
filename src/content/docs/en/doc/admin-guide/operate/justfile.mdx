@@ -742,6 +742,26 @@ Opens `usr/secrets/secrets.yaml` in vim (as user `nix`).
 just sops
 ```
 
+{/* t:p 23268609db8ca3a4750a8aa377880de53f2df779d90db6b1b0af231414ed86f3 */}
+### ✳️ `invite <user> [mode] [fingerprint]` ⭐
+
+Greets a user or resets their access: session password, Kanidm link, vault
+invitation, welcome sheet to copy. An already defined access is only replaced
+after confirmation.
+
+| Mode | For | Kanidm link |
+|---|---|---|
+| `normal` / `n` (default) | Non-technical user | 1 h, for the admin |
+| `advanced` / `a` | Technical user | 24 h, for the user |
+
+```sh
+just invite alice                  # non-technical
+just invite alice advanced         # technical
+just invite alice a '<fingerprint>' # technical, fingerprint sent remotely
+```
+
+See [Creating a user account](/en/doc/admin-guide/operate/onboarding/).
+
 {/* t:p 69245d1df6a76baa409e908bab2818947b89d962cd041c354fffc0780a336cd4 */}
 ### ✳️ `passwd-default`
 
@@ -752,13 +772,15 @@ Does not configure any account: `just passwd <utilisateur>` takes care of it.
 just passwd-default
 ```
 
-{/* t:p 349eebd72e333582fbe3884c17581bea46ade2cd62e5c0ce8332b5b32d557c9c */}
-### ✳️ `passwd <user>` ⭐
+{/* t:p 9fc1d5444b672479f1d02143444f1f4e13007ceaa6ee0e604e52baecb38fdf71 */}
+### ✳️ `passwd <user> [fingerprint]` ⭐
 
-Updates the password for a specific user.
+Updates a user's session password, or records the fingerprint they sent
+(`mkpasswd -m sha-512`, in single quotes).
 
 ```sh
 just passwd darkone
+just passwd darkone '<fingerprint>'
 ```
 
 {/* t:p 492a5aa3b45a9f68964c089348bdb4f0284b5dd11ec4ad7a6c1922473d97cb9d */}

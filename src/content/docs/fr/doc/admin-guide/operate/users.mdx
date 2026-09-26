@@ -9,13 +9,13 @@ lang: fr
 import { Steps } from '@astrojs/starlight/components';
 
 {/* t:main */}
-{/* t:h a16a904ba4cebc0eb0b300d71e8fdf2acdb7a6b7b8b5ee282b9fb96b6d721679 */}
+{/* t:h b25d2e32652080407bf1b73eae820569c13ebadcdd0cc86a4ac6195e92b9e363 */}
 
-{/* t:p 804d3709cd49a92617588d36d9d06edc37b6514b2d9f36403db0f3d67b21012f */}
+{/* t:p c89892cbe90e10647ecb0dd3686b7f2b7199aaeb509a2d59e7eea08e07b853a6 */}
 Cette page concerne le compte POSIX déclaré dans `etc/config.yaml`&nbsp;: déclaration,
 rattachement aux hôtes, mot de passe, accès SSH, désactivation.
 
-{/* t:p 1156a0686209d54e9f12811173f61e73c611eb3ec899c9961192361308eab2dc */}
+{/* t:p 4625c6318926504d52ccd73e994275236778a39e2addaa317634e181714f023e */}
 ## Créer un compte Linux (POSIX)
 
 Les utilisateurs sont déclarés **une fois** dans `etc/config.yaml`, puis
@@ -27,7 +27,7 @@ Coffre-fort, identité Kanidm, alternatives&nbsp;: voir
 [Créer un compte utilisateur](/fr/doc/admin-guide/operate/onboarding/).
 :::
 
-{/* t:p 875f3ee8246831006547317554684773380c9a7fdc858a07ebba456a2770e30e */}
+{/* t:p 2152a1939de6a4b39e490580942bcce71bb9ca043cc0b2d3c1f39efc1aa43ebf */}
 ### Déclarer un utilisateur
 
 ```yaml
@@ -70,7 +70,7 @@ hosts:
 Autre possibilité : rattacher un utilisateur à un hôte grâce à un groupe commun déclaré dans la liste `groups` commune.
 :::
 
-{/* t:p 566263d5256294795aca42d3f61a7a982d58982ddad68b53c267d5382b2f515e */}
+{/* t:p b7fd9f36ef21afd7307aa41ec0973f6ab9ba85eb2d142f56fb3d88f7b731eedd */}
 ### Déployer les modifications
 
 Toute modification de `etc/config.yaml` suit le **même cycle** :
@@ -106,7 +106,7 @@ Toute modification de `etc/config.yaml` suit le **même cycle** :
 déploiement part d'un état incohérent ou non versionné.
 :::
 
-{/* t:p e3a147302d14e2e73b35651a82628b73004bdfcfb0405b111e2fbffcbfca7b06 */}
+{/* t:p 385d7b8413d2a3412c82886dcffefd9f16d5684a588efb81aeb1a47ef53f7e93 */}
 ### Définir le mot de passe
 
 <Steps>
@@ -141,8 +141,7 @@ déploiement part d'un état incohérent ou non versionné.
 - `just passwd-default` n'enregistre que le mot de passe de référence du parc ([Secrets](/fr/doc/admin-guide/operate/secrets/)).
 :::
 
-{/* t:p 826c743d502cbe04e1801b699399ff776c2dd133ddab867da113c250b26a4015 */}
-{/* t:p 933885347c28a0e97bb028dbb55fad18f18efa9daf282a64ef33790217809ce9 */}
+{/* t:p 421005f76f592064b2e23a202348e8e08bfa68b07f457d111eb98c98f8a3796c */}
 ## Accès SSH
 
 L'accès SSH est **par clé uniquement** et **entièrement déclaratif**, sur toute
@@ -172,7 +171,6 @@ hôte par hôte :
 darkone.user.build.sshDeniedGroups = [ "guests" ];
 ```
 
-{/* t:p e810bab6404082f8aff35030cfc7b52e224eb5ce5d5f52ca94fe67d17f86d3ff */}
 {/* t:p d929a47941fb703dd34d9ac49a678dc511433d466b60b6ab033b9f661944261d */}
 ## Désactiver un compte
 

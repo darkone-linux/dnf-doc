@@ -204,19 +204,26 @@ moving, the train announces it and leaves it&nbsp;: it will go with the next
 framework release.
 </Aside>
 
-{/* t:p 7640fffe4bd8ed144db0b0533dd7b901247f61496c7f0ddabfa09d8e068a2fa6 */}
+{/* t:p d5b2163680fbb0a2004fd48a5f3e013f535ac0812faaaeab261319710ffa955d */}
 ## Continuous integration safeguards
 
 On a `v*` tag, `release.yml` refuses to publish if:
 
 - the `VERSION` file does not match the tag;
-- `CHANGELOG.md` does not contain a section for this version;
-- the lock points to a `dnf-generator` taken from a branch rather than from a
-  published release.
+- `CHANGELOG.md` has no section for this version;
+- the lock file points to a `dnf-generator` taken from a branch rather than from a published release.
 
 The three `ci.yml` checks (unit tests, evaluation, lint) are replayed via
-`workflow_call`, then the changelog section becomes the notes of the GitHub
-*release*.
+`workflow_call`, then the changelog section becomes the GitHub *release* notes.
+
+<Aside type="caution" title="Tag pushed, release missing">
+Never move or recreate the tag: FlakeHub has already published it.
+
+- Transient failure (runner down, network)&nbsp;: `gh run rerun <id> --failed`
+  replays the failed *jobs* with the tag's *workflows*.
+- Defect in the tagged tree&nbsp;: the number is lost. Fix on `main`,
+  then `just release patch`.
+</Aside>
 
 {/* t:p 76bf7c0ae965537388dc68bc0a93388c26f12d5dae428fd2ad7c9594d61c1900 */}
 ## Shared configuration

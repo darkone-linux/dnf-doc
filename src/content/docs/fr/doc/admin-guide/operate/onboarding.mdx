@@ -9,15 +9,15 @@ lang: fr
 import { Steps } from '@astrojs/starlight/components';
 
 {/* t:main */}
-{/* t:h e5de76e5e3d95f4baf0cc4f3513ad8b34b36f62e7190219e22d51482c0d37d5b */}
+{/* t:h 870ddc2274826251b4d9ad06d33ff344887135eaa6d90efbcb3e1627a4fa53ce */}
 
-{/* t:p 27d6fbf5ef43f7c5cf9a09cc31923115e92cb7fb31893ed971e8b11bd279b4cf */}
+{/* t:p 5f20348fb99615e854d9f38e8adb03e4d8d5be6e570b44cfc064876b4e203811 */}
 Deux alternatives, selon l'autonomie de l'utilisateur&nbsp;:
 
 - **Non technicien** (découvre l'informatique) : on lui demande le moins possible.
 - **Technicien** (habitué à l'outil informatique) : définit lui-même ses accès.
 
-{/* t:p 2cef649a573d8ae4cb71a068c62eae3dd4356a1bba31bf4506c9c1955111391e */}
+{/* t:p ef2d716515e4cf8b4b3cd747fea80f8bbfeeb0822e635506883f2e4726cc8f3d */}
 ## Trois types de comptes
 
 | Type | Déclaration | Accès |
@@ -26,7 +26,7 @@ Deux alternatives, selon l'autonomie de l'utilisateur&nbsp;:
 | **Services** | Vaultwarden, Kanidm | services et coffre-fort, Matrix |
 | **Ami Matrix** | [Jeton Matrix](/fr/doc/admin-guide/operate/matrix/#inscrire-des-amis) | Matrix seul |
 
-{/* t:p 00210d7bb53801c736daf1f1a1cb644b3a25428277c833a674cf4da16a1ae441 */}
+{/* t:p b42d4379f85000765af2dbf44085251b26c15a05937b708a7f3c95e0051a0ef5 */}
 ## Choisir une alternative
 
 | Secret | Utilisateur non technicien | Utilisateur technicien |
@@ -45,13 +45,13 @@ avec un contact de confiance. Il est utile de&nbsp;:
 - ou conseiller l'activation de cette option aux utilisateurs techniciens.
 :::
 
-{/* t:p 187c07cfb578ef84a2545397ecd52afcb7d71085ebdbdc5110cd542883a1beaf */}
+{/* t:p 50337c132ba9c9b211b9bcb0c953ee5a07f121e4f65d0fea9aaabcdf46dc2797 */}
 ## Déclaration initiale (Linux)
 
 Commune aux deux alternatives&nbsp;: [déclarer, rattacher et déployer](/fr/doc/admin-guide/operate/users/#créer-un-compte-linux-posix)
 l'utilisateur. Le déploiement du HCS crée aussi son compte Kanidm.
 
-{/* t:p c90d4980926cf174558cd55394e1774e62db46485a469e3984d0c9ab7ef19d06 */}
+{/* t:p c495ea0dded5b08b81b575913482bec2ce16a5249dcb704e3a25ea44dda5a8f8 */}
 ## Alternative pour non technicien
 
 L'utilisateur ne retient que son **mot de passe principal**&nbsp;: l'administrateur
@@ -108,7 +108,7 @@ mot de passe principal. Pour rendre l'utilisateur autonome, celui-ci peut sortir
 ses identifiants de la collection commune avec l'administrateur.
 :::
 
-{/* t:p 570ede840384f77dfe7cf7b1bfa7ebebf45d94016a1e6fb200403d89c6a7f835 */}
+{/* t:p 257a4609dc887519647fcfdb45850d2e8b6258586e13a205171312335976f0bd */}
 ## Alternative pour utilisateur technicien
 
 L'administrateur fournit les points d'entrée et l'utilisateur définit ses accès.
@@ -143,17 +143,19 @@ L'administrateur fournit les points d'entrée et l'utilisateur définit ses acc�
 
 </Steps>
 
-{/* t:p 4d48deaa3659a6ae3c361db3a49e556b1448a8452fe04abeafcd9d7fe22bcc29 */}
+{/* t:p 850b98fcb1a42a92439389a4ad7f0a4b562b32feea83ede37efd407c8ae850c2 */}
 ## FAQ
 
 Quelques informations et astuces utiles, à connaître.
 
+{/* t:p dc3c691142354d72cf96455e97eb4c75ffcd042e4bfaf28987da4311c5859a3b */}
 ### Comment réinitialiser un accès ?
 
 Relancer `just invite alice` (ou `advanced`) : un accès déjà défini n'est
 remplacé qu'après confirmation. Voir aussi
 [Réinitialiser le mot de passe d'un utilisateur](/fr/doc/how-to/admin/reset-user-password/).
 
+{/* t:p 7c67db60edf22c09e9413fe47fa35a645022ea11d39aa0401d8ed912ef5afa01 */}
 ### Oubli de mot de passe principal ?
 
 :::danger[L'accès au coffre peut être définitivement perdu]
@@ -169,20 +171,24 @@ D'autres [mécanismes de prévention existent](https://bitwarden.com/fr-fr/help/
 indice du mot de passe, accès d'urgence par personne de confiance, connexion avec un appareil connu,
 clé d'accès alternative...
 
+{/* t:p 810b42877139b565fb36c366d9b9ec178f4be615915236d9945be0d88175a702 */}
 ### Kanidm impose-t-il une 2FA ?
 
 Par défaut oui. Il faut un code TOTP ou une clé d'accès. Rangés dans un élément, la clé ou le TOTP
 peuvent être proposés par la saisie automatique de Bitwarden.
 
+{/* t:p edbe813ac2b5f786d139fe11cf1fb13e3e81dc9e5c631e1bfd7055bbf0fbf152 */}
 ### Et le compte Matrix ?
 
 Il se crée à la première connexion dans Element (bouton **IDM**)&nbsp;: rien à préparer.
 
+{/* t:p 66c69ba6aff707be2044ea67ffb24c8e32e9b2b93d3ef5c7688b8a0a6ea72676 */}
 ### Problème de connexion Bitwarden
 
 **Choisir « self-hosted »** dans Bitwarden est requis. Par défaut, le client Bitwarden se connecte
 à bitwarden.com. Saisir l'URL du Vaultwarden du réseau, puis son mot de passe principal.
 
+{/* t:p 920906047489295e285dceb91b5a4e9989fb81232648d44057f0640799a03af0 */}
 ### Puis-je utiliser ma YubiKey ?
 
 Oui ! C'est même recommandé, c'est plus simple et plus sécurisé.

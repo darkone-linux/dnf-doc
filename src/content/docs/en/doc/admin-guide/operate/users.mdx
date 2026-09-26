@@ -1,7 +1,7 @@
 ---
-title: Users and identities
+title: Manage users
 sidebar:
-  label: Users
+  label: Users (management)
   order: 6
 lang: en
 ---
@@ -9,15 +9,25 @@ lang: en
 import { Steps } from '@astrojs/starlight/components';
 
 {/* t:translated-from fr */}
-{/* t:h a16a904ba4cebc0eb0b300d71e8fdf2acdb7a6b7b8b5ee282b9fb96b6d721679 */}
+{/* t:h b25d2e32652080407bf1b73eae820569c13ebadcdd0cc86a4ac6195e92b9e363 */}
 
-{/* t:p 1156a0686209d54e9f12811173f61e73c611eb3ec899c9961192361308eab2dc */}
+{/* t:p c89892cbe90e10647ecb0dd3686b7f2b7199aaeb509a2d59e7eea08e07b853a6 */}
+This page covers the POSIX account declared in `etc/config.yaml`&nbsp;: declaration,
+attachment to hosts, password, SSH access, deactivation.
+
+{/* t:p 4625c6318926504d52ccd73e994275236778a39e2addaa317634e181714f023e */}
 ## Create a Linux (POSIX) account
 
-Users are declared **once** in `etc/config.yaml`, then **attached** to the hosts
-where they need to open a session. The same account can exist on several machines.
+Users are declared **once** in `etc/config.yaml`, then
+**attached** to the hosts where they must log in. The same account can
+exist on several machines.
 
-{/* t:p 875f3ee8246831006547317554684773380c9a7fdc858a07ebba456a2770e30e */}
+:::tip[End-to-end creation]
+Vault, Kanidm identity, alternatives&nbsp;: see
+[Create a user account](/en/doc/admin-guide/operate/onboarding/).
+:::
+
+{/* t:p 2152a1939de6a4b39e490580942bcce71bb9ca043cc0b2d3c1f39efc1aa43ebf */}
 ### Declare a user
 
 ```yaml
@@ -36,9 +46,12 @@ users:
 | *(key)* | Account login (e.g. `alice`) |
 | `uid` | Stable numeric identifier |
 | `name` | Display name |
-| `email` | Address (also used for the SSO identity) |
+| `email` | Address (also used for SSO identity) |
 | `profile` | [User profile](/en/doc/admin-guide/understand/user-profiles/) (environment) |
-| `groups` | Groups (network and services access) |
+| `groups` | Groups (network access and [services](/en/doc/admin-guide/operate/sso/#identities-and-groups)) |
+
+The HCS deployment also creates a [Kanidm](/en/doc/admin-guide/operate/sso/)
+account for them, without credentials.
 
 {/* t:p f93adb95d0c4124c98ae91d5835b63faf346221b89bc26b732dea3d70af6ffd4 */}
 ### Attach to a host
@@ -57,7 +70,7 @@ hosts:
 Another possibility: attach a user to a host through a common group declared in the shared `groups` list.
 :::
 
-{/* t:p 566263d5256294795aca42d3f61a7a982d58982ddad68b53c267d5382b2f515e */}
+{/* t:p b7fd9f36ef21afd7307aa41ec0973f6ab9ba85eb2d142f56fb3d88f7b731eedd */}
 ### Deploy the changes
 
 Any change to `etc/config.yaml` follows the **same cycle**:
@@ -74,7 +87,7 @@ Any change to `etc/config.yaml` follows the **same cycle**:
    just clean       # generate + fix + format
    ```
 
-3. **Commit in git**
+3. **Validate in git**
 
    ```sh
    just commit "user(new): alice"
@@ -83,7 +96,7 @@ Any change to `etc/config.yaml` follows the **same cycle**:
 4. **Deploy**
 
    ```sh
-   just apply poste-alice     # creates the account on the host
+   just apply @user-alice,hcs     # alice's machines + Kanidm account
    ```
 
 </Steps>
@@ -93,7 +106,7 @@ Any change to `etc/config.yaml` follows the **same cycle**:
 deployment starts from an inconsistent or unversioned state.
 :::
 
-{/* t:p e3a147302d14e2e73b35651a82628b73004bdfcfb0405b111e2fbffcbfca7b06 */}
+{/* t:p 385d7b8413d2a3412c82886dcffefd9f16d5684a588efb81aeb1a47ef53f7e93 */}
 ### Set the password
 
 <Steps>
@@ -104,7 +117,11 @@ deployment starts from an inconsistent or unversioned state.
    just passwd alice
    ```
 
-2. **Commit in git**
+   The user can enter their own password. Remotely, they send
+   their hash (`mkpasswd -m sha-512`), to be pasted with `just sops` under
+   `user.alice.password-hash`.
+
+2. **Validate in git**
 
    ```sh
    just commit "chore(user): alice password"
@@ -118,41 +135,28 @@ deployment starts from an inconsistent or unversioned state.
 
 </Steps>
 
-:::tip[An account has no password until one is set]
-`just passwd <login>` is what enables the session; `just passwd-default`
-only records the reference password of the fleet. See
-[Secrets](/en/doc/admin-guide/operate/secrets/).
+:::note[Only `just passwd` is authoritative]
+- No session before `just passwd <login>`.
+- If changed on a host, the password is overwritten at the next deployment.
+- `just passwd-default` only records the fleet's reference password ([Secrets](/en/doc/admin-guide/operate/secrets/)).
 :::
 
-:::note[Password redefinition (todo)]
-For now, a user cannot redefine their POSIX password for the whole fleet.
-:::
-
-{/* t:p 933885347c28a0e97bb028dbb55fad18f18efa9daf282a64ef33790217809ce9 */}
+{/* t:p 421005f76f592064b2e23a202348e8e08bfa68b07f457d111eb98c98f8a3796c */}
 ## SSH access
 
-SSH access is **key-only** and **fully declarative**, across the entire
-fleet:
+SSH access is **key-only** and **fully declarative**, across the whole
+fleet&nbsp;:
 
-- password and keyboard-interactive disabled (`darkone.system.core`);
-- only declared keys count
-  (`users.users.<login>.openssh.authorizedKeys`) : `~/.ssh/authorized_keys`
-  is no longer read;
-- an account without a declared key opens its local session, never SSH.
+- Password and interactive keyboard are disabled.
+- Declare keys in `users.users.<login>.openssh.authorizedKeys`.
+- An account without a declared key can open a local session, outside SSH.
 
-:::note[The forge is the exception]
+:::note[The forge is an exception]
 The `forgejo` account serves the `git push` of all repositories: its keys are
-those each user deposits in the forge's web interface, not
-those of the NixOS configuration. `sshd` fetches them via
-`AuthorizedKeysCommand`, not from a file. A key is therefore added in
-Forgejo (**Settings → SSH / GPG keys**), never in `config.yaml`.
-:::
-
-:::caution[No more ssh-copy-id bootstrap]
-Without a password channel or a `~/.ssh/authorized_keys` file, `ssh-copy-id` has
-no door in or target either. Every key goes through the configuration then
-`just apply`. Keep a fallback access (console, or the LUKS initrd sshd on
-port 2222) before deploying to a remote host.
+those each user uploads in the forge's web interface, not
+those from the NixOS configuration. `sshd` asks it for them via
+`AuthorizedKeysCommand` rather than from a file. A key is therefore added in
+Forgejo (**Settings → SSH / GPG keys**).
 :::
 
 {/* t:p d5b50329c05599139e966e6f3e3280df40356023c90d591921e3462adfa308b4 */}

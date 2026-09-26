@@ -56,11 +56,11 @@ without a human, so stolen **with** its motherboard it remains
 decryptable.
 :::
 
-{/* t:p 42e908bb9e54804ac5ca92ca06a47b4a453ff777497fa97228ca04dfbc45c6c8 */}
+{/* t:p 5127012456d188e05229f9359674629b13cc51aeec85731ce536d54a3fa7af22 */}
 ## The four Kanidm authentication methods
 
 A Kanidm account exposes several authentication methods, independent of each
-other. The goal is that no key loss can lock an account out.
+other. The goal is that no lost key ever locks an account out.
 
 | Method | Kanidm nature | Support |
 |---|---|---|
@@ -70,14 +70,14 @@ other. The goal is that no key loss can lock an account out.
 | **Password + TOTP** | Primary credential | Safety net, never removed |
 
 The first three are **passkeys**: Kanidm stores them side by side and offers them
-together to the browser. The fourth lives elsewhere (the primary credential) and
-cannot be overwritten by a WebAuthn ceremony.
+together to the browser. The fourth lives elsewhere (the primary credential)
+and cannot be overwritten by a WebAuthn ceremony.
 
-:::note[Enrolment is an administrator action]
-Users do not create their own passkeys, except those of the
-[technical path](/en/doc/admin-guide/operate/onboarding/#technical-path),
-which follow the order below. Each web ceremony includes a choice (vault or
-physical key) whose wrong selection destroys an existing key.
+:::note[Enrollment is an administrator task]
+Users do not create their own passkeys, except
+[technicians](/en/doc/admin-guide/operate/onboarding/#alternative-for-technical-users),
+who follow the order below. Each web ceremony involves a choice
+(vault or physical key) whose wrong selection destroys an existing key.
 :::
 
 {/* t:p a77982213590f9a3866896150357f92a6ef31720ee0461dff55a55700597bac3 */}
