@@ -1333,10 +1333,16 @@ darkone.service.turn.enable = false;
 
 <hr/>
 
-{/* t:p ae3d8ae96b4ef3ed31d2b555066f75c26c1fbee9617228e5753aeff3373190a9 */}
+{/* t:p de961b377d9830aa813863ece9f8993763a6949fd3001b0d940f33de857a6a34 */}
 ### &#x2728; darkone.service.vaultwarden
 
-A full-configured vaultwarden server (wip).
+A full-configured vaultwarden server.
+
+:::note[Admin panel]
+`/admin` answers the LAN and the tailnet only: zones and tailnet resolve the
+service to the HCS tailnet IP. Bitwarden clients (web, extension, mobile)
+stay public.
+:::
 
 * **enable** `bool` Enable local Vaultwarden service
 * **enableSmtp** `bool` Enable SMTP to send emails (recommended, needs `network.smtp`)
