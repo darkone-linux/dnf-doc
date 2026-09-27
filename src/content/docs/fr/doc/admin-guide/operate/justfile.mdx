@@ -794,8 +794,8 @@ Ouvre `usr/secrets/secrets.yaml` dans vim (via l'utilisateur `nix`).
 just sops
 ```
 
-{/* t:p 23268609db8ca3a4750a8aa377880de53f2df779d90db6b1b0af231414ed86f3 */}
-### ✳️ `invite <utilisateur> [mode] [empreinte]` ⭐
+{/* t:p 2628a5585aa23ff94cee6a15811b9810de152a03fd8c101be0b45e9826e9ae8e */}
+### ✳️ `invite <user> [mode] [hash]` ⭐
 
 Accueille un utilisateur ou réinitialise ses accès : mot de passe de session,
 lien Kanidm, invitation au coffre-fort, fiche d'accueil à copier. Un accès déjà
@@ -807,9 +807,9 @@ défini n'est remplacé qu'après confirmation.
 | `advanced` / `a` | Technicien | 24 h, pour l'utilisateur |
 
 ```sh
-just invite alice                  # non technicien
-just invite alice advanced         # technicien
-just invite alice a '<empreinte>'  # technicien, empreinte envoyée à distance
+just invite alice             # non technicien
+just invite alice advanced    # technicien
+just invite alice a '<hash>'  # technicien, empreinte envoyée à distance
 ```
 
 Voir [Créer un compte utilisateur](/fr/doc/admin-guide/operate/onboarding/).
