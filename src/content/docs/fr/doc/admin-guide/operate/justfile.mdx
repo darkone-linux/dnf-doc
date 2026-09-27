@@ -777,6 +777,16 @@ Réinstalle le bootloader avec `NIXOS_INSTALL_BOOTLOADER=1`.
 just fix-boot myserver
 ```
 
+### ✳️ `fix-gdm-greeters <hôtes> [check|apply]`
+
+Réaligne les UID des comptes `gdm-greeter*` sur ceux de nixpkgs.
+Voir [Dépannage](/fr/doc/admin-guide/maintain/troubleshooting/#uid-des-comptes-gdm-greeter-décalés).
+
+```sh
+just fix-gdm-greeters poste-01,poste-02         # diagnostic, n'écrit rien
+just fix-gdm-greeters poste-01,poste-02 apply
+```
+
 ---
 
 {/* t:p b49d5ebe223d56907dafe9ff9a0d06d2ec129382e49a87cc6766a3f851418c01 */}

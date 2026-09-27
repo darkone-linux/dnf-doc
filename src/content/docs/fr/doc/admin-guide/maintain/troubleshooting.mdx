@@ -178,3 +178,25 @@ passerelle dont la synchronisation n'a jamais abouti répond donc `502` sur ses
 services exposés, au lieu de relayer vers un certificat non vérifiable. Premier
 réflexe&nbsp;: `systemctl start sync-caddy-certs` sur la passerelle.
 :::
+
+## UID des comptes gdm-greeter décalés
+
+Symptôme, à chaque activation d'un poste GNOME&nbsp;:
+
+```
+warning: not applying UID change of user 'gdm-greeter-2' (60580 -> 60579)
+```
+
+nixpkgs a renuméroté ses comptes `gdm-greeter*` ; NixOS ne renumérote jamais un
+compte existant. Les postes installés avant gardent les anciens UID, et deux
+greeters peuvent partager le même.
+
+```sh
+just fix-gdm-greeters poste-01,poste-02         # diagnostic, n'écrit rien
+just fix-gdm-greeters poste-01,poste-02 apply
+```
+
+`apply` arrête GDM, recrée les comptes décalés avec les UID déclarés, réattribue
+leurs fichiers puis relance GDM. Un hôte avec une session graphique ouverte est
+laissé de côté : relancer après déconnexion. Sauvegarde de `/etc/passwd` et
+`/etc/shadow` dans `/var/lib/nixos/backup-gdm-greeters-<date>/`.
