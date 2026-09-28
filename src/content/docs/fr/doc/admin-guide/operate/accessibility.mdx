@@ -111,8 +111,8 @@ reste muet sous Linux.
        users: ["alice"]
    ```
 
-   Le profil d'utilisateur ajoute le compte aux groupes `input` et `uinput`,
-   sans lesquels Talon ne peut pas injecter d'événements.
+   Sur l'hôte `umi`, le profil d'utilisateur ajoute le compte aux groupes
+   `input` et `uinput`, sans lesquels Talon ne peut pas injecter d'événements.
 
 2. **Activer l'ouverture de session automatique** dans la configuration de la
    machine, si l'utilisateur ne peut pas utiliser de clavier pour s'identifier&nbsp;:
@@ -268,5 +268,10 @@ figure dans les `users` de l'hôte. Retirer la ligne de `configuration.nix`.
 ### Un compte UMI peut-il choisir GNOME ?
 
 Non sur un hôte `umi`&nbsp;: la session Cinnamon est réimposée à chaque
-démarrage, car Talon exige X11. Sur un autre hôte, le compte ouvre une session
-GNOME Wayland, sans Talon.
+démarrage, car Talon exige X11.
+
+### Et sur un poste ordinaire ?
+
+Le compte ouvre la session GNOME Wayland de l'hôte, avec le clavier visuel de
+GNOME, le curseur et le texte agrandis. Talon et Onboard, qui exigent X11,
+restent inactifs.
