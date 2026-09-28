@@ -388,67 +388,76 @@ darkone.home.office = {
 
 <hr/>
 
-{/* t:p 6b680883b6e70004f1c4282bd8d309bca0c375c25be9bace4ec444e36705edab */}
-### &#x1F3E0; darkone.home.umi
+{/* t:p 699279bd25188b672928b67f8e8129e10ee254f1d706557d90f24d6a8a503c31 */}
+### 🏠 darkone.home.umi
 
 Unified Multimodal Input (UMI)
 
-Écran tactile + voix + regard (Talon démarrage automatique + Onboard).
+Écran tactile + voix + regard (démarrage automatique de Talon + Onboard).
 
-:::note[Complémentaire au profil hôte umi]
-L'hôte doit fournir udev/uinput et la session Cinnamon X11 (voir
-`darkone.host.umi`, qui définit UMI). Ce module configure côté utilisateur : activation du
-clic par stationnement (`enableDwell`), clavier Onboard ancré toujours visible avec
-prédiction de mots et modificateurs persistants, et démarrage automatique de la session Talon.
+:::note[La session dépend de l'hôte]
+- **Hôte `darkone.host.umi`** : session Cinnamon X11 (udev, uinput, Talon
+  fournis par l'hôte). Talon et un clavier Onboard ancré (prédiction de
+  mots, modificateurs persistants) démarrent avec la session.
+- **Tout autre hôte** : GNOME Wayland avec son accessibilité native : clavier
+  à l'écran, gros pointeur et texte. Talon et Onboard, uniquement X11,
+  restent désactivés.
+
+Clic par dwell (`enableDwell`) activable dans les deux cas.
 :::
 
 :::tip[Scripts communautaires]
-Définir `communityScripts` sur un arbre github:talonhub/community récupéré pour obtenir
-le contrôle vocal et du pavage oculaire (zoom souris, pop click) de manière déclarative.
+Définissez `communityScripts` sur un arbre github:talonhub/community récupéré
+pour obtenir le contrôle vocal complet de la souris et du regard (zoom de la
+souris, pop click) de façon déclarative.
 :::
 
-:::note[Doubles schémas]
-La session UMI est Cinnamon (org/cinnamon/*) mais les clés GNOME
-(org/gnome/*) restent synchronisées : mousetweaks lit le schéma d'accessibilité GNOME,
-et ils servent de repli si l'utilisateur se retrouve un jour dans une session GNOME.
-Exception : les clés verrouillées par le module DNF gnome ne sont jamais répliquées ici,
-une écriture sur une clé verrouillée interrompt l'ensemble du `dconf load` de home-manager.
-Le verrouillage d'écran reste activé côté GNOME (verrouillé par le module DNF gnome) ;
-`idle-delay = 0` évite de le déclencher, et la session Cinnamon a son
-propre verrouillage entièrement désactivé.
+:::note[Deux schémas]
+Les réglages vont vers les deux familles : org/cinnamon/* pour la session
+UMI de l'hôte, org/gnome/* pour les sessions GNOME ailleurs (mousetweaks
+les lit aussi). Exception : les clés verrouillées par le module gnome de
+DNF ne sont jamais écrites ici, une écriture sur une clé verrouillée
+interrompt tout le `dconf load` de home-manager.
+Le verrouillage de session reste activé côté GNOME (verrouillé par le module
+gnome de DNF) ; `idle-delay = 0` évite de le déclencher, et la session
+Cinnamon a le sien entièrement désactivé.
 :::
 
-:::caution[Trousseau de connexion : deux modes, décidés par l'hôte]
-Une session de connexion automatique ne saisi aucun mot de passe, donc PAM n'a rien à transmettre
-à gnome-keyring et chaque application utilisant des secrets affiche une invite gcr que l'utilisateur
-UMI ne peut pas répondre. La façon d'éviter cela dépend de l'hôte :
+:::caution[Keyring de connexion : utilisateur en autologin uniquement, deux modes selon l'hôte]
+Une session en autologin ne saisit aucun mot de passe, PAM n'a donc rien à
+transmettre à gnome-keyring et chaque application utilisant un secret affiche
+une invite gcr que l'utilisateur UMI ne peut pas répondre. Une connexion par
+mot de passe déverrouille le keyring comme d'habitude et n'est pas touchée.
+Pour l'utilisateur en autologin, la correction dépend de l'hôte :
 
-- **Hôte non chiffré** : le trousseau de connexion est initialisé avec un mot de passe vide,
-  que gnome-keyring stocke en texte clair et déverrouille de lui-même (il essaie
-  un mot de passe vide avant de proposer une invite). Tout trousseau préexistant protégé par mot de passe
-  est supprimé — sa phrase de passe est impossible à saisir ici, il ne peut donc que
-  produire l'invite en permanence. La connexion automatique accorde déjà l'ensemble de la session à
-  quiconque démarre la machine, il n'y a donc pas de perte de confidentialité réelle.
+- **Hôte non chiffré** : le keyring de connexion est initialisé avec un mot de
+  passe vide, que gnome-keyring stocke en clair et déverrouille seul (il
+  essaie un mot de passe vide avant de demander). Tout keyring préexistant
+  protégé par mot de passe est supprimé : sa phrase secrète est
+  impossible à saisir ici, elle ne pourrait donc que produire indéfiniment
+  l'invite. L'autologin accorde déjà toute la session à quiconque démarre la
+  machine, cela ne coûte donc rien en confidentialité.
 - **Hôte chiffré** (`darkone.system.luks.volumes` non vide) : rien n'est
-  initialisé. La phrase de passe saisie au démarrage est mise en cache dans le trousseau noyau et
-  transmise à gnome-keyring par `pam_gdm`, le trousseau reste donc chiffré avec
-  elle. C'est le seul mode qui protège les secrets au repos.
+  initialisé. La phrase secrète saisie au démarrage est mise en cache dans
+  le keyring du noyau et transmise à gnome-keyring par `pam_gdm`, le
+  keyring reste donc chiffré avec elle. C'est le seul mode qui protège les
+  secrets au repos.
 
-Attention, hôtes chiffrés uniquement : la rotation de la phrase de passe LUKS (valeur
-sops modifiée, `luks-passphrase-sync`) laisse le trousseau sur l'ancienne — GNOME
-signale ensuite « Le mot de passe que vous utilisez pour vous connecter à votre ordinateur ne
-correspond plus à celui de votre trousseau de connexion ». Supprimer
-`~/.local/share/keyrings/login.keyring` et se reconnecter.
+Piège, hôtes chiffrés uniquement : faire tourner la phrase secrète LUKS
+(valeur sops modifiée, `luks-passphrase-sync`) laisse le keyring sur
+l'ancienne. GNOME affiche alors « The password you use to log in to your
+computer no longer matches that of your login keyring ». Supprimez
+`~/.local/share/keyrings/login.keyring` et reconnectez-vous.
 :::
 
-* **enable** `bool` Configuration d'entrée multimodale UMI (Talon + Onboard)
-* **enableTalonAutostart** `bool` Démarrer Talon à la connexion de la session (talon doit être dans PATH).
+* **enable** `bool` Configuration de l'entrée multimodale UMI (Talon + Onboard)
+* **enableTalonAutostart** `bool` Démarrer Talon à l'ouverture de session (talon doit être dans le PATH).
 * **communityScripts** `nullOr package` Arbre talonhub/community déployé dans ~/.talon/user/community.
-* **enableDwell** `bool` clic par stationnement : cliquer en reposant le pointeur. Désactivé par défaut — il n'est
-  utilisable qu'avec un tracker oculaire, et avec une souris il se déclenche sur ce
-  sur quoi le pointeur était positionné (le menu d'accessibilité activant le zoom ou le clavier
-  à l'écran, typiquement)
-* **dwellTime** `float` Délai du clic par stationnement en secondes.
+* **enableDwell** `bool` Clic par dwell : cliquer en laissant le pointeur au repos. Désactivé par défaut — uniquement
+  utilisable avec un tracker oculaire, et à la souris il se déclenche sur ce que
+  le pointeur a laissé en dessous (typiquement le menu d'accessibilité
+  activant le zoom ou le clavier à l'écran)
+* **dwellTime** `float` Délai du clic par dwell en secondes.
 
 ```nix
 darkone.home.umi = {

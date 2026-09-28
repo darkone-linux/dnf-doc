@@ -45,30 +45,31 @@ advanced -> student
 admin -> nixadmin
 ```
 
-{/* t:p 9541bd4a9788a4ff38b843f98cd81df90bfc2cdc5b22807aebe6e921b891d286 */}
-## The profiles
+{/* t:p 1515a3eadaec684ae4f4676b7ef25b8e5d2625716e59b04c3cf48564bfc89aa8 */}
+## Profiles
 
-| Profile | For whom | Inherits from |
+| Profile | Intended for | Inherits from |
 |---|---|---|
 | `minimal` | Base of every profile | |
 | `normal` | Standard user (desktop) | `minimal` |
-| `advanced` | Developers, computer scientists | `normal` |
+| `advanced` | Developers, IT specialists | `normal` |
 | `umi` | User with multimodal input (touch, voice, gaze) | `normal` |
 | `admin` | Network administrator | `advanced` |
-| `nix-admin` | Fleet administrator (Nix tools) | `admin` |
+| `nix-admin` | Fleet administrator (Nix tooling) | `admin` |
 | `student` | Student | `advanced` |
 | `teenager` | Teenager | `minimal` |
 | `gamer` | Gamer | `minimal` |
 | `child` | Child (technical icons hidden) | `minimal` |
 | `baby` | Very young child | `minimal` |
 
-:::tip[The `umi` profile comes as a pair]
-It only makes sense on a host in `umi` profile, which provides the X11 session
-and support for input devices (eye tracker, event injection). See
-[Accessibility](/en/doc/admin-guide/operate/accessibility/).
+:::tip[The `umi` profile and its host]
+It only makes full sense on a host using the `umi` profile, which provides the X11
+session and support for input devices (eye tracker, event injection).
+On any other host, the account keeps GNOME and its on-screen keyboard.
+See [Accessibility](/en/doc/admin-guide/operate/accessibility/).
 :::
 
-:::tip[User side]
+:::tip[On the user side]
 A usage-oriented overview is available in the
 [user guide](/en/doc/user-guide/understand/profiles/).
 :::

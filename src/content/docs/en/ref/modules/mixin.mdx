@@ -197,7 +197,7 @@ darkone.host.server = {
 
 <hr/>
 
-{/* t:p e37e61c0a610091ca01fe18b2a13647e83cafdf83f1e26799384a0ce93e9322d */}
+{/* t:p e9849f054ddb95100ac62edf8720767a794fb6b7900993299f80f899b8e9d08e */}
 ### &#x1F4E6; darkone.host.umi
 
 Host profile: UMI (Unified Multimodal Input) workstation, usable without keyboard/mouse.
@@ -218,9 +218,9 @@ uinput event injection and Tobii udev rules.
 Talon requires X11 (Wayland unsupported upstream, not planned) and
 GNOME 50 dropped its Xorg session, so UMI sessions run Cinnamon (X11,
 GNOME-like UX, native tray) while other users keep GNOME Wayland. The
-users listed in `gazeUsers` (plus `autoLoginUser`) get their saved GDM
-session seeded to "cinnamon" through AccountsService; GDM keeps managing
-the file afterwards.
+host users whose home enables `darkone.home.umi` (`umi` user profile) get
+their saved GDM session pinned to "cinnamon" through AccountsService, at
+every boot: a keyboard-free user cannot pick a session at the greeter.
 :::
 
 :::caution[Talon package]
@@ -246,15 +246,13 @@ endpoints), never through /dev/video*.
 :::
 
 * **enable** `bool` UMI host configuration: multimodal input, touch + voice + gaze (Onboard, Talon, Tobii)
-* **autoLoginUser** `nullOr str` Auto-login user (mandatory for a keyboard-free session).
-* **gazeUsers** `listOf str` UMI users whose GDM session is seeded to Cinnamon/X11 (autoLoginUser is always included).
+* **autoLoginUser** `nullOr str` Auto-login user (mandatory for a keyboard-free session), a host user with the `umi` profile.
 * **package** `nullOr package` Talon package (defaults to `pkgs.talon` from the talon-nix overlay when available).
 
 ```nix
 darkone.host.umi = {
   enable = false;
   autoLoginUser = null;
-  gazeUsers = [ ];
   package = pkgs.talon or null;
 };
 ```

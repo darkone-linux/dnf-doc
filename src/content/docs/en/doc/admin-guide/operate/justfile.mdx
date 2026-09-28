@@ -716,13 +716,24 @@ just nfs-cleanup myserver          # dry run, writes nothing
 just nfs-cleanup myserver apply    # actual execution
 ```
 
-{/* t:p 4873218939a6b08ab3b5c3fcb2627475521a93d2f57aad33722e0d5bbd58c4bb */}
-### ✳️ `fix-boot <host>`
+{/* t:p 6d9a61229063eda367273336d0ad2b8dc32f07bfbf01d167587d3ca4882500e1 */}
+### ✳️ `fix-boot <hôte>`
 
 Reinstalls the bootloader with `NIXOS_INSTALL_BOOTLOADER=1`.
 
 ```sh
 just fix-boot myserver
+```
+
+{/* t:p 7f6c07f48212376864957033a1729e07dd4cf8824d08aeec90e40a4afe878158 */}
+### ✳️ `fix-gdm-greeters <hôtes> [check|apply]`
+
+Realigns the UIDs of `gdm-greeter*` accounts with those of nixpkgs.
+See [Troubleshooting](/en/doc/admin-guide/maintain/troubleshooting/#misaligned-gdm-greeter-uids).
+
+```sh
+just fix-gdm-greeters poste-01,poste-02         # diagnostic, n'écrit rien
+just fix-gdm-greeters poste-01,poste-02 apply
 ```
 
 ---

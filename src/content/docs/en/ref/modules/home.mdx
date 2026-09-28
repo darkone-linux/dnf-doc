@@ -393,18 +393,21 @@ darkone.home.office = {
 
 <hr/>
 
-{/* t:p 6b680883b6e70004f1c4282bd8d309bca0c375c25be9bace4ec444e36705edab */}
+{/* t:p 699279bd25188b672928b67f8e8129e10ee254f1d706557d90f24d6a8a503c31 */}
 ### &#x1F3E0; darkone.home.umi
 
 Unified Multimodal Input (UMI)
 
 Touchscreen + voice + gaze (Talon autostart + Onboard).
 
-:::note[Pairs with the umi host profile]
-The host must provide udev/uinput and the Cinnamon X11 session (see
-`darkone.host.umi`, which defines UMI). This module configures the user side: opt-in dwell
-click (`enableDwell`), always-visible docked Onboard keyboard with word
-prediction and sticky modifiers, and Talon session autostart.
+:::note[Session depends on the host]
+- **`darkone.host.umi` host**: Cinnamon X11 session (udev, uinput, Talon
+  provided by the host). Talon and a docked Onboard keyboard (word
+  prediction, sticky modifiers) start with the session.
+- **Any other host**: GNOME Wayland with its native accessibility: on-screen
+  keyboard, big pointer and text. Talon and Onboard, X11-only, stay off.
+
+Opt-in dwell click (`enableDwell`) in both cases.
 :::
 
 :::tip[Community scripts]
@@ -413,20 +416,20 @@ full voice and gaze mouse control (zoom mouse, pop click) declaratively.
 :::
 
 :::note[Dual schemas]
-The UMI session is Cinnamon (org/cinnamon/*) but the GNOME keys
-(org/gnome/*) are kept in sync: mousetweaks reads the GNOME a11y schema,
-and they serve as fallback if the user ever lands in a GNOME session.
-Exception: keys locked by the DNF gnome module are never mirrored here,
+Settings go to both families: org/cinnamon/* for the UMI host session,
+org/gnome/* for GNOME sessions elsewhere (mousetweaks reads it too).
+Exception: keys locked by the DNF gnome module are never written here,
 a write to a locked key aborts the whole home-manager `dconf load`.
 Screen locking stays enabled GNOME-side (locked by the DNF gnome module);
 `idle-delay = 0` avoids triggering it, and the Cinnamon session has its
 own lock fully disabled.
 :::
 
-:::caution[Login keyring: two modes, decided by the host]
+:::caution[Login keyring: autologin user only, two modes decided by the host]
 An autologin session types no password, so PAM has nothing to hand to
 gnome-keyring and every secret-using app pops a gcr prompt the UMI user
-cannot answer. How that is avoided depends on the host:
+cannot answer. A password login unlocks the keyring as usual and is left
+alone. For the autologin user, the fix depends on the host:
 
 - **Unencrypted host**: the login keyring is seeded with an empty password,
   which gnome-keyring stores in plain text and unlocks on its own (it tries

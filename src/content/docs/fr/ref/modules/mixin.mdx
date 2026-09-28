@@ -187,64 +187,43 @@ darkone.host.server = {
 };
 ```
 
-{/* t:p e37e61c0a610091ca01fe18b2a13647e83cafdf83f1e26799384a0ce93e9322d */}
+{/* t:p e9849f054ddb95100ac62edf8720767a794fb6b7900993299f80f899b8e9d08e */}
 ### &#x1F4E6; darkone.host.umi
 
-Profil d'hôte : poste UMI (Unified Multimodal Input), utilisable sans clavier ni souris.
+Profil hôte : poste de travail UMI (Unified Multimodal Input), utilisable sans clavier ni souris.
 
 :::note[UMI : Unified Multimodal Input]
-Objectif d'accessibilité : des entrées coordonnées (toucher, voix, regard…) remplacent
-le clavier et la souris, combinées selon les capacités de l'utilisateur. Pile actuelle :
-Onboard sur écran tactile, commandes vocales Talon, Tobii Eye Tracker 5 piloté via Talon.
+Objectif d'accessibilité : des entrées coordonnées (tactile, voix, regard…) remplacent le clavier et la souris, combinées pour s'adapter aux capacités de l'utilisateur. Pile actuelle : Onboard sur écran tactile, commandes vocales Talon, Tobii Eye Tracker 5 piloté via Talon.
 :::
 
-:::note[Hérite du profil desktop]
-Hérite du profil desktop complet (GNOME, multimédia, bureautique) et ajoute les
-prérequis UMI : une session Cinnamon X11 pour les utilisateurs UMI, l'auto-login,
-l'injection d'événements uinput et les règles udev Tobii.
+:::note[Étend le poste de travail]
+Hérite du profil poste de travail complet (GNOME, multimédia, bureautique) et ajoute les prérequis UMI : une session Cinnamon X11 pour les utilisateurs UMI, la connexion automatique, l'injection d'événements uinput et les règles udev Tobii.
 :::
 
 :::tip[Coexistence X11 / Wayland]
-Talon nécessite X11 (Wayland non pris en charge en amont, pas prévu) et
-GNOME 50 a supprimé sa session Xorg, donc les sessions UMI tournent sous Cinnamon (X11,
-UX proche de GNOME, barre système native) tandis que les autres utilisateurs conservent
-GNOME Wayland. Les utilisateurs listés dans `gazeUsers` (plus `autoLoginUser`) voient
-leur session GDM sauvegardée initialisée sur "cinnamon" via AccountsService ; GDM
-continue à gérer le fichier ensuite.
+Talon exige X11 (Wayland non supporté en amont, non prévu) et GNOME 50 a supprimé sa session Xorg, les sessions UMI utilisent donc Cinnamon (X11, ergonomie proche de GNOME, tray natif) tandis que les autres utilisateurs conservent GNOME Wayland. Les utilisateurs de l'hôte dont le home active `darkone.home.umi` (profil utilisateur `umi`) voient leur session GDM enregistrée épinglée sur «&nbsp;cinnamon&nbsp;» via AccountsService, à chaque démarrage : un utilisateur sans clavier ne peut pas choisir de session à l'écran de connexion.
 :::
 
 :::caution[Paquet Talon]
-`pkgs.talon` provient de l'entrée `talon-nix` branchée dans le flake DNF
-(x86_64-linux uniquement, archive amont non libre). Avec `package = null`,
-udev/uinput/a11y sont tout de même configurés et Talon peut être lancé manuellement
-(steam-run sur l'archive amont, ce qui conserve la mise à jour automatique).
+`pkgs.talon` provient de l'input `talon-nix` câblé dans le flake DNF (x86_64-linux uniquement, tarball amont non libre). Avec `package = null`, udev/uinput/a11y restent configurés et Talon peut être lancé manuellement (steam-run sur le tarball amont, ce qui conserve la mise à jour automatique).
 :::
 
 :::tip[Premier lancement]
-Le firmware du Tobii 5 doit être initialisé une fois sur une machine Windows
-(Tobii Experience). Au premier démarrage de Talon, rebranchez le tracker puis
-redémarrez Talon (udev), puis lancez la calibration depuis le menu Talon.
+Le firmware du Tobii 5 doit être initialisé une fois sur une machine Windows (Tobii Experience). Au premier démarrage de Talon, rebranchez le tracker puis redémarrez Talon (udev), et lancez l'étalonnage depuis le menu Talon.
 :::
 
-:::note[Bruit attendu du noyau]
-Le tracker déclare deux interfaces de classe vidéo (caméras oculaires IR brutes) que
-uvcvideo ne peut pas gérer : `Unknown video format`, `No supported video formats
-found`, `probe with driver uvcvideo failed with error -22`. Sans danger et
-souhaité : aucun pilote noyau ne revendique les interfaces, donc libusb les obtient
-librement. Le tracker est atteint via l'interface 0 (spécifique au fournisseur,
-endpoints bulk), jamais via /dev/video*.
+:::note[Bruit noyau attendu]
+Le tracker déclare deux interfaces de classe vidéo (caméras oculaires IR brutes) que uvcvideo ne sait pas gérer&nbsp;: `Unknown video format`, `No supported video formats found`, `probe with driver uvcvideo failed with error -22`. Sans gravité et souhaité : aucun pilote noyau ne réclame ces interfaces, libusb les obtient donc librement. Le tracker est jointé par l'interface 0 (spécifique au fabricant, points de terminaison bulk), jamais via /dev/video*.
 :::
 
-* **enable** `bool` Configuration de l'hôte UMI : entrées multimodales, toucher + voix + regard (Onboard, Talon, Tobii)
-* **autoLoginUser** `nullOr str` Utilisateur en auto-login (obligatoire pour une session sans clavier).
-* **gazeUsers** `listOf str` Utilisateurs UMI dont la session GDM est initialisée sur Cinnamon/X11 (autoLoginUser est toujours inclus).
-* **package** `nullOr package` Paquet Talon (par défaut `pkgs.talon` de l'overlay talon-nix quand il est disponible).
+* **enable** `bool` Configuration hôte UMI&nbsp;: entrée multimodale, tactile + voix + regard (Onboard, Talon, Tobii)
+* **autoLoginUser** `nullOr str` Utilisateur en connexion automatique (obligatoire pour une session sans clavier), un utilisateur hôte avec le profil `umi`.
+* **package** `nullOr package` Paquet Talon (par défaut `pkgs.talon` provenant de l'overlay talon-nix, s'il est disponible).
 
 ```nix
 darkone.host.umi = {
   enable = false;
   autoLoginUser = null;
-  gazeUsers = [ ];
   package = pkgs.talon or null;
 };
 ```

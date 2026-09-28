@@ -174,3 +174,26 @@ sync never succeeded therefore returns `502` on its exposed services, instead
 of relaying to a certificate that cannot be verified. First step:
 `systemctl start sync-caddy-certs` on the gateway.
 :::
+
+{/* t:p a263e11d277daad81d933977ff7ed7b7fe37a90b7c6c319ddab3b5a9df926397 */}
+## Misaligned gdm-greeter UIDs
+
+Symptom, on every GNOME&nbsp;workstation startup:
+
+```
+warning: not applying UID change of user 'gdm-greeter-2' (60580 -> 60579)
+```
+
+nixpkgs renumbered its `gdm-greeter*` accounts; NixOS never renumbers an existing
+account. Workstations installed before keep the old UIDs, and two greeters can
+end up sharing the same one.
+
+```sh
+just fix-gdm-greeters poste-01,poste-02         # diagnostic, writes nothing
+just fix-gdm-greeters poste-01,poste-02 apply
+```
+
+`apply` stops GDM, recreates the misaligned accounts with the declared UIDs,
+reassigns their files, then restarts GDM. A host with an open graphical session
+is left aside: restart after logging out. Backup of `/etc/passwd` and
+`/etc/shadow` in `/var/lib/nixos/backup-gdm-greeters-<date>/`.

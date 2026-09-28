@@ -13,20 +13,20 @@ sidebar:
 **Un module d'application GUI** installe des applications graphiques et leur configuration optimisée pour DNF.
 :::
 
-{/* t:p 918755c0433e74935a1d84e103acfd707ccd1ab2b205f1ad831e00ce5246f5dc */}
+{/* t:p 1e16a5aec9f856e43c662690094f5cc7298ea425ad5d13438bacb18b27b3a1bc */}
 ### &#x1F5BC; darkone.graphic.gnome
 
-Environnement gnome préconfiguré avec ses dépendances.
+Environnement GNOME préconfiguré avec ses dépendances.
 
-* **enable** `bool` WM gnome préconfiguré
-* **enableDashToDock** `bool` Plugin Dash to dock
-* **enableLightDM** `bool` Active LightDM à la place de GDM
-* **enableCaffeine** `bool` Désactive la mise en veille automatique
+* **enable** `bool` Environnement GNOME préconfiguré
+* **enableDashToDock** `bool` Extension Dash to dock
+* **enableLightDM** `bool` Utiliser LightDM au lieu de GDM
+* **enableCaffeine** `bool` Désactiver la mise en veille automatique
 * **enableGsConnect** `bool` Communication avec les appareils
 * **enableOnlineServices** `bool` Comptes en ligne, CalDAV, CardDAV...
-* **xkbVariant** `str` Variante du clavier. La disposition est extraite du keymap de la console.
-* **screenBlankDelay** `ints.unsigned` Délai d'extinction de l'écran en secondes (0 = jamais). Les laptops le remplacent par 900 (15 min).
-* **cursorSize** `ints.positive` Taille du curseur en pixels, verrouillée à l'échelle de l'hôte. Les hôtes UMI (`darkone.host.umi`) le portent à 48.
+* **xkbVariant** `str` Variante du clavier. La disposition est déduite de la keymap de la console.
+* **screenBlankDelay** `ints.unsigned` Délai d'extinction de l'écran en secondes (0 = jamais). Les portables l'imposent à 900 (15 min).
+* **cursorSize** `ints.positive` Taille par défaut du pointeur en pixels, modifiable par l'utilisateur (*Paramètres → Accessibilité*).
 
 ```nix
 darkone.graphic.gnome = {

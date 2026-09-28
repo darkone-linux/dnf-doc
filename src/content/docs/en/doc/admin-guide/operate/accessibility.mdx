@@ -86,12 +86,13 @@ machine, using the Tobii Experience app. Without this step, the tracker
 stays silent under Linux.
 :::
 
-{/* t:p 45bfc590a6967410ff88a1e5f880196dc7d56756b10c4fc844893e874e167a2e */}
-## Setting up a workstation
+{/* t:p c93bd4bce346f19414cf1a72c28ea9c48f9cd03b41029e5db702755dea9b82e1 */}
+## Set up a workstation
 
 <Steps>
 
-1. **Declare the host and its user** in `etc/config.yaml`, both with the `umi` profile&nbsp;:
+1. **Declare the host and its user** in `etc/config.yaml`, both with the `umi`
+   profile:
 
    ```yaml
    # etc/config.yaml
@@ -104,22 +105,24 @@ stays silent under Linux.
 
    hosts:
      - hostname: "umi-desktop"
-       name: "Poste accessible"
+       name: "Accessible workstation"
        zone: "maison:2.3"
        profile: "umi"
        users: ["alice"]
    ```
 
-   The user profile adds the account to the `input` and `uinput` groups, without which Talon cannot inject events.
+   On the `umi` host, the user profile adds the account to the `input` and
+   `uinput` groups, without which Talon cannot inject events.
 
-2. **Enable automatic login** in the machine's configuration, if the user cannot use a keyboard to sign in&nbsp;:
+2. **Enable automatic login** in the machine configuration, if the user cannot
+   use a keyboard to sign in:
 
    ```nix
    # usr/machines/umi-desktop/configuration.nix
    darkone.host.umi.autoLoginUser = "alice";
    ```
 
-3. **Generate and deploy**&nbsp;:
+3. **Generate and deploy**:
 
    ```sh
    just generate
@@ -129,29 +132,33 @@ stays silent under Linux.
 4. **Test and configure**
 
    :::caution[Eye tracker: calibrate on first launch]
-   Unplug then replug the tracker (the udev rules only apply on plug-in), restart Talon, then launch calibration from its menu.
+   Unplug and replug the tracker (udev rules only apply on plug-in), restart
+   Talon, then run the calibration from its menu.
    :::
 
 </Steps>
 
-:::tip[Multiple users on the same machine]
-Only the account listed in `autoLoginUser` opens its session by itself. The other UMI accounts declare themselves in `gazeUsers` to inherit the Cinnamon session. Ordinary accounts keep their usual GNOME Wayland session.
+:::tip[Several users on the same machine]
+Only the account listed in `autoLoginUser` signs in on its own. Every host
+account with the `umi` profile starts the Cinnamon session, imposed at each
+boot. Ordinary accounts keep their usual GNOME Wayland session.
 :::
 
-{/* t:p 91f9cdcda861e354cfe03cf5ac4a4e5104a11ca0cd7e6c5b93d1f52c970f6833 */}
-## Configuring the host
+{/* t:p 57599746c00cceec0b12d6c259f69fb9eb4bf98494f38209a29bee06769d874b */}
+## Configure the host
 
-`darkone.host.umi` options, to set in `usr/machines/<host>/configuration.nix`.
+Options of `darkone.host.umi`, to set in `usr/machines/<host>/configuration.nix`.
 
 | Option | Default | Role |
 |---|---|---|
-| `enable` | enabled by the profile | Enables the host profile |
-| `autoLoginUser` | `null` | Account opened automatically at boot |
-| `gazeUsers` | `[ ]` | Other accounts whose GDM session is Cinnamon/X11 |
+| `enable` | enabled by the profile | Activates the host profile |
+| `autoLoginUser` | `null` | `umi` account started at boot |
 | `package` | `pkgs.talon` | Talon package, or `null` to install it manually |
 
-:::note[Talon missing or unwanted]
-With `package = null`, everything else is configured (udev, uinput, accessibility) and Talon can be launched manually from the upstream archive, which preserves its automatic update.
+:::note[Talon absent or unwanted]
+With `package = null`, everything else is configured (udev, uinput,
+accessibility) and Talon can be launched manually from the upstream archive,
+which preserves its automatic update.
 :::
 
 {/* t:p 709e9bc89795b7865cbf37293e4ceb74278f0810e2eae35831824159682f5e89 */}
@@ -192,53 +199,64 @@ click by tongue click. They are declared reproducibly:
 ```
 :::
 
-{/* t:p 5044490a8abeb5837bee3f39342be30b9e5ecdfdb568bfbb2cebd68ad5353c7f */}
+{/* t:p 82e859a9b5a9d723bb26f02386ba865d0b9743d4928e2437863afb118d29e05d */}
 ## What the profile changes
 
-The workstation is deliberately stripped of anything that assumes a keyboard or
-a mouse.
+The workstation is deliberately stripped of everything that requires a keyboard
+or a mouse.
 
 | Change | Reason |
 |---|---|
 | Cinnamon session on X11 | Talon (unfortunately) does not work under Wayland |
-| Automatic login | No password can be entered |
+| Automatic login | No password to type |
 | Locking and sleep disabled | A locked screen is a dead end |
-| Passwordless keyring | Avoids an impossible-to-fill prompt (unencrypted host only) |
-| Enlarged cursor and text | Limited accuracy of gaze (a few dozen pixels) and of the finger |
-| Visual keyboard anchored at bottom | Always available, large targets, word prediction |
+| Passwordless keyring | Avoids an impossible prompt (automatic login, unencrypted host) |
+| Enlarged cursor and text | Limited precision of the gaze (a few dozen pixels) and of the finger |
+| On-screen keyboard docked at the bottom | Always available, large targets, word prediction |
 
-:::danger[The workstation is not protected at startup]
-Automatic login, no screen locking&nbsp;: anyone who
-turns on the machine is in the session. The only useful barrier is
-[disk encryption](/en/doc/admin-guide/operate/luks/), to plan for from
-installation if the workstation is mobile.
+:::danger[The workstation is not protected at boot]
+Automatic login, no screen lock: whoever turns the machine on is in the
+session. The only effective safeguard is [disk encryption](/en/doc/admin-guide/operate/luks/),
+to be planned from installation if the workstation is mobile.
 
-Login through facial recognition is on the TODO list.
+Face recognition login is on the TODO list.
 :::
 
 :::note[The keyring follows disk encryption]
-Session keyring handling depends on the host&nbsp;:
+Only the automatically signed-in account is concerned: a password login unlocks
+its keyring as usual. For this account, everything depends on the host:
 
-- **unencrypted workstation** : the keyring is created without a password,
-  otherwise the session would open on a prompt that nobody can fill in ;
-- **encrypted workstation (LUKS)** : the passphrase entered at boot is passed to
-  the keyring through the PAM stack of automatic login. The keyring
-  stays protected, and nothing is asked.
+- **unencrypted workstation**: the keyring is created without a password, or the
+  session would open on a prompt nobody can satisfy;
+- **encrypted workstation (LUKS)**: the passphrase entered at boot is passed to
+  the keyring by the automatic login PAM stack. The keyring stays protected,
+  and nothing is asked.
 
-Consequence on an encrypted workstation&nbsp;: changing the LUKS passphrase
-without changing the one in the keyring triggers the message "the login
-password no longer matches the one in your keyring". Then delete
-`~/.local/share/keyrings/login.keyring` and reopen the session.
+Consequence on an encrypted workstation: changing the LUKS passphrase without
+changing the keyring one triggers the "your login password no longer matches
+the one used for your keyring" message. Then delete
+`~/.local/share/keyrings/login.keyring` and log in again.
 :::
 
-{/* t:p 0d6884836da7cb7f47cd1adf7ac95f0476333b18b3c52557168d7f034641bbba */}
-## Diagnostics
+{/* t:p f291b3ad2fd6fafdd32eba82bcb3e99963cc0ec2ad1052c4536f5a6fb3af8527 */}
+## The host's other accounts
+
+An ordinary account keeps its GNOME Wayland session, with a few differences
+inherited from the host:
+
+- **Boot**: the machine logs into the UMI account. Log out of it, or switch
+  user to open your own.
+- **Seahorse**: absent, because it is unusable without a keyboard.
+- **Shutdown**: each service gets 5 seconds to stop.
+
+{/* t:p c008d6394b3cfe91de9c0de062c1f97929bf1e008890cff1484736ce5f5bc24f */}
+## Troubleshooting
 
 | Symptom | Lead |
 |---|---|
-| Talon does not see the tracker | Replug the tracker, then relaunch Talon (udev rule applied on connection) |
-| Firmware not initialized | Run through Tobii Experience under Windows once |
-| Session opened under GNOME | Check that the account is in `gazeUsers` or in `autoLoginUser` |
+| Talon does not see the tracker | Replug the tracker, then restart Talon (udev rule applied on plug-in) |
+| Firmware not initialised | Go once through Tobii Experience under Windows |
+| Session opened under GNOME | Check the `umi` profile of the account and its presence in the host's `users`, then reboot |
 | The pointer clicks on its own | `enableDwell` enabled without a tracker, disable it |
 
 :::note[Expected kernel messages]
@@ -248,3 +266,19 @@ the `Unknown video format`, `No supported video formats found` and
 **normal and desirable**: no kernel driver claims the interfaces, which leaves
 them free for Talon.
 :::
+
+{/* t:p 938609b64e2e1217c0db6ceeca57cfadea52087e1a0a2c4319be9b6fdb6ff3b2 */}
+## FAQ
+
+{/* t:p 49a3e63f83ac4ab8d59d9fec17b634755193ab5c7f83c6e469656b3b31c22450 */}
+### Can a UMI account choose GNOME?
+
+Not on a `umi` host: the Cinnamon session is re-imposed at every boot, because
+Talon requires X11.
+
+{/* t:p ac6c80b95349c7cebae6b778636b28afcda1c1826a5b6d551c7c87e914420339 */}
+### And on an ordinary workstation?
+
+The account opens the host's GNOME Wayland session, with the GNOME on-screen
+keyboard, the enlarged cursor and text. Talon and Onboard, which require X11,
+stay inactive.
