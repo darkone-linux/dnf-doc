@@ -13,7 +13,7 @@ sidebar:
 **A users management module** manage user-related processing or special user settings.
 :::
 
-{/* t:p 974c75c457ae4a6bb977b8c7e7b9805bea19078793b91b6e2b2e33379e705708 */}
+{/* t:p b32179f02a3c0af7c7083f281d36d2463161763bf2cacdfe699456ef802c136b */}
 ### &#x1F464; darkone.user.build
 
 Build users NixOS (not home-manager) configuration.
@@ -25,6 +25,13 @@ This module is enabled by default (required by DNF configuration).
 :::note[SSH denial by logical group]
 `sshDeniedGroups` (default `guests`) expands to `DenyUsers` on each host: a
 member keeps its local session and loses SSH.
+:::
+
+:::note[authorized_keys registry]
+`usr/users/<login>/authorized_keys` (consumer workspace, committed, OpenSSH
+format) feeds `openssh.authorizedKeys` on every host of the user. Missing
+file = no key; disabled account = file ignored. Private keys never live in
+the workspace: they stay in each user's Vaultwarden vault (cf. `rbw`).
 :::
 
 * **enable** `bool` Users common builder (enabled by default)

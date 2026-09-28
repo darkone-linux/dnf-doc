@@ -141,7 +141,7 @@ déploiement part d'un état incohérent ou non versionné.
 - `just passwd-default` n'enregistre que le mot de passe de référence du parc ([Secrets](/fr/doc/admin-guide/operate/secrets/)).
 :::
 
-{/* t:p 421005f76f592064b2e23a202348e8e08bfa68b07f457d111eb98c98f8a3796c */}
+{/* t:p 712c060ed428fd173758650782af0b6c309591c7f48a2fe1ac23e0576c0d1809 */}
 ## Accès SSH
 
 L'accès SSH est **par clé uniquement** et **entièrement déclaratif**, sur toute
@@ -165,6 +165,7 @@ celles de la configuration NixOS. `sshd` les lui demande par
 Forgejo (**Paramètres → Clés SSH / GPG**).
 :::
 
+{/* t:p 9b422e7d57aadca6b2f7b03bf7406aa32606ea862e50f3f6025bf36e9814615d */}
 ### Clés privées
 
 Une clé privée ne va **jamais** dans le dépôt ni dans sops&nbsp;: la clé
@@ -207,8 +208,10 @@ darkone.user.build.sshDeniedGroups = [ "guests" ];
 Dans tous les cas, appliquer ensuite le cycle `just clean` → `just commit` →
 `just apply` sur les hôtes concernés.
 
+{/* t:p 938609b64e2e1217c0db6ceeca57cfadea52087e1a0a2c4319be9b6fdb6ff3b2 */}
 ## FAQ
 
+{/* t:p 2e0f57c89069244f9721025843eb78833d5f2a5b2fa62532fd6479a9ae0af8f6 */}
 ### Une clé SSH sur YubiKey ?
 
 La clé privée naît dans la YubiKey (FIDO2) et n'en sort jamais&nbsp;: rien à

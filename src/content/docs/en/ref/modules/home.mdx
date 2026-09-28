@@ -13,10 +13,16 @@ sidebar:
 **A home manager module** works with [home manager](https://github.com/nix-community/home-manager) profiles.
 :::
 
-{/* t:p 1875c51405935cdbc347b17e430c5db26c3cc19a191714237b6a81531b953274 */}
+{/* t:p 40701e4f5386074a54eacf475b7459685e4f867f192a3bd54e62e5f5444b7a9b */}
 ### &#x1F3E0; darkone.home.advanced
 
 Home profile for advanced users (computer scientists, developers, admins).
+
+:::note[SSH keys from Vaultwarden]
+`enableVaultwardenSsh` turns `rbw` into the SSH agent: private keys stay in
+the user's vault (end-to-end encrypted), never in clear on disk nor in sops.
+The user runs `rbw unlock` once per session.
+:::
 
 * **enable** `bool` Enable advanced user features
 * **enableTools** `bool` Various tools for advanced users
@@ -26,6 +32,8 @@ Home profile for advanced users (computer scientists, developers, admins).
 * **enableDnfDeveloper** `bool` Enable all tools for DNF Codev Developer
 * **enableDeveloper** `bool` Enable tools for developer
 * **enableEssentials** `bool` Frequently used tools
+* **enableVaultwardenSsh** `bool` SSH agent backed by the user's Vaultwarden vault (rbw). Do not enable on
+  a host reached with `ssh -A`: the local agent would mask the forwarded one
 
 ```nix
 darkone.home.advanced = {
@@ -37,6 +45,7 @@ darkone.home.advanced = {
   enableDnfDeveloper = false;
   enableDeveloper = true;
   enableEssentials = true;
+  enableVaultwardenSsh = false;
 };
 ```
 

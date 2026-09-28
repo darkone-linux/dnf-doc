@@ -141,22 +141,51 @@ deployment starts from an inconsistent or unversioned state.
 - `just passwd-default` only records the fleet's reference password ([Secrets](/en/doc/admin-guide/operate/secrets/)).
 :::
 
-{/* t:p 421005f76f592064b2e23a202348e8e08bfa68b07f457d111eb98c98f8a3796c */}
-## SSH access
+{/* t:p 712c060ed428fd173758650782af0b6c309591c7f48a2fe1ac23e0576c0d1809 */}
+## SSH Access
 
-SSH access is **key-only** and **fully declarative**, across the whole
+SSH access is **key-only** and **entirely declarative**, across the whole
 fleet&nbsp;:
 
-- Password and interactive keyboard are disabled.
-- Declare keys in `users.users.<login>.openssh.authorizedKeys`.
-- An account without a declared key can open a local session, outside SSH.
+- Passwords and interactive keyboard are disabled.
+- Declare public keys in `usr/users/<login>/authorized_keys`.
+- The file applies to all hosts of the account.
+- An account with no declared key can open a local session, outside SSH.
 
-:::note[The forge is an exception]
-The `forgejo` account serves the `git push` of all repositories: its keys are
-those each user uploads in the forge's web interface, not
-those from the NixOS configuration. `sshd` asks it for them via
-`AuthorizedKeysCommand` rather than from a file. A key is therefore added in
-Forgejo (**Settings → SSH / GPG keys**).
+```sh
+# usr/users/<login>/authorized_keys : one key per line, `#` starts a comment
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAA… alice@portable
+```
+
+:::note[The forge is the exception]
+The `forgejo` account serves the `git push` of every repository: its keys are
+the ones each user deposits in the forge's web interface, not the ones from
+the NixOS configuration. `sshd` asks it for them via `AuthorizedKeysCommand`
+rather than from a file. A key is therefore added in
+Forgejo (**Settings → SSH / GPG Keys**).
+:::
+
+{/* t:p 9b422e7d57aadca6b2f7b03bf7406aa32606ea862e50f3f6025bf36e9814615d */}
+### Private keys
+
+A private key never goes **anywhere near** the repository or sops&nbsp;: the
+infrastructure key, present on every host, would make it readable by every
+root on the estate. It lives in the user's Vaultwarden vault, encrypted
+end-to-end.
+
+On selected workstations, `rbw` acts as an SSH agent and reads keys from the
+vault&nbsp;:
+
+```nix
+# usr/users/<login>/default.nix (advanced, admin, nix-admin profiles…)
+darkone.home.advanced.enableVaultwardenSsh = true;
+```
+
+- The user stores their key in the vault ([Use my SSH key](/en/doc/how-to/user/ssh-key/)).
+- Its public key then joins `authorized_keys`.
+
+:::caution[Not on a host reached through `ssh -A`]
+The local `rbw` agent would shadow the agent forwarded from the workstation.
 :::
 
 {/* t:p d5b50329c05599139e966e6f3e3280df40356023c90d591921e3462adfa308b4 */}
@@ -180,3 +209,26 @@ darkone.user.build.sshDeniedGroups = [ "guests" ];
 
 In all cases, then apply the `just clean` → `just commit` →
 `just apply` cycle on the affected hosts.
+
+{/* t:p 938609b64e2e1217c0db6ceeca57cfadea52087e1a0a2c4319be9b6fdb6ff3b2 */}
+## FAQ
+
+{/* t:p 2e0f57c89069244f9721025843eb78833d5f2a5b2fa62532fd6479a9ae0af8f6 */}
+### An SSH key on a YubiKey?
+
+The private key is born inside the YubiKey (FIDO2) and never leaves it&nbsp;: nothing to
+store in the vault. Every connection requires touching the key.
+
+```sh
+ssh-keygen -t ed25519-sk -O resident -O verify-required   # creation, once
+
+# On another workstation: retrieve the handle under the default name
+cd ~/.ssh && ssh-keygen -K && mv id_ed25519_sk_rk id_ed25519_sk
+```
+
+- The public key (`sk-ssh-ed25519@openssh.com …`) joins `authorized_keys`.
+- `rbw` does not manage these keys&nbsp;: `ssh` reads them from `~/.ssh`.
+
+:::caution[To be validated]
+Procedure not tested on the estate.
+:::

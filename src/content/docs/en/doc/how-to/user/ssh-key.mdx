@@ -1,0 +1,64 @@
+---
+title: Using my SSH key
+sidebar:
+  label: SSH key
+  order: 4
+lang: en
+---
+
+import { Steps } from '@astrojs/starlight/components';
+
+{/* t:translated-from fr */}
+{/* t:h 9bfcc9820f7bc4a9380aa9c0e651bda6cfbfc40aef7bb046ce06c763a6cee59c */}
+
+{/* t:p 27c98a3fbee982277cfb7d673885ada103fd9d25ec5d6e33d63a552e7b2c20f1 */}
+My SSH key lives in my vault&nbsp;: it follows me across my machines without
+ever being written in clear text on their disks. My administrator enables
+this service for me.
+
+{/* t:p 8885a7a8e73ce1245738758b21c2adb02ad27d1a3d4519889a18cf5ee6c4baaf */}
+## Storing my key
+
+<Steps>
+
+1. **Create the key**
+
+   In the web vault&nbsp;: *New → SSH Key*. A key is generated
+   automatically&nbsp;; the form also accepts an existing key.
+
+2. **Send the public key**
+
+   *Copy the public key*, then I send it to my administrator. They
+   authorize it on my machines.
+
+</Steps>
+
+{/* t:p f64ba61a187a14267be42a2d2116f0fc02ddc58529324d401976e78990de750e */}
+## Using it
+
+<Steps>
+
+1. **First time**
+
+   `rbw login`&nbsp;: I enter my master password.
+
+2. **Each session**
+
+   `rbw unlock`, then `ssh`, `git push`… work without any other prompt.
+
+3. **After adding a key**
+
+   `rbw sync` retrieves a key added from the web vault.
+
+</Steps>
+
+To check&nbsp;: `ssh-add -L` displays my key.
+
+{/* t:p 938609b64e2e1217c0db6ceeca57cfadea52087e1a0a2c4319be9b6fdb6ff3b2 */}
+## FAQ
+
+{/* t:p 41a78352d31a9cc113b38568fd22426482f954bb5275df98a006e38561538725 */}
+### Is the master password asked again?
+
+The vault locks after an hour without use. The next use of the key
+reopens the master password prompt.

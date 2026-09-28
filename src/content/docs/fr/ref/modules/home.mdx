@@ -13,19 +13,27 @@ sidebar:
 **Un module home manager** fonctionne avec les profils [home manager](https://github.com/nix-community/home-manager).
 :::
 
-{/* t:p 1875c51405935cdbc347b17e430c5db26c3cc19a191714237b6a81531b953274 */}
+{/* t:p 40701e4f5386074a54eacf475b7459685e4f867f192a3bd54e62e5f5444b7a9b */}
 ### &#x1F3E0; darkone.home.advanced
 
-Profil maison pour utilisateurs avancés (informaticiens, développeurs, admins).
+Profil d'accueil pour les utilisateurs avancés (informaticiens, développeurs, administrateurs).
 
-* **enable** `bool` Active les fonctionnalités utilisateur avancé
-* **enableTools** `bool` Divers outils pour utilisateurs avancés
+:::note[Clés SSH depuis Vaultwarden]
+`enableVaultwardenSsh` transforme `rbw` en agent SSH : les clés privées restent
+dans le coffre de l'utilisateur (chiffrement de bout en bout), jamais en clair
+sur disque ni dans sops. L'utilisateur lance `rbw unlock` une fois par session.
+:::
+
+* **enable** `bool` Activer les fonctionnalités utilisateur avancées
+* **enableTools** `bool` Outils variés pour les utilisateurs avancés
 * **enablePhoneTools** `bool` Outils pour smartphone (scrcpy)
-* **enableAdmin** `bool` Active les fonctionnalités administrateur (réseau, outils système)
-* **enableNixAdmin** `bool` Active les fonctionnalités d'administration nix
-* **enableDnfDeveloper** `bool` Active tous les outils pour le développeur DNF Codev
-* **enableDeveloper** `bool` Active les outils pour développeur
-* **enableEssentials** `bool` Outils utilisés fréquemment
+* **enableAdmin** `bool` Activer les fonctionnalités administrateur (réseau, outils système)
+* **enableNixAdmin** `bool` Activer les fonctionnalités d'administration nix
+* **enableDnfDeveloper** `bool` Activer tous les outils pour DNF Codev Developer
+* **enableDeveloper** `bool` Activer les outils développeur
+* **enableEssentials** `bool` Outils fréquemment utilisés
+* **enableVaultwardenSsh** `bool` Agent SSH adossé au coffre Vaultwarden de l'utilisateur (rbw). Ne pas activer sur
+  un hôte joint via `ssh -A` : l'agent local masquerait celui relayé
 
 ```nix
 darkone.home.advanced = {
@@ -37,6 +45,7 @@ darkone.home.advanced = {
   enableDnfDeveloper = false;
   enableDeveloper = true;
   enableEssentials = true;
+  enableVaultwardenSsh = false;
 };
 ```
 
