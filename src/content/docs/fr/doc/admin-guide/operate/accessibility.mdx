@@ -139,10 +139,9 @@ reste muet sous Linux.
 </Steps>
 
 :::tip[Plusieurs utilisateurs sur la même machine]
-Seul le compte listé dans `autoLoginUser` ouvre sa session tout seul. Les
-autres comptes UMI se déclarent dans `gazeUsers` pour hériter de
-la session Cinnamon. Les comptes ordinaires gardent leur session GNOME
-Wayland habituelle.
+Seul le compte listé dans `autoLoginUser` ouvre sa session tout seul. Tout
+compte de l'hôte au profil `umi` ouvre la session Cinnamon, imposée à chaque
+démarrage. Les comptes ordinaires gardent leur session GNOME Wayland habituelle.
 :::
 
 {/* t:p 91f9cdcda861e354cfe03cf5ac4a4e5104a11ca0cd7e6c5b93d1f52c970f6833 */}
@@ -153,8 +152,7 @@ Options de `darkone.host.umi`, à poser dans `usr/machines/<hôte>/configuration
 | Option | Défaut | Rôle |
 |---|---|---|
 | `enable` | activé par le profil | Active le profil d'hôte |
-| `autoLoginUser` | `null` | Compte ouvert automatiquement au démarrage |
-| `gazeUsers` | `[ ]` | Autres comptes dont la session GDM est Cinnamon/X11 |
+| `autoLoginUser` | `null` | Compte `umi` ouvert au démarrage |
 | `package` | `pkgs.talon` | Paquet Talon, ou `null` pour l'installer à la main |
 
 :::note[Talon absent ou non souhaité]
@@ -212,7 +210,7 @@ souris.
 | Session Cinnamon en X11 | Talon ne fonctionne (malheureusement) pas sous Wayland |
 | Ouverture de session automatique | Aucun mot de passe saisissable |
 | Verrouillage et veille désactivés | Un écran verrouillé est un cul-de-sac |
-| Trousseau de clés sans mot de passe | Évite une invite impossible à satisfaire (hôte non chiffré uniquement) |
+| Trousseau de clés sans mot de passe | Évite une invite impossible à satisfaire (ouverture automatique, hôte non chiffré) |
 | Curseur et texte agrandis | Précision limitée du regard (quelques dizaines de pixels) et du doigt |
 | Clavier visuel ancré en bas | Toujours disponible, grandes cibles, prédiction de mots |
 
@@ -226,7 +224,9 @@ L'ouverture de session par reconnaissance faciale est dans la liste TODO.
 :::
 
 :::note[Le trousseau suit le chiffrement du disque]
-Le traitement du trousseau de session dépend de l'hôte&nbsp;:
+Seul le compte ouvert automatiquement est concerné&nbsp;: une connexion par mot de
+passe déverrouille son trousseau comme d'habitude. Pour ce compte, tout dépend de
+l'hôte&nbsp;:
 
 - **poste non chiffré** : le trousseau est créé sans mot de passe, sinon la
   session s'ouvrirait sur une invite que personne ne peut satisfaire ;
@@ -247,7 +247,7 @@ correspond plus à celui de votre trousseau ». Supprimer alors
 |---|---|
 | Talon ne voit pas le traqueur | Rebrancher le traqueur, puis relancer Talon (règle udev appliquée au branchement) |
 | Micrologiciel non initialisé | Repasser une fois par Tobii Experience sous Windows |
-| Session ouverte sous GNOME | Vérifier que le compte figure dans `gazeUsers` ou dans `autoLoginUser` |
+| Session ouverte sous GNOME | Vérifier le profil `umi` du compte et sa présence dans les `users` de l'hôte, puis redémarrer |
 | Le pointeur clique tout seul | `enableDwell` activé sans traqueur, le désactiver |
 
 :::note[Messages du noyau attendus]
@@ -257,3 +257,16 @@ des messages `Unknown video format`, `No supported video formats found` et
 souhaitables**&nbsp;: aucun pilote noyau ne réclame les interfaces, ce qui les
 laisse libres pour Talon.
 :::
+
+## FAQ
+
+### L'option `gazeUsers` est refusée
+
+Elle est supprimée&nbsp;: un compte est UMI dès qu'il a le profil `umi` et
+figure dans les `users` de l'hôte. Retirer la ligne de `configuration.nix`.
+
+### Un compte UMI peut-il choisir GNOME ?
+
+Non sur un hôte `umi`&nbsp;: la session Cinnamon est réimposée à chaque
+démarrage, car Talon exige X11. Sur un autre hôte, le compte ouvre une session
+GNOME Wayland, sans Talon.
