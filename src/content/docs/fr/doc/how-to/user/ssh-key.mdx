@@ -1,0 +1,56 @@
+---
+title: Utiliser ma clé SSH
+sidebar:
+  label: Clé SSH
+  order: 4
+lang: fr
+---
+
+import { Steps } from '@astrojs/starlight/components';
+
+Ma clé SSH vit dans mon coffre-fort&nbsp;: elle me suit sur mes postes sans
+jamais être écrite en clair sur leur disque. Mon administrateur active ce
+service pour moi.
+
+## Ranger ma clé
+
+<Steps>
+
+1. **Créer la clé**
+
+   Dans le coffre-fort web&nbsp;: *Nouveau → Clé SSH*. Une clé est générée
+   d'office&nbsp;; le formulaire accepte aussi une clé existante.
+
+2. **Transmettre la clé publique**
+
+   *Copier la clé publique*, puis je l'envoie à mon administrateur. Il
+   l'autorise sur mes postes.
+
+</Steps>
+
+## M'en servir
+
+<Steps>
+
+1. **Première fois**
+
+   `rbw login`&nbsp;: je saisis mon mot de passe maître.
+
+2. **À chaque session**
+
+   `rbw unlock`, puis `ssh`, `git push`… fonctionnent sans autre question.
+
+3. **Après un ajout**
+
+   `rbw sync` rapatrie une clé ajoutée depuis le coffre-fort web.
+
+</Steps>
+
+Pour vérifier&nbsp;: `ssh-add -L` affiche ma clé.
+
+## FAQ
+
+### Le mot de passe maître est redemandé ?
+
+Le coffre-fort se verrouille après une heure sans usage. Le prochain usage de
+la clé rouvre la fenêtre du mot de passe maître.

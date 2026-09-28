@@ -148,8 +148,14 @@ L'accès SSH est **par clé uniquement** et **entièrement déclaratif**, sur to
 la flotte&nbsp;:
 
 - Mot de passe et clavier interactif sont désactivés.
-- Déclarer les clés dans `users.users.<login>.openssh.authorizedKeys`.
+- Déclarer les clés publiques dans `usr/users/<login>/authorized_keys`.
+- Le fichier vaut pour tous les hôtes du compte.
 - Un compte sans clé déclarée peut ouvrir une session locale, hors SSH.
+
+```sh
+# usr/users/<login>/authorized_keys : une clé par ligne, `#` en commentaire
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAA… alice@portable
+```
 
 :::note[La forge fait exception]
 Le compte `forgejo` sert le `git push` de tous les dépôts : ses clés sont
@@ -157,6 +163,26 @@ celles que chaque utilisateur dépose dans l'interface web de la forge, pas
 celles de la configuration NixOS. `sshd` les lui demande par
 `AuthorizedKeysCommand` et non par un fichier. Une clé s'ajoute donc dans
 Forgejo (**Paramètres → Clés SSH / GPG**).
+:::
+
+### Clés privées
+
+Une clé privée ne va **jamais** dans le dépôt ni dans sops&nbsp;: la clé
+d'infra, présente sur chaque hôte, la rendrait lisible par tout root du parc.
+Elle vit dans le coffre-fort Vaultwarden de l'utilisateur, chiffré de bout en bout.
+
+Sur les postes choisis, `rbw` sert d'agent SSH et lit les clés du coffre&nbsp;:
+
+```nix
+# usr/users/<login>/default.nix (profils advanced, admin, nix-admin…)
+darkone.home.advanced.enableVaultwardenSsh = true;
+```
+
+- L'utilisateur range sa clé dans le coffre ([Utiliser ma clé SSH](/fr/doc/how-to/user/ssh-key/)).
+- Sa clé publique rejoint ensuite `authorized_keys`.
+
+:::caution[Pas sur un hôte atteint par `ssh -A`]
+L'agent `rbw` local y masquerait l'agent transféré depuis le poste.
 :::
 
 {/* t:p d5b50329c05599139e966e6f3e3280df40356023c90d591921e3462adfa308b4 */}
@@ -180,3 +206,24 @@ darkone.user.build.sshDeniedGroups = [ "guests" ];
 
 Dans tous les cas, appliquer ensuite le cycle `just clean` → `just commit` →
 `just apply` sur les hôtes concernés.
+
+## FAQ
+
+### Une clé SSH sur YubiKey ?
+
+La clé privée naît dans la YubiKey (FIDO2) et n'en sort jamais&nbsp;: rien à
+ranger dans le coffre. Chaque connexion demande de toucher la clé.
+
+```sh
+ssh-keygen -t ed25519-sk -O resident -O verify-required   # création, une fois
+
+# Sur un autre poste : récupérer le handle sous le nom lu par défaut
+cd ~/.ssh && ssh-keygen -K && mv id_ed25519_sk_rk id_ed25519_sk
+```
+
+- La clé publique (`sk-ssh-ed25519@openssh.com …`) rejoint `authorized_keys`.
+- `rbw` ne gère pas ces clés&nbsp;: `ssh` les lit dans `~/.ssh`.
+
+:::caution[À valider]
+Procédure non testée sur le parc.
+:::
