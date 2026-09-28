@@ -240,6 +240,18 @@ correspond plus à celui de votre trousseau ». Supprimer alors
 `~/.local/share/keyrings/login.keyring` et rouvrir la session.
 :::
 
+## Les autres comptes de l'hôte
+
+Un compte ordinaire garde sa session GNOME Wayland, avec quelques différences
+héritées de l'hôte&nbsp;:
+
+- **Démarrage** : la machine ouvre la session du compte UMI. Fermer celle-ci ou
+  changer d'utilisateur pour ouvrir la sienne.
+- **Apparence** : les réglages par défaut de Cinnamon (Linux Mint) s'appliquent
+  là où DNF n'impose rien, par exemple la police de l'interface (Ubuntu 10).
+- **Seahorse** : absent, car inutilisable sans clavier.
+- **Extinction** : chaque service a 5 secondes pour s'arrêter.
+
 {/* t:p 0d6884836da7cb7f47cd1adf7ac95f0476333b18b3c52557168d7f034641bbba */}
 ## Diagnostic
 
@@ -259,11 +271,6 @@ laisse libres pour Talon.
 :::
 
 ## FAQ
-
-### L'option `gazeUsers` est refusée
-
-Elle est supprimée&nbsp;: un compte est UMI dès qu'il a le profil `umi` et
-figure dans les `users` de l'hôte. Retirer la ligne de `configuration.nix`.
 
 ### Un compte UMI peut-il choisir GNOME ?
 
