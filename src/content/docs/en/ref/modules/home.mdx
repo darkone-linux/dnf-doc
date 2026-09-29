@@ -318,7 +318,7 @@ darkone.home.music = {
 
 <hr/>
 
-{/* t:p ded5ad9f99e27d7640344f065f7d7b5d9dd322fbe27e9e17904d1896f523e969 */}
+{/* t:p f20ab83d32f83322f643d6920a494cd938b1823fce19244666b4d467dfb50cfe */}
 ### &#x1F3E0; darkone.home.office
 
 Common tools for office desktop.
@@ -338,6 +338,25 @@ Common tools for office desktop.
 * **enableEmail** `bool` Email management packages (thunderbird)
 * **enableSecurity** `bool` Security tools (keepass)
 * **enableCalendarContacts** `bool` Calendar, contacts, tasks and related apps
+* **enablePandoc** `bool` Markdown to PDF toolchain: pandoc, typst, Gentium and DejaVu fonts,
+  and the `md2pdf` command (Gentium body, A4, the zone's language).
+
+  ```sh
+  md2pdf notes.md              # A4, 10pt -&gt; notes.pdf
+  md2pdf --big notes.md        # A4, 12pt
+  md2pdf --tablet notes.md     # A6, 9pt (11pt with --big), zoomed on a tablet
+  md2pdf -e context notes.md   # ConTeXt engine (enablePandocContext)
+  ```
+
+  The engine is typst. It renders the raw TeX usual in notes (`\pagebreak`,
+  `\placecontent`, `\centerline`...) and reports any other. Table
+  columns fit their content, unless the separator dashes differ in
+  length (`|--|--------|`): the widths then follow them. A bare
+  `pandoc notes.md -o notes.pdf` uses the same engine, language and fonts.
+  Under GNOME, the three layouts are also offered on right click in
+  Nautilus (Scripts menu).
+* **enablePandocContext** `bool` ConTeXt as an alternative PDF engine, `md2pdf -e context` (~900 MiB, needs enablePandoc)
+* **pandocAuthor** `nullOr str` Creator written into PDFs by `md2pdf`. `null` takes the account's full name.
 * **enableEssentials** `bool` Essential tools
 * **huntspellLang** `str` [Huntspell Lang](https://mynixos.com/nixpkgs/packages/hunspellDicts)
 * **enableElementAutoStart** `bool` Auto-start Element Desktop on login when a local Matrix server is present
@@ -388,6 +407,9 @@ darkone.home.office = {
   enableEmail = false;
   enableSecurity = false;
   enableCalendarContacts = false;
+  enablePandoc = false;
+  enablePandocContext = false;
+  pandocAuthor = "Jane Doe";
   enableEssentials = true;
   huntspellLang = "en-us";
   enableElementAutoStart = true;
