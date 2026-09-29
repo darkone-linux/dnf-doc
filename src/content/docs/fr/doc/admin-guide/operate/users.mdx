@@ -181,6 +181,7 @@ darkone.home.advanced.enableVaultwardenSsh = true;
 
 - L'utilisateur range sa clé dans le coffre ([Utiliser ma clé SSH](/fr/doc/how-to/user/ssh-key/)).
 - Sa clé publique rejoint ensuite `authorized_keys`.
+- Verrouillage après 12&nbsp;h sans usage&nbsp;: `programs.rbw.settings.lock_timeout` (secondes).
 
 :::caution[Pas sur un hôte atteint par `ssh -A`]
 L'agent `rbw` local y masquerait l'agent transféré depuis le poste.
