@@ -11,10 +11,10 @@ import { Steps } from '@astrojs/starlight/components';
 {/* t:translated-from fr */}
 {/* t:h 9bfcc9820f7bc4a9380aa9c0e651bda6cfbfc40aef7bb046ce06c763a6cee59c */}
 
-{/* t:p 27c98a3fbee982277cfb7d673885ada103fd9d25ec5d6e33d63a552e7b2c20f1 */}
-My SSH key lives in my vault&nbsp;: it follows me across my machines without
-ever being written in clear text on their disks. My administrator enables
-this service for me.
+{/* t:p 578578dbe4488b3baae683a1f01484dea1344a9ec3b8e39be2b72e27b4a9fda4 */}
+My SSH key lives in my vault: it follows me onto my machines without ever being
+written in cleartext on their disk. My administrator enables this service for me
+(option [enableVaultwardenSsh](/en/ref/modules/home/#-darkonehomeadvanced)).
 
 {/* t:p 8885a7a8e73ce1245738758b21c2adb02ad27d1a3d4519889a18cf5ee6c4baaf */}
 ## Storing my key
@@ -57,8 +57,8 @@ To check&nbsp;: `ssh-add -L` displays my key.
 {/* t:p 938609b64e2e1217c0db6ceeca57cfadea52087e1a0a2c4319be9b6fdb6ff3b2 */}
 ## FAQ
 
-{/* t:p 41a78352d31a9cc113b38568fd22426482f954bb5275df98a006e38561538725 */}
+{/* t:p 7eb43861cea9a4a742e0de400db7ca301c02f699ae14b5ff486031aa5ca48070 */}
 ### Is the master password asked again?
 
-The vault locks after an hour without use. The next use of the key
-reopens the master password prompt.
+The vault locks after twelve hours without use. The next use of the key reopens
+the master password window.

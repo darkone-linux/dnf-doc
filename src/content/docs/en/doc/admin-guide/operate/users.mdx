@@ -165,16 +165,12 @@ rather than from a file. A key is therefore added in
 Forgejo (**Settings → SSH / GPG Keys**).
 :::
 
-{/* t:p 9b422e7d57aadca6b2f7b03bf7406aa32606ea862e50f3f6025bf36e9814615d */}
+{/* t:p 2016691525306f6d58d987cd820413f10b31f1469016b02057f3fb5b2948f86e */}
 ### Private keys
 
-A private key never goes **anywhere near** the repository or sops&nbsp;: the
-infrastructure key, present on every host, would make it readable by every
-root on the estate. It lives in the user's Vaultwarden vault, encrypted
-end-to-end.
+A private key never goes **anywhere near** the repository or sops&nbsp;: the infra key, present on every host, would make it readable by any root account of the cluster. It lives in the user's Vaultwarden vault, encrypted end to end.
 
-On selected workstations, `rbw` acts as an SSH agent and reads keys from the
-vault&nbsp;:
+On the selected workstations, `rbw` acts as the SSH agent and reads the keys from the vault&nbsp;:
 
 ```nix
 # usr/users/<login>/default.nix (advanced, admin, nix-admin profiles…)
@@ -182,10 +178,11 @@ darkone.home.advanced.enableVaultwardenSsh = true;
 ```
 
 - The user stores their key in the vault ([Use my SSH key](/en/doc/how-to/user/ssh-key/)).
-- Its public key then joins `authorized_keys`.
+- Its public key then goes into `authorized_keys`.
+- Locks after 12&nbsp;h of inactivity&nbsp;: `programs.rbw.settings.lock_timeout` (seconds).
 
-:::caution[Not on a host reached through `ssh -A`]
-The local `rbw` agent would shadow the agent forwarded from the workstation.
+:::caution[Not on a host reached via `ssh -A`]
+The local `rbw` agent would there mask the agent forwarded from the workstation.
 :::
 
 {/* t:p d5b50329c05599139e966e6f3e3280df40356023c90d591921e3462adfa308b4 */}
