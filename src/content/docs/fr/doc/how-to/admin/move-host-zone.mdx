@@ -1,0 +1,220 @@
+---
+title: Déplacer un hôte d'une zone à une autre
+sidebar:
+  label: Changer de zone
+  order: 11
+lang: fr
+---
+
+import { Steps } from '@astrojs/starlight/components';
+
+{/* t:main */}
+{/* t:h a4e60b1d36c159c004f626750dbade49d7d134b15c54ccf3c9fc2cecfa622a9f */}
+
+{/* t:p ca92f6f06acd08571e6be89e752a87d26336b5fd2d454799c6f7d593ebb11b13 */}
+Faire passer un poste ou un serveur dans une autre zone, lors d'un déménagement
+par exemple. La clé `zone` de l'hôte porte l'essentiel du changement&nbsp;;
+restent ses sauvegardes, les services qu'il héberge et l'ordre de déploiement.
+
+Une passerelle ne change pas de zone, elle la définit. Pour la remplacer, voir
+[Migrer le matériel d'une passerelle](/fr/doc/admin-guide/install/gateway-hardware-migration/).
+
+{/* t:p 286f5d1f3a485a173490590ce6ca037ad49755d5bca04c4025c8e58b867b572c */}
+## Ce qui suit tout seul
+
+Régénéré par `just clean`, puis propagé au déploiement.
+
+| Repris automatiquement | Pourquoi |
+|---|---|
+| Adresse, DNS et DHCP | Dérivés de la clé `zone` |
+| [Adresse de passage](/fr/doc/admin-guide/understand/network/#machines-hors-de-leur-zone) dans l'ancienne zone | Même dernier octet partout |
+| Supervision et journaux | Features rattachées à la zone |
+| Cache binaire de zone | Choisi d'après la zone |
+| Pare-feu borné à la zone | Suit le préfixe de zone |
+| Utilisateurs, secrets, clés SSH | Indépendants de la zone |
+
+{/* t:p 51739fb0ff46563269e469a27625adb08f71ad0a91c842221b97b67c321f7545 */}
+## Ce qui reste à traiter
+
+| Point | Risque | À faire |
+|---|---|---|
+| Sauvegardes restic | Cible et passphrase suivent la zone | Épingler l'ancien serveur |
+| Services hébergés | Changent de zone et d'URL | Prévenir les utilisateurs |
+| Features en `:<zone>` | Zone explicite, ne suit pas | Corriger la zone |
+| Fuseau horaire, langue | Ceux de la nouvelle zone | Surcharger si besoin |
+| Configuration machine citant `zone` | Suit la zone déclarée | Relire `usr/machines/<hôte>/` |
+
+Un service hébergé passe de `<service>.<ancienne-zone>.domain.tld` à
+`<service>.<nouvelle-zone>.domain.tld` et ne sert plus que sa nouvelle zone. Un
+service `global` garde son adresse publique, relayée par le HCS.
+
+```sh
+grep -rn 'zone\.' usr/machines/poste/
+```
+
+Fuseau horaire et langue se surchargent par `darkone.system.i18n.timeZone` et
+`darkone.system.i18n.locale`.
+
+{/* t:p 57388cd005fb0a923b74a5b782ccd5b2bcefcf609e3f63cad596f4bc8bad5a49 */}
+## Procédure
+
+Exemple&nbsp;: `poste` quitte la zone `maison` (`10.0`) pour la zone `atelier`
+(`10.1`).
+
+<Steps>
+
+1. **Activer le cache itinérant**
+
+   Les substituters deviennent neutres et suivent la zone où la machine est
+   branchée, ce qui évite au premier déploiement après le déplacement de
+   télécharger à travers le VPN. Voir [Cache binaire](/fr/doc/admin-guide/operate/deploy/#cache-binaire).
+
+   ```nix
+   # usr/machines/poste/configuration.nix
+   darkone.service.nix-cache.roaming = true;
+   ```
+
+   ```sh
+   just apply poste
+   ```
+
+2. **Changer la zone**
+
+   Choisir une adresse libre selon la [convention d'adressage](/fr/doc/how-to/admin/config/#section-zones)
+   de la zone d'arrivée.
+
+   ```yaml
+   # etc/config.yaml
+   - hostname: "poste"
+     zone: "atelier:2.1"   # ancienne valeur : "maison:2.1"
+     mac: "aa:bb:cc:dd:ee:ff"
+   ```
+
+   :::caution[Clé `mac` obligatoire]
+   La passerelle d'arrivée attribue l'adresse fixe sur l'adresse MAC. Sans elle,
+   l'hôte reçoit une adresse dynamique et son nom désigne une adresse qu'il n'a pas.
+   :::
+
+3. **Épingler les sauvegardes**
+
+   Pour garder l'historique, la cible continue de viser le serveur de l'ancienne
+   zone, avec la passphrase de cette zone.
+
+   ```nix
+   # usr/machines/poste/configuration.nix
+   darkone.service.restic = {
+     enable = true;
+     targets = [
+       {
+         root = "rest:http://100.64.0.20:8888"; # IP tailnet du serveur de maison
+         zone = "maison"; # passphrase restic-password-maison
+         categories = [ "system" ];
+       }
+     ];
+   };
+   ```
+
+   Côté serveur, `listenAll` doit être actif&nbsp;: voir
+   [Sauvegarder hors-site](/fr/doc/how-to/admin/network-backup/#sauvegarder-hors-site).
+
+   :::danger[Une cible en `restic.${zone.domain}` suit la zone]
+   Face à un serveur dans la nouvelle zone, elle initialise un dépôt vide et
+   repart de zéro. Sans serveur, chaque sauvegarde est sautée sans erreur, et
+   seule l'alerte `ResticBackupStale` le révèle.
+   :::
+
+4. **Régénérer et valider**
+
+   ```sh
+   just clean
+   git diff var/generated/
+   just commit "chore(poste): move from maison to atelier"
+   ```
+
+   Le diff doit montrer l'adresse fixe dans `atelier` et une adresse de passage
+   `10.0.6.x` dans `maison`.
+
+5. **Préparer l'arrivée**
+
+   Déployer le HCS, puis la passerelle d'arrivée, puis les autres passerelles,
+   **sauf celle de départ**.
+
+   ```sh
+   just apply hcs
+   just apply gw-atelier   # puis les autres passerelles, sauf gw-maison
+   ```
+
+   La passerelle d'arrivée réserve la nouvelle adresse sur la MAC de l'hôte. Le
+   HCS relaie les services `global` et tient les règles VPN des postes
+   d'administration&nbsp;: tous deux visent l'adresse de l'hôte.
+
+6. **Déplacer la machine**
+
+   Branchée dans `atelier`, elle reçoit sa nouvelle adresse par DHCP, avant tout
+   redéploiement.
+
+7. **Finir les passerelles**
+
+   L'hôte parti, la passerelle de départ peut publier son nouveau nom et lui
+   réserver son adresse de passage.
+
+   ```sh
+   just apply gw-maison
+   ```
+
+8. **Déployer l'hôte**
+
+   ```sh
+   just apply poste
+   ```
+
+   :::caution[Pas avant le déplacement]
+   Les exporteurs de supervision écoutent sur l'adresse déclarée. Un hôte
+   déployé avant d'avoir sa nouvelle adresse voit ces services échouer.
+   :::
+
+9. **Vérifier**
+
+   - `dig poste.atelier.domain.tld` rend la nouvelle adresse.
+   - La cible `poste` est `UP` dans le Prometheus de `atelier`.
+   - Une [sauvegarde manuelle](/fr/doc/how-to/admin/network-backup/#lancer-une-sauvegarde-manuellement) retrouve les anciens snapshots.
+
+10. **Retirer le cache itinérant**
+
+    Supprimer `darkone.service.nix-cache.roaming`, sauf pour un portable qui
+    change souvent de zone, puis `just apply poste`.
+
+</Steps>
+
+{/* t:p 938609b64e2e1217c0db6ceeca57cfadea52087e1a0a2c4319be9b6fdb6ff3b2 */}
+## FAQ
+
+{/* t:p e3a11460e30631e66cc7294e419295a623df374a55c7235686dc4f4a45403fc4 */}
+### Et si l'hôte est le poste d'administration&nbsp;?
+
+Pendant le transport, plus rien ne déploie&nbsp;: prévoir un
+[déployeur alternatif](/fr/doc/admin-guide/operate/alternate-deployer/). À
+l'arrivée, il déploie la passerelle de départ à travers le VPN, puis lui-même
+avec `just apply-local`.
+
+{/* t:p 171d614f2aa119129bbd82fde4ae0de005e36227aef92be2fe908e12a5fa5c9d */}
+### Pourquoi la passerelle de départ en dernier&nbsp;?
+
+Elle retire à l'hôte son adresse fixe. Encore branché, il recevrait son adresse
+de passage au renouvellement du bail, sans la configuration qui va avec, et le
+nom de l'hôte ne désignerait plus l'adresse qu'il occupe.
+
+{/* t:p bb06670cd3f4bf7fdae33c7660f34facd59aefb70f7558c44d2b39799d4c7b73 */}
+### Faut-il s'attendre à des alertes&nbsp;?
+
+Oui, pendant le transport l'hôte est injoignable des deux côtés. Il est attendu
+par `atelier` dès l'étape 5 et encore surveillé par `maison` jusqu'à l'étape 7.
+Pour un poste, ce ne sont que des avertissements (voir
+[classes d'alerte](/fr/doc/admin-guide/understand/monitoring-alerts/)).
+
+{/* t:p b64122ee9babbaf68462817a7e77eaacacb919598741f2dba1a44a610b7f67d8 */}
+### Comment revenir en arrière&nbsp;?
+
+Rétablir l'ancienne `zone`, régénérer, puis rejouer la procédure en sens
+inverse. Grâce aux adresses de passage, l'hôte reste joignable dans chaque zone
+entre-temps.
