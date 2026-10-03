@@ -978,7 +978,7 @@ darkone.service.outline.enable = false;
 
 <hr/>
 
-{/* t:p 0b092d2ccbf5c114dbcb874e9770292b28bd008f771a371b106fb3f612d3dc42 */}
+{/* t:p fe6552db204edec1c6a97e11dd469ca53fcd434dc8b3f77e92d4e1424035f5aa */}
 ### &#x2728; darkone.service.oxicloud
 
 OxiCloud — Fast Sovereign Cloud (file storage, WebDAV, CalDAV & CardDAV).
@@ -996,9 +996,24 @@ the Kanidm endpoints. Without `idm`, the upstream behaviour is left untouched
 (local password login only).
 :::
 
-:::tip[Storage]
-File storage, WebDAV, CalDAV and CardDAV are served on the same HTTP port,
-behind the Caddy reverse proxy. The PostgreSQL database is created locally.
+:::caution[Accounts with SSO]
+- Self-registration is closed: accounts are created at the first SSO login.
+- Members of the Kanidm `admins` group become OxiCloud administrators at that
+  first login only; later role changes are made in the OxiCloud admin UI.
+:::
+
+:::tip[Storage and clients]
+File storage, WebDAV (`/webdav/`), CalDAV (`/caldav`) and CardDAV (`/carddav`)
+are served on the same HTTP port, behind the Caddy reverse proxy. The
+Nextcloud compatibility layer is on: Nextcloud desktop and mobile clients, and
+the GNOME Online Accounts Nextcloud provider, connect to the service URL. The
+PostgreSQL database is created locally.
+:::
+
+:::tip[Mail]
+When `network.smtp` is set, OxiCloud sends share notifications and email
+invitations (magic links) through that relay. Without it, email features are
+disabled.
 :::
 
 * **enable** `bool` Enable local OxiCloud service

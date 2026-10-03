@@ -894,27 +894,43 @@ Un wiki outline complètement configuré.
 darkone.service.outline.enable = false;
 ```
 
-{/* t:p 0b092d2ccbf5c114dbcb874e9770292b28bd008f771a371b106fb3f612d3dc42 */}
+{/* t:p fe6552db204edec1c6a97e11dd469ca53fcd434dc8b3f77e92d4e1424035f5aa */}
 ### &#x2728; darkone.service.oxicloud
 
-OxiCloud — Cloud souverain rapide (stockage de fichiers, WebDAV, CalDAV et CardDAV).
+OxiCloud — Cloud souverain rapide (stockage de fichiers, WebDAV, CalDAV & CardDAV).
 
 :::note[Service en cours de validation]
-Wrapper DNF autour du module nixpkgs (issu du [PR #516113](https://github.com/NixOS/nixpkgs/pull/516113)).
-Le paquet `oxicloud` est déjà livré dans nixpkgs ; seul le module est sourcé
-depuis le fork (cf. l'entrée `nixpkgs-oxicloud` de `flake.nix`).
+Wrapper DNF autour du module nixpkgs (depuis [PR #516113](https://github.com/NixOS/nixpkgs/pull/516113)).
+Le paquet `oxicloud` est déjà fourni par nixpkgs&nbsp;; seul le module provient
+du fork (cf. entrée `flake.nix` `nixpkgs-oxicloud`).
 :::
 
 :::tip[SSO]
-Quand un service `idm` (Kanidm) existe sur le réseau (zone ou global), l'OIDC est
-câblé automatiquement : un client OAuth2 est enregistré et OxiCloud est pointé vers
-les endpoints Kanidm. Sans `idm`, le comportement amont est laissé inchangé
+Lorsqu'un service `idm` (Kanidm) existe sur le réseau (zone ou global), l'OIDC est
+câblé automatiquement&nbsp;: un client OAuth2 est enregistré et OxiCloud pointe vers
+les endpoints Kanidm. Sans `idm`, le comportement amont est inchangé
 (connexion par mot de passe local uniquement).
 :::
 
-:::tip[Stockage]
-Le stockage de fichiers, WebDAV, CalDAV et CardDAV sont servis sur le même port HTTP,
-derrière le reverse proxy Caddy. La base de données PostgreSQL est créée localement.
+:::caution[Comptes avec SSO]
+- L'auto-inscription est fermée&nbsp;: les comptes sont créés à la première connexion SSO.
+- Les membres du groupe Kanidm `admins` deviennent administrateurs OxiCloud à cette
+  première connexion uniquement&nbsp;; les changements de rôle ultérieurs se font dans
+  l'interface d'administration OxiCloud.
+:::
+
+:::tip[Stockage et clients]
+Le stockage de fichiers, WebDAV (`/webdav/`), CalDAV (`/caldav`) et CardDAV (`/carddav`)
+sont servis sur le même port HTTP, derrière le reverse proxy Caddy. La
+couche de compatibilité Nextcloud est active&nbsp;: les clients Nextcloud desktop et
+mobiles, ainsi que le fournisseur Nextcloud de GNOME Online Accounts, se connectent à
+l'URL du service. La base de données PostgreSQL est créée localement.
+:::
+
+:::tip[Courriel]
+Lorsque `network.smtp` est défini, OxiCloud envoie les notifications de partage et les
+invitations par courriel (magic links) via ce relais. Sans lui, les fonctionnalités
+courriel sont désactivées.
 :::
 
 * **enable** `bool` Activer le service OxiCloud local

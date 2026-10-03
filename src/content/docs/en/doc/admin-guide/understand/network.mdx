@@ -195,8 +195,8 @@ Anyone who reaches port 3100 can read **and** write logs: it is
 only open on the tailnet.
 </Aside>
 
-{/* t:p 0674a51f1e6ebc08cb3d2aac04dad67d13c8723bf425eb6bd5060e18888274a2 */}
-## DNS names and resolution
+{/* t:p 64bf8614600f988c4425408fa65e279fc8ce12ef3c29da70af870fb28cee3b4f */}
+## Names and DNS resolution
 
 Three families of names coexist on the network. All are generated from
 `etc/config.yaml`.
@@ -205,24 +205,27 @@ Three families of names coexist on the network. All are generated from
 |---|---|---|---|
 | **Simple name** | `<host>` | Entire internal network | `server` |
 | **Zone FQDN** | `<name>.<zone>.<domain>` | Entire internal network | `cloud.home.domain.tld` |
-| **Global service** | `<name>.<domain>` | Internet included | `git.domain.tld` |
+| **Global service** | `<name>.<domain>` | Including the Internet | `git.domain.tld` |
 
-- **Simple names** : these are the **machines** (declared hosts). Resolved
-  everywhere on the network, to the machine's real address, regardless of its
-  zone.
-- **Zone FQDNs** : these are the **services of a zone**. They point to the
-  gateway of that zone, which serves them via its reverse proxy.
-- **Global services** : services marked `global` in `etc/config.yaml`.
-  Exposed on the HCS with **public DNS** : reachable from anywhere.
+- **Simple names**: these are the **machines** (declared hosts). Resolved
+  everywhere on the network, to the machine's real address, whatever its zone.
+- **Zone FQDN**: these are the **services of a zone**. They point to that
+  zone's gateway, which serves them through its reverse proxy.
+- **Global services**: services marked `global` in `etc/config.yaml`.
+  Exposed on the HCS with **public DNS**: reachable from anywhere.
 
-Who resolves what :
+Who resolves what:
 
-- `dnsmasq`, on **each gateway**, knows all internal names (machines
-  and services of **all** zones) : it resolves simple names and FQDNs.
-- The current zone is resolved locally ; other zones and the global domain
-  are routed to the correct gateway, or to the HCS pivot resolver.
-- Public (Internet) names go to upstream encrypted DNS, filtered by
-  AdGuardHome if enabled.
+- `dnsmasq`, on **every gateway**, knows all internal names (machines and
+  services of **all** zones): it resolves simple names and FQDNs.
+- The current zone is resolved locally; the other zones and the global domain
+  are routed to the right gateway, or to the HCS pivot resolver.
+- Public (Internet) names are sent upstream to encrypted DNS, filtered by
+  AdGuardHome if it is enabled.
+- Only declared names exist&nbsp;: an unknown name under a zone answers
+  `NXDOMAIN`, without redirecting to the gateway.
+- Tailnet names (`<node>.tailnet.internal`) are relayed by each gateway to
+  MagicDNS&nbsp;: also resolved from the LANs.
 
 {/* t:p 85f3fe6956a70f9611dbcb98bd9f85a9a205238c879b765a9ed130bc2f4ddf0b */}
 ### The pivot resolver (HCS)
@@ -347,31 +350,31 @@ its part, keeps its meaning.
 | `portable` | its original address, everywhere on the network |
 | `portable.atelier.domain.tld` | its address in the `atelier` zone |
 
-{/* t:p 206c5ce188914a01ac28aefee8b299d9e06cdb50646a4d5cb50005337e65830d */}
-### A lease that does not change anymore
+{/* t:p aeee169e3a2c230374fecf9a91548ab550db500540ba9d5127f47161210d1875 */}
+### A lease that no longer moves
 
-`dnsmasq` indexes leases on the sole **MAC address**, not on the DHCP client
+`dnsmasq` indexes leases solely on the **MAC address**, not on the DHCP client
 identifier.
 
-The reason&nbsp;: the same device does not advertise the same identifier depending on the
-system running on it. An installation image and the installed system
-pass for two different machines, and get two addresses. By
-relying on the MAC, the address no longer changes between the installation and the
-first real boot.
+The reason&nbsp;: a given device does not advertise the same identifier depending
+on the system running on it. An installation image and the installed system
+look like two different machines, and receive two addresses. Relying on the
+MAC, the address no longer changes between installation and the first real
+boot.
 
 <Aside type="note" title="Machines without a declared MAC address">
-The reservation requires a `mac` key in `etc/config.yaml`. Without it, the machine
-remains reachable at home, but not elsewhere. `just install` requires it before
-any formatting&nbsp;; `just host-info <hôte> <ip>` picks it up on a running
-machine.
+A reservation requires a `mac` key in `etc/config.yaml`. Without it, away from
+home, the machine is only reachable over the tailnet. `just install` requires it
+before any formatting&nbsp;; `just host-info <host> <ip>` collects it from a
+booted machine.
 </Aside>
 
 <Aside type="caution" title="The fixed address stays outside the dynamic range">
-A `dhcp-host` reservation placed **inside** the `dhcp-range` range is honored
-only as long as the address has not already been lent to someone else. Otherwise the
-machine gets another one, silently, at the worst moment&nbsp;: the
-first boot after an installation. The generator now refuses a fixed
-address that falls within the dynamic range of its zone.
+A `dhcp-host` reservation placed **inside** the `dhcp-range` range is only
+honored as long as the address has not already been leased to someone else.
+Otherwise the machine gets a different one, silently, at the worst moment: the
+first boot after an installation. The generator now rejects a fixed address
+that falls within its zone's dynamic range.
 </Aside>
 
 {/* t:p f4e685c0b76d9d967020dfe697effcf500fad1689bf2ae6baf6a69b1ef4bb099 */}
@@ -400,32 +403,55 @@ A `just apply` launched afterwards therefore installed a bootloader without the
 initrd host key, and therefore without remote LUKS unlocking.
 </Aside>
 
-{/* t:p 783d023ece503d2713b4d9a417d43a82baa2d279065ec17a0ba045b3e42997b0 */}
+{/* t:p 1f0e389ea9219e6329c738a9ecfa8cbe8c721167faf0a86a5f16aeee858cdf8b */}
 ### Finding a machine again after a reboot
 
-The calculation above provides **one** address to start with. After the reboot
-that closes an installation, that is no longer enough&nbsp;: the machine can
-reappear elsewhere, or not be truly up yet.
+The calculation above gives **one** address to boot from. After the reboot that
+closes an installation, it is no longer sufficient&nbsp;: the machine may
+reappear elsewhere, or not really be up yet.
 
 `just full-install` therefore probes **all** known addresses of the host, in
-that order, on ports 22 **and** 2222, and continues on the first one
-that responds&nbsp;:
+this order, on ports 22 **and** 2222, and continues with the first one that
+answers&nbsp;:
 
-1. the address used for the installation ;
-2. the fixed address of its zone of origin, the one the DNS publishes everywhere ;
-3. the passing address reserved by the local zone ;
+1. the address used for the installation;
+2. the fixed address of its origin zone, the one DNS publishes everywhere;
+3. the transit address reserved by the local zone;
 4. its name, resolved by the local gateway.
 
-A response on port 2222 means the host is waiting for its LUKS passphrase in
+An answer on port 2222 means the host is waiting for its LUKS passphrase in
 its initrd&nbsp;: `just unlock` answers it without intervention. See [Disk
 encryption](/en/doc/admin-guide/operate/luks/).
 
-What remains is deployment&nbsp;: [Colmena](https://colmena.cli.rs/) addresses a
-node by its name, which designates the address of origin. For a visiting host,
-`just configure` therefore sets up a temporary SSH redirect, removed at the end
-of the installation or manually&nbsp;:
+{/* t:p 0375184ba2de655df60fb39295333cffb4f01284c596f7e8860df65261f7474f */}
+### Joining a roaming host
+
+[Colmena](https://colmena.cli.rs/) (`just apply`), `fleet-update` and
+`just enter` target a host by its name, which denotes its original address. On
+an administration machine, every SSH connection to a network host goes through
+`dnf-locate`, which tries&nbsp;:
+
+1. the name alone first&nbsp;: the common case costs nothing extra;
+2. otherwise, in parallel, its reservation in each zone
+   (`portable.workshop.domain.tld`) and its tailnet name
+   (`portable.tailnet.internal`).
+
+The first path that answers wins. `dnf-locate --print portable` displays the one
+it finds.
+
+<Aside type="caution" title="An address out of range is ignored">
+A reservation must fall within its zone's subnet, a tailnet name within the
+tailnet range. Without this check, a public DNS wildcard would send the
+deployment to a stranger&nbsp;: the `nix` account verifies no host key.
+</Aside>
+
+The tailnet path only applies to an administration machine (`tag:admin`)&nbsp;:
+the access policy opens no other tailnet client to the zones.
+
+To enforce an address, `just configure` sets a temporary SSH redirection for a
+roaming host, removed at the end of the installation or by hand&nbsp;:
 
 ```sh
-just roaming             # display current redirects
-just roaming-clear       # remove them all
+just roaming             # show current redirections
+just roaming-clear       # remove all of them
 ```

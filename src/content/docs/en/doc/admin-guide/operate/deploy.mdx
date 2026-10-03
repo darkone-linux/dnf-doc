@@ -121,59 +121,61 @@ The recipe picks the tool to run, in this order&nbsp;:
 - `var/deployments/` ignored by git: `/var/*` rule from the boilerplate.
 :::
 
-{/* t:p 2281cf145dd58450b9b79836a9794b5bb6d08cfad2eabd91e6f23afe91fe018e */}
-### How a run unfolds
+{/* t:p 1005a3ae714503d51514442daa9daa2ea20d453fdac38358beec5684c4e49811 */}
+### How a rollout unfolds
 
 <Steps>
-1. **Update**: `nix flake update` of the project then of `dnf/` (co-development), `just clean`, one commit per repository.
-2. **Selection**: hosts, profiles and zones read from `var/generated/`, filtered by `--on`; current zone inferred from the local IP; one builder elected per host.
-3. **Build**: all selected hosts, reachable or not, each on its builder.
-4. **Publish**: the closure of each reachable host is brought into its store, outside waves, before any activation.
-5. **Test**: `switch-to-configuration test`, one wave per profile; the next wave starts when all its hosts are OK or set aside.
-6. **Switch**: all hosts validated in test, **all at once**, regardless of wave order.
+1. **Update**: `nix flake update` for the project, then for `dnf/` (co-development), `just clean`, one commit per repository.
+2. **Selection**: hosts, profiles and zones read from `var/generated/`, filtered by `--on`; the current zone deduced from the local IP; one builder elected per host.
+3. **Build**: all selected hosts, reachable or not, each on its own builder. Presence probed through the deployment SSH connection, which also joins a [roaming host](/en/doc/admin-guide/understand/network/#joining-a-roaming-host).
+4. **Publication**: the closure of each reachable host is brought into its store, outside waves, before any activation.
+5. **Test**: `switch-to-configuration test`, one wave per profile; the next wave starts once all its hosts are OK or set aside.
+6. **Switch**: all hosts validated in test, **in a single go**, out of wave order.
 </Steps>
 
 :::note[Why publish before activating]
 Serving and activating are two distinct needs. Once each host is served, a wave
-depends only on `ssh`: a gateway that restarts its network no longer deprives
-anyone of their substituter.
+no longer depends on anything but `ssh`&nbsp;: a gateway restarting its network
+no longer deprives anyone of their substituter.
 
 The host **pulls** first (`nix build --max-jobs 0`, which substitutes without
-ever compiling locally), and is only **pushed** as a fallback. A pull that fails
-is the ordinary case: a very fresh path is not yet in any cache.
+ever compiling on the spot), and is only **pushed** as a fallback. A failed pull
+is the ordinary case&nbsp;: a brand new path is not yet in any cache.
 :::
 
-Three options shorten this flow:
+Three options shorten this sequence&nbsp;:
 
 | Option | Effect |
 |---|---|
 | `--build-only` | Stops after the build; in interactive mode, offers to continue |
 | `--skip-test` | No test: the switch happens wave by wave, right after the build |
-| `--skip-switch` | No switch: the run stops on what the test left in place |
+| `--skip-switch` | No switch: the rollout stops at whatever the test left in place |
 
 :::tip[Preload the fleet without activating anything]
-`--skip-test --skip-switch` builds **and** publishes, then stops: each host
-holds its closure (state `ready`) without having activated anything. A
-subsequent run, or a `--resume`, then activates without copying anything more.
-Handy for separating a large package download from a short intervention window.
+`--skip-test --skip-switch` builds **and publishes**, then stops&nbsp;: each
+host holds its closure (`ready` state) without having activated anything. A
+subsequent rollout, or a `--resume`, then activates without copying anything
+anymore. Useful to separate a large package download from a short intervention
+window.
 
-`--build-only` is the other extreme: nothing leaves the deployment machine, the
-publication itself is skipped.
+`--build-only` is the other extreme&nbsp;: nothing leaves the deployment
+machine, publication itself is skipped.
 :::
 
-:::note[Why the switch is not wave-based]
-Waves protect an unproven configuration. Once the test passed on each host,
-there is nothing left to protect: the switch fires at once, at most
-`--max-parallel` hosts activated simultaneously. With `--skip-test`, nothing has
-been proven: the switch resumes the wave order.
+:::note[Why the switch is not done wave by wave]
+Waves protect an unproven configuration. Once the test succeeds on each host,
+there is nothing left to protect&nbsp;: the switch goes out in one go, with at
+most `--max-parallel` hosts activated simultaneously. With `--skip-test`,
+nothing has been proven&nbsp;: the switch resumes the wave order.
 :::
 
-:::tip[Resume an interrupted run]
-`--resume` restarts from the last folder of `var/deployments/`: update skipped,
-waves and options of the original run, and the hosts that still had work
-(remaining, offline, failed, or only tested). Builds are reused if the revisions
-of the project and of `dnf/` have not moved and the paths are still in the
-store; otherwise they are redone. Nothing to resume: exit code `2`, no run.
+:::tip[Resume an interrupted rollout]
+`--resume` restarts from the last folder in `var/deployments/`&nbsp;: update
+skipped, waves and options of the original rollout, and the hosts that remained
+to be done (remaining, offline, failed, or only tested). Builds are reused if
+the revisions of the project and of `dnf/` have not moved and the paths are
+still in the store&nbsp;; otherwise they are redone. Nothing to resume&nbsp;:
+exit code `2`, no rollout.
 :::
 
 {/* t:p 9ad52175ec4d6348bd727913124244bc3668b1ccda0da23d300570b9b8b1e965 */}
@@ -261,10 +263,10 @@ network:
 
 Profiles separated by `:`, `[others]` designates the unlisted profiles. Optional block&nbsp;: without it, the tool applies the values above. The `--deployment-order` and `--critical-profiles` options take precedence over `config.yaml`.
 
-{/* t:p 0a5b254f6bf9490b52578c7302521a81749c025f7b5d164c02037162ec859964 */}
-### Timeouts and monitoring
+{/* t:p 214dd9d0d8b581abe98af854adfac1e1807d76c7b9845729d97a41c04566c4b9 */}
+### Timing and monitoring
 
-Two other optional `config.yaml` blocks set the durations:
+Two other optional blocks in `config.yaml` set the durations&nbsp;:
 
 ```yaml
 # etc/config.yaml
@@ -278,12 +280,12 @@ network:
 
 | Key | Role | Default |
 |---|---|---|
-| `pingInterval` | Seconds between two pings of tracked hosts | `15` |
-| `timeouts.<clé>` | Maximum duration of an operation, in seconds | depending on the operation |
+| `pingInterval` | Seconds between two presence probes | `15` |
+| `timeouts.<key>` | Maximum duration of an operation, in seconds | depends on the operation |
 
-`timeouts` keys, in the order of the run:
+`timeouts` keys, in the order of the rollout&nbsp;:
 
-| `timeouts.<clé>` | Default (s) |
+| `timeouts.<key>` | Default (s) |
 |---|---|
 | `flakeUpdate` | 120 |
 | `clean` | 60 |
@@ -299,8 +301,8 @@ network:
 | `killGrace` | 10 |
 
 :::note[An unknown key stops generation]
-`just generate` checks key names and refuses a zero or negative timeout: a typo
-would otherwise fall back to the default value, in silence.
+`just generate` checks key names and refuses a zero or negative duration&nbsp;:
+a typo would otherwise silently fall back to the default value.
 :::
 
 {/* t:p 99d045f2da864a2a62675432f5b261163caaaa11d7dea2034ff2be4239620384 */}

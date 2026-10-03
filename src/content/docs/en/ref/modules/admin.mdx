@@ -97,6 +97,42 @@ darkone.admin.fleet-update = {
 
 <hr/>
 
+{/* t:p 4f04e35d9e5542b33c929570c7976d2687be5ff11d777c5eeac96cd362fc439a */}
+### &#x1F451; darkone.admin.locate
+
+Fleet host locator (`dnf-locate`): ssh finds a host wherever it is plugged.
+
+A fleet name resolves to the host's home address. Once the host roams
+(another zone, or outside on the tailnet), every `ssh nix@<host>` — colmena,
+`fleet-update`, `just enter` — would aim at that dead address. Enabled on an
+admin host, a `ProxyCommand` routes these connections through `dnf-locate`.
+
+Paths tried, all derived from the topology:
+
+- `<host>`: home address, alone first — the usual case costs one lookup;
+- `<host>.<zone domain>`: reservation each zone holds for visiting hosts;
+- `<host>.tailnet.internal`: tailnet address (zone gateways resolve it).
+
+The first path to answer on the port wins.
+
+:::caution[Fleet ranges only]
+An alternate path counts only when its address lies in its own range (zone
+subnet, tailnet). A wildcard record of the public domain resolves any name,
+and the `nix` account pins no host key: the deploy would land on a stranger.
+:::
+
+:::tip[Where is my host?]
+`dnf-locate --print <host>` prints the path that answers, or fails.
+:::
+
+* **enable** `bool` Route ssh to fleet hosts through `dnf-locate` (home, zone reservations, tailnet).
+
+```nix
+darkone.admin.locate.enable = config.darkone.admin.nix.enable;
+```
+
+<hr/>
+
 {/* t:p 3843b1fc8c8bd6f6ad35516b2ac9860ccf154f96bdcfb041b93f5c65778a022c */}
 ### &#x1F451; darkone.admin.nix
 

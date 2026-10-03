@@ -97,6 +97,47 @@ darkone.admin.fleet-update = {
 
 <hr/>
 
+{/* t:p 4f04e35d9e5542b33c929570c7976d2687be5ff11d777c5eeac96cd362fc439a */}
+### &#x1F451; darkone.admin.locate
+
+Localiseur d'hôtes du parc (`dnf-locate`) : ssh retrouve un hôte où qu'il soit branché.
+
+Un nom de parc se résout vers l'adresse maison de l'hôte. Dès que l'hôte
+roame (autre zone, ou dehors sur le tailnet), chaque `ssh nix@<host>` —
+colmena, `fleet-update`, `just enter` — viserait cette adresse morte. Activé
+sur un hôte d'administration, un `ProxyCommand` route ces connexions via
+`dnf-locate`.
+
+Chemins essayés, tous dérivés de la topologie :
+
+- `<host>` : adresse maison, seule en premier — le cas courant coûte une
+  seule résolution ;
+- `<host>.<zone domain>` : réservation que chaque zone tient pour les hôtes
+  visiteurs ;
+- `<host>.tailnet.internal` : adresse tailnet (les passerelles de zone la
+  résolvent).
+
+Le premier chemin qui répond sur le port l'emporte.
+
+:::caution[Plages du parc uniquement]
+Un chemin alternatif ne compte que si son adresse se situe dans sa propre
+plage (sous-réseau de zone, tailnet). Un enregistrement joker du domaine
+public résout n'importe quel nom, et le compte `nix` ne fige aucune clé
+d'hôte : le déploiement atterrirait chez un inconnu.
+:::
+
+:::tip[Où est mon hôte ?]
+`dnf-locate --print <host>` affiche le chemin qui répond, ou échoue.
+:::
+
+* **enable** `bool` Routage de ssh vers les hôtes du parc via `dnf-locate` (maison, réservations de zone, tailnet).
+
+```nix
+darkone.admin.locate.enable = config.darkone.admin.nix.enable;
+```
+
+<hr/>
+
 {/* t:p 3843b1fc8c8bd6f6ad35516b2ac9860ccf154f96bdcfb041b93f5c65778a022c */}
 ### &#x1F451; darkone.admin.nix
 

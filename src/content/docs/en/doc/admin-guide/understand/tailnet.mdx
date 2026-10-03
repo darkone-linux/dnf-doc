@@ -226,10 +226,10 @@ A client only uses it as a resolver if it accepts the tailnet's DNS
 - **Leave control to gateways**: they keep their own DNS (`--accept-dns=false`),
   which their zone and its clients depend on.
 
-{/* t:p 91bc1bde70dba30de3eec75662137cb84d5c6f65aa840b40733bb0231ac959e1 */}
+{/* t:p 9a50d997c3505640fcf46a9cb2a8792e16543d4967c29ab37699de6e9d674b08 */}
 ### How it fits together
 
-A remote device opens a service of the `maison` zone:
+A remote device opens a service in the `home` zone&nbsp;:
 
 ```d2
 style.fill: transparent
@@ -241,8 +241,8 @@ unbound: unbound (HCS)
 gw: Home gateway
 
 app -> magic: photos.maison.domain.tld ?
-magic -> unbound: split DNS, through the tunnel
-unbound -> gw: maison zone
+magic -> unbound: Split DNS, through the tunnel
+unbound -> gw: home zone
 gw -> unbound: 10.0.1.1
 unbound -> magic: 10.0.1.1
 magic -> app: 10.0.1.1
@@ -250,18 +250,18 @@ app -> gw: HTTPS 10.0.1.1
 gw -> app: service page
 ```
 
-1. MagicDNS recognizes `domain.tld` and forwards the query, through the tunnel, to
-   unbound.
-2. unbound forwards it to the `maison` gateway's resolver, at its tailnet address.
+1. MagicDNS recognizes `domain.tld` and forwards the query, through the tunnel, to unbound.
+2. unbound forwards it to the `home` gateway's resolver, at its tailnet address.
 3. The answer is the gateway's LAN address (`10.0.1.1`).
-4. The device reaches it through the zone's subnet route; the policy authorizes it
-   on port 443 (`gateway-maison`).
+4. The device reaches it through the subnet route of the zone&nbsp;; the policy
+   allows it on port 443 (`gateway-maison`).
 
-<Aside type="caution" title="Gateways and HCS: no tailnet.internal names">
-Their system does not go through MagicDNS: `gw-atelier.tailnet.internal` does not
-resolve there. Aim at a tailnet address (see the
+<Aside type="caution" title="HCS: no tailnet.internal names">
+Its system does not go through MagicDNS: `gw-atelier.tailnet.internal` does not
+resolve there. Target a tailnet address (see the
 [network backup](/en/doc/how-to/admin/network-backup/)), or query MagicDNS
-directly: `dig @100.100.100.100 gw-atelier.tailnet.internal`.
+directly: `dig @100.100.100.100 gw-atelier.tailnet.internal`. Gateways, on the
+other hand, relay these names to MagicDNS for their whole LAN.
 </Aside>
 
 {/* t:p 2a52d780151021c39574fdca9d7606444d43380e64338b45341264ad7ddcaaaa */}
