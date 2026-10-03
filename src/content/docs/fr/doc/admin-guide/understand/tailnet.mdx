@@ -178,8 +178,13 @@ unbound -> peer: atelier.domain.tld
   services déclarés. Un nom inconnu d'une autre zone part vers la passerelle de cette
   zone (adresse LAN, à travers le tailnet)&nbsp;; le reste de `domain.tld` part vers
   unbound, sur le HCS.
-- **Services d'une zone**&nbsp;: `*.<zone>.domain.tld` pointe vers l'adresse LAN de la
-  passerelle de la zone, qui les sert derrière son proxy.
+- **Services d'une zone**&nbsp;: chaque service déclaré `<nom>.<zone>.domain.tld`
+  pointe vers l'adresse LAN de la passerelle de la zone, qui le sert derrière son proxy.
+- **Services globaux servis par une zone** (`git.domain.tld` sur une passerelle)&nbsp;:
+  unbound répond l'adresse LAN aux seules machines taguées, que la politique laisse
+  entrer dans les zones. Les autres appareils reçoivent l'adresse publique du HCS, qui
+  ne relaie que HTTPS. Adresses tailnet des machines lues dans Headscale par
+  `unbound-tailnet-view`.
 - **HCS**&nbsp;: unbound écoute sur `127.0.0.1` et sur l'adresse tailnet du HCS, pour
   les seules adresses du tailnet. Il transmet `<zone>.domain.tld` au résolveur de la
   passerelle, à son adresse tailnet&nbsp;: d'où l'importance de déclarer `vpn.ipv4`.
