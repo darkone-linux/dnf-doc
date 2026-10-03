@@ -131,7 +131,7 @@ La recette choisit l'outil à lancer, dans cet ordre&nbsp;:
 <Steps>
 1. **Mise à jour** : `nix flake update` du projet puis de `dnf/` (co-développement), `just clean`, un commit par dépôt.
 2. **Sélection** : hôtes, profils et zones lus dans `var/generated/`, filtrés par `--on` ; zone courante déduite de l'IP locale ; un builder élu par hôte.
-3. **Construction** : tous les hôtes sélectionnés, joignables ou non, chacun sur son builder.
+3. **Construction** : tous les hôtes sélectionnés, joignables ou non, chacun sur son builder. Présence sondée par la connexion SSH de déploiement, qui joint aussi un [hôte en déplacement](/fr/doc/admin-guide/understand/network/#joindre-un-hôte-en-déplacement).
 4. **Publication** : la fermeture de chaque hôte joignable est amenée dans son store, hors vagues, avant toute activation.
 5. **Test** : `switch-to-configuration test`, une vague par profil ; la vague suivante démarre quand tous ses hôtes sont OK ou écartés.
 6. **Switch** : tous les hôtes validés en test, **d'un seul coup**, hors ordre des vagues.
@@ -287,7 +287,7 @@ network:
 
 | Clé | Rôle | Défaut |
 |---|---|---|
-| `pingInterval` | Secondes entre deux pings des hôtes suivis | `15` |
+| `pingInterval` | Secondes entre deux sondes de présence | `15` |
 | `timeouts.<clé>` | Durée maximale d'une opération, en secondes | selon l'opération |
 
 Clés de `timeouts`, dans l'ordre du déroulé&nbsp;:

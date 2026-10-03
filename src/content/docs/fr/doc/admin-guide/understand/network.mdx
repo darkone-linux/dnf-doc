@@ -228,6 +228,10 @@ Qui résout quoi :
   sont aiguillés vers la bonne passerelle, ou vers le résolveur pivot du HCS.
 - Les noms publics (Internet) partent vers les DNS chiffrés en amont, filtrés par
   AdGuardHome s'il est activé.
+- Seuls les noms déclarés existent&nbsp;: un nom inconnu sous une zone répond
+  `NXDOMAIN`, sans renvoi vers la passerelle.
+- Les noms du tailnet (`<nœud>.tailnet.internal`) sont relayés par chaque
+  passerelle à MagicDNS&nbsp;: résolus aussi depuis les LAN.
 
 {/* t:p 85f3fe6956a70f9611dbcb98bd9f85a9a205238c879b765a9ed130bc2f4ddf0b */}
 ### Le résolveur pivot (HCS)
@@ -366,8 +370,8 @@ s'appuyant sur la MAC, l'adresse ne change plus entre l'installation et le
 premier démarrage réel.
 
 <Aside type="note" title="Machines sans adresse MAC déclarée">
-La réservation exige une clé `mac` dans `etc/config.yaml`. Sans elle, la machine
-reste joignable chez elle, mais pas ailleurs. `just install` la réclame avant
+La réservation exige une clé `mac` dans `etc/config.yaml`. Sans elle, hors de
+chez elle, la machine n'est joignable que par le tailnet. `just install` la réclame avant
 tout formatage&nbsp;; `just host-info <hôte> <ip>` la relève sur une machine
 démarrée.
 </Aside>
@@ -426,10 +430,31 @@ Une réponse sur le port 2222 signifie que l'hôte attend sa passphrase LUKS dan
 son initrd&nbsp;: `just unlock` y répond sans intervention. Voir [Chiffrement
 des disques](/fr/doc/admin-guide/operate/luks/).
 
-Reste le déploiement&nbsp;: [Colmena](https://colmena.cli.rs/) s'adresse à un
-nœud par son nom, qui désigne l'adresse d'origine. Pour un hôte en visite,
-`just configure` pose donc une redirection SSH temporaire, retirée en fin
-d'installation ou à la main&nbsp;:
+### Joindre un hôte en déplacement
+
+[Colmena](https://colmena.cli.rs/) (`just apply`), `fleet-update` et
+`just enter` visent un hôte par son nom, qui désigne son adresse d'origine. Sur
+une machine d'administration, chaque connexion SSH vers un hôte du réseau passe
+par `dnf-locate`, qui essaie&nbsp;:
+
+1. le nom seul, d'abord&nbsp;: le cas courant ne coûte rien de plus ;
+2. sinon, en parallèle, sa réservation dans chaque zone
+   (`portable.atelier.domain.tld`) et son nom tailnet (`portable.tailnet.internal`).
+
+Le premier chemin qui répond l'emporte. `dnf-locate --print portable` affiche
+celui qu'il trouve.
+
+<Aside type="caution" title="Une adresse hors plage est ignorée">
+Une réservation doit tomber dans le sous-réseau de sa zone, un nom tailnet dans
+la plage du tailnet. Sans ce contrôle, un joker du DNS public enverrait le
+déploiement chez un inconnu&nbsp;: le compte `nix` ne vérifie aucune clé d'hôte.
+</Aside>
+
+Le chemin tailnet ne vaut que pour une machine d'administration (`tag:admin`)&nbsp;:
+la politique d'accès n'ouvre aux zones aucun autre client du tailnet.
+
+Pour imposer une adresse, `just configure` pose une redirection SSH temporaire
+pour un hôte en visite, retirée en fin d'installation ou à la main&nbsp;:
 
 ```sh
 just roaming             # afficher les redirections en cours

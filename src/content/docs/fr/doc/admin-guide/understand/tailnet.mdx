@@ -258,11 +258,12 @@ gw -> app: page du service
 4. L'appareil l'atteint par la route de sous-réseau de la zone&nbsp;; la politique
    l'autorise sur le port 443 (`gateway-maison`).
 
-<Aside type="caution" title="Passerelles et HCS : pas de noms tailnet.internal">
-Leur système ne passe pas par MagicDNS&nbsp;: `gw-atelier.tailnet.internal` n'y
+<Aside type="caution" title="HCS : pas de noms tailnet.internal">
+Son système ne passe pas par MagicDNS&nbsp;: `gw-atelier.tailnet.internal` n'y
 résout pas. Viser une adresse tailnet (voir la
 [sauvegarde réseau](/fr/doc/how-to/admin/network-backup/)), ou interroger MagicDNS
-directement&nbsp;: `dig @100.100.100.100 gw-atelier.tailnet.internal`.
+directement&nbsp;: `dig @100.100.100.100 gw-atelier.tailnet.internal`. Les
+passerelles, elles, relaient ces noms à MagicDNS pour tout leur LAN.
 </Aside>
 
 {/* t:p 2a52d780151021c39574fdca9d7606444d43380e64338b45341264ad7ddcaaaa */}
