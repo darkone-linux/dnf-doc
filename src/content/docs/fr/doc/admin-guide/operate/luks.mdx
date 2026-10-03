@@ -111,7 +111,7 @@ La phase par défaut ajoute ce qui demande la machine&nbsp;:
    n'en régénère jamais une nouvelle, cela invaliderait celle qu'a posée
    l'installation) ;
 6. sur une **passerelle**, relève l'**IP WAN** courante dans le manifeste
-   (repli de `just enter` et `just unlock`, voir plus bas), à relancer si le
+   (repli de `just unlock`, voir plus bas), à relancer si le
    fournisseur d'accès renumérote ;
 7. si **aucune passphrase gérée** ne déverrouille le volume (hôte installé
    avant la bascule vers le formatage partagé), demande sa passphrase
@@ -192,11 +192,10 @@ Ce que l'option apporte réellement, c'est l'**attente** du périphérique
 
 À distance, l'initrd démarre un **sshd dédié sur le port 2222**, avec sa
 propre clé d'hôte persistante, accessible uniquement avec la clé de
-déploiement `nix`. Deux façons d'y répondre&nbsp;:
+déploiement `nix`. `just unlock` y répond&nbsp;:
 
 ```sh
-just unlock <hôte>     # sans humain : la passphrase est lue dans sops
-just enter <hôte>      # interactif : le prompt est présenté au terminal
+just unlock <hôte>     # passphrase lue dans sops, sinon demandée au terminal
 ```
 
 `just unlock` attend que le port 2222 apparaisse (un point par tentative), lit
@@ -218,11 +217,11 @@ témoin fiable est donc la machine qui quitte son initrd et répond sur le port 
 et c'est ce que `just unlock` observe depuis le poste d'administration.
 :::
 
-`just enter` fait la même chose en mode interactif&nbsp;: quand le port 22 ne
-répond pas, il sonde le 2222 sur l'IP explicite (si fournie), le nom d'hôte,
-puis l'**IP WAN enregistrée dans le manifeste**, et présente le prompt LUKS via
-`systemd-tty-ask-password-agent`. Dans les deux cas, la passphrase acceptée, le
-démarrage continue et le port 22 revient.
+Aucune passphrase stockée acceptée, ou pas de clé d'infrastructure sur le
+poste&nbsp;: depuis un terminal, `just unlock` présente le prompt LUKS via
+`systemd-tty-ask-password-agent`. Il sonde le 2222 sur l'IP explicite (si
+fournie), le nom d'hôte, puis l'**IP WAN enregistrée dans le manifeste**. Dans
+les deux cas, la passphrase acceptée, le démarrage continue et le port 22 revient.
 
 :::note[Pourquoi deux chemins]
 `systemd-tty-ask-password-agent` ne parle qu'à un terminal&nbsp;: aucun script
