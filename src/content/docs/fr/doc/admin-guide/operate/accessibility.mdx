@@ -175,7 +175,11 @@ Options de `darkone.home.umi`, à poser dans `usr/users/<login>/default.nix`.
 | `enableTrackerAuto` | `true` | Regard et clic suivent le traqueur |
 | `gazeFilterSpeed` | `2.0` | Réactivité du regard (Talon&nbsp;: `1.0`) |
 | `cursorFilterSpeed` | `4.0` | Réactivité du pointeur (Talon&nbsp;: `2.0`) |
+| `enableGazeControl` | `true` | Le pointeur suit le regard |
 | `enableHeadControl` | `false` | La tête déplace aussi le pointeur |
+| `enableHeadJump` | `false` | Un mouvement de tête ramène le pointeur au regard |
+| `enableMouseJump` | `false` | Bouger une souris vers le regard y ramène le pointeur |
+| `enableGazeFocus` | `false` | La fenêtre regardée prend le focus (expérimental) |
 | `dwellTime` | `1.2` | Délai du clic par temporisation, en secondes |
 | `panelHeight` | `64` | Hauteur du panneau Cinnamon, en pixels |
 | `textScaling` | `1.4` | Facteur d'agrandissement du texte (Cinnamon) |
@@ -187,6 +191,12 @@ Sous Cinnamon, `enableTrackerAuto` active le pilotage du pointeur par le regard
 et le clic par temporisation au branchement du traqueur, et coupe ce clic au
 débranchement&nbsp;: **à la souris, il clique sur tout ce que le pointeur
 survole**. `enableDwell` ne sert alors que sous GNOME.
+:::
+
+:::note[Modes du menu Eye Tracking]
+`enableGazeControl`, `enableHeadControl`, `enableHeadJump`, `enableMouseJump`
+et `enableGazeFocus` sont réimposés à chaque démarrage de Talon. Un changement
+fait depuis le menu dure jusqu'au prochain démarrage.
 :::
 
 :::tip[Apports communautaires]
