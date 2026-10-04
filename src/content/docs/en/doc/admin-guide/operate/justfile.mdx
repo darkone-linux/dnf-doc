@@ -626,22 +626,25 @@ just update-dnf
 These commands interact with fleet hosts: maintenance,
 reboot, cleanup, and boot repair.
 
-{/* t:p 9d330bebbc10ed7f0f1d8f494deb95df3363124b85db188c57f5347b25b011f0 */}
-### ✳️ `enter <host>` / `e` ⭐
+{/* t:p 87cfe4223c0fab5e4381d0cc7692d28386bf04e9e7395dfe897943bf8e4ca508 */}
+### ✳️ `enter <hôte>` / `e` ⭐
 
-Opens an interactive SSH session as `nix@<host>`. If the host is waiting for its LUKS passphrase at boot (port 22 closed), it switches to its initrd sshd (port 2222, falling back to the manifest's WAN IP for a gateway) and presents the passphrase prompt. See [Disk encryption (LUKS)](/en/doc/admin-guide/operate/luks/).
+Opens an interactive SSH session as `nix@<hôte>`, on port 22 only. A host outside its zone is located by `dnf-locate` (see
+[Joining a host while travelling](/en/doc/admin-guide/understand/network/#joining-a-roaming-host)).
+A host waiting for its LUKS passphrase falls under `just unlock`.
 
 ```sh
 just enter myserver
 ```
 
-{/* t:p 9f400b7be7d3bc1a8e6bc34f3cdb28a586672c31447cf4e5309adcab3094c35e */}
+{/* t:p e99600d63e174503edb2110d8a6fb6bd9f080610effa9bd6ec6c5b23dcb7f9fa */}
 ### ✳️ `unlock <hôte> [ip] [délai]`
 
-Answers the LUKS prompt of a host stuck in its initrd, **with no human**&nbsp;:
-the passphrase is read from sops and pushed via the sshd on port 2222. Waits
-for the host to appear (one dot per attempt), which allows chaining it right
-after a reboot. Called automatically by `just full-install`.
+Answers the LUKS prompt of a host still sitting in its initrd, **with no human present**&nbsp;:
+the passphrase is read from sops and pushed through the sshd on port 2222. It waits for
+the host to show up (one dot per attempt), which makes it possible to chain it right
+after a reboot. Called automatically by `just full-install`. No stored passphrase
+accepted&nbsp;: from a terminal, the request is presented.
 
 On a host without a LUKS volume, it is a logged no-op.
 

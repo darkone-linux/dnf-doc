@@ -197,7 +197,7 @@ darkone.host.server = {
 
 <hr/>
 
-{/* t:p e9849f054ddb95100ac62edf8720767a794fb6b7900993299f80f899b8e9d08e */}
+{/* t:p 7716f827fd2b8a8a5e0c671f9bf162f3144a8acbff5cfd460d9afa7c84c40241 */}
 ### &#x1F4E6; darkone.host.umi
 
 Host profile: UMI (Unified Multimodal Input) workstation, usable without keyboard/mouse.
@@ -234,6 +234,13 @@ udev/uinput/a11y are still configured and Talon can be run manually
 The Tobii 5 firmware must be initialized once on a Windows machine
 (Tobii Experience). On first Talon start, replug the tracker then
 restart Talon (udev), and run the calibration from the Talon menu.
+:::
+
+:::caution[No mousetweaks]
+muffin does dwell clicks itself (click types from the panel). A mousetweaks
+daemon in the session would dwell in parallel with plain left clicks (the
+chosen type is never used), pop its "Hover Click" window and grab the mouse
+wheel on the root window until logout (`XGrabButton` on buttons 4/5).
 :::
 
 :::note[Expected kernel noise]

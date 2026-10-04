@@ -419,76 +419,117 @@ darkone.home.office = {
 
 <hr/>
 
-{/* t:p 699279bd25188b672928b67f8e8129e10ee254f1d706557d90f24d6a8a503c31 */}
-### 🏠 darkone.home.umi
+{/* t:p 6891ae5d180fc59c4bd0f406ae23255004b8d020089d9424a0d7ece29a0c72b6 */}
+### &#x1F3E0; darkone.home.umi
 
-Unified Multimodal Input (UMI)
+Entrée multimodale unifiée (UMI)
 
 Écran tactile + voix + regard (démarrage automatique de Talon + Onboard).
 
 :::note[La session dépend de l'hôte]
 - **Hôte `darkone.host.umi`** : session Cinnamon X11 (udev, uinput, Talon
-  fournis par l'hôte). Talon et un clavier Onboard ancré (prédiction de
-  mots, modificateurs persistants) démarrent avec la session.
+  fournis par l'hôte). Talon et le clavier Onboard docked (prédiction
+  de mots, modificateursadhésifs) démarrent avec la session, clavier masqué
+  jusqu'à demande. Panneau, icônes et texte agrandis pour les cibles du
+  regard (`panelHeight`, `textScaling`). Panneau DNF (`enablePanel`) : lanceurs | fenêtres
+  ouvertes, puis clic au survol avec ses types, zone de pause, bascule  du regard (applet `umi-mouse`), menu d'accessibilité, activation d'Onboard.
 - **Tout autre hôte** : GNOME Wayland avec son accessibilité native : clavier
-  à l'écran, gros pointeur et texte. Talon et Onboard, uniquement X11,
+  à l'écran, grand pointeur et grand texte. Talon et Onboard, uniquement X11,
   restent désactivés.
 
-Clic par dwell (`enableDwell`) activable dans les deux cas.
+Clic par dwell : à activer (`enableDwell`) sous GNOME. Sous Cinnamon, un script
+utilisateur Talon le fait suivre le regard, avec le contrôle du regard
+(`enableTrackerAuto`). Talon 0.4 et 1.0 indifféremment ; le « Always On » de 1.0
+est désactivé, le capteur passe en veille avec le contrôle du regard.
+:::
+
+:::note[Pointage par le regard seul (Talon 1.0)]
+Les filtres de Talon figent le curseur ~2 mm avant le regard : le script les
+augmente (`gazeFilterSpeed`, `cursorFilterSpeed`, mesuré sur un Tobii 5). Les modes
+du menu Eye Tracking sont déclarés (`enableGazeControl`, `enableHeadControl`,
+`enableHeadJump`, `enableMouseJump`, `enableGazeFocus`) et redéfinis à chaque
+démarrage de Talon : regard seul par défaut, une tête instable entraîne le curseur.
 :::
 
 :::tip[Scripts communautaires]
-Définissez `communityScripts` sur un arbre github:talonhub/community récupéré
-pour obtenir le contrôle vocal complet de la souris et du regard (zoom de la
-souris, pop click) de façon déclarative.
+Mettez `communityScripts` sur un arbre github:talonhub/community récupéré pour
+obtenir un contrôle complet de la voix et de la souris via le regard (zoom
+de la souris, pop click) de façon déclarative.
 :::
 
 :::note[Deux schémas]
-Les réglages vont vers les deux familles : org/cinnamon/* pour la session
-UMI de l'hôte, org/gnome/* pour les sessions GNOME ailleurs (mousetweaks
-les lit aussi). Exception : les clés verrouillées par le module gnome de
-DNF ne sont jamais écrites ici, une écriture sur une clé verrouillée
-interrompt tout le `dconf load` de home-manager.
-Le verrouillage de session reste activé côté GNOME (verrouillé par le module
-gnome de DNF) ; `idle-delay = 0` évite de le déclencher, et la session
-Cinnamon a le sien entièrement désactivé.
+Les réglages vont vers les deux familles : org/cinnamon/* pour la session hôte
+UMI, org/gnome/* pour les sessions GNOME ailleurs. Sous Cinnamon, csd met en
+miroir les touches de souris d'accessibilité entre les deux familles, dans les
+deux sens.
+Exception : les touches verrouillées par le module DNF gnome ne sont jamais
+écrites ici, une écriture sur une clé verrouillée fait échouer l'ensemble du
+`dconf load` de home-manager.
+Le verrouillage de session reste activé côté GNOME (verrouillé par le module DNF
+gnome) ; `idle-delay = 0` évite de le déclencher, et la session Cinnamon a son
+propre verrouillage entièrement désactivé.
 :::
 
-:::caution[Keyring de connexion : utilisateur en autologin uniquement, deux modes selon l'hôte]
-Une session en autologin ne saisit aucun mot de passe, PAM n'a donc rien à
-transmettre à gnome-keyring et chaque application utilisant un secret affiche
-une invite gcr que l'utilisateur UMI ne peut pas répondre. Une connexion par
-mot de passe déverrouille le keyring comme d'habitude et n'est pas touchée.
-Pour l'utilisateur en autologin, la correction dépend de l'hôte :
+:::caution[Coffre de connexion : utilisateur en autologin seulement, deux modes selon l'hôte]
+Une session en autologin ne tape aucun mot de passe, donc PAM n'a rien à
+confier à gnome-keyring et chaque application utilisant un secret affiche une
+invite gcr à laquelle l'utilisateur UMI ne peut pas répondre. Une connexion par
+mot de passe déverrouille le coffre comme d'habitude et n'est pas touchée. Pour
+l'utilisateur en autologin, la correction dépend de l'hôte :
 
-- **Hôte non chiffré** : le keyring de connexion est initialisé avec un mot de
-  passe vide, que gnome-keyring stocke en clair et déverrouille seul (il
-  essaie un mot de passe vide avant de demander). Tout keyring préexistant
-  protégé par mot de passe est supprimé : sa phrase secrète est
-  impossible à saisir ici, elle ne pourrait donc que produire indéfiniment
-  l'invite. L'autologin accorde déjà toute la session à quiconque démarre la
-  machine, cela ne coûte donc rien en confidentialité.
+- **Hôte non chiffré** : le coffre de connexion est initialisé avec un mot de
+  passe vide, que gnome-keyring stocke en clair et déverrouille seul (il essaie
+  un mot de passe vide avant de demander). Tout coffre préexistant protégé par
+  un mot de passe est supprimé — sa phrase secrète est impossible à taper ici,
+  elle ne pourrait donc que produire l'invite indéfiniment. L'autologin accorde
+  déjà toute la session à quiconque démarre la machine, cela ne coûte donc rien
+  en confidentialité réelle.
 - **Hôte chiffré** (`darkone.system.luks.volumes` non vide) : rien n'est
-  initialisé. La phrase secrète saisie au démarrage est mise en cache dans
-  le keyring du noyau et transmise à gnome-keyring par `pam_gdm`, le
-  keyring reste donc chiffré avec elle. C'est le seul mode qui protège les
-  secrets au repos.
+  initialisé. La phrase secrète tapée au démarrage est mise en cache dans le
+  keyring du noyau et confiée à gnome-keyring par `pam_gdm`, le coffre reste
+  donc chiffré avec elle. C'est le seul mode qui protège les secrets au repos.
 
-Piège, hôtes chiffrés uniquement : faire tourner la phrase secrète LUKS
-(valeur sops modifiée, `luks-passphrase-sync`) laisse le keyring sur
-l'ancienne. GNOME affiche alors « The password you use to log in to your
-computer no longer matches that of your login keyring ». Supprimez
+Piège, hôtes chiffrés seulement : la rotation de la phrase secrète LUKS (valeur
+sops modifiée, `luks-passphrase-sync`) laisse le coffre sur l'ancienne — GNOME
+signale alors « The password you use to log in to your computer no longer
+matches that of your login keyring ». Supprimez
 `~/.local/share/keyrings/login.keyring` et reconnectez-vous.
 :::
 
 * **enable** `bool` Configuration de l'entrée multimodale UMI (Talon + Onboard)
 * **enableTalonAutostart** `bool` Démarrer Talon à l'ouverture de session (talon doit être dans le PATH).
-* **communityScripts** `nullOr package` Arbre talonhub/community déployé dans ~/.talon/user/community.
-* **enableDwell** `bool` Clic par dwell : cliquer en laissant le pointeur au repos. Désactivé par défaut — uniquement
-  utilisable avec un tracker oculaire, et à la souris il se déclenche sur ce que
-  le pointeur a laissé en dessous (typiquement le menu d'accessibilité
-  activant le zoom ou le clavier à l'écran)
+* **communityScripts** `nullOr package` arbre talonhub/community déployé dans ~/.talon/user/community.
+* **enableDwell** `bool` clic par dwell : cliquer en laissant le pointeur au repos. Désactivé par défaut — ce n'est
+  utilisable qu'avec un capteur oculaire, et à la souris il se déclenche sur ce que
+  le pointeur a laissé survolé (typiquement le menu d'accessibilité basculant le
+  zoom ou le clavier à l'écran)
 * **dwellTime** `float` Délai du clic par dwell en secondes.
+* **enableTrackerAuto** `bool` Capteur oculaire branché : contrôle de la souris par le regard de Talon et clic au survol activés ;
+  débranché : clic au survol désactivé (session Cinnamon). Prend le dessus
+  sur `enableDwell` sous Cinnamon.
+* **gazeFilterSpeed** `nullOr numbers.positive` Coefficient du filtre de regard par œil de Talon Control Mouse, avec
+  `enableTrackerAuto` : plus élevé réagit plus vite et lisse moins. La valeur
+  propre de Talon (1.0) fige le curseur avant le regard ; `null` la conserve.
+* **cursorFilterSpeed** `nullOr numbers.positive` Coefficient du filtre de curseur de Talon Control Mouse, avec
+  `enableTrackerAuto` : plus élevé réagit plus vite, dépasse plus. `null`
+  conserve celui de Talon (2.0).
+* **enableGazeControl** `bool` Talon Gaze Control, avec `enableTrackerAuto` : le curseur suit le regard.
+* **enableHeadControl** `bool` Talon Head Control, avec `enableTrackerAuto` : les mouvements de tête déplacent aussi
+  le curseur. Désactivé par défaut, une tête instable entraîne le curseur
+  loin du regard
+* **enableHeadJump** `bool` Talon Head Jump, avec `enableTrackerAuto` : un mouvement de tête amène le
+  curseur au regard
+* **enableMouseJump** `bool` Talon Mouse Jump, avec `enableTrackerAuto` : déplacer une vraie souris vers
+  le regard y amène le curseur. Désactivé par défaut, cela arrache le pointeur
+  d'un assistant
+* **enableGazeFocus** `bool` Talon Gaze Focus (expérimental), avec `enableTrackerAuto` : la fenêtre
+  regardée reçoit le focus
+* **panelHeight** `ints.between 40 96` Hauteur du panneau Cinnamon en pixels, ses icônes suivent (cibles du regard).
+* **textScaling** `float` Facteur d'agrandissement du texte de la session Cinnamon (les boutons grossissent avec leurs libellés).
+* **enablePanel** `bool` Panneau Cinnamon géré par DNF : lanceurs et fenêtres ouvertes séparés,
+  contrôles du clic au survol (types de clic, zone de pause), menu
+  d'accessibilité, activation du clavier. Réécrit à chaque activation.
+* **panelLaunchers** `listOf str` Lanceurs du panneau (ids de fichiers .desktop), avec `enablePanel`.
 
 ```nix
 darkone.home.umi = {
@@ -497,6 +538,18 @@ darkone.home.umi = {
   communityScripts = null;
   enableDwell = false;
   dwellTime = 1.2;
+  enableTrackerAuto = true;
+  gazeFilterSpeed = 2.0;
+  cursorFilterSpeed = 4.0;
+  enableGazeControl = true;
+  enableHeadControl = false;
+  enableHeadJump = false;
+  enableMouseJump = false;
+  enableGazeFocus = false;
+  panelHeight = 64;
+  textScaling = 1.5;
+  enablePanel = true;
+  panelLaunchers = [ ];
 };
 ```
 

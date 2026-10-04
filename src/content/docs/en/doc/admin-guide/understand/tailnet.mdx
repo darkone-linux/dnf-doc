@@ -132,23 +132,23 @@ maison.gw -> atelier.gw: tailnet, route 10.1.0.0/16
 What a gateway lets through is detailed in [What crosses a
 gateway](/en/doc/admin-guide/understand/network/#what-goes-through-a-gateway).
 
-{/* t:p fe7c76bd443a57614cb4878bb829c13acbafe3db8f726431921ad43c0f52df4e */}
+{/* t:p a304f602d810ac041ca8946db2ad498564714156ca34634be6dab6082e034c3d */}
 ## DNS
 
-Every machine queries a different resolver, but a zone's names always end up with
-the same owner: that zone's gateway.
+Each machine queries a different resolver, but the names of a zone always end up
+at the same owner: the gateway of that zone.
 
-| Machine | Resolver | A zone's names | Global services | Internet |
+| Machine | Resolver | Zone names | Global services | Internet |
 |---|---|---|---|---|
-| Workstation of a zone, gateway | gateway's dnsmasq, behind AdGuard Home if enabled | dnsmasq, or the zone's gateway | dnsmasq, or the HCS's unbound | public DNS, filtered by AdGuard Home |
+| Machine in a zone, gateway | gateway's dnsmasq, behind AdGuard Home if enabled | dnsmasq, or the zone's gateway | dnsmasq, or the HCS's unbound | Public DNS, filtered by AdGuard Home |
 | HCS | unbound, local | the zone's gateway | unbound | Quad9, encrypted |
-| Remote device | MagicDNS (`100.100.100.100`) | through the HCS's unbound | through the HCS's unbound | resolver of the visited network |
+| Remote device | MagicDNS (`100.100.100.100`) | via the HCS's unbound | via the HCS's unbound | the visited network's resolver |
 
 ```d2
 style.fill: transparent
 direction: down
 
-pc: Workstation of a zone { shape: person }
+pc: Machine in a zone { shape: person }
 remote: Remote device { shape: person }
 
 gw: Home gateway {
@@ -166,23 +166,30 @@ visited: Resolver\nof the visited network { shape: cloud }
 pc -> gw.agh
 remote -> magic
 gw.agh -> upstream: Internet
-gw.dnsmasq -> peer: atelier.domain.tld
+gw.dnsmasq -> peer: workshop.domain.tld
 gw.dnsmasq -> unbound: domain.tld
 magic -> unbound: domain.tld
 magic -> visited: Internet
-unbound -> peer: atelier.domain.tld
+unbound -> peer: workshop.domain.tld
 ```
 
-- **Gateway**: dnsmasq knows the machines of all zones and the declared services.
-  An unknown name of another zone goes to that zone's gateway (LAN address, through
-  the tailnet); the rest of `domain.tld` goes to unbound, on the HCS.
-- **A zone's services**: `*.<zone>.domain.tld` points to the zone gateway's LAN
-  address, which serves them behind its proxy.
-- **HCS**: unbound listens on `127.0.0.1` and on the HCS's tailnet address, for
-  tailnet addresses only. It forwards `<zone>.domain.tld` to the gateway's
-  resolver, at its tailnet address: hence the importance of declaring `vpn.ipv4`.
-- **`headscale.domain.tld`**: never requested on the tunnel it helps set up, see
-  [Booting the control plane](/en/doc/admin-guide/operate/vpn/#control-plane-bootstrap).
+- **Gateway**&nbsp;: dnsmasq knows the machines of every zone and the declared
+  services. An unknown name from another zone goes to that zone's gateway (LAN
+  address, through the tailnet)&nbsp;; the rest of `domain.tld` goes to unbound,
+  on the HCS.
+- **Services of a zone**&nbsp;: each declared service `<name>.<zone>.domain.tld`
+  points to the gateway's LAN address of the zone, which serves it behind its proxy.
+- **Global services served by a zone** (`git.domain.tld` on a gateway)&nbsp;:
+  unbound answers with the LAN address to the tagged machines only, that the policy
+  lets into the zones. The other devices receive the HCS's public address, which
+  only relays HTTPS. Machines' tailnet addresses read in Headscale by
+  `unbound-tailnet-view`.
+- **HCS**&nbsp;: unbound listens on `127.0.0.1` and on the HCS's tailnet address,
+  for tailnet addresses only. It forwards `<zone>.domain.tld` to the gateway's
+  resolver, at its tailnet address&nbsp;: hence the importance of declaring
+  `vpn.ipv4`.
+- **`headscale.domain.tld`**&nbsp;: never queried from the tunnel it helps to set up,
+  see [Control plane bootstrapping](/en/doc/admin-guide/operate/vpn/#control-plane-bootstrap).
 
 {/* t:p a6aeea99a3370e2a3d25fa9effbb15e98f0384c764eec332452b418eb1cdef35 */}
 ## MagicDNS

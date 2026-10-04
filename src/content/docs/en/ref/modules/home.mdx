@@ -424,7 +424,7 @@ darkone.home.office = {
 
 <hr/>
 
-{/* t:p 699279bd25188b672928b67f8e8129e10ee254f1d706557d90f24d6a8a503c31 */}
+{/* t:p 6891ae5d180fc59c4bd0f406ae23255004b8d020089d9424a0d7ece29a0c72b6 */}
 ### &#x1F3E0; darkone.home.umi
 
 Unified Multimodal Input (UMI)
@@ -434,11 +434,26 @@ Touchscreen + voice + gaze (Talon autostart + Onboard).
 :::note[Session depends on the host]
 - **`darkone.host.umi` host**: Cinnamon X11 session (udev, uinput, Talon
   provided by the host). Talon and a docked Onboard keyboard (word
-  prediction, sticky modifiers) start with the session.
+  prediction, sticky modifiers) start with the session, the keyboard hidden
+  until asked for. Panel, icons and text enlarged for gaze targets
+  (`panelHeight`, `textScaling`). DNF panel (`enablePanel`): launchers | open
+  windows, then hover click types, pause zone, gaze switch (applet
+  `umi-mouse`), accessibility menu, Onboard toggle.
 - **Any other host**: GNOME Wayland with its native accessibility: on-screen
   keyboard, big pointer and text. Talon and Onboard, X11-only, stay off.
 
-Opt-in dwell click (`enableDwell`) in both cases.
+Dwell click: opt-in (`enableDwell`) under GNOME. In Cinnamon, a Talon user
+script makes it follow the eye tracker, with gaze control (`enableTrackerAuto`).
+Talon 0.4 and 1.0 alike; 1.0's "Always On" is switched off, the tracker goes
+dark with gaze control.
+:::
+
+:::note[Gaze-only pointing (Talon 1.0)]
+Talon's filters freeze the cursor ~2 mm short of the gaze: the script raises
+them (`gazeFilterSpeed`, `cursorFilterSpeed`, measured on a Tobii 5). Eye
+Tracking menu modes are declared (`enableGazeControl`, `enableHeadControl`,
+`enableHeadJump`, `enableMouseJump`, `enableGazeFocus`) and set again at
+each Talon start: gaze only by default, an unsteady head drags the cursor.
 :::
 
 :::tip[Community scripts]
@@ -448,7 +463,8 @@ full voice and gaze mouse control (zoom mouse, pop click) declaratively.
 
 :::note[Dual schemas]
 Settings go to both families: org/cinnamon/* for the UMI host session,
-org/gnome/* for GNOME sessions elsewhere (mousetweaks reads it too).
+org/gnome/* for GNOME sessions elsewhere. In Cinnamon, csd mirrors the
+a11y mouse keys between both families, both ways.
 Exception: keys locked by the DNF gnome module are never written here,
 a write to a locked key aborts the whole home-manager `dconf load`.
 Screen locking stays enabled GNOME-side (locked by the DNF gnome module);
@@ -488,6 +504,32 @@ matches that of your login keyring". Delete
   the pointer was left over (the a11y menu toggling zoom or the on-screen
   keyboard, typically)
 * **dwellTime** `float` Dwell click delay in seconds.
+* **enableTrackerAuto** `bool` Eye tracker plugged in: Talon gaze mouse control and hover click on;
+  unplugged: hover click off (Cinnamon session). Takes over
+  `enableDwell` in Cinnamon.
+* **gazeFilterSpeed** `nullOr numbers.positive` Talon Control Mouse per-eye gaze filter coefficient, with
+  `enableTrackerAuto`: higher reacts faster and smooths less. Talon's
+  own value (1.0) freezes the cursor short of the gaze; `null` keeps it.
+* **cursorFilterSpeed** `nullOr numbers.positive` Talon Control Mouse cursor filter coefficient, with
+  `enableTrackerAuto`: higher reacts faster, overshoots more. `null`
+  keeps Talon's own (2.0).
+* **enableGazeControl** `bool` Talon Gaze Control, with `enableTrackerAuto`: the cursor follows the gaze.
+* **enableHeadControl** `bool` Talon Head Control, with `enableTrackerAuto`: head movements also move
+  the cursor. Off by default, an unsteady head drags the cursor away
+  from the gaze
+* **enableHeadJump** `bool` Talon Head Jump, with `enableTrackerAuto`: a head movement brings the
+  cursor to the gaze
+* **enableMouseJump** `bool` Talon Mouse Jump, with `enableTrackerAuto`: moving a real mouse towards
+  the gaze brings the cursor there. Off by default, it yanks a helper's
+  pointer
+* **enableGazeFocus** `bool` Talon Gaze Focus (experimental), with `enableTrackerAuto`: the window
+  looked at gets the focus
+* **panelHeight** `ints.between 40 96` Cinnamon panel height in pixels, its icons follow (gaze targets).
+* **textScaling** `float` Text scaling factor of the Cinnamon session (buttons grow with their labels).
+* **enablePanel** `bool` Cinnamon panel managed by DNF: launchers and open windows set apart,
+  hover click controls (click types, pause zone), accessibility menu,
+  keyboard toggle. Rewritten at every activation.
+* **panelLaunchers** `listOf str` Panel launchers (desktop file ids), with `enablePanel`.
 
 ```nix
 darkone.home.umi = {
@@ -496,6 +538,18 @@ darkone.home.umi = {
   communityScripts = null;
   enableDwell = false;
   dwellTime = 1.2;
+  enableTrackerAuto = true;
+  gazeFilterSpeed = 2.0;
+  cursorFilterSpeed = 4.0;
+  enableGazeControl = true;
+  enableHeadControl = false;
+  enableHeadJump = false;
+  enableMouseJump = false;
+  enableGazeFocus = false;
+  panelHeight = 64;
+  textScaling = 1.5;
+  enablePanel = true;
+  panelLaunchers = [ ];
 };
 ```
 
