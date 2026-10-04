@@ -171,16 +171,17 @@ Options de `darkone.home.umi`, à poser dans `usr/users/<login>/default.nix`.
 | `enable` | activé par le profil | Active le profil d'utilisateur |
 | `enableTalonAutostart` | `true` | Lance Talon à l'ouverture de session |
 | `communityScripts` | `null` | Arbre `talonhub/community` déployé dans `~/.talon/user/community` |
-| `enableDwell` | `false` | Clic par temporisation du pointeur |
+| `enableDwell` | `false` | Clic par temporisation permanent |
+| `enableTrackerAuto` | `true` | Regard et clic suivent le traqueur |
 | `dwellTime` | `1.2` | Délai du clic par temporisation, en secondes |
 | `panelHeight` | `64` | Hauteur du panneau Cinnamon, en pixels |
 | `textScaling` | `1.5` | Facteur d'agrandissement du texte (Cinnamon) |
 
-:::caution[Le clic par temporisation reste optionnel]
-`enableDwell` déclenche un clic dès que le pointeur reste immobile. C'est
-indispensable au regard, mais **déstabilisant à la souris**&nbsp;: le pointeur
-abandonné sur le menu d'accessibilité ou sur le clavier visuel clique tout seul.
-Ne l'activer que sur un poste équipé d'un traqueur.
+:::caution[Le clic par temporisation suit le traqueur]
+Sous Cinnamon, `enableTrackerAuto` active le pilotage du pointeur par le regard
+et le clic par temporisation au branchement du traqueur, et coupe ce clic au
+débranchement&nbsp;: **à la souris, il clique sur tout ce que le pointeur
+survole**. `enableDwell` ne sert alors que sous GNOME.
 :::
 
 :::tip[Apports communautaires]
