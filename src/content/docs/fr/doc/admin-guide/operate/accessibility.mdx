@@ -173,6 +173,9 @@ Options de `darkone.home.umi`, à poser dans `usr/users/<login>/default.nix`.
 | `communityScripts` | `null` | Arbre `talonhub/community` déployé dans `~/.talon/user/community` |
 | `enableDwell` | `false` | Clic par temporisation permanent |
 | `enableTrackerAuto` | `true` | Regard et clic suivent le traqueur |
+| `gazeFilterSpeed` | `2.0` | Réactivité du regard (Talon&nbsp;: `1.0`) |
+| `cursorFilterSpeed` | `4.0` | Réactivité du pointeur (Talon&nbsp;: `2.0`) |
+| `enableHeadControl` | `false` | La tête déplace aussi le pointeur |
 | `dwellTime` | `1.2` | Délai du clic par temporisation, en secondes |
 | `panelHeight` | `64` | Hauteur du panneau Cinnamon, en pixels |
 | `textScaling` | `1.4` | Facteur d'agrandissement du texte (Cinnamon) |
@@ -296,6 +299,9 @@ héritées de l'hôte&nbsp;:
 | Micrologiciel non initialisé | Repasser une fois par Tobii Experience sous Windows |
 | Session ouverte sous GNOME | Vérifier le profil `umi` du compte et sa présence dans les `users` de l'hôte, puis redémarrer |
 | Le pointeur clique tout seul | `enableDwell` activé sans traqueur, le désactiver |
+| Le pointeur s'arrête avant le point regardé | Augmenter `gazeFilterSpeed` et `cursorFilterSpeed` |
+| Le pointeur dépasse ou tremble | Les diminuer |
+| Le pointeur suit les mouvements de tête | `enableHeadControl` à `false` |
 
 :::note[Messages du noyau attendus]
 Le traqueur expose deux interfaces vidéo que `uvcvideo` ne sait pas gérer, d'où
