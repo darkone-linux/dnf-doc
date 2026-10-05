@@ -5,6 +5,70 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-10-05
+
+### ⚠ Breaking
+
+- **manage**: Just enter is port 22 only, just unlock takes the initrd prompt
+
+### Added
+
+- **build-fix**: AI repair of invalid link hashes in just update
+- **changelog**: Just update-changelog, one page per release from the framework CHANGELOG
+- **user**: SSH keys via authorized_keys registry and rbw agent
+- **user**: SSH keys via authorized_keys registry and rbw agent (en)
+- **home**: Rbw vault lock after 12h of inactivity
+- **headscale**: Unbound view gives tagged nodes the LAN address of zone globals
+- **umi**: Larger Cinnamon panel, icons and text, single-click Nemo
+- **umi**: Eye tracker plugged in enables gaze control and hover click
+- **umi**: Gaze panel with hover click types, pause zone and keyboard toggle
+- **umi**: No terminal launcher, text scaling 1.4
+- **umi**: Panel gaze switch, Talon action user.umi_gaze
+- **umi**: Accessibility on from first login, no Onboard prompt
+- **umi**: Onboard starts hidden, replaces its own autostart entry
+- **umi**: Hide click type buttons while hover click is paused
+- **umi**: Faster Talon gaze filters, head control and mouse jump off
+- **umi**: Gaze button off pauses hover click, back on resumes it
+- **umi**: Declarative Talon eye tracking modes (gaze, head, jumps, focus)
+
+### Fixed
+
+- **translate**: Re-point anchors after all writes, pair headings by paragraph hash
+- **accounts**: Account creation review / improvements
+- **accounts**: Emergency access FAQ and reset, dead anchors, typos
+- **gdm**: Realign gdm-greeter UIDs with nixpkgs
+- **umi**: No X forwarding through su on UMI hosts, prompts lock the screen
+- **umi**: No mousetweaks in Cinnamon, click types, wheel and no hover popup
+
+### Documentation
+
+- **changelog**: Update
+- **accounts**: Add onboarding paths, fix vault reset procedure
+- **accounts**: Add onboarding paths, fix vault reset procedure (en)
+- **release**: Recover a pushed tag whose GitHub release is missing
+- **accounts**: Users page as Linux account reference, onboarding links to it
+- **accounts**: Just invite in onboarding and reset
+- **onboarding**: Refactorings translated (en)
+- **vaultwarden**: /admin internal only, plain admin token
+- **justfile**: Just invite command
+- **vaultwarden**: Service comments
+- **umi**: Users derived from profile, pinned session, keyring scope
+- **umi**: UMI accounts on other hosts, input groups scope
+- **umi**: Other accounts of a UMI host, drop gazeUsers FAQ
+- **umi**: GNOME accounts keep GNOME defaults on a UMI host
+- **umi**: Updates translated -> en
+- **rbw**: Link to admin option
+- **pandoc**: Moved pandoc to HM + md2pdf script
+- **admin**: Move a host to another zone
+- **network**: Strict DNS, tailnet names and dnf-locate for roaming hosts
+- **network**: Strict DNS, tailnet names and dnf-locate for roaming hosts (en)
+- **translate**: UMI, luks, vpn docs -> en
+- **network**: AdGuard Home keeps no rate limit on the zone resolver
+- **deploy**: Roaming feature, nomadic hosts build themselves
+- **nextcloud**: Pin moves to 35, apps absent from the 35 release
+- **nextcloud**: Smtp password from sops, occ run with sudo
+- **translate**: Deployment fixes + nextcloud35 -> en
+
 ## [0.3.1] - 2026-09-25
 
 ### Added
@@ -384,7 +448,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Initial Astro/Starlight documentation site for Darkone NixOS Framework.
 - Upgrade to Astro 6.
 
-[Unreleased]: https://github.com/darkone-linux/dnf-doc/compare/v0.3.1...HEAD
+[Unreleased]: https://github.com/darkone-linux/dnf-doc/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/darkone-linux/dnf-doc/compare/v0.3.1...v0.4.0
 [0.3.1]: https://github.com/darkone-linux/dnf-doc/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/darkone-linux/dnf-doc/compare/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/darkone-linux/dnf-doc/compare/v0.2.0...v0.2.1
