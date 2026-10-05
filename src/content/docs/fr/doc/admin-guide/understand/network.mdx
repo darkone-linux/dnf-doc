@@ -73,6 +73,8 @@ agh -> up: Reste, filtré
 - AdGuardHome devient le résolveur DNS des postes (port 53).
 - Il bloque publicités et traceurs, et chiffre les requêtes vers l'extérieur.
 - `dnsmasq` recule sur un port interne et garde les noms locaux et le DHCP.
+- Aucune limite de débit : résolveur de zone, fermé au WAN. Une rafale de
+  requêtes (mise à jour du parc) ne perd aucune réponse.
 
 {/* t:p 57fc5b43d7eb3bcde6aa9ee46c543e26940e4aa2fd9d07581e87f11c00a41a70 */}
 ## Réseau étendu (VPN)
