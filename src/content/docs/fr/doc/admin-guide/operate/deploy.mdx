@@ -191,7 +191,7 @@ topologie de déploiement ne doit pas reconstruire le parc.
 
 | Ordre | Builder retenu | Condition |
 |---|---|---|
-| 1 | L'hôte lui-même | Fonctionnalité `auto-build` déclarée sur l'hôte |
+| 1 | L'hôte lui-même | Fonctionnalité `auto-build` ou `roaming` |
 | 2 | L'hôte `harmonia` de sa zone | La zone en a un |
 | 3 | L'hôte `harmonia` `global` | Il en existe un dans le parc |
 | 4 | La machine de déploiement | Défaut |
@@ -771,11 +771,11 @@ machines de la zone.
 :::tip[Hôte nomade (portable multi-zones)]
 Un portable qui change de zone ne doit pas garder des substituters figés sur sa
 zone déclarée&nbsp;: injoignables ailleurs, ils coûtent des timeouts à chaque
-requête. Activez le mode *roaming*&nbsp;:
+requête. Déclarez-le nomade&nbsp;:
 
-```nix
-# usr/machines/<hôte>/configuration.nix
-darkone.service.nix-cache.roaming = true;
+```yaml
+# etc/config.yaml
+    features: ["roaming"]
 ```
 
 Ses substituters deviennent des noms **neutres** (`harmonia.dnf.internal`,
@@ -783,6 +783,10 @@ Ses substituters deviennent des noms **neutres** (`harmonia.dnf.internal`,
 caches → le cache suit la machine. Hors de toute zone, réponse NXDOMAIN
 immédiate → repli direct sur `cache.nixos.org`, sans délai. Les clés de
 signature étant communes à tout le réseau, rien d'autre à configurer.
+
+Hors zone, aucun cache du parc ne le sert&nbsp;: `fleet-update` le construit donc
+sur lui-même, comme un hôte [`auto-build`](#construction-distribuée). Pour un
+déplacement ponctuel, l'option `darkone.service.nix-cache.roaming` seule suffit.
 :::
 
 :::note[Activation]
