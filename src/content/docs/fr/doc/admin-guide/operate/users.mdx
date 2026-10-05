@@ -231,3 +231,20 @@ cd ~/.ssh && ssh-keygen -K && mv id_ed25519_sk_rk id_ed25519_sk
 :::caution[À valider]
 Procédure non testée sur le parc.
 :::
+
+### Le trousseau GNOME après `just passwd` ?
+
+Le trousseau de connexion reste chiffré par l'ancien mot de passe de session.
+À la session suivante ouverte au mot de passe, DNF le supprime et GNOME le
+recrée vide&nbsp;: aucune invite, l'ancien mot de passe n'ouvre plus rien.
+
+- Applications : identifiants à ressaisir une fois (Nextcloud, comptes en ligne, Chromium).
+- Ouverture par YubiKey, ou trousseau encore actif : suppression reportée à une prochaine session.
+- Trousseau sans mot de passe ([remède YubiKey](/fr/doc/admin-guide/operate/yubikey/#le-trousseau-gnome-redemande-un-mot-de-passe), accessibilité) : conservé.
+
+Pour garder un trousseau protégé par un mot de passe propre&nbsp;:
+
+```nix
+# usr/users/<login>/default.nix
+darkone.home.gnome.keepKeyring = true;
+```
