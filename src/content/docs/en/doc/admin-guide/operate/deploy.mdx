@@ -178,34 +178,34 @@ still in the store&nbsp;; otherwise they are redone. Nothing to resume&nbsp;:
 exit code `2`, no rollout.
 :::
 
-{/* t:p 9ad52175ec4d6348bd727913124244bc3668b1ccda0da23d300570b9b8b1e965 */}
-### Distributed build
+{/* t:p 4cbcc00e93172e4a8786902b1830beba2568953c2295cdece1cd5aea416d6347 */}
+### Distributed builds
 
-The deployment machine must not be the bottleneck of the fleet. Each host is
-therefore built by the **elected builder** for it. The election is recomputed at
-each run from `var/generated/`, never declared: changing the deployment topology
-must not rebuild the fleet.
+The deployment machine must not become the bottleneck of the fleet. Each host is
+therefore built by the **builder elected for it**. The election is recalculated on
+each run from `var/generated/`, never declared&nbsp;: changing the deployment
+topology must not rebuild the fleet.
 
-| Order | Builder kept | Condition |
+| Order | Builder selected | Condition |
 |---|---|---|
-| 1 | The host itself | `auto-build` feature declared on the host |
+| 1 | The host itself | `auto-build` or `roaming` feature |
 | 2 | The `harmonia` host of its zone | The zone has one |
 | 3 | The `global` `harmonia` host | One exists in the fleet |
 | 4 | The deployment machine | Default |
 
-The rule fits in one sentence: **a builder must be able to serve what it
-builds**. Hence the choice of `harmonia` hosts, whose `/nix/store` is already the
-cache of their zone, with nothing to bootstrap. A gateway without `harmonia`
-does not fit: its paths are not in any substitute.
+The rule comes down to one sentence&nbsp;: **a builder must be able to serve what
+it builds**. Hence the choice of `harmonia` hosts, whose `/nix/store` is already
+their zone's cache, with nothing to prime. A gateway without `harmonia` does not
+suit&nbsp;: its paths are in no substituter.
 
-The result stays on the builder. Publication then brings it to the hosts of the
-zone, over LAN, through their usual substitute.
+The result stays on the builder. It is the deployment that then brings it to the
+zone's hosts, over the LAN, through their usual substituter.
 
 :::note[`nixpkgs` sources downloaded by the builder]
-Each system embeds the `nixpkgs` source (about 200&nbsp;MiB), new at each update
-and absent from any cache. Before sending it the derivations, the tool therefore
-asks the builder to download itself, from GitHub, the sources locked in
-`flake.lock` that its builds need: they no longer go through the upstream link of
+Every system embeds the `nixpkgs` source (about 200&nbsp;MiB), new with each
+update and absent from any cache. Before sending it the derivations, the tool
+therefore asks the builder to download from GitHub, by itself, the sources locked
+in `flake.lock` that its builds need&nbsp;: they no longer go through the uplink of
 the deployment machine. A builder that cannot reach `github.com` receives them
 pushed, as before, without failure.
 :::
@@ -216,14 +216,14 @@ pushed, as before, without failure.
 ```
 
 :::tip[When to declare `auto-build`]
-A host that builds itself no longer receives any closure. This is decisive for a
-host isolated behind a slow link that carries a large package absent from the
+A host that builds itself no longer receives any closure. This is decisive for an
+isolated host behind a slow link that embeds a large package absent from the
 public cache, and it is the answer for a host of another architecture.
 
-The choice is made **per host**, never per zone: RAM and disk are properties of
-the machine. Counterpart to weigh: the closure of derivations, several hundred
-MiB, goes up to it at each run that moves `nixpkgs`. It is the report's copy
-counters that settle the case, not intuition.
+The choice is made **per host**, never per zone&nbsp;: RAM and disk are
+properties of the machine. The trade-off to weigh&nbsp;: the closure of the
+derivations, several hundred MiB, is pushed towards it on each run that moves
+`nixpkgs`. It is the report's copy counters that settle the case, not intuition.
 :::
 
 :::note[Automatic fallback]
@@ -233,13 +233,13 @@ because of a delegation, and the report names the builder that actually built.
 :::
 
 The `--no-distributed-build` option brings everything back to the center,
-whatever the election. It is a debugging escape hatch: the rule comes from the
-fleet, the exception from the command line.
+whatever the election. It is a debugging escape hatch&nbsp;: the rule comes from
+the fleet, the exception from the command line.
 
-:::caution[A zone without `harmonia` is expensive]
-Without a zone cache, there is neither local builder nor common source: each
-host gets its closure pushed, one by one, from the deployment machine. The
-report lists these zones and the number of pushed bytes shows it. Declare a
+:::caution[A zone without `harmonia` costs a lot]
+Without a zone cache, there is neither a local builder nor a shared source&nbsp;:
+each host has its closure pushed to it, one by one, from the deployment machine.
+The report lists these zones and the number of pushed bytes shows it. Declare a
 [`harmonia`](#binary-cache) on a host of the zone.
 :::
 
@@ -713,83 +713,87 @@ version of the tool knows how to send it. Add it in the meantime, after checking
 the delivery by hand.
 :::
 
-{/* t:p 53a65117f4b0aa9b06069bf828ec8a617dc5f76f1d45daf9f956e1bb20ada775 */}
+{/* t:p e15c5fd254f0a8c71d2819086e27695f5a131645bc14804189a7f98604c01ae8 */}
 ## Binary cache
 
-Two services combine to avoid recompiling or re-downloading the derivations at
-each deployment.
+Two services combine to avoid recompiling or re-downloading derivations oneach deployment.
 
 | Service | Role |
 |---|---|
 | `harmonia` | Serves the local, signed `/nix/store` **directly** to the hosts (LAN, or VPN if it is `global`). |
 | `nix-cache` | Per-zone `nginx` proxy that caches the public `cache.nixos.org` cache on the gateway. |
 
-A `harmonia` host has a second role: it is the
-[elected builder](#distributed-build) of its zone, because it can serve
+A `harmonia` host has a second role&nbsp;: it is the
+[elected builder](#distributed-builds) of its zone, because it knows how to serve
 what it builds.
 
-A host queries these sources in the following priority order. The first fetch
-from the Internet is thus shared across the whole zone.
+A host queries these sources in the following order of priority. The first
+fetch from the Internet is thus shared across the whole zone.
 
 | Priority | Source | Scope |
 |---|---|---|
-| 20 | zone `harmonia` | LAN, what the zone compiled |
-| 35 | zone `nix-cache` proxy | LAN, shared mirror of the public cache |
-| 40 | `cache.nixos.org` directly | safety net if the gateway is down |
-| 45 | `global` `harmonia` | last resort, over the VPN |
+| 20 | The zone's `harmonia` | LAN, what the zone has compiled |
+| 35 | The zone's `nix-cache` proxy | LAN, shared mirror of the public cache |
+| 40 | `cache.nixos.org` directly | Safety net if the gateway is down |
+| 45 | `global` `harmonia` | Last resort, over the VPN |
 
 :::note[How the order is guaranteed]
 Nix does not follow the order of the `substituters` list, it sorts the caches
-according to the priority each announces in its `nix-cache-info`. Yet these
-announced values are tied: all `harmonia` declare 30, and the proxy relaying
-`cache.nixos.org` as-is declares 40, like the direct access to the public cache.
-DNF therefore fixes the priority in the substituter URL (`?priority=35`), which
-overrides the announced value and makes the order in the table explicit.
+according to the priority each one announces in its `nix-cache-info`. Now these
+announced values are tied&nbsp;: all `harmonia` declare 30, and the proxy
+relaying `cache.nixos.org` as is declares 40, like direct access to the public
+cache. DNF therefore sets the priority in the substituter's URL
+(`?priority=35`), which overrides the announced value and makes the table order
+explicit.
 
-Two intended consequences. The zone proxy sits **ahead of** the direct access to
-the public cache, otherwise zone sharing would never happen. And a `global`
-`harmonia` sits **behind** this public cache: `harmonia` serves a whole
-`/nix/store`, without being able to tell what it compiled from the rest, so a
-well-stocked host would capture all the traffic the public cache must serve. As
-a last resort, it is only consulted for what `cache.nixos.org` does not have,
-that is, its own builds.
+Two intended consequences. The zone proxy comes **before** direct access to the
+public cache, otherwise zone-level sharing would never happen. And a `global`
+`harmonia` comes **after** that public cache&nbsp;: `harmonia` serves an entire
+`/nix/store`, without being able to distinguish what it has compiled from the
+rest, so a well-stocked host would capture all the traffic the public cache is
+supposed to serve. As a last resort, it is only consulted for what
+`cache.nixos.org` does not have, that is its own builds.
 :::
 
 :::note[A host does not use its own `harmonia`]
 This service serves its own `/nix/store`, so it can only provide paths already
-present locally. On this host, everything missing necessarily comes from another
-source: that is normal, its `harmonia` only benefits the **other** machines of
-the zone.
+present locally. On that host, everything missing necessarily comes from another
+source&nbsp;: that is normal, its `harmonia` only benefits the **other** machines
+of the zone.
 :::
 
-:::tip[Nomadic host (multi-zone portable)]
-A laptop that changes zone must not keep substituters fixed on its declared
-zone: unreachable elsewhere, they cost timeouts on every request. Enable the
-*roaming* mode&nbsp;:
+:::tip[Roaming host (portable across zones)]
+A laptop that changes zones must not keep substituters hardwired to its declared
+zone&nbsp;: unreachable elsewhere, they cost a timeout on every request. Declare it
+roaming&nbsp;:
 
-```nix
-# usr/machines/<hôte>/configuration.nix
-darkone.service.nix-cache.roaming = true;
+```yaml
+# etc/config.yaml
+    features: ["roaming"]
 ```
 
 Its substituters become **neutral** names (`harmonia.dnf.internal`,
-`nix-cache.dnf.internal`) that the DNS of each zone resolves to its own caches →
-the cache follows the machine. Outside any zone, an immediate NXDOMAIN response
-→ direct fallback on `cache.nixos.org`, without delay. Signature keys being
-common to the whole network, nothing else to configure.
+`nix-cache.dnf.internal`) that each zone's DNS resolves to its own caches
+→ the cache follows the machine. Outside any zone, immediate NXDOMAIN
+response → direct fallback to `cache.nixos.org`, without delay. Since the signing
+keys are common to the whole network, nothing else to configure.
+
+Outside a zone, no fleet cache serves it&nbsp;: `fleet-update` therefore builds it
+on itself, like an [`auto-build`](#distributed-builds) host. For a one-off move,
+the `darkone.service.nix-cache.roaming` option alone is enough.
 :::
 
 :::note[Activation]
 `harmonia` and `nix-cache` are [services](/en/doc/admin-guide/operate/services/)
-to enable on a network host (`nix-cache` on the zone gateway). The harmonia
-signature key is managed by [sops](/en/doc/admin-guide/operate/secrets/)
-(`just configure-admin-host`).
+to enable on a network host (`nix-cache` on the zone gateway). The signing key of
+harmonia is managed by
+[sops](/en/doc/admin-guide/operate/secrets/) (`just configure-admin-host`).
 :::
 
-:::tip[Why a single-upstream proxy]
-`nix-cache` only relays **one** upstream (`cache.nixos.org`)&nbsp;: it caches
-`narinfo` and `nar` as-is, signatures intact. No URL rewriting nor database,
-therefore no HTTP 500 "invalid nar hash" error like the old `ncps` relay.
+:::tip[Why a proxy with a single upstream]
+`nix-cache` relays only **one** upstream (`cache.nixos.org`)&nbsp;: it caches
+`narinfo` and `nar` as is, signatures intact. No URL rewriting and no database,
+hence no HTTP 500 "invalid nar hash" error from the old `ncps` relay.
 :::
 
 {/* t:p 54036d97ac85014a52079c024508dd3fbf02c05c1a43782ae13514626aaf9fa1 */}
@@ -830,7 +834,7 @@ Two distinct mechanisms, combinable on the same host.
 | `auto-build` | `fleet-update`, at fleet build | The whole system closure of the host that declares it |
 
 `build-farm` relieves an admin machine of its long compilations.
-[`auto-build`](#distributed-build) removes a transfer to a host. They do
+[`auto-build`](#distributed-builds) removes a transfer to a host. They do
 not replace each other.
 :::
 

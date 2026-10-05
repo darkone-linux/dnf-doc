@@ -763,43 +763,54 @@ darkone.service.monitoring = {
 
 <hr/>
 
-{/* t:p 286916049b2fade03561250f9b306b1e59ba28cf15f271ab1ae134c708d8578a */}
+{/* t:p bd252071bad1bdcbac772db6f2258c53ff55ad26576e36f93408a6b59490b2f7 */}
 ### &#x2728; darkone.service.nextcloud
 
 Service Nextcloud entièrement configuré.
 
 :::caution[Secrets sops requis]
-Lorsqu'il est activé, ce module lit :
+Lorsque ce module est activé, il lit&nbsp;:
 
-- `nextcloud-admin-password` : mot de passe initial du compte administrateur ;
+- `nextcloud-admin-password` : mot de passe initial du compte administrateur&nbsp;;
 - `nextcloud-whiteboard-secret` : JWT partagé avec le backend tableau blanc
-  (lu uniquement quand `whiteboard` figure dans `plugins`) ;
-- `oidc-secret-<client>` : secret client OAuth2 de Kanidm, déclaré par le
-  module idm et re-chiffré ici pour l'unité de provisionnement `occ`.
+  (lu uniquement quand `whiteboard` figure dans `plugins`)&nbsp;;
+- `oidc-secret-<client>` : secret client OAuth2 Kanidm, déclaré par le module
+  idm et rechiffré ici pour l'unité de provisionnement `occ`&nbsp;;
+- `smtp/password` : mot de passe du relais SMTP (uniquement avec
+  `network.smtp`). Externe&nbsp;: saisi à la main, jamais généré.
 
-`just configure-admin-host` les génère tous, de manière idempotente, et ne
-jamais écrase un secret existant. Exécutez-le avant de reconstruire :
-l'activation sops-nix échoue sur une entrée manquante.
+`just configure-admin-host` génère les autres, de façon idempotente, et
+n'écrase jamais un secret existant. Lancez-le avant de reconstruire&nbsp;: la
+activation de sops-nix échoue si une entrée manque.
+:::
+
+:::note[Exécuter occ]
+`services.nextcloud.secrets` fait charger à `occ` des credentials
+systemd&nbsp;: lancez `sudo nextcloud-occ` (PHP s'exécute toujours en tant
+que `nextcloud`), pas `sudo -u nextcloud`.
 :::
 
 * **enable** `bool` Activer le service nextcloud local
 * **adminUser** `str` Nom d'utilisateur administrateur pour Nextcloud
-* **enableSsoRedirect** `bool` Envoyer les utilisateurs directement à Kanidm au lieu d'afficher le formulaire
-  de connexion Nextcloud (`user_oidc` `allow_multiple_user_backends`). Économise un clic
-  à chaque connexion, y compris le Login Flow v2 du client desktop.
+* **enableSsoRedirect** `bool` Envoyer les utilisateurs directement vers Kanidm
+  au lieu d'afficher le formulaire de connexion Nextcloud
+  (`user_oidc` `allow_multiple_user_backends`). Économise un clic à chaque
+  connexion, y compris celle du client de bureau via Login Flow v2.
 
   :::caution[Formulaire de connexion local]
-  Ceci masque le formulaire de mot de passe, compte administrateur inclus. Accédez-y avec
-  `/login?direct=1`.
+  Cela masque le formulaire de mot de passe, compte administrateur
+  compris. Y accéder avec `/login?direct=1`.
   :::
 
-  Sans effet lorsque Kanidm est absent du réseau.
-* **plugins** `listOf (enum (appstoreApps ++ shippedToggleableApps))` Applications Nextcloud à activer. Seuls `calendar` et `contacts` sont
-  activés par défaut ; Talk (`spreed`), le tableau de bord, le flux d'activité, les photos et
-  toutes les autres applications restent désactivés tant qu'ils ne figurent pas ici.
+  Sans effet si Kanidm est absent du réseau.
+* **plugins** `listOf (enum (appstoreApps ++ shippedToggleableApps))` Applications
+  Nextcloud à activer. Seuls `calendar`, `contacts` et `tasks` sont
+  activés par défaut&nbsp;; Talk (`spreed`), le tableau de bord, le flux
+  d'activité, les photos et toutes les autres applications restent
+  désactivées tant qu'elles ne sont pas listées ici.
 
-  `user_oidc` est requis pour le SSO Kanidm et est inclus de force
-  indépendamment de cette liste.
+  `user_oidc` (SSO Kanidm) et `notify_push` (push client) sont toujours
+  activés, quelle que soit cette liste.
 
 ```nix
 darkone.service.nextcloud = {
@@ -848,37 +859,66 @@ darkone.service.nfs = {
 
 <hr/>
 
-{/* t:p 8be7c3f5233aa6db94ee37dede9fd367109619b2f64646434f83fc519e58c4fb */}
+{/* t:p 06621fc3a7f49992fea52f210b113c71812328cc2dd2c7ab4fa911809c61f0b8 */}
 ### &#x2728; darkone.service.nix-cache
 
 Proxy de cache binaire Nix par zone (nginx `proxy_cache`).
 
-Met en cache le cache Nix public (`cache.nixos.org`) sur la passerelle de zone pour qu'un déploiement à l'échelle de la flotte tire chaque fermeture du WAN une seule fois, puis la serve sur le LAN à chaque autre hôte. Les chemins construits localement sont servis directement par `harmonia` (voir `harmonia.nix`) ; ce proxy ne sert jamais de façade à harmonia.
+Met en cache le cache Nix public (`cache.nixos.org`) sur la passerelle de
+zone, afin qu'un déploiement à l'échelle de la flotte récupère chaque
+fermeture depuis le WAN une seule fois, puis la serve sur le LAN à tous les
+autres hôtes. Les chemins compilés localement sont servis directement
+depuis `harmonia` (voir `harmonia.nix`)&nbsp;; ce proxy ne sert jamais de
+ façade à harmonia.
 
-:::note[Pourquoi nginx et pas un proxy réécrivant]
-Un point de terminaison de cache sert de façade à exactement **un** upstream. Un `narinfo` et son `nar` sont deux requêtes distinctes et l'URL du `nar` est indépendante de l'upstream, donc un proxy multi-upstream doit réécrire les URLs `narinfo` dans son propre espace de noms et les suivre dans une base de données (l'approche qu'a prise l'ancien proxy `ncps`, et la source de ses HTTP 500 "invalid nar hash" récurrents). Avec un seul upstream, il n'y a pas d'ambiguïté :
-nginx met en cache `narinfo` + `nar` verbatim, les signatures passent intouchées et les clients les vérifient. Pas de réécriture, pas de base de données, pas de tel bogue par construction.
+:::note[Pourquoi nginx plutôt qu'un proxy réécrivain]
+Un point de cache dessert exactement **un** amont. Un `narinfo` et son
+`nar` sont deux requêtes distinctes et l'URL du `nar` est indépendante de
+l'amont, si bien qu'un proxy multi-amont doit réécrire les URL `narinfo`
+dans son propre espace de noms et les suivre en base de données
+(l'approche retenue par l'ancien proxy `ncps` — et la source de ses
+récurrentes HTTP 500 « invalid nar hash »). Avec un amont unique, il n'y a
+aucune ambiguïté&nbsp;:
+nginx met en cache `narinfo` + `nar` tels quels, les signatures transitent
+intactes et les clients les vérifient. Pas de réécriture, pas de base de
+données, et donc pas ce bogue par construction.
 :::
 
 :::tip[Topologie]
-- serveur : l'hôte passerelle qui liste `nix-cache` dans `config.yaml` (un par zone). Fait tourner nginx sur l'IP interne, port `network.ports.nixCache`.
-- clients : chaque hôte de la zone locale. Leurs substituters deviennent les instances harmonia de la zone (direct, LAN/tailnet) plus ce proxy.
-- clients itinérants (`roaming = true`) : hôtes nomades déplacés entre les zones. Leurs substituters sont les noms neutres de zone (`harmonia.dnf.internal`, `nix-cache.dnf.internal`) que le DNS de chaque zone résout vers ses propres services de cache (voir `service/dnsmasq.nix`), donc le cache suit le portable.
-- hôtes de la zone globale (`www`, un VPS de datacenter) : pas de LAN, pas de passerelle, donc pas de proxy. Ils prennent l'harmonia `global` via le tailnet et la clé de flotte, sans quoi ils ne peuvent rien tirer de ce que la flotte a construit.
+- server&nbsp;: l'hôte passerelle qui déclare `nix-cache` dans `config.yaml`
+  (un par zone). Fait tourner nginx sur l'IP interne, port
+  `network.ports.nixCache`.
+- clients&nbsp;: tous les hôtes de la zone locale. Leurs substituteurs
+  deviennent les instances harmonia de la zone (directes, LAN/tailnet) plus
+  ce proxy.
+- clients nomades (`roaming = true`, défini par la fonctionnalité hôte
+  `roaming`)&nbsp;: hôtes itinérants déplacés entre zones. Leurs
+  substituteurs sont les noms neutres de zone (`harmonia.dnf.internal`,
+  `nix-cache.dnf.internal`) que le DNS de chaque zone résout vers ses propres
+  services de cache (voir `service/dnsmasq.nix`), afin que le cache suive
+  l'ordinateur portable. `fleet-update` construit un tel hôte sur lui-même.
+- hôtes de la zone globale (`www`, un VPS de datacenter)&nbsp;: pas de
+  LAN, pas de passerelle, donc pas de proxy. Ils utilisent l'harmonia
+  `global` via le tailnet et la clé de flotte, sans laquelle ils ne
+  pourraient rien récupérer de ce que la flotte a compilé.
 :::
 
-* **enable** `bool` le proxy de cache binaire Nix par zone (nginx devant cache.nixos.org)
-* **maxSize** `str` Taille maximale du cache sur disque ; nginx évince les entrées les moins récemment utilisées au-delà.
-* **roaming** `bool` Hôte nomade (portable déplacé entre zones) : remplace les substituters
-  attachés à la zone par les noms neutres de zone que le DNS de chaque zone résout vers
-  ses propres services de cache. Hors de toute zone DNF, les noms donnent NXDOMAIN
-  immédiatement et Nix retombe sur cache.nixos.org.
+* **enable** `bool` Le proxy de cache binaire Nix par zone (nginx devant cache.nixos.org)
+* **maxSize** `str` Taille maximale du cache sur disque&nbsp;; nginx évince au-delà
+  les entrées les moins récemment utilisées.
+* **roaming** `bool` Hôte nomade (ordinateur portable déplacé entre
+  zones)&nbsp;: remplacer les substituteurs épinglés à la zone par les noms
+  neutres de zone que le DNS de chaque zone résout vers ses propres services
+  de cache. Hors de toute zone DNF, ces noms répondent NXDOMAIN
+  immédiatement et Nix se rabat sur cache.nixos.org. Déclaré par la
+  fonctionnalité `roaming` dans `config.yaml`&nbsp;; à définir à la main
+  pour un déplacement temporaire.
 
 ```nix
 darkone.service.nix-cache = {
   enable = false;
   maxSize = "40g";
-  roaming = false;
+  roaming = (host.features or { }) ? "roaming";
 };
 ```
 

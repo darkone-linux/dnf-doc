@@ -102,22 +102,29 @@ Detailed options for each service in the
 - **Single sign-on**: most services go through [SSO Kanidm](/en/doc/admin-guide/operate/sso/).
 - **Local or global**: a service stays in its zone, unless `global: true` exposes it publicly.
 
-{/* t:p 83ad1db1dcf5c83ed4fdbae4d3735258ea074bb7bad2554821c8f564502b0eaa */}
-## Services with pinned versions
+{/* t:p a53cb2ed33ac5ee08bd4dabb10982ebefee88b523db36e71df5803f8388c16c2 */}
+## Services with a pinned version
 
-Some services cannot follow nixpkgs' default version&nbsp;: their editor forbids skipping a major version. DNF therefore pins the package in the module, and upgrades happen **one major version at a time**.
+Some services cannot follow nixpkgs' default version: their upstream forbids
+skipping a major version. DNF therefore pins the package in the module, and
+upgrades happen **one major version at a time**.
 
 | Service | Option | Upstream constraint |
 |---|---|---|
-| `idm` (Kanidm) | `services.kanidm.package` | Only one version maintained, end of life 30 days after the release of the next one |
-| `nextcloud` | `services.nextcloud.package` | 33 → 34 possible, 33 → 35 impossible |
+| `idm` (Kanidm) | `services.kanidm.package` | A single maintained version, end of life 30 days after the next release |
+| `nextcloud` | `services.nextcloud.package` | 34 → 35 possible, 33 → 35 impossible |
 
-:::caution[Check the installed version before upgrading]
-Pinning the next major version while the instance is not ready for it yet causes the migration to fail at startup. First query the service itself&nbsp;: `kanidmd domain upgrade-check` for Kanidm, `nextcloud-occ status` for Nextcloud.
+:::caution[Check the running version before upgrading]
+Pinning the next major version while the instance is not yet ready for it makes
+the migration fail at boot. Query the service itself first:
+`kanidmd domain upgrade-check` for Kanidm, `nextcloud-occ status` for
+Nextcloud.
 :::
 
-An upgrade to plan is signaled by a `warning` at evaluation, emitted as soon as the pinned version is deprecated. The detailed Kanidm procedure, transposable to the others, is described at the end of the
-[SSO and identities](/en/doc/admin-guide/operate/sso/) page.
+The signal that an upgrade must be planned is a `warning` at evaluation time,
+emitted as soon as the pinned version is deprecated. Kanidm's detailed
+procedure, which can be applied to the other services, is described at the end of
+the page [SSO and identities](/en/doc/admin-guide/operate/sso/).
 
 {/* t:p bcea1ed7430dadaade6fadfdc8dfc49af5c67e44a4ade5a633d95b1255ed3195 */}
 ### Back up before upgrading

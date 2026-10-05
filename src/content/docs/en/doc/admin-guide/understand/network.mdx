@@ -49,10 +49,10 @@ gw.dns -> lan.srv: LAN
 - On the Internet side (WAN), everything is closed. On the local side (LAN), only
   SSH, DNS, DHCP and the home page are open.
 
-{/* t:p 90f3855e5e9d884ab3846df4a8b745ffda8ad3b3f9e054d9967a77cda60596ae */}
-## Ad blocking (AdGuardHome)
+{/* t:p af753e77b8f1916eb839dc8f6cdd15f7633fff96fb5becf76ca5da1bfb40a98c */}
+## Advertisement Filtering (AdGuardHome)
 
-Optional service, enabled on the gateway. It inserts itself in front of `dnsmasq`.
+Optional service, enabled on the gateway. It sits in front of `dnsmasq`.
 
 ```d2
 style.fill: transparent
@@ -67,12 +67,14 @@ up: External DNS\nencrypted { shape: cloud }
 
 pc -> agh: DNS query
 agh -> dns: Local names
-agh -> up: Rest, filtered
+agh -> up: The rest, filtered
 ```
 
 - AdGuardHome becomes the DNS resolver for workstations (port 53).
-- It blocks ads and trackers, and encrypts queries to the outside.
-- `dnsmasq` moves to an internal port and keeps local names and DHCP.
+- It blocks ads and trackers, and encrypts outgoing queries.
+- `dnsmasq` moves back to an internal port and keeps local names and DHCP.
+- No rate limiting: zone resolver, closed to the WAN. A burst of queries
+  (fleet update) loses no response.
 
 {/* t:p 57fc5b43d7eb3bcde6aa9ee46c543e26940e4aa2fd9d07581e87f11c00a41a70 */}
 ## Wide area network (VPN)
