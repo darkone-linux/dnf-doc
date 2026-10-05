@@ -51,6 +51,10 @@ hasard. Le nom du dernier suit le sous-domaine déclaré (`oidc-secret-nextcloud
 si le service répond sur `nextcloud`, `oidc-secret-nextcloud-cloud` s'il répond
 sur `cloud`).
 
+Avec un relais `network.smtp`, Nextcloud lit aussi `smtp/password`, fourni par
+l'opérateur de messagerie et saisi à la main. Il prime sur le mot de passe
+saisi dans l'interface d'administration.
+
 :::tip[Idempotent]
 La commande n'écrase jamais un secret existant. La relancer après avoir ajouté
 une instance ne complète que ce qui manque.
@@ -93,7 +97,7 @@ serveur nettement réduite, synchronisation quasi immédiate.
 Vérification depuis le serveur&nbsp;:
 
 ```sh
-sudo -u nextcloud nextcloud-occ notify_push:self-test
+sudo nextcloud-occ notify_push:self-test
 ```
 
 Le test réclame l'URL publique du service, donc le reverse proxy de la zone
@@ -264,6 +268,7 @@ comprise, est décrite dans
 | Symptôme | Piste |
 |---|---|
 | Connexion impossible pour l'administrateur | Passer par `/login?direct=1` |
+| `occ` échoue sous `sudo -u nextcloud` | Lancer `sudo nextcloud-occ` |
 | Synchronisation lente sur les postes | `notify_push:self-test` sur le serveur |
 | Le tableau blanc ne répond pas | `whiteboard` absent de `plugins`, ou `just configure-admin-host` jamais relancé depuis |
 | Le client redemande son autorisation à chaque session | Trousseau de session non déverrouillé |
