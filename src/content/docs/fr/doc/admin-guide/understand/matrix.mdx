@@ -19,9 +19,9 @@ Pour l'exploitation au quotidien, voir
 {/* t:p b28770e46ea00c812b42773942785636e474f91945dffd9013ec80b8cb8083e9 */}
 ## Vue d'ensemble
 
-Tout est porté par `dnf/modules/service/matrix.nix`, avec deux modules
-satellites&nbsp;: `element.nix` (client web statique) et `turn.nix` (relais
-coturn pour l'audio/vidéo).
+Tout est porté par `dnf/modules/service/matrix.nix` et ses sous-modules
+`matrix/`, avec deux modules satellites&nbsp;: `element.nix` (client web
+statique) et `turn.nix` (relais coturn pour l'audio/vidéo).
 
 ```d2
 style.fill: transparent
@@ -85,13 +85,16 @@ synapse <-> bridges <-> ext
 {/* t:p 13c6a2814eee915a3089c2fadfc14cd3e406e01ed88014bc51ae5bf898e7c861 */}
 ## Anatomie du module
 
-`matrix.nix` est un `lib.mkMerge` de blocs indépendants&nbsp;:
+Des blocs indépendants, répartis en sous-modules&nbsp;:
 
-| Bloc | Condition | Contenu |
+| Fichier | Condition | Contenu |
 |---|---|---|
-| Base | toujours | client OIDC, reverse proxy, persistance |
-| Serveur | `matrix.enable` | Synapse, PostgreSQL, secrets communs, appservice `doublepuppet` |
-| Un bloc par pont | `matrix.enable && bridges.<x>.enable` | secrets sops + service mautrix du pont |
+| `matrix.nix` | toujours | client OIDC, reverse proxy, persistance |
+| `matrix.nix` | `matrix.enable` | Synapse, PostgreSQL, fédération |
+| `matrix/mas.nix` | `matrix.enable` | MAS, outil `dnf-mas` |
+| `matrix/rtc.nix` | `matrix.enable && matrixRtc.enable` | LiveKit, service JWT |
+| `matrix/bridges.nix` | `matrix.enable` | appservice `doublepuppet` |
+| `matrix/bridges.nix` | `matrix.enable && bridges.<x>.enable` | secrets sops + service du pont |
 
 Chaque pont est donc débrayable individuellement
 (`darkone.service.matrix.bridges.{whatsapp,signal,telegram,messenger,discord}.enable`),
@@ -122,7 +125,7 @@ pour que chaque compte local puisse se connecter et partager ses salons.
 {/* t:p 9586614fc831ebae3659bdaac0701d3df4c27b7a7864e94b09027a3b2d9b0349 */}
 ### Permissions
 
-Le helper `mkBridgePermissions` (dans `matrix.nix`) construit la même
+Le helper `mkBridgePermissions` (dans `matrix/bridges.nix`) construit la même
 politique pour tous les ponts&nbsp;:
 
 ```yaml
@@ -333,7 +336,7 @@ Activation et migration&nbsp;: voir
 {/* t:p b6417ed593bca0abe771e7d61447636c779be1dffa5374a8f462fe9d3c517232 */}
 ## Secrets et ports
 
-- **Secrets** : déclarés par bloc dans `matrix.nix` (`sops.secrets.*`), et
+- **Secrets** : déclarés par bloc dans chaque sous-module (`sops.secrets.*`), et
   assemblés en fichiers d'environnement par des `sops.templates.*` possédés
   par l'utilisateur système du pont. Liste complète dans
   [la page d'exploitation](/fr/doc/admin-guide/operate/matrix/#secrets-requis).
