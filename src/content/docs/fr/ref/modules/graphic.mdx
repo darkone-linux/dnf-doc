@@ -13,20 +13,33 @@ sidebar:
 **Un module d'application GUI** installe des applications graphiques et leur configuration optimisée pour DNF.
 :::
 
-{/* t:p 1e16a5aec9f856e43c662690094f5cc7298ea425ad5d13438bacb18b27b3a1bc */}
+{/* t:p f4d2b367592b8e6434c194c9d36859fc16f7d5efb3c60dc5f48b028696a02aa7 */}
 ### &#x1F5BC; darkone.graphic.gnome
 
-Environnement GNOME préconfiguré avec ses dépendances.
+Environnement gnome pré-configuré avec ses dépendances.
 
-* **enable** `bool` Environnement GNOME préconfiguré
-* **enableDashToDock** `bool` Extension Dash to dock
-* **enableLightDM** `bool` Utiliser LightDM au lieu de GDM
+:::note[Trousseau de connexion après `just passwd`]
+PAM déverrouille la trousseau de connexion avec le mot de passe de session,
+qu'un changement effectué par l'admin ne peut pas réchiffrer (l'ancien mot de
+passe est inconnu). La prochaine connexion par mot de passe jette la trousseau :
+GNOME la recrée, vide, sur le nouveau mot de passe. Aucune invite, et l'ancien
+mot de passe n'ouvre plus rien.
+:::
+
+:::caution[Secrets de la trousseau perdus à chaque changement de mot de passe admin]
+Les apps redemandent leurs identifiants. Pour exclure, avec une trousseau ayant
+son propre mot de passe : `darkone.home.gnome.keepKeyring`.
+:::
+
+* **enable** `bool` Environnement gnome pré-configuré
+* **enableDashToDock** `bool` Plugin Dash to dock
+* **enableLightDM** `bool` Activer LightDM au lieu de GDM
 * **enableCaffeine** `bool` Désactiver la mise en veille automatique
 * **enableGsConnect** `bool` Communication avec les appareils
 * **enableOnlineServices** `bool` Comptes en ligne, CalDAV, CardDAV...
-* **xkbVariant** `str` Variante du clavier. La disposition est déduite de la keymap de la console.
-* **screenBlankDelay** `ints.unsigned` Délai d'extinction de l'écran en secondes (0 = jamais). Les portables l'imposent à 900 (15 min).
-* **cursorSize** `ints.positive` Taille par défaut du pointeur en pixels, modifiable par l'utilisateur (*Paramètres → Accessibilité*).
+* **xkbVariant** `str` Variante de clavier. La disposition est extraite de la keymap console.
+* **screenBlankDelay** `ints.unsigned` Délai d'extinction de l'écran en secondes (0 = jamais). Les portables l'écrasent à 900 (15 min).
+* **cursorSize** `ints.positive` Taille du pointeur par défaut en pixels, surchargeable par l'utilisateur (Paramètres &gt; Accessibilité).
 
 ```nix
 darkone.graphic.gnome = {

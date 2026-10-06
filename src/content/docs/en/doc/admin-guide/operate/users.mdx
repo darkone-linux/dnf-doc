@@ -229,3 +229,21 @@ cd ~/.ssh && ssh-keygen -K && mv id_ed25519_sk_rk id_ed25519_sk
 :::caution[To be validated]
 Procedure not tested on the estate.
 :::
+
+{/* t:p 9b258c11bb94d9dc7300291acdca7e84729f81215db0a50eb5d5bab3b4efda5a */}
+### The GNOME keyring after `just passwd`?
+
+The login keyring remains encrypted by the old session password.
+At the next session opened with the password, DNF removes it and GNOME
+recreates it empty: no prompt, the old password no longer opens anything.
+
+- Applications: credentials to re-enter once (Nextcloud, online accounts, Chromium).
+- Login with YubiKey, or keyring still active: removal deferred to a later session.
+- Keyring without a password ([YubiKey fix](/en/doc/admin-guide/operate/yubikey/#gnome-keyring-asks-for-a-password-again), accessibility): kept.
+
+To keep a keyring protected by a clean password:
+
+```nix
+# usr/users/<login>/default.nix
+darkone.home.gnome.keepKeyring = true;
+```

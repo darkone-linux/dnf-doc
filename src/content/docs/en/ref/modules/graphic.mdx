@@ -13,10 +13,22 @@ sidebar:
 **A GUI application module** installs graphical applications and their configuration optimized for DNF.
 :::
 
-{/* t:p 1e16a5aec9f856e43c662690094f5cc7298ea425ad5d13438bacb18b27b3a1bc */}
+{/* t:p f4d2b367592b8e6434c194c9d36859fc16f7d5efb3c60dc5f48b028696a02aa7 */}
 ### &#x1F5BC; darkone.graphic.gnome
 
 Pre-configured gnome environment with dependences.
+
+:::note[Login keyring after `just passwd`]
+PAM unlocks the login keyring with the session password, which a change
+made by the admin cannot re-encrypt (the old password is unknown). The next
+password login drops the keyring: GNOME recreates it, empty, on the new
+password. No prompt, and the old password opens nothing anymore.
+:::
+
+:::caution[Keyring secrets lost on each admin password change]
+Apps ask once again for their credentials. Opt-out, for a keyring with a
+password of its own: `darkone.home.gnome.keepKeyring`.
+:::
 
 * **enable** `bool` Pre-configured gnome WM
 * **enableDashToDock** `bool` Dash to dock plugin

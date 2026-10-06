@@ -195,7 +195,7 @@ darkone.home.games = {
 
 <hr/>
 
-{/* t:p aea352584c63177580944b2682107f9c683861bf52b1a419c598926e5ac8cd21 */}
+{/* t:p ebcb7d14c8150897d17f424fd86294a72c6d5763c5bd151bf2ec0767d625b935 */}
 ### &#x1F3E0; darkone.home.gnome
 
 Gnome tweaks for home-manager.
@@ -205,6 +205,8 @@ unconditionally, Extensions for non-technical profiles, registers polished
 `.desktop` entries for `scrcpy` and `scrcpy-console` when the package is
 part of the user's `home.packages`, and (when `hideTechnicalIcons` is set)
 hides Settings, Printers and File Roller icons for beginner / child profiles.
+`keepKeyring` opts the user out of the login keyring reset that follows an
+admin password change (read by the NixOS gnome module).
 
 :::caution[NFS bookmarks]
 Do not declare `gtk.gtk3.bookmarks` from this module — while NFS home shares
@@ -213,11 +215,13 @@ are on, `home/profiles/minimal/nfs.nix` owns this file and overwrites it.
 
 * **enable** `bool` Enable gnome settings for home manager
 * **hideTechnicalIcons** `bool` Hide some icons for beginners / children / babies
+* **keepKeyring** `bool` Keep the login keyring when the admin changes the session password (keyring with a password of its own)
 
 ```nix
 darkone.home.gnome = {
   enable = false;
   hideTechnicalIcons = false;
+  keepKeyring = false;
 };
 ```
 

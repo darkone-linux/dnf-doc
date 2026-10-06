@@ -1,0 +1,124 @@
+---
+title: "Version 0.4.0"
+description: "Contrôle du regard UMI et md2pdf typst"
+sidebar:
+  label: "0.4.0"
+lang: fr
+prev:
+  link: /fr/changelog/v0-3-1/
+  label: "Version 0.3.1"
+---
+
+{/* t:translated-from en */}
+{/* t:h 6956bb01c684fe3a032ece87e18f3cc9e489b58b76c181a33f7da4703e092ec2 */}
+
+{/* t:p 61e348518dff4fc9223567d33c83b3bc67b19b79207fd6acd5e73cd65f1a7975 */}
+Publié le **2026-10-05** : contrôle du regard UMI et md2pdf typst.
+
+[Changements sur GitHub](https://github.com/darkone-linux/darkone-nixos-framework/compare/v0.3.1...v0.4.0) · [Toutes les versions](/fr/changelog/)
+
+:::caution[Changements incompatibles]
+- **office** : Déplacement de darkone.console.pandoc vers darkone.home.office.enablePandoc
+- **manage** : just enter ne couvre que le port 22, just unlock prend la invite de l'initrd
+- **nextcloud** : Passage à 35, suppression des plugins news/memories/recognize
+:::
+
+{/* t:p dd74817d03ce8588528561777173a1c2fe0a12b1fda5d6e5aaa4e13ec906b2a5 */}
+## Ajouts
+
+- **vaultwarden** : Accès d'urgence pour la récupération du mot de passe maître
+- **invite** : just invite, fiche de bienvenue et lien de réinitialisation Kanidm
+- **secrets** : Alerte sur un jeton d'administration vaultwarden haché
+- **umi** : Utilisateurs UMI dérivés de leur profil utilisateur
+- **gnome** : Taille du curseur surchargeable par l'utilisateur, 48 px pour les utilisateurs UMI
+- **umi** : Accessibilité GNOME native pour les utilisateurs UMI hors hôtes UMI
+- **user** : Clés SSH via le registre authorized_keys et l'agent rbw
+- **home** : Verrouillage du coffre rbw après 12 h d'inactivité
+- **pandoc** : Ajout de typst
+- **office** : ConTeXt optionnel dans la chaîne d'outils pandoc
+- **office** : Moteur PDF, langue et polices pandoc par défaut
+- **office** : Commande md2pdf avec les mises en page ConTeXt et typst
+- **office** : Entrées Nautilus pour convertir Markdown en PDF
+- **office** : Mise en page typst de md2pdf plus proche de ConTeXt, schémas adaptés à la largeur
+- **office** : md2pdf typst restitue les sauts TeX bruts et la table des matières, titre façon ConTeXt
+- **office** : md2pdf --tablet en A6 à 9 pt, mise en page réglée pour les tablettes
+- **office** : md2pdf et pandoc utilisent le moteur typst par défaut
+- **office** : Finitions typst de md2pdf : table des matières, filets, listes, notes de bas de page, code en ligne
+- **office** : Notes de bas de page typst de md2pdf à 80 %, compactes comme avec ConTeXt
+- **office** : md2pdf typst dimensionne les colonnes du tableau selon leur contenu
+- **oxicloud** : Proxy de confiance, administrateurs kanidm, api nextcloud, smtp, locale
+- **dns** : Résolution des noms de nœuds tailnet depuis les LAN de zone
+- **admin** : dnf-locate route ssh vers les hôtes de la flotte en itinérance
+- **engine** : Sonde de présence via la connexion ssh de déploiement
+- **enter** : Journaux de dnf-locate
+- **headscale** : La vue Unbound donne aux nœuds étiquetés l'adresse LAN des globaux de zone
+- **umi** : Panneau Cinnamon plus grand, icônes et texte, clic simple dans Nemo
+- **umi** : La souris oculaire branchée active le contrôle du regard et le clic au survol
+- **umi** : Panneau de regard avec types de clic au survol, zone de pause et bascule clavier
+- **umi** : Pas de lanceur de terminal, échelle du texte 1,4
+- **umi** : Entrées de menu Cinnamon plus espacées
+- **umi** : Interrupteur de regard au panneau, action Talon user.umi_gaze
+- **umi** : Accessibilité active dès la première connexion, sans invite Onboard
+- **umi** : Onboard démarre masqué, remplace sa propre entrée de démarrage automatique
+- **umi** : Masquage des boutons de type de clic pendant la pause du clic au survol
+- **umi** : Filtres de regard Talon plus rapides, contrôle de tête et saut de souris désactivés
+- **umi** : Bouton de regard désactivé met le clic au survol en pause, sa réactivation le reprend
+- **umi** : Modes de suivi oculaire Talon déclaratifs (regard, tête, sauts, focus)
+- **umi** : Mises à jour des paramètres de regard
+- **nix-cache** : La fonctionnalité d'hôte itinérant définit les substituts d'itinérance
+
+{/* t:p 0b8c903d3fbfc1cb593527237e81eaa41721c5cf8d4dbe20b767a4a97899be51 */}
+## Corrections
+
+- **invite** : Todo -> simple journal
+- **gdm** : Réalignement des UID de gdm-greeter sur nixpkgs
+- **umi** : Session GDM des utilisateurs UMI épinglée à Cinnamon à chaque démarrage
+- **umi** : Panneaux Cinnamon masqués via XDG_DATA_HOME, suppression de l'entrée GNOME morte
+- **umi** : Valeurs par défaut GSettings de Cinnamon exclues de GNOME et de l'inviteur GDM
+- **office** : md2pdf typst tolère les citations orphelines et les liens morts
+- **office** : md2pdf ConTeXt ne perd plus les lignes de tableau aux sauts de page
+- **security** : Serveurs NTP C7 en FQDN absolu, insensibles au domaine de recherche
+- **ai** : herdr désactivé, la build unstable échoue au lien
+- **outline** : Overlay corrigeant le patch yarn 1.10.1 et les hashes
+- **dns** : Les noms de zone non déclarés ne résolvent plus vers la passerelle
+- **manage** : just enter rejoint les hôtes itinérants via dnf-locate
+- **child** : Module d'éducation activé, enableChild seul n'installait rien
+- **student** : Module d'éducation activé, enableStudent seul n'installait rien
+- **umi** : Pas de transfert X via su sur les hôtes UMI, les invites verrouillent l'écran
+- **umi** : Prise en charge de Talon 1.0 dans le script de suivi, Always On désactivé
+- **umi** : Pas de mousetweaks dans Cinnamon, types de clic, molette et pas de popup au survol
+- **home** : Applications graphiques hors pkgs-stable, incompatibilité glibc avec le pilote Mesa
+- **home** : apostrophe désactivé, ses dépendances python 3.12 échouent à la compilation
+- **adguardhome** : Pas de limite de débit sur le résolveur de zone
+- **nextcloud** : Mot de passe smtp déclaratif via services.nextcloud.secrets
+
+{/* t:p 0a723621cec4f9f700b742cf0ace11f5161ede3e20dc9851083f2b43bdc97837 */}
+## Sécurité
+
+- **vaultwarden** : /admin restreint aux réseaux internes
+- **umi** : Trousseau sans mot de passe initialisé pour l'utilisateur de connexion automatique uniquement
+- **umi** : Groupes input/uinput attribués uniquement sur les hôtes UMI
+
+{/* t:p eeb9829a9ed4f4c989a7fb3e14703e6714b94d36706c807318b233309d54df41 */}
+## Supprimés
+
+- **oxicloud** : Overlay target-cpu supprimé, corrigé dans nixpkgs
+- **education** : celestia supprimé, build cassé avec FFmpeg 8
+- **printing** : Doublon hplip de hplipWithPlugin supprimé des pilotes CUPS
+
+{/* t:p b74368bb7bbbde41a84316e71f169b59ea50836e6b901ed7e27ff50d8004acae */}
+## Modifiés
+
+- **umi** : Identifiants internes alignés sur la nomination umi
+
+{/* t:p 693eb86c1cc779baa703e6cffde4170003a90843d8c49a3cdf575aaeaa52c6cd */}
+## Documentation
+
+- **umi** : L'en-tête de profil décrit la session par hôte
+- **office** : Règle de largeur de tableau md2pdf dans la description d'enablePandoc
+
+{/* t:p 69744b0f5296663a6f20caae0b7366f8307091cd7a4857fb8a454c49bc4f0242 */}
+## Dépendances
+
+- dnf-generator v0.2.1
+- fleet-update v0.7.4

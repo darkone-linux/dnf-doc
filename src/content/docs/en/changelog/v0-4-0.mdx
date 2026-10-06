@@ -1,0 +1,124 @@
+---
+title: "Version 0.4.0"
+description: "UMI gaze control and typst md2pdf"
+sidebar:
+  label: "0.4.0"
+lang: en
+prev:
+  link: /en/changelog/v0-3-1/
+  label: "Version 0.3.1"
+---
+
+{/* t:main */}
+{/* t:h 6956bb01c684fe3a032ece87e18f3cc9e489b58b76c181a33f7da4703e092ec2 */}
+
+{/* t:p 61e348518dff4fc9223567d33c83b3bc67b19b79207fd6acd5e73cd65f1a7975 */}
+Released on **2026-10-05**: UMI gaze control and typst md2pdf.
+
+[Changes on GitHub](https://github.com/darkone-linux/darkone-nixos-framework/compare/v0.3.1...v0.4.0) · [All versions](/en/changelog/)
+
+:::caution[Breaking changes]
+- **office**: Move darkone.console.pandoc to darkone.home.office.enablePandoc
+- **manage**: Just enter is port 22 only, just unlock takes the initrd prompt
+- **nextcloud**: Move to 35, drop news/memories/recognize plugins
+:::
+
+{/* t:p dd74817d03ce8588528561777173a1c2fe0a12b1fda5d6e5aaa4e13ec906b2a5 */}
+## Added
+
+- **vaultwarden**: Allow emergency access for master password recovery
+- **invite**: Just invite, welcome sheet and Kanidm reset link
+- **secrets**: Warn on a hashed vaultwarden admin token
+- **umi**: Derive UMI users from their user profile
+- **gnome**: Let users override the pointer size, UMI users get 48 px
+- **umi**: Native GNOME a11y for UMI users outside UMI hosts
+- **user**: SSH keys via authorized_keys registry and rbw agent
+- **home**: Rbw vault lock after 12h of inactivity
+- **pandoc**: Added typst
+- **office**: Make ConTeXt optional in the pandoc toolchain
+- **office**: Default pandoc PDF engine, language and fonts
+- **office**: Md2pdf command with ConTeXt and typst layouts
+- **office**: Nautilus entries to convert Markdown to PDF
+- **office**: Md2pdf typst layout closer to ConTeXt, schemas fit width
+- **office**: Md2pdf typst renders raw TeX breaks and TOC, ConTeXt-like title
+- **office**: Md2pdf --tablet on A6 at 9pt, the layout tuned for tablets
+- **office**: Md2pdf and pandoc default to the typst engine
+- **office**: Md2pdf typst polish: TOC, rules, lists, footnotes, inline code
+- **office**: Md2pdf typst footnotes at 80%, tight as with ConTeXt
+- **office**: Md2pdf typst sizes table columns from their content
+- **oxicloud**: Trusted proxy, kanidm admins, nextcloud api, smtp, locale
+- **dns**: Resolve tailnet node names from zone LANs
+- **admin**: Dnf-locate routes ssh to roaming fleet hosts
+- **engine**: Presence probe over the deploy ssh connection
+- **enter**: Dnf-locate logs
+- **headscale**: Unbound view gives tagged nodes the LAN address of zone globals
+- **umi**: Larger Cinnamon panel, icons and text, single-click Nemo
+- **umi**: Eye tracker plugged in enables gaze control and hover click
+- **umi**: Gaze panel with hover click types, pause zone and keyboard toggle
+- **umi**: No terminal launcher, text scaling 1.4
+- **umi**: Roomier Cinnamon menu entries
+- **umi**: Panel gaze switch, Talon action user.umi_gaze
+- **umi**: Accessibility on from first login, no Onboard prompt
+- **umi**: Onboard starts hidden, replaces its own autostart entry
+- **umi**: Hide click type buttons while hover click is paused
+- **umi**: Faster Talon gaze filters, head control and mouse jump off
+- **umi**: Gaze button off pauses hover click, back on resumes it
+- **umi**: Declarative Talon eye tracking modes (gaze, head, jumps, focus)
+- **umi**: Gaze settings updates
+- **nix-cache**: Roaming host feature sets the roaming substituters
+
+{/* t:p 0b8c903d3fbfc1cb593527237e81eaa41721c5cf8d4dbe20b767a4a97899be51 */}
+## Fixed
+
+- **invite**: Todo -> just log
+- **gdm**: Realign gdm-greeter UIDs with nixpkgs
+- **umi**: Pin UMI users' GDM session to Cinnamon at every boot
+- **umi**: Hide Cinnamon panels through XDG_DATA_HOME, drop dead GNOME entry
+- **umi**: Keep Cinnamon GSettings defaults out of GNOME and the GDM greeter
+- **office**: Md2pdf typst tolerates stray citations and dead links
+- **office**: Md2pdf ConTeXt no longer drops table rows at page breaks
+- **security**: C7 NTP servers as absolute FQDN, immune to search domain
+- **ai**: Disable herdr, unstable build fails to link
+- **outline**: Overlay fixing 1.10.1 yarn patch and hashes
+- **dns**: Undeclared zone names no longer resolve to the gateway
+- **manage**: Just enter reaches roaming hosts through dnf-locate
+- **child**: Enable education module, enableChild alone installed nothing
+- **student**: Enable education module, enableStudent alone installed nothing
+- **umi**: No X forwarding through su on UMI hosts, prompts lock the screen
+- **umi**: Talon 1.0 support in the tracker script, Always On switched off
+- **umi**: No mousetweaks in Cinnamon, click types, wheel and no hover popup
+- **home**: GUI apps off pkgs-stable, glibc mismatch with Mesa driver
+- **home**: Disable apostrophe, its python 3.12 deps fail to build
+- **adguardhome**: No rate limit on the zone resolver
+- **nextcloud**: Declarative smtp password via services.nextcloud.secrets
+
+{/* t:p 0a723621cec4f9f700b742cf0ace11f5161ede3e20dc9851083f2b43bdc97837 */}
+## Security
+
+- **vaultwarden**: Restrict /admin to internal networks
+- **umi**: Seed passwordless keyring for the autologin user only
+- **umi**: Grant input/uinput groups on UMI hosts only
+
+{/* t:p eeb9829a9ed4f4c989a7fb3e14703e6714b94d36706c807318b233309d54df41 */}
+## Removed
+
+- **oxicloud**: Drop target-cpu overlay, fixed in nixpkgs
+- **education**: Drop celestia, build broken against FFmpeg 8
+- **printing**: Drop hplip duplicate of hplipWithPlugin in CUPS drivers
+
+{/* t:p b74368bb7bbbde41a84316e71f169b59ea50836e6b901ed7e27ff50d8004acae */}
+## Changed
+
+- **umi**: Align internal identifiers on the umi naming
+
+{/* t:p 693eb86c1cc779baa703e6cffde4170003a90843d8c49a3cdf575aaeaa52c6cd */}
+## Documentation
+
+- **umi**: Profile header describes the session per host
+- **office**: Md2pdf table width rule in the enablePandoc description
+
+{/* t:p 69744b0f5296663a6f20caae0b7366f8307091cd7a4857fb8a454c49bc4f0242 */}
+## Dependencies
+
+- dnf-generator v0.2.1
+- fleet-update v0.7.4
