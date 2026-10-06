@@ -13,55 +13,55 @@ sidebar:
 **Un module système** gère les configurations communes, importantes et générales.
 :::
 
-{/* t:p 628d66cdffb60bcfec0f83f4b842a672698a924ab1abcbc92c6c55825dcca936 */}
+{/* t:p 19b9a849269fa414322361090aa75e1013617c2ec868794f85dc918a1e6679ad */}
 ### &#x2699; darkone.system.core
 
-Le module cœur de DNF.
+Le module DNF principal.
 
 :::danger[Module requis]
 Ce module est activé par défaut (requis par la configuration DNF).
-Il est nécessaire au bon fonctionnement de tout ordinateur NixOS du réseau local.
+Il est nécessaire au bon fonctionnement de chaque ordinateur NixOS du réseau local.
 :::
 
-Met en place :
-- systemd-boot et le kernel LTS (dernier mainline via `enableLatestKernel`) ;
-- JetBrains Mono Nerd Font, avec `kmscon` pour le TTY ;
-- l'optimisation nightly du store, GC hebdomadaire avec rétention de 30 j
-  (keep-last-N via `gcKeepGenerations` sur les hôtes au disque contraint) ;
-- le pare-feu et SSH à clés uniquement ;
-- la politique de veille (`disableSuspend` pour les serveurs) ;
-- les règles polkit laissant `wheel` arrêter/redémarrer ;
-- un groupe/utilisateur `common-files` partagé pour les dossiers médias
-  inter-services.
+Met en place&nbsp;:
+- systemd-boot et le noyau LTS (dernier mainline via `enableLatestKernel`);
+- JetBrains Mono Nerd Font, avec `kmscon` pour le TTY;
+- optimisation nightly du store, GC hebdomadaire avec rétention de 30 jours (keep-last-N via
+  `gcKeepGenerations` sur les hôtes au disque contraint);
+- le pare-feu et SSH à clé uniquement;
+- le terminfo `xterm-ghostty` de Ghostty, pour que chaque hôte accepte le terminal;
+- la politique de veille (`disableSuspend` pour les serveurs);
+- les règles polkit laissant `wheel` arrêter/redémarrer;
+- un groupe/utilisateur `common-files` partagé pour les dossiers médias inter-services.
 
 :::note[Point d'entrée du mixin]
 Active le mixin de profil de l'hôte (`darkone.host.${host.profile}.enable`)
 et propage `enableSops` au module sops.
 :::
 
-:::caution[SSH ouvert par interface]
-Le port 22 n'est global que sur les hôtes sans jambe WAN. Une passerelle l'obtient
-sur le bridge LAN et le tailnet ; un hôte de zone globale sur le tailnet seulement
-— un SSH public là-bas se décide dans le profil d'hôte.
+:::caution[SSH est ouvert par interface]
+Le port 22 n'est global que sur les hôtes sans jambe WAN. Une passerelle l'obtient sur le pont LAN
+et le tailnet&nbsp;; un hôte en zone globale sur le tailnet seulement — un SSH public
+là-bas se décide dans le profil d'hôte.
 :::
 
-:::danger[SSH à clés uniquement]
-Mots de passe et keyboard-interactive sont désactivés sur toute la flotte, et
-seul `/etc/ssh/authorized_keys.d/%u` est lu : un compte sans clé déclarée n'a
-aucun accès SSH, et `ssh-copy-id` n'a plus de canal de bootstrap.
+:::danger[SSH est à clé uniquement]
+Les mots de passe et l'interactif clavier sont désactivés sur toute la flotte, et seul
+`/etc/ssh/authorized_keys.d/%u` est lu&nbsp;: un compte sans clé déclarée
+n'a aucun accès SSH, et `ssh-copy-id` n'a plus de canal de bootstrap.
 :::
 
-* **enable** `bool` Système cœur du framework Darkone (activé par défaut)
+* **enable** `bool` Système principal du framework Darkone (activé par défaut)
 * **enableSystemdBoot** `bool` Activer le chargeur de démarrage par défaut
-* **enableLatestKernel** `bool` Utiliser le dernier kernel mainline (linuxPackages_latest) au lieu du LTS
+* **enableLatestKernel** `bool` Utiliser le dernier noyau mainline (linuxPackages_latest) au lieu du LTS
 * **enableFstrim** `bool` Optimisation SSD avec fstrim
-* **enableFirewall** `bool` Activer le pare-feu (défaut true)
-* **enableSops** `bool` Activer le module dnf sops (défaut true)
-* **enableFlatpak** `bool` Activer la configuration DNF flatpak (environnements graphiques uniquement)
+* **enableFirewall** `bool` Activer le pare-feu (true par défaut)
+* **enableSops** `bool` Activer le module dnf sops (true par défaut)
+* **enableFlatpak** `bool` Activer la configuration DNF flatpak (uniquement pour les environnements graphiques)
 * **enableKmscon** `bool` Activer la nerd font pour le TTY
-* **gcKeepGenerations** `int` Quand &gt; 0, réduire le profil système aux N dernières générations avant
-  chaque garbage collection, et collecter quotidiennement sans rétention
-  basée sur l'âge. Pour les hôtes avec racine étroite (passerelles).
+* **gcKeepGenerations** `int` Si &gt; 0, limiter le profil système aux N dernières générations avant
+  chaque collecte de déchets, et collecter quotidiennement sans rétention
+  basée sur l'âge. Pour les hôtes avec une partition racine étroite (passerelles).
 * **enableBoost** `bool` Activer l'overclocking, corectl
 * **enableAutoSuspend** `bool` Activer la veille automatique (pour les portables, ignoré si disableSuspend est true)
 * **disableSuspend** `bool` Désactivation complète de la veille (pour les serveurs)

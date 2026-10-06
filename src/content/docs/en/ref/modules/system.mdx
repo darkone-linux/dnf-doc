@@ -13,7 +13,7 @@ sidebar:
 **A system module** manages common, important, and general configurations.
 :::
 
-{/* t:p 628d66cdffb60bcfec0f83f4b842a672698a924ab1abcbc92c6c55825dcca936 */}
+{/* t:p 19b9a849269fa414322361090aa75e1013617c2ec868794f85dc918a1e6679ad */}
 ### &#x2699; darkone.system.core
 
 The core DNF module.
@@ -29,6 +29,7 @@ Sets up:
 - nightly store optimisation, weekly GC with 30 d retention (keep-last-N via
   `gcKeepGenerations` on disk-constrained hosts);
 - the firewall and key-only SSH;
+- Ghostty's `xterm-ghostty` terminfo, so every host accepts the terminal;
 - the suspend policy (`disableSuspend` for servers);
 - polkit rules letting `wheel` halt/reboot;
 - a shared `common-files` group/user for cross-service media folders.
