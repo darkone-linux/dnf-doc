@@ -249,3 +249,12 @@ Pour garder un trousseau protégé par un mot de passe propre&nbsp;:
 # usr/users/<login>/default.nix
 darkone.home.gnome.keepKeyring = true;
 ```
+
+### Un fichier `.bkp` dans un home ?
+
+Une application a remplacé un fichier géré par Home Manager (`mimeapps.list`,
+réglages…). À l'activation suivante, il passe en `<fichier>.bkp` et la version
+déclarée reprend sa place.
+
+- Une seule sauvegarde par fichier : la précédente est écrasée.
+- Changement à conserver : le déclarer dans `usr/users/<login>/default.nix`.
