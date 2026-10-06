@@ -146,8 +146,8 @@ Un module du framework atteint les fichiers consumer (`usr/secrets/…`,
 ### Exposition du service
 
 Le bloc **inconditionnel** déclare `darkone.system.services.service.<nom>`, lu
-par `modules/system/services.nix` pour générer reverse proxy, page d'accueil,
-persistance et sauvegarde.
+par `modules/system/services.nix` (registre, page d'accueil) et ses sous-modules
+`services/caddy.nix` (reverse proxy) et `services/oauth2-proxy.nix` (SSO).
 
 ```nix
 darkone.system.services.service.oxicloud = {
