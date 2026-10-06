@@ -16,7 +16,7 @@ Comment DNF implémente le serveur Matrix (Synapse) et les ponts mautrix.
 Pour l'exploitation au quotidien, voir
 [Matrix et les ponts](/fr/doc/admin-guide/operate/matrix/).
 
-{/* t:p b28770e46ea00c812b42773942785636e474f91945dffd9013ec80b8cb8083e9 */}
+{/* t:p 93c636bdb718984bb33054e634bdeba0cf187c9be34e53eb4df371a90b446cf2 */}
 ## Vue d'ensemble
 
 Tout est porté par `dnf/modules/service/matrix.nix` et ses sous-modules
@@ -82,7 +82,7 @@ synapse <-> bridges <-> ext
   Synapse contre un JWT LiveKit, puis envoie son média **directement** au SFU,
   hors du proxy. Requis par Element X, qui ne connaît pas l'autre pile.
 
-{/* t:p 13c6a2814eee915a3089c2fadfc14cd3e406e01ed88014bc51ae5bf898e7c861 */}
+{/* t:p acb98e2affc63ba69e93725af07873026362780d471dd5b9b52a269f6a1bff75 */}
 ## Anatomie du module
 
 Des blocs indépendants, répartis en sous-modules&nbsp;:
@@ -122,7 +122,7 @@ propre compte (il faut `puppeting` au minimum). DNF donne `full` au domaine
 pour que chaque compte local puisse se connecter et partager ses salons.
 </Aside>
 
-{/* t:p 9586614fc831ebae3659bdaac0701d3df4c27b7a7864e94b09027a3b2d9b0349 */}
+{/* t:p 80f0f06fd5967302ee606bffe2e2840217b113f58dddb2374c1ac15ba725a2b5 */}
 ### Permissions
 
 Le helper `mkBridgePermissions` (dans `matrix/bridges.nix`) construit la même
@@ -333,7 +333,7 @@ mas -> idm: SSO amont
 Activation et migration&nbsp;: voir
 [le guide d'exploitation](/fr/doc/admin-guide/operate/matrix/#authentification-mas).
 
-{/* t:p b6417ed593bca0abe771e7d61447636c779be1dffa5374a8f462fe9d3c517232 */}
+{/* t:p 30e0312be0845077dba8ec2755e85f26480b61370db3a186970eea037942eb5b */}
 ## Secrets et ports
 
 - **Secrets** : déclarés par bloc dans chaque sous-module (`sops.secrets.*`), et

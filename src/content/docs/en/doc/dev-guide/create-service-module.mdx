@@ -141,29 +141,29 @@ A framework module accesses consumer files (`usr/secrets/…`,
 {/* t:p 87e14a0e85d4a423956560abb4ef0c2d28af6a1abfae3394ebc0080188da6477 */}
 ## Registration and activation
 
-{/* t:p 47b4195921cbf9e27ef69e887f3ad700d18ef27c28feaec1954ea2b297985727 */}
-### Service exposition
+{/* t:p 9221473bae5581fa4952ba0835c27a81c72546f53a8a88d310c87c9f914a719b */}
+### Service exposure
 
-The **unconditional** block declares `darkone.system.services.service.<name>`, read
-by `modules/system/services.nix` to generate reverse proxy, homepage,
-persistence and backup.
+The **unconditional** block declares `darkone.system.services.service.<nom>`, read
+by `modules/system/services.nix` (registry, homepage) and its submodules
+`services/caddy.nix` (reverse proxy) and `services/oauth2-proxy.nix` (SSO).
 
 ```nix
 darkone.system.services.service.oxicloud = {
   inherit defaultParams;                 # title / description / icon homepage
   persist = {
-    dirs = [ oxCfg.dataDir ];            # service data
+    dirs = [ oxCfg.dataDir ];            # données du service
     dbDirs = [ config.services.postgresql.dataDir ];
   };
-  proxy.servicePort = srvPort;           # Caddy proxies to this port
+  proxy.servicePort = srvPort;           # Caddy proxifie vers ce port
 };
 ```
 
 - `proxy.servicePort`: internal HTTP port; the Caddy reverse proxy connects to it
-- `persist.{dirs,dbDirs,varDirs,mediaDirs,…}`: persisted / backed-up paths.
+- `persist.{dirs,dbDirs,varDirs,mediaDirs,…}`: persisted/backed-up paths.
 - `defaultParams`: default metadata (`title`, `description`, `icon`),
-  overridable from `config.yaml`. The `icon` uses the
-  [selfh.st](https://selfh.st/icons/) slug (prefixed `sh-` by the framework).
+  overridable from `config.yaml`. The `icon` uses the slug
+  [selfh.st](https://selfh.st/icons/) (prefixed with `sh-` by the framework).
 
 ```nix
 defaultParams = {

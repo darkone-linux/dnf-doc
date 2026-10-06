@@ -13,56 +13,57 @@ sidebar:
 **Un module système** gère les configurations communes, importantes et générales.
 :::
 
-{/* t:p 4489346fc53d9ccb14e05aad53b4c4b3aa217cbaf81466526b9d235b7f92347a */}
+{/* t:p 628d66cdffb60bcfec0f83f4b842a672698a924ab1abcbc92c6c55825dcca936 */}
 ### &#x2699; darkone.system.core
 
-Module principal de DNF.
+Le module cœur de DNF.
 
-:::danger[Module obligatoire]
+:::danger[Module requis]
 Ce module est activé par défaut (requis par la configuration DNF).
-Il est nécessaire au bon fonctionnement de chaque ordinateur NixOS du réseau local.
+Il est nécessaire au bon fonctionnement de tout ordinateur NixOS du réseau local.
 :::
 
-Configure le chargeur systemd-boot, le noyau LTS (ou le dernier noyau stable via
-`enableLatestKernel`), la JetBrains Mono Nerd
-Font (avec `kmscon` pour le TTY), l'optimisation nocturne du magasin Nix et
-la collecte hebdomadaire des ordures (rétention de 30 jours, ou keep-last-N via
-`gcKeepGenerations` sur les hôtes à espace disque limité), le pare-feu, la
-politique de veille (les serveurs peuvent la désactiver complètement via
-`disableSuspend`), les règles polkit
-autorisant le groupe `wheel` à arrêter/redémarrer, et un groupe/utilisateur
-`common-files` partagé pour les dossiers médias inter-services.
+Met en place :
+- systemd-boot et le kernel LTS (dernier mainline via `enableLatestKernel`) ;
+- JetBrains Mono Nerd Font, avec `kmscon` pour le TTY ;
+- l'optimisation nightly du store, GC hebdomadaire avec rétention de 30 j
+  (keep-last-N via `gcKeepGenerations` sur les hôtes au disque contraint) ;
+- le pare-feu et SSH à clés uniquement ;
+- la politique de veille (`disableSuspend` pour les serveurs) ;
+- les règles polkit laissant `wheel` arrêter/redémarrer ;
+- un groupe/utilisateur `common-files` partagé pour les dossiers médias
+  inter-services.
 
-:::note[Point d'entrée mixin]
+:::note[Point d'entrée du mixin]
 Active le mixin de profil de l'hôte (`darkone.host.${host.profile}.enable`)
-et propage `enableSops` vers le module sops.
+et propage `enableSops` au module sops.
 :::
 
-:::caution[SSH est ouvert par interface]
-Le port 22 n'est global que sur les hôtes sans accès WAN. Une passerelle l'obtient
-sur le bridge LAN et le tailnet ; un hôte de zone globale l'obtient uniquement
-sur le tailnet — un SSH public sur celui-ci est décidé dans le profil de l'hôte.
+:::caution[SSH ouvert par interface]
+Le port 22 n'est global que sur les hôtes sans jambe WAN. Une passerelle l'obtient
+sur le bridge LAN et le tailnet ; un hôte de zone globale sur le tailnet seulement
+— un SSH public là-bas se décide dans le profil d'hôte.
 :::
 
-:::danger[SSH est clé uniquement]
-Les mots de passe et l'authentification interactive sont désactivés sur l'ensemble
-de la flotte, et seul `/etc/ssh/authorized_keys.d/%u` est lu : un compte sans
-clé déclarée n'a aucun accès SSH, et `ssh-copy-id` n'a plus de canal d'amorçage.
+:::danger[SSH à clés uniquement]
+Mots de passe et keyboard-interactive sont désactivés sur toute la flotte, et
+seul `/etc/ssh/authorized_keys.d/%u` est lu : un compte sans clé déclarée n'a
+aucun accès SSH, et `ssh-copy-id` n'a plus de canal de bootstrap.
 :::
 
-* **enable** `bool` Système principal du framework Darkone (activé par défaut)
+* **enable** `bool` Système cœur du framework Darkone (activé par défaut)
 * **enableSystemdBoot** `bool` Activer le chargeur de démarrage par défaut
-* **enableLatestKernel** `bool` Utiliser le dernier noyau stable (linuxPackages_latest) au lieu du noyau LTS
+* **enableLatestKernel** `bool` Utiliser le dernier kernel mainline (linuxPackages_latest) au lieu du LTS
 * **enableFstrim** `bool` Optimisation SSD avec fstrim
-* **enableFirewall** `bool` Activer le pare-feu (vrai par défaut)
-* **enableSops** `bool` Activer le module sops dnf (vrai par défaut)
-* **enableFlatpak** `bool` Activer la configuration flatpak DNF (uniquement pour les environnements graphiques)
+* **enableFirewall** `bool` Activer le pare-feu (défaut true)
+* **enableSops** `bool` Activer le module dnf sops (défaut true)
+* **enableFlatpak** `bool` Activer la configuration DNF flatpak (environnements graphiques uniquement)
 * **enableKmscon** `bool` Activer la nerd font pour le TTY
-* **gcKeepGenerations** `int` Lorsque &gt; 0, tronquer le profil système aux N dernières générations avant
-  chaque collecte des ordures, et collecter quotidiennement sans rétention
-  basée sur l'âge. Pour les hôtes avec une partition racine serrée (passerelles).
+* **gcKeepGenerations** `int` Quand &gt; 0, réduire le profil système aux N dernières générations avant
+  chaque garbage collection, et collecter quotidiennement sans rétention
+  basée sur l'âge. Pour les hôtes avec racine étroite (passerelles).
 * **enableBoost** `bool` Activer l'overclocking, corectl
-* **enableAutoSuspend** `bool` Activer la veille automatique (pour les portables, ignoré si disableSuspend est vrai)
+* **enableAutoSuspend** `bool` Activer la veille automatique (pour les portables, ignoré si disableSuspend est true)
 * **disableSuspend** `bool` Désactivation complète de la veille (pour les serveurs)
 * **enableCommonFilesUser** `bool` Activer l'utilisateur common-files utilisé par plusieurs services
 
@@ -134,21 +135,19 @@ darkone.system.hardware = {
 };
 ```
 
-{/* t:p 46487a2c2032983b63ec5f022790f16b962e01ef5f3ad172a6dfc5b6f7fbe5ea */}
+{/* t:p 6d45bdbe22a6c16d07209a2d1b8d4731cfb1d754cfe098972471e9e87021a482 */}
 ### &#x2699; darkone.system.i18n
 
-Configuration de la localisation et de la langue.
+Configuration de la locale et de la langue.
 
 :::note
-Par défaut, la configuration de ce module s'adapte à la configuration globale usr/config.yaml.
-La locale doit suivre la forme canonique `xx_YY.UTF-8` (par exemple `fr_FR.UTF-8`)
-afin que les codes de langue et de pays puissent être dérivés en toute sécurité pour la
-disposition des touches de la console, la disposition XKB et les valeurs par défaut
-de la région téléphonique Nextcloud.
+Les valeurs par défaut suivent la zone de l'hôte (`etc/config.yaml`). La locale doit avoir
+la forme canonique `xx_YY.UTF-8` (ex. `fr_FR.UTF-8`) : le keymap console, la disposition
+XKB et la région téléphonique Nextcloud en dérivent.
 :::
 
-* **enable** `bool` Activer i18n avec la configuration de la zone de réseau par défaut
-* **locale** `strMatching localeRegex` Locale réseau, doit correspondre à la forme `xx_YY.UTF-8`.
+* **enable** `bool` Activer i18n avec la configuration de zone réseau par défaut
+* **locale** `strMatching dnfLib.localeRegex` Locale réseau, doit correspondre à la forme `xx_YY.UTF-8`.
 * **timeZone** `str` Fuseau horaire réseau
 
 ```nix
@@ -158,6 +157,8 @@ darkone.system.i18n = {
   timeZone = "Europe/Paris";
 };
 ```
+
+<hr/>
 
 {/* t:p 547364c2554296fa354c98b7915e0e0f9cec01677ee8999e8f42005ade8613a0 */}
 ### &#x2699; darkone.system.luks
@@ -355,54 +356,96 @@ darkone.system.security = {
 
 <hr/>
 
-{/* t:p 9db8b221e9b60f619f49705fc46a6a30ddd5765dbd9b1232e9552edfbabe9c9e */}
+{/* t:p 6ddd130d9dff949cc744771dbd3478dd08385e5e9088926d865e24e623767e86 */}
+### &#x2699; darkone.system.services.caddy
+
+Services DNF : reverse proxy Caddy. Doc : en-tête de `../services.nix`.
+
+<hr/>
+
+{/* t:p e1583714476b06c5f41de36bc076ef6ce343dcd8abd4ecdcc6c08be37eb9e7bb */}
+### &#x2699; darkone.system.services.oauth2-proxy
+
+Services DNF : SSO oauth2-proxy. Doc : en-tête de `../services.nix`.
+
+<hr/>
+
+{/* t:p eb17d80f925434ae60c929580146be65da724b3197490509daf1d5948a9865a7 */}
 ### &#x2699; darkone.system.services
 
-Enregistrement et configuration des services DNF.
+Registre des services DNF : chaque module de service s'y enregistre, et le registre
+est résolu par rapport à la topologie réseau.
 
 :::caution[Module interne spécial]
-Ce module sert à enregistrer et configurer les modules DNF&nbsp;:
-- Client de serveur de coordination (headscale / tailscale)
-- Proxys inverses (caddy)
-- Inscriptions à la page d'accueil
-- Entrées DNS
-- dossiers et fichiers à sauvegarder
+Le registre résolu (`darkone.system.services.resolved`) alimente les sections
+de la page d'accueil et les sous-modules ci-dessous. Les entrées `persist.*` sont
+les dossiers et fichiers à sauvegarder.
 :::
 
-- **enable** `bool` Activer le gestionnaire de services DNF pour enregistrer et exposer les services
-- **service** `attrs` Configuration globale des services &lt;nom&gt;
-  - **enable** `bool` Activer le proxy de service
-  - **defaultParams** `submodule` Ces options sont calculées par dnfLib.srv.extractServiceParams
-    - **domain** `str` Nom de domaine pour le service
-    - **title** `str` Nom affiché sur la page d'accueil
-    - **description** `str` Description du service pour la page d'accueil
-    - **icon** `str` [Nom de l'icône pour la page d'accueil](https://selfh.st/icons/)
-    - **global** `bool` Service global accessible sur Internet
-    - **noRobots** `bool` Empêcher les robots de scanner si global est vrai
-    - **fqdn** `str` FQDN calculé du service avant le proxy inverse
-    - **href** `str` URL calculée du service avant le proxy inverse
-    - **ip** `str` IP calculée pour contacter le service
-  - **displayOnHomepage** `bool` Afficher un lien sur la page d'accueil
-  - **reverseProxy** `bool` Accessible via le proxy inverse de la passerelle de zone (DNS pointe vers l'IP LAN de la passerelle)
-  - **uniquePerZone** `bool` Au plus une instance autorisée par zone (validation du générateur)
-  - **externalAccess** `bool` Service de zone www accessible depuis le LAN via une IP hôte fixe (p. ex. headscale, turn)
-  - **persist.dirs** `listOf str` Répertoires persistants du service
-  - **persist.files** `listOf str` Fichiers persistants du service
-  - **persist.dbDirs** `listOf str` Répertoires persistants du service avec base(s) de données
-  - **persist.dbFiles** `listOf str` Fichier(s) de base de données du service
-  - **persist.varDirs** `listOf str` Fichiers secondaires variables (log, cache, etc.)
-  - **persist.mediaDirs** `listOf str` Répertoires média du service (images, vidéos, gros fichiers)
-  - **proxy.enable** `bool` Créer une configuration virtualHost (false pour les services qui gèrent la leur)
-  - **proxy.isProtected** `bool` Service protégé par Oauth2
-  - **proxy.allowedGroups** `listOf str` Groupes Kanidm autorisés sur ce service protégé (vide = tout utilisateur authentifié)
-  - **proxy.isInternal** `bool` Lier le service sur l'interface interne uniquement (pas accessible depuis Internet)
-  - **proxy.hasReverseProxy** `bool` Ceci est un proxy inverse (ou une autre configuration virtualHost via extraConfig)
-  - **proxy.defaultService** `bool` Est le service par défaut
-  - **proxy.servicePort** `nullOr port` Port interne du service
-  - **proxy.preExtraConfig** `lines` Configuration virtualHost caddy supplémentaire (préfixe)
-  - **proxy.extraConfig** `lines` Configuration virtualHost caddy supplémentaire
-  - **proxy.extraGlobalConfig** `lines` Configuration caddy supplémentaire
-  - **proxy.scheme** `str` Schéma interne du service (http / https)
+Sous-modules (`services/`) :
+- `caddy.nix` : vhosts du reverse proxy, TLS, pare-feu HTTP(S) ;
+- `oauth2-proxy.nix` : SSO Kanidm des services protégés.
+
+{/* t:p 40dca566541cc3e195ba3809298afd0f66f4a80d4602b7b17a7075fe96f84575 */}
+#### Reverse proxy (`caddy.nix`)
+
+Un vhost Caddy par service résolu, plus le pare-feu HTTP(S) des passerelles de zone
+et du HCS.
+
+:::note[Exposition]
+- services de zone : sur la passerelle de zone, sous le domaine de zone ;
+- services globaux : sur le HCS, sous le domaine du réseau ;
+- `external-hosts` : services de zone dont le HCS fait face, proxyés vers leur passerelle.
+:::
+
+{/* t:p 7134724ea25686c17aa00bbfd26d0c6e202b306ef9eefa302c8fa0281348ff9b */}
+#### SSO (`oauth2-proxy.nix`)
+
+oauth2-proxy devant les services protégés d'une zone, adossé au client OAuth2
+`internal-service` de Kanidm.
+
+:::note[Flux]
+Caddy `forward_auth` vérifie chaque requête contre `/oauth2/auth`. Le flux de
+connexion s'ancre sur le FQDN de la page d'accueil de zone, qui héberge les
+points d'entrée publics `/oauth2/*` d'oauth2-proxy ; un cookie scopé au domaine
+de zone conserve la session sur ses services.
+:::
+
+* **enable** `bool` Activer le gestionnaire de services DNF pour enregistrer et exposer les services
+* **service** `attrs` Configuration globale des services &lt;name&gt;
+  * **enable** `bool` Activer le proxy du service
+  * **defaultParams** `submodule` Ces options sont calculées par dnfLib.srv.extractServiceParams
+    * **domain** `str` Nom de domaine du service
+    * **title** `str` Nom affiché sur la page d'accueil
+    * **description** `str` Description du service pour la page d'accueil
+    * **icon** `str` [Nom d'icône pour la page d'accueil](https://selfh.st/icons/)
+    * **global** `bool` Le service global est accessible sur Internet
+    * **noRobots** `bool` Empêcher les robots de scanner si global est true
+    * **fqdn** `str` FQDN calculé du service avant le reverse proxy
+    * **href** `str` URL calculée du service avant le reverse proxy
+    * **ip** `str` IP calculée pour contacter le service
+  * **displayOnHomepage** `bool` Afficher un lien sur la page d'accueil
+  * **reverseProxy** `bool` Atteint via le reverse proxy de la passerelle de zone (le DNS pointe vers l'IP LAN de la passerelle)
+  * **uniquePerZone** `bool` Au plus une instance par zone (validation du générateur)
+  * **externalAccess** `bool` Service www-zone joignable depuis la LAN via une IP hôte fixe (ex. headscale, turn)
+  * **persist.dirs** `listOf str` Dossiers persistants du service
+  * **persist.files** `listOf str` Fichiers persistants du service
+  * **persist.dbDirs** `listOf str` Dossiers persistants du service avec base(s) de données
+  * **persist.dbFiles** `listOf str` Fichier(s) de base de données du service
+  * **persist.varDirs** `listOf str` Fichiers secondaires variables (log, cache, etc.)
+  * **persist.mediaDirs** `listOf str` Dossiers médias du service (images, vidéos, gros fichiers)
+  * **proxy.enable** `bool` Créer la configuration virtualHost (false pour les services qui gèrent la leur)
+  * **proxy.isProtected** `bool` Service protégé par Oauth2
+  * **proxy.allowedGroups** `listOf str` Groupes Kanidm autorisés sur ce service protégé (vide = tout utilisateur authentifié)
+  * **proxy.isInternal** `bool` Lier le service sur l'interface interne uniquement (pas accessible Internet)
+  * **proxy.hasReverseProxy** `bool` C'est un reverse proxy (ou une autre configuration virtualhost via extraConfig)
+  * **proxy.defaultService** `bool` C'est le service par défaut
+  * **proxy.servicePort** `nullOr port` Port interne du service
+  * **proxy.preExtraConfig** `lines` Configuration caddy virtualHost supplémentaire (préfixe)
+  * **proxy.extraConfig** `lines` Configuration caddy virtualHost supplémentaire
+  * **proxy.extraGlobalConfig** `lines` Configuration caddy supplémentaire
+  * **proxy.scheme** `str` Schéma du service interne (http / https)
+* **resolved** `raw` Registre des services résolu.
 
 ```nix
 darkone.system.services = {
@@ -438,6 +481,7 @@ darkone.system.services = {
   service.proxy.extraConfig = "";
   service.proxy.extraGlobalConfig = "";
   service.proxy.scheme = "https";
+  resolved = { inherit services hasProtectedServices authHost; };
 };
 ```
 

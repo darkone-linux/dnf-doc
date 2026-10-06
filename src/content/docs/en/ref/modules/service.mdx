@@ -237,14 +237,14 @@ darkone.service.geneweb = {
 
 <hr/>
 
-{/* t:p 9eff601bfa10173d76a5cf1c41937f362ab0c5f9b552985b84dc53cd18a30d87 */}
+{/* t:p 04c66c33ef9c0752276cf0a35a7c8e7bc544a6bf1e40bc2c18879d9f197bc934 */}
 ### &#x2728; darkone.service.harmonia
 
 Harmonia: local Nix binary cache server (serves this host's /nix/store).
 
 Exposes locally built / realised store paths over plain HTTP (port 5000),
 signed with the deployment-wide binary-cache key. Enable per host from
-`usr/config.yaml` (services.harmonia), like any other DNF service.
+`etc/config.yaml` (services.harmonia), like any other DNF service.
 
 :::note[How harmonia works with the nix-cache proxy]
 Harmonia is a *source* of packages, served **directly** to clients over the
@@ -298,7 +298,28 @@ darkone.service.harmonia.enable = false;
 
 <hr/>
 
-{/* t:p 96c1f32ecec75c85099972d1cf88b23138dae032469278bd24c7b74b8db16a9c */}
+{/* t:p e86f7b5e08487c255bb709db5303d805164c148a31511f96943f8771419b56e1 */}
+### &#x2728; darkone.service.headscale.audit
+
+DNF headscale: `headscale-audit`. Doc: `../headscale.nix` header.
+
+<hr/>
+
+{/* t:p 07c238943585caca37f85c3ef7f0373584c8fe5d38314fc4a9809c6055b5cb08 */}
+### &#x2728; darkone.service.headscale.dns
+
+DNF headscale: tailnet pivot DNS. Doc: `../headscale.nix` header.
+
+<hr/>
+
+{/* t:p 1bc57d2fbacc6a8534067ed147b7a52149872eb8771373148368a4b969623da0 */}
+### &#x2728; darkone.service.headscale.enroll
+
+DNF headscale: `dnf-tailnet-enroll`. Doc: `../headscale.nix` header.
+
+<hr/>
+
+{/* t:p 1c5c73cfa0239db48f8312afda270fee90f64c897f01d3e5efb2b50efbb1b4ca */}
 ### &#x2728; darkone.service.headscale
 
 A full-configured headscale service for HCS.
@@ -314,15 +335,6 @@ time, then reloaded on change (SIGHUP) without restarting headscale.
   `zone-*` groups). SSH from admin stations and `policy.adminDevices`.
 - Personal devices log in through Kanidm (OIDC), for members of the Kanidm
   `tailnet` group; their keys expire after `nodeExpiry`.
-- `headscale-audit` (every 15 min) compares the live nodes with the declared
-  topology: metrics for the `dnf-headscale-<zone>` alerts, details in its
-  journal. It never tags nor deletes.
-- `dnf-tailnet-enroll` backs `just tailnet-enroll`: single-use keys tagged
-  from the declared topology, declared name and tags on the enrolled node.
-- Unbound view `tailnet-machines`: tagged nodes (HCS aside) get the zone LAN
-  address of the global services a zone serves (`git.<domain>` on a gateway),
-  everyone else the public one. `unbound-tailnet-view` lists their tailnet
-  IPs from headscale, declared nowhere.
 
 ```nix
 darkone.service.headscale.policy.adminDevices.phone-alice = "100.64.0.9";
@@ -338,6 +350,36 @@ headscale still starts without Kanidm and falls back to CLI registration
 until its next restart. Registered nodes are unaffected.
 :::
 
+Sub-modules (`headscale/`):
+- `dns.nix`: unbound, the tailnet pivot DNS, and its `tailnet-machines` view;
+- `audit.nix`: `headscale-audit`, live nodes against the declared topology;
+- `enroll.nix`: `dnf-tailnet-enroll`, behind `just tailnet-enroll`.
+
+{/* t:p 4cd662808c91c5d1e78ab3611e8587866070b81b52a07cb50eca1f93c4452b13 */}
+#### Pivot DNS (`dns.nix`)
+
+unbound on the HCS. Internal names reach it through headscale split DNS; it
+forwards each zone domain to the zone gateway, the rest to Quad9 over TLS.
+
+View `tailnet-machines`: tagged nodes (HCS aside) get the zone LAN address
+of the global services a zone serves (`git.<domain>` on a gateway),
+everyone else the public one. `unbound-tailnet-view` lists their tailnet
+IPs from headscale, declared nowhere.
+
+{/* t:p 592412b218f2c13bc4ef8250d9d03fd1435be2922dd32209eabbed93561a3c8d */}
+#### Audit (`audit.nix`)
+
+`headscale-audit`, every 15 min: live nodes against the declared topology.
+Metrics for the `dnf-headscale-<zone>` alerts, details in its journal. It
+never tags nor deletes.
+
+{/* t:p ad5d40e1917ed192cca38d18dd6062fde4a92374e6d5e3cb4e77cad41a39c5a9 */}
+#### Enrollment (`enroll.nix`)
+
+`dnf-tailnet-enroll`, root side of `just tailnet-enroll`: single-use keys
+tagged from the declared topology; the enrolled node gets its declared name
+and tags.
+
 * **enable** `bool` Enable headscale DNF service
 * **enableGRPC** `bool` Open GRPC TCP port
 * **nodeExpiry** `str` Key expiry of personal devices (`0`: never). Tagged machines never expire.
@@ -346,6 +388,7 @@ until its next restart. Registered nodes are unaffected.
 * **policy.exitNodeSources** `listOf str` Policy sources allowed to use the HCS as exit node.
 * **policy.extraHosts** `attrs` Extra policy host aliases (name -&gt; CIDR), to use in `extraAcls`.
 * **policy.extraAcls** `listOf (attrsOf anything)` ACL rules appended after the generated ones.
+* **shared** `raw` Headscale values shared with the `headscale/` sub-modules.
 
 ```nix
 darkone.service.headscale = {
@@ -357,6 +400,14 @@ darkone.service.headscale = {
   policy.exitNodeSources = [ ];
   policy.extraHosts = { };
   policy.extraAcls = [ ];
+  shared = {
+        inherit
+          policy
+          auditSpec
+          idmUrl
+          hcsTailnetIpv4
+          ;
+      };
 };
 ```
 
@@ -406,21 +457,11 @@ darkone.service.homepage = {
 
 <hr/>
 
-{/* t:p 046d3aed6844038d902ecc7e1bd0f65285c684628a546b9d465e460840c40cd0 */}
-### &#x2728; darkone.service.idm
+{/* t:p df26f2a78af998f29708ef55df7286ced86d3dd32fba2f7538ac6ade7aaca8ca */}
+### &#x2728; darkone.service.idm.provision
 
-Kanidm (identity manager) DNF Service.
+DNF idm: Kanidm provisioning. Doc: `../idm.nix` header.
 
-:::note[Secrets are generated, not typed]
-`just configure-admin-host` creates every entry this module reads:
-the break-glass account passwords (`kanidm-admin-password`,
-`kanidm-idm-admin-password`), the self-signed pair of the internal HTTPS
-listener (`kanidm-tls-chain` / `kanidm-tls-key`, 10 years, CN=127.0.0.1) and
-one `oidc-secret-<client>` per provisioned OAuth2 client. Read them back with
-`just sops` on the rare occasions an admin needs one.
-:::
-
-* **enable** `bool` Enable local SSO with Kanidm
 * **oauth2** `attrs` OAuth2/OIDC client templates contributed by service modules.
   Kanidm provisions one client per matching entry in `network.services`,
   with `clientId = dnfLib.oauth2ClientName`.
@@ -436,8 +477,7 @@ one `oidc-secret-<client>` per provisioned OAuth2 client. Read them back with
   * **extra** `attrs` Extra attributes merged into the provisioned client (claimMaps, etc).
 
 ```nix
-darkone.service.idm = {
-  enable = false;
+darkone.service.idm.provision = {
   oauth2.enable = true;
   oauth2.clientName = null;
   oauth2.displayName = null;
@@ -449,6 +489,65 @@ darkone.service.idm = {
   oauth2.preferShortUsername = null;
   oauth2.extra = { };
 };
+```
+
+<hr/>
+
+{/* t:p 2fc462a6899f7a4371bb6b31820da0a1b2996d67e3682d17291fe6722469edf8 */}
+### &#x2728; darkone.service.idm.replication
+
+DNF idm: Kanidm replication. Doc: `../idm.nix` header.
+
+* **replication** `raw` Replication facts of this node.
+
+```nix
+darkone.service.idm.replication.replication = { inherit isMainReplica isReplConsumer; };
+```
+
+<hr/>
+
+{/* t:p ad8ac0ab2185114fe0502554b07ecbb52ecbc643d7ede8e59512366079167017 */}
+### &#x2728; darkone.service.idm
+
+Kanidm (identity manager) DNF Service.
+
+:::note[Secrets are generated, not typed]
+`just configure-admin-host` creates every entry this module reads:
+the break-glass account passwords (`kanidm-admin-password`,
+`kanidm-idm-admin-password`), the self-signed pair of the internal HTTPS
+listener (`kanidm-tls-chain` / `kanidm-tls-key`, 10 years, CN=127.0.0.1) and
+one `oidc-secret-<client>` per provisioned OAuth2 client. Read them back with
+`just sops` on the rare occasions an admin needs one.
+:::
+
+Sub-modules (`idm/`):
+- `replication.nix`: multi-zone read-only replication, HCS to zone gateways;
+- `provision.nix`: OAuth2 clients (template registry), groups and persons.
+
+{/* t:p c9d523f9c225056343b709b06602f0efa716c56a8fac18a0f30525abe02bf688 */}
+#### Replication (`replication.nix`)
+
+Automatic, derived from where `idm` is declared:
+- idm on the HCS only, or on a gateway without HCS: one instance;
+- on the HCS and &gt;= 1 zone gateway: the HCS supplies (WriteReplica), each
+  idm gateway consumes.
+
+Two-step bootstrap: `just apply` generates every replication certificate
+(gateways stay WriteReplicaNoUI), then `just idm-sync-certs` + `just apply`
+adds the partners and flips the gateways to ReadOnlyReplica.
+
+{/* t:p 4e0b67213ff14e67574c0a64e7b3f3e2665b642b522acd1290d06f7d5e6a993c */}
+#### Provisioning (`provision.nix`)
+
+Every OIDC-capable service module contributes a client template to
+`darkone.service.idm.oauth2`; one client is provisioned per (template,
+instance), merged by `clientId` across zones. Never on a replication
+consumer: it mirrors the HCS.
+
+* **enable** `bool` Enable local SSO with Kanidm
+
+```nix
+darkone.service.idm.enable = false;
 ```
 
 <hr/>
@@ -597,6 +696,27 @@ darkone.service.loki = {
 
 <hr/>
 
+{/* t:p 9e45e5fe2d35ea8b6d959a3953af4f868f6c42c20f2ae819bd8becf957e38789 */}
+### &#x2728; darkone.service.matrix.bridges
+
+DNF matrix: mautrix bridges. Doc: `../matrix.nix` header.
+
+<hr/>
+
+{/* t:p 61278cb483717d86141ce40a15c54e0172be46cfc775bec74067ff5296a32803 */}
+### &#x2728; darkone.service.matrix.mas
+
+DNF matrix: authentication delegated to MAS. Doc: `../matrix.nix` header.
+
+<hr/>
+
+{/* t:p a7561f578552c4ecbc848dcdd8c38ccaccb3d6dc10d2617588d942d07f429b82 */}
+### &#x2728; darkone.service.matrix.rtc
+
+DNF matrix: MatrixRTC calls (LiveKit). Doc: `../matrix.nix` header.
+
+<hr/>
+
 {/* t:p 3aed33d5211d279fd7b46860c052b6b452ec8bb63edc1e0302566f26450650d7 */}
 ### &#x2728; darkone.service.matrix-admin
 
@@ -626,31 +746,17 @@ darkone.service.matrix-admin.enable = false;
 
 <hr/>
 
-{/* t:p f0b857acdd4159cd1de77d0a60ddfc7228897996a3cd833ef2194e8914375c9a */}
+{/* t:p 6088713fc363cc14df3f8ae0883dd2cd8b77bf511ebed0a237877a54a572f68c */}
 ### &#x2728; darkone.service.matrix
 
-DNF matrix (synapse) server with mautrix bridges.
+DNF matrix (synapse) homeserver.
 
-Bridges (whatsapp, signal, telegram, messenger, discord) are usable by every
-local account: each user links its own remote account by talking to the
-bridge bot (`@whatsappbot`, `@signalbot`, ... then `login`); sessions are
-isolated per user. The declared `network.matrix.admins` administrate the
-bridges and the server (cf. "Administrators" below).
+Sub-modules (`matrix/`):
+- `mas.nix`: authentication, delegated to Matrix Authentication Service;
+- `bridges.nix`: mautrix bridges, usable by every local account;
+- `rtc.nix`: MatrixRTC backend (LiveKit) for Element Call.
 
-Double puppeting uses the official appservice method
-(https://docs.mau.fi/bridges/general/double-puppeting.html): a shared
-`doublepuppet` appservice token lets bridges send remote-originated messages
-as the user's real matrix account. Required sops secrets:
-`mautrix-doublepuppet-as-token` and `mautrix-doublepuppet-hs-token`
-(`openssl rand -hex 32` each).
-
-Every bridge's appservice as/hs tokens are sops-provided rather than
-auto-generated: the registration file becomes a pure function of the
-secrets, so resetting a bridge's state dir never invalidates the
-registration synapse has loaded (which would otherwise require a registration
-wipe + synapse restart and produce "as_token was not accepted" errors).
-
-{/* t:p 721584fdcd7e19220bfa29c1991267d1fef12571ca5de8ac0c5aab8b3cbe707d */}
+{/* t:p ef14a55ba6ca6ee10f8d7ec88c4915da15b8692533db6bf932ec5ddfe196b481 */}
 #### Federation
 
 Federation is configurable via `darkone.service.matrix.federation`:
@@ -676,32 +782,50 @@ with `sudo dnf-mas manage issue-user-registration-token`.
 Friends and declared users draw from the same localpart namespace, and a
 matrix id is never freed (unique in MAS's `users`, deactivation keeps it).
 Declaring a user whose localpart a friend already took fails their first SSO
-login: `on_conflict` stays on `fail` below, since anything else hands the
+login: MAS `on_conflict` stays on `fail`, since anything else hands the
 existing account to whoever registers a matching name upstream. Merge
 procedure in the admin guide (`operate/matrix.mdx`).
 :::
 
-{/* t:p 8991e0d7f2ebabc4d8467440645ee2a7b1e06249102aa84b4071b0398d13da0f */}
-#### Authentication (MAS)
+{/* t:p 3aed5cf433b9735b25686e721ff04b5181dc68e19b53dd8763d16fe8bdf11df4 */}
+#### Administrators
 
-All authentication is delegated to Matrix Authentication Service, always:
+`network.matrix.admins` (local parts) is the single declarative source for
+both administrations, applied at rebuild with no database write:
+
+- bridges: `admin` level in every mautrix `permissions` map;
+- server: `policy.data.admin_users`, which the bundled MAS policy turns into
+  the `urn:mas:admin` and `urn:synapse:admin:*` scopes (MAS admin API, synapse
+  admin API, `matrix-admin` UI login).
+
+:::caution[Imperative promotions survive]
+The policy grants admin on `admin_users` OR the `can_request_admin` database
+flag `dnf-mas manage promote-admin` sets. Audit leftovers with
+`list-admin-users`, drop them with `demote-admin`.
+:::
+
+{/* t:p 38c6929f59e6161969cebae616a24ed666da10478e1487f49fdaaccd62346dbb */}
+#### Authentication (`mas.nix`)
+
+All authentication goes through Matrix Authentication Service, always:
 Element X, QR login and the `/account` self-service portal only exist there,
 and synapse's own auth is deprecated upstream (MSC3861). Kanidm stays the
 identity source: MAS is the OIDC client instead of synapse, and synapse only
-asks MAS to introspect tokens. Served on the same vhost:
-MAS owns the root + compat auth endpoints, synapse keeps `/_matrix/*` and
-`/_synapse/*`; client discovery is automatic (synapse serves
-`auth_metadata` itself), so no well-known change.
+asks MAS to introspect tokens.
+
+Same vhost: MAS owns the root + compat auth endpoints, synapse keeps
+`/_matrix/*` and `/_synapse/*`. Client discovery is automatic (synapse
+serves `auth_metadata` itself), no well-known change.
 
 Required sops secrets, all created by `just configure-admin-host`:
 `mas-encryption-secret`, `mas-synapse-secret` and `mas-rsa-private-key`.
 
 `dnf-mas` (root) wraps `mas-cli` for host-side administration: registration
 tokens, `promote-admin`, `register-user`, `syn2mas`. MAS runs with
-`DynamicUser` and reads its secrets from systemd credentials, which do not
-exist outside the running unit; the wrapper rebuilds an equivalent
-credentials directory from the sops files, so it works whether the service
-is up or down (syn2mas needs it down).
+`DynamicUser` and reads its secrets from systemd credentials, absent outside
+the running unit; the wrapper rebuilds an equivalent credentials directory
+from the sops files, so it works whether the service is up or down (syn2mas
+needs it down).
 
 `mas-cli` only acts, never lists: enable the `matrix-admin` service for the
 read side (accounts, devices, sessions), it speaks both admin APIs.
@@ -719,21 +843,71 @@ then, with both services stopped: `sudo dnf-mas syn2mas check`,
 `.specs/matrix-authentication-service.md`.
 :::
 
-{/* t:p 0fc77b947b4fa00219c9c48005b393bffb05d36cc9bb56626743d586b2542433 */}
-#### Administrators
+{/* t:p d89c278f40800fada51f6d1720dc109703fb95a32cb83dc8d3fc5817d75705d2 */}
+#### Bridges (`bridges.nix`)
 
-`network.matrix.admins` (local parts) is the single declarative source for
-both administrations, applied at rebuild with no database write:
+mautrix bridges: WhatsApp, Signal, Telegram, Messenger, Discord. Each user
+links their own remote account by talking to the bridge bot
+(`@whatsappbot`, `@signalbot`, ... then `login`); sessions are isolated per
+user. Bridge administrators: cf. "Administrators" above.
 
-- bridges: `admin` level in every mautrix `permissions` map;
-- server: `policy.data.admin_users`, which the bundled MAS policy turns into
-  the `urn:mas:admin` and `urn:synapse:admin:*` scopes (MAS admin API, synapse
-  admin API, `matrix-admin` UI login).
+Double puppeting: official appservice method
+(https://docs.mau.fi/bridges/general/double-puppeting.html). A shared
+`doublepuppet` appservice token lets bridges send remote-originated messages
+as the user's real matrix account. Required sops secrets:
+`mautrix-doublepuppet-as-token` and `mautrix-doublepuppet-hs-token`
+(generated by `just configure-admin-host`).
 
-:::caution[Imperative promotions survive]
-The policy grants admin on `admin_users` OR the `can_request_admin` database
-flag `dnf-mas manage promote-admin` sets. Audit leftovers with
-`list-admin-users`, drop them with `demote-admin`.
+Every bridge's appservice as/hs tokens are sops-provided, never
+auto-generated: the registration file is a pure function of the secrets, so
+resetting a bridge's state dir never invalidates the registration synapse
+loaded ("as_token was not accepted", registration wipe + synapse restart).
+
+{/* t:p 6c701fd98c4e364620b6b61af47b19c93804303e85b7af46fe9adb7aa06687e5 */}
+#### Calls (`rtc.nix`)
+
+Two stacks coexist, because no single one covers every client:
+
+- Legacy 1:1 WebRTC, negotiated over synapse and relayed by coturn
+  (`darkone.service.turn`). The only thing Element Classic speaks.
+- MatrixRTC (`matrixRtc.enable`): a LiveKit SFU plus its authorization
+  service, for group calls and for Element Call. Element X speaks *only*
+  this one and reports "call is not supported"
+  (`MISSING_MATRIX_RTC_TRANSPORT`) without it; Element Web/Desktop embed
+  Element Call too and gain group calls from it.
+
+Both are served from the matrix vhost, next to synapse and MAS: the SFU
+websocket on `/livekit/sfu`, the JWT service on `/livekit/jwt`. Clients
+discover it from `matrix_rtc.transports` (synapse, MSC4143) and, as a
+fallback for older ones, from `rtc_foci` in the well-known.
+
+Required sops secret: `livekit-secret` (`just configure-admin-host`),
+shared by the SFU and the JWT service.
+
+:::caution[Media ports must reach the host]
+Media does not go through the reverse proxy. The UDP range and the TCP
+fallback are opened on the public interface, so a NATed host needs them
+forwarded, and `rtc.use_external_ip` set (untested here: the HCS holds its
+public address directly).
+:::
+
+:::caution[Echo cancellation is not a server-side setting]
+`services.livekit.settings` is freeform: unknown keys reach the config
+file silently. LiveKit's `audio` section only tunes active speaker
+detection and RED redundancy; `echo_cancellation`, `noise_suppression`
+and `channels` do not exist there. They are `getUserMedia` constraints,
+owned by the client.
+
+No SFU setting can fix an echoing participant:
+
+- LiveKit forwards Opus without ever decoding it.
+- AEC needs the local speaker reference, which never leaves the device.
+- Element Call encrypts media end to end, so the SFU cannot read it.
+
+The remedy is device-side: a headset, or Element Call's own audio
+processing toggles. Beware the diagnosis trap: a handset whose hardware
+AEC advertises itself but does nothing echoes for everyone *else*, never
+for its own user.
 :::
 
 * **enable** `bool` Enable matrix (synapse) service
@@ -746,6 +920,7 @@ flag `dnf-mas manage promote-admin` sets. Audit leftovers with
 * **bridges.telegram.enable** `bool` Mautrix Telegram bridge (login by phone number).
 * **bridges.messenger.enable** `bool` Mautrix Facebook Messenger bridge (login by cookies).
 * **bridges.discord.enable** `bool` Mautrix Discord bridge (login by QR code, experimental).
+* **shared** `raw` Matrix values shared with the `matrix/` sub-modules.
 
 ```nix
 darkone.service.matrix = {
@@ -759,6 +934,14 @@ darkone.service.matrix = {
   bridges.telegram.enable = true;
   bridges.messenger.enable = true;
   bridges.discord.enable = false;
+  shared = {
+          inherit
+            params
+            masKanidmUlid
+            livekitJwtUrl
+            matrixAdmins
+            ;
+        };
 };
 ```
 
@@ -1161,7 +1344,21 @@ darkone.service.prometheus = {
 
 <hr/>
 
-{/* t:p 2ce5a88e716dfe477552656f108debbf5dad6b48ea380520084fbc6fec90ddec */}
+{/* t:p cb589e564f0f5507147099e58e33ede3ad7fbe4a061e1fc1edffc6d1a23696bf */}
+### &#x2728; darkone.service.restic.metrics
+
+DNF restic: backup freshness metrics. Doc: `../restic.nix` header.
+
+<hr/>
+
+{/* t:p f7b7d2d49efea30b55196693f49c587549b3a33d6bf91035311977070b622955 */}
+### &#x2728; darkone.service.restic.server
+
+DNF restic: the REST server. Doc: `../restic.nix` header.
+
+<hr/>
+
+{/* t:p 5fef0d0d1586c19fd9bffb65356fcf8db59233022d66c800478be774f2835662 */}
 ### &#x2728; darkone.service.restic
 
 Restic backup module: REST server + per-host backup targets.
@@ -1219,6 +1416,51 @@ surfaces, through ResticBackupStale / ResticBackupCritical, which watch the
 last successful run.
 :::
 
+:::note[Cloud sync folders are never backed up]
+A Nextcloud/ownCloud sync folder replicates a server-side original that is
+backed up on its own, and restic never dedups across repositories. Caught by
+path (`/home/*/Nextcloud`, numbered variants included) and by journal marker.
+:::
+
+:::danger[Migrating repos created before this layout]
+Repos written when the subpath mirrored the source directory sit under
+`<hostname>/srv/{nfs,medias}`. Rename them on the server before the next run:
+`initialize = true` would otherwise create an empty repo at the new path and
+silently start a full re-seed.
+
+```sh
+mv <data-dir>/<hostname>/srv/medias <data-dir>/<hostname>/medias
+rmdir <data-dir>/<hostname>/srv
+```
+:::
+
+Sub-modules (`restic/`):
+- `server.nix`: the REST server, one account per fleet host;
+- `metrics.nix`: backup freshness metrics for the restic alerts.
+
+{/* t:p 8395c3000227aa7845f885c140dc055a3f8cbde7ba6c87e86caaae4067f7c8a4 */}
+#### REST server (`server.nix`)
+
+One account per fleet host (`restic/<hostname>/rest-password`), checked
+against an htpasswd assembled at boot; `privateRepos` confines each host to
+its own `<hostname>/` prefix.
+
+:::caution[`listenAll` widens the bind, not the firewall]
+The server binds `params.ip`, i.e. the LAN address on a gateway. Clients
+reaching it from another zone over the tailnet need `listenAll = true`
+(bind `0.0.0.0`). The firewall stays the boundary: `lan0` gets the port from
+`getInternalInterfaceFwPath`, `tailscale0` is already a trusted interface on
+a gateway, and the WAN never opens it.
+:::
+
+{/* t:p 860a53fec4e4b81fcaf5e317c7735bffe0cf2934c70f177082a8a63014c44885 */}
+#### Metrics (`metrics.nix`)
+
+Monitored nodes only (`monitoring-node` feature): each job stamps its last
+success in the textfile collector, and `restic-declared` lists the declared
+jobs so a job that never succeeds still ages into a `dnf-restic-<zone>`
+alert.
+
 * **enable** `bool` Enable restic backup client
 * **enableDryRun** `bool` Dry Run mode
 * **enableWaitRemoteFs** `bool` Run backups only after remote-fs.target
@@ -1232,6 +1474,7 @@ last successful run.
   * **categories** `listOf ( enum [ "system" "nfs" "medias" ] )` What to back up to this target
 * **nfsPaths** `listOf str` NFS dirs (/srv/nfs/&lt;xxx&gt;) included in the 'nfs' category
 * **mediasPaths** `listOf str` Medias dirs (/srv/medias/&lt;xxx&gt;) included in the 'medias' category
+* **shared** `raw` Restic values shared with the `restic/` sub-modules.
 
 ```nix
 darkone.service.restic = {
@@ -1248,6 +1491,7 @@ darkone.service.restic = {
   targets.categories = [ ];
   nfsPaths = [ ];
   mediasPaths = [ ];
+  shared = { inherit params; };
 };
 ```
 
@@ -1302,15 +1546,34 @@ darkone.service.stk = {
 
 <hr/>
 
-{/* t:p 03a1368f4559b952ebbd866587b9d926128a3c3007a7d24086d3005e31db63c7 */}
+{/* t:p 4a2834beed1c755b7c52f3e461191a4cac553c026be6f06446e69ea46409f4f6 */}
+### &#x2728; darkone.service.tailscale.autopause
+
+DNF tailscale: roaming auto-pause. Doc: `../tailscale.nix` header.
+
+<hr/>
+
+{/* t:p bc4b1b3c2380198a08fe87612e4e382162ca0a2a17d049b7fbad12ac92e2a369 */}
+### &#x2728; darkone.service.tailscale.cert-sync
+
+DNF tailscale: HCS certificate sync. Doc: `../tailscale.nix` header.
+
+<hr/>
+
+{/* t:p c8b921a3fe473da8c6ca68aa43a902ec014be2ddeec1182203c4c1da41538184 */}
+### &#x2728; darkone.service.tailscale.selfheal
+
+DNF tailscale: self-heal watchdog. Doc: `../tailscale.nix` header.
+
+<hr/>
+
+{/* t:p 371e2eab3796ffabb564213d8a2d4fa468fde9c653a29003ccbc560574fb7de1 */}
 ### &#x2728; darkone.service.tailscale
 
-Tailscale client service for HCS.
+Tailscale client of the DNF tailnet (headscale on the HCS).
 
-:::note
-A tailscale client to connect an external host to HCS.
-Do not use it to connect a gateway for a tailnet subnet.
-:::
+Joins the HCS, zone gateways (`isGateway`: zone subnet advertised, routes
+accepted, own resolver kept) and roaming hosts.
 
 :::note[Enrollment]
 No shared key. `just tailnet-enroll <host>`, also run by `just configure`,
@@ -1318,12 +1581,41 @@ mints a single-use key tagged for the host on the HCS and hands it to
 `dnf-tailnet-join`. Idempotent: an enrolled node is left untouched.
 :::
 
+Sub-modules (`tailscale/`):
+- `cert-sync.nix`: zone gateways pull the HCS Caddy certificates;
+- `selfheal.nix`: watchdog restarting a disconnected tailscaled;
+- `autopause.nix`: roaming clients pause tailscale on a zone LAN.
+
+{/* t:p 3e6bd6037462c03c8da354bd108ff063dd36740d61b3c2e3c7b0966fc6f2f9c9 */}
+#### Certificate sync (`cert-sync.nix`)
+
+Public certificates are issued on the HCS only; each zone gateway pulls the
+whole Caddy storage over the tailnet (rsync as `nix`, elevated to `caddy` on
+the HCS side), then publishes it to its own Caddy.
+
+{/* t:p 8c7f18ea22f38fc83af3c3bbc9ff0bf5a75d359741fd9ff9c8cd4e60205f96c4 */}
+#### Self-heal (`selfheal.nix`)
+
+Every minute, checks that the backend runs and the control plane sees the
+node online; restarts tailscaled after a sustained loss. Exports
+`dnf_tailscale_*` metrics for the `TailscaleFlapping`/`TailscaleUnhealthy`
+alerts.
+
+{/* t:p 23e9c5a8e0e02e2aa10f23941a56441848bfa8d0445702bd5b213364738c7820 */}
+#### Auto-pause (`autopause.nix`)
+
+Roaming clients only. On a DNF zone LAN, `--accept-dns` would hijack
+resolv.conf (local dnsmasq/AdGuard) and `--accept-routes` collide with the
+connected zone subnet: a NetworkManager dispatcher pauses tailscale there
+and resumes it elsewhere.
+
 * **enable** `bool` Enable tailscale client to connect HCS
 * **isGateway** `bool` This tailscale node is a subnet gateway
 * **isExitNode** `bool` Configure this client as exit node
 * **selfHeal.enable** `bool` Watchdog: detect headscale disconnection and restart tailscaled.
 * **autoPauseOnLan.enable** `bool` Roaming client: pause tailscale (down) while plugged into a known DNF
   zone LAN, resume it elsewhere. Non-gateway NetworkManager clients only.
+* **shared** `raw` Tailscale values shared with the `tailscale/` sub-modules.
 
 ```nix
 darkone.service.tailscale = {
@@ -1332,6 +1624,16 @@ darkone.service.tailscale = {
   isExitNode = false;
   selfHeal.enable = true;
   autoPauseOnLan.enable = false;
+  shared = {
+        inherit
+          tsBin
+          isHcsSubnetGateway
+          selfHealEnable
+          selfHealStateDir
+          autoPauseEnable
+          autoPauseStateFile
+          ;
+      };
 };
 ```
 

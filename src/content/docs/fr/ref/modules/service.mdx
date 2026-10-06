@@ -231,47 +231,65 @@ darkone.service.geneweb = {
 
 <hr/>
 
-{/* t:p 9eff601bfa10173d76a5cf1c41937f362ab0c5f9b552985b84dc53cd18a30d87 */}
+{/* t:p 04c66c33ef9c0752276cf0a35a7c8e7bc544a6bf1e40bc2c18879d9f197bc934 */}
 ### &#x2728; darkone.service.harmonia
 
-Harmonia : serveur de cache binaire Nix local (sert le `/nix/store` de cet hôte).
+Harmonia : serveur local de cache binaire Nix (sert le `/nix/store` de cet hôte).
 
-Expose les chemins du store construits/obtenus localement en HTTP simple (port 5000), signés avec la clé du cache binaire de tout le déploiement. Activation par hôte depuis `usr/config.yaml` (services.harmonia), comme tout autre service DNF.
+Expose les chemins du store locaux construits / réalisés en HTTP simple (port
+5000), signés avec la clé de cache binaire propre au déploiement. Active par
+hôte depuis `etc/config.yaml` (services.harmonia), comme tout autre service DNF.
 
 :::note[Comment harmonia fonctionne avec le proxy nix-cache]
-Harmonia est une *source* de paquets, servie **directement** aux clients sur le LAN (dans la zone) ou le tailnet (quand flaggée `global`). Le proxy `nix-cache` propre à la zone est une préoccupation distincte : il met en cache le cache binaire *public* (`cache.nixos.org`), jamais harmonia.
+Harmonia est une *source* de paquets, servie **directement** aux clients par le
+LAN (in-zone) ou le tailnet (lorsqu'elle est marquée `global`). Le proxy
+`nix-cache` par zone est un sujet distinct : il met en cache le cache binaire
+*public* (`cache.nixos.org`), jamais harmonia.
 
-Les substituters de chaque hôte de la zone locale deviennent, par ordre de priorité :
+Les substituers de chaque hôte de zone locale deviennent, par ordre de
+priorité :
 
-- les instances harmonia de *sa propre* zone (priorité la plus haute, LAN), puis
-- toute harmonia flaggée `global` (typiquement sur le HCS, via le tailnet), puis
+- les instances harmonia de *sa propre zone* (priorité la plus haute, LAN), puis
+- tout harmonia marqué `global` (généralement sur le HCS, par le tailnet), puis
 - le proxy `nix-cache` de la zone (cache public).
 
-Cet ordre est fixé côté client avec `?priority=` sur chaque URL de substituter (voir `nix-cache.nix`), car la `priority` définie ci-dessous est identique sur chaque instance et Nix trie les substituters par priorité annoncée, pas par ordre de liste.
+Cet ordre est épinglé côté client avec `?priority=` sur chaque URL de
+substituer (voir `nix-cache.nix`), car le `priority` défini ci-dessous est
+identique sur chaque instance et Nix trie les substituers par priorité
+annoncée, pas par l'ordre de la liste.
 
-Un hôte qui fait tourner harmonia n'obtient **pas** sa propre instance comme substituter : il ne servirait que des chemins que son store local possède déjà.
+Un hôte exécutant harmonia ne reçoit **pas** sa propre instance comme
+substituer : elle ne servirait que des chemins que son store local possède
+déjà.
 
-Un hôte de la zone globale (`www`) n'a ni LAN ni proxy : son seul substituter de flotte est l'harmonia `global`, via le tailnet.
+Un hôte de zone globale (`www`) n'a ni LAN ni proxy : son seul substituer de
+flotte est l'harmmonia `global`, par le tailnet.
 
-Les harmonia non-globales des autres zones ne sont jamais utilisées. La signature d'harmonia est transmise telle quelle, donc chaque hôte fait confiance à la clé publique harmonia du déploiement (`usr/secrets/harmonia.pub`). Le transport est en HTTP simple sur le LAN / VPN de confiance : l'intégrité vient de la signature NAR, pas de TLS.
+Les harmonia non globaux des autres zones ne sont jamais utilisés. La
+signature d'harmmonia est transmise inchangée, si bien que chaque hôte fait
+confiance à la clé publique harmonia propre au déploiement
+(`usr/secrets/harmonia.pub`). Le transport est en HTTP simple sur le LAN /
+VPN de confiance : l'intégrité vient de la signature NAR, pas de TLS.
 :::
 
-:::tip[Provisionnement de la clé de signature]
-`just configure-admin-host` génère automatiquement la paire de clés du déploiement quand `usr/secrets/harmonia.pub` manque : la clé publique est commitée et la clé privée est injectée dans le secret sops `harmonia-secret-key`.
+:::tip[Provision de la clé de signature]
+`just configure-admin-host` génère automatiquement la paire de clés propre au
+déploiement lorsque `usr/secrets/harmonia.pub` est absent : la clé publique est
+commitée et la clé privée est injectée dans le secret sops `harmonia-secret-key`.
 :::
 
-:::note[Avertissement bénin au démarrage sur les permissions de la clé de signature]
+:::note[Avertissement de démarrage bénin au sujet des permissions de la clé]
 `WARN harmonia_cache::tls: /run/credentials/harmonia.service/sign-key-0 has
 insecure permissions 0o440; recommend 0600` est un faux positif : systemd
-expose les fichiers `LoadCredential` en mode 0440 appartenant à root, avec une
+expose les fichiers `LoadCredential` possédés par root en mode 0440 avec une
 ACL qui n'accorde l'accès qu'à l'utilisateur du service (systemd/systemd#29435) ;
-harmonia vérifie naïvement les bits chmod. Surveillez tout de même l'amont :
-harmonia rejette déjà fermement les clés *TLS* lisibles par le groupe au
-démarrage ; si cette politique s'étend un jour aux clés de signature, cette
-unité cassera à la mise à jour.
+harmonia vérifie naïvement les bits du chmod. Surveillez néanmoins l'amont :
+harmonia rejette déjà à l'amarrage les clés *TLS* lisibles par le groupe — si
+cette politique s'étendait un jour aux clés de signature, cette unité cassera à
+la mise à jour.
 :::
 
-* **enable** `bool` Activer un serveur de cache binaire Nix local Harmonia
+* **enable** `bool` Activer un serveur de cache binaire Nix Harmonia local
 
 ```nix
 darkone.service.harmonia.enable = false;
@@ -279,40 +297,101 @@ darkone.service.harmonia.enable = false;
 
 <hr/>
 
-{/* t:p 96c1f32ecec75c85099972d1cf88b23138dae032469278bd24c7b74b8db16a9c */}
+{/* t:p e86f7b5e08487c255bb709db5303d805164c148a31511f96943f8771419b56e1 */}
+### &#x2728; darkone.service.headscale.audit
+
+DNF headscale : `headscale-audit`. Doc : en-tête de `../headscale.nix`.
+
+<hr/>
+
+{/* t:p 07c238943585caca37f85c3ef7f0373584c8fe5d38314fc4a9809c6055b5cb08 */}
+### &#x2728; darkone.service.headscale.dns
+
+DNF headscale : DNS pivot du tailnet. Doc : en-tête de `../headscale.nix`.
+
+<hr/>
+
+{/* t:p 1bc57d2fbacc6a8534067ed147b7a52149872eb8771373148368a4b969623da0 */}
+### &#x2728; darkone.service.headscale.enroll
+
+DNF headscale : `dnf-tailnet-enroll`. Doc : en-tête de `../headscale.nix`.
+
+<hr/>
+
+{/* t:p 1c5c73cfa0239db48f8312afda270fee90f64c897f01d3e5efb2b50efbb1b4ca */}
 ### &#x2728; darkone.service.headscale
 
-Un service headscale entièrement configuré pour HCS.
+Un service headscale entièrement configuré pour le HCS.
 
-La politique ACL du tailnet est générée à partir de la topologie (zones, hôtes, utilisateurs) par `dnfLib.mkHeadscalePolicy`, validée par `headscale policy check` au moment du build, puis rechargée en cas de modification (SIGHUP) sans redémarrage de headscale.
+La politique ACL du tailnet est générée depuis la topologie (zones, hôtes,
+utilisateurs) par `dnfLib.mkHeadscalePolicy`, validée par `headscale policy check`
+à la construction, puis rechargée au changement (SIGHUP) sans redémarrer headscale.
 
-- Les machines sont étiquetées : `tag:hcs`, `tag:gw-<zone>`, `tag:admin` (hôte dont les `groups` contiennent `admin`).
-- Les machines et les LAN des zones peuvent communiquer entre elles. Appareils personnels : DNS et HTTPS sur le HCS, HTTPS sur les passerelles de zone (toutes les zones pour les administrateurs, sinon uniquement leurs groupes `zone-*`). SSH depuis les postes administrateurs et `policy.adminDevices`.
-- Les appareils personnels se connectent via Kanidm (OIDC), pour les membres du groupe Kanidm `tailnet` ; leurs clés expirent après `nodeExpiry`.
-- `headscale-audit` (toutes les 15 min) compare les nœuds en direct avec la topologie déclarée : métriques pour les alertes `dnf-headscale-<zone>`, détails dans son journal. Il ne modifie ni n'efface d'étiquettes.
-- `dnf-tailnet-enroll` prend en charge `just tailnet-enroll` : clés à usage unique étiquetées selon la topologie déclarée, nom et étiquettes déclarés sur le nœud inscrit.
-- La vue Unbound `tailnet-machines` : les nœuds étiquetés (hors HCS) obtiennent l'adresse LAN de zone des services globaux servis par cette zone (`git.<domain>` sur une passerelle), tous les autres obtiennent l'adresse publique. `unbound-tailnet-view` liste leurs adresses IP tailnet depuis headscale, jamais déclarées ailleurs.
+- Les machines sont taguées : `tag:hcs`, `tag:gw-<zone>`, `tag:admin` (hôte dont
+  `groups` contient `admin`).
+- Les machines et les LAN de zone joignent les autres. Appareils personnels : DNS
+  et HTTPS sur le HCS, HTTPS sur les passerelles de zone (toutes les zones pour
+  les admin, sinon leurs groupes `zone-*`). SSH depuis les postes d'admin et
+  `policy.adminDevices`.
+- Les appareils personnels se connectent via Kanidm (OIDC), pour les membres du
+  groupe Kanidm `tailnet` ; leurs clés expirent après `nodeExpiry`.
 
 ```nix
 darkone.service.headscale.policy.adminDevices.phone-alice = "100.64.0.9";
 ```
 
 :::caution[Mode ouvert]
-`policy.enforce = false` conserve les identités mais autorise tout le trafic : uniquement lors d'une migration, tant que les nœuds ne sont pas étiquetés.
+`policy.enforce = false` conserve les identités mais autorise tout trafic : pour
+une migration uniquement, pendant que les nœuds sont tagués.
 :::
 
-:::note[Panne de Kanidm]
-headscale démarre toujours même sans Kanidm et bascule sur l'enregistrement CLI jusqu'à son prochain redémarrage. Les nœuds déjà enregistrés ne sont pas affectés.
+:::note[Indisponibilité de Kanidm]
+headscale démarre quand même sans Kanidm et bascule sur l'enregistrement CLI
+jusqu'à son prochain redémarrage. Les nœuds déjà enregistrés ne sont pas
+affectés.
 :::
 
-* **enable** `bool` Active le service headscale DNF
-* **enableGRPC** `bool` Ouvre le port TCP GRPC
-* **nodeExpiry** `str` Expiration des clés des appareils personnels (`0` : jamais). Les machines étiquetées n'expirent jamais.
-* **policy.enforce** `bool` ACL tailnet en mode « refus par défaut ». `false` autorise tout le trafic, uniquement lors d'une migration.
-* **policy.adminDevices** `attrs` Appareils personnels autorisés en SSH sur toutes les machines et zones : nom -&gt; IPv4 tailnet.
+Sous-modules (`headscale/`) :
+- `dns.nix` : unbound, le DNS pivot du tailnet et sa vue `tailnet-machines` ;
+- `audit.nix` : `headscale-audit`, nœuds actifs confrontés à la topologie déclarée ;
+- `enroll.nix` : `dnf-tailnet-enroll`, derrière `just tailnet-enroll`.
+
+{/* t:p 4cd662808c91c5d1e78ab3611e8587866070b81b52a07cb50eca1f93c4452b13 */}
+#### DNS pivot (`dns.nix`)
+
+unbound sur le HCS. Les noms internes l'atteignent par le split DNS de
+headscale ; il relaie chaque domaine de zone vers la passerelle de zone, le
+reste vers Quad9 par TLS.
+
+Vue `tailnet-machines` : les nœuds tagués (HCS mis à part) reçoivent l'adresse
+LAN de zone des services globaux qu'une zone dessert (`git.<domain>` sur une
+passerelle), tous les autres reçoivent l'adresse publique.
+`unbound-tailnet-view` liste leurs IP de tailnet depuis headscale, déclarées
+nulle part ailleurs.
+
+{/* t:p 592412b218f2c13bc4ef8250d9d03fd1435be2922dd32209eabbed93561a3c8d */}
+#### Audit (`audit.nix`)
+
+`headscale-audit`, toutes les 15 min : nœuds actifs confrontés à la topologie
+déclarée. Métriques pour les alertes `dnf-headscale-<zone>`, détails dans son
+journal. Ne tague ni ne supprime jamais.
+
+{/* t:p ad5d40e1917ed192cca38d18dd6062fde4a92374e6d5e3cb4e77cad41a39c5a9 */}
+#### Enrôlement (`enroll.nix`)
+
+`dnf-tailnet-enroll`, côté root de `just tailnet-enroll` : clés à usage unique
+taguées depuis la topologie déclarée ; le nœud enrôlé reçoit son nom et ses
+tags déclarés.
+
+* **enable** `bool` Activer le service DNF headscale
+* **enableGRPC** `bool` Ouvrir le port TCP GRPC
+* **nodeExpiry** `str` Expiration des clés des appareils personnels (`0` : jamais). Les machines taguées n'expirent jamais.
+* **policy.enforce** `bool` ACL du tailnet en refus par défaut. `false` autorise tout trafic, pour une migration uniquement.
+* **policy.adminDevices** `attrs` Appareils personnels autorisés en SSH sur chaque machine et zone : nom -&gt; IPv4 de tailnet.
 * **policy.exitNodeSources** `listOf str` Sources de politique autorisées à utiliser le HCS comme nœud de sortie.
-* **policy.extraHosts** `attrs` Alias d'hôtes supplémentaires pour la politique (nom -&gt; CIDR), à utiliser dans `extraAcls`.
+* **policy.extraHosts** `attrs` Alias d'hôte de politique supplémentaires (nom -&gt; CIDR), à utiliser dans `extraAcls`.
 * **policy.extraAcls** `listOf (attrsOf anything)` Règles ACL ajoutées après celles générées.
+* **shared** `raw` Valeurs headscale partagées avec les sous-modules `headscale/`.
 
 ```nix
 darkone.service.headscale = {
@@ -324,6 +403,14 @@ darkone.service.headscale = {
   policy.exitNodeSources = [ ];
   policy.extraHosts = { };
   policy.extraAcls = [ ];
+  shared = {
+        inherit
+          policy
+          auditSpec
+          idmUrl
+          hcsTailnetIpv4
+          ;
+      };
 };
 ```
 
@@ -371,38 +458,27 @@ darkone.service.homepage = {
 
 <hr/>
 
-{/* t:p 046d3aed6844038d902ecc7e1bd0f65285c684628a546b9d465e460840c40cd0 */}
-### &#x2728; darkone.service.idm
+{/* t:p df26f2a78af998f29708ef55df7286ced86d3dd32fba2f7538ac6ade7aaca8ca */}
+### &#x2728; darkone.service.idm.provision
 
-Service DNF Kanidm (gestionnaire d'identités).
+DNF idm : provision Kanidm. Doc : en-tête de `../idm.nix`.
 
-:::note[Les secrets sont générés, pas saisis]
-`just configure-admin-host` crée chaque entrée lue par ce module :
-les mots de passe du compte de secours (`kanidm-admin-password`,
-`kanidm-idm-admin-password`), le couple auto-signé de l'écouteur HTTPS
-interne (`kanidm-tls-chain` / `kanidm-tls-key`, 10 ans, CN=127.0.0.1) et
-un `oidc-secret-<client>` par client OAuth2 provisionné. Relisez-les avec
-`just sops` lorsqu'un administrateur en a besoin, ce qui est rare.
-:::
-
-* **enable** `bool` Activer le SSO local avec Kanidm
-* **oauth2** `attrs` Modèles de clients OAuth2/OIDC fournis par les modules de services.
-  Kanidm provisionne un client pour chaque entrée correspondante dans `network.services`,
+* **oauth2** `attrs` Gabarits de client OAuth2/OIDC fournis par les modules de service.
+  Kanidm provisionne un client par entrée correspondante dans `network.services`,
   avec `clientId = dnfLib.oauth2ClientName`.
-  * **enable** `bool` Whether to provision OAuth2 clients for this template.
-  * **clientName** `nullOr str` Override the kanidm client name. Defaults to dnfLib.oauth2ClientName.
-  * **displayName** `str` Human-readable name shown on the kanidm consent screen.
-  * **imageFile** `path` Application icon. Re-uploaded on every kanidm-provision run.
-  * **redirectPaths** `listOf str` OAuth2 redirect paths (one per accepted callback URL).
-  * **landingPath** `str` Auto-connect entry point path on the service.
-  * **enableLegacyCrypto** `bool` Allow legacy JWT signing algorithms (eg. RS256).
-  * **allowInsecureClientDisablePkce** `bool` Disable PKCE on the client (only for clients that do not implement it).
-  * **preferShortUsername** `nullOr bool` Use the short username (no domain) in the `preferred_username` claim.
-  * **extra** `attrs` Extra attributes merged into the provisioned client (claimMaps, etc).
+  * **enable** `bool` Provisionner ou non des clients OAuth2 pour ce gabarit.
+  * **clientName** `nullOr str` Remplace le nom de client kanidm. Par défaut dnfLib.oauth2ClientName.
+  * **displayName** `str` Nom lisible affiché sur l'écran de consentement kanidm.
+  * **imageFile** `path` Icône de l'application. Renvoyée à chaque exécution de kanidm-provision.
+  * **redirectPaths** `listOf str` Chemins de redirection OAuth2 (un par URL de rappel acceptée).
+  * **landingPath** `str` Chemin du point d'entrée de connexion automatique sur le service.
+  * **enableLegacyCrypto** `bool` Autoriser les algorithmes de signature JWT hérités (ex. RS256).
+  * **allowInsecureClientDisablePkce** `bool` Désactiver PKCE sur le client (uniquement pour les clients qui ne l'implémentent pas).
+  * **preferShortUsername** `nullOr bool` Utiliser le nom d'utilisateur court (sans domaine) dans la revendication `preferred_username`.
+  * **extra** `attrs` Attributs supplémentaires fusionnés dans le client provisionné (claimMaps, etc).
 
 ```nix
-darkone.service.idm = {
-  enable = false;
+darkone.service.idm.provision = {
   oauth2.enable = true;
   oauth2.clientName = null;
   oauth2.displayName = null;
@@ -414,6 +490,67 @@ darkone.service.idm = {
   oauth2.preferShortUsername = null;
   oauth2.extra = { };
 };
+```
+
+<hr/>
+
+{/* t:p 2fc462a6899f7a4371bb6b31820da0a1b2996d67e3682d17291fe6722469edf8 */}
+### &#x2728; darkone.service.idm.replication
+
+DNF idm : réplication Kanidm. Doc : en-tête de `../idm.nix`.
+
+* **replication** `raw` Faits de réplication de ce nœud.
+
+```nix
+darkone.service.idm.replication.replication = { inherit isMainReplica isReplConsumer; };
+```
+
+<hr/>
+
+{/* t:p ad8ac0ab2185114fe0502554b07ecbb52ecbc643d7ede8e59512366079167017 */}
+### &#x2728; darkone.service.idm
+
+Service DNF Kanidm (gestionnaire d'identités).
+
+:::note[Les secrets sont générés, pas saisis]
+`just configure-admin-host` crée chaque entrée lue par ce module : les mots de
+passe du compte break-glass (`kanidm-admin-password`,
+`kanidm-idm-admin-password`), la paire auto-signée de l'écouteur HTTPS interne
+(`kanidm-tls-chain` / `kanidm-tls-key`, 10 ans, CN=127.0.0.1) et un
+`oidc-secret-<client>` par client OAuth2 provisionné. Relisez-les avec `just sops`
+aux rares occasions où un admin en a besoin.
+:::
+
+Sous-modules (`idm/`) :
+- `replication.nix` : réplication en lecture seule multi-zones, du HCS vers les
+  passerelles de zone ;
+- `provision.nix` : clients OAuth2 (registre de gabarits), groupes et personnes.
+
+{/* t:p c9d523f9c225056343b709b06602f0efa716c56a8fac18a0f30525abe02bf688 */}
+#### Réplication (`replication.nix`)
+
+Automatique, dérivée de l'endroit où `idm` est déclaré :
+- idm sur le HCS seul, ou sur une passerelle sans HCS : une instance ;
+- sur le HCS et &gt;= 1 passerelle de zone : le HCS fournit (WriteReplica), chaque
+  passerelle idm consomme.
+
+Amorçage en deux temps : `just apply` génère tous les certificats de réplication
+(les passerelles restent WriteReplicaNoUI), puis `just idm-sync-certs` +
+`just apply` ajoute les partenaires et fait basculer les passerelles en
+ReadOnlyReplica.
+
+{/* t:p 4e0b67213ff14e67574c0a64e7b3f3e2665b642b522acd1290d06f7d5e6a993c */}
+#### Provisionnement (`provision.nix`)
+
+Chaque module de service compatible OIDC contribue un modèle de client à
+`darkone.service.idm.oauth2` ; un client est provisionné par (modèle,
+instance), fusionné par `clientId` à travers les zones. Jamais sur un
+consommateur de réplication : il reflète le HCS.
+
+* **enable** `bool` Activer le SSO local avec Kanidm
+
+```nix
+darkone.service.idm.enable = false;
 ```
 
 <hr/>
@@ -560,6 +697,27 @@ darkone.service.loki = {
 
 <hr/>
 
+{/* t:p 9e45e5fe2d35ea8b6d959a3953af4f868f6c42c20f2ae819bd8becf957e38789 */}
+### &#x2728; darkone.service.matrix.bridges
+
+DNF matrix : ponts mautrix. Doc : en-tête de `../matrix.nix`.
+
+<hr/>
+
+{/* t:p 61278cb483717d86141ce40a15c54e0172be46cfc775bec74067ff5296a32803 */}
+### &#x2728; darkone.service.matrix.mas
+
+DNF matrix : authentification déléguée à MAS. Doc : en-tête de `../matrix.nix`.
+
+<hr/>
+
+{/* t:p a7561f578552c4ecbc848dcdd8c38ccaccb3d6dc10d2617588d942d07f429b82 */}
+### &#x2728; darkone.service.matrix.rtc
+
+DNF matrix : appels MatrixRTC (LiveKit). Doc : en-tête de `../matrix.nix`.
+
+<hr/>
+
 {/* t:p 3aed33d5211d279fd7b46860c052b6b452ec8bb63edc1e0302566f26450650d7 */}
 ### &#x2728; darkone.service.matrix
 
@@ -574,73 +732,191 @@ Le double puppeting utilise la méthode officielle appservice
 
 Les tokens as/hs de chaque pont sont fournis par sops plutôt que générés automatiquement : le fichier de registration devient une pure fonction des secrets, donc réinitialiser le répertoire d'état d'un pont n'invalide jamais la registration chargée par synapse (sinon il faudrait purger la registration + redémarrer synapse, ce qui produirait des erreurs « as_token was not accepted »).
 
-{/* t:p f0b857acdd4159cd1de77d0a60ddfc7228897996a3cd833ef2194e8914375c9a */}
+{/* t:p 6088713fc363cc14df3f8ae0883dd2cd8b77bf511ebed0a237877a54a572f68c */}
+### &#x2728; darkone.service.matrix
+
+DNF matrix (synapse) homeserver.
+
+Sous-modules (`matrix/`) :
+- `mas.nix` : authentification, déléguée au Matrix Authentication Service ;
+- `bridges.nix` : ponts mautrix, utilisables par tout compte local ;
+- `rtc.nix` : backend MatrixRTC (LiveKit) pour Element Call.
+
+{/* t:p ef14a55ba6ca6ee10f8d7ec88c4915da15b8692533db6bf932ec5ddfe196b481 */}
 #### Fédération
 
 La fédération est configurable via `darkone.service.matrix.federation` :
 
 - `enable = false` : bloque toute la fédération (liste blanche de domaines vide).
 - `enable = true; whitelist = [ ]` : fédération ouverte avec tous les serveurs.
-- `enable = true; whitelist = [ "ami.org" ]` : liste blanche (entrant + sortant).
+- `enable = true; whitelist = [ "ami.org" ]` : liste blanche (entrante + sortante).
 
-La découverte reste verrouillée quoi qu'il arrive (absence des salons dans les répertoires distants, profils privés sur la fédération), donc le réseau est accessible mais non consultable.
+La découverte reste verrouillée quoi qu'il arrive (salons absents des
+répertoires distants, profils privés sur la fédération), si bien que le
+réseau est joignable mais pas consultable.
 
-:::caution[Sûr pour les enfants]
-La fédération ouverte permet à n'importe quel serveur fédéré d'envoyer des DM/invitations aux utilisateurs locaux. Pour un réseau familial, renseigner `whitelist` uniquement avec des serveurs de confiance.
+:::caution[Compatible enfant]
+Une fédération ouverte permet à tout serveur fédéré de DM/inviter les
+utilisateurs locaux. Pour un réseau familial, remplir `whitelist` uniquement
+avec des serveurs de confiance.
 :::
 
-L'auto-inscription des amis (`friendRegistration.enable`) ouvre des comptes locaux par mot de passe, contrôlés par token, en parallèle des utilisateurs OIDC Kanidm. Émettre un token sur l'hôte avec `sudo dnf-mas manage issue-user-registration-token`.
+L'auto-inscription des amis (`friendRegistration.enable`) ouvre des comptes
+mot de passe locaux conditionnés par un jeton, en parallèle des utilisateurs
+OIDC Kanidm. Fabriquer un jeton sur l'hôte avec
+`sudo dnf-mas manage issue-user-registration-token`.
 
-:::caution[Un seul espace de noms, des identifiants permanents]
-Les amis et les utilisateurs déclarés piochent dans le même espace de noms localpart, et un identifiant matrix n'est jamais libéré (unique dans les `users` de MAS, la désactivation le conserve). Déclarer un utilisateur dont un ami a déjà pris la localpart échoue lors de sa première connexion SSO : `on_conflict` reste sur `fail` ci-dessous, car toute autre option transférerait le compte existant à qui s'inscrit avec un nom correspondant en amont. Procédure de fusion dans le guide administrateur (`operate/matrix.mdx`).
+:::caution[Un seul espace de noms, ids permanents]
+Les amis et les utilisateurs déclarés puisent dans le même espace de noms de
+localpart, et un id matrix n'est jamais libéré (unique dans les `users` de
+MAS, la désactivation le conserve). Déclarer un utilisateur dont un ami a
+déjà pris le localpart échoue à sa première connexion SSO : l'`on_conflict`
+de MAS reste sur `fail`, puisque tout autre choix remet le compte existant à
+qui s'inscrit avec un nom correspondant en amont. Procédure de fusion dans
+le guide administrateur (`operate/matrix.mdx`).
 :::
 
-{/* t:p 721584fdcd7e19220bfa29c1991267d1fef12571ca5de8ac0c5aab8b3cbe707d */}
-#### Authentification (MAS)
+{/* t:p 3aed5cf433b9735b25686e721ff04b5181dc68e19b53dd8763d16fe8bdf11df4 */}
+#### Administrateurs
 
-Toute l'authentification est déléguée à Matrix Authentication Service, toujours : Element X, la connexion par QR et le portail self-service `/account` n'existent que là, et l'auth de synapse elle-même est dépréctée en amont (MSC3861). Kanidm reste la source d'identité : MAS est le client OIDC à la place de synapse, et synapse se contente de demander à MAS d'introspecter les tokens. Servi sur le même vhost : MAS possède la racine + les endpoints d'auth compat, synapse conserve `/_matrix/*` et `/_synapse/*` ; la découverte côté client est automatique (synapse sert `auth_metadata` lui-même), donc pas de modification well-known.
+`network.matrix.admins` (parties locales) est la source déclarative unique
+des deux administrations, appliquée à la reconstruction sans écriture en
+base :
+
+- ponts : niveau `admin` dans chaque carte `permissions` mautrix ;
+- serveur : `policy.data.admin_users`, que la politique MAS fournie transforme
+  en scopes `urn:mas:admin` et `urn:synapse:admin:*` (API admin MAS, API
+  admin synapse, connexion à l'UI `matrix-admin`).
+
+:::caution[Les promotions impératives persistent]
+La politique accorde l'admin sur `admin_users` OU sur l'indicateur de base
+`can_request_admin` posé par `dnf-mas manage promote-admin`. Auditer les
+restes avec `list-admin-users`, les retirer avec `demote-admin`.
+:::
+
+{/* t:p 38c6929f59e6161969cebae616a24ed666da10478e1487f49fdaaccd62346dbb */}
+#### Authentification (`mas.nix`)
+
+Toute l'authentification passe toujours par le Matrix Authentication
+Service : Element X, la connexion par QR code et le portail d'auto-service
+`/account` n'existent que là, et l'auth propre à synapse est dépréciée en
+amont (MSC3861). Kanidm reste la source d'identité : MAS est le client OIDC
+à la place de synapse, et synapse ne fait qu'interroger MAS pour introspecter
+les jetons.
+
+Même vhost : MAS détient les points d'auth racine + compat, synapse garde
+`/_matrix/*` et `/_synapse/*`. La découverte des clients est automatique
+(synapse sert lui-même `auth_metadata`), aucun changement de well-known.
 
 Secrets sops requis, tous créés par `just configure-admin-host` :
 `mas-encryption-secret`, `mas-synapse-secret` et `mas-rsa-private-key`.
 
-`dnf-mas` (root) encapsule `mas-cli` pour l'administration côté hôte : tokens d'inscription, `promote-admin`, `register-user`, `syn2mas`. MAS tourne avec `DynamicUser` et lit ses secrets via les credentials systemd, qui n'existent pas en dehors de l'unité en cours ; le wrapper reconstitue un répertoire de credentials équivalent à partir des fichiers sops, donc il fonctionne que le service soit en marche ou à l'arrêt (syn2mas nécessite l'arrêt).
+`dnf-mas` (root) enveloppe `mas-cli` pour l'administration côté hôte : jetons
+d'inscription, `promote-admin`, `register-user`, `syn2mas`. MAS tourne avec
+`DynamicUser` et lit ses secrets depuis les credentials systemd, absents hors
+de l'unité en cours ; le wrapper reconstruit un répertoire de credentials
+équivalent à partir des fichiers sops, donc fonctionne que le service soit en
+service ou non (syn2mas l'exige à l'arrêt).
 
-`mas-cli` n'agit jamais ne liste pas : activer le service `matrix-admin` pour le côté lecture (comptes, appareils, sessions), il parle les deux APIs admin.
+`mas-cli` n'agit que, jamais de listage : activer le service `matrix-admin`
+pour le côté lecture (comptes, appareils, sessions), il parle les deux API
+admin.
 
-:::danger[Inchangeable après démarrage]
-`mas-encryption-secret` et le ULID du fournisseur Kanidm ne doivent jamais changer après le premier démarrage de MAS (données chiffrées de la DB / liens de compte upstream).
+:::danger[Immutable une fois démarré]
+`mas-encryption-secret` et le ULID du fournisseur Kanidm ne doivent jamais
+changer après le premier démarrage de MAS (données de DB chiffrées / liens
+de comptes amont).
 :::
 
 :::danger[Migrer une instance pré-MAS]
-Un serveur d'accueil antérieur à MAS nécessite la migration `syn2mas` (comptes, mots de passe, sessions, identifiants externes) sinon plus personne ne pourra se connecter. Déployer d'abord, puis, avec les deux services à l'arrêt : `sudo dnf-mas syn2mas check`, `... migrate --dry-run`, `... migrate`. Procédure dans
-`.specs/matrix-authentication-service.md`.
+Un homeserver antérieur à MAS requiert la migration `syn2mas` (comptes,
+mots de passe, sessions, ids externes), sans quoi plus personne ne se
+connecte. Déployer d'abord, puis, services arrêtés tous les deux :
+`sudo dnf-mas syn2mas check`, `... migrate --dry-run`, `... migrate`.
+Procédure dans `.specs/matrix-authentication-service.md`.
 :::
 
-{/* t:p 8991e0d7f2ebabc4d8467440645ee2a7b1e06249102aa84b4071b0398d13da0f */}
-#### Administrateurs
+{/* t:p d89c278f40800fada51f6d1720dc109703fb95a32cb83dc8d3fc5817d75705d2 */}
+#### Ponts (`bridges.nix`)
 
-`network.matrix.admins` (parties locales) est la source déclarative unique des deux administrations, appliquée au rebuild sans écriture en base :
+Ponts mautrix : WhatsApp, Signal, Telegram, Messenger, Discord. Chaque
+utilisateur lie son propre compte distant en parlant au bot du pont
+(`@whatsappbot`, `@signalbot`, ... puis `login`) ; les sessions sont isolées
+par utilisateur. Administrateurs des ponts : cf. « Administrateurs » ci-dessus.
 
-- ponts : niveau `admin` dans chaque map `permissions` mautrix ;
-- serveur : `policy.data.admin_users`, que la policy MAS fournie convertit en
-  les scopes `urn:mas:admin` et `urn:synapse:admin:*` (API admin MAS, API
-  admin synapse, connexion à l'IU `matrix-admin`).
+Double puppeting : méthode officielle appservice
+(https://docs.mau.fi/bridges/general/double-puppeting.html). Un jeton
+appservice `doublepuppet` partagé permet aux ponts d'envoyer des messages à
+origine distante sous le vrai compte matrix de l'utilisateur. Secrets sops
+requis : `mautrix-doublepuppet-as-token` et `mautrix-doublepuppet-hs-token`
+(générés par `just configure-admin-host`).
 
-:::caution[Les promotions impératives persistent]
-La policy accorde l'admin sur `admin_users` OU le flag de base de données `can_request_admin` défini par `dnf-mas manage promote-admin`. Auditer les résidus avec
-`list-admin-users`, les supprimer avec `demote-admin`.
+Les jetons as/hs appservice de chaque pont proviennent de sops, jamais
+auto-générés : le fichier de registration est une fonction pure des secrets,
+si bien qu'effacer le répertoire d'état d'un pont n'invalide jamais la
+registration chargée par synapse (« as_token was not accepted », effacement
+de la registration + redémarrage de synapse).
+
+{/* t:p 6c701fd98c4e364620b6b61af47b19c93804303e85b7af46fe9adb7aa06687e5 */}
+#### Appels (`rtc.nix`)
+
+Deux stacks coexistent, car aucune seule ne couvre tous les clients :
+
+- WebRTC 1:1 historique, négocié via synapse et relayé par coturn
+  (`darkone.service.turn`). La seule chose que parle Element Classic.
+- MatrixRTC (`matrixRtc.enable`) : un SFU LiveKit plus son service
+  d'autorisation, pour les appels de groupe et Element Call. Element X ne
+  parle *que* celui-là et affiche « call is not supported »
+  (`MISSING_MATRIX_RTC_TRANSPORT`) sans lui ; Element Web/Desktop intègrent
+  aussi Element Call et en gagnent les appels de groupe.
+
+Les deux sont servis depuis le vhost matrix, à côté de synapse et MAS : le
+websocket du SFU sur `/livekit/sfu`, le service JWT sur `/livekit/jwt`. Les
+clients le découvrent via `matrix_rtc.transports` (synapse, MSC4143) et, en
+repli pour les plus anciens, via `rtc_foci` dans le well-known.
+
+Secret sops requis : `livekit-secret` (`just configure-admin-host`), partagé
+par le SFU et le service JWT.
+
+:::caution[Les ports média doivent atteindre l'hôte]
+Le média ne passe pas par le reverse proxy. La plage UDP et le repli TCP sont
+ouverts sur l'interface publique : un hôte derrière NAT doit les faire
+forwarder, et `rtc.use_external_ip` défini (non testé ici : le HCS détient
+directement son adresse publique).
+:::
+
+:::caution[La réduction d'écho n'est pas un réglage serveur]
+`services.livekit.settings` est freeform : les clés inconnues atteignent le
+fichier de config silencieusement. La section `audio` de LiveKit ne règle que
+la détection du locuteur actif et la redondance RED ; `echo_cancellation`,
+`noise_suppression` et `channels` n'y existent pas. Ce sont des contraintes
+`getUserMedia`, du ressort du client.
+
+Aucun réglage SFU ne peut réparer un participant qui échoie :
+
+- LiveKit relaie l'Opus sans jamais le décoder.
+- L'AEC a besoin de la référence du haut-parleur local, qui ne quitte jamais
+  l'appareil.
+- Element Call chiffre le média de bout en bout, le SFU ne peut donc pas le
+  lire.
+
+Le remède est côté appareil : un casque, ou les interrupteurs de traitement
+audio d'Element Call. Attention au piège de diagnostic : un combiné dont
+l'AEC matérielle s'annonce sans rien faire échoie pour les *autres*, jamais
+pour son propre utilisateur.
 :::
 
 * **enable** `bool` Activer le service matrix (synapse)
 * **federation.enable** `bool` Autoriser la fédération serveur-à-serveur. False bloque toute la fédération.
-* **federation.whitelist** `listOf str` Vide = fédérer avec tous les serveurs ; non vide = uniquement ces domaines (entrant + sortant).
-* **matrixRtc.enable** `bool` Activer le backend MatrixRTC (LiveKit SFU) pour les appels de groupe Element Call.
-* **friendRegistration.enable** `bool` Autoriser les amis à s'auto-inscrire avec un token d'invitation (contrôlé par token).
+* **federation.whitelist** `listOf str` Vide = fédérer avec tous les serveurs ; non vide = seulement ces domaines (entrant + sortant).
+* **matrixRtc.enable** `bool` Activer le backend MatrixRTC (SFU LiveKit) pour les appels de groupe Element Call.
+* **friendRegistration.enable** `bool` Autoriser les amis à s'auto-inscrire avec un jeton d'invitation (conditionné par jeton).
 * **bridges.whatsapp.enable** `bool` Pont Mautrix WhatsApp (connexion par QR code).
 * **bridges.signal.enable** `bool` Pont Mautrix Signal (connexion par QR code).
 * **bridges.telegram.enable** `bool` Pont Mautrix Telegram (connexion par numéro de téléphone).
 * **bridges.messenger.enable** `bool` Pont Mautrix Facebook Messenger (connexion par cookies).
 * **bridges.discord.enable** `bool` Pont Mautrix Discord (connexion par QR code, expérimental).
+* **shared** `raw` Valeurs matrix partagées avec les sous-modules `matrix/`.
 
 ```nix
 darkone.service.matrix = {
@@ -654,49 +930,14 @@ darkone.service.matrix = {
   bridges.telegram.enable = true;
   bridges.messenger.enable = true;
   bridges.discord.enable = false;
-};
-```
-
-<hr/>
-
-{/* t:p 0fc77b947b4fa00219c9c48005b393bffb05d36cc9bb56626743d586b2542433 */}
-#### Administrateurs
-
-`network.matrix.admins` (parties locales) est la source déclarative unique des deux administrations, appliquée au rebuild sans écriture en base :
-
-- ponts : niveau `admin` dans chaque map `permissions` mautrix ;
-- serveur : `policy.data.admin_users`, que la policy MAS fournie convertit en
-  les scopes `urn:mas:admin` et `urn:synapse:admin:*` (API admin MAS, API
-  admin synapse, connexion à l'IU `matrix-admin`).
-
-:::caution[Les promotions impératives persistent]
-La policy accorde l'admin sur `admin_users` OU le flag de base de données `can_request_admin` défini par `dnf-mas manage promote-admin`. Auditer les résidus avec
-`list-admin-users`, les supprimer avec `demote-admin`.
-:::
-
-* **enable** `bool` Activer le service matrix (synapse)
-* **federation.enable** `bool` Autoriser la fédération serveur-à-serveur. False bloque toute la fédération.
-* **federation.whitelist** `listOf str` Vide = fédérer avec tous les serveurs ; non vide = uniquement ces domaines (entrant + sortant).
-* **matrixRtc.enable** `bool` Activer le backend MatrixRTC (LiveKit SFU) pour les appels de groupe Element Call.
-* **friendRegistration.enable** `bool` Autoriser les amis à s'auto-inscrire avec un token d'invitation (contrôlé par token).
-* **bridges.whatsapp.enable** `bool` Pont Mautrix WhatsApp (connexion par QR code).
-* **bridges.signal.enable** `bool` Pont Mautrix Signal (connexion par QR code).
-* **bridges.telegram.enable** `bool` Pont Mautrix Telegram (connexion par numéro de téléphone).
-* **bridges.messenger.enable** `bool` Pont Mautrix Facebook Messenger (connexion par cookies).
-* **bridges.discord.enable** `bool` Pont Mautrix Discord (connexion par QR code, expérimental).
-
-```nix
-darkone.service.matrix = {
-  enable = false;
-  federation.enable = false;
-  federation.whitelist = [ ];
-  matrixRtc.enable = false;
-  friendRegistration.enable = false;
-  bridges.whatsapp.enable = true;
-  bridges.signal.enable = true;
-  bridges.telegram.enable = true;
-  bridges.messenger.enable = true;
-  bridges.discord.enable = false;
+  shared = {
+          inherit
+            params
+            masKanidmUlid
+            livekitJwtUrl
+            matrixAdmins
+            ;
+        };
 };
 ```
 
@@ -1104,21 +1345,39 @@ darkone.service.prometheus = {
 
 <hr/>
 
-{/* t:p 2ce5a88e716dfe477552656f108debbf5dad6b48ea380520084fbc6fec90ddec */}
+{/* t:p cb589e564f0f5507147099e58e33ede3ad7fbe4a061e1fc1edffc6d1a23696bf */}
+### &#x2728; darkone.service.restic.metrics
+
+DNF restic : métriques de fraîcheur des sauvegardes. Doc : en-tête de `../restic.nix`.
+
+<hr/>
+
+{/* t:p f7b7d2d49efea30b55196693f49c587549b3a33d6bf91035311977070b622955 */}
+### &#x2728; darkone.service.restic.server
+
+DNF restic : le serveur REST. Doc : en-tête de `../restic.nix`.
+
+<hr/>
+
+{/* t:p 5fef0d0d1586c19fd9bffb65356fcf8db59233022d66c800478be774f2835662 */}
 ### &#x2728; darkone.service.restic
 
-Module de sauvegarde Restic : serveur REST + cibles de sauvegarde par hôte.
+Module de sauvegarde restic : serveur REST + cibles de sauvegarde par hôte.
 
-:::tip[Deux rôles, un seul module]
-- Serveur : un hôte dont le `config.yaml` contient `restic` dans ses services lance le serveur REST (`enableServer`) et stocke le dépôt de chaque hôte.
-- Client : tout hôte avec `enable = true` déclare des `targets` de sauvegarde (chemin local ou `rest:http://restic.<zone>:<port>`).
+:::tip[Deux rôles, un module]
+- Serveur : un hôte avec `restic` dans ses services config.yaml exécute le
+  serveur REST (`enableServer`) et stocke le dépôt de chaque hôte.
+- Client : tout hôte avec `enable = true` déclare des `targets` de sauvegarde
+  (chemin local ou `rest:http://restic.<zone>:<port>`).
 :::
 
 :::note[Deux mots de passe, ne pas confondre]
-- Phrase de passe du dépôt : `restic-password-<zone>`, chiffre le contenu du dépôt.
-- Identifiant REST : `restic/<hostname>/rest-password` par hôte, authentifie l'hôte auprès du serveur REST.
+- Phrase secrète du dépôt : `restic-password-<zone>`, chiffre le contenu du dépôt.
+- Identifiant REST : `restic/<hostname>/rest-password` par hôte, authentifie
+  l'hôte auprès du serveur REST.
 
-Les deux sont créés par `just configure-admin-host` (idempotent), qui lit les hôtes et zones déclarés dans la flotte.
+Les deux sont créés par `just configure-admin-host` (idempotent), qui lit
+les hôtes et zones déclarés dans la flotte.
 :::
 
 Exemple (configuration machine) :
@@ -1133,45 +1392,92 @@ darkone.service.restic = {
 };
 ```
 
-Disposition du dépôt par cible : un dépôt par catégorie, nommé d'après celle-ci.
+Disposition des dépôts par cible : un dépôt par catégorie, nommé d'après elle.
 
 ```
-<root>/<hostname>/system  <- catégorie "system" (/ hors exclus)
+<root>/<hostname>/system  <- catégorie "system" (/ moins les exclusions)
 <root>/<hostname>/nfs     <- catégorie "nfs"    (/srv/nfs/<...>)
 <root>/<hostname>/medias  <- catégorie "medias" (/srv/medias/<...>)
 ```
 
-:::caution[Le chemin du dépôt est exactement à deux niveaux]
-Le rest-server sert des dépôts à au plus deux composantes sous son `--path` :
-`<hostname>/medias` répond, `<hostname>/srv/medias` retourne 404 et restic
-signale une erreur trompeuse `repository does not exist`. Le sous-chemin est
-donc le nom nu de la catégorie, jamais le répertoire source. Une disposition
-identique pour les cibles locales et REST permet de déplacer un dépôt de
-l'une à l'autre sans le renommer.
+:::caution[Le chemin du dépôt a exactement deux niveaux]
+rest-server sert les dépôts à deux composantes au plus sous son `--path` :
+`<hostname>/medias` répond, `<hostname>/srv/medias` renvoie 404 et restic
+signale un `repository does not exist` trompeur. Le sous-chemin est donc le
+nom brut de la catégorie, jamais le répertoire source. Une disposition
+identique pour les cibles locales et REST permet à un dépôt de passer de
+l'une à l'autre sans renommage.
 :::
 
-:::note[Un serveur REST inaccessible est contourné]
-Chaque cible `rest:` embarque une sonde d'atteignabilité `ExecCondition`. Une sauvegarde
-dont le serveur est arrêtée est *passée*, jamais échouée : pas de
-SystemdUnitFailed nocturne, pas dix minutes de tentatives restic, pas de `initialize`
-créant un dépôt vide contre un endpoint mort. La sauvegarde manquante apparaît
-néanmoins via ResticBackupStale / ResticBackupCritical, qui surveillent la
-dernière exécution réussie.
+:::note[Un serveur REST injoignable saute la sauvegarde]
+Chaque cible `rest:` porte une sonde d'accessibilité `ExecCondition`. Une
+sauvegarde dont le serveur est en panne est *ignorée*, jamais échouée : pas de
+SystemdUnitFailed nocturne, pas de quart d'heure de nouvelles tentatives
+restic, et pas d'`initialize` créant un dépôt vide contre un point d'accès
+mort. La sauvegarde manquante apparaît quand même, via ResticBackupStale /
+ResticBackupCritical, qui surveillent la dernière exécution réussie.
 :::
+
+:::note[Les dossiers de synchronisation cloud ne sont jamais sauvegardés]
+Un dossier de synchronisation Nextcloud/ownCloud réplique un original côté
+serveur qui est sauvegardé à part, et restic ne fait jamais de déduplication
+entre dépôts. Détecté par le chemin (`/home/*/Nextcloud`, variantes numérotées
+incluses) et par la marque dans le journal.
+:::
+
+:::danger[Migrer les dépôts créés avant cette disposition]
+Les dépôts écrits quand le sous-chemin reflétait le répertoire source se
+trouvent sous `<hostname>/srv/{nfs,medias}`. Renommez-les sur le serveur avant
+la prochaine exécution : sinon `initialize = true` créerait un dépôt vide au
+nouveau chemin et lancerait silencieusement un ré-ensemblage complet.
+
+```sh
+mv <data-dir>/<hostname>/srv/medias <data-dir>/<hostname>/medias
+rmdir <data-dir>/<hostname>/srv
+```
+:::
+
+Sous-modules (`restic/`) :
+- `server.nix` : le serveur REST, un compte par hôte de la flotte ;
+- `metrics.nix` : métriques de fraîcheur des sauvegardes pour les alertes restic.
+
+{/* t:p 8395c3000227aa7845f885c140dc055a3f8cbde7ba6c87e86caaae4067f7c8a4 */}
+#### Serveur REST (`server.nix`)
+
+Un compte par hôte de la flotte (`restic/<hostname>/rest-password`), vérifié
+contre un htpasswd assemblé au démarrage ; `privateRepos` confine chaque hôte
+à son propre préfixe `<hostname>/`.
+
+:::caution[`listenAll` élargit la liaison, pas le pare-feu]
+Le serveur se lie à `params.ip`, c'est-à-dire l'adresse LAN sur une passerelle.
+Les clients qui l'atteignent depuis une autre zone par le tailnet ont besoin de
+`listenAll = true` (liaison sur `0.0.0.0`). Le pare-feu reste la frontière :
+`lan0` reçoit le port via `getInternalInterfaceFwPath`, `tailscale0` est déjà
+une interface de confiance sur une passerelle, et le WAN ne l'ouvre jamais.
+:::
+
+{/* t:p 860a53fec4e4b81fcaf5e317c7735bffe0cf2934c70f177082a8a63014c44885 */}
+#### Métriques (`metrics.nix`)
+
+Nœuds monitorés uniquement (fonction `monitoring-node`) : chaque tâche
+horodate sa dernière réussite dans le collecteur textfile, et `restic-declared`
+liste les tâches déclarées pour qu'une tâche qui ne réussit jamais vieillisse
+quand même en alerte `dnf-restic-<zone>`.
 
 * **enable** `bool` Activer le client de sauvegarde restic
-* **enableDryRun** `bool` Mode simulation
-* **enableWaitRemoteFs** `bool` Lancer les sauvegardes uniquement après remote-fs.target
+* **enableDryRun** `bool` Mode simulation (dry run)
+* **enableWaitRemoteFs** `bool` Exécuter les sauvegardes seulement après remote-fs.target
 * **enableServer** `bool` Activer le serveur REST restic
-* **listenAll** `bool` Écouter sur 0.0.0.0 (clients hors site)
-* **serverDataDir** `str` Répertoire de stockage local du serveur REST (dépôts de tous les hôtes)
+* **listenAll** `bool` Lier le serveur REST sur 0.0.0.0 (clients hors site)
+* **serverDataDir** `str` Racine de stockage locale du serveur REST (dépôts de tous les hôtes)
 * **targets** `listOf submodule` Destinations de sauvegarde pour cet hôte (chemin local ou URL REST)
-  * **name** `str` Identifiant de cible, utilisé dans les noms de sauvegarde/unité (&lt;category&gt;-&lt;name&gt;)
+  * **name** `str` Identifiant de cible, utilisé dans les noms de sauvegarde/d'unité (&lt;category&gt;-&lt;name&gt;)
   * **root** `str` Racine du dépôt : chemin local ou URL REST
-  * **zone** `str` Zone sélectionnant la phrase de passe du dépôt (restic-password-&lt;zone&gt;)
-  * **categories** `listOf ( enum [ "system" "nfs" "medias" ] )` Quoi sauvegarder dans cette cible
-* **nfsPaths** `listOf str` Répertoires NFS (/srv/nfs/&lt;xxx&gt;) inclus dans la catégorie « nfs »
-* **mediasPaths** `listOf str` Répertoires Médias (/srv/medias/&lt;xxx&gt;) inclus dans la catégorie « medias »
+  * **zone** `str` Zone sélectionnant la phrase secrète du dépôt (restic-password-&lt;zone&gt;)
+  * **categories** `listOf ( enum [ "system" "nfs" "medias" ] )` Ce qu'il faut sauvegarder vers cette cible
+* **nfsPaths** `listOf str` Répertoires NFS (/srv/nfs/&lt;xxx&gt;) inclus dans la catégorie 'nfs'
+* **mediasPaths** `listOf str` Répertoires médias (/srv/medias/&lt;xxx&gt;) inclus dans la catégorie 'medias'
+* **shared** `raw` Valeurs restic partagées avec les sous-modules `restic/`.
 
 ```nix
 darkone.service.restic = {
@@ -1188,6 +1494,7 @@ darkone.service.restic = {
   targets.categories = [ ];
   nfsPaths = [ ];
   mediasPaths = [ ];
+  shared = { inherit params; };
 };
 ```
 
@@ -1244,24 +1551,77 @@ darkone.service.stk = {
 
 <hr/>
 
-{/* t:p 03a1368f4559b952ebbd866587b9d926128a3c3007a7d24086d3005e31db63c7 */}
+{/* t:p 4a2834beed1c755b7c52f3e461191a4cac553c026be6f06446e69ea46409f4f6 */}
+### &#x2728; darkone.service.tailscale.autopause
+
+DNF tailscale : mise en pause automatique lors des déplacements. Doc : en-tête de `../tailscale.nix`.
+
+<hr/>
+
+{/* t:p bc4b1b3c2380198a08fe87612e4e382162ca0a2a17d049b7fbad12ac92e2a369 */}
+### &#x2728; darkone.service.tailscale.cert-sync
+
+DNF tailscale : synchronisation des certificats HCS. Doc : en-tête de `../tailscale.nix`.
+
+<hr/>
+
+{/* t:p c8b921a3fe473da8c6ca68aa43a902ec014be2ddeec1182203c4c1da41538184 */}
+### &#x2728; darkone.service.tailscale.selfheal
+
+DNF tailscale : chien de garde d'auto-réparation. Doc : en-tête de `../tailscale.nix`.
+
+<hr/>
+
+{/* t:p 371e2eab3796ffabb564213d8a2d4fa468fde9c653a29003ccbc560574fb7de1 */}
 ### &#x2728; darkone.service.tailscale
 
-Service client Tailscale pour HCS.
+Client tailscale du tailnet DNF (headscale sur le HCS).
 
-:::note
-Un client tailscale pour connecter un hôte externe au HCS. Ne pas l'utiliser pour connecter une passerelle de sous-réseau tailnet.
-:::
+Rejoint le HCS, les passerelles de zone (`isGateway` : sous-réseau de zone
+annoncé, routes acceptées, propre résolveur conservé) et les hôtes en
+déplacement.
 
 :::note[Inscription]
-Pas de clé partagée. `just tailnet-enroll <host>`, également lancé par `just configure`, crée une clé à usage unique taguée pour l'hôte sur le HCS et la remet à `dnf-tailnet-join`. Idempotent&nbsp;: un nœud inscrit n'est pas modifié.
+Pas de clé partagée. `just tailnet-enroll <host>`, lancé aussi par `just configure`,
+fabrique sur le HCS une clé à usage unique étiquetée pour l'hôte et la remet à
+`dnf-tailnet-join`. Idempotent : un nœud déjà inscrit reste intact.
 :::
 
-* **enable** `bool` Active le client tailscale pour connecter le HCS
+Sous-modules (`tailscale/`) :
+- `cert-sync.nix` : les passerelles de zone récupèrent les certificats Caddy du HCS ;
+- `selfheal.nix` : chien de garde redémarrant un tailscaled déconnecté ;
+- `autopause.nix` : les clients en déplacement mettent tailscale en pause sur une LAN de zone.
+
+{/* t:p 3e6bd6037462c03c8da354bd108ff063dd36740d61b3c2e3c7b0966fc6f2f9c9 */}
+#### Synchronisation des certificats (`cert-sync.nix`)
+
+Les certificats publics sont émis sur le HCS uniquement ; chaque passerelle de
+zone récupère tout le stockage Caddy par le tailnet (rsync en tant que `nix`,
+élevé à `caddy` côté HCS), puis le publie sur son propre Caddy.
+
+{/* t:p 8c7f18ea22f38fc83af3c3bbc9ff0bf5a75d359741fd9ff9c8cd4e60205f96c4 */}
+#### Auto-réparation (`selfheal.nix`)
+
+Chaque minute, vérifie que le backend tourne et que le plan de contrôle voit
+le nœud en ligne ; redémarre tailscaled après une perte prolongée. Exporte les
+métriques `dnf_tailscale_*` pour les alertes `TailscaleFlapping`/
+`TailscaleUnhealthy`.
+
+{/* t:p 23e9c5a8e0e02e2aa10f23941a56441848bfa8d0445702bd5b213364738c7820 */}
+#### Mise en pause automatique (`autopause.nix`)
+
+Clients en déplacement uniquement. Sur une LAN de zone DNF, `--accept-dns`
+hijackerait resolv.conf (dnsmasq/AdGuard local) et `--accept-routes`
+entrerait en conflit avec le sous-réseau de zone connecté : un dispatcheur
+NetworkManager met tailscale en pause sur place et le réactive ailleurs.
+
+* **enable** `bool` Activer le client tailscale pour se connecter au HCS
 * **isGateway** `bool` Ce nœud tailscale est une passerelle de sous-réseau
-* **isExitNode** `bool` Configure ce client comme nœud de sortie
-* **selfHeal.enable** `bool` Watchdog&nbsp;: détecte la déconnexion de headscale et redémarre tailscaled.
-* **autoPauseOnLan.enable** `bool` Client itinérant&nbsp;: met tailscale en pause (down) tant qu'il est branché sur un LAN de zone DNF connu, le reprend ailleurs. Clients NetworkManager non-passereaux uniquement.
+* **isExitNode** `bool` Configurer ce client comme nœud de sortie
+* **selfHeal.enable** `bool` Chien de garde : détecter la déconnexion d'headscale et redémarrer tailscaled.
+* **autoPauseOnLan.enable** `bool` Client en déplacement : mettre tailscale en pause (down) branché sur une
+  LAN de zone DNF connue, le réactiver ailleurs. Clients NetworkManager non passerelle uniquement.
+* **shared** `raw` Valeurs tailscale partagées avec les sous-modules `tailscale/`.
 
 ```nix
 darkone.service.tailscale = {
@@ -1270,6 +1630,16 @@ darkone.service.tailscale = {
   isExitNode = false;
   selfHeal.enable = true;
   autoPauseOnLan.enable = false;
+  shared = {
+        inherit
+          tsBin
+          isHcsSubnetGateway
+          selfHealEnable
+          selfHealStateDir
+          autoPauseEnable
+          autoPauseStateFile
+          ;
+      };
 };
 ```
 

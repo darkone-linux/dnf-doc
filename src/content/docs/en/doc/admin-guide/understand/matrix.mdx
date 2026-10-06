@@ -16,73 +16,23 @@ How DNF implements the Matrix server (Synapse) and mautrix bridges.
 For day-to-day operation, see
 [Matrix et les ponts](/en/doc/admin-guide/operate/matrix/).
 
-{/* t:p b28770e46ea00c812b42773942785636e474f91945dffd9013ec80b8cb8083e9 */}
-## Overview
-
-Everything is provided by `dnf/modules/service/matrix.nix`, with two satellite modules&nbsp;: `element.nix` (static web client) and `turn.nix` (coturn relay for audio/video).
-
-```d2
-style.fill: transparent
-direction: down
-
-client: Clients\n(Element, Fractal) {
-  shape: person
-}
-caddy: Caddy\n(reverse proxy)
-synapse: Synapse {
-  shape: rectangle
-}
-pg: PostgreSQL {
-  shape: cylinder
-}
-idm: Kanidm\n(OIDC)
-turn: coturn\n(TURN/STUN)
-rtc: MatrixRTC {
-  sfu: LiveKit\n(SFU)
-  jwt: Authorization\nservice
-}
-
-bridges: mautrix bridges {
-  wa: whatsapp
-  sig: signal
-  tg: telegram
-  meta: messenger
-  dc: discord
-}
-
-ext: External networks\n(WhatsApp, Telegram...) {
-  shape: cloud
-}
-
-client -> caddy -> synapse -> pg
-synapse -> idm
-client -> turn
-client -> rtc.sfu: media
-client -> caddy -> rtc.jwt: token
-rtc.jwt -> synapse: validates the OpenID token
-synapse <-> bridges <-> ext
-```
-
-- **Caddy** routes `/_matrix/*` and `/_synapse/client/*` to Synapse and serves the `/.well-known/matrix/{client,server}` files (client discovery and federation).
-- **Synapse** listens on `dnfConfig.network.ports.matrix`, with a local PostgreSQL base (created with `C` collation by a `matrix-db-init` unit).
-- **Kanidm** provides authentication&nbsp;: OIDC client provisioned via `darkone.service.idm.oauth2.matrix`, *local part* derived from `preferred_username` (see [Authentication & IDM](/en/doc/admin-guide/understand/auth-idm/)).
-- **coturn** is wired up automatically if the `turn` service is declared (`turn_uris`, shared secret via sops). It relays calls for two of the legacy clients, the only stack Element Classic knows how to use.
-- **MatrixRTC** (`matrixRtc.enable`) adds the Element Call stack&nbsp;: a LiveKit SFU and its authorization service, served on the Matrix vhost under `/livekit/sfu` and `/livekit/jwt`. The client exchanges an OpenID token from Synapse for a LiveKit JWT, then sends its media **directly** to the SFU, outside the proxy. Required by Element X, which doesn't know the other stack.
-
-{/* t:p 13c6a2814eee915a3089c2fadfc14cd3e406e01ed88014bc51ae5bf898e7c861 */}
+{/* t:p acb98e2affc63ba69e93725af07873026362780d471dd5b9b52a269f6a1bff75 */}
 ## Module anatomy
 
-`matrix.nix` is a `lib.mkMerge` of independent blocks:
+Independent blocks, spread across submodules:
 
-| Block | Condition | Content |
+| File | Condition | Content |
 |---|---|---|
-| Base | always | OIDC client, reverse proxy, persistence |
-| Server | `matrix.enable` | Synapse, PostgreSQL, common secrets, `doublepuppet` appservice |
-| One block per bridge | `matrix.enable && bridges.<x>.enable` | sops secrets + bridge's mautrix service |
+| `matrix.nix` | always | OIDC client, reverse proxy, persistence |
+| `matrix.nix` | `matrix.enable` | Synapse, PostgreSQL, federation |
+| `matrix/mas.nix` | `matrix.enable` | MAS, `dnf-mas` tool |
+| `matrix/rtc.nix` | `matrix.enable && matrixRtc.enable` | LiveKit, JWT service |
+| `matrix/bridges.nix` | `matrix.enable` | `doublepuppet` appservice |
+| `matrix/bridges.nix` | `matrix.enable && bridges.<x>.enable` | sops secrets + bridge service |
 
-Each bridge can thus be disabled individually
+Each bridge can therefore be disabled individually
 (`darkone.service.matrix.bridges.{whatsapp,signal,telegram,messenger,discord}.enable`),
-its sops secrets only being declared if the bridge is active.
+its sops secrets being declared only if the bridge is active.
 
 {/* t:p 8b8301256d56c5de8ddf451ceae77dd7a0fead3191e43dad54c96654ba4f32a7 */}
 ## Mautrix bridges
@@ -105,20 +55,20 @@ own account (at least `puppeting` is required). DNF gives `full` to the domain
 so that every local account can connect and share their rooms.
 </Aside>
 
-{/* t:p 9586614fc831ebae3659bdaac0701d3df4c27b7a7864e94b09027a3b2d9b0349 */}
+{/* t:p 80f0f06fd5967302ee606bffe2e2840217b113f58dddb2374c1ac15ba725a2b5 */}
 ### Permissions
 
-The `mkBridgePermissions` helper (in `matrix.nix`) builds the same
-policy for all bridges&nbsp;:
+The `mkBridgePermissions` helper (in `matrix/bridges.nix`) builds the same
+policy for all bridges:
 
 ```yaml
 permissions:
-  "domain.tld": user          # tout compte local, avec son propre compte distant
-  "@alice:domain.tld": admin  # chaque network.matrix.admins de etc/config.yaml
+  "domain.tld": user          # any local account, with its own remote account
+  "@alice:domain.tld": admin  # each network.matrix.admins of etc/config.yaml
 ```
 
-Remote sessions are isolated per Matrix user&nbsp;: extending this to all
-accounts in the domain carries no risk of interference.
+Remote sessions are isolated per Matrix user: extending it to every account
+in the domain carries no risk of interference.
 
 {/* t:p 580fec2b6739ee349a69326fb1515efd838f21ba016a7e3767969df39b631af8 */}
 ### Double puppeting
@@ -317,25 +267,24 @@ mas -> idm: Upstream SSO
 Activation and migration: see
 [the operations guide](/en/doc/admin-guide/operate/matrix/#authentication-mas).
 
-{/* t:p b6417ed593bca0abe771e7d61447636c779be1dffa5374a8f462fe9d3c517232 */}
+{/* t:p 30e0312be0845077dba8ec2755e85f26480b61370db3a186970eea037942eb5b */}
 ## Secrets and ports
 
-- **Secrets** : declared in blocks in `matrix.nix` (`sops.secrets.*`), and
-  assembled into environment files by `sops.templates.*` owned by the
-  bridge's system user. Complete list in
+- **Secrets**: declared per block in each submodule (`sops.secrets.*`), then
+  assembled into environment files by `sops.templates.*` owned by the bridge's
+  system user. Full list in
   [the operations page](/en/doc/admin-guide/operate/matrix/#required-secrets).
-- **Ports** : `matrix`, `matrixTelegram` and `matrixDiscord` are fixed by the
-  registry `dnf/config/network.nix`&nbsp;; the default appservice ports of the
-  other bridges (29318, 29319, 29328) are listed there as `reserved` to avoid
-  any future collision.
-- **MatrixRTC ports** : the registry also carries `livekit`, `livekitJwt` and
+- **Ports**: `matrix`, `matrixTelegram` and `matrixDiscord` are fixed by the
+  `dnf/config/network.nix` registry; the other bridges' default appservice
+  ports (29318, 29319, 29328) are listed there as `reserved` to avoid any
+  future collision.
+- **MatrixRTC ports**: the registry also carries `livekit`, `livekitJwt` and
   the media bounds `livekitRtcUdpStart`/`End`. Two upstream default values are
-  deliberately discarded there&nbsp;: the authorization service leaves 8080
-  (taken by headscale) and the media range drops below coturn's, which it
-  overlapped.
-- **WhatsApp statuses** : `network.enable_status_broadcast = false` in the
-  bridge config, otherwise the bridge indefinitely recreates the
-  "WhatsApp Status Broadcast" room for each user.
+  deliberately discarded: the authorization service leaves 8080 (taken by
+  headscale) and the media range moves below coturn's, which it overlapped.
+- **WhatsApp statuses**: `network.enable_status_broadcast = false` in the
+  bridge config, otherwise the bridge endlessly recreates the
+  « WhatsApp Status Broadcast » room for every user.
 
 {/* t:p ebc4d3df25421e737099119b56fc77f8147dd8501c459ba274280882d74143ed */}
 ## See also

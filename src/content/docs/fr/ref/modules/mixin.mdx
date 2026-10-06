@@ -24,61 +24,27 @@ Une configuration de bureau complète avec gnome, outils multimédias et outils 
 darkone.host.desktop.enable = false;
 ```
 
-{/* t:p b834c10ded96582df7e8839d0022e26561f63bb5daea0326b6908ebc34fc0c75 */}
-### &#x1F4E6; darkone.host.gateway
+{/* t:p a76cad0e7e750a87c4f42e53c943767badb447ffd138a6d272cf2aa25bd4d49d */}
+### &#x1F4E6; darkone.host.gateway.backup-links
 
-La passerelle / routeur principal d'une zone de réseau local.
+Passerelle DNF : liens de secours. Doc&nbsp;: en-tête de `../gateway.nix`.
 
-:::tip[Une passerelle prête à l'emploi !]
-La passerelle est configurée dans le fichier `usr/config.yaml`.
-Les services activés supplémentaires (homepage, adguardhome, forgejo, nix-cache...)
-sont automatiquement configurés avec une connectique réseau cohérente sur la
-passerelle et toutes les machines du réseau local.
-:::
-
-:::caution[Le trafic routé est filtré]
-`filterForward = true` : seuls les passages LAN &lt;-&gt; WAN et LAN &lt;-&gt; tailnet sont autorisés. Tout
-le reste est abandonné — ajoutez-le à `networking.firewall.extraForwardRules`.
-:::
-
-:::tip[Liens de secours : Internet en mode dégradé]
-`backupLinks` ajoute des liens de sortie (port ethernet de secours, client wifi comme un partage
-de connexion de téléphone) vers lesquels la zone se replie lorsque le WAN perd sa liaison, son bail ou
-l'Internet :
-
-```nix
-darkone.host.gateway.backupLinks.phone = {
-  type = "wifi";          # SSID + passphrase: sops `backup-link/phone/{ssid,psk}`
-  interface = "wlp4s0";
-  priority = 10;          # lower = preferred among backups
-};
-```
-
-Les métriques de routage orientent la route par défaut ; `dnf-uplink-monitor` sonde via
-chaque lien, pénalise ceux qui n'ont pas Internet et retient en période de probation un lien
-touché par une panne jusqu'à ce qu'il réponde. Un secours wifi garde sa radio
-éteinte tant qu'aucun lien préféré n'atteint Internet ; un secours ethernet reste actif,
-au repos. Détails : `lib/uplinks.nix`.
-:::
-
-* **enable** `bool` Active les fonctionnalités de passerelle pour l'hôte courant (dhcp, dns, proxy, etc.)
-* **backupLinks** `attrs` Liens de sortie de secours, utilisés quand le WAN n'a ni liaison, ni bail, ni
-  Internet. Nom : `[a-z][a-z0-9-]*`.
-  * **type** `enum [ "ethernet" "wifi" ]` `ethernet` : client DHCP sur un port de secours, toujours actif. `wifi` :
-    client WPA2/WPA3, radio éteinte (rfkill) tant qu'aucun lien préféré
-    n'atteint Internet ; le SSID et la phrase secrète sont lus depuis sops
+* **backupLinks** `attrs` Liens de repli, utilisés quand le WAN n'a ni lien, ni bail, ni
+  Internet. Nom&nbsp;: `[a-z][a-z0-9-]*`.
+  * **type** `enum [ "ethernet" "wifi" ]` `ethernet`&nbsp;: client DHCP sur un port libre, toujours actif. `wifi`&nbsp;:
+    client WPA2/WPA3, radio désactivée (rfkill) tant qu'aucun lien
+    préféré n'atteint Internet&nbsp;; SSID et phrase de passe sont lus dans sops
     (`backup-link/&lt;name&gt;/ssid`, `backup-link/&lt;name&gt;/psk`).
-  * **interface** `str` Interface portant le lien : ni le WAN, ni un port LAN, ni une radio hostapd.
-  * **priority** `ints.between 1 99` Plus la valeur est basse, plus le lien est préféré parmi les liens de secours (métrique
-    de route 200 + 10 × priorité, le WAN restant à 100).
-* **linkCheck.targets** `nonEmptyListOf str` Adresses IP pingées via chaque lien de sortie ; une seule réponse suffit. Uniquement des IP littérales : la sonde ne doit pas dépendre du DNS.
-* **linkCheck.interval** `ints.positive` Secondes entre deux tours de sonde.
-* **linkCheck.failAfter** `ints.positive` Tours échoués avant qu'un lien de sortie soit pénalisé.
-* **linkCheck.recoverAfter** `ints.positive` Tours réussis avant qu'un lien de sortie pénalisé soit rétabli (hystérésis).
+  * **interface** `str` Interface portant le lien&nbsp;: ni le WAN, ni un port LAN, ni une radio hostapd.
+  * **priority** `ints.between 1 99` La plus basse est préférée parmi les liens de secours (métrique de route
+    200 + 10 × priority, le WAN restant à 100).
+* **linkCheck.targets** `nonEmptyListOf str` Adresses IP pingées via chaque lien&nbsp;; une réponse suffit. IP littérales uniquement&nbsp;: la sonde ne doit pas dépendre du DNS.
+* **linkCheck.interval** `ints.positive` Secondes entre deux séries de sondes.
+* **linkCheck.failAfter** `ints.positive` Séries échouées avant pénalité d'un lien.
+* **linkCheck.recoverAfter** `ints.positive` Séries réussies avant restauration d'un lien pénalisé (hystérésis).
 
 ```nix
-darkone.host.gateway = {
-  enable = false;
+darkone.host.gateway.backup-links = {
   backupLinks.type = null;
   backupLinks.interface = "wlp4s0";
   backupLinks.priority = 10;
@@ -91,24 +57,74 @@ darkone.host.gateway = {
 
 <hr/>
 
-{/* t:p ce0850823911bfdcf2cfd22c4a5115a5286f40eb706131fd0024c6fc80c63e59 */}
+{/* t:p dee26eb5124c1600214d1dcdc1d5b2d9a3c72e32c9c96e5ae6baf62f0dcc6b1e */}
+### &#x1F4E6; darkone.host.gateway
+
+La passerelle / routeur principal d'une zone de réseau local.
+
+:::tip[Une passerelle prête à l'emploi&nbsp;!]
+La passerelle est configurée dans le fichier `etc/config.yaml`.
+Les services activés en supplément (homepage, adguardhome, forgejo, nix-cache...)
+sont configurés automatiquement avec une interconnexion réseau cohérente sur la
+passerelle et toutes les machines du réseau local.
+:::
+
+:::caution[Trafic routé filtré]
+`filterForward = true`&nbsp;: seuls LAN &lt;-&gt; WAN et LAN &lt;-&gt; tailnet passent. Tout le
+reste est jeté — ajoutez-le à `networking.firewall.extraForwardRules`.
+:::
+
+Sous-module (`gateway/`)&nbsp;: `backup-links.nix`, liens de secours.
+
+{/* t:p 090f2b0cda40fa5b9621158a96d67bed77a6415df76ee294e62381c1a76b2825 */}
+#### Liens de secours (`backup-links.nix`)
+
+:::tip[Liens de secours&nbsp;: Internet en mode dégradé]
+`backupLinks` ajoute des liens de repli (port ethernet libre, client wifi type
+point d'accès de téléphone) auxquels la zone se rabat quand le WAN perd son
+lien, son bail ou Internet&nbsp;:
+
+```nix
+darkone.host.gateway.backupLinks.phone = {
+  type = "wifi";          # SSID + phrase de passe: sops `backup-link/phone/{ssid,psk}`
+  interface = "wlp4s0";
+  priority = 10;          # plus bas = préféré parmi les secours
+};
+```
+
+Les métriques de route orientent la route par défaut&nbsp;; `dnf-uplink-monitor`
+pinge via chaque lien, pénalise celui sans Internet et remet celui revenu
+d'une panne à l'épreuve jusqu'à ce qu'il réponde. Un lien wifi garde sa
+radio éteinte tant qu'aucun lien préféré n'atteint Internet&nbsp;; un lien
+ethernet reste actif, inactif. Détails&nbsp;: `lib/uplinks.nix`.
+:::
+
+* **enable** `bool` Activer les fonctions de passerelle pour l'hôte courant (dhcp, dns, proxy, etc.)
+
+```nix
+darkone.host.gateway.enable = false;
+```
+
+<hr/>
+
+{/* t:p f152fd245120a91750afc6be05a20713a633174fedd3fa2a72db448161fd45c7 */}
 ### &#x1F4E6; darkone.host.hcs
 
-Serveur de coordination headscale principal.
+Le serveur de coordination headscale principal.
 
 :::tip[Un serveur headscale prêt à l'emploi&nbsp;!]
-Le réseau est configuré dans le fichier `usr/config.yaml`.
-Les services supplémentaires activés (authentification, etc.)
-sont automatiquement configurés avec une connectivité réseau cohérente sur
+Le réseau est configuré dans le fichier `etc/config.yaml`.
+Les services activés en supplément (authentification, etc.)
+sont configurés automatiquement avec une interconnexion réseau cohérente sur
 votre réseau global.
 
 Alias Zsh «&nbsp;h&nbsp;» pour «&nbsp;headscale&nbsp;».
 :::
 
 :::caution[SSH public]
-Le port 22 est ouvert sur toutes les interfaces, Internet compris — unique
-hôte de la flotte dans ce cas&nbsp;: il héberge le plan de contrôle du tailnet,
-l'y accéder ne doit donc pas nécessiter le tailnet.
+Le port 22 est ouvert sur toutes les interfaces, Internet compris — seul hôte
+de la flotte dans ce cas&nbsp;: il fait tourner le plan de contrôle du tailnet,
+son atteinte ne doit donc pas requérir le tailnet.
 :::
 
 * **enable** `bool` Activer le serveur de coordination headscale
@@ -134,20 +150,20 @@ Config de bureau + outils et configuration spécifiques aux ordinateurs portable
 darkone.host.laptop.enable = false;
 ```
 
-{/* t:p eb860dd93583cb48cb93a118b8d626134b9c3924be54e7f628c1bdba014c716c */}
+{/* t:p 2b879eca6bc6bf68d0a2155c76c04beef662fc42d51f8322bb25c9d4287705c3 */}
 ### &#x1F4E6; darkone.host.minimal
 
-Chaque configuration d'hôte est basée sur cette configuration minimale.
+Toute configuration d'hôte repose sur cette configuration minimale.
 
-:::caution[Déclaration de services]
-Un certain nombre de services (immich, nextcloud, forgejo, etc.) peuvent être déclarés dans
-`usr/config.yaml` de chaque hôte, quel que soit son type (serveur, ordinateur portable,
-bureau, etc.). **Il est conseillé de les déclarer dans le fichier yaml pour que
-le service soit visible sur l'ensemble du réseau!**
+:::caution[Déclaration des services]
+Un certain nombre de services (immich, nextcloud, forgejo, etc.) peuvent être
+déclarés dans `etc/config.yaml` de chaque hôte, quel que soit son type
+(serveur, portable, fixe, etc.). **Il est conseillé de les déclarer dans le
+fichier yaml pour que le service soit visible sur l'ensemble du réseau&nbsp;!**
 :::
 
-* **enable** `bool` Configuration minimale de l'hôte
-* **secure** `bool` Préférer des options plus sécurisées (désactiver les utilisateurs mutables...)
+* **enable** `bool` Configuration d'hôte minimale
+* **secure** `bool` Préférer des options plus sûres (désactiver les utilisateurs mutables...)
 
 ```nix
 darkone.host.minimal = {
@@ -155,6 +171,8 @@ darkone.host.minimal = {
   secure = false;
 };
 ```
+
+<hr/>
 
 {/* t:p 8cf0a2317d88ffe0fea4875cf25bad41c2e6c4a6ddf979f9852c46ef6acc0e2b */}
 ### &#x1F4E6; darkone.host.portable

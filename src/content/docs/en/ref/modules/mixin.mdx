@@ -26,13 +26,46 @@ darkone.host.desktop.enable = false;
 
 <hr/>
 
-{/* t:p b834c10ded96582df7e8839d0022e26561f63bb5daea0326b6908ebc34fc0c75 */}
+{/* t:p a76cad0e7e750a87c4f42e53c943767badb447ffd138a6d272cf2aa25bd4d49d */}
+### &#x1F4E6; darkone.host.gateway.backup-links
+
+DNF gateway: backup uplinks. Doc: `../gateway.nix` header.
+
+* **backupLinks** `attrs` Fallback uplinks, used when the WAN has no link, no lease or no
+  Internet. Name: `[a-z][a-z0-9-]*`.
+  * **type** `enum [ "ethernet" "wifi" ]` `ethernet`: DHCP client on a spare port, always up. `wifi`:
+    WPA2/WPA3 client, radio off (rfkill) until no preferred link
+    reaches the Internet; SSID and passphrase are read from sops
+    (`backup-link/&lt;name&gt;/ssid`, `backup-link/&lt;name&gt;/psk`).
+  * **interface** `str` Interface carrying the link: neither the WAN, a LAN port nor a hostapd radio.
+  * **priority** `ints.between 1 99` Lower is preferred among backup links (route metric
+    200 + 10 × priority, the WAN staying at 100).
+* **linkCheck.targets** `nonEmptyListOf str` IP addresses pinged through each uplink; one answer is enough. IP literals only: the probe must not depend on DNS.
+* **linkCheck.interval** `ints.positive` Seconds between two probe rounds.
+* **linkCheck.failAfter** `ints.positive` Failed rounds before an uplink is penalised.
+* **linkCheck.recoverAfter** `ints.positive` Good rounds before a penalised uplink is restored (hysteresis).
+
+```nix
+darkone.host.gateway.backup-links = {
+  backupLinks.type = null;
+  backupLinks.interface = "wlp4s0";
+  backupLinks.priority = 10;
+  linkCheck.targets = internetProbeTargets;
+  linkCheck.interval = 10;
+  linkCheck.failAfter = 3;
+  linkCheck.recoverAfter = 6;
+};
+```
+
+<hr/>
+
+{/* t:p dee26eb5124c1600214d1dcdc1d5b2d9a3c72e32c9c96e5ae6baf62f0dcc6b1e */}
 ### &#x1F4E6; darkone.host.gateway
 
 The main gateway / router of a local network zone.
 
 :::tip[A ready-to-use gateway!]
-The gateway is configured in `usr/config.yaml` file.
+The gateway is configured in `etc/config.yaml` file.
 Additional enabled services (homepage, adguardhome, forgejo, nix-cache...)
 are automatically configured with consistent network plumbing on the
 gateway and all machines on the local network.
@@ -42,6 +75,11 @@ gateway and all machines on the local network.
 `filterForward = true`: only LAN &lt;-&gt; WAN and LAN &lt;-&gt; tailnet cross. Anything
 else is dropped — add it to `networking.firewall.extraForwardRules`.
 :::
+
+Sub-module (`gateway/`): `backup-links.nix`, backup uplinks.
+
+{/* t:p 090f2b0cda40fa5b9621158a96d67bed77a6415df76ee294e62381c1a76b2825 */}
+#### Backup uplinks (`backup-links.nix`)
 
 :::tip[Backup links: Internet in degraded mode]
 `backupLinks` adds uplinks (spare ethernet port, wifi client such as a phone
@@ -64,42 +102,20 @@ idle. Details: `lib/uplinks.nix`.
 :::
 
 * **enable** `bool` Enable gateway features for the current host (dhcp, dns, proxy, etc.)
-* **backupLinks** `attrs` Fallback uplinks, used when the WAN has no link, no lease or no
-  Internet. Name: `[a-z][a-z0-9-]*`.
-  * **type** `enum [ "ethernet" "wifi" ]` `ethernet`: DHCP client on a spare port, always up. `wifi`:
-    WPA2/WPA3 client, radio off (rfkill) until no preferred link
-    reaches the Internet; SSID and passphrase are read from sops
-    (`backup-link/&lt;name&gt;/ssid`, `backup-link/&lt;name&gt;/psk`).
-  * **interface** `str` Interface carrying the link: neither the WAN, a LAN port nor a hostapd radio.
-  * **priority** `ints.between 1 99` Lower is preferred among backup links (route metric
-    200 + 10 × priority, the WAN staying at 100).
-* **linkCheck.targets** `nonEmptyListOf str` IP addresses pinged through each uplink; one answer is enough. IP literals only: the probe must not depend on DNS.
-* **linkCheck.interval** `ints.positive` Seconds between two probe rounds.
-* **linkCheck.failAfter** `ints.positive` Failed rounds before an uplink is penalised.
-* **linkCheck.recoverAfter** `ints.positive` Good rounds before a penalised uplink is restored (hysteresis).
 
 ```nix
-darkone.host.gateway = {
-  enable = false;
-  backupLinks.type = null;
-  backupLinks.interface = "wlp4s0";
-  backupLinks.priority = 10;
-  linkCheck.targets = internetProbeTargets;
-  linkCheck.interval = 10;
-  linkCheck.failAfter = 3;
-  linkCheck.recoverAfter = 6;
-};
+darkone.host.gateway.enable = false;
 ```
 
 <hr/>
 
-{/* t:p ce0850823911bfdcf2cfd22c4a5115a5286f40eb706131fd0024c6fc80c63e59 */}
+{/* t:p f152fd245120a91750afc6be05a20713a633174fedd3fa2a72db448161fd45c7 */}
 ### &#x1F4E6; darkone.host.hcs
 
 The main headscale coordination server.
 
 :::tip[A ready-to-use headscale server!]
-The network is configured in `usr/config.yaml` file.
+The network is configured in `etc/config.yaml` file.
 Additional enabled services (authentication, etc.)
 are automatically configured with consistent network plumbing on your
 global network.
@@ -138,14 +154,14 @@ darkone.host.laptop.enable = false;
 
 <hr/>
 
-{/* t:p eb860dd93583cb48cb93a118b8d626134b9c3924be54e7f628c1bdba014c716c */}
+{/* t:p 2b879eca6bc6bf68d0a2155c76c04beef662fc42d51f8322bb25c9d4287705c3 */}
 ### &#x1F4E6; darkone.host.minimal
 
 Every host configuration is based on this minimal config.
 
 :::caution[Services declaration]
 A number of services (immich, nextcloud, forgejo, etc.) can be declared in
-`usr/config.yaml` of each host, regardless of its type (server, laptop,
+`etc/config.yaml` of each host, regardless of its type (server, laptop,
 desktop, etc.). **It is advisable to declare them in the yaml file so that
 the service is visible across the entire network!**
 :::
