@@ -16,6 +16,59 @@ How DNF implements the Matrix server (Synapse) and mautrix bridges.
 For day-to-day operation, see
 [Matrix et les ponts](/en/doc/admin-guide/operate/matrix/).
 
+{/* t:p 93c636bdb718984bb33054e634bdeba0cf187c9be34e53eb4df371a90b446cf2 */}
+## Overview
+
+Everything is handled by `dnf/modules/service/matrix.nix` and its submodules `matrix/`, with two satellite modules: `element.nix` (static web client) and `turn.nix` (coturn relay for audio/video).
+
+```d2
+style.fill: transparent
+direction: down
+
+client: Clients\n(Element, Fractal) {
+  shape: person
+}
+caddy: Caddy\n(reverse proxy)
+synapse: Synapse {
+  shape: rectangle
+}
+pg: PostgreSQL {
+  shape: cylinder
+}
+idm: Kanidm\n(OIDC)
+turn: coturn\n(TURN/STUN)
+rtc: MatrixRTC {
+  sfu: LiveKit\n(SFU)
+  jwt: Authorization\nservice
+}
+
+bridges: mautrix bridges {
+  wa: whatsapp
+  sig: signal
+  tg: telegram
+  meta: messenger
+  dc: discord
+}
+
+ext: External networks\n(WhatsApp, Telegram...) {
+  shape: cloud
+}
+
+client -> caddy -> synapse -> pg
+synapse -> idm
+client -> turn
+client -> rtc.sfu: media
+client -> caddy -> rtc.jwt: token
+rtc.jwt -> synapse: validates the OpenID token
+synapse <-> bridges <-> ext
+```
+
+- **Caddy** routes `/_matrix/*` and `/_synapse/client/*` to Synapse and serves the `/.well-known/matrix/{client,server}` files (client discovery and federation).
+- **Synapse** listens on `dnfConfig.network.ports.matrix`, uses a local PostgreSQL database (created with `C` collation by a `matrix-db-init` unit).
+- **Kanidm** provides authentication: an OIDC client is provisioned via `darkone.service.idm.oauth2.matrix`, with the *local part* derived from the `preferred_username` (see [Authentication & IDM](/en/doc/admin-guide/understand/auth-idm/)).
+- **coturn** is automatically connected if the `turn` service is declared (`turn_uris`, shared secret via sops). It relays calls for two legacy clients, the only stack supported by Element Classic.
+- **MatrixRTC** (`matrixRtc.enable`) adds the Element Call stack: a LiveKit SFU and its authorization service, exposed on the Matrix vhost at `/livekit/sfu` and `/livekit/jwt`. The client exchanges a Synapse OpenID token for a LiveKit JWT, then sends its media **directly** to the SFU, bypassing the proxy. This is required by Element X, which does not support the legacy stack.
+
 {/* t:p acb98e2affc63ba69e93725af07873026362780d471dd5b9b52a269f6a1bff75 */}
 ## Module anatomy
 

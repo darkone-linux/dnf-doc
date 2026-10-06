@@ -51,48 +51,45 @@ darkone.home.advanced = {
 
 <hr/>
 
-{/* t:p 592e6eb518c867d3bedc4a5cee1c1f6ab24aa02a8eb94805f2a35d2d6db84123 */}
+{/* t:p db416e8f77abfb580d55ac06bcc0859a45abb819942b6d4b848f929b36bd06f4 */}
 ### &#x1F3E0; darkone.home.ai
 
-Outils d'IA de codage et utilitaires de support.
+Outils de codage IA et utilitaires associés.
 
-:::note[Flags]
-- `darkone.home.ai.enable` interrupteur principal qui installe les paquets
-  utilitaires (aichat, llm, fabric-ai, gh, lazygit, direnv, outils de
-  qualité de code, etc.) et active le système de flags par agent ci-dessous.
-- `darkone.home.ai.enable{Claude,OpenCode,Codex,Aider,Goose}` installe et
-  configure chacun un agent d'IA de codage spécifique.
-- `darkone.home.ai.preferLocal` combiné à un hôte `darkone.service.ai` local
-  ollama, les agents utilisent par défaut le modèle local au lieu des APIs cloud.
+:::note[Drapeaux]
+- `darkone.home.ai.enable` : paquets utilitaires (aichat, llm, fabric-ai, gh,
+  lazygit, direnv, outils Rust et qualité de code) et les drapeaux d'agent ci-dessous.
+- `darkone.home.ai.enable{Claude,OpenCode,Codex,Antigravity,Aider,Goose}` :
+  un agent de codage IA chacun.
+- `darkone.home.ai.preferLocal` : OpenCode utilise par défaut le modèle ollama
+  local sur un hôte `darkone.service.ai`.
 :::
 
 :::tip[Câblage par hôte]
-Ce module lit `osConfig.darkone.service.ai.enable` pour détecter un
-hôte ollama local. Sur ces hôtes, `gollama`, le CLI `ollama`, et les
-modèles locaux par défaut pour Aider / OpenCode sont activés automatiquement.
+Sur un hôte ollama local (`darkone.service.ai`) : `gollama` et la CLI
+`ollama`, et Aider revient au modèle local quand Claude est désactivé.
 
-`programs.gh` est activé avec l'extension `github-copilot-cli`.
-OpenCode obtient deux serveurs MCP (filesystem, fetch) via `npx -y`.
-Claude Code applique une matrice de permissions allow/ask/deny et un
-hook de gouvernance RTK sur les appels Bash.
+La CLI GitHub (`gh`) et la CLI Copilot (`copilot`) sont installées. Claude Code
+applique une matrice de permissions autoriser/demander/refuser et un hook de
+gouvernance RTK sur les appels Bash.
 :::
 
-:::caution[settings.json inscriptible]
-Claude Code et Antigravity CLI réécrivent leur propre `settings.json` :
-un magasin en lecture seule en symlink les casse, et fait échouer le
-prochain switch sur le `.bkp`. Le socle Nix est fusionné par jq dans un
-fichier INSCRIPTIBLE à chaque switch ; les clés d'exécution (plugins,
-espaces de travail de confiance) sont préservées.
+:::caution[settings.json modifiable]
+Claude Code et Antigravity CLI réécrivent leur propre `settings.json` : un
+lien symbolique en lecture seule les casse, et fait échouer le prochain switch
+sur le `.bkp`. Le socle Nix est fusionné par jq dans un fichier MODIFIABLE à
+chaque switch à la place ; les clés d'exécution (plugins, espaces de travail
+de confiance) sont préservées.
 :::
 
-* **enable** `bool` Activer les outils d'IA et les utilitaires de support
+* **enable** `bool` Activer les outils IA et les utilitaires associés
 * **enableClaude** `bool` CLI Claude Code
-* **enableOpenCode** `bool` Agent d'IA terminal OpenCode
+* **enableOpenCode** `bool` Agent IA terminal OpenCode
 * **enableCodex** `bool` CLI OpenAI Codex
 * **enableAntigravity** `bool` CLI Google Antigravity
-* **enableAider** `bool` Programmation en binôme avec Aider AI
+* **enableAider** `bool` Programmation en binôme IA avec Aider
 * **enableGoose** `bool` Agent de codage IA Goose (Block Inc.)
-* **preferLocal** `bool` Préférer les modèles locaux plutôt que ceux du cloud
+* **preferLocal** `bool` Préférer les modèles locaux plutôt que cloud
 
 ```nix
 darkone.home.ai = {
@@ -109,19 +106,18 @@ darkone.home.ai = {
 
 <hr/>
 
-{/* t:p 0fabfb5339e05d605bca4e56694acf6244ae0c63d5b9fa84a7005fab56fe6689 */}
+{/* t:p 0521a41214fc89d015d5c6028a290a99ffda28e1b2114015791c4ccc44a7fa3f */}
 ### &#x1F3E0; darkone.home.audio
 
 Outils et effets audio.
 
-Installe un lecteur audio (`vlc`) et l'encodeur MP3 (`lame`)
-sans condition, puis superpose les éditeurs et les effets (`audacity`,
-`easyeffects` avec le préset `easyeffects-fw16`) lorsque `enableTools` est
-défini. La réduction de bruit en temps réel (`noisetorch`) est intentionnellement désactivée
-car elle nécessite PulseAudio.
+Installe l'encodeur MP3 (`lame`) et, avec GNOME, un lecteur audio
+(`vlc`), puis ajoute les éditeurs et effets (`audacity`, `easyeffects`) quand
+`enableTools` est défini. La réduction de bruit en temps réel (`noisetorch`) est
+volontairement désactivée car elle requiert PulseAudio.
 
 * **enable** `bool` Outils audio
-* **enableTools** `bool` Outils audio / éditeurs (audacity, easyeffect, noisetorch...)
+* **enableTools** `bool` Outils / éditeurs audio (audacity, easyeffects)
 
 ```nix
 darkone.home.audio = {
@@ -129,6 +125,8 @@ darkone.home.audio = {
   enableTools = false;
 };
 ```
+
+<hr/>
 
 {/* t:p ccba3aeb30aded9435afa145d2d81ea366f47acc6973791166ad3a872f9485e0 */}
 ### &#x1F3E0; darkone.home.education
@@ -192,29 +190,28 @@ darkone.home.games = {
 
 <hr/>
 
-{/* t:p ebcb7d14c8150897d17f424fd86294a72c6d5763c5bd151bf2ec0767d625b935 */}
+{/* t:p 1b44d5c67d18f80e640f8cb6b017fa17f337dff61244f49e80456f5f168bcfd3 */}
 ### &#x1F3E0; darkone.home.gnome
 
-Ajustements Gnome pour home-manager.
+Réglages GNOME pour home-manager.
 
-Masque sans condition les lanceurs `xterm` nu, les paramètres Qt5/Qt6 et le
-manuel NixOS, Extensions pour les profils non techniques, enregistre des entrées
-`.desktop` soignées pour `scrcpy` et `scrcpy-console` quand le paquet fait partie
-des `home.packages` de l'utilisateur, et (quand `hideTechnicalIcons` est défini)
-masque les icônes Paramètres, Imprimantes et File Roller pour les profils
-débutant / enfant. `keepKeyring` dispense l'utilisateur de la réinitialisation
-du trousseau de connexion qui suit un changement de mot de passe admin (lu par
-le module gnome de NixOS).
+Masque les lanceurs : le simple `xterm`, les paramètres Qt5/Qt6 et le manuel
+NixOS pour tous les profils, `scrcpy` et `scrcpy-console` s'ils sont installés,
+Extensions pour les profils non techniques, et (`hideTechnicalIcons`)
+Paramètres, Imprimantes et File Roller pour les profils débutant / enfant.
+`keepKeyring` dispense l'utilisateur de la réinitialisation du trousseau de
+connexion qui suit un changement de mot de passe administrateur (lu par le
+module gnome de NixOS).
 
 :::caution[Signets NFS]
 Ne pas déclarer `gtk.gtk3.bookmarks` depuis ce module — tant que les partages
-home NFS sont actifs, `home/profiles/minimal/nfs.nix` détient ce fichier et le
-réécrit.
+home NFS sont actifs, `home/profiles/minimal/nfs.nix` détient ce fichier et
+l'écrase.
 :::
 
 * **enable** `bool` Activer les réglages gnome pour home manager
 * **hideTechnicalIcons** `bool` Masquer certaines icônes pour débutants / enfants / bébés
-* **keepKeyring** `bool` Conserver le trousseau de connexion quand l'admin change le mot de passe de session (trousseau avec un mot de passe propre)
+* **keepKeyring** `bool` Conserver le trousseau de connexion quand l'administrateur change le mot de passe de session (trousseau avec un mot de passe propre)
 
 ```nix
 darkone.home.gnome = {
@@ -226,22 +223,22 @@ darkone.home.gnome = {
 
 <hr/>
 
-{/* t:p 66e29bc700c56c059782e370db0f691a83609c85f44233ef1b041e62f5537ba4 */}
+{/* t:p 4b47fd0367f92539e7e8e32f6224b1541593fc953e81e0bc6ed033b9abc39b1d */}
 ### &#x1F3E0; darkone.home.imagery
 
 Logiciels de traitement d'images.
 
 Installe toujours la visionneuse légère (`geeqie`) et l'éditeur (`gimp`),
-puis superpose les outils par audience : `enableBeginner` ajoute `pinta`,
+puis ajoute les outils selon le public : `enableBeginner` ajoute `pinta`,
 `enablePro` ajoute `inkscape`/`krita`/`yed`, `enable3D` (avec
-`enablePro`) ajoute `blender`, `enableCAD` ajoute `freecad` (de nixpkgs stable
-pour éviter l'agitation Qt), et `enableCli` ajoute `imagemagick`/`jhead`.
+`enablePro`) ajoute `blender`, `enableCAD` ajoute `freecad`, et `enableCli`
+ajoute `imagemagick`/`jhead`.
 
-* **enable** `bool` Création d'images
+* **enable** `bool` Création iconographique
 * **enablePro** `bool` Logiciels de traitement d'images supplémentaires pour les professionnels
 * **enableBeginner** `bool` Logiciels de traitement d'images supplémentaires pour les débutants
 * **enable3D** `bool` Logiciels 3D
-* **enableCAD** `bool` Logiciels CAO
+* **enableCAD** `bool` Logiciels de CAO
 * **enableCli** `bool` Outils CLI (imagemagick, jhead...)
 
 ```nix
@@ -255,50 +252,55 @@ darkone.home.imagery = {
 };
 ```
 
-{/* t:p 6ead6a8f78c5432c5d37e53fc79876316270cdadcd91b4b5c6e702475e4d7b67 */}
+<hr/>
+
+{/* t:p 3ede0acdc4f8c45c11a99762b637ff2163a89d672f4d45e6a145888af50f725f */}
 ### &#x1F3E0; darkone.home.mime
 
-Module types Mime DNF. (en cours)
+Applications par défaut (`xdg.mimeApps`) pour documents, images, audio, vidéo.
 
-:::note
-Ce module définit les applications par défaut selon le profil utilisateur. Par exemple, éditeur de markdown pour...
-- Débutant (par défaut) : appostrophe, éditeur de texte gnome...
-- Avancé : zed, vim, vscode...
-:::
+Chaque type MIME liste les entrées desktop par préférence, la première
+installée gagne : Papers (PDF), Geeqie (images), Celluloid (vidéo), Audacious
+(audio), GNOME Text Editor (texte brut), Zed (Markdown).
 
-* **enable** `bool` Activer la mise à jour des applications par défaut DNF
+TODO : choix par profil (débutant : apps GNOME, avancé : Zed, vim,
+VS Code), scripts shell dans Zed, AsciiDoc dans GNOME Text Editor.
+
+* **enable** `bool` Activer la mise à jour des applications par défaut de DNF
 
 ```nix
 darkone.home.mime.enable = false;
 ```
 
-{/* t:p e9003f91f616b99c5c4df40e54ed03f1e4b439e82bb3344150764e2fdf41c934 */}
+<hr/>
+
+{/* t:p 1af4a1d424771272450ca799127048c63fac2325e3fb0e4f6a02bee96bfc61b8 */}
 ### &#x1F3E0; darkone.home.music
 
 Applications graphiques de création musicale et sonore.
 
-Classées par audience&nbsp;: `enablePro` (ardour, reaper, renoise,
+Classées par public : `enablePro` (ardour, reaper, renoise,
 rosegarden), `enableCreator` (decibels, hydrogen), `enableScore`
 (musescore, muse-sounds-manager), `enableFun` (mixxx, mousai),
 `enableCli` (mpg123, cmus, lilypond), `enableEasy` (gnome-music vs.
-audacious), `enableMpd` (MPD daemon, ncmpcpp, mpd-mpris), et
+audacious, GNOME uniquement), `enableMpd` (daemon MPD, ncmpcpp, mpd-mpris), et
 `enableDev` (lilypond).
 
-:::note[Bibliothèque musicale compatible NFS]
+:::note[Bibliothèque musicale NFS-aware]
 Quand l'hôte est un client NFS et que le réseau expose un service `nfs`
 dans la même zone, MPD lit son répertoire musical depuis le montage NFS
-(`/mnt/nfs/homes/$USER/Music`). Sinon il bascule sur la valeur locale
-`srv-dirs.homes`, puis sur `~/Music`.
+(`/mnt/nfs/homes/$USER/Music`). Sinon il revient à la valeur locale
+`srv-dirs.homes`, puis à `~/Music`.
 :::
 
-* **enable** `bool` Module d'accueil de création musicale
-* **enablePro** `bool` Outils lourds pour professionnels (rose, ardour...)
-* **enableFun** `bool` Outils audio amusants (mixxx...)
+* **enable** `bool` Module home de création musicale
+* **enablePro** `bool` Outils professionnels exigeants (rose, ardour...)
+* **enableFun** `bool` Outils audio ludiques (mixxx...)
 * **enableCli** `bool` Outils audio en ligne de commande (mpg123, cmus, moc...)
 * **enableDev** `bool` Logiciels audio pour développeurs (lilypond...)
-* **enableMpd** `bool` Démon MPD et lecteurs (mpd, ncmpcpp...)
-* **enableEasy** `bool` Outils faciles plutôt qu'efficaces (gnome-music vs audacious...)
-* **enableScore** `bool` Logiciels de partitions (musescore...)
+* **enableMpd** `bool` Daemon MPD et lecteurs (mpd, ncmpcpp...)
+* **enableEasy** `bool` Outils simples plutôt qu'efficaces (gnome-music vs audacious...)
+* **enableScore** `bool` Logiciels de notation (musescore...)
 * **enableCreator** `bool` Outils de création pour débutants (lmms, hydrogen...)
 
 ```nix
@@ -317,77 +319,132 @@ darkone.home.music = {
 
 <hr/>
 
-{/* t:p f20ab83d32f83322f643d6920a494cd938b1823fce19244666b4d467dfb50cfe */}
+{/* t:p e74f4ce29a55ae65b8f7929dc70baaedeba4abf185d483ed1a8e37a846ede7e9 */}
+### &#x1F3E0; darkone.home.office.browsers
+
+Bureau DNF : Firefox ESR, LibreWolf et Chromium. Doc : en-tête de `../office.nix`.
+
+<hr/>
+
+{/* t:p 10bd5132481d8e57399efc9789c0a9d25d0594125e78544d4ac3941118d21afb */}
+### &#x1F3E0; darkone.home.office.matrix
+
+Bureau DNF : clients de bureau Matrix (Element, Fractal). Doc : en-tête de `../office.nix`.
+
+<hr/>
+
+{/* t:p 5cf5ca4bc132bb171f6e78e13fa26ef48a53d5facd87694dd852efc25b3ee88a */}
+### &#x1F3E0; darkone.home.office.nextcloud
+
+Bureau DNF : client Nextcloud et GNOME Online Accounts. Doc : en-tête de `../office.nix`.
+
+* **webdavLogin** `package` assistant `nextcloud-webdav-login`, installé par la liste de paquets du bureau.
+
+```nix
+darkone.home.office.nextcloud.webdavLogin = nextcloudWebdavLogin;
+```
+
+<hr/>
+
+{/* t:p 0c50f5cc5fe4a90d254227776cc14748d3b7576d0f27d70c5daf70fdf6db7a0d */}
+### &#x1F3E0; darkone.home.office.pandoc
+
+Bureau DNF : `md2pdf` et la chaîne d'outils pandoc. Doc : en-tête de `../office.nix`.
+
+* **md2pdf** `package` commande `md2pdf`, installée par la liste de paquets du bureau.
+
+```nix
+darkone.home.office.pandoc.md2pdf = md2pdf;
+```
+
+<hr/>
+
+{/* t:p cc98e19f321c99680044aa6b6ccb95d27a5fcedf252d202e6d6b6b95ac58fde1 */}
 ### &#x1F3E0; darkone.home.office
 
-Outils courants pour le poste bureautique.
+Bureau de bureau : navigateurs, suite bureautique, communication, cloud et outils PDF.
+
+Les paquets sont contrôlés par des drapeaux par public (`enableEssentials`,
+`enableOffice`, `enableTools`, `enableCommunication`...). Sous-modules (`office/`) :
+
+- `browsers.nix` : Firefox ESR (LibreWolf, Chromium) avec politiques partagées :
+  page d'accueil et locale de la zone, protection contre le suivi, Bitwarden
+  épinglé si le réseau fait tourner Vaultwarden.
+- `matrix.nix` : dès que le réseau fait tourner Matrix, Element Desktop,
+  pré-configuré (SSO Kanidm) ; Fractal avec `enableCommunication`.
+- `nextcloud.nix` : client de bureau lié à l'instance du réseau, et
+  `nextcloud-webdav-login` pour GNOME Online Accounts.
+- `pandoc.nix` : `md2pdf` et les réglages par défaut de pandoc (`enablePandoc`).
 
 * **enable** `bool` Paquets utiles par défaut
-* **enableMore** `bool` Paquets alternatifs supplémentaires
-* **enableUnsafeFeatures** `bool` Fonctions pour les utilisateurs avancés non enfants
-* **enableUBlock** `bool` Activer le plugin uBlock
-* **enableTools** `bool` Petits outils (GNOME) : iotas, dialect, etc.
-* **enableProductivity** `bool` Applications de productivité (Obsidian, gestion du temps, projets, etc.)
+* **enableMore** `bool` Plus de paquets alternatifs
+* **enableUnsafeFeatures** `bool` Fonctionnalités pour utilisateurs avancés non-enfants
+* **enableUBlock** `bool` Activer le plugin ublock
+* **enableTools** `bool` Petits outils (gnome) (iotas, dialect, etc.)
+* **enableProductivity** `bool` Apps de productivité (obsidian, gestion du temps, projets, etc.)
 * **enableCommunication** `bool` Outils de communication
-* **enableOffice** `bool` Paquets bureautiques (LibreOffice, hunspell, polices...)
-* **enableFirefox** `bool` Activer Firefox
-* **enableLibreWolf** `bool` Activer LibreWolf (alternative à Firefox)
-* **enableChromium** `bool` Activer Chromium
-* **enableBrave** `bool` Activer le navigateur Brave
-* **enableEmail** `bool` Paquets de gestion du courrier (Thunderbird)
-* **enableSecurity** `bool` Outils de sécurité (KeePass)
-* **enableCalendarContacts** `bool` Agenda, contacts, tâches et applications associées
-* **enablePandoc** `bool` Chaîne Markdown vers PDF : pandoc, typst, polices Gentium et DejaVu,
-  ainsi que la commande `md2pdf` (corps Gentium, A4, langue de la zone).
+* **enableOffice** `bool` Paquets bureautiques (libreoffice, hunspell, polices...)
+* **enableFirefox** `bool` Activer firefox
+* **enableLibreWolf** `bool` Activer LibreWolf (alternative à firefox)
+* **enableChromium** `bool` Activer chromium
+* **enableBrave** `bool` Activer Brave Browser
+* **enableEmail** `bool` Paquets de gestion du courrier (thunderbird)
+* **enableSecurity** `bool` Outils de sécurité (keepass)
+* **enableCalendarContacts** `bool` Calendrier, contacts, tâches et apps associées
+* **enablePandoc** `bool` Chaîne d'outils Markdown vers PDF : pandoc, typst, polices Gentium et DejaVu,
+  et la commande `md2pdf` (corps Gentium, A4, la langue de la zone).
 
   ```sh
   md2pdf notes.md              # A4, 10pt -&gt; notes.pdf
   md2pdf --big notes.md        # A4, 12pt
-  md2pdf --tablet notes.md     # A6, 9pt (11pt with --big), zoomed on a tablet
-  md2pdf -e context notes.md   # ConTeXt engine (enablePandocContext)
+  md2pdf --tablet notes.md     # A6, 9pt (11pt avec --big), zoomé sur une tablette
+  md2pdf -e context notes.md   # moteur ConTeXt (enablePandocContext)
   ```
 
-  Le moteur est typst. Il rend le TeX brut usuel dans les notes (`\pagebreak`,
-  `\placecontent`, `\centerline`...) et signale tout le reste. Les colonnes
-  de tableau s'ajustent à leur contenu, sauf si les tirets du séparateur
-  diffèrent en longueur (`|--|--------|`) : les largeurs suivent alors ces
-  tirets. Un simple `pandoc notes.md -o notes.pdf` utilise le même moteur,
-  la même langue et les mêmes polices. Sous GNOME, les trois mises en page
-  sont aussi proposées au clic droit dans Nautilus (menu Scripts).
-* **enablePandocContext** `bool` ConTeXt comme moteur PDF alternatif, `md2pdf -e context` (~900 MiB, nécessite enablePandoc)
-* **pandocAuthor** `nullOr str` Créateur inscrit dans les PDF par `md2pdf`. `null` reprend le nom complet du compte.
+  Le moteur est typst. Il rend le TeX brut courant dans les notes (`\pagebreak`,
+  `\placecontent`, `\centerline`...) et signale tout autre élément. Les colonnes
+  des tableaux s'ajustent à leur contenu, sauf si les tirets de séparation
+  diffèrent en longueur (`|--|--------|`) : les largeurs les suivent alors.
+  Un simple `pandoc notes.md -o notes.pdf` utilise le même moteur, la même
+  langue et les mêmes polices.
+  Sous GNOME, les trois dispositions sont aussi proposées au clic droit dans
+  Nautilus (menu Scripts).
+* **enablePandocContext** `bool` ConTeXt comme moteur PDF alternatif, `md2pdf -e context` (~900 MiO, requiert enablePandoc)
+* **pandocAuthor** `nullOr str` Créateur écrit dans les PDF par `md2pdf`. `null` prend le nom complet du compte.
 * **enableEssentials** `bool` Outils essentiels
-* **huntspellLang** `str` [Langue Hunspell](https://mynixos.com/nixpkgs/packages/hunspellDicts)
-* **enableElementAutoStart** `bool` Démarrer Element Desktop à la connexion si un serveur Matrix local est présent
-* **enableFractalAutoStart** `bool` Démarrer Fractal à la connexion si un serveur Matrix local est présent (opt-in, voir les réserves ci-dessous)
-* **nextcloud.enable** `bool` Installer le client Nextcloud desktop, pré-lié à l'instance réseau
+* **hunspellLang** `str` [Dictionnaire Hunspell](https://mynixos.com/nixpkgs/packages/hunspellDicts)
+* **enableElementAutoStart** `bool` Démarrage automatique d'Element Desktop (masqué) à la connexion quand le réseau fait tourner Matrix
+* **enableFractalAutoStart** `bool` Démarrage automatique de Fractal à la connexion, avec `enableCommunication` (opt-in : pas de mode arrière-plan, sa fenêtre s'ouvre)
+* **nextcloud.enable** `bool` Installer le client de bureau Nextcloud, pré-lié à l'instance du réseau
 * **nextcloud.server** `nullOr str` Instance Nextcloud à laquelle le client se lie. `null` choisit celle déclarée
-  sur le réseau (cette zone en priorité). À définir pour cibler plutôt une instance
-  locale ou externe.
-* **nextcloud.enableAutoStart** `bool` Lancer le client Nextcloud en arrière-plan à la connexion
-* **nextcloud.enableWebdav** `bool` Installer `nextcloud-webdav-login`, un utilitaire ponctuel qui s'authentifie
+  sur le réseau (cette zone d'abord). Définissez-la pour viser une instance
+  locale ou externe à la place.
+* **nextcloud.enableAutoStart** `bool` Démarrer le client Nextcloud en arrière-plan à la connexion
+* **nextcloud.enableWebdav** `bool` Fournir `nextcloud-webdav-login`, un assistant one-shot qui authentifie
   via le navigateur (SSO Kanidm) et enregistre le résultat comme compte GNOME
-  Online Account : fichiers en WebDAV dans le gestionnaire de fichiers, plus
-  agenda et contacts dans Evolution. Nécessaire car Nextcloud refuse de créer
-  un mot de passe d'application depuis son interface web pour un utilisateur OIDC.
+  Online : fichiers via WebDAV dans le gestionnaire de fichiers, plus
+  calendrier et contacts dans Evolution. Nécessaire car Nextcloud refuse de
+  créer un mot de passe d'application depuis son interface web pour un
+  utilisateur OIDC.
 
-  L'utilitaire affiche aussi le mot de passe d'application : tout autre
-  client WebDAV peut donc viser le même compte.
+  L'assistant affiche aussi le mot de passe d'application, si bien que tout
+  autre client WebDAV peut être pointé vers le même compte.
 
   :::note[GNOME uniquement]
   Le compte est écrit là où GNOME Online Accounts le lit, ce que
-  `darkone.graphic.gnome` active de lui-même dès que le réseau porte un
-  cloud. Sur un autre poste, le mot de passe affiché reste utilisable.
+  `darkone.graphic.gnome` active dès que le réseau porte un cloud.
+  Sur un autre bureau, le mot de passe affiché reste utilisable.
   :::
 
   Ignoré quand `darkone.home.office.nextcloud.enable` est désactivé.
 * **nextcloud.syncDir** `nullOr str` Dossier local pré-rempli dans l'assistant de configuration, relatif à `$HOME`.
 
-  :::caution[Aucune synchronisation par défaut]
-  Volontairement laissé `null`. L'assistant s'arrête alors sur sa page de
-  dossier et l'utilisateur décide quoi, s'il y a lieu, synchroniser. Le
+  :::caution[Pas de synchro par défaut]
+  Laissé `null` volontairement. L'assistant s'arrête alors sur sa page de
+  dossier et l'utilisateur décide quoi synchroniser, le cas échéant. Le
   définir saute cette page.
   :::
+* **shared** `raw` Valeurs du bureau partagées avec les sous-modules `office/`.
 
 ```nix
 darkone.home.office = {
@@ -410,7 +467,7 @@ darkone.home.office = {
   enablePandocContext = false;
   pandocAuthor = "Jane Doe";
   enableEssentials = true;
-  huntspellLang = "en-us";
+  hunspellLang = "en-us";
   enableElementAutoStart = true;
   enableFractalAutoStart = false;
   nextcloud.enable = detectedNextcloud != null;
@@ -418,6 +475,19 @@ darkone.home.office = {
   nextcloud.enableAutoStart = true;
   nextcloud.enableWebdav = true;
   nextcloud.syncDir = "Nextcloud";
+  shared = {
+        inherit
+          lang
+          country
+          hasHomepage
+          homeUrl
+          hasMatrix
+          hasVaultwarden
+          nextcloudUrl
+          hasNextcloud
+          hasNextcloudWebdav
+          ;
+      };
 };
 ```
 
@@ -559,33 +629,32 @@ darkone.home.umi = {
 
 <hr/>
 
-{/* t:p c4e7ccd302eeb7b1f711e952c7b240e65376ef7ae3efef2d060a20669491507b */}
+{/* t:p c8dc3d8872562d6c75b55c01e0ea3ab5dcba60abde629944a4da0e2234e1c417 */}
 ### &#x1F3E0; darkone.home.video
 
 Outils et applications vidéo.
 
-Installe par défaut le lecteur (`celluloid`, interface GTK4/libadwaita au-dessus de mpv)
-et conditionne les autres par audience : `enableTools` (ffmpeg, mlt, vlc,
-video-trimmer, parabolic), `enableEditing` (kdenlive + shotcut depuis stable
-nixpkgs), `enableCreator` (OBS Studio avec `obs-backgroundremoval`,
-`obs-vkcapture`, etc.), `enableUnfree` (davinci-resolve depuis stable),
-et `enableAlternative` (mpv).
+Installe toujours le lecteur par défaut (`celluloid`, interface GTK4/libadwaita
+sur mpv) et contrôle le reste par public : `enableTools` (ffmpeg, mlt, vlc,
+video-trimmer, parabolic), `enableEditing` (kdenlive, shotcut),
+`enableCreator` (OBS Studio avec `obs-backgroundremoval`, `obs-vkcapture`,
+etc.), `enableUnfree` (davinci-resolve) et `enableAlternative` (mpv).
 
 :::caution[Pas GNOME Showtime]
-Showtime 50 se bloque sur certains fichiers — `get_state(CLOCK_TIME_NONE)` sur le
-thread principal, [GNOME/showtime#299](https://gitlab.gnome.org/GNOME/showtime/-/work_items/299).
-Le processus bloqué conserve le nom D-Bus `org.gnome.Showtime`, donc chaque
-lancement ultérieur est activé vers celui-ci et ne fait rien silencieusement :
-ni fenêtre, ni log.
-Non corrigé en amont à la version 50.0.
+Showtime 50 plante en interbloqué sur certains fichiers — `get_state(CLOCK_TIME_NONE)` sur le
+fil principal, [GNOME/showtime#299](https://gitlab.gnome.org/GNOME/showtime/-/work_items/299).
+Le processus bloqué conserve le nom D-Bus `org.gnome.Showtime`, si bien que
+chaque lancement ultérieur est activé sur lui et ne fait silencieusement rien :
+ni fenêtre, ni journal.
+Non corrigé en amont en 50.0.
 :::
 
-* **enable** `bool` Module maison de création et d'outils vidéo
+* **enable** `bool` Module home de création et d'outils vidéo
 * **enableTools** `bool` Outils vidéo pour professionnels
-* **enableEditing** `bool` Outils de montage vidéo (kdenlive…)
-* **enableCreator** `bool` Outils de création vidéo (obs…)
-* **enableUnfree** `bool` Applications vidéo non libres (davinci…)
-* **enableAlternative** `bool` Applications vidéo alternatives (mpv…)
+* **enableEditing** `bool` Outils de montage vidéo (kdenlive...)
+* **enableCreator** `bool` Outils de création vidéo (obs...)
+* **enableUnfree** `bool` Apps vidéo non libres (davinci...)
+* **enableAlternative** `bool` Apps vidéo alternatives (mpv...)
 
 ```nix
 darkone.home.video = {

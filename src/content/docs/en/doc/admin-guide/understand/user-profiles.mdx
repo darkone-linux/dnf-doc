@@ -74,26 +74,27 @@ A usage-oriented overview is available in the
 [user guide](/en/doc/user-guide/understand/profiles/).
 :::
 
-{/* t:p 4095d8f12d8b119e486adef9d7d18f42aa5a001e6e111979f4ac3bbda92bd83f */}
+{/* t:p db5bd4bcf99768f4f5589aac11c0a5d9fd943bd513bedca2b896608af31c34b8 */}
 ## The GNOME desktop
 
 | Element | Profiles | Behavior |
 |---|---|---|
 | Qt5 / Qt6 settings, NixOS manual | all | Icons hidden (manual accessible via `nixos-help`) |
 | "Support GNOME" notification | all | Disabled |
-| Document viewer | all | Papers, default PDF application (replaces Evince) |
+| Document viewer | all | Papers, the default PDF application (replaces Evince) |
 | Image viewer | all | Geeqie by default, if the `imagery` module is active |
 | GNOME extensions | non-technical | Icon hidden |
 | Terminal | non-technical | Console, absent from the dash, present in the applications grid |
 | Terminal | technical | Ghostty in the dash, if `darkone.home.advanced.enableTools` is active |
+| Element (Matrix) | all except `minimal`, `baby` | Launched hidden if the network has Matrix |
 
-:::note[Locked dash]
+:::note[Dash locked]
 The favorites list (`favorite-apps`) is locked for the whole host: a
-technical profile without Ghostty therefore does not have Console in its dash either.
+technical profile without Ghostty therefore has no Console in its dash either.
 :::
 
-{/* t:p a457e1b1c9e9a250f11800283e6121e4738416e7bd4434b723a7be4fb49a4a57 */}
-## Assigning a profile
+{/* t:p a5220ac2a170024a2b24bd7c781ba1b2329995d86835c648d26a689a118c7dc5 */}
+## Assign a profile
 
 ```yaml
 # etc/config.yaml
@@ -105,7 +106,8 @@ users:
     groups: ["global"]
 ```
 
-:::note[Customizing]
-A profile can be created or overridden in `usr/home/profiles/<name>/`. Reusable
-building blocks are the [Home Manager modules](/en/ref/modules/home/).
+:::note[Customize]
+Create or override a profile in `usr/home/profiles/<nom>/`, a single account
+in `usr/users/<login>/default.nix` (`darkone.home.*` options, without
+`lib.mkForce`). The reusable building blocks are the [Home Manager modules](/en/ref/modules/home/).
 :::

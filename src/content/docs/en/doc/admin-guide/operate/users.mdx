@@ -247,3 +247,13 @@ To keep a keyring protected by a clean password:
 # usr/users/<login>/default.nix
 darkone.home.gnome.keepKeyring = true;
 ```
+
+{/* t:p c543bae382a43528fa23c6446c3d6b59ef3445163d818d87cd9b6bac969d27e3 */}
+### A `.bkp` file in a home directory?
+
+An application has replaced a file managed by Home Manager (`mimeapps.list`,
+settings…). At the next activation, it becomes `<file>.bkp` and the declared
+version takes its place back.
+
+- Only one backup per file: the previous one is overwritten.
+- Change to keep: declare it in `usr/users/<login>/default.nix`.

@@ -51,30 +51,27 @@ darkone.home.advanced = {
 
 <hr/>
 
-{/* t:p 592e6eb518c867d3bedc4a5cee1c1f6ab24aa02a8eb94805f2a35d2d6db84123 */}
+{/* t:p db416e8f77abfb580d55ac06bcc0859a45abb819942b6d4b848f929b36bd06f4 */}
 ### &#x1F3E0; darkone.home.ai
 
 AI coding tools and supporting utilities.
 
 :::note[Flags]
-- `darkone.home.ai.enable` master switch installs utility packages
-  (aichat, llm, fabric-ai, gh, lazygit, direnv, code-quality tools, etc.)
-  and enables the per-agent flag system below.
-- `darkone.home.ai.enable{Claude,OpenCode,Codex,Aider,Goose}` each
-  installs and configures a specific AI coding agent.
-- `darkone.home.ai.preferLocal` when combined with a local `darkone.service.ai`
-  ollama host, agents default to the local model instead of cloud APIs.
+- `darkone.home.ai.enable`: utility packages (aichat, llm, fabric-ai, gh,
+  lazygit, direnv, Rust and code-quality tools) and the agent flags below.
+- `darkone.home.ai.enable{Claude,OpenCode,Codex,Antigravity,Aider,Goose}`:
+  one AI coding agent each.
+- `darkone.home.ai.preferLocal`: OpenCode defaults to the local ollama model
+  on a `darkone.service.ai` host.
 :::
 
 :::tip[Per-host wiring]
-This module reads `osConfig.darkone.service.ai.enable` to detect a
-local ollama host.  On such hosts, `gollama`, the `ollama` CLI, and
-local-model defaults for Aider / OpenCode are activated automatically.
+On a local ollama host (`darkone.service.ai`): `gollama` and the `ollama`
+CLI, and Aider falls back on the local model when Claude is off.
 
-`programs.gh` is enabled with the `github-copilot-cli` extension.
-OpenCode gets two MCP servers (filesystem, fetch) via `npx -y`.
-Claude Code enforces an allow/ask/deny permission matrix and an RTK
-governance hook on Bash calls.
+GitHub CLI (`gh`) and Copilot CLI (`copilot`) are installed. Claude Code
+enforces an allow/ask/deny permission matrix and an RTK governance hook on
+Bash calls.
 :::
 
 :::caution[Writable settings.json]
@@ -108,19 +105,18 @@ darkone.home.ai = {
 
 <hr/>
 
-{/* t:p 0fabfb5339e05d605bca4e56694acf6244ae0c63d5b9fa84a7005fab56fe6689 */}
+{/* t:p 0521a41214fc89d015d5c6028a290a99ffda28e1b2114015791c4ccc44a7fa3f */}
 ### &#x1F3E0; darkone.home.audio
 
 Audio tools and effects.
 
-Installs an audio player (`vlc`) and the MP3 encoder (`lame`)
-unconditionally, then layers editors and effects (`audacity`,
-`easyeffects` with the `easyeffects-fw16` preset) when `enableTools` is
-set. Real-time noise reduction (`noisetorch`) is intentionally disabled
-because it requires PulseAudio.
+Installs the MP3 encoder (`lame`) and, with GNOME, an audio player
+(`vlc`), then layers editors and effects (`audacity`, `easyeffects`) when
+`enableTools` is set. Real-time noise reduction (`noisetorch`) is
+intentionally disabled because it requires PulseAudio.
 
 * **enable** `bool` Audio tools
-* **enableTools** `bool` Audio tools / editors (audacity, easyeffect, noisetorch...)
+* **enableTools** `bool` Audio tools / editors (audacity, easyeffects)
 
 ```nix
 darkone.home.audio = {
@@ -195,16 +191,15 @@ darkone.home.games = {
 
 <hr/>
 
-{/* t:p ebcb7d14c8150897d17f424fd86294a72c6d5763c5bd151bf2ec0767d625b935 */}
+{/* t:p 1b44d5c67d18f80e640f8cb6b017fa17f337dff61244f49e80456f5f168bcfd3 */}
 ### &#x1F3E0; darkone.home.gnome
 
 Gnome tweaks for home-manager.
 
-Hides the bare `xterm`, Qt5/Qt6 settings and NixOS manual launchers
-unconditionally, Extensions for non-technical profiles, registers polished
-`.desktop` entries for `scrcpy` and `scrcpy-console` when the package is
-part of the user's `home.packages`, and (when `hideTechnicalIcons` is set)
-hides Settings, Printers and File Roller icons for beginner / child profiles.
+Hides launchers: the bare `xterm`, Qt5/Qt6 settings and NixOS manual for
+every profile, `scrcpy` and `scrcpy-console` when installed, Extensions for
+non-technical profiles, and (`hideTechnicalIcons`) Settings, Printers and
+File Roller for beginner / child profiles.
 `keepKeyring` opts the user out of the login keyring reset that follows an
 admin password change (read by the NixOS gnome module).
 
@@ -227,7 +222,7 @@ darkone.home.gnome = {
 
 <hr/>
 
-{/* t:p 66e29bc700c56c059782e370db0f691a83609c85f44233ef1b041e62f5537ba4 */}
+{/* t:p 4b47fd0367f92539e7e8e32f6224b1541593fc953e81e0bc6ed033b9abc39b1d */}
 ### &#x1F3E0; darkone.home.imagery
 
 Image processing software.
@@ -235,8 +230,8 @@ Image processing software.
 Always installs the lightweight viewer (`geeqie`) and editor (`gimp`),
 then layers tooling by audience: `enableBeginner` adds `pinta`,
 `enablePro` adds `inkscape`/`krita`/`yed`, `enable3D` (with
-`enablePro`) adds `blender`, `enableCAD` adds `freecad` (from stable
-nixpkgs to avoid Qt churn), and `enableCli` adds `imagemagick`/`jhead`.
+`enablePro`) adds `blender`, `enableCAD` adds `freecad`, and `enableCli`
+adds `imagemagick`/`jhead`.
 
 * **enable** `bool` Imagery creation
 * **enablePro** `bool` Additional image processing software for professionals
@@ -258,16 +253,17 @@ darkone.home.imagery = {
 
 <hr/>
 
-{/* t:p 6ead6a8f78c5432c5d37e53fc79876316270cdadcd91b4b5c6e702475e4d7b67 */}
+{/* t:p 3ede0acdc4f8c45c11a99762b637ff2163a89d672f4d45e6a145888af50f725f */}
 ### &#x1F3E0; darkone.home.mime
 
-Mime types DNF module. (wip)
+Default applications (`xdg.mimeApps`) for documents, images, audio, video.
 
-:::note
-This module define default applications depending on user profile. For example, markdown editor for...
-- Beginner (default): apostrophe, gnome text editor...
-- Advanced: zed, vim, vscode...
-:::
+Each MIME type lists desktop entries by preference, the first installed one
+wins: Papers (PDF), Geeqie (images), Celluloid (video), Audacious (audio),
+GNOME Text Editor (plain text), Zed (Markdown).
+
+TODO: per-profile choices (beginner: GNOME apps, advanced: Zed, vim,
+VS Code), shell scripts in Zed, AsciiDoc in GNOME Text Editor.
 
 * **enable** `bool` Enable DNF default applications update
 
@@ -277,7 +273,7 @@ darkone.home.mime.enable = false;
 
 <hr/>
 
-{/* t:p e9003f91f616b99c5c4df40e54ed03f1e4b439e82bb3344150764e2fdf41c934 */}
+{/* t:p 1af4a1d424771272450ca799127048c63fac2325e3fb0e4f6a02bee96bfc61b8 */}
 ### &#x1F3E0; darkone.home.music
 
 Graphical music and sound creation apps.
@@ -286,7 +282,7 @@ Categorised by audience: `enablePro` (ardour, reaper, renoise,
 rosegarden), `enableCreator` (decibels, hydrogen), `enableScore`
 (musescore, muse-sounds-manager), `enableFun` (mixxx, mousai),
 `enableCli` (mpg123, cmus, lilypond), `enableEasy` (gnome-music vs.
-audacious), `enableMpd` (MPD daemon, ncmpcpp, mpd-mpris), and
+audacious, GNOME only), `enableMpd` (MPD daemon, ncmpcpp, mpd-mpris), and
 `enableDev` (lilypond).
 
 :::note[NFS-aware music library]
@@ -322,10 +318,62 @@ darkone.home.music = {
 
 <hr/>
 
-{/* t:p f20ab83d32f83322f643d6920a494cd938b1823fce19244666b4d467dfb50cfe */}
+{/* t:p e74f4ce29a55ae65b8f7929dc70baaedeba4abf185d483ed1a8e37a846ede7e9 */}
+### &#x1F3E0; darkone.home.office.browsers
+
+DNF office: Firefox ESR, LibreWolf and Chromium. Doc: `../office.nix` header.
+
+<hr/>
+
+{/* t:p 10bd5132481d8e57399efc9789c0a9d25d0594125e78544d4ac3941118d21afb */}
+### &#x1F3E0; darkone.home.office.matrix
+
+DNF office: Matrix desktop clients (Element, Fractal). Doc: `../office.nix` header.
+
+<hr/>
+
+{/* t:p 5cf5ca4bc132bb171f6e78e13fa26ef48a53d5facd87694dd852efc25b3ee88a */}
+### &#x1F3E0; darkone.home.office.nextcloud
+
+DNF office: Nextcloud client and GNOME Online Accounts. Doc: `../office.nix` header.
+
+* **webdavLogin** `package` `nextcloud-webdav-login` helper, installed by the office package list.
+
+```nix
+darkone.home.office.nextcloud.webdavLogin = nextcloudWebdavLogin;
+```
+
+<hr/>
+
+{/* t:p 0c50f5cc5fe4a90d254227776cc14748d3b7576d0f27d70c5daf70fdf6db7a0d */}
+### &#x1F3E0; darkone.home.office.pandoc
+
+DNF office: `md2pdf` and the pandoc toolchain. Doc: `../office.nix` header.
+
+* **md2pdf** `package` `md2pdf` command, installed by the office package list.
+
+```nix
+darkone.home.office.pandoc.md2pdf = md2pdf;
+```
+
+<hr/>
+
+{/* t:p cc98e19f321c99680044aa6b6ccb95d27a5fcedf252d202e6d6b6b95ac58fde1 */}
 ### &#x1F3E0; darkone.home.office
 
-Common tools for office desktop.
+Office desktop: browsers, office suite, communication, cloud and PDF tools.
+
+Packages are gated by audience flags (`enableEssentials`, `enableOffice`,
+`enableTools`, `enableCommunication`...). Sub-modules (`office/`):
+
+- `browsers.nix`: Firefox ESR (LibreWolf, Chromium) with shared policies:
+  zone homepage and locale, tracking protection, Bitwarden pinned when the
+  network runs Vaultwarden.
+- `matrix.nix`: Element Desktop as soon as the network runs Matrix,
+  pre-configured (Kanidm SSO); Fractal with `enableCommunication`.
+- `nextcloud.nix`: desktop client bound to the network instance, and
+  `nextcloud-webdav-login` for GNOME Online Accounts.
+- `pandoc.nix`: `md2pdf` and the pandoc defaults (`enablePandoc`).
 
 * **enable** `bool` Default useful packages
 * **enableMore** `bool` More alternative packages
@@ -334,7 +382,7 @@ Common tools for office desktop.
 * **enableTools** `bool` Little (gnome) tools (iotas, dialect, etc.)
 * **enableProductivity** `bool` Productivity apps (obsidian, time mgm, projects, etc.)
 * **enableCommunication** `bool` Communication tools
-* **enableOffice** `bool` Office packages (libreoffice, huntspell, fonts...)
+* **enableOffice** `bool` Office packages (libreoffice, hunspell, fonts...)
 * **enableFirefox** `bool` Enable firefox
 * **enableLibreWolf** `bool` Enable LibreWolf (firefox alternative)
 * **enableChromium** `bool` Enable chromium
@@ -362,9 +410,9 @@ Common tools for office desktop.
 * **enablePandocContext** `bool` ConTeXt as an alternative PDF engine, `md2pdf -e context` (~900 MiB, needs enablePandoc)
 * **pandocAuthor** `nullOr str` Creator written into PDFs by `md2pdf`. `null` takes the account's full name.
 * **enableEssentials** `bool` Essential tools
-* **huntspellLang** `str` [Huntspell Lang](https://mynixos.com/nixpkgs/packages/hunspellDicts)
-* **enableElementAutoStart** `bool` Auto-start Element Desktop on login when a local Matrix server is present
-* **enableFractalAutoStart** `bool` Auto-start Fractal on login when a local Matrix server is present (opt-in, see caveats below)
+* **hunspellLang** `str` [Hunspell dictionary](https://mynixos.com/nixpkgs/packages/hunspellDicts)
+* **enableElementAutoStart** `bool` Auto-start Element Desktop (hidden) on login when the network runs Matrix
+* **enableFractalAutoStart** `bool` Auto-start Fractal on login, with `enableCommunication` (opt-in: no background mode, its window opens)
 * **nextcloud.enable** `bool` Install the Nextcloud desktop client, pre-bound to the network instance
 * **nextcloud.server** `nullOr str` Nextcloud instance the client binds to. `null` picks the one declared
   on the network (this zone first). Set it to target a local or external
@@ -393,6 +441,7 @@ Common tools for office desktop.
   the user decides what, if anything, to synchronise. Setting it skips
   that page.
   :::
+* **shared** `raw` Office values shared with the `office/` sub-modules.
 
 ```nix
 darkone.home.office = {
@@ -415,7 +464,7 @@ darkone.home.office = {
   enablePandocContext = false;
   pandocAuthor = "Jane Doe";
   enableEssentials = true;
-  huntspellLang = "en-us";
+  hunspellLang = "en-us";
   enableElementAutoStart = true;
   enableFractalAutoStart = false;
   nextcloud.enable = detectedNextcloud != null;
@@ -423,6 +472,19 @@ darkone.home.office = {
   nextcloud.enableAutoStart = true;
   nextcloud.enableWebdav = true;
   nextcloud.syncDir = "Nextcloud";
+  shared = {
+        inherit
+          lang
+          country
+          hasHomepage
+          homeUrl
+          hasMatrix
+          hasVaultwarden
+          nextcloudUrl
+          hasNextcloud
+          hasNextcloudWebdav
+          ;
+      };
 };
 ```
 
@@ -559,17 +621,16 @@ darkone.home.umi = {
 
 <hr/>
 
-{/* t:p c4e7ccd302eeb7b1f711e952c7b240e65376ef7ae3efef2d060a20669491507b */}
+{/* t:p c8dc3d8872562d6c75b55c01e0ea3ab5dcba60abde629944a4da0e2234e1c417 */}
 ### &#x1F3E0; darkone.home.video
 
 Video tools and applications.
 
 Always installs the default player (`celluloid`, GTK4/libadwaita front-end
 over mpv) and gates the rest by audience: `enableTools` (ffmpeg, mlt, vlc,
-video-trimmer, parabolic), `enableEditing` (kdenlive + shotcut from stable
-nixpkgs), `enableCreator` (OBS Studio with `obs-backgroundremoval`,
-`obs-vkcapture`, etc.), `enableUnfree` (davinci-resolve from stable),
-and `enableAlternative` (mpv).
+video-trimmer, parabolic), `enableEditing` (kdenlive, shotcut),
+`enableCreator` (OBS Studio with `obs-backgroundremoval`, `obs-vkcapture`,
+etc.), `enableUnfree` (davinci-resolve) and `enableAlternative` (mpv).
 
 :::caution[Not GNOME Showtime]
 Showtime 50 deadlocks on some files — `get_state(CLOCK_TIME_NONE)` on the
