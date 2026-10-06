@@ -106,6 +106,7 @@ users:
 ```
 
 :::note[Personnaliser]
-On crée ou surcharge un profil dans `usr/home/profiles/<nom>/`. Les briques
-réutilisables sont les [modules Home Manager](/fr/ref/modules/home/).
+On crée ou surcharge un profil dans `usr/home/profiles/<nom>/`, un seul compte
+dans `usr/users/<login>/default.nix` (options `darkone.home.*`, sans
+`lib.mkForce`). Les briques réutilisables sont les [modules Home Manager](/fr/ref/modules/home/).
 :::
