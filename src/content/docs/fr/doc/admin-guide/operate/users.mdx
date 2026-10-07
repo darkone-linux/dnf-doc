@@ -259,3 +259,13 @@ déclarée reprend sa place.
 
 - Une seule sauvegarde par fichier : la précédente est écrasée.
 - Changement à conserver : le déclarer dans `usr/users/<login>/default.nix`.
+
+### La liste des comptes à la connexion ?
+
+Par défaut, l'écran de connexion GDM demande de saisir l'identifiant. Pour
+choisir son compte dans une liste, sur un poste partagé par exemple&nbsp;:
+
+```nix
+# usr/machines/<hôte>/configuration.nix
+darkone.graphic.gnome.enableGdmSelector = true;
+```
