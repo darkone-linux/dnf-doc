@@ -117,4 +117,5 @@ users:
 On crée ou surcharge un profil dans `usr/home/profiles/<nom>/`, un seul compte
 dans `usr/users/<login>/default.nix` (options `darkone.home.*`, sans
 `lib.mkForce`). Les briques réutilisables sont les [modules Home Manager](/fr/ref/modules/home/).
+Un programme d'un profil se retire avec `excludePackages` (modules `games`, `education`).
 :::
