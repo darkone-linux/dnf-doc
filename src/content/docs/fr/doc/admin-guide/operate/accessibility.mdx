@@ -177,6 +177,7 @@ Options de `darkone.home.umi`, à poser dans `usr/users/<login>/default.nix`.
 | `cursorFilterSpeed` | `4.0` | Réactivité du pointeur (Talon&nbsp;: `2.0`) |
 | `enableGazeControl` | `true` | Le pointeur suit le regard |
 | `enableHeadControl` | `false` | La tête déplace aussi le pointeur |
+| `headSpeed` | `null` | Sensibilité de la tête (Talon&nbsp;: `1`) |
 | `enableHeadJump` | `false` | Un mouvement de tête ramène le pointeur au regard |
 | `enableMouseJump` | `false` | Bouger une souris vers le regard y ramène le pointeur |
 | `enableGazeFocus` | `false` | La fenêtre regardée prend le focus (expérimental) |
@@ -300,6 +301,48 @@ avec `enableTrackerAuto`.
 Recalibrer après un changement d'écran, de position du traqueur ou de
 l'utilisateur, ou d'éclairage.
 
+## Régler le pointeur à chaud
+
+Avec `enableHeadControl`, le regard amène le pointeur dans la zone visée et la
+tête l'affine. `headSpeed` en dessous de `1` atténue les mouvements de tête
+trop amples. Ces réglages s'essaient sans redéploiement, depuis la console
+(REPL) de Talon, et sont perdus au redémarrage de Talon.
+
+<Steps>
+
+1. **Ouvrir la console** de Talon de l'utilisateur, depuis un compte
+   administrateur de l'hôte&nbsp;:
+
+   ```sh
+   sudo -u alice env HOME=/home/alice /home/alice/.talon/.venv/bin/repl
+   ```
+
+2. **Lire les réglages appliqués**&nbsp;:
+
+   ```python
+   print(actions.user.umi_tuning())
+   ```
+
+3. **Essayer des valeurs**, l'utilisateur au poste&nbsp;:
+
+   | Commande | Effet |
+   |---|---|
+   | `actions.tracking.control_head_toggle(True)` | Active la tête |
+   | `actions.user.umi_head_speed(0.3)` | Tête 3 fois moins sensible |
+   | `actions.user.umi_head_speed(1)` | Sensibilité d'origine de Talon |
+   | `actions.user.umi_filter_speed(2, 4)` | Réactivité du regard et du pointeur |
+
+4. **Reporter les valeurs retenues** dans `usr/users/<login>/default.nix`
+   (`enableHeadControl`, `headSpeed`, `gazeFilterSpeed`, `cursorFilterSpeed`),
+   puis déployer.
+
+</Steps>
+
+:::caution[À valider]
+`headSpeed` agit sur la courbe d'accélération de la tête, un réglage interne
+de Talon. Son effet reste à mesurer sur un Tobii 5.
+:::
+
 {/* t:p aafb0344f2e16bc42c11104b0491de119988ec4e77d0fe0643dc6c17cd2e8b36 */}
 ## Les autres comptes de l'hôte
 
@@ -326,7 +369,7 @@ héritées de l'hôte&nbsp;:
 | Le pointeur vise toujours à côté du regard | [Recalibrer](#calibrer-le-regard) |
 | Le pointeur s'arrête avant le point regardé | Augmenter `gazeFilterSpeed` et `cursorFilterSpeed` |
 | Le pointeur dépasse ou tremble | Les diminuer |
-| Le pointeur suit les mouvements de tête | `enableHeadControl` à `false` |
+| La tête déplace trop le pointeur | Baisser `headSpeed`, ou `enableHeadControl` à `false` |
 
 :::note[Messages du noyau attendus]
 Le traqueur expose deux interfaces vidéo que `uvcvideo` ne sait pas gérer, d'où
