@@ -133,7 +133,7 @@ reste muet sous Linux.
 
    :::caution[Eye tracker : calibrer au premier lancement]
    Débrancher puis rebrancher le traqueur (les règles udev ne s'appliquent qu'au
-   branchement), relancer Talon, puis lancer la calibration depuis son menu.
+   branchement), relancer Talon, puis [calibrer le regard](#calibrer-le-regard).
    :::
 
 </Steps>
@@ -185,6 +185,7 @@ Options de `darkone.home.umi`, à poser dans `usr/users/<login>/default.nix`.
 | `textScaling` | `1.4` | Facteur d'agrandissement du texte (Cinnamon) |
 | `enablePanel` | `true` | Panneau imposé, réécrit à chaque déploiement |
 | `panelLaunchers` | Fichiers, Firefox | Lanceurs du panneau (fichiers `.desktop`) |
+| `menuFavorites` | Calibration, Calculatrice, Agenda, Paramètres | Favoris du menu, réécrits au déploiement |
 
 :::caution[Le clic par temporisation suit le traqueur]
 Sous Cinnamon, `enableTrackerAuto` active le pilotage du pointeur par le regard
@@ -290,6 +291,15 @@ laisser la main à la souris. Le rallumer à la souris, au toucher ou par
 l'action Talon `user.umi_gaze` réactive aussi les clics. Il est rallumé à
 chaque démarrage.
 
+## Calibrer le regard
+
+Le favori *Calibrer le regard*, en tête du menu Cinnamon, lance la calibration
+de Talon, sans passer par son menu dans la zone de notification. Il apparaît
+avec `enableTrackerAuto`.
+
+Recalibrer après un changement d'écran, de position du traqueur ou de
+l'utilisateur, ou d'éclairage.
+
 {/* t:p aafb0344f2e16bc42c11104b0491de119988ec4e77d0fe0643dc6c17cd2e8b36 */}
 ## Les autres comptes de l'hôte
 
@@ -313,6 +323,7 @@ héritées de l'hôte&nbsp;:
 | Session ouverte sous GNOME | Vérifier le profil `umi` du compte et sa présence dans les `users` de l'hôte, puis redémarrer |
 | Le pointeur clique tout seul | `enableDwell` activé sans traqueur, le désactiver |
 | Fenêtre « Clic de survol », clics toujours simples, molette inopérante | Un démon `mousetweaks` tourne dans la session, lancé avant la mise à jour&nbsp;: rouvrir la session |
+| Le pointeur vise toujours à côté du regard | [Recalibrer](#calibrer-le-regard) |
 | Le pointeur s'arrête avant le point regardé | Augmenter `gazeFilterSpeed` et `cursorFilterSpeed` |
 | Le pointeur dépasse ou tremble | Les diminuer |
 | Le pointeur suit les mouvements de tête | `enableHeadControl` à `false` |
