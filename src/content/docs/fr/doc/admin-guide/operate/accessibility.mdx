@@ -183,10 +183,13 @@ Options de `darkone.home.umi`, à poser dans `usr/users/<login>/default.nix`.
 | `enableGazeFocus` | `false` | La fenêtre regardée prend le focus (expérimental) |
 | `dwellTime` | `1.2` | Délai du clic par temporisation, en secondes |
 | `panelHeight` | `64` | Hauteur du panneau Cinnamon, en pixels |
-| `textScaling` | `1.4` | Facteur d'agrandissement du texte (Cinnamon) |
+| `textScaling` | `1.5` | Facteur d'agrandissement du texte (Cinnamon) |
 | `enablePanel` | `true` | Panneau imposé, réécrit à chaque déploiement |
 | `panelLaunchers` | Fichiers, Firefox | Lanceurs du panneau (fichiers `.desktop`) |
 | `menuFavorites` | Calibration, Calculatrice, Agenda, Paramètres | Favoris du menu, réécrits au déploiement |
+| `enableRofiMenu` | `true` | Grille d'applications plein écran |
+| `rofiGridResolution` | `{ columns = 6; rows = 4; }` | Tuiles par page de la grille |
+| `hiddenApps` | Terminaux, doublons, manuel NixOS | Masquées de la grille et du menu |
 
 :::caution[Le clic par temporisation suit le traqueur]
 Sous Cinnamon, `enableTrackerAuto` active le pilotage du pointeur par le regard
@@ -270,7 +273,7 @@ Sous Cinnamon, `enablePanel` organise le panneau du bas pour le regard.
 
 | Emplacement | Contenu |
 |---|---|
-| Gauche | Menu, lanceurs, fenêtres ouvertes |
+| Gauche | Menu, grille, lanceurs, fenêtres ouvertes |
 | Droite | Types de clic, zone pause, regard |
 | Puis | Accessibilité, clavier visuel |
 | Enfin | Icônes d'état (Nextcloud…), horloge |
@@ -291,6 +294,29 @@ yeux ne déplacent plus rien, et le clic par temporisation passe en pause pour
 laisser la main à la souris. Le rallumer à la souris, au toucher ou par
 l'action Talon `user.umi_gaze` réactive aussi les clics. Il est rallumé à
 chaque démarrage.
+
+## La grille d'applications
+
+Avec `enableRofiMenu`, le premier lanceur du panneau ouvre toutes les
+applications en plein écran, par pages de grandes tuiles, sans barre de
+défilement.
+
+| Cible | Effet |
+|---|---|
+| Tuile survolée | Mise en surbrillance |
+| Clic sur une tuile | Lance l'application, ferme la grille |
+| ◀ ▶ (bords de l'écran) | Page précédente, suivante |
+| *Fermer* | Ferme la grille |
+
+Les panneaux de réglages restent dans le menu Cinnamon. `hiddenApps` masque
+d'autres applications (fichiers `.desktop`), de la grille comme du menu.
+`rofiGridResolution` règle le nombre de tuiles par page.
+
+:::caution[À valider avec le traqueur]
+Clic par temporisation dans la grille pas encore testé avec le Tobii. La grille
+capte la souris&nbsp;: zone pause, types de clic et clavier visuel ne répondent
+plus tant qu'elle est ouverte.
+:::
 
 ## Calibrer le regard
 
