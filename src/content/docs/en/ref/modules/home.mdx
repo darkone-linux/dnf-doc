@@ -490,7 +490,7 @@ darkone.home.office = {
 
 <hr/>
 
-{/* t:p 6891ae5d180fc59c4bd0f406ae23255004b8d020089d9424a0d7ece29a0c72b6 */}
+{/* t:p 34fa69fb27a5b72661a765e7c82230f02edce63c411fd653a815ab510cc7b27f */}
 ### &#x1F3E0; darkone.home.umi
 
 Unified Multimodal Input (UMI)
@@ -504,7 +504,8 @@ Touchscreen + voice + gaze (Talon autostart + Onboard).
   until asked for. Panel, icons and text enlarged for gaze targets
   (`panelHeight`, `textScaling`). DNF panel (`enablePanel`): launchers | open
   windows, then hover click types, pause zone, gaze switch (applet
-  `umi-mouse`), accessibility menu, Onboard toggle.
+  `umi-mouse`), accessibility menu, Onboard toggle. Menu favorites
+  (`menuFavorites`) open with the eye tracker calibration.
 - **Any other host**: GNOME Wayland with its native accessibility: on-screen
   keyboard, big pointer and text. Talon and Onboard, X11-only, stay off.
 
@@ -514,12 +515,26 @@ Talon 0.4 and 1.0 alike; 1.0's "Always On" is switched off, the tracker goes
 dark with gaze control.
 :::
 
+:::note[Application grid (UMI host)]
+`enableRofiMenu`: the first panel launcher opens a full-screen rofi grid,
+pages of `rofiGridResolution` tiles turned by edge-high buttons, one click
+launches, settings panels left out. `hiddenApps` hides entries from the grid
+and the Cinnamon menu alike. rofi grabs the pointer: panel out of reach.
+:::
+
 :::note[Gaze-only pointing (Talon 1.0)]
 Talon's filters freeze the cursor ~2 mm short of the gaze: the script raises
 them (`gazeFilterSpeed`, `cursorFilterSpeed`, measured on a Tobii 5). Eye
 Tracking menu modes are declared (`enableGazeControl`, `enableHeadControl`,
 `enableHeadJump`, `enableMouseJump`, `enableGazeFocus`) and set again at
 each Talon start: gaze only by default, an unsteady head drags the cursor.
+:::
+
+:::tip[Gaze places, head refines]
+With `enableHeadControl`, `headSpeed` below 1 dampens ample head movements
+(`head_bezier.vmax` scaled, lever to be validated on a Tobii 5). Live tuning
+from Talon's REPL, lost on restart: `actions.user.umi_head_speed(0.3)`,
+`actions.user.umi_filter_speed(2, 4)`, `print(actions.user.umi_tuning())`.
 :::
 
 :::tip[Community scripts]
@@ -579,6 +594,9 @@ matches that of your login keyring". Delete
 * **cursorFilterSpeed** `nullOr numbers.positive` Talon Control Mouse cursor filter coefficient, with
   `enableTrackerAuto`: higher reacts faster, overshoots more. `null`
   keeps Talon's own (2.0).
+* **headSpeed** `nullOr numbers.positive` Talon Head Control sensitivity, with `enableTrackerAuto` and
+  `enableHeadControl`: below 1 the head moves the cursor less (ample,
+  poorly controlled movements). `null` keeps Talon's own (1).
 * **enableGazeControl** `bool` Talon Gaze Control, with `enableTrackerAuto`: the cursor follows the gaze.
 * **enableHeadControl** `bool` Talon Head Control, with `enableTrackerAuto`: head movements also move
   the cursor. Off by default, an unsteady head drags the cursor away
@@ -596,6 +614,18 @@ matches that of your login keyring". Delete
   hover click controls (click types, pause zone), accessibility menu,
   keyboard toggle. Rewritten at every activation.
 * **panelLaunchers** `listOf str` Panel launchers (desktop file ids), with `enablePanel`.
+* **menuFavorites** `listOf str` Cinnamon menu favorites (desktop file ids), rewritten at every
+  activation. `dnf-umi-calibrate.desktop`, with `enableTrackerAuto`,
+  starts the eye tracker calibration.
+* **enableRofiMenu** `bool` Full-screen application grid (rofi), UMI host only: pages of big
+  tiles turned by edge buttons, one click launches, settings panels
+  left out. Opened by the first panel launcher (with `enablePanel`).
+* **rofiGridResolution** `submodule` Application grid page, in tiles, with `enableRofiMenu`. The default
+  6 × 4 fits 96 px icons on a 1600×900 screen; fewer tiles grow wider.
+  * **columns** `ints.between 1 12` Tiles per row.
+  * **rows** `ints.between 1 8` Tile rows per page.
+* **hiddenApps** `listOf str` Applications hidden from the grid and the Cinnamon menu (desktop file
+  ids), UMI host only. Launches by id and file associations still work.
 
 ```nix
 darkone.home.umi = {
@@ -607,6 +637,7 @@ darkone.home.umi = {
   enableTrackerAuto = true;
   gazeFilterSpeed = 2.0;
   cursorFilterSpeed = 4.0;
+  headSpeed = 0.3;
   enableGazeControl = true;
   enableHeadControl = false;
   enableHeadJump = false;
@@ -616,6 +647,11 @@ darkone.home.umi = {
   textScaling = 1.5;
   enablePanel = true;
   panelLaunchers = [ ];
+  menuFavorites = [ ];
+  enableRofiMenu = true;
+  rofiGridResolution.columns = 6;
+  rofiGridResolution.rows = 4;
+  hiddenApps = [ ];
 };
 ```
 

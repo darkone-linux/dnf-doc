@@ -86,64 +86,6 @@ machine, using the Tobii Experience app. Without this step, the tracker
 stays silent under Linux.
 :::
 
-{/* t:p c93bd4bce346f19414cf1a72c28ea9c48f9cd03b41029e5db702755dea9b82e1 */}
-## Set up a workstation
-
-<Steps>
-
-1. **Declare the host and its user** in `etc/config.yaml`, both with the `umi`
-   profile:
-
-   ```yaml
-   # etc/config.yaml
-   users:
-     alice:
-       uid: 1010
-       name: "Alice"
-       profile: "umi"
-       groups: ["global"]
-
-   hosts:
-     - hostname: "umi-desktop"
-       name: "Accessible workstation"
-       zone: "maison:2.3"
-       profile: "umi"
-       users: ["alice"]
-   ```
-
-   On the `umi` host, the user profile adds the account to the `input` and
-   `uinput` groups, without which Talon cannot inject events.
-
-2. **Enable automatic login** in the machine configuration, if the user cannot
-   use a keyboard to sign in:
-
-   ```nix
-   # usr/machines/umi-desktop/configuration.nix
-   darkone.host.umi.autoLoginUser = "alice";
-   ```
-
-3. **Generate and deploy**:
-
-   ```sh
-   just generate
-   just apply umi-desktop
-   ```
-
-4. **Test and configure**
-
-   :::caution[Eye tracker: calibrate on first launch]
-   Unplug and replug the tracker (udev rules only apply on plug-in), restart
-   Talon, then run the calibration from its menu.
-   :::
-
-</Steps>
-
-:::tip[Several users on the same machine]
-Only the account listed in `autoLoginUser` signs in on its own. Every host
-account with the `umi` profile starts the Cinnamon session, imposed at each
-boot. Ordinary accounts keep their usual GNOME Wayland session.
-:::
-
 {/* t:p 57599746c00cceec0b12d6c259f69fb9eb4bf98494f38209a29bee06769d874b */}
 ## Configure the host
 
@@ -161,42 +103,52 @@ accessibility) and Talon can be launched manually from the upstream archive,
 which preserves its automatic update.
 :::
 
-{/* t:p 2d2e708a806cd50280cac6d5ca7821d5f53c83e8d3094f9850af52656732be31 */}
-## Configuring the user
+{/* t:p 626d4010cc11d046dc0eedee9afbb33aae77e90c8e7f357d694144f55392fb70 */}
+## Configure the user
 
-Options for `darkone.home.umi`, to be set in `usr/users/<login>/default.nix`.
+Options of `darkone.home.umi`, set in `usr/users/<login>/default.nix`.
 
 | Option | Default | Role |
 |---|---|---|
 | `enable` | enabled by the profile | Enables the user profile |
-| `enableTalonAutostart` | `true` | Starts Talon on login |
+| `enableTalonAutostart` | `true` | Starts Talon at login |
 | `communityScripts` | `null` | `talonhub/community` tree deployed to `~/.talon/user/community` |
 | `enableDwell` | `false` | Permanent dwell click |
 | `enableTrackerAuto` | `true` | Gaze and click follow the tracker |
-| `gazeFilterSpeed` | `2.0` | Gaze responsiveness (Talon&nbsp;: `1.0`) |
-| `cursorFilterSpeed` | `4.0` | Cursor responsiveness (Talon&nbsp;: `2.0`) |
-| `enableGazeControl` | `true` | Cursor follows gaze |
-| `enableHeadControl` | `false` | Head also moves the cursor |
-| `enableHeadJump` | `false` | Head movement brings the cursor back to the gaze point |
-| `enableMouseJump` | `false` | Moving a mouse toward the gaze point brings the cursor back to it |
-| `enableGazeFocus` | `false` | Window being looked at takes focus (experimental) |
+| `gazeFilterSpeed` | `2.0` | Gaze responsiveness (Talon: `1.0`) |
+| `cursorFilterSpeed` | `4.0` | Pointer responsiveness (Talon: `2.0`) |
+| `enableGazeControl` | `true` | Pointer follows the gaze |
+| `enableHeadControl` | `false` | Head also moves the pointer |
+| `headSpeed` | `null` | Head sensitivity (Talon: `1`) |
+| `enableHeadJump` | `false` | A head movement brings the pointer back to the gaze |
+| `enableMouseJump` | `false` | Moving a mouse toward the gaze brings the pointer there |
+| `enableGazeFocus` | `false` | The gazed window takes focus (experimental) |
 | `dwellTime` | `1.2` | Dwell click delay, in seconds |
-| `panelHeight` | `64` | Cinnamon panel height, in pixels |
-| `textScaling` | `1.4` | Text scaling factor (Cinnamon) |
-| `enablePanel` | `true` | Enforced panel, rewritten on every deployment |
+| `panelHeight` | `64` | Height of the Cinnamon panel, in pixels |
+| `textScaling` | `1.5` | Text magnification factor (Cinnamon) |
+| `enablePanel` | `true` | Panel imposed, rewritten at every deployment |
 | `panelLaunchers` | Files, Firefox | Panel launchers (`.desktop` files) |
+| `menuFavorites` | Calculator, Calculator, Calendar, Settings | Menu favorites, rewritten at deployment |
+| `enableRofiMenu` | `true` | Full-screen application grid |
+| `rofiGridResolution` | `{ columns = 6; rows = 4; }` | Tiles per grid page |
+| `hiddenApps` | Terminals, duplicates, NixOS manual | Hidden from the grid and the menu |
 
-:::caution[The dwell click follows the tracker]
-On Cinnamon, `enableTrackerAuto` enables pointer control by gaze and dwell click when the tracker is connected, and disables that click when disconnected&nbsp;: **when using a mouse, it will click on anything the pointer hovers over**. In that case, `enableDwell` is only useful on GNOME.
+:::caution[Dwell click follows the tracker]
+Under Cinnamon, `enableTrackerAuto` enables pointer control by gaze and dwell
+click when the tracker is plugged in, and turns that click off when it is
+unplugged: **with the mouse, it clicks on everything the pointer hovers over**.
+`enableDwell` is then only useful under GNOME.
 :::
 
 :::note[Eye Tracking menu modes]
 `enableGazeControl`, `enableHeadControl`, `enableHeadJump`, `enableMouseJump`
-and `enableGazeFocus` are enforced on every Talon startup. Any change made from the menu only lasts until the next startup.
+and `enableGazeFocus` are re-imposed at every Talon start. A change made from
+the menu lasts until the next start.
 :::
 
-:::tip[Community additions]
-The `talonhub/community` scripts provide mouse zoom and tongue-click. They are declared reproducibly&nbsp;:
+:::tip[Community contributions]
+The community scripts `talonhub/community` bring mouse zoom and
+tongue-click. They are declared reproducibly:
 
 ```nix
 # usr/users/alice/default.nix
@@ -244,27 +196,107 @@ Only the automatically logged-in account is affected&nbsp;: logging in with a pa
 Consequence for an encrypted workstation&nbsp;: changing the LUKS passphrase without changing the keyring passphrase will cause the message "The login password does not match your keyring password." In that case, delete `~/.local/share/keyrings/login.keyring` and reopen the session.
 :::
 
-{/* t:p f1921babefdf88cdf9849a5bf6983deb057c3760dd711dc70abeee0aee5a3cd8 */}
+{/* t:p 23fbd14434407ce358abab10fbc943298b8a5591c48acd4b992bd9a98cb18c27 */}
 ## The panel
 
-On Cinnamon, `enablePanel` organizes the bottom panel for gaze use.
+Under Cinnamon, `enablePanel` organizes the bottom panel for the gaze.
 
-| Location | Content |
+| Position | Content |
 |---|---|
-| Left | Menu, launchers, open windows |
+| Left | Menu, grid, launchers, open windows |
 | Right | Click types, pause zone, gaze |
 | Then | Accessibility, on-screen keyboard |
-| Last | Status icons (Nextcloud…), clock |
+| Finally | Status icons (Nextcloud…), clock |
 
-The click types (single, double, drag, secondary) and the pause zone only appear if dwell click is active. The pause zone lets the gaze explore the screen without triggering anything&nbsp;; the click types are hidden during pause.
+The click types (single, double, drag, secondary) and the pause zone appear
+only when dwell click is active. The pause zone lets the gaze explore the
+screen without triggering anything; the click types are hidden during the
+pause.
 
 | Action on the pause zone | Effect |
 |---|---|
-| Click, active clicks | Suspends dwell click |
-| Pointer held for 1.5 s, while paused | Reactivates clicks (green bar) |
-| Mouse click, while paused | Reactivates clicks |
+| Click, clicks active | Suspends dwell click |
+| Pointer resting 1.5 s, in pause | Re-enables clicks (green bar) |
+| Mouse click, in pause | Re-enables clicks |
 
-The gaze button (eye) disables pointer control by gaze&nbsp;: eyes no longer move anything, and dwell click goes into pause to leave control to the mouse. Re-enabling it with the mouse, touch, or the Talon action `user.umi_gaze` also reactivates clicks. It is re-enabled on every startup.
+The gaze button (eye) turns off pointer control by gaze: the eyes no longer
+move anything, and dwell click pauses to hand over to the mouse. Turning it
+back on with the mouse, touch, or the Talon action `user.umi_gaze` also
+re-enables clicks. It is turned back on at every start.
+
+{/* t:p 86e45337c389862d25119898269a632fd291e4511ffad88747c70d4722de9e4e */}
+## The application grid
+
+With `enableRofiMenu`, the first launcher on the panel opens all applications
+full screen, in pages of large tiles, with no scrollbar.
+
+| Target | Effect |
+|---|---|
+| Hovered tile | Highlighted |
+| Click a tile | Launches the application, closes the grid |
+| ◀ ▶ (screen edges) | Previous, next page |
+| *Close* | Closes the grid |
+
+Settings panels stay in the Cinnamon menu. `hiddenApps` hides other
+applications (`.desktop` files) from both the grid and the menu.
+`rofiGridResolution` sets the number of tiles per page.
+
+:::caution[To validate with the tracker]
+Dwell click in the grid not yet tested with the Tobii. The grid captures the
+mouse: the pause zone, click types and on-screen keyboard stop responding while
+it is open.
+:::
+
+{/* t:p 250e9c0ee6981f830b2cefc9b54b2a6bf2924832067b121a8e1d008b5c05eab1 */}
+## Calibrate gaze
+
+The *Calibrate gaze* favorite, at the top of the Cinnamon menu, starts Talon's
+calibration without going through its menu in the notification area. It appears
+with `enableTrackerAuto`.
+
+Recalibrate after changing screen, tracker or user position, or lighting.
+
+{/* t:p fc75a0cf64a8c72ac16e3c49f209027f192c375fd565155135792ba199f96573 */}
+## Tune the pointer live
+
+With `enableHeadControl`, the gaze brings the pointer into the target zone and
+the head refines it. `headSpeed` below `1` softens overly large head
+movements. These settings can be tried without redeploying, from Talon's
+console (REPL), and are lost when Talon restarts.
+
+<Steps>
+
+1. **Open the console** of the user's Talon, from an admin account on the host:
+
+   ```sh
+   sudo -u alice env HOME=/home/alice /home/alice/.talon/.venv/bin/repl
+   ```
+
+2. **Read the applied settings**:
+
+   ```python
+   print(actions.user.umi_tuning())
+   ```
+
+3. **Try values**, user at the workstation:
+
+   | Command | Effect |
+   |---|---|
+   | `actions.tracking.control_head_toggle(True)` | Enables head control |
+   | `actions.user.umi_head_speed(0.3)` | Head 3 times less sensitive |
+   | `actions.user.umi_head_speed(1)` | Talon's original sensitivity |
+   | `actions.user.umi_filter_speed(2, 4)` | Gaze and pointer responsiveness |
+
+4. **Record the retained values** in `usr/users/<login>/default.nix`
+   (`enableHeadControl`, `headSpeed`, `gazeFilterSpeed`, `cursorFilterSpeed`),
+   then deploy.
+
+</Steps>
+
+:::caution[To validate]
+`headSpeed` acts on the head acceleration curve, an internal Talon setting.
+Its effect still needs measuring on a Tobii 5.
+:::
 
 {/* t:p aafb0344f2e16bc42c11104b0491de119988ec4e77d0fe0643dc6c17cd2e8b36 */}
 ## Other accounts on the host
@@ -276,22 +308,27 @@ A regular account keeps its GNOME Wayland session, with a few differences inheri
 - **`su`**: does not transmit screen access, and a prompt (keyring…) would block the UMI account. Administer via SSH or from your own session.
 - **Shutdown**: each service has 5 seconds to stop.
 
-{/* t:p 6fa09ae8171d60792238793fb1dfa8a832f85da51cc0a4f96a6dd61574c87302 */}
+{/* t:p 557866c11c8e6901b0068bc98d19b41e6ab56ea7a5eaf46f34c0c42f61b7b06b */}
 ## Troubleshooting
 
-| Symptom | Possible cause/solution |
+| Symptom | Lead |
 |---|---|
-| Talon does not see the tracker | Reconnect the tracker, then relaunch Talon (udev rule applied on connection) |
-| Firmware not initialized | Run Tobii Experience once on Windows |
-| Session opened under GNOME | Check the `umi` profile for the account and its presence in the host's `users`, then restart |
-| Pointer clicks by itself | `enableDwell` is enabled without a tracker, disable it |
-| "Hover click" window, clicks always single, wheel not working | A `mousetweaks` daemon is running in the session, started before the update&nbsp;: reopen the session |
-| Pointer stops before the gaze point | Increase `gazeFilterSpeed` and `cursorFilterSpeed` |
-| Pointer overshoots or jitters | Decrease them |
-| Pointer follows head movements | Set `enableHeadControl` to `false` |
+| Talon does not see the tracker | Replug the tracker, then restart Talon (udev rule applied at plug-in) |
+| Firmware not initialized | Run Tobii Experience once under Windows |
+| Session opened under GNOME | Check the account's `umi` profile and its presence in the host's `users`, then reboot |
+| The pointer clicks by itself | `enableDwell` enabled without a tracker, disable it |
+| "Hover Click" window, clicks always single, scroll wheel unresponsive | A `mousetweaks` daemon is running in the session, started before the update: log out and back in |
+| The pointer always aims beside the gaze | [Recalibrate](#calibrate-gaze) |
+| The pointer stops short of the gazed point | Increase `gazeFilterSpeed` and `cursorFilterSpeed` |
+| The pointer overshoots or jitters | Decrease them |
+| The head moves the pointer too much | Lower `headSpeed`, or set `enableHeadControl` to `false` |
 
 :::note[Expected kernel messages]
-The tracker exposes two video interfaces that `uvcvideo` cannot handle, resulting in messages such as `Unknown video format`, `No supported video formats found` and `probe with driver uvcvideo failed with error -22`. These are **normal and expected**&nbsp;: no kernel driver claims the interfaces, leaving them free for Talon.
+The tracker exposes two video interfaces that `uvcvideo` cannot handle, hence
+the messages `Unknown video format`, `No supported video formats found` and
+`probe with driver uvcvideo failed with error -22`. They are **normal and
+desirable**: no kernel driver claims the interfaces, leaving them free for
+Talon.
 :::
 
 {/* t:p 938609b64e2e1217c0db6ceeca57cfadea52087e1a0a2c4319be9b6fdb6ff3b2 */}

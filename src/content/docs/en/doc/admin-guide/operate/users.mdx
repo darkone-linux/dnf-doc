@@ -257,3 +257,14 @@ version takes its place back.
 
 - Only one backup per file: the previous one is overwritten.
 - Change to keep: declare it in `usr/users/<login>/default.nix`.
+
+{/* t:p bbd95e81919c04b15f1ec929255eb6239b7073cc309a756416f3a8ecc17fc0f7 */}
+### The account list at login?
+
+By default, the GDM login screen asks you to type your username. To pick
+your account from a list, on a shared machine for example&nbsp;:
+
+```nix
+# usr/machines/<hôte>/configuration.nix
+darkone.graphic.gnome.enableGdmSelector = true;
+```
