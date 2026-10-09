@@ -234,7 +234,7 @@ souris.
 | Session Cinnamon en X11 | Talon ne fonctionne (malheureusement) pas sous Wayland |
 | Ouverture de session automatique | Aucun mot de passe saisissable |
 | Verrouillage et veille désactivés | Un écran verrouillé est un cul-de-sac |
-| Trousseau de clés sans mot de passe | Évite une invite impossible à satisfaire (ouverture automatique, hôte non chiffré) |
+| Trousseau de clés sans mot de passe | Évite une invite impossible à satisfaire |
 | Accessibilité active dès l'ouverture | Aucune invite d'activation (Onboard) |
 | Curseur, texte, panneau et icônes agrandis | Précision limitée du regard (quelques dizaines de pixels) et du doigt |
 | Fenêtres d'applications maximisées | Grandes cibles, panneau toujours accessible |
@@ -252,21 +252,14 @@ l'installation si le poste est mobile.
 L'ouverture de session par reconnaissance faciale est dans la liste TODO.
 :::
 
-:::note[Le trousseau suit le chiffrement du disque]
-Seul le compte ouvert automatiquement est concerné&nbsp;: une connexion par mot de
-passe déverrouille son trousseau comme d'habitude. Pour ce compte, tout dépend de
-l'hôte&nbsp;:
+:::note[Trousseau sans mot de passe]
+Seul le compte ouvert automatiquement est concerné, poste chiffré ou non&nbsp;:
+sans mot de passe, son trousseau s'ouvre sans invite. Sur un poste chiffré, LUKS
+protège ses secrets au repos.
 
-- **poste non chiffré** : le trousseau est créé sans mot de passe, sinon la
-  session s'ouvrirait sur une invite que personne ne peut satisfaire ;
-- **poste chiffré (LUKS)** : la passphrase saisie au démarrage est transmise au
-  trousseau par la pile PAM de l'ouverture de session automatique. Le trousseau
-  reste protégé, et rien n'est demandé.
-
-Conséquence sur un poste chiffré&nbsp;: changer la passphrase LUKS sans changer
-celle du trousseau provoque le message « le mot de passe de connexion ne
-correspond plus à celui de votre trousseau ». Supprimer alors
-`~/.local/share/keyrings/login.keyring` et rouvrir la session.
+Aucun mot de passe ne l'atteint, connexion par mot de passe comprise&nbsp;:
+GNOME le rechiffrerait avec. Un trousseau protégé est supprimé à la mise à
+jour ou au démarrage suivant, ses secrets perdus.
 :::
 
 {/* t:p 23fbd14434407ce358abab10fbc943298b8a5591c48acd4b992bd9a98cb18c27 */}
