@@ -272,7 +272,7 @@ Sous Cinnamon, `enablePanel` organise le panneau du bas pour le regard.
 | Gauche | Menu, grille, lanceurs, fenêtres ouvertes |
 | Droite | Types de clic, zone pause, regard |
 | Puis | Accessibilité, clavier visuel |
-| Enfin | Icônes d'état (Nextcloud…), horloge |
+| Enfin | Icônes d'état (Talon, Nextcloud…), horloge |
 
 Ni icône Bluetooth ni barre de coin (afficher le bureau). L'appairage passe par
 le *Gestionnaire Bluetooth* du menu.
@@ -327,6 +327,10 @@ avec `enableTrackerAuto`.
 
 Recalibrer après un changement d'écran, de position du traqueur ou de
 l'utilisateur, ou d'éclairage.
+
+Le traqueur se fixe sous l'écran principal, celui où Talon calibre. Le Tobii 5
+suit un écran 16:9 de 27" au plus, à 45-95&nbsp;cm&nbsp;: au-delà (téléviseur…),
+la calibration s'interrompt dès le premier point.
 
 {/* t:p fc75a0cf64a8c72ac16e3c49f209027f192c375fd565155135792ba199f96573 */}
 ## Régler le pointeur à chaud
@@ -390,11 +394,13 @@ héritées de l'hôte&nbsp;:
 | Symptôme | Piste |
 |---|---|
 | Talon ne voit pas le traqueur | Rebrancher le traqueur, puis relancer Talon (règle udev appliquée au branchement) |
+| Icône Talon absente du panneau | Rouvrir la session |
 | Micrologiciel non initialisé | Repasser une fois par Tobii Experience sous Windows |
 | Session ouverte sous GNOME | Vérifier le profil `umi` du compte et sa présence dans les `users` de l'hôte, puis redémarrer |
 | Le pointeur clique tout seul | `enableDwell` activé sans traqueur, le désactiver |
 | Fenêtre « Clic de survol », clics toujours simples, molette inopérante | Un démon `mousetweaks` tourne dans la session, lancé avant la mise à jour&nbsp;: rouvrir la session |
 | Le pointeur vise toujours à côté du regard | [Recalibrer](#calibrer-le-regard) |
+| Calibration interrompue au premier point | Écran de plus de 27", ou trop éloigné |
 | Le pointeur s'arrête avant le point regardé | Augmenter `gazeFilterSpeed` et `cursorFilterSpeed` |
 | Le pointeur dépasse ou tremble | Les diminuer |
 | La tête déplace trop le pointeur | Baisser `headSpeed`, ou `enableHeadControl` à `false` |
