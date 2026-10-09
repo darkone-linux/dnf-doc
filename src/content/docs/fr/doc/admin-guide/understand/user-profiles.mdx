@@ -59,7 +59,7 @@ admin -> nixadmin
 | `student` | Étudiant | `advanced` |
 | `teenager` | Adolescent | `minimal` |
 | `gamer` | Joueur | `minimal` |
-| `child` | Enfant (icônes techniques masquées) | `minimal` |
+| `child` | Enfant (Cartable Fantastique, icônes techniques masquées) | `minimal` |
 | `baby` | Très jeune enfant | `minimal` |
 
 :::tip[Le profil `umi` et son hôte]
@@ -100,6 +100,32 @@ Depuis Ghostty, `ssh` installe le terminfo `xterm-ghostty` sur l'hôte distant
 compris.
 :::
 
+## Le Cartable Fantastique
+
+Le profil `child` ajoute à LibreOffice la barre d'outils du
+[Cartable Fantastique](https://www.cartablefantastique.fr/outils-pour-compenser/le-plug-in-libre-office/),
+pensée pour les élèves dyspraxiques ou DYS : lire, écrire, calculer, lecture vocale.
+
+| Édition | Pour qui |
+|---|---|
+| `primaire` | École élémentaire (défaut de `child`) |
+| `college` | Collège : langues, chimie, électricité |
+| `adaptateur` | Adulte qui adapte des supports |
+
+```nix
+# usr/users/<login>/default.nix
+darkone.home.office.cartableFantastique = "college"; # null : aucune
+```
+
+L'extension s'installe dans le profil LibreOffice du compte, à l'activation
+Home Manager (démarrage ou déploiement). La lecture vocale passe par
+speech-dispatcher, actif par défaut sur les postes.
+
+:::caution[Retrait manuel]
+Repasser l'option à `null` laisse l'extension en place : la retirer via
+*Outils → Gestionnaire des extensions*.
+:::
+
 {/* t:p a5220ac2a170024a2b24bd7c781ba1b2329995d86835c648d26a689a118c7dc5 */}
 ## Affecter un profil
 
@@ -119,3 +145,11 @@ dans `usr/users/<login>/default.nix` (options `darkone.home.*`, sans
 `lib.mkForce`). Les briques réutilisables sont les [modules Home Manager](/fr/ref/modules/home/).
 Un programme d'un profil se retire avec `excludePackages` (modules `games`, `education`).
 :::
+
+## FAQ
+
+### Un hash du Cartable Fantastique ne correspond plus
+
+L'éditeur remplace le fichier `.oxt` sans changer d'URL. Recalculer les
+`hashes` de `dnf/pkgs/cartable-fantastique/package.nix` avec
+`nix store prefetch-file <url>`.
