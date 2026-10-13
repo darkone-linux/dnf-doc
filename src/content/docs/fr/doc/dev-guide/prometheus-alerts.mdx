@@ -115,6 +115,17 @@ valeurs de label&nbsp;: la liste des montages est donc résolue par la fonction
 évaluation, aucune tant que la règle reste muette.
 :::
 
+:::note[FilesystemReadOnly : une métrique dédiée]
+`node_filesystem_readonly` fusionne le `ro` du **montage** (voulu) et celui du
+**superbloc** (panne&nbsp;: btrfs forcé en lecture seule, ext4
+`errors=remount-ro`). La règle lit donc `dnf_filesystem_forced_readonly`&nbsp;:
+
+- **Source** : `service/monitoring/fs-readonly.nix`, sur chaque nœud, chaque minute.
+- **Contenu** : montages `rw` sur superbloc `ro`, lus dans `/proc/1/mountinfo`.
+- **Emplacement** : textfile sur tmpfs (`textfileRuntimeDir`), réécrit même disque en panne.
+- **Test** : `tests/scenarios/scripts/fs-forced-readonly.nix` épingle le parseur.
+:::
+
 :::note[Le bot n'affiche pas `summary`]
 Le bot Matrix rend le titre puis l'annotation `description`, et ne se rabat sur
 `summary` que si `description` est absente&nbsp;: toutes les règles DNF en
@@ -198,8 +209,8 @@ Deux listes de seuils le font, dans `mkResourceRuleGroups`&nbsp;:
   plein en une même alerte sur chaque machine qui le monte, alors que le serveur
   alerte déjà tout seul, avec la vraie partition.
 - `readOnlyByDesignFstypes` — retiré de `FilesystemReadOnly` seul (médias
-  optiques). La règle ne surveille donc que les montages censés être accessibles
-  en écriture.
+  optiques ou images&nbsp;: leur pilote peut poser le superbloc `ro` sous un
+  montage `rw`, signature identique à une panne).
 :::
 
 :::tip[Convention DNF]
