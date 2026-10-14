@@ -435,7 +435,8 @@ héritées de l'hôte&nbsp;:
 | Le pointeur s'arrête avant le point regardé | Augmenter `gazeFilterSpeed` et `cursorFilterSpeed` |
 | Le pointeur dépasse ou tremble | Les diminuer |
 | La tête déplace trop le pointeur | Baisser `headSpeed`, ou `enableHeadControl` à `false` |
-| Le kart ne répond pas à la souris | Rétablir les touches par défaut du jeu, lire les messages `dnf-stk-mouse` du journal (`journalctl -b -t xsession`) |
+| Le kart ne répond pas à la souris | Rétablir les touches par défaut du jeu, lire les messages du convertisseur (`journalctl -b -g 'dnf-stk-mouse:'`) |
+| Le joystick n'est pas dans les souris lues (`reading …`) | Absent de `lsusb`&nbsp;: le brancher sur un autre port USB (`connect-debounce failed` dans `dmesg`) |
 
 :::note[Messages du noyau attendus]
 Le traqueur expose deux interfaces vidéo que `uvcvideo` ne sait pas gérer, d'où
