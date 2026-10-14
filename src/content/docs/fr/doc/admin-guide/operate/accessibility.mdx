@@ -191,6 +191,7 @@ Options de `darkone.home.umi`, à poser dans `usr/users/<login>/default.nix`.
 | `enableRofiMenu` | `true` | Grille d'applications plein écran |
 | `rofiGridResolution` | `{ columns = 6; rows = 4; }` | Tuiles par page de la grille |
 | `hiddenApps` | Terminaux, doublons, manuel NixOS | Masquées de la grille et du menu |
+| `enableStkWithMouse` | `false` | [SuperTuxKart à la souris](#supertuxkart-à-la-souris) |
 
 :::caution[Le clic par temporisation suit le traqueur]
 Sous Cinnamon, `enableTrackerAuto` active le pilotage du pointeur par le regard
@@ -221,6 +222,31 @@ clic par claquement de langue. Ils se déclarent de façon reproductible&nbsp;:
   };
 }
 ```
+:::
+
+### SuperTuxKart à la souris
+
+Avec `enableStkWithMouse`, l'utilisateur pilote
+[SuperTuxKart](https://supertuxkart.net/) avec sa seule souris, par exemple un
+joystick adapté reconnu comme une souris (n-ABLER…). Hôte `umi` uniquement.
+Le jeu est installé, son lanceur démarre aussi le convertisseur `dnf-stk-mouse`.
+
+| Geste | Action dans le jeu |
+|---|---|
+| Joystick vers l'avant | Accélérer |
+| Joystick vers l'arrière | Freiner, reculer |
+| Joystick à gauche, à droite | Tourner |
+| Clic gauche maintenu | Déraper |
+| Double clic gauche | Utiliser l'objet (arme) |
+| Clic droit maintenu | Nitro |
+
+Le pointeur reste actif&nbsp;: les menus du jeu se pilotent à la souris, la
+course l'ignore. Les gestes n'agissent que lorsque la fenêtre du jeu est
+active, ailleurs la souris reste une souris.
+
+:::caution[À valider avec un n-ABLER]
+Seuils et délai de relâchement réglés sans le périphérique réel. Les touches
+du jeu doivent rester celles par défaut (flèches, `V`, `Espace`, `N`).
 :::
 
 {/* t:p b344e6c518cf626d40462fbe145ae5cf197fbdfc14964144e081206cecd00a75 */}
@@ -409,6 +435,7 @@ héritées de l'hôte&nbsp;:
 | Le pointeur s'arrête avant le point regardé | Augmenter `gazeFilterSpeed` et `cursorFilterSpeed` |
 | Le pointeur dépasse ou tremble | Les diminuer |
 | La tête déplace trop le pointeur | Baisser `headSpeed`, ou `enableHeadControl` à `false` |
+| Le kart ne répond pas à la souris | Rétablir les touches par défaut du jeu, lire les messages `dnf-stk-mouse` du journal (`journalctl -b -t xsession`) |
 
 :::note[Messages du noyau attendus]
 Le traqueur expose deux interfaces vidéo que `uvcvideo` ne sait pas gérer, d'où
