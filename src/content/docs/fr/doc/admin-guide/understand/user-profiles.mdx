@@ -126,6 +126,19 @@ Repasser l'option à `null` laisse l'extension en place : la retirer via
 *Outils → Gestionnaire des extensions*.
 :::
 
+## Applications lourdes à la demande
+
+Pour alléger le premier poste, `advanced` et les profils qui en héritent
+n'installent ni VS Code (0,3 Gio) ni Slidev (0,4 Gio)&nbsp;: Zed reste l'éditeur
+par défaut. Pour les ajouter à un compte, y compris pour retrouver l'ancien
+comportement&nbsp;:
+
+```nix
+# usr/users/<login>/default.nix
+darkone.home.advanced.enableVscode = true;
+darkone.home.advanced.enableSlidev = true; # avec son extension VS Code
+```
+
 {/* t:p a5220ac2a170024a2b24bd7c781ba1b2329995d86835c648d26a689a118c7dc5 */}
 ## Affecter un profil
 
