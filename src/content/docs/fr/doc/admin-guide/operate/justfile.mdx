@@ -392,6 +392,22 @@ comme `install`.
 just install-key myusbhost
 ```
 
+### ✳️ `install-here <hôte> <login> [empreinte]`
+
+Installe la machine sur laquelle elle tourne, démarrée sur l'ISO générique DNF,
+comme poste d'administration du projet&nbsp;: disko efface son disque, les clés
+naissent sur la cible (`bootstrap-keys`), puis `nixos-install`. Le projet
+rejoint `/etc/nixos` du nouveau système, propriété de `login`. Pas de disque
+chiffré pour l'instant.
+
+:::danger[Efface le disque de la machine courante]
+Refuse de tourner hors de l'ISO générique (fichier témoin `/etc/dnf-installer`).
+:::
+
+```sh
+just install-here poste alice '<empreinte>'
+```
+
 {/* t:p 865f0750feeb2e5de985ac71cf4c03c9686ede99e3c74b45939a00ab19a05b91 */}
 ### ✳️ `configure <hôte> [ip]`
 
