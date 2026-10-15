@@ -427,24 +427,26 @@ d'ensemble côté admin :
 {/* t:p f9cc254f9539c986c130f7b78cb7fe72905cdc021a97eac42a277937e3b4180f */}
 ## Sourcer un module upstream
 
-Quand seul le **module** NixOS manque (paquet déjà dans nixpkgs), on le source
-depuis un fork portant la PR, sans le reconstruire.
+Quand seul le **module** NixOS manque (paquet déjà dans nixpkgs), on copie le
+module de la PR dans `dnf/backports/nixos/<nom>.nix`. Un input pointant le fork
+récupérerait tout un arbre nixpkgs à chaque évaluation, sur chaque hôte.
 
 <Steps>
 
-1. Ajouter dans `dnf/flake.nix` un input dédié pointant la branche du fork,
-   **sans** `inputs.nixpkgs.follows` (on veut l'arbre du fork tel quel) :
+1. Copier le module depuis la branche de la PR, sous un en-tête de
+   provenance (PR, commit)&nbsp;:
 
    ```nix
-   nixpkgs-oxicloud.url = "github:flashonfire/nixpkgs/oxicloud-service";
+   # Backport of the `services.oxicloud` NixOS module, nixpkgs PR #516113
+   # (flashonfire/nixpkgs@739df6f3, unchanged but for `nixfmt -s`).
    ```
 
-2. Injecter le path du module dans la `modules` list de `mkNode`
-   (`dnf/lib/mk-configuration.nix`) → parsé inconditionnellement, sans effet
-   tant que `services.<nom>.enable = false` :
+2. L'ajouter à la `modules` list de `mkNode` (`dnf/lib/mk-configuration.nix`)
+   → importé sur chaque hôte, sans effet tant que
+   `services.<nom>.enable = false`&nbsp;:
 
    ```nix
-   "${nixpkgs-oxicloud}/nixos/modules/services/web-apps/oxicloud.nix"
+   ../backports/nixos/oxicloud.nix
    ```
 
 </Steps>
@@ -453,13 +455,14 @@ depuis un fork portant la PR, sans le reconstruire.
 Distinguer deux cas. **OxiCloud** : le paquet est déjà dans nixpkgs → aucun
 overlay, `pkgs.oxicloud` vient du tree principal. **GeneWeb** : le paquet
 manquait (deps OCaml) → un overlay (`lib/overlays/geneweb.nix`) injecte
-`pkgs.geneweb` depuis le fork.
+`pkgs.geneweb` depuis l'input `nixpkgs-geneweb`, récupéré seulement là où le
+paquet se construit.
 </Aside>
 
 <Aside type="tip" title="Nettoyage après merge">
-**Cleanup** une fois la PR mergée dans `nixos-unstable` : supprimer l'input,
-retirer le path du module (et l'overlay éventuel). Le wrapper
-`modules/service/<nom>.nix` reste inchangé.
+**Cleanup** une fois la PR mergée dans `nixos-unstable` : supprimer la copie et
+sa ligne dans `mkNode` (et l'overlay, l'input éventuels). Le wrapper
+`modules/service/<nom>.nix` reste inchangé. Détails&nbsp;: `dnf/backports/README.md`.
 </Aside>
 
 {/* t:p 115d003f8e8d1ff8f87008a952d2555f275b6594cf03de93b3d1fd2537983caf */}
