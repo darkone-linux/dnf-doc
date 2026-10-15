@@ -551,6 +551,17 @@ ajouté un hôte ou une zone. Voir
 just configure-admin-host
 ```
 
+### ✳️ `bootstrap-keys [racine] [login] [empreinte]`
+
+Crée les clés et le squelette sops d'une machine qui n'a pas encore de compte
+`nix`, sous la racine donnée (`/`, ou `/mnt` depuis l'installateur).
+`configure-admin-host` s'appuie sur la même mécanique. L'empreinte d'un compte
+(`mkpasswd`, entre apostrophes) est facultative.
+
+```sh
+just bootstrap-keys /mnt alice '<empreinte>'
+```
+
 {/* t:p acb78183caf1bf914a25a73ebe75aa2943291d34e30fc05807884f8055117ab6 */}
 ### ✳️ `build-iso [arch]`
 
