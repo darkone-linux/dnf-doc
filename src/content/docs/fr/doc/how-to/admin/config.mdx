@@ -70,6 +70,10 @@ zones) mais nécessite l'utilisation d'un domaine réel et une configuration DNS
 | `coordination.hostname` | Hôte et sous-domaine Headscale. |
 | `coordination.domain` | Hôte et sous-domaine Headscale. |
 
+La locale fixe aussi le clavier, en console comme sur le bureau&nbsp;: celui
+que donne `dnf/config/locales.json` (`en_GB.UTF-8`&nbsp;: `uk` en console, `gb`
+sous GNOME), sinon le code du pays (`ru_RU.UTF-8`&nbsp;: `ru`).
+
 :::tip[Réseau sans VPN]
 `coordination.enable: false` reste valide&nbsp;: on peut définir une ou plusieurs zones et
 déployer localement. Avec plusieurs zones, un VPN facilite cependant l'administration des
