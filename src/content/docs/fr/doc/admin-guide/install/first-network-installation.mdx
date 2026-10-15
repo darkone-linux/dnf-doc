@@ -149,11 +149,17 @@ système complet.
 
 <Steps>
 
-1. **Générer l'image**
+1. **Obtenir l'image**
 
    ```sh
    just build-iso
    ```
+
+   Cette image porte votre clé de déploiement. Autre voie, sans construction&nbsp;:
+   l'ISO générique jointe à chaque
+   [release du framework](https://github.com/darkone-linux/darkone-nixos-framework/releases)
+   (`dnf-installer-vX.Y.Z-x86_64-linux.iso`)&nbsp;; la clé s'autorise alors au
+   démarrage.
 
 2. **Démarrer la machine**
 
@@ -169,6 +175,13 @@ système complet.
    ```
 
    La commande `dnf-netinfo` les réaffiche.
+
+   Avec l'ISO générique, l'écran le rappelle&nbsp;: définir un mot de passe
+   (`passwd`), puis autoriser la clé depuis le poste d'admin.
+
+   ```sh
+   sudo -i -u nix ssh-copy-id nixos@10.0.0.50
+   ```
 
 3. **Fixer les adresses** (dès qu'une zone existe)
 
