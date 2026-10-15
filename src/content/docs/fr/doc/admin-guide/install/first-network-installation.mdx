@@ -51,9 +51,10 @@ machine&nbsp;: c'est la voie la plus simple.
    ```
 
    Il demande la langue et le clavier, l'identité et le mot de passe de
-   l'administrateur, le domaine du réseau, le nom de la machine et, s'il y en a
-   plusieurs, le disque. Le reste se détecte&nbsp;: portable ou poste fixe, UEFI
-   ou BIOS, fuseau horaire du pays.
+   l'administrateur, le domaine du réseau, le nom de la machine, le disque s'il
+   y en a plusieurs, puis le chiffrement du disque et sa passphrase. Le reste
+   se détecte&nbsp;: portable ou poste fixe, UEFI ou BIOS, fuseau horaire du
+   pays.
 
 4. **Confirmer**
 
@@ -61,12 +62,15 @@ machine&nbsp;: c'est la voie la plus simple.
    est ensuite effacé et le système installé, projet compris dans
    `/etc/nixos`.
 
-5. **Redémarrer**, clé USB retirée.
+5. **Redémarrer**, clé USB retirée. Disque chiffré&nbsp;: la passphrase est
+   demandée à chaque démarrage, avec le clavier choisi.
 
 </Steps>
 
-:::caution[Disque en clair]
-L'assistant ne chiffre pas encore le disque.
+:::caution[La passphrase du disque est celle du parc]
+Elle devient la passphrase partagée (`luks-passphrase`)&nbsp;: tout hôte
+chiffré installé ensuite est formaté avec elle. Le chiffrement exige l'UEFI.
+Voir [Chiffrement des disques (LUKS)](/fr/doc/admin-guide/operate/luks/).
 :::
 
 ### Installation scriptée
@@ -86,14 +90,19 @@ network:
 host:
   hostname: "poste"
 disk:
-  encrypt: false
+  encrypt: true
 locale:
   language: "fr_FR.UTF-8"
 ```
 
 ```sh
-darkone new --answers reponses.yaml --non-interactive --yes
+darkone new --answers reponses.yaml --non-interactive --yes \
+  --luks-passphrase-file /run/user/1000/luks
 ```
+
+La passphrase du disque n'entre jamais dans le fichier de réponses, qui
+circule&nbsp;: `--luks-passphrase-file` la lit dans un fichier, sinon elle est
+demandée.
 
 `--dry-run` affiche le plan sans rien toucher, sur n'importe quelle machine.
 

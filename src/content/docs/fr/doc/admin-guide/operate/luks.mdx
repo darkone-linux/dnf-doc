@@ -44,6 +44,8 @@ moyen d'agir sur les keyslots, il ajoute le nouveau slot avant de tuer l'ancien.
 `just install` formate le volume avec la passphrase partagée
 (`nixos-anywhere --disk-encryption-keys`)&nbsp;: le keyslot de formatage **est**
 le keyslot partagé. Rien à retenir de l'installation, rien à retaper ensuite.
+Le premier poste, installé par `darkone new`, est formaté avec la passphrase
+tapée dans l'assistant&nbsp;: elle devient la passphrase partagée du parc.
 Un hôte installé avant cette bascule est détecté par `just luks <hôte>`, qui
 demande alors sa passphrase d'installation une dernière fois pour amorcer le
 slot partagé.
@@ -74,6 +76,7 @@ rare d'avoir à la lancer soi-même&nbsp;:
 | Appelée par | Action | Ce qu'elle fait |
 |---|---|---|
 | `just install <hôte>` | `pre` | Avant le build, donc avant l'installation |
+| `just install-here <hôte>` | `pre`, sans compte `nix` (`bootstrap-keys`) | Premier poste, depuis l'ISO |
 | `just configure <hôte>` | (défaut) | Après le premier démarrage |
 
 Sans volume LUKS dans le disko, c'est un no-op journalisé.
