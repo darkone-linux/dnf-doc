@@ -163,16 +163,21 @@ seulement s'il a bougé depuis son dernier tag.
 6. **Framework**&nbsp;: `just simulate all` tourne **après** les épinglages,
    donc sur les dépendances réellement livrées. Les tests en machine virtuelle
    ne tournent pas dans l'intégration continue&nbsp;: un scénario rouge arrête
-   le train ici. Puis `VERSION`, `CHANGELOG.md`, commit, tag et poussée.
+   le train ici. Puis `VERSION`, l'épinglage du modèle de projet
+   (`templates/project/flake.nix`), `CHANGELOG.md`, commit, tag et poussée.
 
 7. **Documentation**&nbsp;: `just codegen` régénère la référence, puis
    traduction et normalisation. S'il y a quelque chose à publier, le site est
    construit (avant le tag, pour qu'un lien cassé bloque), la version s'aligne
    sur la ligne `MAJEUR.MINEUR` du framework, puis le site est déployé.
 
-8. **Boilerplate et exemple**&nbsp;: le tag du framework est écrit dans leur
-   `flake.nix`, le `flake.lock` est **commité** (c'est lui qui rend un clone
-   reproductible), puis changelog et tag identique à celui du framework.
+8. **Boilerplate et exemple**&nbsp;: le boilerplate est d'abord recopié depuis
+   `templates/project/` au tag du framework (`CHANGELOG.md` et `flake.lock`
+   conservés), avec un bandeau « copie publiée » sous le titre de ses README.
+   On ne le modifie donc jamais à la main. Puis, pour les deux, le tag du
+   framework est écrit dans leur `flake.nix`, le `flake.lock` est **commité**
+   (c'est lui qui rend un clone reproductible), puis changelog et tag
+   identique à celui du framework.
    Chaque hôte de l'exemple est évalué jusqu'à `system.build.toplevel`
    contre le nouveau framework, matériel et secrets remplacés par des
    bouchons (`dnf/just/scripts/eval-template-hosts.nix`)&nbsp;: un modèle n'a

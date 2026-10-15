@@ -30,15 +30,21 @@ l'administrateur. De là, on déploie et fait évoluer tout le réseau.
 {/* t:p 46c17b8025062545b579cc343eb69183d8a881a6eafd602a97a9040fc0925da6 */}
 ## Créer le projet
 
-Le projet part du template `dnf-boilerplate` : une structure prête et un
+Le projet part du modèle fourni par le framework : une structure prête et un
 `etc/config.yaml` commenté à remplir.
 
 <Steps>
 
 1. **Créer le dépôt**
 
-   Depuis le template [dnf-boilerplate](https://github.com/darkone-linux/dnf-boilerplate)
-   (bouton « Use this template »), ou par clone.
+   ```sh
+   nix flake new -t github:darkone-linux/darkone-nixos-framework mon-reseau
+   cd mon-reseau && git init && git add -A
+   ```
+
+   Le projet épingle la dernière release du framework. Autre voie&nbsp;: le
+   template GitHub [dnf-boilerplate](https://github.com/darkone-linux/dnf-boilerplate)
+   (bouton « Use this template »), copie publiée du même modèle.
 
 2. **Amorcer le framework**
 
