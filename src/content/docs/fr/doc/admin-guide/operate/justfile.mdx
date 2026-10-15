@@ -451,6 +451,8 @@ Relève sur la machine les modules noyau de ses cartes réseau filaires et les
 écrit dans `usr/machines/<hôte>/hardware/detected-hardware.nix` (fichier généré,
 importé automatiquement). Ils ne rejoignent l'initrd que s'il a du réseau,
 pour le [déverrouillage LUKS à distance](/fr/doc/admin-guide/operate/luks/).
+Détecte aussi une machine virtuelle (`systemd-detect-virt`)&nbsp;: aucun
+firmware n'y est chargé (`darkone.system.hardware.virtual`).
 Appelé par `install` (utilisateur `nixos` de l'ISO) et par `copy-hw`.
 
 ```sh

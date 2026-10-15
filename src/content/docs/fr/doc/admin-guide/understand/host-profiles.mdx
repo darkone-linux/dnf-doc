@@ -58,6 +58,19 @@ desktop -> umi
 | `hcs` | Coordination du VPN | `server` | Headscale + services partagés |
 | `vm` | Machine virtuelle | `server` | Outils invité (VirtualBox/QEMU/Xen) |
 
+Tout hôte charge l'ensemble des firmwares, sauf une machine virtuelle&nbsp;:
+`just install` et `just copy-hw` la détectent, quel que soit son profil
+(0,8 Gio de moins à télécharger).
+
+Les postes (`desktop`, `laptop`) impriment via CUPS et la découverte réseau,
+sans pilotes propriétaires. Pour tous les pilotes (HP, Brother, Canon, Epson,
+Samsung), y compris sur un portable qui les avait déjà&nbsp;:
+
+```nix
+# usr/machines/<hôte>/configuration.nix
+darkone.service.printing.loadAll = true;
+```
+
 {/* t:p 8e8c875a21edff3916f1840f55da250b12833b4f26a3d9a40b99f475e5e2cc42 */}
 ## Choisir un profil
 
