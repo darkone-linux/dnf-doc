@@ -85,6 +85,14 @@ Tout se déclare dans `etc/config.yaml` (réseau, zones, utilisateurs, hôtes).
 Pour un premier poste, une zone, un utilisateur et un hôte suffisent : tout
 hôte appartient à une zone (ou porte une adresse publique `ipv4`).
 
+Un éditeur doté de yaml-language-server (VS Code avec l'extension YAML, Zed…)
+complète et valide chaque clé, grâce à cette première ligne du fichier (déjà
+présente dans un projet créé par le modèle)&nbsp;:
+
+```yaml
+# yaml-language-server: $schema=../dnf/config/config.schema.json
+```
+
 ```yaml
 # etc/config.yaml
 zones:

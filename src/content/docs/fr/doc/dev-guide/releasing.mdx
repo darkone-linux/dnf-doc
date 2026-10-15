@@ -154,6 +154,9 @@ seulement s'il a bougé depuis son dernier tag.
    possède le schéma `etc/config.yaml`, donc il part avant ce qui en dépend.
    Son tag est ensuite épinglé dans `dnf/flake.nix` (commit `chore(deps)`),
    pour que le contrat entre framework et générateur se lise dans un diff.
+   Le générateur épinglé régénère enfin `dnf/config/config.schema.json`,
+   le schéma que les projets lisent par leur lien `dnf/` (commit
+   `chore(schema)` s'il change).
 
 5. **fleet-update**, s'il a bougé&nbsp;: barrières `ci` et `audit` avec
    l'outillage de son `nix develop`, release et poussée. Son tag est ensuite
