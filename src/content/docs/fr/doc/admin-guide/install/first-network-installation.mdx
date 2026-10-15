@@ -29,9 +29,78 @@ machine est elle-même un hôte DNF&nbsp;: les recettes d'administration tournen
 sous son compte de déploiement `nix`.
 :::
 
+## Installation assistée
+
+Le premier poste s'installe seul, depuis l'ISO générique, sans autre
+machine&nbsp;: c'est la voie la plus simple.
+
+<Steps>
+
+1. **Obtenir l'image**
+
+   L'ISO générique jointe à chaque
+   [release du framework](https://github.com/darkone-linux/darkone-nixos-framework/releases)
+   (`dnf-installer-vX.Y.Z-x86_64-linux.iso`), gravée sur une clé USB.
+
+2. **Démarrer la machine** sur la clé, en filaire, Secure Boot désactivé.
+
+3. **Lancer l'assistant**
+
+   ```sh
+   darkone new
+   ```
+
+   Il demande la langue et le clavier, l'identité et le mot de passe de
+   l'administrateur, le domaine du réseau, le nom de la machine et, s'il y en a
+   plusieurs, le disque. Le reste se détecte&nbsp;: portable ou poste fixe, UEFI
+   ou BIOS, fuseau horaire du pays.
+
+4. **Confirmer**
+
+   Le récapitulatif signale les choix définitifs (domaine, login). Le disque
+   est ensuite effacé et le système installé, projet compris dans
+   `/etc/nixos`.
+
+5. **Redémarrer**, clé USB retirée.
+
+</Steps>
+
+:::caution[Disque en clair]
+L'assistant ne chiffre pas encore le disque.
+:::
+
+### Installation scriptée
+
+Un fichier de réponses tient lieu de questions&nbsp;; une réponse absente est
+demandée, ou refusée avec `--non-interactive`.
+
+```yaml
+# reponses.yaml
+version: 1
+admin:
+  login: "alice"
+  name: "Alice Martin"
+  passwordHash: '$y$j9T$...'    # mkpasswd -m yescrypt
+network:
+  domain: "example.org"
+host:
+  hostname: "poste"
+disk:
+  encrypt: false
+locale:
+  language: "fr_FR.UTF-8"
+```
+
+```sh
+darkone new --answers reponses.yaml --non-interactive --yes
+```
+
+`--dry-run` affiche le plan sans rien toucher, sur n'importe quelle machine.
+
 {/* t:p 46c17b8025062545b579cc343eb69183d8a881a6eafd602a97a9040fc0925da6 */}
 ## Créer le projet
 
+Voie manuelle, depuis une machine d'administration qui est déjà un hôte DNF.
 Le projet part du modèle fourni par le framework : une structure prête et un
 `etc/config.yaml` commenté à remplir.
 
