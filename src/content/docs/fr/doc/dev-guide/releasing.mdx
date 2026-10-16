@@ -164,9 +164,9 @@ seulement s'il a bougé depuis son dernier tag.
    est construit (commit `chore(deps)`).
 
 6. **Framework**&nbsp;: `just simulate all` tourne **après** les épinglages,
-   donc sur les dépendances réellement livrées. Les tests en machine virtuelle
-   ne tournent pas dans l'intégration continue&nbsp;: un scénario rouge arrête
-   le train ici. Puis `VERSION`, l'épinglage du modèle de projet
+   donc sur les dépendances réellement livrées. Ces scénarios ne tournent
+   pas dans l'intégration continue&nbsp;: un scénario rouge arrête le train
+   ici. Puis `VERSION`, l'épinglage du modèle de projet
    (`templates/project/flake.nix`), `CHANGELOG.md`, commit, tag et poussée.
 
 7. **Documentation**&nbsp;: `just codegen` régénère la référence, puis
@@ -229,6 +229,34 @@ Sur un tag `v*`, `release.yml` refuse de publier si&nbsp;:
 Les trois contrôles de `ci.yml` (tests unitaires, évaluation, lint) sont
 rejoués via `workflow_call`, puis la section du changelog devient les notes de
 la *release* GitHub.
+
+### Test de l'installeur
+
+Sur un tag seulement, `installer-test` joue `darkone new` de bout en bout dans
+une VM QEMU (KVM du runner, vrai réseau)&nbsp;: l'ISO générique démarre,
+l'assistant est piloté par sa console série (pexpect), puis le système installé
+redémarre et se contrôle par SSH. Deux scénarios, en parallèle, environ
+40&nbsp;minutes chacun&nbsp;:
+
+- **scripté**&nbsp;: fichier de réponses, `--non-interactive`, disque chiffré,
+  premier démarrage déverrouillé par le sshd d'initrd&nbsp;;
+- **interactif**&nbsp;: chaque question répondue à la console, disque en clair,
+  clé USB de sauvegarde débranchée puis rebranchée (QMP).
+
+Contrôles&nbsp;: lancement automatique sur tty1, système `running` sans unité en
+échec, `/etc/nixos` propre, page d'accueil installée, sauvegarde ouverte depuis
+l'hôte. Un échec retient l'ISO hors de la *release*&nbsp;; le journal série est
+joint au *run*.
+
+Même test en local, sur l'ISO de l'arbre courant ou une autre&nbsp;:
+
+```sh
+just test-installer                 # les deux scénarios
+just test-installer interactive /chemin/de/l.iso
+```
+
+Disques et journaux&nbsp;: `~/.cache/dnf-installer-test/<scénario>/`, environ
+25&nbsp;Go par scénario. Le code&nbsp;: `dnf/tests/installer/`.
 
 <Aside type="caution" title="Tag poussé, release absente">
 Ne jamais déplacer ni recréer le tag&nbsp;: FlakeHub l'a déjà publié.

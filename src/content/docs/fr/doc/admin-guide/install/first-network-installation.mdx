@@ -34,6 +34,18 @@ sous son compte de déploiement `nix`.
 Le premier poste s'installe seul, depuis l'ISO générique, sans autre
 machine&nbsp;: c'est la voie la plus simple.
 
+:::tip[Essayer d'abord dans une VM]
+Sur un Linux doté de Nix et de KVM, une seule commande démarre l'ISO dans une
+fenêtre QEMU, disque virtuel compris&nbsp;:
+
+```sh
+nix run github:darkone-linux/darkone-nixos-framework#try
+```
+
+Le disque est gardé d'une fois sur l'autre (`~/.local/share/dnf-try`)&nbsp;;
+`nix run …#try -- --reset` repart de zéro.
+:::
+
 <Steps>
 
 1. **Obtenir l'image**
