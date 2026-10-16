@@ -409,6 +409,30 @@ Refuse de tourner hors de l'ISO générique (fichier témoin `/etc/dnf-installer
 just install-here poste alice '<empreinte>'
 ```
 
+### ✳️ `backup-admin <périphérique> [passphrase] [racine]`
+
+Écrit sur une clé USB, sans la formater, une sauvegarde chiffrée par age de ce
+que rien d'autre ne remplace&nbsp;: la clé de déploiement `nix` (qui donne la
+clé age d'admin), la clé age d'infra et le projet (`git bundle`). Fichier
+`dnf-backup-<domaine>.tar.age`, avec un `README.txt` en clair&nbsp;; une
+sauvegarde précédente du même réseau est gardée, renommée à sa date.
+
+- `périphérique`&nbsp;: une partition de la clé, `/dev/disk/by-label/SECOURS`
+  par exemple&nbsp;;
+- `passphrase`&nbsp;: un fichier qui la contient&nbsp;; sinon, age la demande&nbsp;;
+- `racine`&nbsp;: le système qui porte les clés, `/mnt` depuis l'installeur.
+
+`darkone new` la lance après l'installation.
+
+```sh
+just backup-admin /dev/disk/by-label/SECOURS
+```
+
+### ✳️ `backup-check <périphérique> [passphrase] [racine]`
+
+Relit la sauvegarde de `backup-admin`, mêmes arguments, et la compare aux clés
+et au dernier commit du projet.
+
 {/* t:p 865f0750feeb2e5de985ac71cf4c03c9686ede99e3c74b45939a00ab19a05b91 */}
 ### ✳️ `configure <hôte> [ip]`
 

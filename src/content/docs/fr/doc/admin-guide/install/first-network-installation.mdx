@@ -44,7 +44,10 @@ machine&nbsp;: c'est la voie la plus simple.
 
 2. **Démarrer la machine** sur la clé, en filaire, Secure Boot désactivé.
 
-3. **Lancer l'assistant**
+3. **Répondre à l'assistant**
+
+   Il se lance tout seul sur la console, une fois le réseau en place.
+   `Ctrl-C` donne l'invite de commande, d'où il se relance&nbsp;:
 
    ```sh
    darkone new
@@ -52,9 +55,10 @@ machine&nbsp;: c'est la voie la plus simple.
 
    Il demande la langue et le clavier, l'identité et le mot de passe de
    l'administrateur, le domaine du réseau, le nom de la machine, le disque s'il
-   y en a plusieurs, puis le chiffrement du disque et sa passphrase. Le reste
+   y en a plusieurs (pas en dessous de 20&nbsp;Go&nbsp;: la clé de sauvegarde
+   n'est jamais proposée), puis le chiffrement du disque et sa passphrase. Le reste
    se détecte&nbsp;: portable ou poste fixe, UEFI ou BIOS, fuseau horaire du
-   pays.
+   pays. Disque en clair&nbsp;: une passphrase pour la sauvegarde des clés.
 
 4. **Confirmer**
 
@@ -62,10 +66,26 @@ machine&nbsp;: c'est la voie la plus simple.
    est ensuite effacé et le système installé, projet compris dans
    `/etc/nixos`.
 
-5. **Redémarrer**, clé USB retirée. Disque chiffré&nbsp;: la passphrase est
-   demandée à chaque démarrage, avec le clavier choisi.
+5. **Sauvegarder les clés**, sur une seconde clé USB
+
+   Brancher une clé USB (FAT, exFAT, ext4…), la choisir&nbsp;: rien n'y est
+   effacé. L'assistant y écrit `dnf-backup-<domaine>.tar.age`, puis demande de
+   la débrancher et de la rebrancher pour la relire. Pas de sauvegarde
+   relue, pas de fin d'installation.
+
+6. **Redémarrer**, clés USB retirées. Disque chiffré&nbsp;: la passphrase est
+   demandée à chaque démarrage, avec le clavier choisi. La première session
+   ouvre une page d'accueil dans le navigateur&nbsp;: étape 1 sur 4 franchie,
+   la passerelle ensuite.
 
 </Steps>
+
+:::danger[Sans sauvegarde, un disque perdu emporte tous les secrets]
+La clé de déploiement `nix`, la clé age d'infra et le projet n'existent que sur
+ce poste. La sauvegarde, chiffrée par la passphrase du disque (ou celle de la
+sauvegarde, disque en clair), les contient tous&nbsp;: la ranger loin de la
+machine.
+:::
 
 :::caution[La passphrase du disque est celle du parc]
 Elle devient la passphrase partagée (`luks-passphrase`)&nbsp;: tout hôte
@@ -93,6 +113,8 @@ disk:
   encrypt: true
 locale:
   language: "fr_FR.UTF-8"
+backup:
+  device: "/dev/disk/by-label/SECOURS"   # clé USB de la sauvegarde
 ```
 
 ```sh
@@ -102,7 +124,31 @@ darkone new --answers reponses.yaml --non-interactive --yes \
 
 La passphrase du disque n'entre jamais dans le fichier de réponses, qui
 circule&nbsp;: `--luks-passphrase-file` la lit dans un fichier, sinon elle est
-demandée.
+demandée. Elle chiffre aussi la sauvegarde&nbsp;; disque en clair, c'est
+`--backup-passphrase-file`. En scripté, la clé USB est relue sans être
+débranchée.
+
+### Sauvegarde des clés
+
+`dnf-backup-<domaine>.tar.age`, chiffré par age, contient&nbsp;:
+
+- `nix/`&nbsp;: la clé de déploiement (SSH) et la clé age d'admin qui en
+  dérive&nbsp;;
+- `infra.key`&nbsp;: la clé age d'infra&nbsp;;
+- `project.bundle`&nbsp;: le projet, `/etc/nixos`, en `git bundle`.
+
+Pour l'ouvrir, sur n'importe quel Linux doté d'age&nbsp;:
+
+```sh
+age -d dnf-backup-example.org.tar.age | tar -x
+git clone dnf-backup/project.bundle mon-reseau
+```
+
+Sur un nouveau poste d'administration, les clés reprennent leur place, au
+compte `nix`, en mode 600&nbsp;: `/home/nix/.ssh/id_ed25519`,
+`/home/nix/.config/sops/age/keys.txt` et `/etc/sops/age/infra.key`. Le projet
+évolue&nbsp;: `just backup-admin <périphérique>` refait la sauvegarde
+([recettes](/fr/doc/admin-guide/operate/justfile/)).
 
 `--dry-run` affiche le plan sans rien toucher, sur n'importe quelle machine.
 
