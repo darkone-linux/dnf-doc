@@ -5,6 +5,62 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-10-17
+
+### Added
+
+- **gnome**: EnableGdmSelector option shows the GDM user list
+- **gnome**: EnableGdmSelector option shows the GDM user list (en)
+- **home**: Games/education excludePackages, umi dark theme by default
+- **umi**: Tobii 5 defaults, head control on, headSpeed 5, gaze filter 1
+- **umi**: Hover click defaults, 1.6 s delay and 30 px motion threshold
+- **umi**: Single click once button, hover click pauses after one left click
+- **umi**: EnableStkWithMouse, play SuperTuxKart with the mouse alone
+
+### Fixed
+
+- **umi**: Talon waits for the panel tray, Tobii screen size limit documented
+- **monitoring**: FilesystemReadOnly ignores intended read-only mounts
+- **umi**: STK journal lookup, joystick missing from lsusb
+
+### Documentation
+
+- **users**: Login keyring reset after just passwd
+- **users**: Login keyring reset after just passwd (en)
+- **services**: Registry read by the caddy and oauth2-proxy sub-modules
+- **matrix**: Module anatomy after the sub-module split
+- **translate**: Modules refactorings -> en
+- **users**: .bkp file left in a home by Home Manager
+- **profiles**: Per-account darkone.home overrides, no mkForce needed
+- **profiles**: Element Desktop started for every profile with office tools
+- **translate**: Home manager refactorings -> en
+- **profiles**: Ghostty installs its terminfo on ssh hosts
+- **profiles**: Ghostty installs its terminfo on ssh hosts (en)
+- **umi**: Eye tracker calibration from a Cinnamon menu favorite
+- **umi**: Head sensitivity and live pointer tuning from the Talon REPL
+- **umi**: Rofi application grid, hiddenApps option, textScaling default
+- **translate**: Umi adjustments -> en
+- **umi**: Panel without Bluetooth icon nor corner bar
+- **profiles**: Cartable Fantastique for the child profile
+- **umi**: Maximized application windows, enableMaximize option
+- **umi**: Passwordless keyring for the autologin user on every host
+- **install**: Create the project with nix flake new -t, boilerplate sync
+- **config**: Editor completion and validation via config.schema.json
+- **install**: Generic installer ISO from the release, key via ssh-copy-id
+- **profiles**: VS Code and Slidev on demand, migration
+- **hosts**: No firmware on VMs, printer drivers opt-in with migration
+- **install**: The admin machine is a DNF host, nix deploy account
+- **dev**: Upstream module as a backport copy, not a fork input
+- **secrets**: Bootstrap-keys, random nix password, restore the admin keys
+- **install**: Install-here, local install of the admin host from the ISO
+- **config**: The locale sets the console and desktop keyboard
+- **install**: Assisted install with darkone new, scripted with --answers
+- **install**: Encrypted first host with darkone new
+- **install**: Admin key backup, assistant on tty1, welcome page
+- **install**: Try DNF in a VM, installer test of the release train
+- **translate**: Onboarding -> en
+- **ref**: Regenerate for dnf v0.5.0
+
 ## [0.4.0] - 2026-10-05
 
 ### ⚠ Breaking
@@ -448,7 +504,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Initial Astro/Starlight documentation site for Darkone NixOS Framework.
 - Upgrade to Astro 6.
 
-[Unreleased]: https://github.com/darkone-linux/dnf-doc/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/darkone-linux/dnf-doc/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/darkone-linux/dnf-doc/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/darkone-linux/dnf-doc/compare/v0.3.1...v0.4.0
 [0.3.1]: https://github.com/darkone-linux/dnf-doc/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/darkone-linux/dnf-doc/compare/v0.2.1...v0.3.0
