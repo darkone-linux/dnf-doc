@@ -20,6 +20,44 @@ boot. DNF industrializes this point of friction with two guarantees:
   workstation, with no screen or keyboard attached to the host, and that from
   the **very first boot** that follows the installation.
 
+{/* t:p d89183494baf7db9b0ed4f0da63d80d8b39f6b60047a1e565771bd2f14d2cf4e */}
+## Unlock methods
+
+Each method occupies its own keyslot in the LUKS2 header. All of them are valid
+at the same time, on every encrypted volume of the host.
+
+| Method | Where it lives | Role |
+|---|---|---|
+| **Shared passphrase** | sops → `luks-passphrase` | A single one for the whole fleet, it authorizes keyslot management. It is also what **formats** the disk |
+| **Per-host passphrase** | sops → `luks/<hôte>/passphrase` | To hand over to the machine's user without exposing the fleet |
+| **FIDO2 YubiKeys** | Derived from the physical key | Touch the key at boot, nothing to type |
+
+:::note[Why two passphrases and not one]
+They are not meant for the same people&nbsp;: the shared one is the key of the
+fleet administrator, the per-host one is handed to the user of a single
+machine. And because there are two of them, rotating one remains **authorized
+by the other**&nbsp;: the synchronization service never finds itself without a
+way to act on the keyslots, it adds the new slot before killing the old one.
+:::
+
+:::note[There is no installation passphrase anymore]
+`just install` formats the volume with the shared passphrase
+(`nixos-anywhere --disk-encryption-keys`)&nbsp;: the formatting keyslot **is**
+the shared keyslot. Nothing to remember from the installation, nothing to
+retype afterwards. The first machine, installed via `darkone new`, is
+formatted with the passphrase typed in the wizard&nbsp;: it becomes the shared
+passphrase of the fleet. A host installed before that switch is detected by
+`just luks <hôte>`, which then asks for its installation passphrase one last
+time to bootstrap the shared slot.
+:::
+
+:::note[Nothing to declare in the Nix configuration]
+The `darkone.system.luks` module is active by default but **completely inert**
+as long as the host does not appear in the `usr/secrets/luks.json` manifest
+**and** declares no LUKS volume in its disko. Existing encrypted hosts do not
+change until `just luks <hôte>` has been run.
+:::
+
 {/* t:p 190004c52abc1765d77cc4b7bb00ab2bda83f99e21641f1feeed438f76b7addd */}
 ## Provisioning a host
 
