@@ -14,30 +14,140 @@ import { Steps } from '@astrojs/starlight/components';
 {/* t:p 854614f5bd70050fb11d763f899cbe620d3f8e0711d328b29cd8da8110a14663 */}
 A DNF network is set up **step by step**, and you can stop at any stage: a single workstation is enough to get started.
 
-{/* t:p 7168edbb289fe3fc37cb470e6a00a3d543db88eeaef4c1d9f04068d3c6581a84 */}
-## The path
+{/* t:p 9069333d30874b4ad79d8f3d515baa990d526250ef0e55648bb95dab62bdc68d */}
+## The journey
 
-1. **A workstation** : the administrator's machine (this page).
-2. **A gateway** : create a [zone](/en/doc/admin-guide/install/gateway/) and connect other machines to it.
-3. **Coordination** : connect zones via [VPN](/en/doc/admin-guide/install/hcs/) (tailnet).
+1. **A workstation**: the administrator's machine (this page).
+2. **A gateway**: create a [zone](/en/doc/admin-guide/install/gateway/) and connect other workstations to it.
+3. **Coordination**: link the zones together with a [VPN](/en/doc/admin-guide/install/hcs/) (tailnet).
 
 :::note[A single configuration]
-All nodes are described in **one** NixOS configuration, on the administrator's
-machine. From there, the entire network is deployed and evolved.
+All nodes are described in **one** NixOS configuration, on the administrator's machine. From there, the whole network is deployed and evolved. This machine is itself a DNF host: the administration recipes run under its `nix` deployment account.
 :::
 
-{/* t:p 46c17b8025062545b579cc343eb69183d8a881a6eafd602a97a9040fc0925da6 */}
-## Create the project
+{/* t:p 1c23c85b4b2e873ffb4c584f6326a764abd43910147fac0b7a4a1360e253d2f0 */}
+## Assisted installation
 
-The project starts from the `dnf-boilerplate` template: a ready-made structure
-and a commented `etc/config.yaml` to fill in.
+The first workstation installs itself, from the generic ISO, with no other machine: this is the simplest path.
+
+:::tip[Try it first in a VM]
+On a Linux with Nix and KVM, a single command boots the ISO in a QEMU window, virtual disk included:
+
+```sh
+nix run github:darkone-linux/darkone-nixos-framework#try
+```
+
+The disk is kept from one run to the next (`~/.local/share/dnf-try`); `nix run …#try -- --reset` starts from scratch.
+:::
+
+<Steps>
+
+1. **Get the image**
+
+   The generic ISO attached to each
+   [framework release](https://github.com/darkone-linux/darkone-nixos-framework/releases)
+   (`dnf-installer-vX.Y.Z-x86_64-linux.iso`), written to a USB stick.
+
+2. **Boot the machine** from the stick, wired, Secure Boot disabled.
+
+3. **Answer the wizard**
+
+   It launches on its own on the console, once the network is up.
+   `Ctrl-C` gives the command prompt, from where it restarts:
+
+   ```sh
+   darkone new
+   ```
+
+   It asks for the language and keyboard, the administrator's identity and password, the network domain, the machine name, the disk if there are several (not below 20&nbsp;GB: the backup key is never offered), then disk encryption and its passphrase. The rest is detected: laptop or desktop, UEFI or BIOS, the country's time zone. Unencrypted disk: a passphrase for the key backup.
+
+4. **Confirm**
+
+   The summary shows the final choices (domain, login). The disk is then erased and the system installed, project included, in `/etc/nixos`.
+
+5. **Back up the keys**, on a second USB stick
+
+   Plug in a USB stick (FAT, exFAT, ext4…), select it: nothing on it is erased. The wizard writes `dnf-backup-<domain>.tar.age` to it, then asks you to unplug and replug it to read it back. No reread backup, no end of installation.
+
+6. **Reboot**, USB sticks removed. Encrypted disk: the passphrase is requested at every boot, with the chosen keyboard. The first session opens a home page in the browser: step 1 of 4 done, the gateway next.
+
+</Steps>
+
+:::danger[Without a backup, a lost disk takes all the secrets with it]
+The `nix` deployment key, the infra age key and the project only exist on this workstation. The backup, encrypted with the disk's passphrase (or the backup's passphrase, unencrypted disk), contains them all: store it away from the machine.
+:::
+
+:::caution[The disk passphrase is the fleet's passphrase]
+It becomes the shared passphrase (`luks-passphrase`): every encrypted host installed afterwards is formatted with it. Encryption requires UEFI. See [Disk encryption (LUKS)](/en/doc/admin-guide/operate/luks/).
+:::
+
+{/* t:p a1234c364c54cc1bce1d2d19a8591379ce4eed466cf3b5fc5608f55f9d026f47 */}
+### Scripted installation
+
+An answers file stands in for the questions; a missing answer is requested, or refused with `--non-interactive`.
+
+```yaml
+# reponses.yaml
+version: 1
+admin:
+  login: "alice"
+  name: "Alice Martin"
+  passwordHash: '$y$j9T$...'    # mkpasswd -m yescrypt
+network:
+  domain: "example.org"
+host:
+  hostname: "poste"
+disk:
+  encrypt: true
+locale:
+  language: "fr_FR.UTF-8"
+backup:
+  device: "/dev/disk/by-label/SECOURS"   # clé USB de la sauvegarde
+```
+
+```sh
+darkone new --answers reponses.yaml --non-interactive --yes \
+  --luks-passphrase-file /run/user/1000/luks
+```
+
+The disk passphrase never goes into the answers file, which circulates: `--luks-passphrase-file` reads it from a file, otherwise it is requested. It also encrypts the backup; unencrypted disk, that is `--backup-passphrase-file`. In scripted mode, the USB stick is reread without being unplugged.
+
+{/* t:p 1cc36b34e466ea1dc845615ddba891d7d51c7d3c16d2155e789849352c00b8df */}
+### Key backup
+
+`dnf-backup-<domain>.tar.age`, encrypted with age, contains:
+
+- `nix/`: the (SSH) deployment key and the admin age key derived from it;
+- `infra.key`: the infra age key;
+- `project.bundle`: the project, `/etc/nixos`, as a `git bundle`.
+
+To open it, on any Linux with age:
+
+```sh
+age -d dnf-backup-example.org.tar.age | tar -x
+git clone dnf-backup/project.bundle mon-reseau
+```
+
+On a new administration workstation, the keys go back in place, under the `nix` account, in mode 600: `/home/nix/.ssh/id_ed25519`, `/home/nix/.config/sops/age/keys.txt` and `/etc/sops/age/infra.key`. As the project evolves: `just backup-admin <device>` redoes the backup ([recipes](/en/doc/admin-guide/operate/justfile/)).
+
+`--dry-run` prints the plan without touching anything, on any machine.
+
+{/* t:p 14ebf2ba66d96136943b858b6d2d5117b609e7f64595110268fbdc48c5fdc2eb */}
+## Creating the project
+
+Manual path, from an administration machine that is already a DNF host.
+The project starts from the template provided by the framework: a ready-made structure and a commented `etc/config.yaml` to fill in.
 
 <Steps>
 
 1. **Create the repository**
 
-   From the [dnf-boilerplate](https://github.com/darkone-linux/dnf-boilerplate)
-   template ("Use this template" button), or by cloning.
+   ```sh
+   nix flake new -t github:darkone-linux/darkone-nixos-framework mon-reseau
+   cd mon-reseau && git init && git add -A
+   ```
+
+   The project pins the latest framework release. Another path: the GitHub template [dnf-boilerplate](https://github.com/darkone-linux/dnf-boilerplate) (the "Use this template" button), a published copy of the same template.
 
 2. **Bootstrap the framework**
 
@@ -47,13 +157,9 @@ and a commented `etc/config.yaml` to fill in.
    ```
 
    :::note[What does `#init` do?]
-   It creates the `dnf/` link to the framework tree in the nix store: this is
-   what gives `just` its recipes and the generator its profiles. Then
-   `just --list` shows all the available commands.
+   It creates the `dnf/` symlink to the framework tree in the nix store: that is what gives `just` its recipes and the generator its profiles. Then `just --list` lists all available commands.
 
-   Once the project has its own `flake.lock`, you refresh this link with
-   `nix run .#init`: this form follows the revision pinned by the project, so
-   the tooling never diverges from the built system.
+   Once the project has its own `flake.lock`, refresh this symlink with `nix run .#init`: this form follows the revision pinned by the project, so the tooling never diverges from the built system.
    :::
 
 3. **Initialize the secrets**
@@ -63,20 +169,22 @@ and a commented `etc/config.yaml` to fill in.
    ```
 
    :::tip[Idempotent]
-   Creates the age keys, the `.sops.yaml` file, the reference password and the
-   [internal secrets](/en/doc/admin-guide/operate/secrets/#internal-secrets-and-external-secrets)
-   of the declared services. Never recreates what already exists: re-run it
-   after each new service, host or zone.
+   Creates the age keys, the `.sops.yaml` file, the reference password and the [internal secrets](/en/doc/admin-guide/operate/secrets/#internal-secrets-and-external-secrets) of the declared services. It never recreates what already exists: rerun it after every new service, host or zone.
    :::
 
 </Steps>
 
-{/* t:p cb1d627adc4061817b67459b16b7dda54b88b7cc5af85121c04c215e18ce8888 */}
+{/* t:p bc452891b960f9941c6824f7a15db91066ca093dfd434dc19572a0b5ad907fcf */}
 ## Describing the configuration
 
 Everything is declared in `etc/config.yaml` (network, zones, users, hosts).
-For a first workstation, one zone, one user and one host are enough : every
-host belongs to a zone (or carries a public `ipv4` address).
+For a first workstation, one zone, one user and one host suffice: every host belongs to a zone (or carries a public `ipv4` address).
+
+An editor with yaml-language-server (Zed, VS Code with the YAML extension…) completes and validates every key, thanks to this first line of the file (already present in a project created from the template):
+
+```yaml
+# yaml-language-server: $schema=../dnf/config/config.schema.json
+```
 
 ```yaml
 # etc/config.yaml
@@ -104,7 +212,7 @@ hosts:
         main: "/dev/nvme0n1"
 ```
 
-Then regenerate, verify and commit :
+Then regenerate, check and commit:
 
 ```sh
 just generate      # produit var/generated/*.nix depuis etc/config.yaml
@@ -113,39 +221,34 @@ git add . && git commit -m "Premier hôte"
 ```
 
 :::caution[Generated files]
-`var/generated/` is produced by the tool : you never edit it by hand.
-You edit `etc/config.yaml`, then regenerate. `just generate` also seeds the
-files that the framework expects : `usr/users/<login>/` for each account and
-`usr/machines/<hôte>/` (`configuration.nix`, `install/disko.nix`) for each
-host with a `disko` block.
+`var/generated/` is produced by the tool: never edit it by hand.
+Edit `etc/config.yaml`, then regenerate. `just generate` also seeds the files the framework expects: `usr/users/<login>/` for each account and `usr/machines/<host>/` (`configuration.nix`, `install/disko.nix`) for each host with a `disko` block.
 :::
 
 :::danger[Commit before building]
-Nix flakes only see files tracked by git. An uncommitted
-`var/generated/hosts.nix` or `usr/machines/<hôte>/` makes every build fail.
+Nix flakes only see files tracked by git. An uncommitted `var/generated/hosts.nix` or `usr/machines/<host>/` makes every build fail.
 :::
 
-{/* t:p 1470ae27c10646bdfc5030eed8417f1aeaf4c61bf41b5c463b1cad902a81fe01 */}
-## Install a machine
+{/* t:p 96360f6abe9d02ae6b647865b4838644700804b01e917ec95dbd488fae02fbd5 */}
+## Installing a workstation
 
-Installation burns an image, boots the machine from it, then applies the full
-system.
+The installation writes an image, boots the machine from it, then applies the full system.
 
 <Steps>
 
-1. **Generate the image**
+1. **Get the image**
 
    ```sh
    just build-iso
    ```
 
+   This image carries your deployment key. Another path, without building: the generic ISO attached to each
+   [framework release](https://github.com/darkone-linux/darkone-nixos-framework/releases)
+   (`dnf-installer-vX.Y.Z-x86_64-linux.iso`); the key then authorizes itself at boot.
+
 2. **Boot the machine**
 
-   Burn the image to a USB stick, connect the computer to the network **via
-   Ethernet**, then boot from the stick. Before the command prompt, the screen
-   shows a DNF welcome message, then the IP address and the MAC address of the
-   interface connected to the Internet (served by the local gateway or your
-   router)&nbsp;: write them down.
+   Write the image to a USB stick, plug the computer into the network **wired**, then boot from the stick. Before the command prompt, the screen shows a DNF welcome message, then the IP address and MAC address of the interface connected to the Internet (served by the local gateway or your router): note them down.
 
    ```text
    - IP: 10.0.0.50
@@ -154,22 +257,25 @@ system.
 
    The `dnf-netinfo` command displays them again.
 
-3. **Set fixed addresses** (once a zone exists)
+   With the generic ISO, the screen reminds you: set a password (`passwd`), then authorize the key from the admin workstation.
 
-   Installation ends with a reboot, and the following steps must find the
-   machine again. Two cases&nbsp;:
+   ```sh
+   sudo -i -u nix ssh-copy-id nixos@10.0.0.50
+   ```
 
-   - **MAC address already declared**: nothing to do, the gateway serves the
-     same fixed address to the USB stick and the installed system;
-   - **unknown MAC address**: write it down, then declare it.
+3. **Set the addresses** (as soon as a zone exists)
+
+   The installation ends with a reboot, and the next steps must find the machine again. Two cases:
+
+   - **MAC address already declared**: nothing to do, the gateway serves the same static address to the USB stick and the installed system;
+   - **MAC address unknown**: read it, then declare it.
 
    ```sh
    # just host-info <hôte> <ip-actuelle>
    just host-info poste 10.0.0.50
    ```
 
-   Report the value in `etc/config.yaml`, with a **fixed address**, then
-   redeploy the gateway of every affected zone&nbsp;:
+   Enter the value in `etc/config.yaml`, with a **static address**, then redeploy the gateway of each affected zone:
 
    ```yaml
    # etc/config.yaml
@@ -179,11 +285,7 @@ system.
    ```
 
    :::caution[Outside the dynamic DHCP range]
-   The fixed address must be **outside** the zone's `dhcp-range` (by default
-   `<préfixe>.3.200` to `<préfixe>.3.249`). Within the range, the reservation is
-   only honored as long as the address has not already been leased to someone
-   else&nbsp;: the machine then silently changes address at its first boot. The
-   generator refuses this case.
+   The static address must be **outside** the zone's `dhcp-range` (by default `<prefix>.3.200` to `<prefix>.3.249`). Inside the range, the reservation is only honored as long as the address has not already been lent to someone else: the machine then changes address at its first boot, silently. The generator refuses this case.
    :::
 
    ```sh
@@ -196,8 +298,7 @@ system.
 4. **Install the system**
 
    :::caution[Before starting the installation]
-   Make sure the machine boots by default to the disk that will host the
-   system and not to the installation USB stick.
+   Make sure the machine reboots by default onto the disk that will hold the system, not the installation USB stick.
    :::
 
    ```sh
@@ -205,28 +306,16 @@ system.
    just full-install poste nixos 10.0.0.50
    ```
 
-   :::tip[Within a few minutes]
-   `full-install` installs the system, the programs, the configurations and the
-   users. When it reboots automatically, it probes **all** the machine's known
-   addresses (the installation one, its zone's, the transient one, its name)
-   and continues on whichever one answers. On an encrypted host, it also
-   answers the LUKS prompt on its own. In case of failure, the detailed steps
-   are in the `Justfile`.
+   :::tip[In a few minutes]
+   `full-install` installs the system, the programs, the configurations and the users. When it reboots automatically, it probes **all** known addresses of the machine (the installation one, its zone one, the transient one, its name) and continues on whichever answers. On an encrypted host, it also answers the LUKS prompt by itself. In case of failure, the detailed steps are in the `Justfile`.
    :::
 
-   :::note[Install over an existing system]
-   A machine that already runs may hold a dynamic lease older than its
-   reservation. `nixos-anywhere` freezes its target address for the whole
-   run&nbsp;: as soon as its installer does DHCP again, the machine switches to
-   its reserved address and the run talks into the void.
+   :::note[Installing over an existing system]
+   A machine already running may hold a dynamic lease older than its reservation. `nixos-anywhere` freezes its target address for the whole run: as soon as its installer does a new DHCP, the machine switches to its reserved address and the run talks into the void.
 
-   The recipe now refuses to start on an address that the host does not keep.
-   The simplest is to reboot the machine before installing, so that it takes
-   its reserved address.
+   The recipe now refuses to boot on an address the host does not keep. The simplest fix is to reboot the machine before installing, so it takes its reserved address.
 
-   If the case still happens, **nothing is lost**&nbsp;: the installer is
-   already loaded in memory on the machine, at the right address this time.
-   Just run it again, the loading phase is skipped automatically&nbsp;:
+   If the case still occurs, **nothing is lost**: the installer is already loaded in memory on the machine, at the right address this time. Just rerun it there; the loading phase is skipped automatically:
 
    ```sh
    just full-install poste root 10.0.2.1
@@ -238,7 +327,5 @@ system.
 </Steps>
 
 :::note[You can stop here]
-A standalone machine is already fully usable. The
-[gateway](/en/doc/admin-guide/install/gateway/) is only needed to create a
-zone (shared local network).
+A standalone workstation is already fully usable. The [gateway](/en/doc/admin-guide/install/gateway/) is only needed to create a zone (shared local network).
 :::

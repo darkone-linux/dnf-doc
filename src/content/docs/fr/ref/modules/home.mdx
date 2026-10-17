@@ -13,27 +13,30 @@ sidebar:
 **Un module home manager** fonctionne avec les profils [home manager](https://github.com/nix-community/home-manager).
 :::
 
-{/* t:p 40701e4f5386074a54eacf475b7459685e4f867f192a3bd54e62e5f5444b7a9b */}
+{/* t:p 8fdf13f9221c980f32acc19a9d3d633063d5c863d640eb309353e6ec7c992596 */}
 ### &#x1F3E0; darkone.home.advanced
 
-Profil d'accueil pour les utilisateurs avancés (informaticiens, développeurs, administrateurs).
+Profil `home` pour les utilisateurs avancés (informaticiens, développeurs, administrateurs).
 
 :::note[Clés SSH depuis Vaultwarden]
-`enableVaultwardenSsh` transforme `rbw` en agent SSH : les clés privées restent
-dans le coffre de l'utilisateur (chiffrement de bout en bout), jamais en clair
-sur disque ni dans sops. L'utilisateur lance `rbw unlock` une fois par session.
+`enableVaultwardenSsh` transforme `rbw` en agent SSH : les clés privées restent dans
+le coffre de l'utilisateur (chiffrées de bout en bout), jamais en clair sur le disque ni dans sops.
+L'utilisateur exécute `rbw unlock` une fois par session.
 :::
 
-* **enable** `bool` Activer les fonctionnalités utilisateur avancées
-* **enableTools** `bool` Outils variés pour les utilisateurs avancés
+* **enable** `bool` Activer les fonctionnalités pour utilisateurs avancés
+* **enableTools** `bool` Divers outils pour utilisateurs avancés
 * **enablePhoneTools** `bool` Outils pour smartphone (scrcpy)
-* **enableAdmin** `bool` Activer les fonctionnalités administrateur (réseau, outils système)
-* **enableNixAdmin** `bool` Activer les fonctionnalités d'administration nix
-* **enableDnfDeveloper** `bool` Activer tous les outils pour DNF Codev Developer
-* **enableDeveloper** `bool` Activer les outils développeur
+* **enableAdmin** `bool` Activer les fonctionnalités d'administration (réseau, outils système)
+* **enableNixAdmin** `bool` Activer les fonctionnalités d'administration Nix
+* **enableDnfDeveloper** `bool` Activer tous les outils pour un développeur Codev DNF
+* **enableDeveloper** `bool` Activer les outils pour développeur
+* **enableVscode** `bool` VS Code. Opt-in : ~0,3 GiB à télécharger, Zed est l'éditeur par défaut
+* **enableSlidev** `bool` Présentations Slidev (`slidev-cli`, plus son extension VS Code si
+  `enableVscode`). Opt-in : ~0,4 GiB à télécharger
 * **enableEssentials** `bool` Outils fréquemment utilisés
-* **enableVaultwardenSsh** `bool` Agent SSH adossé au coffre Vaultwarden de l'utilisateur (rbw). Ne pas activer sur
-  un hôte joint via `ssh -A` : l'agent local masquerait celui relayé
+* **enableVaultwardenSsh** `bool` Agent SSH s'appuyant sur le coffre Vaultwarden de l'utilisateur (rbw). À ne pas activer sur
+  un hôte atteint via `ssh -A` : l'agent local masquerait celui transmis
 
 ```nix
 darkone.home.advanced = {
@@ -44,6 +47,8 @@ darkone.home.advanced = {
   enableNixAdmin = false;
   enableDnfDeveloper = false;
   enableDeveloper = true;
+  enableVscode = false;
+  enableSlidev = false;
   enableEssentials = true;
   enableVaultwardenSsh = false;
 };
@@ -128,10 +133,10 @@ darkone.home.audio = {
 
 <hr/>
 
-{/* t:p ccba3aeb30aded9435afa145d2d81ea366f47acc6973791166ad3a872f9485e0 */}
+{/* t:p 4b3d985e5098de4315379243dfd3fe60bd3fe1ff38dce0e5a24ecf8c5590639f */}
 ### &#x1F3E0; darkone.home.education
 
-Plusieurs paquets d'éducation graphiques.
+Plusieurs paquets éducatifs graphiques.
 
 * **enable** `bool` Collection de logiciels éducatifs
 * **enableBaby** `bool` Logiciels éducatifs pour bébés (&lt;=6 ans)
@@ -141,9 +146,10 @@ Plusieurs paquets d'éducation graphiques.
 * **enableMusic** `bool` Outils et applications musicales
 * **enableScience** `bool` Outils et applications scientifiques
 * **enableDraw** `bool` Outils et applications de dessin
-* **enableLang** `bool` Outils et applications de langue
-* **enableMisc** `bool` Outils et applications diverses (général, formation...)
+* **enableLang** `bool` Outils et applications linguistiques
+* **enableMisc** `bool` Outils et applications divers (généraux, formation...)
 * **enableComputer** `bool` Outils et applications informatiques (klavaro, etc.)
+* **excludePackages** `listOf package` Logiciels des thèmes activés à ne pas installer, identifiés par leur nom.
 
 ```nix
 darkone.home.education = {
@@ -158,13 +164,16 @@ darkone.home.education = {
   enableLang = true;
   enableMisc = true;
   enableComputer = true;
+  excludePackages = [ ];
 };
 ```
 
-{/* t:p e202c2e0e406911619242d888e19e0712c66acc344372d279c687929053926fc */}
+<hr/>
+
+{/* t:p 2639c165d2e0173266adf6f27f4e29aeeb208128d6fb8665cc5c418045d3370a */}
 ### &#x1F3E0; darkone.home.games
 
-Plusieurs jeux graphiques.
+Plusieurs paquets de jeux graphiques.
 
 * **enable** `bool` Activer les jeux
 * **enableBaby** `bool` Jeux pour bébés (&lt;=6 ans)
@@ -173,7 +182,8 @@ Plusieurs jeux graphiques.
 * **enable3D** `bool` Plus de jeux 3D
 * **enableCli** `bool` Jeux en ligne de commande
 * **enableStk** `bool` SuperTuxKart (uniquement)
-* **enableMore** `bool` Plus de jeux (secondaires) dans chaque catégorie
+* **enableMore** `bool` Plus de jeux secondaires dans chaque catégorie
+* **excludePackages** `listOf package` Jeux des catégories activées à ne pas installer, identifiés par leur nom.
 
 ```nix
 darkone.home.games = {
@@ -185,6 +195,7 @@ darkone.home.games = {
   enableCli = false;
   enableStk = false;
   enableMore = false;
+  excludePackages = [ ];
 };
 ```
 
@@ -326,6 +337,13 @@ Bureau DNF : Firefox ESR, LibreWolf et Chromium. Doc : en-tête de `../office.ni
 
 <hr/>
 
+{/* t:p 5b36653384b06b1f063d273416eee05a61f9ee961880ac34470e208c53941fb9 */}
+### &#x1F3E0; darkone.home.office.cartable-fantastique
+
+Bureau DNF : barre d'outils Cartable Fantastique dans LibreOffice. Doc : en-tête de `../office.nix`.
+
+<hr/>
+
 {/* t:p 10bd5132481d8e57399efc9789c0a9d25d0594125e78544d4ac3941118d21afb */}
 ### &#x1F3E0; darkone.home.office.matrix
 
@@ -359,92 +377,106 @@ darkone.home.office.pandoc.md2pdf = md2pdf;
 
 <hr/>
 
-{/* t:p cc98e19f321c99680044aa6b6ccb95d27a5fcedf252d202e6d6b6b95ac58fde1 */}
+{/* t:p 67ec66a2c85901fe1ce250ddc5a8f2fa21dba1efb37b85c5859cec8e9c571039 */}
 ### &#x1F3E0; darkone.home.office
 
-Bureau de bureau : navigateurs, suite bureautique, communication, cloud et outils PDF.
+Bureau de travail : navigateurs, suite bureautique, communication, cloud et outils PDF.
 
-Les paquets sont contrôlés par des drapeaux par public (`enableEssentials`,
-`enableOffice`, `enableTools`, `enableCommunication`...). Sous-modules (`office/`) :
+Les paquets sont filtrés selon le public (`enableEssentials`, `enableOffice`,
+`enableTools`, `enableCommunication`...). Sous-modules (`office/`) :
 
-- `browsers.nix` : Firefox ESR (LibreWolf, Chromium) avec politiques partagées :
-  page d'accueil et locale de la zone, protection contre le suivi, Bitwarden
-  épinglé si le réseau fait tourner Vaultwarden.
-- `matrix.nix` : dès que le réseau fait tourner Matrix, Element Desktop,
-  pré-configuré (SSO Kanidm) ; Fractal avec `enableCommunication`.
+- `browsers.nix` : Firefox ESR (LibreWolf, Chromium) avec des politiques partagées :
+  page d'accueil et locale de la zone, protection contre le suivi, Bitwarden épinglé lorsque
+  le réseau exécute Vaultwarden.
+- `cartable-fantastique.nix` : barre d'outils Cartable Fantastique dans LibreOffice
+  (`cartableFantastique`, par défaut pour le profil `child`).
+- `matrix.nix` : Element Desktop dès que le réseau exécute Matrix,
+  préconfiguré (SSO Kanidm) ; Fractal avec `enableCommunication`.
 - `nextcloud.nix` : client de bureau lié à l'instance du réseau, et
-  `nextcloud-webdav-login` pour GNOME Online Accounts.
-- `pandoc.nix` : `md2pdf` et les réglages par défaut de pandoc (`enablePandoc`).
+  `nextcloud-webdav-login` pour les Comptes en ligne GNOME.
+- `pandoc.nix` : `md2pdf` et les paramètres par défaut de pandoc (`enablePandoc`).
 
 * **enable** `bool` Paquets utiles par défaut
 * **enableMore** `bool` Plus de paquets alternatifs
 * **enableUnsafeFeatures** `bool` Fonctionnalités pour utilisateurs avancés non-enfants
-* **enableUBlock** `bool` Activer le plugin ublock
-* **enableTools** `bool` Petits outils (gnome) (iotas, dialect, etc.)
-* **enableProductivity** `bool` Apps de productivité (obsidian, gestion du temps, projets, etc.)
+* **enableUBlock** `bool` Activer l'extension uBlock
+* **enableTools** `bool` Petits outils (GNOME) (iotas, dialect, etc.)
+* **enableProductivity** `bool` Applications de productivité (obsidian, gestion du temps, projets, etc.)
 * **enableCommunication** `bool` Outils de communication
 * **enableOffice** `bool` Paquets bureautiques (libreoffice, hunspell, polices...)
-* **enableFirefox** `bool` Activer firefox
-* **enableLibreWolf** `bool` Activer LibreWolf (alternative à firefox)
-* **enableChromium** `bool` Activer chromium
+* **enableFirefox** `bool` Activer Firefox
+* **enableLibreWolf** `bool` Activer LibreWolf (alternative à Firefox)
+* **enableChromium** `bool` Activer Chromium
 * **enableBrave** `bool` Activer Brave Browser
-* **enableEmail** `bool` Paquets de gestion du courrier (thunderbird)
+* **enableEmail** `bool` Paquets de gestion de courriel (thunderbird)
 * **enableSecurity** `bool` Outils de sécurité (keepass)
-* **enableCalendarContacts** `bool` Calendrier, contacts, tâches et apps associées
+* **enableCalendarContacts** `bool` Calendrier, contacts, tâches et applications associées
 * **enablePandoc** `bool` Chaîne d'outils Markdown vers PDF : pandoc, typst, polices Gentium et DejaVu,
-  et la commande `md2pdf` (corps Gentium, A4, la langue de la zone).
+  et la commande `md2pdf` (corps Gentium, A4, langue de la zone).
 
   ```sh
   md2pdf notes.md              # A4, 10pt -&gt; notes.pdf
   md2pdf --big notes.md        # A4, 12pt
-  md2pdf --tablet notes.md     # A6, 9pt (11pt avec --big), zoomé sur une tablette
-  md2pdf -e context notes.md   # moteur ConTeXt (enablePandocContext)
+  md2pdf --tablet notes.md     # A6, 9pt (11pt avec --big), agrandi pour tablette
+  md2pdf -e context notes.md   # Moteur ConTeXt (enablePandocContext)
   ```
 
-  Le moteur est typst. Il rend le TeX brut courant dans les notes (`\pagebreak`,
-  `\placecontent`, `\centerline`...) et signale tout autre élément. Les colonnes
-  des tableaux s'ajustent à leur contenu, sauf si les tirets de séparation
-  diffèrent en longueur (`|--|--------|`) : les largeurs les suivent alors.
-  Un simple `pandoc notes.md -o notes.pdf` utilise le même moteur, la même
-  langue et les mêmes polices.
-  Sous GNOME, les trois dispositions sont aussi proposées au clic droit dans
+  Le moteur est typst. Il rend le code TeX brut habituel dans les notes (`\pagebreak`,
+  `\placecontent`, `\centerline`...) et signale tout autre code. Les colonnes de tableau
+  s'adaptent à leur contenu, sauf si les tirets des séparateurs diffèrent en
+  longueur (`|--|--------|`) : les largeurs suivent alors ces tirets. Un simple
+  `pandoc notes.md -o notes.pdf` utilise le même moteur, la même langue et les mêmes polices.
+  Sous GNOME, les trois mises en page sont également proposées par clic droit dans
   Nautilus (menu Scripts).
-* **enablePandocContext** `bool` ConTeXt comme moteur PDF alternatif, `md2pdf -e context` (~900 MiO, requiert enablePandoc)
-* **pandocAuthor** `nullOr str` Créateur écrit dans les PDF par `md2pdf`. `null` prend le nom complet du compte.
+* **enablePandocContext** `bool` ConTeXt comme moteur PDF alternatif, `md2pdf -e context` (~900 MiB, nécessite enablePandoc)
+* **pandocAuthor** `nullOr str` Créateur inscrit dans les PDFs générés par `md2pdf`. `null` utilise le nom complet du compte.
 * **enableEssentials** `bool` Outils essentiels
 * **hunspellLang** `str` [Dictionnaire Hunspell](https://mynixos.com/nixpkgs/packages/hunspellDicts)
-* **enableElementAutoStart** `bool` Démarrage automatique d'Element Desktop (masqué) à la connexion quand le réseau fait tourner Matrix
+* **cartableFantastique** `nullOr ( enum [ "primaire" "college" "adaptateur" ] )` Édition de la barre d'outils [Cartable Fantastique](https://www.cartablefantastique.fr/outils-pour-compenser/le-plug-in-libre-office/)
+  installée dans LibreOffice, à destination des élèves dyspraxiques ou atteints d'autres troubles DYS.
+  `null` n'installe rien.
+
+  - `primaire` : barres Lire, Écrire, Mathématiques et Tableau.
+  - `college` : ajoute les langues, la chimie, l'électricité et l'éditeur d'équations.
+  - `adaptateur` : ajoute des outils pour l'adulte adaptant le matériel scolaire.
+
+  Installée par compte, dans son profil LibreOffice, lors de l'activation de Home Manager.
+  Nécessite `enableOffice`. La synthèse vocale passe par `spd-say` (speech-dispatcher, activé par défaut
+  sur les bureaux NixOS).
+
+  :::caution[Pas de suppression automatique]
+  En repassant à `null`, l'extension reste installée : supprimez-la depuis *Outils → Gestionnaire d'extensions*.
+  :::
+* **enableElementAutoStart** `bool` Démarrage automatique d'Element Desktop (masqué) à la connexion lorsque le réseau exécute Matrix
 * **enableFractalAutoStart** `bool` Démarrage automatique de Fractal à la connexion, avec `enableCommunication` (opt-in : pas de mode arrière-plan, sa fenêtre s'ouvre)
-* **nextcloud.enable** `bool` Installer le client de bureau Nextcloud, pré-lié à l'instance du réseau
-* **nextcloud.server** `nullOr str` Instance Nextcloud à laquelle le client se lie. `null` choisit celle déclarée
-  sur le réseau (cette zone d'abord). Définissez-la pour viser une instance
-  locale ou externe à la place.
+* **nextcloud.enable** `bool` Installer le client de bureau Nextcloud, prélié à l'instance du réseau
+* **nextcloud.server** `nullOr str` Instance Nextcloud à laquelle le client se lie. `null` sélectionne celle déclarée
+  sur le réseau (cette zone en priorité). Définissez-la pour cibler une instance locale ou externe.
 * **nextcloud.enableAutoStart** `bool` Démarrer le client Nextcloud en arrière-plan à la connexion
-* **nextcloud.enableWebdav** `bool` Fournir `nextcloud-webdav-login`, un assistant one-shot qui authentifie
-  via le navigateur (SSO Kanidm) et enregistre le résultat comme compte GNOME
-  Online : fichiers via WebDAV dans le gestionnaire de fichiers, plus
-  calendrier et contacts dans Evolution. Nécessaire car Nextcloud refuse de
-  créer un mot de passe d'application depuis son interface web pour un
-  utilisateur OIDC.
+* **nextcloud.enableWebdav** `bool` Fournir `nextcloud-webdav-login`, un assistant ponctuel qui s'authentifie
+  via le navigateur (SSO Kanidm) et enregistre le résultat comme un Compte en ligne GNOME :
+  fichiers via WebDAV dans le gestionnaire de fichiers, ainsi que calendrier
+  et contacts dans Evolution. Nécessaire car Nextcloud refuse de créer
+  un mot de passe d'application depuis son interface web pour un utilisateur OIDC.
 
-  L'assistant affiche aussi le mot de passe d'application, si bien que tout
-  autre client WebDAV peut être pointé vers le même compte.
+  L'assistant affiche également le mot de passe d'application, afin que tout autre client WebDAV
+  puisse l'utiliser avec ce compte.
 
-  :::note[GNOME uniquement]
-  Le compte est écrit là où GNOME Online Accounts le lit, ce que
-  `darkone.graphic.gnome` active dès que le réseau porte un cloud.
-  Sur un autre bureau, le mot de passe affiché reste utilisable.
+  :::note[Uniquement GNOME]
+  Le compte est écrit à l'emplacement lu par les Comptes en ligne GNOME, que
+  `darkone.graphic.gnome` active de lui-même dès que le réseau
+  propose un cloud. Sur un autre bureau, le mot de passe affiché reste utilisable.
   :::
 
-  Ignoré quand `darkone.home.office.nextcloud.enable` est désactivé.
-* **nextcloud.syncDir** `nullOr str` Dossier local pré-rempli dans l'assistant de configuration, relatif à `$HOME`.
+  Ignoré si `darkone.home.office.nextcloud.enable` est désactivé.
+* **nextcloud.syncDir** `nullOr str` Dossier local prérempli dans l'assistant de configuration, relatif à `$HOME`.
 
-  :::caution[Pas de synchro par défaut]
-  Laissé `null` volontairement. L'assistant s'arrête alors sur sa page de
-  dossier et l'utilisateur décide quoi synchroniser, le cas échéant. Le
-  définir saute cette page.
+  :::caution[Pas de synchronisation par défaut]
+  Laisser à `null` intentionnellement. L'assistant s'arrête alors sur la page du dossier et
+  l'utilisateur décide de ce qu'il veut synchroniser, le cas échéant. Le définir ignore
+  cette page.
   :::
-* **shared** `raw` Valeurs du bureau partagées avec les sous-modules `office/`.
+* **shared** `raw` Valeurs bureautiques partagées avec les sous-modules `office/`.
 
 ```nix
 darkone.home.office = {
@@ -468,6 +500,7 @@ darkone.home.office = {
   pandocAuthor = "Jane Doe";
   enableEssentials = true;
   hunspellLang = "en-us";
+  cartableFantastique = "primaire";
   enableElementAutoStart = true;
   enableFractalAutoStart = false;
   nextcloud.enable = detectedNextcloud != null;
@@ -493,160 +526,153 @@ darkone.home.office = {
 
 <hr/>
 
-{/* t:p 34fa69fb27a5b72661a765e7c82230f02edce63c411fd653a815ab510cc7b27f */}
+{/* t:p c10081ae9f1d4db7c30430cd64e3e57048147a3e8078b4c50580608d0c177195 */}
+### &#x1F3E0; darkone.home.umi.stk-mouse
+
+DNF UMI : SuperTuxKart piloté uniquement à la souris (`enableStkWithMouse`). Doc : en-tête de `../umi.nix`.
+
+<hr/>
+
+{/* t:p 60d66c5a708e87d6085511c30b3031b531650e4d4a4e9601259f2747bc189203 */}
 ### &#x1F3E0; darkone.home.umi
 
 Saisie multimodale unifiée (UMI)
 
-Écran tactile + voix + regard (démarrage automatique de Talon + Onboard).
+Écran tactile + voix + regard (autodémarrage de Talon + Onboard).
 
-:::note[La session dépend de l'hôte]
-- **Hôte `darkone.host.umi`** : session Cinnamon X11 (udev, uinput, Talon
-  fournis par l'hôte). Talon et un clavier Onboard ancré (prédiction de
-  mots, modificateurs collants) démarrent avec la session, le clavier
-  masqué tant qu'on ne le demande pas. Panneau, icônes et texte agrandis
-  pour les cibles de regard (`panelHeight`, `textScaling`). Panneau DNF
-  (`enablePanel`) : lanceurs | fenêtres ouvertes, puis types de clic au
-  survol, zone de pause, commutateur de regard (applet `umi-mouse`),
-  menu d'accessibilité, bascule Onboard. Les favoris du menu
-  (`menuFavorites`) s'ouvrent avec le calibrage du tracker oculaire.
-- **Tout autre hôte** : GNOME Wayland avec son accessibilité native :
-  clavier à l'écran, pointeur et texte agrandis. Talon et Onboard, en
-  X11 uniquement, restent désactivés.
+:::note[Dépendance de session à l'hôte]
+- **Hôte `darkone.host.umi`** : session Cinnamon X11 (udev, uinput, Talon fourni par l'hôte).
+  Talon et un clavier Onboard ancré (prédiction de mots, modificateurs persistants) démarrent avec la session,
+  le clavier étant masqué jusqu'à ce qu'il soit sollicité. Le tableau de bord, les icônes et le texte
+  sont agrandis pour faciliter le ciblage par le regard (`panelHeight`, `textScaling`).
+  Tableau de bord DNF (`enablePanel`) : lanceurs | fenêtres ouvertes, puis types de clic au survol,
+  zone de pause, commutateur de regard (applet `umi-mouse`), menu d'accessibilité, bascule Onboard.
+  Les favoris du menu (`menuFavorites`) s'ouvrent avec l'étalonnage du suivi oculaire.
+  Les fenêtres d'application s'ouvrent en mode maximisé, le tableau de bord restant à portée (`enableMaximize`).
+- **Tout autre hôte** : GNOME Wayland avec son accessibilité native : clavier virtuel, gros pointeur et texte agrandi.
+  Talon et Onboard, réservés à X11, restent désactivés.
 
-Clic par pause : à activer (`enableDwell`) sous GNOME. Sous Cinnamon, un
-script utilisateur Talon le fait suivre le tracker oculaire, avec contrôle
-par regard (`enableTrackerAuto`). Talon 0.4 et 1.0 au même titre&nbsp;; le
-mode « Always On » de 1.0 est désactivé, le tracker s'éteint avec le
-contrôle par regard.
+Clic au maintien (dwell click) : opt-in (`enableDwell`) sous GNOME. Sous Cinnamon, un script utilisateur Talon
+le fait suivre le suivi oculaire, avec contrôle du regard (`enableTrackerAuto`).
+Talon 0.4 et 1.0 pris en charge ; le mode « Always On » de la 1.0 est désactivé, le suiveur
+s'éteint avec le contrôle du regard.
 :::
 
 :::note[Grille d'applications (hôte UMI)]
-`enableRofiMenu` : le premier lanceur du panneau ouvre une grille rofi
-plein écran, des pages de tuiles `rofiGridResolution` parcourues par des
-boutons en bordure, un clic lance, les panneaux de paramètres exclus.
-`hiddenApps` masque des entrées de la grille comme du menu Cinnamon. rofi
-attrape le pointeur : panneau hors de portée.
+`enableRofiMenu` : le premier lanceur du tableau de bord ouvre une grille rofi plein écran,
+pages de tuiles `rofiGridResolution` tournées par des boutons en bordure, un clic lance
+l'application, les panneaux de paramètres sont exclus. `hiddenApps` masque les entrées de la grille
+et du menu Cinnamon. rofi capte le pointeur : le tableau de bord est hors de portée.
 :::
 
-:::note[Pointage au seul regard (Talon 1.0)]
-Les filtres de Talon figent le curseur ~2 mm avant le regard : le script
-les relève (`gazeFilterSpeed`, `cursorFilterSpeed`, mesurés sur un
-Tobii 5). Les modes du menu Eye Tracking sont déclarés
-(`enableGazeControl`, `enableHeadControl`, `enableHeadJump`,
-`enableMouseJump`, `enableGazeFocus`) et réappliqués à chaque démarrage
-de Talon : regard seul par défaut, une tête instable entraîne le curseur.
+:::note[SuperTuxKart uniquement à la souris (hôte UMI)]
+`enableStkWithMouse` : le lanceur du jeu exécute `dnf-stk-mouse`, qui transforme
+toute souris physique en touches par défaut de STK tant que la fenêtre du jeu a le focus.
+Stick avant/arrière : accélérer/freiner, latéral : virer ; clic gauche : dérapage,
+double-clic : tir, clic droit : nitro. Le pointeur reste inchangé (menus).
 :::
 
-:::tip[Le regard place, la tête affine]
-Avec `enableHeadControl`, `headSpeed` sous 1 amortit les mouvements de
-tête amples (`head_bezier.vmax` mis à l'échelle, levier à valider sur un
-Tobii 5). Réglage en direct depuis le REPL de Talon, perdu au
-redémarrage : `actions.user.umi_head_speed(0.3)`,
-`actions.user.umi_filter_speed(2, 4)`, `print(actions.user.umi_tuning())`.
+:::note[Positions du regard, la tête affine (Talon 1.0)]
+Valeurs par défaut mesurées sur un Tobii 5 : filtre de regard Talon (`gazeFilterSpeed`),
+filtre plus rapide du curseur (`cursorFilterSpeed`), contrôle de la tête activé avec une tête
+sensible (`headSpeed` 5, `head_bezier.vmax` mis à l'échelle). Les modes du menu Eye Tracking
+sont déclarés (`enableGazeControl`, `enableHeadControl`, `enableHeadJump`,
+`enableMouseJump`, `enableGazeFocus`) et réappliqués à chaque démarrage de Talon.
+:::
+
+:::tip[Réglage à chaud]
+Depuis la REPL de Talon (perdu au redémarrage) : `actions.user.umi_head_speed(5)`,
+`actions.user.umi_filter_speed(1, 4)`, `print(actions.user.umi_tuning())`.
 :::
 
 :::tip[Scripts communautaires]
-Renseigner `communityScripts` avec un arbre github:talonhub/community
-récupéré donne un contrôle complet souris-par-voix et souris-par-regard
-(zoom mouse, pop click) de façon déclarative.
+Définir `communityScripts` vers un arbre github:talonhub/community récupéré permet d'obtenir
+déclarativement le contrôle vocal et le contrôle du curseur par le regard (zoom mouse, pop click).
 :::
 
-:::note[Deux schémas]
-Les paramètres vont dans les deux familles : org/cinnamon/* pour la
-session de l'hôte UMI, org/gnome/* pour les sessions GNOME ailleurs. Sous
-Cinnamon, csd réplique les touches souris d'accessibilité entre les deux
-familles, dans les deux sens.
-Exception : les touches verrouillées par le module gnome de DNF ne sont
-jamais écrites ici, une écriture sur une touche verrouillée annule tout le
-`dconf load` de home-manager.
-Le verrouillage de l'écran reste activé côté GNOME (verrouillé par le
-module gnome de DNF)&nbsp;; `idle-delay = 0` évite de le déclencher, et la
-session Cinnamon a sa propre verrouillage entièrement désactivé.
+:::note[Double schéma de configuration]
+Les paramètres s'écrivent dans deux familles : `org/cinnamon/*` pour la session hôte UMI,
+`org/gnome/*` pour les sessions GNOME ailleurs. Sous Cinnamon, csd synchronise
+les touches souris d'accessibilité dans les deux sens entre les deux familles.
+Exception : les clés verrouillées par le module GNOME DNF ne sont jamais écrites ici ;
+l'écriture d'une clé verrouillée annule l'ensemble du `dconf load` de Home Manager.
+Le verrouillage de l'écran reste activé côté GNOME (verrouillé par le module GNOME DNF) ;
+`idle-delay = 0` évite de le déclencher, et la session Cinnamon a son propre verrouillage
+totalement désactivé.
 :::
 
-:::caution[Anneau de clés de connexion : utilisateur à connexion automatique seulement, deux modes décidés par l'hôte]
-Une session à connexion automatique ne tape aucun mot de passe, PAM n'a
-donc rien à transmettre à gnome-keyring et chaque application utilisant des
-secrets affiche une invite gcr à laquelle l'utilisateur UMI ne peut
-répondre. Une connexion par mot de passe déverrouille l'anneau de clés
-comme d'habitude et reste inchangée. Pour l'utilisateur à connexion
-automatique, le correctif dépend de l'hôte :
+:::caution[Trousseau de connexion de l'utilisateur en autologin : sans mot de passe, sur tous les hôtes]
+Une session en autologin ne saisit aucun mot de passe : un trousseau scellé par un mot de passe
+provoque une invite gcr que l'utilisateur UMI ne peut pas répondre. Son trousseau de connexion
+est initialisé avec un mot de passe vide (ini brut, déverrouillé sans invite) ; un trousseau scellé
+est supprimé à chaque activation, `user.keystore` inclus, et ses secrets sont perdus.
 
-- **Hôte non chiffré** : l'anneau de clés de connexion est initialisé avec
-  un mot de passe vide, que gnome-keyring stocke en clair et qui le
-  déverrouille de lui-même (il essaie un mot de passe vide avant de
-  demander). Tout anneau de clés existant protégé par mot de passe est
-  supprimé — sa phrase secrète est intapable ici, elle ne produirait donc
-  que l'invite pour toujours. La connexion automatique accorde déjà toute
-  la session à qui démarre la machine, cela ne coûte donc aucune
-  confidentialité réelle.
-- **Hôte chiffré** (`darkone.system.luks.volumes` non vide) : rien n'est
-  initialisé. La phrase secrète tapée au démarrage est mise en cache dans
-  l'anneau de clés du noyau et transmise à gnome-keyring par `pam_gdm`,
-  l'anneau reste donc chiffré avec elle. C'est le seul mode qui protège
-  les secrets au repos.
-
-Réserve, hôtes chiffrés seulement : la rotation de la phrase secrète LUKS
-(valeur sops modifiée, `luks-passphrase-sync`) laisse l'anneau sur
-l'ancienne — GNOME annonce alors « The password you use to log in to your
-computer no longer matches that of your login keyring ». Supprimer
-`~/.local/share/keyrings/login.keyring` et se reconnecter.
+- Au repos, LUKS le protège ; l'autologin donne déjà la session à quiconque démarre la machine.
+- L'hôte UMI éloigne tout mot de passe de gnome-keyring pour cet utilisateur :
+  un trousseau brut déverrouillé par un mot de passe est rechiffré avec celui-ci
+  à la prochaine écriture (`pam_gdm` et la phrase de passe de démarrage incluses).
+- Les autres utilisateurs, et toute connexion par mot de passe ailleurs : inchangés.
 :::
 
-* **enable** `bool` Configuration de la saisie multimodale UMI (Talon + Onboard)
-* **enableTalonAutostart** `bool` Démarrer Talon à la connexion de la session (talon doit être dans le PATH).
-* **communityScripts** `nullOr package` arbre talonhub/community déployé vers ~/.talon/user/community.
-* **enableDwell** `bool` clic par pause : cliquer en laissant le pointeur au repos. Désactivé par défaut —
-  utilisable uniquement avec un tracker oculaire, et avec une souris il se
-  déclenche sur ce où le pointeur était posé (le menu d'accessibilité qui
-  bascule le zoom ou le clavier à l'écran, en général)
-* **dwellTime** `float` Délai du clic par pause en secondes.
-* **enableTrackerAuto** `bool` Tracker oculaire branché : contrôle souris par regard Talon et clic au
-  survol activés ; débranché : clic au survol désactivé (session
-  Cinnamon). Prend le dessus sur `enableDwell` sous Cinnamon.
-* **gazeFilterSpeed** `nullOr numbers.positive` Coefficient du filtre de regard par œil du Control Mouse de Talon, avec
-  `enableTrackerAuto` : plus haut réagit plus vite et lisse moins. La
-  valeur propre de Talon (1.0) fige le curseur avant le regard ; `null`
-  la conserve.
-* **cursorFilterSpeed** `nullOr numbers.positive` Coefficient du filtre de curseur du Control Mouse de Talon, avec
-  `enableTrackerAuto` : plus haut réagit plus vite, dépasse plus.
-  `null` conserve la valeur propre de Talon (2.0).
-* **headSpeed** `nullOr numbers.positive` Sensibilité du Head Control de Talon, avec `enableTrackerAuto` et
-  `enableHeadControl` : sous 1 la tête déplace moins le curseur (mouvements
-  amples, mal contrôlés). `null` conserve la valeur propre de Talon (1).
-* **enableGazeControl** `bool` Gaze Control de Talon, avec `enableTrackerAuto` : le curseur suit le regard.
-* **enableHeadControl** `bool` Head Control de Talon, avec `enableTrackerAuto` : les mouvements de tête
-  déplacent aussi le curseur. Désactivé par défaut, une tête instable
-  entraîne le curseur hors du regard
-* **enableHeadJump** `bool` Head Jump de Talon, avec `enableTrackerAuto` : un mouvement de tête amène
-  le curseur au regard
-* **enableMouseJump** `bool` Mouse Jump de Talon, avec `enableTrackerAuto` : déplacer une vraie souris
-  vers le regard y amène le curseur. Désactivé par défaut, il agite le
-  pointeur d'un assistant
-* **enableGazeFocus** `bool` Gaze Focus de Talon (expérimental), avec `enableTrackerAuto` : la fenêtre
-  regardée prend le focus
-* **panelHeight** `ints.between 40 96` Hauteur du panneau Cinnamon en pixels, ses icônes suivent (cibles de regard).
-* **textScaling** `float` Facteur d'échelle du texte de la session Cinnamon (les boutons grossissent avec leurs libellés).
-* **enablePanel** `bool` Panneau Cinnamon géré par DNF : lanceurs et fenêtres ouverts séparés,
-  commandes de clic au survol (types de clic, zone de pause), menu
-  d'accessibilité, bascule du clavier. Réécrit à chaque activation.
-* **panelLaunchers** `listOf str` Lanceurs du panneau (ids de fichiers desktop), avec `enablePanel`.
-* **menuFavorites** `listOf str` Favoris du menu Cinnamon (ids de fichiers desktop), réécrits à chaque
+* **enable** `bool` Configuration UMI de saisie multimodale (Talon + Onboard)
+* **enableTalonAutostart** `bool` Démarrer Talon à la connexion de session, une fois le tableau de bord initialisé (talon doit être dans le PATH).
+* **communityScripts** `nullOr package` Arbre talonhub/community déployé dans ~/.talon/user/community.
+* **enableDwell** `bool` Clic au maintien : clic en maintenant le pointeur immobile. Désactivé par défaut — uniquement utilisable
+  avec un suivi oculaire, et avec une souris il se déclenche sur l'emplacement laissé
+  (typiquement le menu d'accessibilité basculant le zoom ou le clavier virtuel)
+* **dwellTime** `float` Délai du clic au maintien en secondes.
+* **enableTrackerAuto** `bool` Suivi oculaire branché : contrôle du curseur par le regard Talon et clic au survol activés ;
+  débranché : clic au survol désactivé (session Cinnamon). Prend le dessus sur
+  `enableDwell` sous Cinnamon.
+* **gazeFilterSpeed** `nullOr numbers.positive` Coefficient de filtre de regard Talon (par œil), avec
+  `enableTrackerAuto` : plus haut = plus réactif et moins lissé. Par défaut :
+  celui de Talon, la tête affine les derniers millimètres ; `null` conserve
+  la valeur de Talon.
+* **cursorFilterSpeed** `nullOr numbers.positive` Coefficient de filtre du curseur Talon, avec
+  `enableTrackerAuto` : plus haut = plus réactif, plus de dépassement. `null`
+  conserve la valeur de Talon (2,0).
+* **headSpeed** `nullOr numbers.positive` Sensibilité du contrôle de la tête Talon, avec `enableTrackerAuto` et
+  `enableHeadControl` : au-dessus de 1, un léger mouvement de tête déplace le curseur,
+  en dessous de 1, les mouvements amples ou mal contrôlés sont amortis. `null`
+  conserve la valeur de Talon (1).
+* **enableGazeControl** `bool` Contrôle du regard Talon, avec `enableTrackerAuto` : le curseur suit le regard.
+* **enableHeadControl** `bool` Contrôle de la tête Talon, avec `enableTrackerAuto` : les mouvements de tête affinent
+  le curseur placé par le regard (`headSpeed`). À désactiver si la tête est instable,
+  car cela éloigne le curseur du point de regard.
+* **enableHeadJump** `bool` Saut de tête Talon, avec `enableTrackerAuto` : un mouvement de tête amène
+  le curseur au point de regard
+* **enableMouseJump** `bool` Saut de souris Talon, avec `enableTrackerAuto` : déplacer une souris physique
+  vers le point de regard y amène le curseur. Désactivé par défaut, cela déplace
+  brutalement le pointeur d'un aidant
+* **enableGazeFocus** `bool` Focus par le regard Talon (expérimental), avec `enableTrackerAuto` : la fenêtre
+  regardée obtient le focus
+* **panelHeight** `ints.between 40 96` Hauteur du tableau de bord Cinnamon en pixels, ses icônes suivent (cibles pour le regard).
+* **textScaling** `float` Facteur de mise à l'échelle du texte de la session Cinnamon (les boutons grandissent avec leurs libellés).
+* **enablePanel** `bool` Tableau de bord Cinnamon géré par DNF : lanceurs et fenêtres ouvertes séparés,
+  contrôles de clic au survol (types de clic, zone de pause), menu d'accessibilité,
+  bascule clavier ; pas d'icône Bluetooth ni de barre d'angle. Réécrit à
+  chaque activation.
+* **enableMaximize** `bool` Les fenêtres d'application s'ouvrent en mode maximisé (extension Cinnamon), le tableau de bord
+  reste à portée. Les boîtes de dialogue, Onboard et les fenêtres à taille fixe conservent
+  leur taille.
+* **panelLaunchers** `listOf str` Lanceurs du tableau de bord (identifiants de fichiers .desktop), avec `enablePanel`.
+* **menuFavorites** `listOf str` Favoris du menu Cinnamon (identifiants de fichiers .desktop), réécrits à chaque
   activation. `dnf-umi-calibrate.desktop`, avec `enableTrackerAuto`,
-  lance le calibrage du tracker oculaire.
-* **enableRofiMenu** `bool` Grille d'applications plein écran (rofi), hôte UMI seulement : pages de
-  grandes tuiles parcourues par des boutons en bordure, un clic lance,
-  les panneaux de paramètres exclus. Ouverte par le premier lanceur du
-  panneau (avec `enablePanel`).
-* **rofiGridResolution** `submodule` Page de la grille d'applications, en tuiles, avec `enableRofiMenu`. La
-  par défaut 6 × 4 tient des icônes de 96 px sur un écran 1600×900&nbsp;;
-  moins de tuiles les élargit.
-  * **columns** `ints.between 1 12` Tuiles par rangée.
-  * **rows** `ints.between 1 8` Rangées de tuiles par page.
-* **hiddenApps** `listOf str` Applications masquées de la grille et du menu Cinnamon (ids de fichiers
-  desktop), hôte UMI seulement. Le lancement par id et les associations
-  de fichiers fonctionnent toujours.
+  lance l'étalonnage du suivi oculaire.
+* **enableRofiMenu** `bool` Grille d'applications plein écran (rofi), hôte UMI uniquement : pages de grandes
+  tuiles tournées par des boutons en bordure, un clic lance l'application, les panneaux
+  de paramètres sont exclus. Ouverte par le premier lanceur du tableau de bord (avec `enablePanel`).
+* **rofiGridResolution** `submodule` Grille d'applications par page, en tuiles, avec `enableRofiMenu`. La valeur
+  par défaut 6 × 4 correspond à des icônes de 96 px sur un écran 1600×900 ; moins de tuiles
+  les agrandit.
+  * **columns** `ints.between 1 12` Tuiles par ligne.
+  * **rows** `ints.between 1 8` Lignes de tuiles par page.
+* **hiddenApps** `listOf str` Applications masquées de la grille et du menu Cinnamon (identifiants de fichiers .desktop),
+  hôte UMI uniquement. Les lancements par identifiant et les associations de fichiers restent fonctionnels.
+* **enableStkWithMouse** `bool` SuperTuxKart piloté uniquement à la souris, hôte UMI uniquement : le stick (ou
+  les mouvements de souris) accélère, freine et vire, clic gauche dérape, double-clic
+  tire, clic droit utilise le nitro. Installe le jeu, son lanceur
+  exécute le convertisseur
 
 ```nix
 darkone.home.umi = {
@@ -654,25 +680,27 @@ darkone.home.umi = {
   enableTalonAutostart = true;
   communityScripts = null;
   enableDwell = false;
-  dwellTime = 1.2;
+  dwellTime = 1.6;
   enableTrackerAuto = true;
-  gazeFilterSpeed = 2.0;
+  gazeFilterSpeed = 1.0;
   cursorFilterSpeed = 4.0;
   headSpeed = 0.3;
   enableGazeControl = true;
-  enableHeadControl = false;
+  enableHeadControl = true;
   enableHeadJump = false;
   enableMouseJump = false;
   enableGazeFocus = false;
   panelHeight = 64;
   textScaling = 1.5;
   enablePanel = true;
+  enableMaximize = true;
   panelLaunchers = [ ];
   menuFavorites = [ ];
   enableRofiMenu = true;
   rofiGridResolution.columns = 6;
   rofiGridResolution.rows = 4;
   hiddenApps = [ ];
+  enableStkWithMouse = false;
 };
 ```
 

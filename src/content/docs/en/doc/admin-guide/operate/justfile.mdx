@@ -296,7 +296,7 @@ The host must have a complete `disko` block in `etc/config.yaml` (profile and
 fixed address (`zone: "<zone>:<x.y>"`). The last two points are checked before
 any formatting: without them, the machine changes address at the reboot that
 follows installation. See [Initial
-installation](/en/doc/admin-guide/install/first-network-installation/#install-a-machine).
+installation](/en/doc/admin-guide/install/first-network-installation/#installing-a-workstation).
 :::
 
 The `ip` argument defaults to `auto`: the address is computed the same way as
@@ -367,6 +367,39 @@ Formats a USB device with disko and installs NixOS on it. Seals the host like
 just install-key myusbhost
 ```
 
+{/* t:p 20da6344adfb9ffd435fd452f24a0ae002773ff1f4734c7fe6845f70d90a9aa8 */}
+### ✳️ `install-here <hôte> <login> [empreinte] [yes] [passphrase]`
+
+Installs the machine it runs on, booted from the generic DNF ISO, as the project's administration workstation: disko wipes its disk, the keys are born on the target (`bootstrap-keys`), then `nixos-install`. The project joins `/etc/nixos` of the new system, owned by `login`. An encrypted disk requires its passphrase file, which becomes the fleet's shared passphrase; the initrd SSH key is deposited on the target.
+
+:::danger[Wipes the disk of the current machine]
+Refuses to run outside the generic ISO (witness file `/etc/dnf-installer`).
+:::
+
+```sh
+just install-here poste alice '<empreinte>'
+```
+
+{/* t:p d4ad0660a7291391eec287e97146085ed32d91bd73a567d49cc213c7d183bf55 */}
+### ✳️ `backup-admin <périphérique> [passphrase] [racine]`
+
+Writes to a USB key, without formatting it, an age-encrypted backup of what nothing else replaces: the `nix` deployment key (which gives the admin age key), the infra age key and the project (`git bundle`). File `dnf-backup-<domaine>.tar.age`, with a plain `README.txt`; a previous backup of the same network is kept, renamed with its date.
+
+- `périphérique`: a partition of the key, `/dev/disk/by-label/SECOURS` for example;
+- `passphrase`: a file containing it; otherwise, age asks for it;
+- `racine`: the system holding the keys, `/mnt` from the installer.
+
+`darkone new` runs it after installation.
+
+```sh
+just backup-admin /dev/disk/by-label/SECOURS
+```
+
+{/* t:p 2bf25caf9dce75af1e1509428b8f9682835e01df66c6ad9dbcd4e7cd06457e88 */}
+### ✳️ `backup-check <périphérique> [passphrase] [racine]`
+
+Reads back the `backup-admin` backup, same arguments, and compares it to the keys and the latest commit of the project.
+
 {/* t:p 865f0750feeb2e5de985ac71cf4c03c9686ede99e3c74b45939a00ab19a05b91 */}
 ### ✳️ `configure <host> [ip]`
 
@@ -411,14 +444,10 @@ then chains `detect-hw`.
 just copy-hw myserver
 ```
 
-{/* t:p 7d3b497597bd716e7a910b1a40033c41a74fbf6bfa83d6311d1f75b4a81e9a1c */}
-### ✳️ `detect-hw <host> [ip] [user]`
+{/* t:p d17dc0994db7f9c7685e2bb8be16ad6c5cb7a4453e754525f9cb8b0476fba3b0 */}
+### ✳️ `detect-hw <hôte> [ip] [user]`
 
-Gathers on the machine the kernel modules of its wired network cards and writes
-them to `usr/machines/<host>/hardware/detected-hardware.nix` (generated file,
-imported automatically). They only join the initrd if it has network, for
-[remote LUKS unlock](/en/doc/admin-guide/operate/luks/). Called by `install`
-(`nixos` user of the ISO) and by `copy-hw`.
+Collects on the machine the kernel modules of its wired network cards and writes them to `usr/machines/<hôte>/hardware/detected-hardware.nix` (generated file, imported automatically). They join the initrd only if it has network, for [remote LUKS unlocking](/en/doc/admin-guide/operate/luks/). Also detects a virtual machine (`systemd-detect-virt`): no firmware is loaded on it (`darkone.system.hardware.virtual`). Called by `install` (`nixos` user of the ISO) and by `copy-hw`.
 
 ```sh
 just detect-hw myserver
@@ -511,6 +540,15 @@ adding a host or a zone. See
 
 ```sh
 just configure-admin-host
+```
+
+{/* t:p 2aa934df4aa5afcbf4b93f71bfcd97f8d6bf3b510e9d001f6ffd6192a7d9d60d */}
+### ✳️ `bootstrap-keys [racine] [login] [empreinte]`
+
+Creates the keys and the sops skeleton of a machine that has no `nix` account yet, under the given root (`/`, or `/mnt` from the installer). `configure-admin-host` relies on the same mechanism. The fingerprint of an account (`mkpasswd`, in single quotes) is optional.
+
+```sh
+just bootstrap-keys /mnt alice '<empreinte>'
 ```
 
 {/* t:p acb78183caf1bf914a25a73ebe75aa2943291d34e30fc05807884f8055117ab6 */}

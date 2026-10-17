@@ -124,26 +124,32 @@ darkone.system.documentation.enable = false;
 
 <hr/>
 
-{/* t:p 3adf0df2698845c1f9106cae5c85503a09f6fbc66033cd9efcf2d31af50b5b29 */}
+{/* t:p 7af786e622f6d8bf032c6aed476f87d48d2c99ea95167d7b607adb9ffad2659f */}
 ### &#x2699; darkone.system.hardware
 
 Hardware configuration improvements.
 
+Every firmware is loaded (`hardware.enableAllFirmware`), except on a virtual
+machine: `just detect-hw` probes it (`systemd-detect-virt --vm`) and sets
+`darkone.system.hardware.virtual` in `hardware/detected-hardware.nix`.
+
 * **enable** `bool` Enable hardware optimisations
 * **enableIntel** `bool` Enable intel microcode updates
 * **enableAmd** `bool` Enable amd microcode updates
+* **virtual** `bool` Virtual machine, no firmware loaded. Set by `just detect-hw`
 
 ```nix
 darkone.system.hardware = {
   enable = false;
   enableIntel = false;
   enableAmd = false;
+  virtual = false;
 };
 ```
 
 <hr/>
 
-{/* t:p 6d45bdbe22a6c16d07209a2d1b8d4731cfb1d754cfe098972471e9e87021a482 */}
+{/* t:p 61de4ebd13b1872e4751825029c1eff7067989d28489a55601a8676a78c190af */}
 ### &#x2699; darkone.system.i18n
 
 Location and lang configuration.
@@ -154,21 +160,36 @@ the canonical `xx_YY.UTF-8` shape (e.g. `fr_FR.UTF-8`): the console keymap,
 XKB layout and Nextcloud phone region derive from it.
 :::
 
+:::tip[Keyboard of a locale]
+`dnf/config/locales.json` gives the keyboard of each locale the installer
+offers (`en_GB.UTF-8`: `uk` on the console, `gb` in XKB). Any other locale
+takes its country code (`ru_RU.UTF-8`: `ru`).
+:::
+
 * **enable** `bool` Enable i18n with network zone configuration by default
 * **locale** `strMatching dnfLib.localeRegex` Network locale, must match the `xx_YY.UTF-8` shape.
 * **timeZone** `str` Network time zone
+* **keyboard** `raw` Keyboard of the locale: `console` keymap, `xkb` layout and `xkbVariant`.
 
 ```nix
 darkone.system.i18n = {
   enable = false;
   locale = "fr_FR.UTF-8";
   timeZone = "Europe/Paris";
+  keyboard = if cfg.enable then
+          dnfLib.keyboardFromLocale cfg.locale
+        else
+          {
+            console = config.console.keyMap;
+            xkb = config.console.keyMap;
+            xkbVariant = "";
+          };
 };
 ```
 
 <hr/>
 
-{/* t:p 547364c2554296fa354c98b7915e0e0f9cec01677ee8999e8f42005ade8613a0 */}
+{/* t:p e64e364746893de53c4992b80741a6ff11b1b8f815f4379cc7f741ae4545bac6 */}
 ### &#x2699; darkone.system.luks
 
 LUKS passphrase policy & remote unlock: shared + per-host passphrases, initrd SSH.
@@ -190,7 +211,8 @@ the old one).
 
 There is no separate "install passphrase": `just install` formats the volume
 through `nixos-anywhere --disk-encryption-keys` with the shared passphrase, so
-the format keyslot *is* the shared keyslot.
+the format keyslot *is* the shared keyslot. On the first host (`darkone new`,
+`just install-here`), the passphrase typed in the assistant becomes it.
 
 `just luks <host>` provisions a host (idempotent, also called by
 `just configure`); its `pre` phase runs offline and is called by `just install`

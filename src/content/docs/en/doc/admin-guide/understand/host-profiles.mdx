@@ -43,20 +43,33 @@ desktop -> laptop
 desktop -> umi
 ```
 
-{/* t:p b3b7940308e58ff97e4ac5d3bd551991dbc10de041b9750efccd25c9ac9504a5 */}
-## The profiles
+{/* t:p 93d2fd3f1a2633638ed02f8ab4e0b23e632d7625e172ea15c0d6734be72da4a0 */}
+## Profiles
 
 | Profile | For what | Inherits from | Provides |
 |---|---|---|---|
-| `minimal` | Base of every host | | Hardware, firewall, i18n, zsh, sudo |
-| `server` | Headless server | `minimal` | No suspend, watchdog, limited boot |
+| `minimal` | Base for every host | | Hardware, firewall, i18n, zsh, sudo |
+| `server` | Screenless server | `minimal` | No sleep, watchdog, limited boot |
 | `desktop` | Workstation | `minimal` | GNOME, multimedia, office suite |
 | `laptop` | Laptop | `desktop` | Battery, sensors, thermald |
 | `umi` | Accessible workstation | `desktop` | Autologin, uinput, Tobii udev |
-| `portable` | Bootable USB drive | `minimal` | Extended hardware drivers |
+| `portable` | Bootable USB stick | `minimal` | Extended hardware drivers |
 | `gateway` | Zone gateway | `server` | Router, firewall, DNS/DHCP, VPN |
 | `hcs` | VPN coordination | `server` | Headscale + shared services |
 | `vm` | Virtual machine | `server` | Guest tools (VirtualBox/QEMU/Xen) |
+
+Every host loads the full set of firmware, except a virtual machine&nbsp;:
+`just install` and `just copy-hw` detect it, whatever its profile
+(0.8 GiB less to download).
+
+Workstations (`desktop`, `laptop`) print via CUPS and network discovery,
+without proprietary drivers. For all drivers (HP, Brother, Canon, Epson,
+Samsung), including on a laptop that already had them:
+
+```nix
+# usr/machines/<hôte>/configuration.nix
+darkone.service.printing.loadAll = true;
+```
 
 {/* t:p 8e8c875a21edff3916f1840f55da250b12833b4f26a3d9a40b99f475e5e2cc42 */}
 ## Choosing a profile

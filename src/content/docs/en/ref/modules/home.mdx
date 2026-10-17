@@ -13,7 +13,7 @@ sidebar:
 **A home manager module** works with [home manager](https://github.com/nix-community/home-manager) profiles.
 :::
 
-{/* t:p 40701e4f5386074a54eacf475b7459685e4f867f192a3bd54e62e5f5444b7a9b */}
+{/* t:p 8fdf13f9221c980f32acc19a9d3d633063d5c863d640eb309353e6ec7c992596 */}
 ### &#x1F3E0; darkone.home.advanced
 
 Home profile for advanced users (computer scientists, developers, admins).
@@ -31,6 +31,9 @@ The user runs `rbw unlock` once per session.
 * **enableNixAdmin** `bool` Enable nix administration features
 * **enableDnfDeveloper** `bool` Enable all tools for DNF Codev Developer
 * **enableDeveloper** `bool` Enable tools for developer
+* **enableVscode** `bool` VS Code. Opt-in: ~0.3 GiB to download, Zed is the default editor
+* **enableSlidev** `bool` Slidev presentations (`slidev-cli`, plus its VS Code extension when
+  `enableVscode`). Opt-in: ~0.4 GiB to download
 * **enableEssentials** `bool` Frequently used tools
 * **enableVaultwardenSsh** `bool` SSH agent backed by the user's Vaultwarden vault (rbw). Do not enable on
   a host reached with `ssh -A`: the local agent would mask the forwarded one
@@ -44,6 +47,8 @@ darkone.home.advanced = {
   enableNixAdmin = false;
   enableDnfDeveloper = false;
   enableDeveloper = true;
+  enableVscode = false;
+  enableSlidev = false;
   enableEssentials = true;
   enableVaultwardenSsh = false;
 };
@@ -127,7 +132,7 @@ darkone.home.audio = {
 
 <hr/>
 
-{/* t:p ccba3aeb30aded9435afa145d2d81ea366f47acc6973791166ad3a872f9485e0 */}
+{/* t:p 4b3d985e5098de4315379243dfd3fe60bd3fe1ff38dce0e5a24ecf8c5590639f */}
 ### &#x1F3E0; darkone.home.education
 
 Several graphical education packages.
@@ -143,6 +148,7 @@ Several graphical education packages.
 * **enableLang** `bool` Lang tools and apps
 * **enableMisc** `bool` Misc tools and apps (general, training...)
 * **enableComputer** `bool` Computing tools and apps (klavaro, etc.)
+* **excludePackages** `listOf package` Software of the enabled themes not to install, matched by name.
 
 ```nix
 darkone.home.education = {
@@ -157,12 +163,13 @@ darkone.home.education = {
   enableLang = true;
   enableMisc = true;
   enableComputer = true;
+  excludePackages = [ ];
 };
 ```
 
 <hr/>
 
-{/* t:p e202c2e0e406911619242d888e19e0712c66acc344372d279c687929053926fc */}
+{/* t:p 2639c165d2e0173266adf6f27f4e29aeeb208128d6fb8665cc5c418045d3370a */}
 ### &#x1F3E0; darkone.home.games
 
 Several graphical game packages.
@@ -175,6 +182,7 @@ Several graphical game packages.
 * **enableCli** `bool` Cli Games
 * **enableStk** `bool` SuperTuxKart (only)
 * **enableMore** `bool` More (secondary) games in each categories
+* **excludePackages** `listOf package` Games of the enabled categories not to install, matched by name.
 
 ```nix
 darkone.home.games = {
@@ -186,6 +194,7 @@ darkone.home.games = {
   enableCli = false;
   enableStk = false;
   enableMore = false;
+  excludePackages = [ ];
 };
 ```
 
@@ -325,6 +334,13 @@ DNF office: Firefox ESR, LibreWolf and Chromium. Doc: `../office.nix` header.
 
 <hr/>
 
+{/* t:p 5b36653384b06b1f063d273416eee05a61f9ee961880ac34470e208c53941fb9 */}
+### &#x1F3E0; darkone.home.office.cartable-fantastique
+
+DNF office: Cartable Fantastique toolbar in LibreOffice. Doc: `../office.nix` header.
+
+<hr/>
+
 {/* t:p 10bd5132481d8e57399efc9789c0a9d25d0594125e78544d4ac3941118d21afb */}
 ### &#x1F3E0; darkone.home.office.matrix
 
@@ -358,7 +374,7 @@ darkone.home.office.pandoc.md2pdf = md2pdf;
 
 <hr/>
 
-{/* t:p cc98e19f321c99680044aa6b6ccb95d27a5fcedf252d202e6d6b6b95ac58fde1 */}
+{/* t:p 67ec66a2c85901fe1ce250ddc5a8f2fa21dba1efb37b85c5859cec8e9c571039 */}
 ### &#x1F3E0; darkone.home.office
 
 Office desktop: browsers, office suite, communication, cloud and PDF tools.
@@ -369,6 +385,8 @@ Packages are gated by audience flags (`enableEssentials`, `enableOffice`,
 - `browsers.nix`: Firefox ESR (LibreWolf, Chromium) with shared policies:
   zone homepage and locale, tracking protection, Bitwarden pinned when the
   network runs Vaultwarden.
+- `cartable-fantastique.nix`: Cartable Fantastique toolbar in LibreOffice
+  (`cartableFantastique`, default for the `child` profile).
 - `matrix.nix`: Element Desktop as soon as the network runs Matrix,
   pre-configured (Kanidm SSO); Fractal with `enableCommunication`.
 - `nextcloud.nix`: desktop client bound to the network instance, and
@@ -411,6 +429,22 @@ Packages are gated by audience flags (`enableEssentials`, `enableOffice`,
 * **pandocAuthor** `nullOr str` Creator written into PDFs by `md2pdf`. `null` takes the account's full name.
 * **enableEssentials** `bool` Essential tools
 * **hunspellLang** `str` [Hunspell dictionary](https://mynixos.com/nixpkgs/packages/hunspellDicts)
+* **cartableFantastique** `nullOr ( enum [ "primaire" "college" "adaptateur" ] )` Edition of the [Cartable Fantastique](https://www.cartablefantastique.fr/outils-pour-compenser/le-plug-in-libre-office/)
+  toolbar installed in LibreOffice, for pupils with dyspraxia or other DYS
+  disorders. `null` installs nothing.
+
+  - `primaire`: Lire, Écrire, Mathématiques and Tableau bars.
+  - `college`: adds languages, chemistry, electricity, equation editor.
+  - `adaptateur`: adds tools for the adult adapting school material.
+
+  Installed per account, in its LibreOffice profile, at Home Manager
+  activation. Needs `enableOffice`. Text-to-speech goes through
+  `spd-say` (speech-dispatcher, on by default on NixOS desktops).
+
+  :::caution[No automatic removal]
+  Back to `null`, the extension stays: remove it from *Tools → Extension
+  Manager*.
+  :::
 * **enableElementAutoStart** `bool` Auto-start Element Desktop (hidden) on login when the network runs Matrix
 * **enableFractalAutoStart** `bool` Auto-start Fractal on login, with `enableCommunication` (opt-in: no background mode, its window opens)
 * **nextcloud.enable** `bool` Install the Nextcloud desktop client, pre-bound to the network instance
@@ -465,6 +499,7 @@ darkone.home.office = {
   pandocAuthor = "Jane Doe";
   enableEssentials = true;
   hunspellLang = "en-us";
+  cartableFantastique = "primaire";
   enableElementAutoStart = true;
   enableFractalAutoStart = false;
   nextcloud.enable = detectedNextcloud != null;
@@ -490,7 +525,14 @@ darkone.home.office = {
 
 <hr/>
 
-{/* t:p 34fa69fb27a5b72661a765e7c82230f02edce63c411fd653a815ab510cc7b27f */}
+{/* t:p c10081ae9f1d4db7c30430cd64e3e57048147a3e8078b4c50580608d0c177195 */}
+### &#x1F3E0; darkone.home.umi.stk-mouse
+
+DNF UMI: SuperTuxKart driven by the mouse alone (`enableStkWithMouse`). Doc: `../umi.nix` header.
+
+<hr/>
+
+{/* t:p 60d66c5a708e87d6085511c30b3031b531650e4d4a4e9601259f2747bc189203 */}
 ### &#x1F3E0; darkone.home.umi
 
 Unified Multimodal Input (UMI)
@@ -505,7 +547,8 @@ Touchscreen + voice + gaze (Talon autostart + Onboard).
   (`panelHeight`, `textScaling`). DNF panel (`enablePanel`): launchers | open
   windows, then hover click types, pause zone, gaze switch (applet
   `umi-mouse`), accessibility menu, Onboard toggle. Menu favorites
-  (`menuFavorites`) open with the eye tracker calibration.
+  (`menuFavorites`) open with the eye tracker calibration. Application
+  windows open maximized, panel in reach (`enableMaximize`).
 - **Any other host**: GNOME Wayland with its native accessibility: on-screen
   keyboard, big pointer and text. Talon and Onboard, X11-only, stay off.
 
@@ -522,19 +565,24 @@ launches, settings panels left out. `hiddenApps` hides entries from the grid
 and the Cinnamon menu alike. rofi grabs the pointer: panel out of reach.
 :::
 
-:::note[Gaze-only pointing (Talon 1.0)]
-Talon's filters freeze the cursor ~2 mm short of the gaze: the script raises
-them (`gazeFilterSpeed`, `cursorFilterSpeed`, measured on a Tobii 5). Eye
-Tracking menu modes are declared (`enableGazeControl`, `enableHeadControl`,
-`enableHeadJump`, `enableMouseJump`, `enableGazeFocus`) and set again at
-each Talon start: gaze only by default, an unsteady head drags the cursor.
+:::note[SuperTuxKart with the mouse alone (UMI host)]
+`enableStkWithMouse`: the game's launcher runs `dnf-stk-mouse`, which turns
+every physical mouse into STK's default keys while the game window has the
+focus. Stick forward/back: accelerate/brake, sideways: steer; left click:
+drift, double click: fire, right click: nitro. Pointer untouched (menus).
 :::
 
-:::tip[Gaze places, head refines]
-With `enableHeadControl`, `headSpeed` below 1 dampens ample head movements
-(`head_bezier.vmax` scaled, lever to be validated on a Tobii 5). Live tuning
-from Talon's REPL, lost on restart: `actions.user.umi_head_speed(0.3)`,
-`actions.user.umi_filter_speed(2, 4)`, `print(actions.user.umi_tuning())`.
+:::note[Gaze places, head refines (Talon 1.0)]
+Defaults measured on a Tobii 5: Talon's gaze filter (`gazeFilterSpeed`), a
+faster cursor filter (`cursorFilterSpeed`), head control on with a sensitive
+head (`headSpeed` 5, `head_bezier.vmax` scaled). Eye Tracking menu modes are
+declared (`enableGazeControl`, `enableHeadControl`, `enableHeadJump`,
+`enableMouseJump`, `enableGazeFocus`) and set again at each Talon start.
+:::
+
+:::tip[Live tuning]
+From Talon's REPL, lost on restart: `actions.user.umi_head_speed(5)`,
+`actions.user.umi_filter_speed(1, 4)`, `print(actions.user.umi_tuning())`.
 :::
 
 :::tip[Community scripts]
@@ -553,32 +601,22 @@ Screen locking stays enabled GNOME-side (locked by the DNF gnome module);
 own lock fully disabled.
 :::
 
-:::caution[Login keyring: autologin user only, two modes decided by the host]
-An autologin session types no password, so PAM has nothing to hand to
-gnome-keyring and every secret-using app pops a gcr prompt the UMI user
-cannot answer. A password login unlocks the keyring as usual and is left
-alone. For the autologin user, the fix depends on the host:
+:::caution[Login keyring of the autologin user: no password, on every host]
+An autologin session types no password: a keyring sealed with one pops a gcr
+prompt the UMI user cannot answer. Its login keyring is seeded with an empty
+password (plain ini, unlocked without prompt); a sealed one is deleted at
+each activation, `user.keystore` included, and its secrets are lost.
 
-- **Unencrypted host**: the login keyring is seeded with an empty password,
-  which gnome-keyring stores in plain text and unlocks on its own (it tries
-  an empty password before prompting). Any pre-existing password-protected
-  keyring is deleted — its passphrase is untypable here, so it can only
-  produce the prompt forever. Autologin already grants the whole session to
-  whoever boots the machine, so this costs no real confidentiality.
-- **Encrypted host** (`darkone.system.luks.volumes` non-empty): nothing is
-  seeded. The passphrase typed at boot is cached in the kernel keyring and
-  handed to gnome-keyring by `pam_gdm`, so the keyring stays encrypted with
-  it. This is the only mode that protects the secrets at rest.
-
-Gotcha, encrypted hosts only: rotating the LUKS passphrase (sops value
-changed, `luks-passphrase-sync`) leaves the keyring on the old one — GNOME
-then reports "The password you use to log in to your computer no longer
-matches that of your login keyring". Delete
-`~/.local/share/keyrings/login.keyring` and log in again.
+- At rest, LUKS protects it; autologin already hands the session to whoever
+  boots the machine.
+- The UMI host keeps every password away from gnome-keyring for this user:
+  a plain keyring unlocked with a password is re-encrypted with it at the
+  next write (`pam_gdm` and the boot passphrase included).
+- Other users, and every password login elsewhere: untouched.
 :::
 
 * **enable** `bool` UMI multimodal input configuration (Talon + Onboard)
-* **enableTalonAutostart** `bool` Start Talon on session login (talon must be in PATH).
+* **enableTalonAutostart** `bool` Start Talon on session login, once the panel tray is up (talon must be in PATH).
 * **communityScripts** `nullOr package` talonhub/community tree deployed to ~/.talon/user/community.
 * **enableDwell** `bool` dwell click: clicking by resting the pointer. Off by default — it is
   only usable with an eye tracker, and with a mouse it fires on whatever
@@ -589,18 +627,20 @@ matches that of your login keyring". Delete
   unplugged: hover click off (Cinnamon session). Takes over
   `enableDwell` in Cinnamon.
 * **gazeFilterSpeed** `nullOr numbers.positive` Talon Control Mouse per-eye gaze filter coefficient, with
-  `enableTrackerAuto`: higher reacts faster and smooths less. Talon's
-  own value (1.0) freezes the cursor short of the gaze; `null` keeps it.
+  `enableTrackerAuto`: higher reacts faster and smooths less. Default:
+  Talon's own, the head refines the last millimetres; `null` keeps
+  Talon's whatever its version.
 * **cursorFilterSpeed** `nullOr numbers.positive` Talon Control Mouse cursor filter coefficient, with
   `enableTrackerAuto`: higher reacts faster, overshoots more. `null`
   keeps Talon's own (2.0).
 * **headSpeed** `nullOr numbers.positive` Talon Head Control sensitivity, with `enableTrackerAuto` and
-  `enableHeadControl`: below 1 the head moves the cursor less (ample,
-  poorly controlled movements). `null` keeps Talon's own (1).
+  `enableHeadControl`: above 1 a slight head movement moves the cursor,
+  below 1 ample, poorly controlled movements are dampened. `null`
+  keeps Talon's own (1).
 * **enableGazeControl** `bool` Talon Gaze Control, with `enableTrackerAuto`: the cursor follows the gaze.
-* **enableHeadControl** `bool` Talon Head Control, with `enableTrackerAuto`: head movements also move
-  the cursor. Off by default, an unsteady head drags the cursor away
-  from the gaze
+* **enableHeadControl** `bool` Talon Head Control, with `enableTrackerAuto`: head movements refine
+  the cursor placed by the gaze (`headSpeed`). Off for an unsteady
+  head, which drags the cursor away from the gaze.
 * **enableHeadJump** `bool` Talon Head Jump, with `enableTrackerAuto`: a head movement brings the
   cursor to the gaze
 * **enableMouseJump** `bool` Talon Mouse Jump, with `enableTrackerAuto`: moving a real mouse towards
@@ -612,7 +652,11 @@ matches that of your login keyring". Delete
 * **textScaling** `float` Text scaling factor of the Cinnamon session (buttons grow with their labels).
 * **enablePanel** `bool` Cinnamon panel managed by DNF: launchers and open windows set apart,
   hover click controls (click types, pause zone), accessibility menu,
-  keyboard toggle. Rewritten at every activation.
+  keyboard toggle; no Bluetooth icon nor corner bar. Rewritten at
+  every activation.
+* **enableMaximize** `bool` Application windows open maximized (Cinnamon extension), the panel
+  stays in reach. Dialogs, Onboard and fixed-size windows keep their
+  size.
 * **panelLaunchers** `listOf str` Panel launchers (desktop file ids), with `enablePanel`.
 * **menuFavorites** `listOf str` Cinnamon menu favorites (desktop file ids), rewritten at every
   activation. `dnf-umi-calibrate.desktop`, with `enableTrackerAuto`,
@@ -626,6 +670,10 @@ matches that of your login keyring". Delete
   * **rows** `ints.between 1 8` Tile rows per page.
 * **hiddenApps** `listOf str` Applications hidden from the grid and the Cinnamon menu (desktop file
   ids), UMI host only. Launches by id and file associations still work.
+* **enableStkWithMouse** `bool` SuperTuxKart driven by the mouse alone, UMI host only: the stick (or
+  mouse moves) accelerates, brakes and steers, left click drifts, double
+  click fires, right click uses nitro. Installs the game, its launcher
+  runs the converter
 
 ```nix
 darkone.home.umi = {
@@ -633,25 +681,27 @@ darkone.home.umi = {
   enableTalonAutostart = true;
   communityScripts = null;
   enableDwell = false;
-  dwellTime = 1.2;
+  dwellTime = 1.6;
   enableTrackerAuto = true;
-  gazeFilterSpeed = 2.0;
+  gazeFilterSpeed = 1.0;
   cursorFilterSpeed = 4.0;
   headSpeed = 0.3;
   enableGazeControl = true;
-  enableHeadControl = false;
+  enableHeadControl = true;
   enableHeadJump = false;
   enableMouseJump = false;
   enableGazeFocus = false;
   panelHeight = 64;
   textScaling = 1.5;
   enablePanel = true;
+  enableMaximize = true;
   panelLaunchers = [ ];
   menuFavorites = [ ];
   enableRofiMenu = true;
   rofiGridResolution.columns = 6;
   rofiGridResolution.rows = 4;
   hiddenApps = [ ];
+  enableStkWithMouse = false;
 };
 ```
 

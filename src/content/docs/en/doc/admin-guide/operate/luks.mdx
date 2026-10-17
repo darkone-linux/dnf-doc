@@ -20,100 +20,67 @@ boot. DNF industrializes this point of friction with two guarantees:
   workstation, with no screen or keyboard attached to the host, and that from
   the **very first boot** that follows the installation.
 
-{/* t:p 1434fdb9746b96fef619b8a0830b9735a836e82e4646e214d53362a76e1337c1 */}
-## Unlocking methods
-
-Each method occupies its own keyslot in the LUKS2 header. All are valid at the
-same time, on every encrypted volume of the host.
-
-| Method | Where it lives | Role |
-|---|---|---|
-| **Shared passphrase** | sops → `luks-passphrase` | A single one for the whole fleet, authorizes keyslot management. It is also the one that **formats** the disk |
-| **Host passphrase** | sops → `luks/<host>/passphrase` | To be entrusted to the machine's user without exposing the fleet |
-| **FIDO2 YubiKeys** | Derived from the physical key | Touch the key at boot, nothing to type |
-
-:::note[Why two passphrases and not one]
-They are not meant for the same people: the shared one is the fleet
-administrator's key, the per-host one is entrusted to the user of a single
-machine. And because there are two of them, rotating one remains **authorized
-by the other**: the synchronization service never ends up without a way to act
-on the keyslots, it adds the new slot before killing the old one.
-:::
-
-:::note[There is no installation passphrase anymore]
-`just install` formats the volume with the shared passphrase
-(`nixos-anywhere --disk-encryption-keys`): the formatting keyslot **is** the
-shared keyslot. Nothing to remember from the installation, nothing to retype
-afterwards. A host installed before that switch is detected by `just luks <host>`,
-which then asks for its installation passphrase one last time to seed the
-shared slot.
-:::
-
-:::note[Nothing to declare in the Nix configuration]
-The `darkone.system.luks` module is active by default but **totally inert** as
-long as the host does not appear in the manifest `usr/secrets/luks.json` **and**
-does not declare a LUKS volume in its disko. Existing encrypted hosts do not
-change until `just luks <host>` has been run.
-:::
-
-{/* t:p 8e252c9a0f41cb5b6e7e2252b74489b5bf9ad8ba6e949798e9c58eefddad1b38 */}
-## Provision a host
+{/* t:p 190004c52abc1765d77cc4b7bb00ab2bda83f99e21641f1feeed438f76b7addd */}
+## Provisioning a host
 
 ```sh
-just luks <hôte>            # provisions (or converges) the encryption
-just luks <hôte> pre        # offline half, without touching the machine
-just luks <hôte> passwd     # rotates the passphrase per host
-just luks <hôte> show       # audit: keyslot table + compliance
-just luks <hôte> '' <ip>    # targets an explicit IP (host not yet resolved)
+just luks <hôte>            # provisionne (ou converge) le chiffrement
+just luks <hôte> pre        # moitié hors ligne, sans toucher à la machine
+just luks <hôte> passwd     # fait tourner la passphrase par hôte
+just luks <hôte> show       # audit : table des keyslots + conformité
+just luks <hôte> '' <ip>    # cible une IP explicite (hôte pas encore résolu)
 ```
 
 The recipe is **idempotent**&nbsp;: each run converges and only asks for what is
-missing. It is called automatically at two points, and you rarely need to run
-it yourself&nbsp;:
+missing. It is called automatically at two moments, and it is rare to have to
+run it yourself&nbsp;:
 
 | Called by | Action | What it does |
 |---|---|---|
-| `just install <hôte>` | `pre` | Before the build, hence before the installation |
-| `just configure <hôte>` | (default) | After the first boot |
+| `just install <host>` | `pre` | Before the build, therefore before the installation |
+| `just install-here <host>` | `pre`, without a `nix` account (`bootstrap-keys`) | First machine, from the ISO |
+| `just configure <host>` | (default) | After the first boot |
 
-Without a LUKS volume in disko, it is a logged no-op.
+Without a LUKS volume in the disko, it is a logged no-op.
 
 The **`pre`** phase never touches the machine. It prepares what must exist
 *before* the system is built&nbsp;:
 
-1. the **shared passphrase** in sops if absent (asked only once for the whole
-   fleet);
-2. the **per-host passphrase** in sops if absent, **generated at random without
-   asking anything** (see the callout below);
+1. the **shared passphrase** in sops if absent (asked only once
+   for the whole fleet) ;
+2. the **per-host passphrase** in sops if absent, **generated randomly and without
+   asking anything** (see the box below) ;
 3. the **initrd SSH host key**, generated locally and stored in sops
-   (`luks/<hôte>/initrd-key`, base64-encoded);
+   (`luks/<host>/initrd-key`, base64-encoded) ;
 4. the registration of the host in the **public manifest** `usr/secrets/luks.json`
-   (versioned in clear text, it contains no secret)&nbsp;: this entry is what
-   enables the module.
+   (versioned in the clear, it contains no secret)&nbsp;: it is this entry
+   that activates the module.
 
-:::note[Why the per-host passphrase is never asked at installation time]
-It exists to entrust unlocking a workstation to its user without giving them the
-key to the whole fleet. But at formatting time we still do not know who will use
-the machine&nbsp;: the answer was always "empty". And an interactive question in
-the middle of an installation is exactly what breaks a remote installation.
+:::note[Why the per-host passphrase is never asked at installation]
+It serves to entrust the unlocking of a station to its user without giving them
+the key to the whole fleet. But at formatting time we still do not know who
+will use the machine&nbsp;: the answer was always "&nbsp;empty&nbsp;". And an
+interactive question in the middle of an installation is exactly what breaks
+a remote installation.
 
-It is therefore drawn at random and kept only in sops. The keyslot remains
-useful — it is a second way to open the volume, and the fallback for
-`just unlock`. On the day someone really has to type a passphrase on that
-machine, `just luks <hôte> passwd` gives them a chosen one, and
-`luks-passphrase-sync` swaps the keyslot at the next `apply`.
+It is therefore drawn randomly and kept in sops alone. The slot keeps its
+usefulness — it is a second means of opening the volume, and the fallback of
+`just unlock`. The day someone really must type a passphrase on this
+machine, `just luks <host> passwd` gives them a chosen one, and
+`luks-passphrase-sync` swaps the slot at the next `apply`.
 :::
 
 The default phase adds what requires the machine&nbsp;:
 
-5. restores the **initrd key** from sops if it is missing on the target (it never
-   generates a new one, which would invalidate the one the installation placed);
-6. on a **gateway**, records the current **WAN IP** in the manifest
-   (fallback for `just unlock`, see below), to re-run if the access provider
-   renumbers;
-7. if **no managed passphrase** unlocks the volume (host installed before the
-   switch to shared formatting), asks for its installation passphrase one last
-   time and enrols the shared one alongside it.
+5. re-places the **initrd key** from sops if it is missing on the target (it
+   never regenerates a new one, that would invalidate the one placed by the
+   installation) ;
+6. on a **gateway**, reads the current **WAN IP** in the manifest
+   (fallback of `just unlock`, see below), to be re-run if the
+   access provider renumbers ;
+7. if **no managed passphrase** unlocks the volume (host installed
+   before the switch to shared formatting), asks for its installation
+   passphrase one last time and enrolls the shared one with it.
 
 Then commit and deploy&nbsp;:
 
@@ -123,17 +90,18 @@ just commit "system(luks): <hôte>"
 just apply <hôte>
 ```
 
-At deployment, two idempotent services converge the LUKS header on each
+At deployment, two idempotent services converge the LUKS header at each
 apply: `luks-passphrase-sync` (shared and per-host passphrases) and
 `yubikey-luks-enroll` (one FIDO2 entry per YubiKey enrolled on the fleet, see
 [Strong authentication](/en/doc/admin-guide/operate/yubikey/)).
 
 :::caution[The initrd key must precede the boot loader]
-Initrd secrets are embedded **at boot loader installation time**: a key created
-afterwards simply is not in the initrd that boots. A fresh installation is
+The initrd secrets are embedded **at boot loader installation**: a key created
+after the fact is simply not in the initrd that boots. A fresh installation is
 covered, `just install` places the key under `/mnt` before `nixos-install`. On a
-machine already in service, it is `just luks <hôte>` that places it overSSH&nbsp;: never add a host to `luks.json` by hand, and never deploy before the
-key is on the target. When in doubt, `just luks <hôte> show` checks it.
+machine already in service, it is `just luks <host>` that places it over SSH&nbsp;:
+never add a host to `luks.json` by hand, and never deploy before the key is
+on the target. When in doubt, `just luks <host> show` checks it.
 :::
 
 {/* t:p 16e9cd0c08aff5bc972154684e2d9f6e1b96d39c78d7f5eb2c0a2499ba80fea1 */}

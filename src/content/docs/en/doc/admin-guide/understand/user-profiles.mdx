@@ -45,32 +45,32 @@ advanced -> student
 admin -> nixadmin
 ```
 
-{/* t:p 1515a3eadaec684ae4f4676b7ef25b8e5d2625716e59b04c3cf48564bfc89aa8 */}
+{/* t:p 7a08e2c6399ef56979608c40e5eddf2a7f7ddf8a05911ba56af882511f0dac2d */}
 ## Profiles
 
-| Profile | Intended for | Inherits from |
+| Profile | For whom | Inherits from |
 |---|---|---|
 | `minimal` | Base of every profile | |
 | `normal` | Standard user (desktop) | `minimal` |
-| `advanced` | Developers, IT specialists | `normal` |
-| `umi` | User with multimodal input (touch, voice, gaze) | `normal` |
+| `advanced` | Developers, IT professionals | `normal` |
+| `umi` | Multimodal input user (touch, voice, gaze) | `normal` |
 | `admin` | Network administrator | `advanced` |
-| `nix-admin` | Fleet administrator (Nix tooling) | `admin` |
+| `nix-admin` | Fleet administrator (Nix tools) | `admin` |
 | `student` | Student | `advanced` |
 | `teenager` | Teenager | `minimal` |
 | `gamer` | Gamer | `minimal` |
-| `child` | Child (technical icons hidden) | `minimal` |
+| `child` | Child (Cartable Fantastique, technical icons hidden) | `minimal` |
 | `baby` | Very young child | `minimal` |
 
 :::tip[The `umi` profile and its host]
-It only makes full sense on a host using the `umi` profile, which provides the X11
-session and support for input devices (eye tracker, event injection).
-On any other host, the account keeps GNOME and its on-screen keyboard.
+It makes full sense on a host in the `umi` profile, which provides the X11
+session and input device support (eye tracker, event injection). On another
+host, the account keeps GNOME and its on-screen keyboard.
 See [Accessibility](/en/doc/admin-guide/operate/accessibility/).
 :::
 
-:::tip[On the user side]
-A usage-oriented overview is available in the
+:::tip[From the user's side]
+A usage-oriented presentation is available in the
 [user guide](/en/doc/user-guide/understand/profiles/).
 :::
 
@@ -100,8 +100,49 @@ on first connection (`~/.terminfo`, via `tic`), otherwise it falls back to
 included.
 :::
 
-{/* t:p a5220ac2a170024a2b24bd7c781ba1b2329995d86835c648d26a689a118c7dc5 */}
-## Assign a profile
+{/* t:p b4c95365a038f88f9b775d5035126894628c65f52cb581f8329f6bb8e0240f29 */}
+## Cartable Fantastique
+
+The `child` profile adds to LibreOffice the toolbar from
+[Cartable Fantastique](https://www.cartablefantastique.fr/outils-pour-compenser/le-plug-in-libre-office/),
+designed for students with dyspraxia or DYS: read, write, calculate, text to speech.
+
+| Edition | For whom |
+|---|---|
+| `primaire` | Elementary school (default of `child`) |
+| `college` | Middle school: languages, chemistry, electricity |
+| `adaptateur` | Adult adapting learning materials |
+
+```nix
+# usr/users/<login>/default.nix
+darkone.home.office.cartableFantastique = "college"; # null : aucune
+```
+
+The extension is installed in the account's LibreOffice profile when Home
+Manager activates (startup or deployment). Text to speech goes through
+speech-dispatcher, active by default on workstations.
+
+:::caution[Manual removal]
+Setting the option back to `null` leaves the extension in place: remove it via
+*Tools → Extension Manager*.
+:::
+
+{/* t:p a7eee07e5797df7222dc62a48c37711e11b823edf4ee22ac080034edb6b492e9 */}
+## Heavy applications on demand
+
+To lighten the first workstation, `advanced` and the profiles inheriting from
+it install neither VS Code (0.3 GiB) nor Slidev (0.4 GiB): Zed remains the
+default editor. To add them to an account, including to restore the previous
+behavior:
+
+```nix
+# usr/users/<login>/default.nix
+darkone.home.advanced.enableVscode = true;
+darkone.home.advanced.enableSlidev = true; # avec son extension VS Code
+```
+
+{/* t:p b3d1ff145b59dc3d740ddf122a6c8de24fb355801983ed322d8d665130fa94fb */}
+## Assigning a profile
 
 ```yaml
 # etc/config.yaml
@@ -113,8 +154,21 @@ users:
     groups: ["global"]
 ```
 
-:::note[Customize]
+:::note[Customizing]
 Create or override a profile in `usr/home/profiles/<nom>/`, a single account
 in `usr/users/<login>/default.nix` (`darkone.home.*` options, without
-`lib.mkForce`). The reusable building blocks are the [Home Manager modules](/en/ref/modules/home/).
+`lib.mkForce`). The reusable building blocks are the
+[Home Manager modules](/en/ref/modules/home/).
+A program from a profile is removed with `excludePackages` (`games`,
+`education` modules).
 :::
+
+{/* t:p 938609b64e2e1217c0db6ceeca57cfadea52087e1a0a2c4319be9b6fdb6ff3b2 */}
+## FAQ
+
+{/* t:p c981e2fa51738ffac0eb82131fa286a68cc080bc06858b278ddefb16beb00b8c */}
+### A Cartable Fantastique hash no longer matches
+
+The publisher replaces the `.oxt` file without changing the URL. Recalculate the
+`hashes` of `dnf/pkgs/cartable-fantastique/package.nix` with
+`nix store prefetch-file <url>`.

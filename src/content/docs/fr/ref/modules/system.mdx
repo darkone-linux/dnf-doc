@@ -118,124 +118,102 @@ Documentation (man) pour les développeurs et les administrateurs.
 darkone.system.documentation.enable = false;
 ```
 
-{/* t:p 3adf0df2698845c1f9106cae5c85503a09f6fbc66033cd9efcf2d31af50b5b29 */}
+{/* t:p 7af786e622f6d8bf032c6aed476f87d48d2c99ea95167d7b607adb9ffad2659f */}
 ### &#x2699; darkone.system.hardware
 
 Améliorations de la configuration matérielle.
 
-* **enable** `bool` Activer les optimisations matérielles
-* **enableIntel** `bool` Activer les mises à jour du microcode Intel
-* **enableAmd** `bool` Activer les mises à jour du microcode AMD
+Tout le micrologiciel est chargé (`hardware.enableAllFirmware`), sauf sur une machine virtuelle&nbsp;: `just detect-hw` la détecte (`systemd-detect-virt --vm`) et définit `darkone.system.hardware.virtual` dans `hardware/detected-hardware.nix`.
+
+* **enable** `bool` Active les optimisations matérielles
+* **enableIntel** `bool` Active les mises à jour du microcode Intel
+* **enableAmd** `bool` Active les mises à jour du microcode AMD
+* **virtual** `bool` Machine virtuelle, aucun micrologiciel chargé. Défini par `just detect-hw`
 
 ```nix
 darkone.system.hardware = {
   enable = false;
   enableIntel = false;
   enableAmd = false;
+  virtual = false;
 };
 ```
 
-{/* t:p 6d45bdbe22a6c16d07209a2d1b8d4731cfb1d754cfe098972471e9e87021a482 */}
+<hr/>
+
+{/* t:p 61de4ebd13b1872e4751825029c1eff7067989d28489a55601a8676a78c190af */}
 ### &#x2699; darkone.system.i18n
 
-Configuration de la locale et de la langue.
+Configuration de la localisation et de la langue.
 
 :::note
-Les valeurs par défaut suivent la zone de l'hôte (`etc/config.yaml`). La locale doit avoir
-la forme canonique `xx_YY.UTF-8` (ex. `fr_FR.UTF-8`) : le keymap console, la disposition
-XKB et la région téléphonique Nextcloud en dérivent.
+Les valeurs par défaut suivent la zone de l'hôte (`etc/config.yaml`). La locale doit avoir la forme canonique `xx_YY.UTF-8` (p.&nbsp;ex. `fr_FR.UTF-8`)&nbsp;: le mappage de clavier en console, la disposition XKB et la région téléphonique Nextcloud en dérivent.
 :::
 
-* **enable** `bool` Activer i18n avec la configuration de zone réseau par défaut
-* **locale** `strMatching dnfLib.localeRegex` Locale réseau, doit correspondre à la forme `xx_YY.UTF-8`.
+:::tip[Clavier d'une locale]
+`dnf/config/locales.json` indique le clavier utilisé pour chaque locale proposée par l'installateur (`en_GB.UTF-8`&nbsp;: `uk` en console, `gb` en XKB). Pour toute autre locale, le code pays est utilisé (`ru_RU.UTF-8`&nbsp;: `ru`).
+:::
+
+* **enable** `bool` Active l'internationalisation avec la configuration de la zone réseau par défaut
+* **locale** `strMatching dnfLib.localeRegex` Locale réseau, doit respecter la forme `xx_YY.UTF-8`.
 * **timeZone** `str` Fuseau horaire réseau
+* **keyboard** `raw` Clavier de la locale&nbsp;: mappage `console`, disposition `xkb` et variante `xkbVariant`.
 
 ```nix
 darkone.system.i18n = {
   enable = false;
   locale = "fr_FR.UTF-8";
   timeZone = "Europe/Paris";
+  keyboard = if cfg.enable then
+          dnfLib.keyboardFromLocale cfg.locale
+        else
+          {
+            console = config.console.keyMap;
+            xkb = config.console.keyMap;
+            xkbVariant = "";
+          };
 };
 ```
 
 <hr/>
 
-{/* t:p 547364c2554296fa354c98b7915e0e0f9cec01677ee8999e8f42005ade8613a0 */}
+{/* t:p e64e364746893de53c4992b80741a6ff11b1b8f815f4379cc7f741ae4545bac6 */}
 ### &#x2699; darkone.system.luks
 
-Politique de phrases de passe LUKS et déverrouillage à distance : phrase de passe
-partagée + par hôte, SSH dans l'initrd.
+Politique de mots de passe LUKS et déverrouillage à distance&nbsp;: mots de passe partagés et par hôte, SSH en initrd.
 
-Complète `modules/system/yubikey.nix` (keyslots FIDO2) avec le côté phrase de
-passe de la politique LUKS de la flotte. Chaque volume chiffré porte exactement
-deux phrases de passe gérées, plus un keyslot par YubiKey enrôlée :
+Complète `modules/system/yubikey.nix` (emplacements de clés FIDO2) avec la partie mots de passe de la politique LUKS du parc. Chaque volume chiffré dispose exactement de deux mots de passe gérés, ainsi que d'un emplacement de clé par YubiKey enregistré&nbsp;:
 
 | Keyslot | Secret | Audience |
 |---|---|---|
-| partagé | sops `luks-passphrase` | l'administrateur de la flotte. **Autorise** aussi les opérations sur les keyslots (`luksAddKey` / `luksKillSlot`) pour les unités ci-dessous, et c'est la clé avec laquelle disko formate le disque. |
-| par hôte | sops `luks/<host>/passphrase` | l'utilisateur de cette seule machine, sans céder la flotte. |
-| FIDO2 | registre `usr/secrets/yubikeys.json` | un slot par clé, sur chaque hôte chiffré. |
+| shared | sops `luks-passphrase` | l'administrateur du parc. Autorise également les opérations sur les emplacements (`luksAddKey` / `luksKillSlot`) pour les unités ci-dessous, et est la clé utilisée par disko pour formater le disque. |
+| per-host | sops `luks/<host>/passphrase` | l'utilisateur de cette machine uniquement, sans donner accès au parc entier. |
+| FIDO2 | registry `usr/secrets/yubikeys.json` | un emplacement par clé, sur chaque hôte chiffré. |
 
-Deux phrases de passe gérées et non une, parce qu'elles servent des personnes
-différentes, et parce que la rotation de l'une reste autorisée par l'autre : l'unité
-de synchronisation n'est donc jamais laissée sans authorizer (elle ajoute le nouveau
-slot avant de tuer l'ancien).
+Deux mots de passe gérés plutôt qu'un seul, car ils s'adressent à des publics différents&nbsp;; et parce que la rotation de l'un peut toujours être autorisée par l'autre, le service de synchronisation n'est jamais laissé sans autorisateur (il ajoute le nouvel emplacement avant de supprimer l'ancien).
 
-Il n'existe pas de « phrase de passe d'installation » séparée : `just install` formate
-le volume via `nixos-anywhere --disk-encryption-keys` avec la phrase de passe
-partagée, donc le keyslot de format *est* le keyslot partagé.
+Il n'existe pas de «&nbsp;mot de passe d'installation&nbsp;» distinct&nbsp;: `just install` formate le volume via `nixos-anywhere --disk-encryption-keys` avec le mot de passe partagé, de sorte que l'emplacement de clé de formatage *est* l'emplacement partagé. Sur le premier hôte (`darkone new`, `just install-here`), le mot de passe saisi dans l'assistant devient ce mot de passe.
 
-`just luks <host>` provisionne un hôte (idempotent, également appelé par
-`just configure`) ; sa phase `pre` s'exécute hors ligne et est appelée par
-`just install` avant le build. Elle enregistre l'hôte dans le manifeste
-**public** `usr/secrets/luks.json` (versionné), stocke la phrase de passe par hôte et
-la clé d'hôte SSH de l'initrd dans sops, et garantit que le `luks-passphrase` partagé
-existe. `just luks <host> show` affiche le tableau des keyslots et audite le
-déverrouillage à distance. Le module maintient ensuite tout convergent à chaque
-application :
+`just luks <host>` provisionne un hôte (idempotent, également appelé par `just configure`)&nbsp;; sa phase `pre` s'exécute hors ligne et est appelée par `just install` avant la compilation. Elle enregistre l'hôte dans le manifeste **public** `usr/secrets/luks.json` (committé), stocke le mot de passe par hôte et la clé hôte SSH initrd dans sops, et s'assure que le `luks-passphrase` partagé existe. `just luks <host> show` affiche la table des emplacements de clés et vérifie le déverrouillage à distance. Le module assure ensuite la convergence à chaque application&nbsp;:
 
-- **keyslots** : un service oneshot synchronise les phrases de passe partagée et par
-  hôte dans chaque en-tête LUKS2 déclaré par disko. Une valeur sops modifiée fait
-  tourner le keyslot correspondant (ancien slot tué, nouveau ajouté). Les opérations
-  sur les keyslots sont autorisées par la phrase de passe gérée qui déverrouille encore
-  le volume, donc l'une d'elles doit rester valide. Les slots hors de son registre
-  (FIDO2, enrôlements manuels) ne sont jamais touchés.
-- **déverrouillage à distance** : sshd dans l'initrd sur un port dédié (2222), sa
-  propre clé d'hôte persistante (`/var/lib/luks-initrd/`), connexion root avec la clé
-  de déploiement `nix` (`usr/secrets/nix.pub`). `just unlock <host>` répond à l'invite
-  de phrase de passe sans intervention humaine (via le helper `dnf-unlock` livré dans
-  l'initrd), puis de façon interactive depuis un terminal quand aucune phrase de passe
-  stockée ne fonctionne. Il se replie sur l'IP WAN enregistrée dans le manifeste quand
-  la route VPN est morte. Les hôtes usuels font du DHCP sur des interfaces filaires (un
-  portable en Wi-Fi n'a pas de réseau dans l'initrd et se replie sur le déverrouillage
-  console) ; les passerelles de zone répliquent plutôt leur disposition de production :
-  IP LAN statique sur le pont lan0, DHCP côté WAN, puisqu'elles sont elles-mêmes le
-  serveur DHCP auquel leur initrd attendrait autrement.
+- **keyslots**&nbsp;: un service oneshot synchronise les mots de passe partagé et par hôte dans l'en-tête LUKS2 de chaque volume déclaré par disko. Toute modification d'une valeur dans sops fait tourner l'emplacement correspondant (ancien supprimé, nouveau ajouté). Les opérations sur les emplacements sont autorisées par le mot de passe géré qui déverrouille encore le volume&nbsp;; l'un d'eux doit donc rester valide. Les emplacements hors de son registre (FIDO2, enrôlements manuels) ne sont jamais modifiés.
+- **remote unlock**&nbsp;: sshd en initrd sur un port dédié (2222), avec sa propre clé hôte persistante (`/var/lib/luks-initrd/`), connexion root autorisée avec la clé de déploiement `nix` (`usr/secrets/nix.pub`). `just unlock <host>` répond à l'invite de mot de passe sans intervention humaine (via l'assistant `dnf-unlock` inclus dans l'initrd), ou interactivement depuis un terminal si aucun mot de passe stocké ne fonctionne. En cas d'échec de la route VPN, il se replie sur l'IP WAN enregistrée dans le manifeste. Les hôtes classiques obtiennent leur IP par DHCP sur les interfaces filaires (un portable en Wi-Fi n'a pas de réseau en initrd et se replie sur le déverrouillage par console)&nbsp;; les passerelles de zone répliquent leur configuration de production&nbsp;: IP LAN statique sur le pont lan0, DHCP côté WAN, car elles sont elles-mêmes le serveur DHCP et l'initrd attendrait sinon.
 
 :::note[Zéro configuration]
-Activé par défaut mais totalement inerte tant que l'hôte n'apparaît pas dans
-`usr/secrets/luks.json` ET ne déclare pas de volume LUKS dans sa config disko.
-Les hôtes chiffrés existants ne sont pas affectés tant que `just luks <host>` n'a
-pas été lancé.
+Activé par défaut, mais totalement inactif tant que l'hôte n'apparaît pas dans `usr/secrets/luks.json` ET ne déclare pas de volume LUKS dans sa configuration disko. Les hôtes chiffrés existants ne sont pas affectés avant d'exécuter `just luks <host>`.
 :::
 
-:::caution[La clé initrd doit précéder le bootloader]
-Les secrets de l'initrd sont ajoutés à l'installation du bootloader, *avant*
-l'activation. Une installation neuve est couverte : `just install` place la clé sous
-`/mnt` (`nixos-anywhere --extra-files`) afin que le tout premier démarrage écoutedéjà sur 2222. Sur un hôte déjà en fonctionnement, `just luks <host>` la met en place
-par SSH — n'ajoutez jamais un hôte à la main dans `luks.json`, et n'appliquez jamais
-avant que la clé existe sur la cible.
+:::caution[La clé initrd doit précéder l'installation du chargeur d'amorçage]
+Les secrets initrd sont ajoutés lors de l'installation du chargeur d'amorçage, *avant* l'activation. L'installation initiale est couverte&nbsp;: `just install` place la clé sous `/mnt` (`nixos-anywhere --extra-files`) afin que le tout premier démarrage écoute déjà sur le port 2222. Sur un hôte déjà en service, `just luks <host>` la place via SSH&nbsp;; ne jamais ajouter un hôte à `luks.json` manuellement, et ne jamais appliquer avant que la clé n'existe sur la cible.
 :::
 
-:::danger[Budget de keyslots]
-Les en-têtes LUKS2 contiennent au plus 32 keyslots. Chaque YubiKey enrôlée consomme
-un slot sur chaque hôte chiffré (politique globale de flotte), plus les phrases de passe
-partagée et par hôte : le module avertit quand le total projeté approche de la limite.
+:::danger[Plafond d'emplacements de clés]
+Les en-têtes LUKS2 ne peuvent contenir au plus que 32 emplacements de clés. Chaque YubiKey enregistré consomme un emplacement sur chaque hôte chiffré (politique à l'échelle du parc), en plus des mots de passe partagé et par hôte&nbsp;: le module avertit lorsque le total projeté approche de cette limite.
 :::
 
-* **enable** `bool` Politique de phrase de passe LUKS de la flotte (inerte tant que `just luks &lt;host&gt;` n'a pas provisionné l'hôte)
-* **sshPort** `port` Port du sshd de l'initrd ; distinct de 22 pour que la clé d'hôte de l'initrd n'entre jamais en conflit avec celle du système
-* **volumes** `listOf str` Volumes LUKS déclarés par la disposition disko de l'hôte.
+* **enable** `bool` Politique de mots de passe LUKS du parc (inactive tant que `just luks <host>` n'a pas provisionné l'hôte)
+* **sshPort** `port` Port sshd en initrd&nbsp;; distinct de 22 afin que la clé hôte initrd ne entre jamais en conflit avec celle du système
+* **volumes** `listOf str` Volumes LUKS déclarés par la configuration disko de l'hôte.
 
 ```nix
 darkone.system.luks = {

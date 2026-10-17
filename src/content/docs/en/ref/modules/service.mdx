@@ -984,7 +984,14 @@ darkone.service.minio.enable = false;
 
 <hr/>
 
-{/* t:p 2f827799d5d62f27c5dfa4be69f664d8ae8c62c5cdcd4737e8e79be386e364d7 */}
+{/* t:p 8659925dfeb4c7d9d580ab4be9d4961ff8cdb040682001c3e03910a330e4fb41 */}
+### &#x2728; darkone.service.monitoring.fs-readonly
+
+DNF monitoring: rw mounts the kernel turned read-only. Doc: `../monitoring.nix` header.
+
+<hr/>
+
+{/* t:p 4e9b7ed7f7a0bd6c8e142fb95241082e0d466346591eefe9f8ba25190ec715cf */}
 ### &#x2728; darkone.service.monitoring
 
 Supervision module: Grafana dashboards + per-node exporter.
@@ -998,6 +1005,11 @@ requires on the same host, enforced by the generator). For each zone:
 - Only one monitoring host per zone is accepted.
 - A tag "monitoring-node:[zone]" attaches a node to that zone's Prometheus.
 :::
+
+Read-only watch (`monitoring/fs-readonly.nix`): every node exports
+`dnf_filesystem_forced_readonly`, its `rw` mounts whose filesystem the kernel
+turned read-only, behind `FilesystemReadOnly`. Intended `ro` mounts and binds
+never appear; the file lives on tmpfs, so it outlives the failing disk.
 
 * **enable** `bool` Enable monitoring with prometheus, grafana and node exporter
 * **isNode** `bool` Is a monitoring node
@@ -1174,15 +1186,15 @@ darkone.service.outline.enable = false;
 
 <hr/>
 
-{/* t:p fe6552db204edec1c6a97e11dd469ca53fcd434dc8b3f77e92d4e1424035f5aa */}
+{/* t:p 432ffc3a3281d99344c0f0f6327ed2d17af3aa006a025bec82b939125e0e413d */}
 ### &#x2728; darkone.service.oxicloud
 
 OxiCloud — Fast Sovereign Cloud (file storage, WebDAV, CalDAV & CardDAV).
 
 :::note[Service currently being validated]
 DNF wrapper around the nixpkgs module (from [PR #516113](https://github.com/NixOS/nixpkgs/pull/516113)).
-The `oxicloud` package already ships in nixpkgs; only the module is sourced
-from the fork (cf. `flake.nix` input `nixpkgs-oxicloud`).
+The `oxicloud` package already ships in nixpkgs; only the module is copied
+from the PR (cf. `backports/nixos/oxicloud.nix`).
 :::
 
 :::tip[SSO]

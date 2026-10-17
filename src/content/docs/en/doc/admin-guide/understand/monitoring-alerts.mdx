@@ -106,55 +106,57 @@ Like `monitoring-node:<zone>`, these features accept an owner zone :
 `alert-critical:main` makes a node (typically the HCS) monitored by the
 `main` zone.
 
-{/* t:p 7f42eb61a99747e129008bf81974ae85bc090c3045f58f3d62d076ab5ba44f47 */}
+{/* t:p a8e846d3c2c3b8ca8996299980618d40ff9525cb4fd7eb6a69ff2c6f7ddc923b */}
 ## What is monitored
 
-The rules are derived from what each node declares&nbsp;; nothing to list by hand.
+Rules are derived from what each node declares; nothing to list by hand.
 
 | Family | Trigger |
 |---|---|
-| Unreachable node | silent `node-exporter` (`NodeDown`) |
-| Active service but down | expected systemd unit not `active` (`ServiceDown`) |
-| Failed unit | a `failed` systemd unit (`SystemdUnitFailed`) |
+| Node unreachable | `node-exporter` silent (`NodeDown`) |
+| Service active but failing | expected systemd unit not `active` (`ServiceDown`) |
+| Failed unit | a systemd unit `failed` (`SystemdUnitFailed`) |
 | Resources | disk, RAM, load, inodes, OOM (overridable thresholds) |
-| Network | unreachable gateway, tailnet (headscale) or DNS (blackbox probes) |
-| Remote site powered off | unreachable gateway of another zone (`PeerGatewayDown`) |
-| Tailnet self-healing | detached Tailscale client or looping watchdog (`TailscaleUnhealthy`, `TailscaleFlapping`) |
-| Tailnet audit | missing, mistagged or moved node, unexpected node, invalid policy, OIDC fallback, expiring device, blocked audit ([`Headscale*`](/en/doc/admin-guide/operate/vpn/#audit-and-alerts)) |
+| Network | gateway, tailnet (headscale) or DNS unreachable (blackbox probes) |
+| Remote site down | gateway of another zone unreachable (`PeerGatewayDown`) |
+| Tailnet self-healing | Tailscale client disconnected or watchdog looping (`TailscaleUnhealthy`, `TailscaleFlapping`) |
+| Tailnet audit | node missing, mistagged or moved, unexpected node, invalid policy, OIDC fallback, device expiring, audit blocked ([`Headscale*`](/en/doc/admin-guide/operate/vpn/#audit-and-alerts)) |
 
 <Aside type="caution" title="A zone cannot report its own death">
-A zone's Prometheus runs **on its gateway** and only scrapes that zone's nodes.
-Gateway powered off, the observer goes down with it&nbsp;: no alert fires, and
-the site becomes invisible without anything saying so.
+A zone's Prometheus runs **on its gateway** and only scrapes the nodes
+of that zone. With the gateway down, the observer goes down with it&nbsp;: no
+alert is sent, and the site becomes invisible without anything saying so.
 
-Each zone therefore probes the **other** zones' gateways and raises
-`PeerGatewayDown` (critical, after 5&nbsp;min) when one of them stops responding.
-With three zones, an outage is seen by two witnesses&nbsp;: losing one observer
-never masks the incident. The alert carries `reach="wan"`, so a **local**
-Internet outage triggers `ZoneInternetDown` alone, without a flurry of false
-alerts about peers. It also carries `host` (the targeted gateway)&nbsp;: a
+Each zone therefore probes the gateways of the **other** zones and raises
+`PeerGatewayDown` (critical, after 5&nbsp;min) when one of them stops
+responding. With three zones, a failure is seen by two witnesses&nbsp;: losing one
+observer never hides the incident. The alert carries `reach="wan"`, so a
+**local** Internet outage triggers `ZoneInternetDown` alone, without a flurry of
+false alerts on peers. It also carries `host` (the targeted gateway)&nbsp;: a
 silence route can thus target a single site.
 </Aside>
 
 <Aside type="note" title="One alert per partition, not per mount">
 The same partition is often mounted several times&nbsp;: btrfs subvolumes
-(`/`, `/nix`, `/home`, `/.swapfile`), `bind` mounts. Since metrics are emitted
-**per mount**, one full disk used to raise as many alerts as there were mounts.
+(`/`, `/nix`, `/home`, `/.swapfile`), `bind` mounts. As metrics are emitted
+**per mount**, a single full disk used to give as many alerts as there were
+mounts.
 
-Disk rules therefore aggregate on the device&nbsp;: **one alert per partition**.
-The message names the device then lists its mounts&nbsp;:
+Disk rules therefore aggregate on the device&nbsp;: **one alert per
+partition**. The message names the device then lists its mounts&nbsp;:
 
 ```
 /dev/nvme0n1p3 below 15% free on 10.1.2.1:9100. Mounts: /, /.swapfile, /nix.
 ```
 </Aside>
 
-<Aside type="note" title="Network and read-only mounts">
+<Aside type="note" title="Network mounts and read-only">
 Disk rules ignore **network** mounts (NFS, CIFS…)&nbsp;: they report the
 server's space, which already alerts for its own disk. Likewise, a mount
-intentionally set to **read-only** (share exported `ro`, optical media) does not
-trigger `FilesystemReadOnly`&nbsp;: the rule targets filesystems remounted
-read-only by the kernel after I/O errors.
+deliberately in **read-only** (`bind` `ro`, disk mounted `ro`, optical media)
+never triggers `FilesystemReadOnly`&nbsp;: the rule only targets `rw` mounts
+whose filesystem the kernel switched to read-only after I/O errors. The
+message lists only those mounts.
 </Aside>
 
 {/* t:p d4e3ff350edb205693bfda166ccbb65803e3c6365b08e39ffdf1110cb2ecd97d */}

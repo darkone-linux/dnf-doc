@@ -33,47 +33,51 @@ Keys are in `camelCase` (they become Nix attributes). The examples
 below are **generic** (`domain.tld`, `10.0`/`10.1` prefixes).
 :::
 
-{/* t:p fc08c864fc14796ebcd50b4bafc2c71a2c317dc6aa26a90cfb99d54a012ced53 */}
-## "network" section
+{/* t:p e36852b4827b7e244d6828d355b778277a137508ed8262b5574ab9004616d36c */}
+## Section "network"
 
-This optional section defines the global parameters of our network.
+This optional section defines the global settings of our network.
 
 ```yaml
 # etc/config.yaml
 network:
-  domain: "domain.tld"          # root DNS domain (services, VPN, certificates)
+  domain: "domain.tld"          # domaine DNS racine (services, VPN, certificats)
   default:
-    locale: "fr_FR.UTF-8"       # default locale of each host
-    timezone: "Europe/Paris"    # default timezone
+    locale: "fr_FR.UTF-8"       # locale par défaut de chaque hôte
+    timezone: "Europe/Paris"    # fuseau par défaut
   coordination:
-    enable: true                # enables the VPN mesh (Headscale)
-    hostname: "hcs"             # short hostname of the coordination host
-    domain: "headscale"         # subdomain → headscale.domain.tld
+    enable: true                # active le maillage VPN (Headscale)
+    hostname: "hcs"             # nom court de l'hôte de coordination
+    domain: "headscale"         # sous-domaine → headscale.domain.tld
 ```
 
 :::caution[Choosing a domain]
 It is strongly recommended to use a **real domain** for `network.domain`. This
-makes it easier to access services from outside the network, as well as setting up
-the VPN network.
+makes it easier to access services from outside, as well as to set up the VPN
+network.
 
 Moreover, these features require TLS to work.
-Network TLS certificate management is automatic (acme, transfer to
-zones) but requires using a real domain and proper DNS configuration.
+TLS certificate management for the network is automatic (acme, transfer to the
+zones) but requires the use of a real domain and proper DNS configuration.
 :::
 
 | Key | Role |
 |---|---|
-| `domain` | Top DNS domain (services, Headscale, certificates). |
-| `default.locale` | Default values, possibly overridden by zone. |
-| `default.timezone` | Default values, possibly overridden by zone. |
-| `coordination.enable` | Enables the VPN coordination. `false` → local zones only. |
+| `domain` | Top-level DNS domain (services, Headscale, certificates). |
+| `default.locale` | Default values, possibly overridden per zone. |
+| `default.timezone` | Default values, possibly overridden per zone. |
+| `coordination.enable` | Enables VPN coordination. `false` → local zones only. |
 | `coordination.hostname` | Headscale host and subdomain. |
 | `coordination.domain` | Headscale host and subdomain. |
 
+The locale also sets the keyboard, in console as well as on the desktop: the one
+given by `dnf/config/locales.json` (`en_GB.UTF-8`: `uk` in console, `gb`
+under GNOME), otherwise the country code (`ru_RU.UTF-8`: `ru`).
+
 :::tip[Network without VPN]
 `coordination.enable: false` remains valid: you can define one or more zones and
-deploy locally. With several zones, a VPN however makes it easier to administer
-remote nodes thanks to secure direct access.
+deploy locally. With multiple zones, however, a VPN makes it easier to
+administer remote nodes through secure direct access.
 :::
 
 {/* t:p 7d128f788a02a87c7251d108d7a89f3a99b700cf0f2aab21d842c6660d9265f0 */}

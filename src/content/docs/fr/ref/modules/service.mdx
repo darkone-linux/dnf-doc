@@ -973,27 +973,38 @@ Les identifiants sont gérés via sops.
 darkone.service.minio.enable = false;
 ```
 
-{/* t:p 2f827799d5d62f27c5dfa4be69f664d8ae8c62c5cdcd4737e8e79be386e364d7 */}
+{/* t:p 8659925dfeb4c7d9d580ab4be9d4961ff8cdb040682001c3e03910a330e4fb41 */}
+### &#x2728; darkone.service.monitoring.fs-readonly
+
+Supervision DNF&nbsp;: montages `rw` rendus en lecture seule par le noyau. Doc&nbsp;: en-tête de `../monitoring.nix`.
+
+<hr/>
+
+{/* t:p 4e9b7ed7f7a0bd6c8e142fb95241082e0d466346591eefe9f8ba25190ec715cf */}
 ### &#x2728; darkone.service.monitoring
 
-Module de supervision : tableaux de bord Grafana + exportateur par nœud.
+Module de supervision&nbsp;: tableaux de bord Grafana + exporteur par nœud.
 
 :::tip
-Grafana visualise les métriques collectées par le service `prometheus` (qu'il
-exige sur le même hôte, imposé par le générateur). Pour chaque zone :
+Grafana visualise les métriques collectées par le service `prometheus` (dont il
+a besoin sur le même hôte, imposé par le générateur). Pour chaque zone&nbsp;:
 
-- Tous les nœuds portant le tag "monitoring-node" exécutent l'exportateur de nœud.
-- Le nœud portant le service "monitoring" exécute Grafana (et exige `prometheus`).
+- Tous les nœuds avec le tag «&nbsp;monitoring-node&nbsp;» exécutent l'exporteur de nœud.
+- Le nœud avec le service «&nbsp;monitoring&nbsp;» exécute Grafana (et requiert `prometheus`).
 - Un seul hôte de supervision par zone est accepté.
-- Un tag "monitoring-node:[zone]" rattache un nœud au Prometheus de cette zone.
+- Un tag «&nbsp;monitoring-node:[zone]&nbsp;» rattache un nœud au Prometheus de cette zone.
 :::
 
-* **enable** `bool` Activer la supervision avec prometheus, grafana et l'exportateur de nœud
-* **isNode** `bool` Est un nœud de supervision
-* **kioskTarget** `str` Cible (relative, sans `/`) pour la redirection automatique vers Grafana
-  depuis la racine du domaine de supervision. Remplacée par le module Loki
-  lorsqu'il est actif pour pointer vers un tableau de bord d'accueil multi-sources.
+Surveillance en lecture seule (`monitoring/fs-readonly.nix`) : chaque nœud exporte
+`dnf_filesystem_forced_readonly`, ses montages `rw` dont le noyau a rendu le
+système de fichiers en lecture seule, derrière `FilesystemReadOnly`. Les
+montages `ro` et liaisons prévus n'y apparaissent jamais&nbsp;; le fichier vit sur
+tmpfs, il survit donc au disque défaillant.
 
+* **enable** `bool` Activer la supervision avec prometheus, grafana et l'exporteur de nœud
+* **isNode** `bool` S'agit-il d'un nœud de supervision
+* **kioskTarget** `str` Cible (relative, sans `/`) de la redirection automatique vers Grafana depuis la racine du domaine de supervision. Surchargée par le module Loki
+  lorsqu'il est actif pour pointer vers un tableau de bord multi-sources.
 ```nix
 darkone.service.monitoring = {
   enable = false;
@@ -1176,43 +1187,42 @@ Un wiki outline complètement configuré.
 darkone.service.outline.enable = false;
 ```
 
-{/* t:p fe6552db204edec1c6a97e11dd469ca53fcd434dc8b3f77e92d4e1424035f5aa */}
+{/* t:p 432ffc3a3281d99344c0f0f6327ed2d17af3aa006a025bec82b939125e0e413d */}
 ### &#x2728; darkone.service.oxicloud
 
-OxiCloud — Cloud souverain rapide (stockage de fichiers, WebDAV, CalDAV & CardDAV).
+OxiCloud — Fast Sovereign Cloud (stockage de fichiers, WebDAV, CalDAV et CardDAV).
 
 :::note[Service en cours de validation]
-Wrapper DNF autour du module nixpkgs (depuis [PR #516113](https://github.com/NixOS/nixpkgs/pull/516113)).
-Le paquet `oxicloud` est déjà fourni par nixpkgs&nbsp;; seul le module provient
-du fork (cf. entrée `flake.nix` `nixpkgs-oxicloud`).
+Emballage DNF autour du module nixpkgs (depuis le [PR #516113](https://github.com/NixOS/nixpkgs/pull/516113)).
+Le paquet `oxicloud` est déjà disponible dans nixpkgs&nbsp;; seul le module est copié
+depuis le PR (cf. `backports/nixos/oxicloud.nix`).
 :::
 
 :::tip[SSO]
-Lorsqu'un service `idm` (Kanidm) existe sur le réseau (zone ou global), l'OIDC est
-câblé automatiquement&nbsp;: un client OAuth2 est enregistré et OxiCloud pointe vers
-les endpoints Kanidm. Sans `idm`, le comportement amont est inchangé
-(connexion par mot de passe local uniquement).
+Quand un service `idm` (Kanidm) existe sur le réseau (zone ou global), l'OIDC est
+branché automatiquement&nbsp;: un client OAuth2 est enregistré et OxiCloud est pointé
+vers les points d'entrée de Kanidm. Sans `idm`, le comportement en amont est laissé
+tel quel (connexion par mot de passe local uniquement).
 :::
 
 :::caution[Comptes avec SSO]
 - L'auto-inscription est fermée&nbsp;: les comptes sont créés à la première connexion SSO.
-- Les membres du groupe Kanidm `admins` deviennent administrateurs OxiCloud à cette
-  première connexion uniquement&nbsp;; les changements de rôle ultérieurs se font dans
-  l'interface d'administration OxiCloud.
+- Les membres du groupe `admins` de Kanidm deviennent administrateurs OxiCloud à cette
+  première connexion uniquement&nbsp;; les changements de rôle ultérieurs se font dans l'interface d'admin OxiCloud.
 :::
 
-:::tip[Stockage et clients]
+:::tip[Clients et stockage]
 Le stockage de fichiers, WebDAV (`/webdav/`), CalDAV (`/caldav`) et CardDAV (`/carddav`)
-sont servis sur le même port HTTP, derrière le reverse proxy Caddy. La
-couche de compatibilité Nextcloud est active&nbsp;: les clients Nextcloud desktop et
-mobiles, ainsi que le fournisseur Nextcloud de GNOME Online Accounts, se connectent à
-l'URL du service. La base de données PostgreSQL est créée localement.
+sont servis sur le même port HTTP, derrière le proxy inverse Caddy. La couche de
+compatibilité Nextcloud est active&nbsp;: les clients Nextcloud de bureau et mobiles, ainsi
+que le fournisseur Nextcloud des comptes en ligne GNOME, se connectent à l'URL du service.
+La base de données PostgreSQL est créée localement.
 :::
 
 :::tip[Courriel]
-Lorsque `network.smtp` est défini, OxiCloud envoie les notifications de partage et les
-invitations par courriel (magic links) via ce relais. Sans lui, les fonctionnalités
-courriel sont désactivées.
+Quand `network.smtp` est défini, OxiCloud envoie les notifications de partage et les
+invitations par courriel (liens magiques) via ce relais. Sans lui, les fonctionnalités
+de courriel sont désactivées.
 :::
 
 * **enable** `bool` Activer le service OxiCloud local

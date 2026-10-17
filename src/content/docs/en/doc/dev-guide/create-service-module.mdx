@@ -409,42 +409,42 @@ in front of a service that ignores who connects. Admin overview:
 [Authentication and identities](/en/doc/admin-guide/understand/auth-idm/).
 </Aside>
 
-{/* t:p f9cc254f9539c986c130f7b78cb7fe72905cdc021a97eac42a277937e3b4180f */}
-## Sourcing an upstream module
+{/* t:p 5c4832071b38de9322a455f57259a5d6877972318e4cd14f72efcb9ebb0890b4 */}
+## Backport an upstream module
 
-When only the NixOS **module** is missing (package already in nixpkgs), source it
-from a fork carrying the PR, without rebuilding it.
+When only the NixOS **module** is missing (package already in nixpkgs), copy the module from the PR into `dnf/backports/nixos/<name>.nix`. An input pointing to the fork would fetch a whole nixpkgs tree on every evaluation, on every host.
 
 <Steps>
 
-1. Add in `dnf/flake.nix` a dedicated input pointing to the fork branch,
-   **without** `inputs.nixpkgs.follows` (we want the fork tree as-is):
+1. Copy the module from the PR branch, under a provenance header (PR, commit)&nbsp;:
 
    ```nix
-   nixpkgs-oxicloud.url = "github:flashonfire/nixpkgs/oxicloud-service";
+   # Backport of the `services.oxicloud` NixOS module, nixpkgs PR #516113
+   # (flashonfire/nixpkgs@739df6f3, unchanged but for `nixfmt -s`).
    ```
 
-2. Inject the module path into the `modules` list of `mkNode`
-   (`dnf/lib/mk-configuration.nix`) → parsed unconditionally, with no effect
-   as long as `services.<name>.enable = false`:
+2. Add it to the `modules` list of `mkNode` (`dnf/lib/mk-configuration.nix`)
+   → imported on every host, with no effect as long as
+   `services.<name>.enable = false`&nbsp;:
 
    ```nix
-   "${nixpkgs-oxicloud}/nixos/modules/services/web-apps/oxicloud.nix"
+   ../backports/nixos/oxicloud.nix
    ```
 
 </Steps>
 
 <Aside type="caution" title="Package overlay: only if needed">
 Distinguish two cases. **OxiCloud**: the package is already in nixpkgs → no
-overlay, `pkgs.oxicloud` comes from the main tree. **GeneWeb**: the package was
-missing (OCaml deps) → an overlay (`lib/overlays/geneweb.nix`) injects
-`pkgs.geneweb` from the fork.
+overlay, `pkgs.oxicloud` comes from the main tree. **GeneWeb**: the package
+was missing (OCaml deps) → an overlay (`lib/overlays/geneweb.nix`) injects
+`pkgs.geneweb` from the `nixpkgs-geneweb` input, fetched only where the
+package is built.
 </Aside>
 
 <Aside type="tip" title="Cleanup after merge">
-**Cleanup** once the PR is merged into `nixos-unstable`: remove the input,
-remove the module path (and any overlay). The wrapper
-`modules/service/<name>.nix` stays unchanged.
+**Cleanup** once the PR is merged into `nixos-unstable`: remove the copy and
+its line in `mkNode` (and the overlay and input, if any). The wrapper
+`modules/service/<name>.nix` stays unchanged. Details: `dnf/backports/README.md`.
 </Aside>
 
 {/* t:p 115d003f8e8d1ff8f87008a952d2555f275b6594cf03de93b3d1fd2537983caf */}

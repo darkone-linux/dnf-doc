@@ -392,6 +392,7 @@ comme `install`.
 just install-key myusbhost
 ```
 
+{/* t:p 20da6344adfb9ffd435fd452f24a0ae002773ff1f4734c7fe6845f70d90a9aa8 */}
 ### ✳️ `install-here <hôte> <login> [empreinte] [yes] [passphrase]`
 
 Installe la machine sur laquelle elle tourne, démarrée sur l'ISO générique DNF,
@@ -409,6 +410,7 @@ Refuse de tourner hors de l'ISO générique (fichier témoin `/etc/dnf-installer
 just install-here poste alice '<empreinte>'
 ```
 
+{/* t:p d4ad0660a7291391eec287e97146085ed32d91bd73a567d49cc213c7d183bf55 */}
 ### ✳️ `backup-admin <périphérique> [passphrase] [racine]`
 
 Écrit sur une clé USB, sans la formater, une sauvegarde chiffrée par age de ce
@@ -428,6 +430,7 @@ sauvegarde précédente du même réseau est gardée, renommée à sa date.
 just backup-admin /dev/disk/by-label/SECOURS
 ```
 
+{/* t:p 2bf25caf9dce75af1e1509428b8f9682835e01df66c6ad9dbcd4e7cd06457e88 */}
 ### ✳️ `backup-check <périphérique> [passphrase] [racine]`
 
 Relit la sauvegarde de `backup-admin`, mêmes arguments, et la compare aux clés
@@ -485,7 +488,7 @@ puis enchaîne `detect-hw`.
 just copy-hw myserver
 ```
 
-{/* t:p 7d3b497597bd716e7a910b1a40033c41a74fbf6bfa83d6311d1f75b4a81e9a1c */}
+{/* t:p d17dc0994db7f9c7685e2bb8be16ad6c5cb7a4453e754525f9cb8b0476fba3b0 */}
 ### ✳️ `detect-hw <hôte> [ip] [user]`
 
 Relève sur la machine les modules noyau de ses cartes réseau filaires et les
@@ -592,6 +595,7 @@ ajouté un hôte ou une zone. Voir
 just configure-admin-host
 ```
 
+{/* t:p 2aa934df4aa5afcbf4b93f71bfcd97f8d6bf3b510e9d001f6ffd6192a7d9d60d */}
 ### ✳️ `bootstrap-keys [racine] [login] [empreinte]`
 
 Crée les clés et le squelette sops d'une machine qui n'a pas encore de compte

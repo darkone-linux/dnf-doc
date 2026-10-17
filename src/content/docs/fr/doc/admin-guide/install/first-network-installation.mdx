@@ -15,7 +15,7 @@ import { Steps } from '@astrojs/starlight/components';
 On met en place un réseau DNF **par étapes**, et on peut s'arrêter à chacune :
 un poste suffit pour démarrer.
 
-{/* t:p 7168edbb289fe3fc37cb470e6a00a3d543db88eeaef4c1d9f04068d3c6581a84 */}
+{/* t:p 9069333d30874b4ad79d8f3d515baa990d526250ef0e55648bb95dab62bdc68d */}
 ## Le parcours
 
 1. **Un poste** : la machine de l'administrateur (cette page).
@@ -29,6 +29,7 @@ machine est elle-même un hôte DNF&nbsp;: les recettes d'administration tournen
 sous son compte de déploiement `nix`.
 :::
 
+{/* t:p 1c23c85b4b2e873ffb4c584f6326a764abd43910147fac0b7a4a1360e253d2f0 */}
 ## Installation assistée
 
 Le premier poste s'installe seul, depuis l'ISO générique, sans autre
@@ -105,6 +106,7 @@ chiffré installé ensuite est formaté avec elle. Le chiffrement exige l'UEFI.
 Voir [Chiffrement des disques (LUKS)](/fr/doc/admin-guide/operate/luks/).
 :::
 
+{/* t:p a1234c364c54cc1bce1d2d19a8591379ce4eed466cf3b5fc5608f55f9d026f47 */}
 ### Installation scriptée
 
 Un fichier de réponses tient lieu de questions&nbsp;; une réponse absente est
@@ -140,6 +142,7 @@ demandée. Elle chiffre aussi la sauvegarde&nbsp;; disque en clair, c'est
 `--backup-passphrase-file`. En scripté, la clé USB est relue sans être
 débranchée.
 
+{/* t:p 1cc36b34e466ea1dc845615ddba891d7d51c7d3c16d2155e789849352c00b8df */}
 ### Sauvegarde des clés
 
 `dnf-backup-<domaine>.tar.age`, chiffré par age, contient&nbsp;:
@@ -164,7 +167,7 @@ compte `nix`, en mode 600&nbsp;: `/home/nix/.ssh/id_ed25519`,
 
 `--dry-run` affiche le plan sans rien toucher, sur n'importe quelle machine.
 
-{/* t:p 46c17b8025062545b579cc343eb69183d8a881a6eafd602a97a9040fc0925da6 */}
+{/* t:p 14ebf2ba66d96136943b858b6d2d5117b609e7f64595110268fbdc48c5fdc2eb */}
 ## Créer le projet
 
 Voie manuelle, depuis une machine d'administration qui est déjà un hôte DNF.
@@ -216,7 +219,7 @@ Le projet part du modèle fourni par le framework : une structure prête et un
 
 </Steps>
 
-{/* t:p cb1d627adc4061817b67459b16b7dda54b88b7cc5af85121c04c215e18ce8888 */}
+{/* t:p bc452891b960f9941c6824f7a15db91066ca093dfd434dc19572a0b5ad907fcf */}
 ## Décrire la configuration
 
 Tout se déclare dans `etc/config.yaml` (réseau, zones, utilisateurs, hôtes).
@@ -279,7 +282,7 @@ Les flakes nix ne voient que les fichiers suivis par git. Un
 échouer toutes les constructions.
 :::
 
-{/* t:p 1470ae27c10646bdfc5030eed8417f1aeaf4c61bf41b5c463b1cad902a81fe01 */}
+{/* t:p 96360f6abe9d02ae6b647865b4838644700804b01e917ec95dbd488fae02fbd5 */}
 ## Installer un poste
 
 L'installation grave une image, démarre la machine dessus, puis applique le

@@ -131,7 +131,7 @@ L'entrée couvre alors tout l'historique. Un modèle, sans fichier de version,
 exige un `X.Y.Z` explicite (le train passe celui du framework).
 </Aside>
 
-{/* t:p 86ebe5e1c80dec43b7a0b8b1f3897678c963cbbda0530821959fde3bf7decec8 */}
+{/* t:p 67306e21540a7e1f8b15fa3b7b99d5930a0aa3106a824e947c98b9b578acc9f7 */}
 ## Le train de release
 
 `just release` s'exécute à la racine de l'espace de co-développement, qui doit
@@ -216,7 +216,7 @@ bouge, le train l'annonce et le laisse&nbsp;: il partira avec la prochaine
 release du framework.
 </Aside>
 
-{/* t:p d5b2163680fbb0a2004fd48a5f3e013f535ac0812faaaeab261319710ffa955d */}
+{/* t:p 7640fffe4bd8ed144db0b0533dd7b901247f61496c7f0ddabfa09d8e068a2fa6 */}
 ## Les garde-fous d'intégration continue
 
 Sur un tag `v*`, `release.yml` refuse de publier si&nbsp;:
@@ -230,6 +230,7 @@ Les trois contrôles de `ci.yml` (tests unitaires, évaluation, lint) sont
 rejoués via `workflow_call`, puis la section du changelog devient les notes de
 la *release* GitHub.
 
+{/* t:p 78050813ce636797a75263d66a52ca336f8ba2e1069965b3b17990040bbd3640 */}
 ### Test de l'installeur
 
 Sur un tag seulement, `installer-test` joue `darkone new` de bout en bout dans
