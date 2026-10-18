@@ -239,14 +239,16 @@ l'assistant est piloté par sa console série (pexpect), puis le système instal
 redémarre et se contrôle par SSH. Deux scénarios, en parallèle, environ
 25&nbsp;minutes chacun&nbsp;:
 
-- **scripté**&nbsp;: fichier de réponses, `--non-interactive`, disque chiffré,
-  premier démarrage déverrouillé par le sshd d'initrd&nbsp;;
-- **interactif**&nbsp;: chaque question répondue à la console, disque en clair,
-  clé USB de sauvegarde débranchée puis rebranchée (QMP).
+- **scripté**&nbsp;: fichier de réponses, `--non-interactive`, disque en clair,
+  phrase de passe de la sauvegarde dans un fichier&nbsp;;
+- **interactif**&nbsp;: chaque question répondue à la console, disque chiffré,
+  clé USB de sauvegarde débranchée puis rebranchée (QMP), premier démarrage
+  déverrouillé par le sshd d'initrd.
 
 Contrôles&nbsp;: lancement automatique sur tty1, système `running` sans unité en
-échec, `/etc/nixos` propre, page d'accueil installée, sauvegarde ouverte depuis
-l'hôte. Le journal série est joint au *run*.
+échec, `/etc/nixos` propre, page d'accueil installée, seconde sauvegarde par
+`just backup-admin` depuis le système installé (la première gardée sous sa
+date), sauvegarde ouverte depuis l'hôte. Le journal série est joint au *run*.
 
 Trois déclenchements&nbsp;:
 
