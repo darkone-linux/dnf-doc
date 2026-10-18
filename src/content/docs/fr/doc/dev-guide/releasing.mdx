@@ -233,11 +233,11 @@ la *release* GitHub.
 {/* t:p 78050813ce636797a75263d66a52ca336f8ba2e1069965b3b17990040bbd3640 */}
 ### Test de l'installeur
 
-Sur un tag seulement, `installer-test` joue `darkone new` de bout en bout dans
-une VM QEMU (KVM du runner, vrai réseau)&nbsp;: l'ISO générique démarre,
+Le *workflow* `installer-test.yml` joue `darkone new` de bout en bout dans une
+VM QEMU (KVM du runner, vrai réseau)&nbsp;: l'ISO générique démarre,
 l'assistant est piloté par sa console série (pexpect), puis le système installé
 redémarre et se contrôle par SSH. Deux scénarios, en parallèle, environ
-40&nbsp;minutes chacun&nbsp;:
+25&nbsp;minutes chacun&nbsp;:
 
 - **scripté**&nbsp;: fichier de réponses, `--non-interactive`, disque chiffré,
   premier démarrage déverrouillé par le sshd d'initrd&nbsp;;
@@ -246,8 +246,16 @@ redémarre et se contrôle par SSH. Deux scénarios, en parallèle, environ
 
 Contrôles&nbsp;: lancement automatique sur tty1, système `running` sans unité en
 échec, `/etc/nixos` propre, page d'accueil installée, sauvegarde ouverte depuis
-l'hôte. Un échec retient l'ISO hors de la *release*&nbsp;; le journal série est
-joint au *run*.
+l'hôte. Le journal série est joint au *run*.
+
+Trois déclenchements&nbsp;:
+
+- **tag**&nbsp;: appelé par `release.yml`, un échec retient l'ISO hors de la
+  *release*&nbsp;;
+- **chaque lundi**, sur `main`&nbsp;: une casse venue de nixpkgs unstable se voit
+  avant le tag suivant&nbsp;;
+- **à la main**&nbsp;: `gh workflow run installer-test.yml --ref <branche>`, avant
+  une release ou après un changement de l'ISO.
 
 Même test en local, sur l'ISO de l'arbre courant ou une autre&nbsp;:
 
