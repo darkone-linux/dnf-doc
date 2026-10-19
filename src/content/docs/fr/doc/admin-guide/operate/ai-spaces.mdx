@@ -18,8 +18,8 @@ Un **espace IA** est un hôte DNF de profil `ai-space`, en général un
 et ses propres données.
 
 :::caution[En cours]
-Accès web, SSO et canal Matrix en place. Les outils (Claude Code, Codex) et
-les MCP arrivent dans les prochaines versions.
+Accès web, SSO, canal Matrix, Claude Code, Codex, MCP et skills en place.
+Hermes arrive dans une prochaine version.
 :::
 
 {/* t:p 7b0901b02b6e1f21a39e40172e20d7df21a539df86b387a5ff27076f5d0e19bc */}
@@ -63,7 +63,15 @@ les MCP arrivent dans les prochaines versions.
    sudo -u openclaw openclaw models auth login --provider openai-codex
    ```
 
-   La connexion reste dans `/var/lib/openclaw`, persistant.
+   Les outils auxquels l'assistant délègue les tâches de code se connectent
+   de la même façon&nbsp;:
+
+   ```bash
+   sudo -u openclaw -H claude                         # puis /login
+   sudo -u openclaw -H codex login --device-auth
+   ```
+
+   Les connexions restent dans `/var/lib/openclaw`, persistant.
 
 </Steps>
 
@@ -85,6 +93,58 @@ verify status` sur l'hôte). Tant qu'elle n'est pas vérifiée, Element signale
 ses messages comme non vérifiés.
 :::
 
+## Outils des agents
+
+Les MCP, les skills et les outils se déclarent une seule fois par espace, dans
+`usr/machines/<hôte>/configuration.nix`. L'assistant et chaque membre (Claude
+Code, Codex) reçoivent les mêmes.
+
+```nix
+{ pkgs, ... }:
+{
+  darkone.host.ai-space = {
+    mcp.fetch = {
+      command = "uvx";
+      args = [ "mcp-server-fetch" ];
+    };
+    mcp.docs.url = "https://mcp.example.com/mcp";
+    skills.rapport = ./skills/rapport;   # dossier avec SKILL.md
+    packages = [ pkgs.uv pkgs.pandoc ];
+  };
+
+  darkone.service.openclaw = {
+    workspace."AGENTS.md" = ./AGENTS.md;
+    projects.notes = "https://forge.example.com/alice/notes.git";
+  };
+}
+```
+
+| Option | Rôle |
+|---|---|
+| `darkone.host.ai-space.mcp` | Serveurs MCP, locaux (`command`, `args`, `env`) ou distants (`url`, `headers`) |
+| `darkone.host.ai-space.skills` | Skills par nom&nbsp;: contenu de `SKILL.md`, fichier ou dossier |
+| `darkone.host.ai-space.packages` | Outils dans le PATH de l'assistant et chez les membres |
+| `darkone.host.ai-space.enableClaude`, `enableCodex` | Claude Code et Codex, actifs par défaut |
+| `darkone.service.openclaw.workspace` | Fichiers du workspace de l'assistant (`AGENTS.md`, `SOUL.md`…) |
+| `darkone.service.openclaw.projects` | Dépôts git clonés une fois dans `workspace/projects/<nom>` |
+| `darkone.service.openclaw.transcription` | Transcription locale des notes vocales (whisper.cpp) |
+
+:::danger[Pas de secret dans les MCP]
+`env` et `headers` sont écrits dans le store Nix, lisible par tous.
+:::
+
+:::note[Workspace]
+Les fichiers déclarés sont réécrits à chaque démarrage de l'assistant. Les
+autres (mémoire, fichiers créés par l'agent) lui appartiennent. Les projets ne
+sont jamais mis à jour automatiquement&nbsp;; un clonage en échec est signalé
+dans `journalctl -u openclaw-projects` sans bloquer le déploiement. Un dépôt
+SSH utilise la clé de l'utilisateur `openclaw` (`/var/lib/openclaw/.ssh`).
+:::
+
+Les notes vocales, Matrix ou web, sont transcrites sur l'espace avec le modèle
+`small` de whisper.cpp (466&nbsp;Mo, sur CPU), sans service externe. La langue
+est détectée à chaque note&nbsp;; `transcription.language = "fr"` la fixe.
+
 {/* t:p e41cf39346914d439e1ed2d25b8be397f185ac1ae05f8a8527556b94669e9604 */}
 ## Comptes des membres
 
@@ -93,6 +153,7 @@ Chaque membre a un compte Linux sur l'espace, allégé&nbsp;:
 | Élément | Sur l'espace |
 |---|---|
 | Profil Home Manager | `space-member` (zsh, git, vim, tmux), à la place du sien |
+| Outils de l'espace | Claude Code et Codex, avec les MCP et skills de l'espace (`darkone.home.aiSpace`) |
 | Personnalisations | `usr/users/<login>/space.nix` (tous ses espaces), puis `usr/users/<login>/spaces/<hôte>.nix` (cet espace), s'ils existent |
 | `usr/users/<login>/default.nix` | Ignoré&nbsp;: réservé à ses postes |
 | Droits | Aucun groupe (pas de `sudo`), quel que soit son profil |
@@ -101,8 +162,12 @@ L'administration de l'espace passe par le compte `nix` (`just enter <hôte>`).
 
 :::tip[Personnaliser un espace]
 Ces fichiers sont des modules Home Manager ordinaires&nbsp;: paquets, alias,
-configuration git, autres modules importés.
+configuration git, autres modules importés. Un MCP personnel s'y ajoute par
+`programs.mcp.servers.<nom>`.
 :::
+
+Chaque membre connecte ses propres abonnements, une fois&nbsp;: `claude` (puis
+`/login`) et `codex login --device-auth`.
 
 {/* t:p 7d5debd839e6a5410a5863f982e79b826ce39a70c4b7351f7d6751e15a44514a */}
 ## Accès
