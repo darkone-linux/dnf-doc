@@ -935,7 +935,10 @@ just rotate finalize
 
 Prépare un [hôte isolé](/fr/doc/admin-guide/operate/secrets/#hôtes-isolés)&nbsp;:
 clé d'hôte, fichier `usr/secrets/hosts/<hôte>.yaml` chiffré pour la clé admin
-et cette clé seule, secrets internes. Relançable sans risque.
+et cette clé seule, secrets internes. Sur un [espace IA](/fr/doc/admin-guide/operate/ai-spaces/)
+avec `openclaw`, et si le réseau a Matrix, crée aussi son bot `@<hôte>:<domaine>`
+(compte MAS, jeton dans les secrets de l'espace, marqueur
+`var/generated/spaces/<hôte>.nix`). Relançable sans risque.
 
 ```sh
 just space-init espace1
@@ -948,17 +951,6 @@ Ouvre les secrets d'un hôte isolé dans vim (via l'utilisateur `nix`).
 
 ```sh
 just space-sops espace1
-```
-
-### ✳️ `space-bot <hôte>`
-
-Crée ou rafraîchit le bot Matrix `@<hôte>:<domaine>` d'un espace IA&nbsp;: compte
-MAS, jeton gardé dans les secrets de l'espace, puis le marqueur
-`var/generated/spaces/<hôte>.nix` qui active le canal Matrix d'OpenClaw.
-Idempotent.
-
-```sh
-just space-bot espace1
 ```
 
 ---

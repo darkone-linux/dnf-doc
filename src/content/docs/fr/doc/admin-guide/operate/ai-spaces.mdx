@@ -43,10 +43,12 @@ les MCP arrivent dans les prochaines versions.
        openclaw: {}
    ```
 
-2. **Initialiser ses secrets**
+2. **Initialiser l'espace**
 
-   `just space-init ia-pro` (cf.
-   [Hôtes isolés](/fr/doc/admin-guide/operate/secrets/)).
+   `just space-init ia-pro`&nbsp;: clé d'hôte, secrets (cf.
+   [Hôtes isolés](/fr/doc/admin-guide/operate/secrets/)) et, si le réseau a
+   Matrix, le bot `@ia-pro:<domaine>`. Committer ensuite `usr/secrets/` et
+   `var/generated/spaces/`.
 
 3. **Déployer**
 
@@ -63,21 +65,13 @@ les MCP arrivent dans les prochaines versions.
 
    La connexion reste dans `/var/lib/openclaw`, persistant.
 
-5. **Créer son bot Matrix** (si le réseau a Matrix)
-
-   ```bash
-   just space-bot ia-pro
-   ```
-
-   Committer `var/generated/spaces/ia-pro.nix` et
-   `usr/secrets/hosts/ia-pro.yaml`, puis redéployer l'hyperviseur.
-
 </Steps>
 
 ## Matrix
 
 Les membres écrivent au bot `@<hôte>:<domaine>` en message direct, chiffré de
-bout en bout.
+bout en bout. Le canal n'existe que si le réseau déclare le service `matrix`&nbsp;:
+sans lui, l'espace fonctionne par son interface web seule.
 
 | Élément | Règle |
 |---|---|
