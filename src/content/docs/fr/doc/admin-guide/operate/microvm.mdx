@@ -1,0 +1,114 @@
+---
+title: Les invités microVM
+sidebar:
+  label: MicroVM
+  order: 18
+lang: fr
+---
+
+import { Steps } from '@astrojs/starlight/components';
+
+Un **invité microVM** est un hôte DNF ordinaire (IP de zone, services,
+supervision) qui tourne dans une machine virtuelle légère, sur un autre hôte du
+parc&nbsp;: l'**hyperviseur**. DNF s'appuie sur
+[microvm.nix](https://github.com/microvm-nix/microvm.nix) et cloud-hypervisor.
+Usage type&nbsp;: un espace IA clos par personne ou par équipe.
+
+:::caution[À valider]
+Configuration validée par les tests d'évaluation, pas encore déployée sur un
+hyperviseur réel.
+:::
+
+## Déclarer un invité
+
+<Steps>
+
+1. **Déclarer l'hôte**
+
+   La feature `microvm-guest` nomme l'hyperviseur, de la même zone. L'IP fixe
+   est obligatoire&nbsp;: l'interface et l'adresse MAC en dérivent.
+
+   ```yaml
+   # etc/config.yaml
+   hosts:
+     - hostname: "espace1"
+       zone: "maison:1.40"
+       profile: "ai-space"
+       features: ["microvm-guest:serveur"]
+   ```
+
+2. **Dimensionner**
+
+   Facultatif, 2 vCPU et 4096 Mio par défaut.
+
+   ```nix
+   # usr/machines/espace1/configuration.nix
+   {
+     darkone.system.microvm.guest = {
+       vcpu = 4;
+       mem = 6144; # Mio
+     };
+   }
+   ```
+
+3. **Figer la version d'état**
+
+   Un invité ne passe jamais par `just install`&nbsp;: créer le fichier à la
+   main, avec la version NixOS du premier déploiement.
+
+   ```nix
+   # usr/machines/espace1/install/state.nix
+   { system.stateVersion = "26.05"; }
+   ```
+
+4. **Déployer l'hyperviseur**
+
+   ```sh
+   just generate
+   just apply serveur
+   ```
+
+</Steps>
+
+## Déployer et mettre à jour
+
+Un invité n'est pas une cible de déploiement&nbsp;: `just apply <hyperviseur>`
+construit les invités, démarre les nouveaux et redémarre ceux qui ont changé.
+Les invités démarrent avec l'hyperviseur.
+
+| Élément | Emplacement |
+|---|---|
+| Données persistantes | `/var/lib/microvms/<invité>/` sur l'hyperviseur |
+| `/persist`, `/var/lib`, `/home` | Partages virtiofs de ce dossier |
+| Racine `/` | En mémoire, vidée à chaque démarrage |
+| Store Nix | Celui de l'hyperviseur, en lecture seule |
+
+## Isolation réseau
+
+Chaque invité a sa propre interface `vm-X-Y`, routée en `/32` par
+l'hyperviseur, qui répond pour lui sur le LAN (proxy ARP). Le lien de
+l'hyperviseur vers le LAN n'est pas modifié, il n'y a pas de pont.
+
+| Flux | Autorisé |
+|---|---|
+| Invité → Internet | Oui |
+| Invité → DNS de la passerelle | Oui |
+| Invité → LAN, tailnet, autres invités | Non |
+| Invité → hyperviseur | Non |
+| Passerelle → invité | Oui (proxy, supervision) |
+| Autre hôte → invité | Non |
+
+Les secrets d'un invité ne sont pas ceux du parc&nbsp;: voir
+[hôtes isolés](/fr/doc/admin-guide/operate/secrets/#hôtes-isolés).
+
+## FAQ
+
+### Se connecter à un invité ?
+
+Par SSH depuis l'hyperviseur, sur son IP (`ssh nix@10.0.1.40`)&nbsp;: c'est le
+seul hôte, avec la passerelle, à pouvoir le joindre.
+
+### Effacer un invité ?
+
+Le retirer de `etc/config.yaml`, déployer l'hyperviseur, puis supprimer
+`/var/lib/microvms/<invité>/` sur l'hyperviseur.
