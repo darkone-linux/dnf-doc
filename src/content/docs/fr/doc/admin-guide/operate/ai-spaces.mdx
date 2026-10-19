@@ -18,7 +18,7 @@ Un **espace IA** est un hôte DNF de profil `ai-space`, en général un
 et ses propres données.
 
 :::caution[En cours]
-Accès web et SSO en place. Le canal Matrix, les outils (Claude Code, Codex) et
+Accès web, SSO et canal Matrix en place. Les outils (Claude Code, Codex) et
 les MCP arrivent dans les prochaines versions.
 :::
 
@@ -63,7 +63,33 @@ les MCP arrivent dans les prochaines versions.
 
    La connexion reste dans `/var/lib/openclaw`, persistant.
 
+5. **Créer son bot Matrix** (si le réseau a Matrix)
+
+   ```bash
+   just space-bot ia-pro
+   ```
+
+   Committer `var/generated/spaces/ia-pro.nix` et
+   `usr/secrets/hosts/ia-pro.yaml`, puis redéployer l'hyperviseur.
+
 </Steps>
+
+## Matrix
+
+Les membres écrivent au bot `@<hôte>:<domaine>` en message direct, chiffré de
+bout en bout.
+
+| Élément | Règle |
+|---|---|
+| Qui est écouté | Les membres de l'espace, en MP comme dans un salon où le bot est invité |
+| Validation des commandes | Demandée aux membres, en MP |
+| Clés de chiffrement | Dans `/var/lib/openclaw`, persistant |
+
+:::caution[Vérification de l'appareil]
+Au premier démarrage, le bot demande à vérifier sa session (`openclaw matrix
+verify status` sur l'hôte). Tant qu'elle n'est pas vérifiée, Element signale
+ses messages comme non vérifiés.
+:::
 
 {/* t:p e41cf39346914d439e1ed2d25b8be397f185ac1ae05f8a8527556b94669e9604 */}
 ## Comptes des membres

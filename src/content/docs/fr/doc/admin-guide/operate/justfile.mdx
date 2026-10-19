@@ -950,6 +950,17 @@ Ouvre les secrets d'un hôte isolé dans vim (via l'utilisateur `nix`).
 just space-sops espace1
 ```
 
+### ✳️ `space-bot <hôte>`
+
+Crée ou rafraîchit le bot Matrix `@<hôte>:<domaine>` d'un espace IA&nbsp;: compte
+MAS, jeton gardé dans les secrets de l'espace, puis le marqueur
+`var/generated/spaces/<hôte>.nix` qui active le canal Matrix d'OpenClaw.
+Idempotent.
+
+```sh
+just space-bot espace1
+```
+
 ---
 
 {/* t:p 8272a88fea8a3168d56066a937766e855792dd168cfa08bdc58109bddf8a1695 */}
