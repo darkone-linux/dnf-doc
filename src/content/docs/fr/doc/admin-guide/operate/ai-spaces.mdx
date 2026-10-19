@@ -37,11 +37,15 @@ Hermes arrive dans une prochaine version.
    - hostname: "ia-pro"
      zone: "lan:1.40"
      profile: "ai-space"
-     features: ["microvm-guest:hyperviseur"]
+     features: ["microvm-guest:hyperviseur", "monitoring-node"]
      users: ["alice", "bob"]
      services:
        openclaw: {}
    ```
+
+   `monitoring-node` place l'espace sous la supervision de la zone&nbsp;: sans
+   lui, ni la panne de l'espace ni l'arrêt de l'assistant ne déclenchent
+   d'alerte.
 
    Le **propriétaire** est le membre dont l'abonnement fait tourner
    l'assistant&nbsp;: il reçoit les demandes de validation et les messages

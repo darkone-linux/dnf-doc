@@ -26,7 +26,8 @@ Usage type&nbsp;: un espace IA clos par personne ou par équipe.
 1. **Déclarer l'hôte**
 
    La feature `microvm-guest` nomme l'hyperviseur, de la même zone. L'IP fixe
-   est obligatoire&nbsp;: l'interface et l'adresse MAC en dérivent.
+   est obligatoire&nbsp;: l'interface et l'adresse MAC en dérivent. Comme tout
+   hôte, l'invité n'est supervisé qu'avec la feature `monitoring-node`.
 
    ```yaml
    # etc/config.yaml
@@ -34,7 +35,7 @@ Usage type&nbsp;: un espace IA clos par personne ou par équipe.
      - hostname: "espace1"
        zone: "maison:1.40"
        profile: "ai-space"
-       features: ["microvm-guest:serveur"]
+       features: ["microvm-guest:serveur", "monitoring-node"]
    ```
 
 2. **Dimensionner**
