@@ -269,6 +269,18 @@ just test-installer interactive /chemin/de/l.iso
 Disques et journaux&nbsp;: `~/.cache/dnf-installer-test/<scénario>/`, environ
 25&nbsp;Go par scénario. Le code&nbsp;: `dnf/tests/installer/`.
 
+Pour essayer l'arbre courant à la main, dans une fenêtre QEMU&nbsp;:
+
+```sh
+just try                                   # disque gardé
+just try reset chemin/de/dnf-generator     # disque neuf, générateur local
+```
+
+À la différence de `nix run …#try`, le projet écrit par l'assistant est
+épinglé sur le framework de l'ISO (`path:`) et non sur la release du
+template&nbsp;: le système installé porte le code non publié. Disque&nbsp;:
+`~/.local/share/dnf-try-local`.
+
 <Aside type="caution" title="Tag poussé, release absente">
 Ne jamais déplacer ni recréer le tag&nbsp;: FlakeHub l'a déjà publié.
 
