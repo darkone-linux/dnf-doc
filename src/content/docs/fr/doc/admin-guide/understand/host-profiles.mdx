@@ -59,7 +59,7 @@ desktop -> umi
 | `gateway` | Passerelle de zone | `server` | Routeur, pare-feu, DNS/DHCP, VPN |
 | `hcs` | Coordination du VPN | `server` | Headscale + services partagés |
 | `vm` | Machine virtuelle | `server` | Outils invité (VirtualBox/QEMU/Xen) |
-| `ai-space` | Espace IA (agents) | `server` | Secrets isolés du parc |
+| `ai-space` | Espace IA (agents) | `server` | Secrets isolés du parc ; ses `users` forment le groupe Kanidm `space-<hôte>` |
 
 Tout hôte charge l'ensemble des firmwares, sauf une machine virtuelle&nbsp;:
 `just install` et `just copy-hw` la détectent, quel que soit son profil
