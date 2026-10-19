@@ -43,6 +43,17 @@ Hermes arrive dans une prochaine version.
        openclaw: {}
    ```
 
+   Le **propriétaire** est le membre dont l'abonnement fait tourner
+   l'assistant&nbsp;: il valide les commandes et reçoit les messages
+   spontanés (rappels, tâches planifiées). Seul membre, il est implicite.
+   Avec plusieurs membres, il se déclare dans
+   `usr/machines/ia-pro/configuration.nix` (l'ordre des `users` n'est pas
+   conservé)&nbsp;:
+
+   ```nix
+   { darkone.service.openclaw.owner = "alice"; }
+   ```
+
 2. **Initialiser l'espace**
 
    `just space-init ia-pro`&nbsp;: clé d'hôte, secrets (cf.
@@ -93,8 +104,10 @@ sans lui, l'espace fonctionne par son interface web seule.
 
 | Élément | Règle |
 |---|---|
-| Qui est écouté | Les membres de l'espace (`@<login>:<domaine>`), en MP comme dans un salon où le bot est invité&nbsp;; les autres comptes sont ignorés |
-| Validation des commandes | Demandée aux membres, en MP |
+| Qui est écouté | Les membres de l'espace (`@<login>:<domaine>`), en MP seulement&nbsp;; les autres comptes sont ignorés |
+| Salons | Ignorés&nbsp;: des non-membres y liraient les réponses |
+| Validation des commandes | Demandée au propriétaire, en MP |
+| Messages spontanés | Envoyés au propriétaire, en MP |
 | Clés de chiffrement | Dans `/var/lib/openclaw`, persistant |
 
 :::caution[Vérification de l'appareil]
