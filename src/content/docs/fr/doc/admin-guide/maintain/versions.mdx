@@ -74,6 +74,10 @@ mécaniquement celle du générateur qui va avec.
    nix run .#init
    ```
 
+   Le lien est une racine du GC&nbsp;: le nettoyage hebdomadaire du store ne
+   le vide pas. Un projet lié par une version antérieure l'obtient à ce
+   premier `init`.
+
 4. Régénérer, contrôler, puis déployer un hôte en test avant la flotte :
 
    ```sh
