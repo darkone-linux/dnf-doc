@@ -44,7 +44,7 @@ Hermes arrive dans une prochaine version.
    ```
 
    Le **propriétaire** est le membre dont l'abonnement fait tourner
-   l'assistant&nbsp;: il valide les commandes et reçoit les messages
+   l'assistant&nbsp;: il reçoit les demandes de validation et les messages
    spontanés (rappels, tâches planifiées). Seul membre, il est implicite.
    Avec plusieurs membres, il se déclare dans
    `usr/machines/ia-pro/configuration.nix` (l'ordre des `users` n'est pas
@@ -106,7 +106,8 @@ sans lui, l'espace fonctionne par son interface web seule.
 |---|---|
 | Qui est écouté | Les membres de l'espace (`@<login>:<domaine>`), en MP seulement&nbsp;; les autres comptes sont ignorés |
 | Salons | Ignorés&nbsp;: des non-membres y liraient les réponses |
-| Validation des commandes | Demandée au propriétaire, en MP |
+| Sessions | Une par membre quand ils sont plusieurs, sinon une seule pour tous les canaux |
+| Validation des commandes | Aucune par défaut (cf. [Sécurité](#sécurité))&nbsp;; une demande éventuelle va au propriétaire, en MP |
 | Messages spontanés | Envoyés au propriétaire, en MP |
 | Clés de chiffrement | Dans `/var/lib/openclaw`, persistant |
 
@@ -208,4 +209,24 @@ Chaque membre connecte ses propres abonnements, une fois&nbsp;: `claude` (puis
 Un abonnement personnel (ChatGPT, Claude) partagé par plusieurs membres sort
 des conditions d'utilisation&nbsp;: un espace d'équipe prend un plan équipe ou
 des clés d'API.
+:::
+
+## Sécurité
+
+L'assistant exécute ses commandes sans validation, comme OpenClaw par
+défaut&nbsp;: la barrière est l'espace lui-même (microVM coupée du LAN, secrets
+propres à l'espace).
+
+:::caution[Ce que l'assistant peut lire]
+Il tourne sous l'utilisateur `openclaw`&nbsp;: tout ce que le service détient
+est à sa portée, dont la connexion du propriétaire au fournisseur d'IA et le
+jeton du bot Matrix. Un contenu piégé (page web, document, message) peut lui
+faire divulguer ces informations&nbsp;: ne rien confier à un espace qui ne
+doive pas pouvoir en sortir.
+:::
+
+:::note[Des membres de confiance]
+Un espace est un seul cercle de confiance&nbsp;: l'interface web de chaque
+membre affiche toutes les sessions, MP des autres compris. Des personnes qui ne
+se font pas confiance prennent chacune leur espace.
 :::
