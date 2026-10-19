@@ -88,7 +88,7 @@ Les invités démarrent avec l'hyperviseur.
 
 | Élément | Emplacement |
 |---|---|
-| Données persistantes | `/var/lib/microvms/<invité>/` sur l'hyperviseur |
+| Données persistantes | `/var/lib/microvms/<invité>/` sur l'hyperviseur, fermé à ses comptes sauf root (`0770`) |
 | `/persist`, `/var/lib`, `/home` | Partages virtiofs de ce dossier |
 | Racine `/` | En mémoire, vidée à chaque démarrage |
 | Store Nix | Celui de l'hyperviseur en lecture seule, plus une couche en mémoire pour ce que l'invité installe (`nix shell`, Home Manager), vidée à chaque démarrage |
