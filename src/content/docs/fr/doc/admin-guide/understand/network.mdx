@@ -232,6 +232,8 @@ Qui résout quoi :
   AdGuardHome s'il est activé.
 - Seuls les noms déclarés existent&nbsp;: un nom inconnu sous une zone répond
   `NXDOMAIN`, sans renvoi vers la passerelle.
+- La résolution inverse d'une adresse donne le FQDN de sa machine, jamais un
+  service qu'elle héberge.
 - Les noms du tailnet (`<nœud>.tailnet.internal`) sont relayés par chaque
   passerelle à MagicDNS&nbsp;: résolus aussi depuis les LAN.
 
