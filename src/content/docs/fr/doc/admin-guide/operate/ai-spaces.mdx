@@ -1,0 +1,77 @@
+---
+title: Les espaces IA
+sidebar:
+  label: Espaces IA
+  order: 19
+lang: fr
+---
+
+import { Steps } from '@astrojs/starlight/components';
+
+Un **espace IA** est un hôte DNF de profil `ai-space`, en général un
+[invité microVM](/fr/doc/admin-guide/operate/microvm/). Il porte un assistant
+[OpenClaw](https://openclaw.ai) réservé à ses membres, avec ses propres secrets
+et ses propres données.
+
+:::caution[En cours]
+Accès web et SSO en place. Le canal Matrix, les outils (Claude Code, Codex) et
+les MCP arrivent dans les prochaines versions.
+:::
+
+## Créer un espace
+
+<Steps>
+
+1. **Déclarer l'hôte et ses membres**
+
+   Les `users` de l'hôte sont ses membres&nbsp;: DNF crée pour eux le groupe
+   Kanidm `space-<hôte>`.
+
+   ```yaml
+   # etc/config.yaml
+   - hostname: "ia-pro"
+     zone: "lan:1.40"
+     profile: "ai-space"
+     features: ["microvm-guest:hyperviseur"]
+     users: ["alice", "bob"]
+     services:
+       openclaw: {}
+   ```
+
+2. **Initialiser ses secrets**
+
+   `just space-init ia-pro` (cf.
+   [Hôtes isolés](/fr/doc/admin-guide/operate/secrets/)).
+
+3. **Déployer**
+
+   L'hyperviseur, la passerelle de la zone (vhost, DNS) et le HCS (groupe
+   Kanidm)&nbsp;: `just apply hyperviseur,gw,hcs`.
+
+4. **Connecter un fournisseur d'IA**
+
+   Une fois par espace, depuis l'hôte (`just enter ia-pro`)&nbsp;:
+
+   ```bash
+   sudo -u openclaw -H openclaw models auth login --provider openai-codex
+   ```
+
+   La connexion reste dans `/var/lib/openclaw`, persistant.
+
+</Steps>
+
+## Accès
+
+| Élément | Règle |
+|---|---|
+| Adresse | `https://openclaw.<zone>.<domaine>` |
+| Connexion | SSO Kanidm, réservé au groupe `space-<hôte>` |
+| Appareil | Appairé à la première visite, sans droit d'administration |
+| Administration | En ligne de commande sur l'hôte (`openclaw …`) |
+| Port de l'assistant | Joignable depuis la passerelle de la zone seulement |
+
+:::note[Un abonnement par personne]
+Un abonnement personnel (ChatGPT, Claude) partagé par plusieurs membres sort
+des conditions d'utilisation&nbsp;: un espace d'équipe prend un plan équipe ou
+des clés d'API.
+:::
