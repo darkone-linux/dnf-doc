@@ -61,7 +61,16 @@ hyperviseur réel.
    { system.stateVersion = "26.05"; }
    ```
 
-4. **Déployer l'hyperviseur**
+4. **Initialiser ses secrets**
+
+   L'invité ne lit que ses propres secrets&nbsp;: voir
+   [hôtes isolés](/fr/doc/admin-guide/operate/secrets/#hôtes-isolés).
+
+   ```sh
+   just space-init espace1
+   ```
+
+5. **Déployer l'hyperviseur**
 
    ```sh
    just generate
@@ -97,9 +106,6 @@ l'hyperviseur vers le LAN n'est pas modifié, il n'y a pas de pont.
 | Invité → hyperviseur | Non |
 | Passerelle → invité | Oui (proxy, supervision) |
 | Autre hôte → invité | Non |
-
-Les secrets d'un invité ne sont pas ceux du parc&nbsp;: voir
-[hôtes isolés](/fr/doc/admin-guide/operate/secrets/#hôtes-isolés).
 
 ## FAQ
 

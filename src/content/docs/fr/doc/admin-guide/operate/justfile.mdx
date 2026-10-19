@@ -940,6 +940,24 @@ just rotate push-keys
 just rotate finalize
 ```
 
+### ✳️ `space-init <hôte>`
+
+Prépare un [hôte isolé](/fr/doc/admin-guide/operate/secrets/#hôtes-isolés)&nbsp;:
+clé d'hôte, fichier `usr/secrets/hosts/<hôte>.yaml` chiffré pour la clé admin
+et cette clé seule, secrets internes. Relançable sans risque.
+
+```sh
+just space-init espace1
+```
+
+### ✳️ `space-sops <hôte>`
+
+Ouvre les secrets d'un hôte isolé dans vim (via l'utilisateur `nix`).
+
+```sh
+just space-sops espace1
+```
+
 ---
 
 {/* t:p 8272a88fea8a3168d56066a937766e855792dd168cfa08bdc58109bddf8a1695 */}
