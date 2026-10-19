@@ -140,6 +140,11 @@ partagent donc la même session : on se connecte **une fois**. Les endpoints du
 flux (`/oauth2/*`) sont hébergés sur le FQDN de la **page d'accueil** de la zone,
 qui sert d'ancre commune.
 
+Le cookie dure 7 jours, mais les groupes qu'il porte sont relus auprès de
+Kanidm toutes les 15 minutes&nbsp;: un ajout ou un retrait de groupe s'applique
+dans ce délai, sans reconnexion. Pour forcer une nouvelle session&nbsp;:
+`https://homepage.<zone>/oauth2/sign_out`.
+
 {/* t:p ac6fc1631b029f0ede249fc7790cd49f5e3f6fe56d008b048fcffe2fe585ade8 */}
 ### Accès interne vs externe
 
