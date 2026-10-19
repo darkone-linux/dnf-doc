@@ -163,7 +163,10 @@ Les fichiers déclarés sont réécrits à chaque démarrage de l'assistant. Les
 autres (mémoire, fichiers créés par l'agent) lui appartiennent. Les projets ne
 sont jamais mis à jour automatiquement&nbsp;; un clonage en échec est signalé
 dans `journalctl -u openclaw-projects` sans bloquer le déploiement. Un dépôt
-SSH utilise la clé de l'utilisateur `openclaw` (`/var/lib/openclaw/.ssh`).
+SSH utilise la clé de l'utilisateur `openclaw`, à créer une fois
+(`sudo -u openclaw -H ssh-keygen -t ed25519`) puis à déclarer sur la forge
+(`/var/lib/openclaw/.ssh/id_ed25519.pub`)&nbsp;; la clé du serveur est
+acceptée au premier clonage.
 :::
 
 Les notes vocales, Matrix ou web, sont transcrites sur l'espace avec le modèle
