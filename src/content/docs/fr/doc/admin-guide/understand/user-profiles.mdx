@@ -83,7 +83,7 @@ Une présentation orientée usage figure dans le
 | vim, btop, htop | tous | Icônes masquées, programmes toujours lançables depuis un terminal |
 | Notification « Soutenir GNOME » | tous | Désactivée |
 | Visionneur de documents | tous | Papers, application PDF par défaut (remplace Evince) |
-| Visionneur d'images | tous | Geeqie par défaut, si le module `imagery` est actif |
+| Visionneur d'images | tous sauf `minimal`, `baby` | Geeqie par défaut |
 | Extensions GNOME | non techniques | Icône masquée |
 | Terminal | non techniques | Console, absente du dash, présente dans la grille d'applications |
 | Terminal | techniques | Ghostty, premier favori du dash et Ctrl+Alt+T |
@@ -144,8 +144,8 @@ Repasser l'option à `null` laisse l'extension en place : la retirer via
 {/* t:p 53b2f6a5686d0e1d8871b7c0ab2255ce57996881bbd565799e960931e418f7ae */}
 ## Applications lourdes à la demande
 
-Les profils `admin` et `nix-admin` n'installent ni la création d'images (GIMP,
-Geeqie) ni la musique (Audacious). Pour les rendre à un compte&nbsp;:
+Les profils `admin` et `nix-admin` n'installent ni la création d'images
+(GIMP) ni la musique (Audacious). Pour les rendre à un compte&nbsp;:
 
 ```nix
 # usr/users/<login>/default.nix
