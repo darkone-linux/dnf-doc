@@ -153,6 +153,7 @@ Code, Codex) reçoivent les mêmes.
 | `darkone.host.ai-space.skills` | Skills par nom&nbsp;: contenu de `SKILL.md`, fichier ou dossier |
 | `darkone.host.ai-space.packages` | Outils dans le PATH de l'assistant et chez les membres |
 | `darkone.host.ai-space.enableClaude`, `enableCodex` | Claude Code et Codex, actifs par défaut |
+| `darkone.service.openclaw.exec` | Politique des commandes (cf. [Sécurité](#sécurité)) |
 | `darkone.service.openclaw.identity` | Nom, emoji et avatar de l'assistant (`name`, `emoji`, `avatar`)&nbsp;: la configuration étant en lecture seule, l'assistant ne peut pas les changer lui-même |
 | `darkone.service.openclaw.workspace` | Fichiers du workspace de l'assistant (`AGENTS.md`, `SOUL.md`…) |
 | `darkone.service.openclaw.projects` | Dépôts git clonés une fois dans `workspace/projects/<nom>` |
@@ -208,7 +209,7 @@ Chaque membre connecte ses propres abonnements, une fois&nbsp;: `claude` (puis
 |---|---|
 | Adresse | `https://openclaw.<zone>.<domaine>` |
 | Connexion | SSO Kanidm, réservé au groupe `space-<hôte>` |
-| Appareil | Appairé à la première visite, sans droit d'administration |
+| Appareil | Appairé à la première visite, sans droit d'administration ni de validation (propriétaire seul) |
 | Administration | `openclaw …` sur l'hôte, depuis le compte `nix` |
 | Port de l'assistant | Joignable depuis la passerelle de la zone seulement |
 
@@ -220,9 +221,39 @@ des clés d'API.
 
 ## Sécurité
 
-L'assistant exécute ses commandes sans validation, comme OpenClaw par
-défaut&nbsp;: la barrière est l'espace lui-même (microVM coupée du LAN, secrets
-propres à l'espace).
+Par défaut, l'assistant exécute ses commandes sans validation, comme
+OpenClaw&nbsp;: la barrière est l'espace lui-même (microVM coupée du LAN,
+secrets propres à l'espace). Son service est en plus confiné&nbsp;: il n'écrit
+que dans `/var/lib/openclaw` et ne voit ni les dossiers ni les processus des
+membres.
+
+`darkone.service.openclaw.exec` choisit la politique&nbsp;:
+
+| Valeur | Commandes |
+|---|---|
+| `full` (défaut) | Toutes, sans validation |
+| `ask` | Celles de la liste blanche passent, les autres sont soumises au propriétaire |
+| `auto` | Un modèle examine celles hors liste blanche et soumet au propriétaire les cas douteux |
+| `allowlist` | Celles de la liste blanche seulement |
+| `deny` | Aucune |
+
+La liste blanche se remplit sur l'hôte&nbsp;:
+`openclaw approvals allowlist add --agent main <chemin>`.
+
+:::caution[Validation et Claude Code]
+Avec un modèle `anthropic/*` (CLI `claude`), hors `full`, les pipes,
+redirections et substitutions sont refusés sans demande&nbsp;: l'assistant
+devient nettement moins capable. La validation évite les erreurs, elle
+n'arrête pas un assistant détourné, qui tourne sous le même utilisateur que le
+service.
+:::
+
+:::note[Validation réservée au propriétaire]
+Seul le propriétaire valide, en MP ou dans l'interface web. Un appareil
+appairé avant ce réglage garde son droit&nbsp;: le retirer avec `openclaw
+devices list` puis `openclaw devices remove <id>`, il se réappaire à la visite
+suivante.
+:::
 
 :::caution[Ce que l'assistant peut lire]
 Il tourne sous l'utilisateur `openclaw`&nbsp;: tout ce que le service détient
