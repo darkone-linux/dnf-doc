@@ -45,13 +45,6 @@ nix run github:darkone-linux/darkone-nixos-framework#try
 
 Le disque est gardé d'une fois sur l'autre (`~/.local/share/dnf-try`)&nbsp;;
 `nix run …#try -- --reset` repart de zéro.
-
-Pour ne pas retélécharger le système à chaque essai, servir le store de
-l'hôte, puis répondre `http://10.0.2.2:5000` à la question du cache&nbsp;:
-
-```sh
-nix run nixpkgs#nix-serve-ng -- --host 127.0.0.1 --port 5000
-```
 :::
 
 <Steps>
@@ -148,7 +141,7 @@ locale:
   language: "fr_FR.UTF-8"
 backup:
   device: "/dev/disk/by-label/SECOURS"   # clé USB de la sauvegarde
-cache:                                   # facultatif
+cache:                                   # facultatif, ou --cache <url>
   url: "http://cache.lan:5000"
   publicKey: "cache.lan-1:..."           # inutile si signé par cache.nixos.org
 ```

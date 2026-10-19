@@ -393,7 +393,7 @@ just install-key myusbhost
 ```
 
 {/* t:p 20da6344adfb9ffd435fd452f24a0ae002773ff1f4734c7fe6845f70d90a9aa8 */}
-### ✳️ `install-here <hôte> <login> [empreinte] [yes] [passphrase]`
+### ✳️ `install-here <hôte> <login> [empreinte] [yes] [passphrase] [cache] [clé]`
 
 Installe la machine sur laquelle elle tourne, démarrée sur l'ISO générique DNF,
 comme poste d'administration du projet&nbsp;: disko efface son disque, les clés
@@ -401,6 +401,9 @@ naissent sur la cible (`bootstrap-keys`), puis `nixos-install`. Le projet
 rejoint `/etc/nixos` du nouveau système, propriété de `login`. Un disque
 chiffré demande le fichier de sa passphrase, qui devient la passphrase partagée
 du parc&nbsp;; la clé SSH d'initrd est déposée sur la cible.
+
+`cache` et `clé`&nbsp;: un cache de paquets supplémentaire et sa clé publique,
+pour cette installation seulement (transmis par `darkone new`).
 
 :::danger[Efface le disque de la machine courante]
 Refuse de tourner hors de l'ISO générique (fichier témoin `/etc/dnf-installer`).
