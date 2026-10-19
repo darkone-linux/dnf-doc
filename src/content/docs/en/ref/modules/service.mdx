@@ -1173,7 +1173,7 @@ darkone.service.nix-cache = {
 
 <hr/>
 
-{/* t:p 5e6ff6b0c4449e2e06e34e1be5ef1246336a7a5758856e9a868ede3492618153 */}
+{/* t:p d3e3c476ce1a04ea1805517e05be68c447be0ebd52a43d703d6316998d5e4f65 */}
 ### &#x2728; darkone.service.openclaw
 
 OpenClaw assistant of an AI space (gateway + control UI, behind the zone SSO).
@@ -1184,6 +1184,7 @@ One instance per `ai-space` host, declared like any service:
 - hostname: "ia-pro"
   profile: "ai-space"
   users: ["alice"]          # members: Kanidm group `space-ia-pro`
+  features: ["monitoring-node"] # alerts: space down, gateway unit failed
   services: { openclaw: {} }
 ```
 
@@ -1193,17 +1194,98 @@ One instance per `ai-space` host, declared like any service:
 - devices: a member's browser is paired on first visit, without operator
   admin (granted from the host CLI only);
 - port: reachable from the zone gateway only;
-- state: `/var/lib/openclaw` (provider logins, sessions, workspace).
+- host CLI: `openclaw`, re-run as the service user, past `trusted-proxy`
+  with the gateway password (`openclaw-gateway-password`, `just space-init`);
+- state: `/var/lib/openclaw` (provider logins, sessions, workspace,
+  Matrix E2EE keys);
+- owner (`owner`, default: the only member): its subscription runs the
+  agent, it gets approval requests and proactive messages;
+- Matrix: DM channel with the bot `@<host>:<domain>`, members only, rooms
+  ignored, one session per member when several, when the network has
+  Matrix and `just space-init <host>` created the bot (marker
+  `var/generated/spaces/<host>.nix`, token in the space's sops file); exec
+  approvals asked to the owner in DM;
+- agent tooling: MCP, skills, Claude Code / Codex and `packages` of the
+  space (`darkone.host.ai-space`), shared with the members' homes;
+- identity (`identity`: name, emoji, avatar): declared, the config being
+  read-only (`openclaw agents set-identity` fails);
+- workspace (`/var/lib/openclaw/workspace`): `workspace` files (AGENTS.md,
+  SOUL.md...) replaced at each start, others left to the agent; `projects`
+  git-cloned once into `projects/<name>`;
+- voice notes: local whisper.cpp (`transcription`, ggml `small` model).
 
-:::note[Provider logins]
-Once per space, from the host: `sudo -u openclaw openclaw models auth login
---provider openai-codex` (ChatGPT), or another provider. Tokens stay in the state.
+```nix
+darkone.service.openclaw = {
+  workspace."AGENTS.md" = ./agents/AGENTS.md;
+  projects.notes = "git@forge.example.com:alice/notes.git";
+};
+```
+
+:::caution[Commands run without approval by default]
+`exec = "full"` (OpenClaw's default): the agent runs any command as
+`openclaw`, the space's tokens within reach. The microVM is the boundary,
+the hardened unit a second wall (writes to the state only). `ask`, `auto`:
+misses go to the owner, a guard against mistakes, not a wall (same user).
+:::
+
+:::note[Members trust each other]
+One gateway, one operator domain: every member's UI shows every session,
+DMs included. Members who do not trust each other get separate spaces.
+:::
+
+:::note[Provider login]
+Once per space, from the host as `nix` (the `openclaw` CLI re-runs itself as
+the service user), by `model` provider. Logins stay in the state.
+- `anthropic/*` (default): `sudo -u openclaw -H claude auth login`;
+- `openai/*`: `openclaw models auth login --provider openai`.
 :::
 
 * **enable** `bool` Enable the OpenClaw assistant of an AI space
+* **owner** `nullOr str` Member owning the space: its subscription logs the agent in
+  (`model`), it receives approval requests and proactive messages.
+  Required with several members (`users` order is not kept).
+* **model** `str` Main model. Subscription runtime from its provider: `anthropic/*`
+  through the `claude` CLI (with `darkone.host.ai-space.enableClaude`),
+  `openai/*` through the `codex` plugin (ChatGPT OAuth).
+* **exec** `enum [ "full" "auto" "ask" "allowlist" "deny" ]` Command policy of the agent (OpenClaw `tools.exec.mode`):
+  - `full`: any command, unapproved (OpenClaw default);
+  - `ask`: allowlisted commands run, any other asks the owner;
+  - `auto`: a model reviews misses, the owner decides when it is unsure;
+  - `allowlist`, `deny`: allowlisted commands only, none.
+
+  Allowlist: `openclaw approvals allowlist add --agent main &lt;path&gt;`. With
+  the `claude-cli` runtime, pipes, redirections and substitutions are
+  refused before any prompt outside `full`.
+* **identity.name** `nullOr str` Name of the assistant, shown in the UI.
+* **identity.emoji** `nullOr str` Emoji of the assistant, shown in the UI.
+* **identity.avatar** `nullOr str` Avatar image (URL or workspace-relative path).
+* **workspace** `attrs` Files of the agent workspace, by relative path: content or file.
+  Replaced at each gateway start; undeclared files belong to the agent.
+* **projects** `attrs` Git repositories cloned once into `workspace/projects/&lt;name&gt;`, never
+  pulled. SSH remotes use the key of `openclaw` (`/var/lib/openclaw/.ssh`,
+  created by hand); the server key is accepted on first clone.
+* **transcription.enable** `bool` Transcribe voice notes locally (whisper.cpp, CPU).
+* **transcription.model** `path` whisper.cpp ggml model.
+* **transcription.language** `str` Spoken language (`auto`: detected per note).
 
 ```nix
-darkone.service.openclaw.enable = false;
+darkone.service.openclaw = {
+  enable = false;
+  owner = "alice";
+  model = "openai/gpt-6-astra";
+  exec = "ask";
+  identity.name = "Jarvis";
+  identity.emoji = "🦉";
+  identity.avatar = null;
+  workspace = { };
+  projects = { };
+  transcription.enable = true;
+  transcription.model = pkgs.fetchurl {
+            url = "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-small.bin";
+            sha256 = "0ywqxbziyp2bv72riyjpw4brk9v46d4cfbjfwqvvjrrq0srakqqv";
+          };
+  transcription.language = "fr";
+};
 ```
 
 <hr/>

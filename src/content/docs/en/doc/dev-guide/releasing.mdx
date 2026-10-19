@@ -202,38 +202,6 @@ On a `v*` tag, `release.yml` refuses to publish if&nbsp;:
 
 The three checks in `ci.yml` (unit tests, evaluation, and lint) are rerun via `workflow_call`, and the corresponding changelog section becomes the GitHub release notes.
 
-{/* t:p a116b87bb5b90251ad236d2dcf460aa1060459784c3b6d2ab46c842c9358d019 */}
-### Testing the installer
-
-The `installer-test.yml` *workflow* runs `darkone new` end-to-end in a QEMU VM (KVM on the runner, real network)&nbsp;: the generic ISO boots, the assistant is driven via its serial console (pexpect), then the installed system reboots and is controlled over SSH. Two scenarios run in parallel, each taking about 25&nbsp;minutes&nbsp;:
-
-- **scripted**&nbsp;: response file, `--non-interactive`, unencrypted disk, backup passphrase stored in a file&nbsp;;
-- **interactive**&nbsp;: each question answered on the console, encrypted disk, USB backup key unplugged then replugged (QMP), first boot unlocked by the initrd sshd.
-
-Checks&nbsp;: automatic launch on tty1, system `running` with no failed units, clean `/etc/nixos`, homepage installed, second backup run with `just backup-admin` from the installed system (the first kept under its date), backup opened from the host. The serial log is attached to the *run*.
-
-Three triggers&nbsp;:
-
-- **tag**&nbsp;: called by `release.yml`, any failure prevents the ISO from being included in the *release*&nbsp;;
-- **every Monday**, on `main`&nbsp;: a regression from nixpkgs unstable is caught before the next tag&nbsp;;
-- **manual**&nbsp;: `gh workflow run installer-test.yml --ref <branch>`, before a release or after an ISO change.
-
-Same test locally, on the ISO from the current tree or another&nbsp;:
-
-```sh
-just test-installer                 # both scenarios
-just test-installer interactive /chemin/de/l.iso
-```
-
-Disks and logs&nbsp;: `~/.cache/dnf-installer-test/<scénario>/`, about 25&nbsp;GB per scenario. Code&nbsp;: `dnf/tests/installer/`.
-
-<Aside type="caution" title="Tag pushed, release missing">
-Never move or recreate the tag&nbsp;: FlakeHub has already published it.
-
-- Transient failure (runner stopped, network issue)&nbsp;: `gh run rerun <id> --failed` re-runs failed *jobs* using the *workflows* from the tag.
-- Defect in the tagged tree&nbsp;: the version number is lost. Fix on `main`, then `just release patch`.
-</Aside>
-
 {/* t:p 76bf7c0ae965537388dc68bc0a93388c26f12d5dae428fd2ad7c9594d61c1900 */}
 ## Shared configuration
 

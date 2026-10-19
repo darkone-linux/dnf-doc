@@ -242,44 +242,48 @@ Côté hyperviseur MicroVM&nbsp;: invités, taps routés, isolation.
 
 <hr/>
 
-{/* t:p ca384d4e236e8c01920acaf36f37189434da05890aa09b1c78f989e640cbfee1 */}
+{/* t:p 009e2ca2eecf34c8ea63fc92f5827290969895418ff84bd7750232f39d93eff4 */}
 ### &#x2699; darkone.system.microvm
 
 Invités MicroVM (microvm.nix, cloud-hypervisor) sur un hôte hyperviseur DNF.
 
 Un invité est un hôte DNF ordinaire de l'inventaire, marqué par la
-fonctionnalité `microvm-guest:<hypervisor>` dans `etc/config.yaml`. Il garde
-son IP de zone, ses services et son monitoring&nbsp;; l'hyperviseur l'exécute et le déploie.
+fonctionnalité `microvm-guest:<hypervisor>` dans `etc/config.yaml`. Il conserve
+son IP de zone, ses services et sa supervision ; l'hyperviseur l'exécute et le
+déploie.
 
 ```yaml
 - hostname: "space1"
   zone: "cp:1.40"              # fixed IP: tap + MAC are derived from it
   profile: "ai-space"
-  features: ["microvm-guest:ms-a2"]
+  features: ["microvm-guest:ms-a2", "monitoring-node"] # monitored like any host
 ```
 
 - Côté invité (`microvm/guest.nix`) : partages virtiofs sous
-  `<stateDir>/<guest>/{persist,var-lib,home}`, store hôte en lecture seule, clé
-  hôte sur `/persist`, lien statique `/32` routé par l'hyperviseur.
+  `<stateDir>/<guest>/{persist,var-lib,home}`, magasin de l'hôte en lecture
+  seule, clé de l'hôte sur `/persist`, lien `/32` statique routé par
+  l'hyperviseur.
 - Côté hyperviseur (`microvm/host.nix`) : un tap routé par invité (pas de
-  bridge, uplink intact), proxy ARP sur le LAN, isolation nftables (table
-  `dnf-microvm`).
+  bridge, uplink inchangé), proxy ARP sur le LAN, isolation nftables (table
+  `dnf-microvm`), `<stateDir>` fermé aux utilisateurs de l'hyperviseur (0770)
+  et monté `nosuid,nodev` (fichiers setuid et nœuds de périphériques d'un
+  invité inerts).
 
 :::note[Déploiement]
-Les invités ne sont pas des nœuds colmena&nbsp;: déployer l'hyperviseur construit
+Les invités ne sont pas des nœuds colmena : déployer l'hyperviseur construit
 et redémarre les invités dont le système a changé.
 :::
 
 :::caution[Isolation]
-Un invité atteint Internet et le DNS de la passerelle de zone, rien d'autre
-sur le LAN, pas même l'hyperviseur. Seule la passerelle de zone (reverse
-proxy, monitoring) atteint un invité.
+Un invité atteint Internet et le DNS de la passerelle de zone, rien d'autre sur
+le LAN, pas même l'hyperviseur. Seule la passerelle de zone (proxy inverse,
+supervision) atteint un invité.
 :::
 
 * **hypervisor** `nullOr str` Hyperviseur exécutant cet hôte en invité microVM, null si métal nu.
 * **stateDir** `str` Répertoire de l'hyperviseur contenant un sous-répertoire de partages par invité.
-* **guest.vcpu** `ints.positive` vCPU de l'invité.
-* **guest.mem** `ints.positive` RAM de l'invité, en MiB.
+* **guest.vcpu** `ints.positive` VCPU de l'invité.
+* **guest.mem** `ints.positive` RAM de l'invité, en Mio.
 
 ```nix
 darkone.system.microvm = {

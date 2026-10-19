@@ -18,15 +18,14 @@ fleet: the **hypervisor**. DNF relies on
 [microvm.nix](https://github.com/microvm-nix/microvm.nix) and cloud-hypervisor.
 Typical use: a closed AI workspace per person or per team.
 
-{/* t:p 5168f335c1d1cb0fec182da853de405211dde27af096fab2abb5e8d6707379c3 */}
+{/* t:p af0d26f19f3a4877ea8085f297196c699375b91dd768d586e13de7d69363e918 */}
 ## Declare a guest
 
 <Steps>
 
 1. **Declare the host**
 
-   The `microvm-guest` feature names the hypervisor, from the same zone. The
-   static IP is mandatory: the interface and MAC address derive from it.
+   The `microvm-guest` feature names the hypervisor, from the same zone. The static IP is mandatory: the interface and MAC address are derived from it. Like any host, the guest is only monitored with the `monitoring-node` feature.
 
    ```yaml
    # etc/config.yaml
@@ -34,7 +33,7 @@ Typical use: a closed AI workspace per person or per team.
      - hostname: "espace1"
        zone: "maison:1.40"
        profile: "ai-space"
-       features: ["microvm-guest:serveur"]
+       features: ["microvm-guest:serveur", "monitoring-node"]
    ```
 
 2. **Size it**
@@ -53,8 +52,7 @@ Typical use: a closed AI workspace per person or per team.
 
 3. **Pin the state version**
 
-   A guest never goes through `just install`: create the file by hand, with the
-   NixOS version of the first deployment.
+   A guest never goes through `just install`: create the file by hand, with the NixOS version of the first deployment.
 
    ```nix
    # usr/machines/espace1/install/state.nix
@@ -63,8 +61,7 @@ Typical use: a closed AI workspace per person or per team.
 
 4. **Initialize its secrets**
 
-   The guest only reads its own secrets: see
-   [isolated hosts](/en/doc/admin-guide/operate/secrets/#isolated-hosts).
+   The guest only reads its own secrets: see [isolated hosts](/en/doc/admin-guide/operate/secrets/#isolated-hosts).
 
    ```sh
    just space-init espace1
@@ -79,19 +76,17 @@ Typical use: a closed AI workspace per person or per team.
 
 </Steps>
 
-{/* t:p 664b5a8489085c00f976fe7ea9463c1ce276c8bb668f8ffad34326b8280fc824 */}
+{/* t:p bfa7dad245eb89d62a73e5534220da22b5655cf8d8ab32b940bee88e33207312 */}
 ## Deploy and update
 
-A guest is not a deployment target: `just apply <hypervisor>` builds the
-guests, starts the new ones and restarts the changed ones. Guests start with
-the hypervisor.
+A guest is not a deployment target: `just apply <hypervisor>` builds the guests, starts the new ones and restarts those that changed. Guests start with the hypervisor.
 
 | Item | Location |
 |---|---|
-| Persistent data | `/var/lib/microvms/<guest>/` on the hypervisor |
-| `/persist`, `/var/lib`, `/home` | virtiofs shares of that folder |
-| Root `/` | In memory, wiped at every boot |
-| Nix store | The hypervisor's, read-only, plus an in-memory layer for what the guest installs (`nix shell`, Home Manager), wiped at every boot |
+| Persistent data | `/var/lib/microvms/<guest>/` on the hypervisor, closed to its accounts except root (`0770`) and mounted `nosuid,nodev`: a setuid file or a device created by the guest stays inert there |
+| `/persist`, `/var/lib`, `/home` | virtiofs shares of this folder |
+| Root `/` | In memory, wiped at each boot |
+| Nix store | The hypervisor's one in read-only, plus an in-memory layer for what the guest installs (`nix shell`, Home Manager), wiped at each boot |
 
 {/* t:p 6f8c514064dc3325c5757e21a4db0858ca9cd20b9a60819f62bc35b83dab8991 */}
 ## Network isolation

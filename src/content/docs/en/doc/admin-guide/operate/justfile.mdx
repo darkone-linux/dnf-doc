@@ -860,12 +860,15 @@ just rotate push-keys
 just rotate finalize
 ```
 
-{/* t:p 668bcc6fdb3097472f1003e2a4a80998699732c7230c2bc2aa7e6f086c32fcf9 */}
+{/* t:p 127f5a8c295089644685568a54167f7c10d9688334ba0e81d65db36dbba7dd68 */}
 ### ✳️ `space-init <hôte>`
 
-Prepares an [isolated host](/en/doc/admin-guide/operate/secrets/#isolated-hosts)&nbsp;:
-host key, encrypted `usr/secrets/hosts/<hôte>.yaml` file for the admin key and
-this key only, internal secrets. Can be safely re-run.
+Prépare un [hôte isolé](/en/doc/admin-guide/operate/secrets/#isolated-hosts)&nbsp;:
+clé d'hôte, fichier `usr/secrets/hosts/<hôte>.yaml` chiffré pour la clé admin
+et cette clé seule, secrets internes. Sur un [espace IA](/en/doc/admin-guide/operate/ai-spaces/)
+avec `openclaw`, et si le réseau a Matrix, crée aussi son bot `@<hôte>:<domaine>`
+(compte MAS, jeton dans les secrets de l'espace, marqueur
+`var/generated/spaces/<hôte>.nix`). Relançable sans risque.
 
 ```sh
 just space-init espace1

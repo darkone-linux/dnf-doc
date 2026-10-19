@@ -1176,33 +1176,130 @@ darkone.service.nix-cache = {
 
 <hr/>
 
-{/* t:p 5e6ff6b0c4449e2e06e34e1be5ef1246336a7a5758856e9a868ede3492618153 */}
-### &#x2728; darkone.service.openclaw
+{/* t:p d3e3c476ce1a04ea1805517e05be68c447be0ebd52a43d703d6316998d5e4f65 */}
+### ✨ darkone.service.openclaw
 
-Assistant OpenClaw d'un espace IA (passerelle + interface de contrôle, derrière l'authentification SSO de la zone).
+Assistant OpenClaw d'un espace IA (passerelle + interface de gestion, derrière le SSO de la zone).
 
 Une instance par hôte `ai-space`, déclarée comme n'importe quel service :
 
 ```yaml
 - hostname: "ia-pro"
   profile: "ai-space"
-  users: ["alice"]          # members: Kanidm group `space-ia-pro`
+  users: ["alice"]          # membres : groupe Kanidm `space-ia-pro`
+  features: ["monitoring-node"] # alertes : espace injoignable, unité de la passerelle en échec
   services: { openclaw: {} }
 ```
 
-- accès : forward auth Caddy, membres du groupe `space-<host>` uniquement (`proxy.spaceMembersOnly`) ; OpenClaw fait confiance à la passerelle de la zone en tant que proxy (`trusted-proxy`) et lit l'identité depuis `x-auth-request-email` ;
-- appareils : le navigateur d'un membre est appairé lors de la première visite, sans administrateur de l'espace (accordé uniquement depuis la CLI de l'hôte) ;
-- port : accessible depuis la passerelle de la zone uniquement ;
-- état : `/var/lib/openclaw` (connexions aux fournisseurs, sessions, espace de travail).
-
-:::note[Connexions aux fournisseurs]
-Une fois par espace, depuis l'hôte : `sudo -u openclaw openclaw models auth login --provider openai-codex` (ChatGPT), ou un autre fournisseur. Les jetons restent dans l'état.
-:::
-
-* **enable** `bool` Active l'assistant OpenClaw d'un espace IA
+- accès : forward auth Caddy, membres de `space-<host>` uniquement
+  (`proxy.spaceMembersOnly`) ; OpenClaw fait confiance à la passerelle de la
+  zone en tant que proxy (`trusted-proxy`) et lit l'identité dans
+  `x-auth-request-email` ;
+- appareils : le navigateur d'un membre est appairé à la première visite,
+  sans admin de l'opérateur (accordé uniquement depuis le CLI de l'hôte) ;
+- port : joignable depuis la passerelle de la zone uniquement ;
+- CLI hôte : `openclaw`, relancé en tant qu'utilisateur du service, au-delà de
+  `trusted-proxy` avec le mot de passe de la passerelle
+  (`openclaw-gateway-password`, `just space-init`) ;
+- état : `/var/lib/openclaw` (connexions aux fournisseurs, sessions,
+  espace de travail, clés E2EE Matrix) ;
+- propriétaire (`owner`, par défaut : l'unique membre) : son abonnement fait
+  tourner l'agent, il reçoit les demandes d'approbation et les messages
+  proactifs ;
+- Matrix : canal de DM avec le bot `@<host>:<domain>`, membres uniquement,
+  salons ignorés, une session par membre quand il y en a plusieurs, quand le
+  réseau dispose de Matrix et que `just space-init <host>` a créé le bot
+  (marqueur `var/generated/spaces/<host>.nix`, jeton dans le fichier sops de
+  l'espace) ; approbations d'exec demandées au propriétaire en DM ;
+- outillage de l'agent : MCP, skills, Claude Code / Codex et `packages` de
+  l'espace (`darkone.host.ai-space`), partagés avec les homes des membres ;
+- identité (`identity` : nom, emoji, avatar) : déclarée, la configuration étant
+  en lecture seule (`openclaw agents set-identity` échoue) ;
+- espace de travail (`/var/lib/openclaw/workspace`) : fichiers `workspace`
+  (AGENTS.md, SOUL.md…) remplacés à chaque démarrage, les autres laissés à
+  l'agent ; `projects` clonés une fois en `projects/<name>` ;
+- notes vocales : whisper.cpp local (`transcription`, modèle ggml `small`).
 
 ```nix
-darkone.service.openclaw.enable = false;
+darkone.service.openclaw = {
+  workspace."AGENTS.md" = ./agents/AGENTS.md;
+  projects.notes = "git@forge.example.com:alice/notes.git";
+};
+```
+
+:::caution[Commandes exécutées sans approbation par défaut]
+`exec = "full"` (défaut d'OpenClaw) : l'agent exécute n'importe quelle commande
+en tant qu'`openclaw`, jetons de l'espace à portée de main. La microVM est la
+limite, l'unité durcie une seconde muraille (écritures dans l'état uniquement).
+`ask`, `auto` : les manques vont au propriétaire, un garde-fou contre les
+erreurs, pas une muraille (même utilisateur).
+:::
+
+:::note[Les membres se font confiance]
+Une passerelle, un domaine d'opérateur : l'interface de chaque membre montre
+toutes les sessions, DM compris. Les membres qui ne se font pas confiance
+obtiennent des espaces séparés.
+:::
+
+:::note[Connexion au fournisseur]
+Une fois par espace, depuis l'hôte en tant que `nix` (le CLI `openclaw` se
+relance lui-même en tant qu'utilisateur du service), par fournisseur `model`.
+Les connexions restent dans l'état.
+- `anthropic/*` (défaut) : `sudo -u openclaw -H claude auth login` ;
+- `openai/*` : `openclaw models auth login --provider openai`.
+:::
+
+* **enable** `bool` Activer l'assistant OpenClaw d'un espace IA
+* **owner** `nullOr str` Membre propriétaire de l'espace : son abonnement connecte
+  l'agent (`model`), il reçoit les demandes d'approbation et les messages
+  proactifs. Requis avec plusieurs membres (l'ordre de `users` n'est pas
+  conservé).
+* **model** `str` Modèle principal. Runtime d'abonnement de son fournisseur :
+  `anthropic/*` via le CLI `claude` (avec `darkone.host.ai-space.enableClaude`),
+  `openai/*` via le plugin `codex` (OAuth ChatGPT).
+* **exec** `enum [ "full" "auto" "ask" "allowlist" "deny" ]` Politique de commandes de l'agent (OpenClaw `tools.exec.mode`) :
+  - `full` : n'importe quelle commande, non approuvée (défaut d'OpenClaw) ;
+  - `ask` : commandes de la liste blanche exécutées, toute autre interroge le
+    propriétaire ;
+  - `auto` : un modèle examine les manques, le propriétaire décide en cas de
+    doute ;
+  - `allowlist`, `deny` : commandes de la liste blanche uniquement, aucune.
+
+  Liste blanche : `openclaw approvals allowlist add --agent main &lt;path&gt;`. Avec
+  le runtime `claude-cli`, les pipes, redirections et substitutions sont refusés
+  avant toute invite hors `full`.
+* **identity.name** `nullOr str` Nom de l'assistant, affiché dans l'interface.
+* **identity.emoji** `nullOr str` Emoji de l'assistant, affiché dans l'interface.
+* **identity.avatar** `nullOr str` Image d'avatar (URL ou chemin relatif à l'espace de travail).
+* **workspace** `attrs` Fichiers de l'espace de travail de l'agent, par chemin
+  relatif : contenu ou fichier. Remplacés à chaque démarrage de la passerelle ;
+  les fichiers non déclarés appartiennent à l'agent.
+* **projects** `attrs` Dépôts git clonés une fois dans
+  `workspace/projects/&lt;name&gt;`, jamais tirés. Les remotes SSH utilisent la clé
+  d'`openclaw` (`/var/lib/openclaw/.ssh`, créée à la main) ; la clé du serveur
+  est acceptée au premier clonage.
+* **transcription.enable** `bool` Transcrire les notes vocales en local (whisper.cpp, CPU).
+* **transcription.model** `path` Modèle ggml de whisper.cpp.
+* **transcription.language** `str` Langue parlée (`auto` : détectée par note).
+
+```nix
+darkone.service.openclaw = {
+  enable = false;
+  owner = "alice";
+  model = "openai/gpt-6-astra";
+  exec = "ask";
+  identity.name = "Jarvis";
+  identity.emoji = "🦉";
+  identity.avatar = null;
+  workspace = { };
+  projects = { };
+  transcription.enable = true;
+  transcription.model = pkgs.fetchurl {
+            url = "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-small.bin";
+            sha256 = "0ywqxbziyp2bv72riyjpw4brk9v46d4cfbjfwqvvjrrq0srakqqv";
+          };
+  transcription.language = "fr";
+};
 ```
 
 <hr/>

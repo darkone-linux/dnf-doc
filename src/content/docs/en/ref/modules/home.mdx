@@ -69,6 +69,32 @@ darkone.home.advanced = {
 
 <hr/>
 
+{/* t:p e65a4abb0564f071f818836f3bfef60d3bd7cf2f3068d7c8d633a7d26fd590e2 */}
+### &#x1F3E0; darkone.home.ai-space
+
+Agent tools of an AI space in a member's home: Claude Code, Codex, MCP, skills.
+
+Everything comes from the space (`darkone.host.ai-space` of the host), so
+OpenClaw and every member share the same MCP servers and skills. On by
+default in the `space-member` home; off on any other host.
+
+- MCP: HM `programs.mcp`, integrated into Claude Code and Codex;
+- skills: `~/.claude/skills`, `~/.codex/skills`;
+- logins: once per member, `claude` (`/login`), `codex login --device-auth`.
+
+:::note[Per member, per space]
+`usr/users/<login>/spaces/<host>.nix` adds or overrides, e.g. a personal MCP
+server: `programs.mcp.servers.<name> = { ... };`.
+:::
+
+* **enable** `bool` Agent tools of the AI space (Claude Code, Codex, MCP, skills)
+
+```nix
+darkone.home.ai-space.enable = false;
+```
+
+<hr/>
+
 {/* t:p db416e8f77abfb580d55ac06bcc0859a45abb819942b6d4b848f929b36bd06f4 */}
 ### &#x1F3E0; darkone.home.ai
 
@@ -213,7 +239,20 @@ darkone.home.games = {
 
 <hr/>
 
-{/* t:p 7eadd764803870cf618ad6eba7f67d03e6b6c95ea0206617cf9fce2098100a25 */}
+{/* t:p f0abed69bced38d44e13496840c27797df6cc542cf3090f98a6b672785e8aede */}
+### &#x1F3E0; darkone.home.gnome.hidden-apps
+
+Launchers hidden from the app grid, gathered from `gnome.nix` and `umi.nix`.
+
+* **hiddenEntries** `listOf str` Desktop file ids hidden from the app grid: `gnome.hiddenApps`, `umi.hiddenApps` of a UMI host
+
+```nix
+darkone.home.gnome.hidden-apps.hiddenEntries = [ ];
+```
+
+<hr/>
+
+{/* t:p db881b9c5941a758dd69a8049aa85b5f1a6b3e1627bd339b763bc333fe5fa274 */}
 ### &#x1F3E0; darkone.home.gnome
 
 Gnome tweaks for home-manager.
@@ -222,7 +261,8 @@ Hides launchers: the bare `xterm`, Qt5/Qt6 settings and NixOS manual for
 every profile, `scrcpy` and `scrcpy-console` when installed, Extensions for
 non-technical profiles, and (`hideTechnicalIcons`) Settings, Printers and
 File Roller for beginner / child profiles. `hiddenApps` (default: vim, btop,
-htop) hides more, entries still launchable by id.
+htop) hides more, entries still launchable by id (`gnome/hidden-apps.nix`,
+shared with the UMI module).
 `keepKeyring` opts the user out of the login keyring reset that follows an
 admin password change (read by the NixOS gnome module).
 
@@ -247,14 +287,14 @@ darkone.home.gnome = {
 
 <hr/>
 
-{/* t:p 4b47fd0367f92539e7e8e32f6224b1541593fc953e81e0bc6ed033b9abc39b1d */}
+{/* t:p 5e771f4c0b82bb64156fa676e75b7217138625c9d055aba115f644c492cf0a06 */}
 ### &#x1F3E0; darkone.home.imagery
 
 Image processing software.
 
-Always installs the lightweight viewer (`geeqie`) and editor (`gimp`),
-then layers tooling by audience: `enableBeginner` adds `pinta`,
-`enablePro` adds `inkscape`/`krita`/`yed`, `enable3D` (with
+Always installs the editor (`gimp`); the viewer (`geeqie`) is one of the
+office essentials. Then layers tooling by audience: `enableBeginner` adds
+`pinta`, `enablePro` adds `inkscape`/`krita`/`yed`, `enable3D` (with
 `enablePro`) adds `blender`, `enableCAD` adds `freecad`, and `enableCli`
 adds `imagemagick`/`jhead`.
 

@@ -290,7 +290,7 @@ MicroVM hypervisor side: guests, routed taps, isolation.
 
 <hr/>
 
-{/* t:p ca384d4e236e8c01920acaf36f37189434da05890aa09b1c78f989e640cbfee1 */}
+{/* t:p 009e2ca2eecf34c8ea63fc92f5827290969895418ff84bd7750232f39d93eff4 */}
 ### &#x2699; darkone.system.microvm
 
 MicroVM guests (microvm.nix, cloud-hypervisor) on a DNF hypervisor host.
@@ -303,7 +303,7 @@ IP, services and monitoring; the hypervisor runs it and deploys it.
 - hostname: "space1"
   zone: "cp:1.40"              # fixed IP: tap + MAC are derived from it
   profile: "ai-space"
-  features: ["microvm-guest:ms-a2"]
+  features: ["microvm-guest:ms-a2", "monitoring-node"] # monitored like any host
 ```
 
 - Guest side (`microvm/guest.nix`): virtiofs shares under
@@ -311,7 +311,8 @@ IP, services and monitoring; the hypervisor runs it and deploys it.
   key on `/persist`, static `/32` link routed by the hypervisor.
 - Hypervisor side (`microvm/host.nix`): one routed tap per guest (no bridge,
   uplink untouched), proxy ARP on the LAN, nftables isolation (`dnf-microvm`
-  table).
+  table), `<stateDir>` closed to the hypervisor's users (0770) and bound
+  `nosuid,nodev` (setuid files, device nodes of a guest inert).
 
 :::note[Deployment]
 Guests are no colmena nodes: deploying the hypervisor builds and restarts

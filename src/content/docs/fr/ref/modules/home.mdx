@@ -68,6 +68,32 @@ darkone.home.advanced = {
 
 <hr/>
 
+{/* t:p e65a4abb0564f071f818836f3bfef60d3bd7cf2f3068d7c8d633a7d26fd590e2 */}
+### &#x1F3E0; darkone.home.ai-space
+
+Outils d'agent d'un espace IA dans le domicile d'un membre : Claude Code, Codex, MCP, skills.
+
+Tout provient de l'espace (`darkone.host.ai-space` de l'hôte), donc
+OpenClaw et chaque membre partagent les mêmes serveurs MCP et skills. Activé
+par défaut dans le domicile `space-member` ; désactivé sur tout autre hôte.
+
+- MCP : HM `programs.mcp`, intégré à Claude Code et Codex ;
+- skills : `~/.claude/skills`, `~/.codex/skills` ;
+- connexions : une fois par membre, `claude` (`/login`), `codex login --device-auth`.
+
+:::note[Par membre, par espace]
+`usr/users/<login>/spaces/<host>.nix` ajoute ou surcharge, ex. un serveur MCP
+personnel : `programs.mcp.servers.<name> = { ... };`.
+:::
+
+* **enable** `bool` Outils d'agent de l'espace IA (Claude Code, Codex, MCP, skills)
+
+```nix
+darkone.home.ai-space.enable = false;
+```
+
+<hr/>
+
 {/* t:p db416e8f77abfb580d55ac06bcc0859a45abb819942b6d4b848f929b36bd06f4 */}
 ### &#x1F3E0; darkone.home.ai
 
@@ -213,28 +239,44 @@ darkone.home.games = {
 
 <hr/>
 
-{/* t:p 7eadd764803870cf618ad6eba7f67d03e6b6c95ea0206617cf9fce2098100a25 */}
+{/* t:p f0abed69bced38d44e13496840c27797df6cc542cf3090f98a6b672785e8aede */}
+### &#x1F3E0; darkone.home.gnome.hidden-apps
+
+Lanceurs masqués de la grille d'applications, rassemblés depuis `gnome.nix` et `umi.nix`.
+
+* **hiddenEntries** `listOf str` Ids de fichiers desktop masqués de la grille d'applications : `gnome.hiddenApps`, `umi.hiddenApps` d'un hôte UMI
+
+```nix
+darkone.home.gnome.hidden-apps.hiddenEntries = [ ];
+```
+
+<hr/>
+
+{/* t:p db881b9c5941a758dd69a8049aa85b5f1a6b3e1627bd339b763bc333fe5fa274 */}
 ### &#x1F3E0; darkone.home.gnome
+
 Réglages Gnome pour home-manager.
 
-Masque les lanceurs : le `xterm` nu, les réglages Qt5/Qt6 et le manuel NixOS pour
-chaque profil, `scrcpy` et `scrcpy-console` s'ils sont installés, Extensions pour
-les profils non techniques, et (`hideTechnicalIcons`) Paramètres, Imprimantes et
-File Roller pour les profils débutant / enfant. `hiddenApps` (par défaut : vim, btop,
-htop) masque davantage d'entrées, toujours lançables par identifiant.
+Masque des lanceurs : le `xterm` nu, les réglages Qt5/Qt6 et le manuel NixOS
+pour chaque profil, `scrcpy` et `scrcpy-console` s'ils sont installés,
+Extensions pour les profils non techniques, et (`hideTechnicalIcons`)
+Paramètres, Imprimantes et File Roller pour les profils débutant / enfant.
+`hiddenApps` (par défaut : vim, btop, htop) en masque davantage, les entrées
+restant lançables par id (`gnome/hidden-apps.nix`, partagé avec le module UMI).
 `keepKeyring` dispense l'utilisateur de la réinitialisation du trousseau de
-connexion qui suit un changement de mot de passe administrateur (lu par le module
-gnome de NixOS).
+connexion suite au changement du mot de passe admin (lu par le module gnome
+de NixOS).
 
 :::caution[Signets NFS]
-Ne pas déclarer `gtk.gtk3.bookmarks` depuis ce module : tant que les partages home
-NFS sont actifs, `home/profiles/minimal/nfs.nix` détient ce fichier et l'écrase.
+Ne pas déclarer `gtk.gtk3.bookmarks` depuis ce module — tant que les partages
+home NFS sont actifs, `home/profiles/minimal/nfs.nix` détient ce fichier et
+l'écrase.
 :::
 
 * **enable** `bool` Activer les réglages gnome pour home manager
-* **hideTechnicalIcons** `bool` Masquer certaines icônes pour débutants / enfants / bébés
-* **keepKeyring** `bool` Conserver le trousseau de connexion quand l'administrateur change le mot de passe de la session (trousseau avec son propre mot de passe)
-* **hiddenApps** `listOf str` Entrées de bureau masquées de la grille d'applications, toujours lançables par identifiant
+* **hideTechnicalIcons** `bool` Masquer certaines icônes pour les débutants / enfants / bébés
+* **keepKeyring** `bool` Conserver le trousseau de connexion quand l'admin change le mot de passe de session (trousseau avec un mot de passe propre)
+* **hiddenApps** `listOf str` Entrées desktop masquées de la grille d'applications, toujours lançables par id
 
 ```nix
 darkone.home.gnome = {
@@ -247,20 +289,20 @@ darkone.home.gnome = {
 
 <hr/>
 
-{/* t:p 4b47fd0367f92539e7e8e32f6224b1541593fc953e81e0bc6ed033b9abc39b1d */}
+{/* t:p 5e771f4c0b82bb64156fa676e75b7217138625c9d055aba115f644c492cf0a06 */}
 ### &#x1F3E0; darkone.home.imagery
 
-Logiciels de traitement d'images.
+Logiciels de traitement d'image.
 
-Installe toujours la visionneuse légère (`geeqie`) et l'éditeur (`gimp`),
-puis ajoute les outils selon le public : `enableBeginner` ajoute `pinta`,
-`enablePro` ajoute `inkscape`/`krita`/`yed`, `enable3D` (avec
-`enablePro`) ajoute `blender`, `enableCAD` ajoute `freecad`, et `enableCli`
-ajoute `imagemagick`/`jhead`.
+Installe toujours l'éditeur (`gimp`) ; la visionneuse (`geeqie`) fait partie
+des essentiels de bureau. Puis hiérarchise les outils selon le public :
+`enableBeginner` ajoute `pinta`, `enablePro` ajoute `inkscape`/`krita`/`yed`,
+`enable3D` (avec `enablePro`) ajoute `blender`, `enableCAD` ajoute `freecad`,
+et `enableCli` ajoute `imagemagick`/`jhead`.
 
 * **enable** `bool` Création iconographique
-* **enablePro** `bool` Logiciels de traitement d'images supplémentaires pour les professionnels
-* **enableBeginner** `bool` Logiciels de traitement d'images supplémentaires pour les débutants
+* **enablePro** `bool` Logiciels de traitement d'image supplémentaires pour les professionnels
+* **enableBeginner** `bool` Logiciels de traitement d'image supplémentaires pour les débutants
 * **enable3D** `bool` Logiciels 3D
 * **enableCAD** `bool` Logiciels de CAO
 * **enableCli** `bool` Outils CLI (imagemagick, jhead...)

@@ -25,91 +25,11 @@ A DNF network is set up **step by step**, and you can stop at any stage: a singl
 All nodes are described in **one** NixOS configuration, on the administrator's machine. From there, the whole network is deployed and evolved. This machine is itself a DNF host: the administration recipes run under its `nix` deployment account.
 :::
 
-{/* t:p 18974f6ef63d0d32695f258ebf477d05312f3578604b86b113acc8c6b247dd19 */}
-## Guided installation
-
-The first machine installs itself from the generic ISO, with no other
-machine needed: this is the simplest path.
-
-:::tip[Try it first in a VM]
-On a Linux machine with Nix and KVM, a single command starts the ISO in a
-QEMU window, virtual disk included:
-
-```sh
-nix run github:darkone-linux/darkone-nixos-framework#try
-```
-
-The disk is kept from one run to the next (`~/.local/share/dnf-try`) ;
-`nix run …#try -- --reset` starts from scratch.
-:::
-
-<Steps>
-
-1. **Get the image**
-
-   The generic ISO attached to each
-   [framework release](https://github.com/darkone-linux/darkone-nixos-framework/releases)
-   (`dnf-installer-vX.Y.Z-x86_64-linux.iso`), burned to a USB drive.
-
-2. **Boot the machine** from the drive, Secure Boot disabled. Wired
-   network preferred: without a cable, the console waits for the network, and
-   `Enter` opens `nmtui` to pick a Wi-Fi network.
-
-3. **Answer the wizard**
-
-   It starts by itself on the console once the network is up.
-   `Ctrl-C` gives the command prompt, from where it restarts:
-
-   ```sh
-   darkone new
-   ```
-
-   It asks for the language and keyboard, the administrator's identity and
-   password, the network domain, the machine name, the disk if there are
-   several (none below 20&nbsp;GB: the backup drive is never offered), then
-   disk encryption and its passphrase. The rest is detected: laptop or
-   desktop, UEFI or BIOS, country time zone. Plain disk: a passphrase for
-   the key backup.
-
-4. **Confirm**
-
-   The summary lists the final choices (domain, login). The disk is then
-   erased and the system installed, project included, in `/etc/nixos`.
-
-5. **Back up the keys**, on a second USB drive
-
-   Plug in a USB drive (FAT, exFAT, ext4…), select it: nothing on it is
-   erased. The wizard writes `dnf-backup-<domaine>.tar.age` to it, then asks
-   you to unplug and replug it to read it back. If no drive is possible (a
-   VM, `#try`): **Skip for now**, at your own risk, then
-   `just backup-admin <périphérique>` from the installed system.
-
-6. **Reboot**, USB drives removed. Encrypted disk: the passphrase is
-   required at each boot, with the chosen keyboard. The first session opens
-   a home page in the browser: step 1 of 4 done, the gateway next. It stays
-   within reach in the **Local network** folder of the applications
-   (Onboarding), along with the documentation (DNF Doc) and a terminal in
-   the `/etc/nixos` project (Network Sources), whose `README.md` sums up
-   daily use.
-
-</Steps>
-
-:::danger[Without a backup, a lost disk takes every secret with it]
-The `nix` deployment key, the infra age key and the project exist only on
-this machine. The backup, encrypted with the disk passphrase (or the backup
-passphrase, plain disk), contains them all: store it away from the machine.
-:::
-
-:::caution[The disk passphrase is the fleet passphrase]
-It becomes the shared passphrase (`luks-passphrase`): every encrypted host
-installed afterwards is formatted with it. Encryption requires UEFI.
-See [Disk encryption (LUKS)](/en/doc/admin-guide/operate/luks/).
-:::
-
-{/* t:p a1234c364c54cc1bce1d2d19a8591379ce4eed466cf3b5fc5608f55f9d026f47 */}
+{/* t:p 6aa716ac9de07ac17960d08386555af28d55716a416b64d4ee854790b45f46e2 */}
 ### Scripted installation
 
-An answers file stands in for the questions; a missing answer is requested, or refused with `--non-interactive`.
+A answers file stands in for questions&nbsp;; a missing answer is asked for,
+or refused with `--non-interactive`.
 
 ```yaml
 # reponses.yaml
@@ -128,6 +48,9 @@ locale:
   language: "fr_FR.UTF-8"
 backup:
   device: "/dev/disk/by-label/SECOURS"   # clé USB de la sauvegarde
+cache:                                   # facultatif
+  url: "http://cache.lan:5000"
+  publicKey: "cache.lan-1:..."           # inutile si signé par cache.nixos.org
 ```
 
 ```sh
@@ -135,7 +58,11 @@ darkone new --answers reponses.yaml --non-interactive --yes \
   --luks-passphrase-file /run/user/1000/luks
 ```
 
-The disk passphrase never goes into the answers file, which circulates: `--luks-passphrase-file` reads it from a file, otherwise it is requested. It also encrypts the backup; unencrypted disk, that is `--backup-passphrase-file`. In scripted mode, the USB stick is reread without being unplugged.
+The disk passphrase never enters the answers file, which circulates&nbsp;:
+`--luks-passphrase-file` reads it from a file, otherwise it is asked for. It
+also encrypts the backup&nbsp;; on an unencrypted disk, that is
+`--backup-passphrase-file`. In scripted mode, the USB key is read back without
+being unplugged.
 
 {/* t:p 1cc36b34e466ea1dc845615ddba891d7d51c7d3c16d2155e789849352c00b8df */}
 ### Key backup
