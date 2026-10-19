@@ -105,14 +105,15 @@ l'hyperviseur vers le LAN n'est pas modifié, il n'y a pas de pont.
 | Invité → LAN, tailnet, autres invités | Non |
 | Invité → hyperviseur | Non |
 | Passerelle → invité | Oui (proxy, supervision) |
-| Autre hôte → invité | Non |
+| Autre hôte → invité | Ping et SSH seulement |
 
 ## FAQ
 
 ### Se connecter à un invité ?
 
-Par SSH depuis l'hyperviseur, sur son IP (`ssh nix@10.0.1.40`)&nbsp;: c'est le
-seul hôte, avec la passerelle, à pouvoir le joindre.
+Comme tout hôte, depuis un poste d'administration&nbsp;: `just enter <invité>`.
+Son nom est publié par le DNS des passerelles, qui doivent donc être
+redéployées après l'ajout de l'invité.
 
 ### Effacer un invité ?
 
