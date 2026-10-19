@@ -83,8 +83,9 @@ Le disque est gardé d'une fois sur l'autre (`~/.local/share/dnf-try`)&nbsp;;
 
    Brancher une clé USB (FAT, exFAT, ext4…), la choisir&nbsp;: rien n'y est
    effacé. L'assistant y écrit `dnf-backup-<domaine>.tar.age`, puis demande de
-   la débrancher et de la rebrancher pour la relire. Pas de sauvegarde
-   relue, pas de fin d'installation.
+   la débrancher et de la rebrancher pour la relire. Sans clé possible (une
+   VM, `#try`)&nbsp;: **Skip for now**, à vos risques, puis
+   `just backup-admin <périphérique>` depuis le système installé.
 
 6. **Redémarrer**, clés USB retirées. Disque chiffré&nbsp;: la passphrase est
    demandée à chaque démarrage, avec le clavier choisi. La première session
