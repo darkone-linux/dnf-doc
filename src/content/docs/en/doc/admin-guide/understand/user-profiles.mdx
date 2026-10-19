@@ -74,7 +74,7 @@ A usage-oriented presentation is available in the
 [user guide](/en/doc/user-guide/understand/profiles/).
 :::
 
-{/* t:p 3bf4e09093ff201233280d37c4a5bb6c8b767325f61cfd4910d6aca74a996362 */}
+{/* t:p e63260fff648762bb11ec29e6f86212d56e1073e7a4a44df1aab56a5e2d265d3 */}
 ## The GNOME desktop
 
 | Element | Profiles | Behavior |
@@ -83,35 +83,27 @@ A usage-oriented presentation is available in the
 | vim, btop, htop | all | Icons hidden, programs still launchable from a terminal |
 | "Support GNOME" notification | all | Disabled |
 | Document viewer | all | Papers, default PDF application (replaces Evince) |
-| Image viewer | all | Geeqie by default, if the `imagery` module is active |
+| Image viewer | all except `minimal`, `baby` | Geeqie by default |
 | GNOME extensions | non-technical | Icon hidden |
 | Terminal | non-technical | Console, absent from the dash, present in the applications grid |
 | Terminal | technical | Ghostty, first dash favorite and Ctrl+Alt+T |
-| "Local Network" folder | `nix-admin`, admin host | DNF Doc, Onboarding (the home page), Network Sources (terminal in `/etc/nixos`) |
+| "Local Network" folder | `nix-admin`, admin host | *DNF Docs*, *Getting Started* (the home page), *Network Sources* (terminal in `/etc/nixos`) |
 | Element (Matrix) | all except `minimal`, `baby` | Launched hidden if the network has Matrix |
 
 :::note[Dash locked]
-The favorites list (`favorite-apps`) is locked for the entire host: Console,
-the terminal of non-technical profiles, is not listed there.
+The favorites list (`favorite-apps`) is locked for the whole host: Console, the terminal of non-technical profiles, is not part of it.
 :::
 
 :::tip[Hide other icons]
-`darkone.home.gnome.hiddenApps` lists the hidden entries (`.desktop`
-identifiers). Redefining it in `usr/users/<login>/default.nix` replaces the
-default list.
+`darkone.home.gnome.hiddenApps` lists the hidden entries (`.desktop` identifiers). Redefining it in `usr/users/<login>/default.nix` replaces the default list.
 :::
 
 :::note[The "Local Network" folder]
-Added only once, at the first session: once deleted or renamed, it does not
-come back. To recreate it, delete `~/.local/state/dnf/network-folder` then log
-back in.
+Added only once, at the first session: once deleted or renamed, it does not come back. To recreate it, delete `~/.local/state/dnf/network-folder` then log in again.
 :::
 
 :::note[Ghostty and SSH]
-From Ghostty, `ssh` installs the `xterm-ghostty` terminfo on the remote host
-at first connection (`~/.terminfo`, via `tic`), otherwise it falls back to
-`xterm-256color`. DNF hosts already provide it to all accounts, `root`
-included.
+From Ghostty, `ssh` installs the `xterm-ghostty` terminfo on the remote host at first connection (`~/.terminfo`, via `tic`), otherwise it falls back to `xterm-256color`. DNF hosts already provide it to all accounts, `root` included.
 :::
 
 {/* t:p b4c95365a038f88f9b775d5035126894628c65f52cb581f8329f6bb8e0240f29 */}
@@ -141,11 +133,10 @@ Setting the option back to `null` leaves the extension in place: remove it via
 *Tools → Extension Manager*.
 :::
 
-{/* t:p 53b2f6a5686d0e1d8871b7c0ab2255ce57996881bbd565799e960931e418f7ae */}
+{/* t:p d765e12e7737690632e825a6545b1fbb033fe16f7fae0e881832d3ae8c0d2d8e */}
 ## Heavy applications on demand
 
-The `admin` and `nix-admin` profiles install neither image creation (GIMP,
-Geeqie) nor music (Audacious). To get them back for an account:
+The `admin` and `nix-admin` profiles install neither image creation (GIMP) nor music (Audacious). To give them back to an account:
 
 ```nix
 # usr/users/<login>/default.nix
@@ -153,14 +144,9 @@ darkone.home.imagery.enable = true;
 darkone.home.music.enable = true;
 ```
 
-FileZilla is no longer installed (SFTP from Files or `sftp`), and KeePassXC
-remains the only KeePass manager of technical profiles, with no Secrets
-alongside.
+FileZilla is no longer installed (SFTP from Files or `sftp`), and KeePassXC remains the only KeePass manager of technical profiles, with no Secrets alongside.
 
-To lighten the first machine, `advanced` and the profiles inheriting from it
-install neither VS Code (0.3 GiB) nor Slidev (0.4 GiB): Zed remains the
-default editor. To add them to an account, including to restore the previous
-behavior:
+To lighten the first workstation, `advanced` and the profiles inheriting from it install neither VS Code (0.3 GiB) nor Slidev (0.4 GiB): Zed remains the default editor. To add them to an account, including to restore the previous behavior:
 
 ```nix
 # usr/users/<login>/default.nix

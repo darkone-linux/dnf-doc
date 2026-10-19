@@ -367,12 +367,14 @@ Formats a USB device with disko and installs NixOS on it. Seals the host like
 just install-key myusbhost
 ```
 
-{/* t:p 20da6344adfb9ffd435fd452f24a0ae002773ff1f4734c7fe6845f70d90a9aa8 */}
-### ✳️ `install-here <hôte> <login> [empreinte] [yes] [passphrase]`
+{/* t:p 1a39a6d935759e0a7d62d4423c3ef6ca2c188c0e26a92669dcfc8e78e90ae251 */}
+### ✳️ `install-here <hôte> <login> [empreinte] [yes] [passphrase] [cache] [clé]`
 
-Installs the machine it runs on, booted from the generic DNF ISO, as the project's administration workstation: disko wipes its disk, the keys are born on the target (`bootstrap-keys`), then `nixos-install`. The project joins `/etc/nixos` of the new system, owned by `login`. An encrypted disk requires its passphrase file, which becomes the fleet's shared passphrase; the initrd SSH key is deposited on the target.
+Installs the machine it runs on, booted from the generic DNF ISO, as the project's administration workstation: disk o erases its disk, the keys are born on the target (`bootstrap-keys`), then `nixos-install`. The project joins the new system's `/etc/nixos`, owned by `login`. An encrypted disk requires the file for its passphrase, which becomes the fleet's shared passphrase; the initrd SSH key is placed on the target.
 
-:::danger[Wipes the disk of the current machine]
+`cache` and `clé`: an additional package cache and its public key, for this installation only (passed by `darkone new`).
+
+:::danger[Erases the disk of the current machine]
 Refuses to run outside the generic ISO (witness file `/etc/dnf-installer`).
 :::
 
