@@ -99,7 +99,8 @@ Les invités démarrent avec l'hyperviseur.
 
 Chaque invité a sa propre interface `vm-X-Y`, routée en `/32` par
 l'hyperviseur, qui répond pour lui sur le LAN (proxy ARP), sans pont.
-L'hyperviseur passe sous systemd-networkd, DNS fixé sur la passerelle de zone.
+L'hyperviseur passe sous systemd-networkd, DNS fixé sur la passerelle de zone&nbsp;:
+il ne peut être ni cette passerelle, ni un hôte sous NetworkManager.
 
 | Flux | Autorisé |
 |---|---|
