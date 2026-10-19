@@ -55,25 +55,35 @@ Hermes arrive dans une prochaine version.
    L'hyperviseur, la passerelle de la zone (vhost, DNS) et le HCS (groupe
    Kanidm)&nbsp;: `just apply hyperviseur,gw,hcs`.
 
-4. **Connecter un fournisseur d'IA**
+4. **Connecter le fournisseur d'IA**
 
-   Une fois par espace, depuis l'hôte (`just enter ia-pro`)&nbsp;:
+   Une fois par espace, depuis l'hôte (`just enter ia-pro`), selon le modèle
+   de l'espace (`darkone.service.openclaw.model`)&nbsp;:
 
-   ```bash
-   sudo -u openclaw openclaw models auth login --provider openai-codex
-   ```
+   | Modèle | Abonnement | Connexion |
+   |---|---|---|
+   | `anthropic/*` (défaut&nbsp;: `anthropic/claude-sonnet-5-5`) | Claude Pro/Max, par le CLI `claude` | `sudo -u openclaw -H claude auth login` |
+   | `openai/*` | ChatGPT Plus/Pro, par le plugin `codex` | `openclaw models auth login --provider openai` |
 
-   Les outils auxquels l'assistant délègue les tâches de code se connectent
-   de la même façon&nbsp;:
-
-   ```bash
-   sudo -u openclaw -H claude                         # puis /login
-   sudo -u openclaw -H codex login --device-auth
-   ```
-
-   Les connexions restent dans `/var/lib/openclaw`, persistant.
+   La commande `openclaw` de l'hôte passe d'elle-même sous l'utilisateur du
+   service. `openclaw models status` vérifie la connexion, qui reste dans
+   `/var/lib/openclaw`, persistant.
 
 </Steps>
+
+:::note[Pourquoi un utilisateur `openclaw`]
+L'assistant lit des contenus non fiables (web, messages, documents)&nbsp;: un
+utilisateur système dédié le tient à l'écart des comptes des membres, de
+leurs clés et de leurs connexions. Les membres n'ont pas `sudo` (réservé au
+groupe `wheel`)&nbsp;: l'administration passe par le compte `nix`.
+:::
+
+:::caution[Mise à jour]
+Un espace créé avant le mot de passe local de l'assistant doit repasser par
+`just space-init <hôte>` avant son déploiement&nbsp;: il génère le secret
+`openclaw-gateway-password`, par lequel la commande `openclaw` de l'hôte joint
+le service.
+:::
 
 ## Matrix
 
@@ -83,7 +93,7 @@ sans lui, l'espace fonctionne par son interface web seule.
 
 | Élément | Règle |
 |---|---|
-| Qui est écouté | Les membres de l'espace, en MP comme dans un salon où le bot est invité |
+| Qui est écouté | Les membres de l'espace (`@<login>:<domaine>`), en MP comme dans un salon où le bot est invité&nbsp;; les autres comptes sont ignorés |
 | Validation des commandes | Demandée aux membres, en MP |
 | Clés de chiffrement | Dans `/var/lib/openclaw`, persistant |
 
@@ -177,7 +187,7 @@ Chaque membre connecte ses propres abonnements, une fois&nbsp;: `claude` (puis
 | Adresse | `https://openclaw.<zone>.<domaine>` |
 | Connexion | SSO Kanidm, réservé au groupe `space-<hôte>` |
 | Appareil | Appairé à la première visite, sans droit d'administration |
-| Administration | En ligne de commande sur l'hôte (`openclaw …`) |
+| Administration | `openclaw …` sur l'hôte, depuis le compte `nix` |
 | Port de l'assistant | Joignable depuis la passerelle de la zone seulement |
 
 :::note[Un abonnement par personne]
