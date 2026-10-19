@@ -1176,6 +1176,37 @@ darkone.service.nix-cache = {
 
 <hr/>
 
+{/* t:p 5e6ff6b0c4449e2e06e34e1be5ef1246336a7a5758856e9a868ede3492618153 */}
+### &#x2728; darkone.service.openclaw
+
+Assistant OpenClaw d'un espace IA (passerelle + interface de contrôle, derrière l'authentification SSO de la zone).
+
+Une instance par hôte `ai-space`, déclarée comme n'importe quel service :
+
+```yaml
+- hostname: "ia-pro"
+  profile: "ai-space"
+  users: ["alice"]          # members: Kanidm group `space-ia-pro`
+  services: { openclaw: {} }
+```
+
+- accès : forward auth Caddy, membres du groupe `space-<host>` uniquement (`proxy.spaceMembersOnly`) ; OpenClaw fait confiance à la passerelle de la zone en tant que proxy (`trusted-proxy`) et lit l'identité depuis `x-auth-request-email` ;
+- appareils : le navigateur d'un membre est appairé lors de la première visite, sans administrateur de l'espace (accordé uniquement depuis la CLI de l'hôte) ;
+- port : accessible depuis la passerelle de la zone uniquement ;
+- état : `/var/lib/openclaw` (connexions aux fournisseurs, sessions, espace de travail).
+
+:::note[Connexions aux fournisseurs]
+Une fois par espace, depuis l'hôte : `sudo -u openclaw openclaw models auth login --provider openai-codex` (ChatGPT), ou un autre fournisseur. Les jetons restent dans l'état.
+:::
+
+* **enable** `bool` Active l'assistant OpenClaw d'un espace IA
+
+```nix
+darkone.service.openclaw.enable = false;
+```
+
+<hr/>
+
 {/* t:p d3c0fa3b19d29d002cae847c48764064e5cbd739cba3d6171b8d22a9289a4f9b */}
 ### &#x2728; darkone.service.outline
 

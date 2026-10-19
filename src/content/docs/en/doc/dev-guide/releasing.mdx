@@ -202,33 +202,36 @@ On a `v*` tag, `release.yml` refuses to publish if&nbsp;:
 
 The three checks in `ci.yml` (unit tests, evaluation, and lint) are rerun via `workflow_call`, and the corresponding changelog section becomes the GitHub release notes.
 
-{/* t:p 78050813ce636797a75263d66a52ca336f8ba2e1069965b3b17990040bbd3640 */}
-### Installer test
+{/* t:p a116b87bb5b90251ad236d2dcf460aa1060459784c3b6d2ab46c842c9358d019 */}
+### Testing the installer
 
-Only on tags, the `installer-test` job runs `darkone new` end-to-end in a QEMU VM (with KVM on the runner and real networking)&nbsp;: the generic ISO boots,
-the installer assistant is driven through its serial console (pexpect), and the installed system reboots and is then controlled via SSH. Two scenarios run in parallel, each taking about 40&nbsp;minutes:
+The `installer-test.yml` *workflow* runs `darkone new` end-to-end in a QEMU VM (KVM on the runner, real network)&nbsp;: the generic ISO boots, the assistant is driven via its serial console (pexpect), then the installed system reboots and is controlled over SSH. Two scenarios run in parallel, each taking about 25&nbsp;minutes&nbsp;:
 
-- **Scripted**&nbsp;: uses a response file with `--non-interactive`, full disk encryption, and the initrd's sshd allows unlocking on first boot;
-- **Interactive**&nbsp;: answers each question on the console, uses unencrypted disk, and tests unplugging and replugging a USB backup key (QMP).
+- **scripted**&nbsp;: response file, `--non-interactive`, unencrypted disk, backup passphrase stored in a file&nbsp;;
+- **interactive**&nbsp;: each question answered on the console, encrypted disk, USB backup key unplugged then replugged (QMP), first boot unlocked by the initrd sshd.
 
-Checks performed&nbsp;: automatic login on tty1, system `running` with no failed units, a clean `/etc/nixos`, the homepage installed, and the backup accessible from the host. If either scenario fails, the ISO is not included in the GitHub release&nbsp;; the full serial logs are attached to the workflow run.
+Checks&nbsp;: automatic launch on tty1, system `running` with no failed units, clean `/etc/nixos`, homepage installed, second backup run with `just backup-admin` from the installed system (the first kept under its date), backup opened from the host. The serial log is attached to the *run*.
 
-The same test can be run locally against the ISO from the current tree or any other ISO:
+Three triggers&nbsp;:
+
+- **tag**&nbsp;: called by `release.yml`, any failure prevents the ISO from being included in the *release*&nbsp;;
+- **every Monday**, on `main`&nbsp;: a regression from nixpkgs unstable is caught before the next tag&nbsp;;
+- **manual**&nbsp;: `gh workflow run installer-test.yml --ref <branch>`, before a release or after an ISO change.
+
+Same test locally, on the ISO from the current tree or another&nbsp;:
 
 ```sh
-just test-installer                 # run both scenarios
+just test-installer                 # both scenarios
 just test-installer interactive /chemin/de/l.iso
 ```
 
-Disks and logs are stored in `~/.cache/dnf-installer-test/<scenario>/`, using around 25&nbsp;GB per scenario. The test code is located in `dnf/tests/installer/`.
+Disks and logs&nbsp;: `~/.cache/dnf-installer-test/<scénario>/`, about 25&nbsp;GB per scenario. Code&nbsp;: `dnf/tests/installer/`.
 
-<Aside type="caution" title="Tag pushed but release missing">
-Never move or recreate a tag that has already been pushed&nbsp;: FlakeHub has already published it.
+<Aside type="caution" title="Tag pushed, release missing">
+Never move or recreate the tag&nbsp;: FlakeHub has already published it.
 
-- Transient failure (runner crash, network issue)&nbsp;: use `gh run rerun <id> --failed`
-  to rerun only the failed jobs with the workflows from that tag.
-- Defect in the tagged tree&nbsp;: the version number is lost. Fix the issue on `main`,
-  then run `just release patch`.
+- Transient failure (runner stopped, network issue)&nbsp;: `gh run rerun <id> --failed` re-runs failed *jobs* using the *workflows* from the tag.
+- Defect in the tagged tree&nbsp;: the version number is lost. Fix on `main`, then `just release patch`.
 </Aside>
 
 {/* t:p 76bf7c0ae965537388dc68bc0a93388c26f12d5dae428fd2ad7c9594d61c1900 */}

@@ -106,7 +106,7 @@ Any change to `etc/config.yaml` follows the **same cycle**:
 deployment starts from an inconsistent or unversioned state.
 :::
 
-{/* t:p 385d7b8413d2a3412c82886dcffefd9f16d5684a588efb81aeb1a47ef53f7e93 */}
+{/* t:p 827e1f5e0466f70816cb42fd7e6f52362f21b80c15df6731a09c7b416a8fe94e */}
 ### Set the password
 
 <Steps>
@@ -118,7 +118,7 @@ deployment starts from an inconsistent or unversioned state.
    ```
 
    The user can enter their own password. Remotely, they send
-   their hash (`mkpasswd -m sha-512`), to be pasted with `just sops` under
+   their hash (`mkpasswd -m sha-512`), to paste with `just sops` under
    `user.alice.password-hash`.
 
 2. **Validate in git**
@@ -137,8 +137,8 @@ deployment starts from an inconsistent or unversioned state.
 
 :::note[Only `just passwd` is authoritative]
 - No session before `just passwd <login>`.
-- If changed on a host, the password is overwritten at the next deployment.
-- `just passwd-default` only records the fleet's reference password ([Secrets](/en/doc/admin-guide/operate/secrets/)).
+- Changed on a host, the password is overwritten at the next deployment.
+- No fleet-wide default password: each account has its own ([Secrets](/en/doc/admin-guide/operate/secrets/)).
 :::
 
 {/* t:p 712c060ed428fd173758650782af0b6c309591c7f48a2fe1ac23e0576c0d1809 */}

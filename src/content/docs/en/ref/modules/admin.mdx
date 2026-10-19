@@ -197,7 +197,7 @@ darkone.admin.nix = {
 
 <hr/>
 
-{/* t:p 71229b62d6c1cae9f9cf0a62f8fb317597765f06e9d650a76a9c5f4a7c7144b5 */}
+{/* t:p 6d3b1a924a472aa25cdc9d0ce7f268db6a5cb9ec36e980dba7db7a9d596f833a */}
 ### &#x1F451; darkone.admin.welcome
 
 First-boot welcome page of the admin host installed by `darkone new`.
@@ -205,7 +205,8 @@ First-boot welcome page of the admin host installed by `darkone new`.
 At the first GNOME session of each `wheel` member, the browser opens a local
 page: step 1 of 4 done (the admin host), the gateway next, then services and
 the coordination server, with links to the documentation. Shown once per
-user (`~/.local/state/dnf/welcome-shown`).
+user (`~/.local/state/dnf/welcome-shown`). The "Onboarding" launcher of the
+nix-admin reopens it (`darkone.admin.welcome.page`).
 
 :::note[Set by the installer]
 `darkone new` writes `darkone.admin.welcome.enable = true;` in the
@@ -214,9 +215,13 @@ the users who have not seen it yet.
 :::
 
 * **enable** `bool` the first-boot welcome page of the admin host
+* **page** `path` The welcome page, an HTML file of the store
 
 ```nix
-darkone.admin.welcome.enable = false;
+darkone.admin.welcome = {
+  enable = false;
+  page = page;
+};
 ```
 
 <hr/>

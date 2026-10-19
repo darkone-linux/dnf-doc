@@ -118,17 +118,20 @@ Documentation (man) pour les développeurs et les administrateurs.
 darkone.system.documentation.enable = false;
 ```
 
-{/* t:p 7af786e622f6d8bf032c6aed476f87d48d2c99ea95167d7b607adb9ffad2659f */}
+{/* t:p cc16323a77517256ce985e66bacad8b50f0db3166ca6c1e57c5864fccc86464a */}
 ### &#x2699; darkone.system.hardware
 
 Améliorations de la configuration matérielle.
 
-Tout le micrologiciel est chargé (`hardware.enableAllFirmware`), sauf sur une machine virtuelle&nbsp;: `just detect-hw` la détecte (`systemd-detect-virt --vm`) et définit `darkone.system.hardware.virtual` dans `hardware/detected-hardware.nix`.
+Tous les firmwares sont chargés (`hardware.enableAllFirmware`), sauf sur une
+machine virtuelle&nbsp;: `just detect-hw` la détecte (`systemd-detect-virt --vm`) et
+définit `darkone.system.hardware.virtual` dans `hardware/detected-hardware.nix`.
+Un invité permet aussi à Zed de tourner sur son GPU émulé (`ZED_ALLOW_EMULATED_GPU`).
 
-* **enable** `bool` Active les optimisations matérielles
-* **enableIntel** `bool` Active les mises à jour du microcode Intel
-* **enableAmd** `bool` Active les mises à jour du microcode AMD
-* **virtual** `bool` Machine virtuelle, aucun micrologiciel chargé. Défini par `just detect-hw`
+* **enable** `bool` Activer les optimisations matérielles
+* **enableIntel** `bool` Activer les mises à jour de microcode intel
+* **enableAmd** `bool` Activer les mises à jour de microcode amd
+* **virtual** `bool` Machine virtuelle, aucun firmware chargé. Défini par `just detect-hw`
 
 ```nix
 darkone.system.hardware = {
@@ -220,6 +223,70 @@ darkone.system.luks = {
   enable = true;
   sshPort = 2222;
   volumes = [ ];
+};
+```
+
+<hr/>
+
+{/* t:p a55ad40a297ecc2ef43035967cb2cc96b6d6bca87a9684e97d2e3badd95c6453 */}
+### &#x2699; darkone.system.microvm.guest
+
+Côté invité MicroVM&nbsp;: hyperviseur, lien routé, partages, clé hôte persistante.
+
+<hr/>
+
+{/* t:p a834c6d46b0b8741c5853d04eb20d135292a6f39da722234858a0bb0802a6f48 */}
+### &#x2699; darkone.system.microvm.host
+
+Côté hyperviseur MicroVM&nbsp;: invités, taps routés, isolation.
+
+<hr/>
+
+{/* t:p ca384d4e236e8c01920acaf36f37189434da05890aa09b1c78f989e640cbfee1 */}
+### &#x2699; darkone.system.microvm
+
+Invités MicroVM (microvm.nix, cloud-hypervisor) sur un hôte hyperviseur DNF.
+
+Un invité est un hôte DNF ordinaire de l'inventaire, marqué par la
+fonctionnalité `microvm-guest:<hypervisor>` dans `etc/config.yaml`. Il garde
+son IP de zone, ses services et son monitoring&nbsp;; l'hyperviseur l'exécute et le déploie.
+
+```yaml
+- hostname: "space1"
+  zone: "cp:1.40"              # fixed IP: tap + MAC are derived from it
+  profile: "ai-space"
+  features: ["microvm-guest:ms-a2"]
+```
+
+- Côté invité (`microvm/guest.nix`) : partages virtiofs sous
+  `<stateDir>/<guest>/{persist,var-lib,home}`, store hôte en lecture seule, clé
+  hôte sur `/persist`, lien statique `/32` routé par l'hyperviseur.
+- Côté hyperviseur (`microvm/host.nix`) : un tap routé par invité (pas de
+  bridge, uplink intact), proxy ARP sur le LAN, isolation nftables (table
+  `dnf-microvm`).
+
+:::note[Déploiement]
+Les invités ne sont pas des nœuds colmena&nbsp;: déployer l'hyperviseur construit
+et redémarre les invités dont le système a changé.
+:::
+
+:::caution[Isolation]
+Un invité atteint Internet et le DNS de la passerelle de zone, rien d'autre
+sur le LAN, pas même l'hyperviseur. Seule la passerelle de zone (reverse
+proxy, monitoring) atteint un invité.
+:::
+
+* **hypervisor** `nullOr str` Hyperviseur exécutant cet hôte en invité microVM, null si métal nu.
+* **stateDir** `str` Répertoire de l'hyperviseur contenant un sous-répertoire de partages par invité.
+* **guest.vcpu** `ints.positive` vCPU de l'invité.
+* **guest.mem** `ints.positive` RAM de l'invité, en MiB.
+
+```nix
+darkone.system.microvm = {
+  hypervisor = dnfLib.getMicrovmHypervisor hosts host;
+  stateDir = "/var/lib/microvms";
+  guest.vcpu = 2;
+  guest.mem = 4096;
 };
 ```
 
@@ -376,17 +443,17 @@ et du HCS.
 - `external-hosts` : services de zone dont le HCS fait face, proxyés vers leur passerelle.
 :::
 
-{/* t:p 7134724ea25686c17aa00bbfd26d0c6e202b306ef9eefa302c8fa0281348ff9b */}
+{/* t:p 6aa3e72674e7de020bffd26362d1bc5ea68242949e18f313817503d6826aeb28 */}
 #### SSO (`oauth2-proxy.nix`)
 
-oauth2-proxy devant les services protégés d'une zone, adossé au client OAuth2
-`internal-service` de Kanidm.
+oauth2-proxy devant les services protégés d'une zone, adossé au client
+OAuth2 `internal-service` de Kanidm.
 
 :::note[Flux]
 Caddy `forward_auth` vérifie chaque requête contre `/oauth2/auth`. Le flux de
-connexion s'ancre sur le FQDN de la page d'accueil de zone, qui héberge les
-points d'entrée publics `/oauth2/*` d'oauth2-proxy ; un cookie scopé au domaine
-de zone conserve la session sur ses services.
+connexion est ancré sur le FQDN de la page d'accueil de la zone, qui héberge
+les points d'entrée publics `/oauth2/*` d'oauth2-proxy&nbsp;; un cookie scopé au
+domaine de la zone conserve la session entre ses services.
 :::
 
 * **enable** `bool` Activer le gestionnaire de services DNF pour enregistrer et exposer les services
@@ -396,34 +463,35 @@ de zone conserve la session sur ses services.
     * **domain** `str` Nom de domaine du service
     * **title** `str` Nom affiché sur la page d'accueil
     * **description** `str` Description du service pour la page d'accueil
-    * **icon** `str` [Nom d'icône pour la page d'accueil](https://selfh.st/icons/)
+    * **icon** `str` [Nom de l'icône pour la page d'accueil](https://selfh.st/icons/)
     * **global** `bool` Le service global est accessible sur Internet
-    * **noRobots** `bool` Empêcher les robots de scanner si global est true
+    * **noRobots** `bool` Empêcher les robots de scanner si global est vrai
     * **fqdn** `str` FQDN calculé du service avant le reverse proxy
     * **href** `str` URL calculée du service avant le reverse proxy
     * **ip** `str` IP calculée pour contacter le service
   * **displayOnHomepage** `bool` Afficher un lien sur la page d'accueil
-  * **reverseProxy** `bool` Atteint via le reverse proxy de la passerelle de zone (le DNS pointe vers l'IP LAN de la passerelle)
-  * **uniquePerZone** `bool` Au plus une instance par zone (validation du générateur)
-  * **externalAccess** `bool` Service www-zone joignable depuis la LAN via une IP hôte fixe (ex. headscale, turn)
-  * **persist.dirs** `listOf str` Dossiers persistants du service
+  * **reverseProxy** `bool` Atteint via le reverse proxy de la passerelle de zone (le DNS pointe sur l'IP LAN de la passerelle)
+  * **uniquePerZone** `bool` Au plus une instance autorisée par zone (validation du générateur)
+  * **externalAccess** `bool` Service www-zone joignable depuis le LAN via une IP hôte fixe (ex. headscale, turn)
+  * **persist.dirs** `listOf str` Répertoires persistants du service
   * **persist.files** `listOf str` Fichiers persistants du service
-  * **persist.dbDirs** `listOf str` Dossiers persistants du service avec base(s) de données
+  * **persist.dbDirs** `listOf str` Répertoires persistants du service avec base(s) de données
   * **persist.dbFiles** `listOf str` Fichier(s) de base de données du service
   * **persist.varDirs** `listOf str` Fichiers secondaires variables (log, cache, etc.)
-  * **persist.mediaDirs** `listOf str` Dossiers médias du service (images, vidéos, gros fichiers)
-  * **proxy.enable** `bool` Créer la configuration virtualHost (false pour les services qui gèrent la leur)
+  * **persist.mediaDirs** `listOf str` Répertoires médias du service (images, vidéos, gros fichiers)
+  * **proxy.enable** `bool` Créer la configuration virtualHost (false pour les services qui gèrent le leur)
   * **proxy.isProtected** `bool` Service protégé par Oauth2
   * **proxy.allowedGroups** `listOf str` Groupes Kanidm autorisés sur ce service protégé (vide = tout utilisateur authentifié)
-  * **proxy.isInternal** `bool` Lier le service sur l'interface interne uniquement (pas accessible Internet)
+  * **proxy.spaceMembersOnly** `bool` Restreindre aux membres de l'espace IA de l'hôte de l'instance (groupe Kanidm `space-&lt;host&gt;`)&#8239;; implique isProtected
+  * **proxy.isInternal** `bool` Lier le service sur l'interface interne uniquement (pas accessible depuis Internet)
   * **proxy.hasReverseProxy** `bool` C'est un reverse proxy (ou une autre configuration virtualhost via extraConfig)
-  * **proxy.defaultService** `bool` C'est le service par défaut
+  * **proxy.defaultService** `bool` Est le service par défaut
   * **proxy.servicePort** `nullOr port` Port interne du service
   * **proxy.preExtraConfig** `lines` Configuration caddy virtualHost supplémentaire (préfixe)
   * **proxy.extraConfig** `lines` Configuration caddy virtualHost supplémentaire
   * **proxy.extraGlobalConfig** `lines` Configuration caddy supplémentaire
   * **proxy.scheme** `str` Schéma du service interne (http / https)
-* **resolved** `raw` Registre des services résolu.
+* **resolved** `raw` Registre des services résolus.
 
 ```nix
 darkone.system.services = {
@@ -451,6 +519,7 @@ darkone.system.services = {
   service.proxy.enable = true;
   service.proxy.isProtected = false;
   service.proxy.allowedGroups = [ ];
+  service.proxy.spaceMembersOnly = false;
   service.proxy.isInternal = false;
   service.proxy.hasReverseProxy = true;
   service.proxy.defaultService = false;
@@ -465,32 +534,41 @@ darkone.system.services = {
 
 <hr/>
 
-{/* t:p 85d0d6ce5c9e942e2a09a264d8077616e67c4d522474e74c424f1b53c4645d90 */}
+{/* t:p fbecadf768e9ff08a67d4ffd1c2614a4f56e60eb55320065145b3da2fae799db */}
 ### &#x2699; darkone.system.sops
 
-Gestion DNF de sops, mots de passe et secrets.
+sops DNF, gestion des mots de passe et des secrets.
 
 :::danger[Module critique]
 Ce module est activé par défaut dans le module core.
-Il est recommandé de le laisser activé et de le configurer (commandes `just passwd*`).
+Il est recommandé de le garder activé et de le configurer (commandes `just passwd*`).
 :::
 
-Branche sops-nix sur `usr/secrets/secrets.yaml` et le déverrouille avec la clé
-SSH de l'hôte (`ssh_host_ed25519_key`) ainsi que la clé age d'infrastructure
-dédiée (`/etc/sops/age/infra.key`). Déclare un
-secret `user/<login>/password-hash` par utilisateur d'hôte, avec
-`neededForUsers = true` afin que le hash soit disponible avant la création des
-comptes utilisateurs.
+Câble sops-nix sur `usr/secrets/secrets.yaml` et le déverrouille avec la
+clé SSH hôte (`ssh_host_ed25519_key`) plus la clé age d'infrastructure
+dédiée (`/etc/sops/age/infra.key`). Déclare un secret
+`user/<login>/password-hash` par utilisateur hôte, avec
+`neededForUsers = true` pour que le hash soit disponible avant la création
+des comptes utilisateurs.
 
-Rien d'autre n'est matérialisé ici : un secret appartient aux hôtes qui le
-consomment, déclaré par le module qui le lit. `default-password-hash`
-reste dans le fichier chiffré, illisible par aucun hôte&nbsp;: il enregistre le
-mot de passe par défaut de la flotte pour `just passwd <login>`.
+Rien d'autre n'est matérialisé ici&nbsp;: un secret appartient aux hôtes qui le
+consomment, déclaré par le module qui le lit.
 
-* **enable** `bool` Active la configuration automatisée de sops pour DNF
+:::caution[Hôtes isolés]
+`isolated = true` (défaut du profil `ai-space`) pointe l'hôte vers son propre
+`usr/secrets/hosts/<hostname>.yaml`, sans la clé infra&nbsp;: un hôte exécutant
+des agents non fiables ne détient jamais les secrets de la flotte. Pas de
+hash de mot de passe non plus, ses comptes ne sont qu'en clé SSH.
+:::
+
+* **enable** `bool` Activer la configuration automatisée sops pour DNF
+* **isolated** `bool` Fichier de secrets propre, sans clé infra, sans hash de mots de passe
 
 ```nix
-darkone.system.sops.enable = false;
+darkone.system.sops = {
+  enable = false;
+  isolated = false;
+};
 ```
 
 <hr/>

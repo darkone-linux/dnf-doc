@@ -13,7 +13,14 @@ sidebar:
 **A home manager module** works with [home manager](https://github.com/nix-community/home-manager) profiles.
 :::
 
-{/* t:p 8fdf13f9221c980f32acc19a9d3d633063d5c863d640eb309353e6ec7c992596 */}
+{/* t:p 436859f829d8044f8f91f9e15b27cc091c57079c74ef82804af785faf4d1f52d */}
+### &#x1F3E0; darkone.home.advanced.network-folder
+
+"Local network" folder of the app grid: nix-admin on the admin host.
+
+<hr/>
+
+{/* t:p 5e0d691209900b5d8dc703da37f423999dae61e1aaf24d55e0cc368bd06285d2 */}
 ### &#x1F3E0; darkone.home.advanced
 
 Home profile for advanced users (computer scientists, developers, admins).
@@ -22,6 +29,12 @@ Home profile for advanced users (computer scientists, developers, admins).
 `enableVaultwardenSsh` turns `rbw` into the SSH agent: private keys stay in
 the user's vault (end-to-end encrypted), never in clear on disk nor in sops.
 The user runs `rbw unlock` once per session.
+:::
+
+:::note[Local network folder]
+A nix-admin on the admin host gets a "Local network" folder in the app grid
+(`advanced/network-folder.nix`): DNF Doc, Onboarding (the welcome page) and
+Network Sources (a terminal in `/etc/nixos`). Added once per user, at login.
 :::
 
 * **enable** `bool` Enable advanced user features
@@ -200,7 +213,7 @@ darkone.home.games = {
 
 <hr/>
 
-{/* t:p 1b44d5c67d18f80e640f8cb6b017fa17f337dff61244f49e80456f5f168bcfd3 */}
+{/* t:p 7eadd764803870cf618ad6eba7f67d03e6b6c95ea0206617cf9fce2098100a25 */}
 ### &#x1F3E0; darkone.home.gnome
 
 Gnome tweaks for home-manager.
@@ -208,7 +221,8 @@ Gnome tweaks for home-manager.
 Hides launchers: the bare `xterm`, Qt5/Qt6 settings and NixOS manual for
 every profile, `scrcpy` and `scrcpy-console` when installed, Extensions for
 non-technical profiles, and (`hideTechnicalIcons`) Settings, Printers and
-File Roller for beginner / child profiles.
+File Roller for beginner / child profiles. `hiddenApps` (default: vim, btop,
+htop) hides more, entries still launchable by id.
 `keepKeyring` opts the user out of the login keyring reset that follows an
 admin password change (read by the NixOS gnome module).
 
@@ -220,12 +234,14 @@ are on, `home/profiles/minimal/nfs.nix` owns this file and overwrites it.
 * **enable** `bool` Enable gnome settings for home manager
 * **hideTechnicalIcons** `bool` Hide some icons for beginners / children / babies
 * **keepKeyring** `bool` Keep the login keyring when the admin changes the session password (keyring with a password of its own)
+* **hiddenApps** `listOf str` Desktop entries hidden from the app grid, still launchable by id
 
 ```nix
 darkone.home.gnome = {
   enable = false;
   hideTechnicalIcons = false;
   keepKeyring = false;
+  hiddenApps = [ ];
 };
 ```
 

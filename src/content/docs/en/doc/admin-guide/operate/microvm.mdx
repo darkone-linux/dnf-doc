@@ -1,0 +1,126 @@
+---
+title: microVM guests
+sidebar:
+  label: MicroVM
+  order: 18
+lang: en
+---
+
+import { Steps } from '@astrojs/starlight/components';
+
+{/* t:translated-from fr */}
+{/* t:h ba12b533fea693e0284f0fa18544b808ef40f0a326cdf29903b5e348373c41f8 */}
+
+{/* t:p 90f96b10e2330ef53e5635ac742cf569bf08c98b5586a71821a813833491ed05 */}
+A **microVM guest** is an ordinary DNF host (zone IP, services,
+monitoring) running in a lightweight virtual machine, on another host of the
+fleet: the **hypervisor**. DNF relies on
+[microvm.nix](https://github.com/microvm-nix/microvm.nix) and cloud-hypervisor.
+Typical use: a closed AI workspace per person or per team.
+
+{/* t:p 5168f335c1d1cb0fec182da853de405211dde27af096fab2abb5e8d6707379c3 */}
+## Declare a guest
+
+<Steps>
+
+1. **Declare the host**
+
+   The `microvm-guest` feature names the hypervisor, from the same zone. The
+   static IP is mandatory: the interface and MAC address derive from it.
+
+   ```yaml
+   # etc/config.yaml
+   hosts:
+     - hostname: "espace1"
+       zone: "maison:1.40"
+       profile: "ai-space"
+       features: ["microvm-guest:serveur"]
+   ```
+
+2. **Size it**
+
+   Optional, 2 vCPU and 4096 Mio by default.
+
+   ```nix
+   # usr/machines/espace1/configuration.nix
+   {
+     darkone.system.microvm.guest = {
+       vcpu = 4;
+       mem = 6144; # Mio
+     };
+   }
+   ```
+
+3. **Pin the state version**
+
+   A guest never goes through `just install`: create the file by hand, with the
+   NixOS version of the first deployment.
+
+   ```nix
+   # usr/machines/espace1/install/state.nix
+   { system.stateVersion = "26.05"; }
+   ```
+
+4. **Initialize its secrets**
+
+   The guest only reads its own secrets: see
+   [isolated hosts](/en/doc/admin-guide/operate/secrets/#isolated-hosts).
+
+   ```sh
+   just space-init espace1
+   ```
+
+5. **Deploy the hypervisor**
+
+   ```sh
+   just generate
+   just apply serveur
+   ```
+
+</Steps>
+
+{/* t:p 664b5a8489085c00f976fe7ea9463c1ce276c8bb668f8ffad34326b8280fc824 */}
+## Deploy and update
+
+A guest is not a deployment target: `just apply <hypervisor>` builds the
+guests, starts the new ones and restarts the changed ones. Guests start with
+the hypervisor.
+
+| Item | Location |
+|---|---|
+| Persistent data | `/var/lib/microvms/<guest>/` on the hypervisor |
+| `/persist`, `/var/lib`, `/home` | virtiofs shares of that folder |
+| Root `/` | In memory, wiped at every boot |
+| Nix store | The hypervisor's, read-only, plus an in-memory layer for what the guest installs (`nix shell`, Home Manager), wiped at every boot |
+
+{/* t:p 6f8c514064dc3325c5757e21a4db0858ca9cd20b9a60819f62bc35b83dab8991 */}
+## Network isolation
+
+Each guest has its own `vm-X-Y` interface, routed in `/32` by the hypervisor,
+which answers for it on the LAN (proxy ARP). The hypervisor's link to the LAN
+is unchanged, there is no bridge.
+
+| Flow | Allowed |
+|---|---|
+| Guest → Internet | Yes |
+| Guest → gateway DNS | Yes |
+| Guest → LAN, tailnet, other guests | No |
+| Guest → hypervisor | No |
+| Gateway → guest | Yes (proxy, monitoring) |
+| Other host → guest | Ping and SSH only |
+
+{/* t:p 938609b64e2e1217c0db6ceeca57cfadea52087e1a0a2c4319be9b6fdb6ff3b2 */}
+## FAQ
+
+{/* t:p b2b56a6c3a435b7fcf9c83bdc0fb919786b2d5da878bee450a6f13e446a06899 */}
+### How to connect to a guest?
+
+Like any host, from an administration workstation: `just enter <guest>`. Its
+name is published by the gateways' DNS, which must therefore be redeployed
+after adding the guest.
+
+{/* t:p 5edf6712e8f1a6fb19617f07ba341ad1037ebe941aea82d9a3a530eabbd8ca37 */}
+### How to wipe a guest?
+
+Remove it from `etc/config.yaml`, deploy the hypervisor, then delete
+`/var/lib/microvms/<guest>/` on the hypervisor.

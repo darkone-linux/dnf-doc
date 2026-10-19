@@ -53,26 +53,29 @@ inputs = {
 The generator does not need to be declared: the pinned framework version
 mechanically fixes the version of the generator that goes with it.
 
-{/* t:p c0682472813d599afc1243671a1a6a4295030366e9e5a17d8d6036367f52e6f0 */}
-## Upgrading the version
+{/* t:p 7ca59a438b8195bafde67abae24cc6498ec43bd6a71bf4b6a25c86de1c9ab06b */}
+## Upgrade to a new version
 
 <Steps>
 
-1. Spot the target version in the
+1. Find the target version in the
    [releases](https://github.com/darkone-linux/darkone-nixos-framework/releases)
-   and read the **⚠ Breaking** sections of all versions traversed.
+   and read the **⚠ Breaking** sections of every version you pass through.
 
-2. Modify the tag in `flake.nix`, then refresh the lock:
+2. Update the tag in `flake.nix`, then refresh the lock:
 
    ```sh
    nix flake update dnf
    ```
 
-3. Point the `dnf/` link back to the revision the lock pins:
+3. Point the `dnf/` link back to the revision pinned by the lock:
 
    ```sh
    nix run .#init
    ```
+
+   The link is a GC root: the weekly store cleanup does not remove it. A
+   project linked by a previous version gets it at this first `init`.
 
 4. Regenerate, check, then deploy a test host before the fleet:
 

@@ -1,0 +1,143 @@
+---
+title: "Version 0.5.0"
+description: "Paramètres opt-in avec installateur ISO et correctifs d'intégration fleet"
+sidebar:
+  label: "0.5.0"
+lang: fr
+prev:
+  link: /fr/changelog/v0-4-0/
+  label: "Version 0.4.0"
+---
+
+{/* t:translated-from en */}
+{/* t:h 96986a69cc9425d308aa0f6eeda4e8dc6275f7e12f67091497d9f4080b4bbcba */}
+
+{/* t:p 5124f763656ee5aecf0676503d52ec861e632651a8e06d5c04264659195584de */}
+Publiée le **2026-10-17** : paramètres opt-in avec installateur ISO et correctifs d'intégration fleet.
+
+[Modifications sur GitHub](https://github.com/darkone-linux/darkone-nixos-framework/compare/v0.4.0...v0.5.0) · [Toutes les versions](/fr/changelog/)
+
+:::caution[Ruptures de compatibilité]
+- **office** : Darkone.home.office.huntspellLang renommé hunspellLang
+- **home** : VS Code et slidev opt-in, enableVscode et enableSlidev
+- **printing** : les portables ne chargent plus tous les pilotes, loadAll opt-in
+:::
+
+{/* t:p 8daacbf792a8259af72b7e2edae847582094b527bc61a86928c690d632fc866e */}
+## Ajouté
+
+- **office** : Element dès que Matrix tourne, Fractal avec enableCommunication
+- **hm** : Ghostty installe son terminfo sur les hôtes ssh (ssh-terminfo)
+- **gnome** : l'option EnableGdmSelector affiche la liste d'utilisateurs GDM
+- **umi** : calibration du trackeur oculaire depuis un favori du menu Cinnamon
+- **umi** : l'option HeadSpeed amortit le contrôle tête, réglage en direct depuis la REPL
+- **umi** : grille d'applications Rofi, bouton de panneau et option hiddenApps
+- **home** : excludePackages jeux/éducation, thème umi sombre par défaut
+- **office** : barre d'outils LibreOffice Cartable Fantastique pour le profil enfant
+- **umi** : les fenêtres d'applications s'ouvrent maximisées (enableMaximize)
+- **umi** : réglages Tobii 5, contrôle tête activé, headSpeed 5, filtre de regard 1
+- **umi** : réglages clic survol, délai 1,6 s et seuil de mouvement 30 px
+- **umi** : bouton clic simple unique, le clic survol se met en pause après un clic gauche
+- **umi** : EnableStkWithMouse, jouer à SuperTuxKart à la souris seule
+- **templates** : modèle de projet, nix flake new -t crée un projet DNF
+- **schema** : livraison de config.schema.json, validation de etc/config.yaml par les éditeurs
+- **iso** : ISO d'installation jointe à chaque release, astuce d'installation sans clé
+- **hardware** : aucun firmware sur les machines virtuelles, détecté par detect-hw
+- **configure** : bootstrap-keys crée les clés admin sans le compte nix
+- **install** : install-here, installation locale de l'hôte admin depuis l'ISO
+- **iso** : image générique livrant darkone, ses outils et l'arbre du framework
+- **install** : install-here installe un hôte admin chiffré avec LUKS
+- **install** : sauvegarde de la clé admin sur USB, assistant sur tty1, page de bienvenue
+- **iso** : app #try, console série, test de l'installateur en VM conditionnant la release
+
+{/* t:p 5cabe4b25c639859ec0cbbd4d72a78fa4cb60c3e5b5d71f8689b81328d6e74b4 */}
+## Corrigé
+
+- **just** : description de la cible Luks
+- **gnome** : réinitialisation du trousseau de connexion après changement du mot de passe admin
+- **alerts** : la description de NodeDown nomme le délai de 5 min des hôtes atteints via WAN
+- **secrets** : une unité de génération par règle de bundle, pas par générateur
+- **just** : ordre des listes d'imports générées indépendant de la locale
+- **profiles** : chaque valeur de profil surchargeable par utilisateur (mkDefault)
+- **advanced** : MANPAGER via bat seulement si bat est activé
+- **education** : Tuxpaint sous enableDraw, pas enableMusic
+- **advanced** : TERMINAL jamais vide, ~/.local/bin présent une seule fois dans PATH
+- **vim** : mappings visuels * et # cassés, plugins Neovim exclusivement, branche git affichée
+- **ai** : Copilot CLI installé comme paquet, jamais chargé comme extension gh
+- **office** : autostart d'Element et Fractal lié à la session graphique
+- **student** : musique avec GNOME seulement, le profil échouait sur les hôtes sans GNOME
+- **ai** : settings.json non analysé mis de côté au lieu de faire échouer le switch
+- **nfs** : répertoire XDG entre guillemets dans le script de lien home
+- **home** : écrasement d'un .bkp plus ancien au lieu de faire échouer l'activation
+- **home** : Audacious, vlc et jeux GNOME seulement avec une session GNOME
+- **ai** : la ligne d'état de Claude Code récupère node dans son PATH
+- **core** : terminfo xterm-ghostty installé sur toute la flotte
+- **hm** : TERM n'est plus forcé à xterm-256color dans les variables de session
+- **umi** : Mint-cursor-themes exclu, curseurs Bibata provenant uniquement de bibata-cursors
+- **gnome** : compte de maintenance Nix masqué de la liste d'utilisateurs GDM
+- **umi** : trousseau sans mot de passe pour l'utilisateur autologin sur les hôtes chiffrés aussi
+- **umi** : Talon attend le tiroir du panneau, limite de taille d'écran Tobii documentée
+- **invite** : améliorations des instructions
+- **flake** : récupération de firefox-addons via git+https, gitlab : l'API renvoie 403
+- **monitoring** : FilesystemReadOnly ignore les montages prévus en lecture seule
+- **configure** : erreur explicite quand le compte de déploiement nix est absent
+- **i18n** : clavier par locale depuis config/locales.json, en_GB pt be ch se
+- **iso** : astuce de bienvenue, darkone new n'a plus besoin de fichier de réponses
+- **iso** : assistant lancé une fois par démarrage sur tty1, plus sur sudo -i
+- **install** : backup-admin conserve la sauvegarde précédente jusqu'à ce que la nouvelle soit en place
+
+{/* t:p eb8172dbb2a8c0528faac578d54530cbe6c8f741ebb6eece3480642fefb22e30 */}
+## Sécurité
+
+- **ai** : Claude Code demande avant git checkout, libellés de permission corrigés
+- **yubikey** : expiration de la phrase de passe LUKS en cache (KeyringMode=shared)
+
+{/* t:p 49c6e1a9411eb36e1e2c8bb7c24fd4a31345b61a586f889f396559e10e103cf0 */}
+## Retiré
+
+- **office** : abandon de mattermost-desktop
+- **audio** : abandon du préréglage easyeffects-fw16, défini nulle part
+- **hm** : alias nc supprimé + config de l'assistant zed
+- **gnome** : abandon de la liste Exclude du greeter GDM, ignorée par GDM
+- **umi** : abandon de la barre d'angle et de l'icône Bluetooth, espacement des lanceurs uniforme
+
+{/* t:p e01122c43fd604871f9adf7adb9cf7152a584bcd205217c2cbc0f4a147689676 */}
+## Modifié
+
+- **lib** : factorisation des cascades de paramètres de service, recherches de zones et groupes d'alertes
+- **services** : séparation des modules registry, Caddy et oauth2-proxy
+- **srv-dirs** : un tableau de disposition pilote les valeurs par défaut et les assertions de préfixe
+- **i18n** : regex de locale partagée via dnfLib, suppression du code de keymap mort
+- **yubikey** : réutilisation de la détection du volume luks, commentaires concis
+- **matrix** : séparation de MAS, MatrixRTC et des ponts en sous-modules
+- **monitoring** : constante de répertoire de collecteurs textfile unique dans dnfLib
+- **headscale** : séparation de DNS pivot, audit et inscription en sous-modules
+- **tailscale** : séparation de sync de cert, auto-réparation et auto-pause en sous-modules
+- **idm** : séparation de réplication et de provisionnement, réutilisation du registre résolu
+- **restic** : séparation du serveur REST et des métriques de fraîcheur en sous-modules
+- **nextcloud** : région téléphone et plage tailnet depuis dnfLib
+- **modules** : plage tailnet depuis les constantes dnfLib, commentaire en anglais
+- **gateway** : liens de sauvegarde dans leur propre sous-module
+- **monitoring** : source isNode unique, l'option du module monitoring
+- **home** : conditions de paquets nommées, palettes partagées dans advanced et umi
+- **office** : recherches de locale et de page d'accueil via DnfLib, commentaires concis
+- **music** : variables de session MPD laissées au module home-manager
+- **home** : profil utilisateur importé par chemin, les erreurs nomment le fichier de profil
+- **advanced** : EDITOR et VISUAL laissés à programs.vim.defaultEditor
+- **office** : séparation en sous-modules browsers, matrix, nextcloud, pandoc
+- **zsh** : le plugin p10k livre p10k.zsh seul, pas tout l'arbre assets/
+- **user** : profils utilisateur NixOS fusionnés avec mkMerge, pas un // superficiel
+- **eval** : backport des modules fork, suppression de l'input nixpkgs-oxicloud
+
+{/* t:p feeef3d1faba2e247fc1953fe497120642a0fabb4976e0d9b618617799ec80dc */}
+## Documentation
+
+- **modules** : documentation des sous-modules déplacée dans l'en-tête du module principal
+- **home** : en-têtes et commentaires du module alignés sur le code
+- **mime** : l'en-tête décrit les valeurs par défaut réelles, branche morte supprimée
+- **templates** : les recettes admin s'exécutent sur un hôte DNF, via son compte nix
+
+{/* t:p 72c5bcf525849e33d75823d0ec506919f66daefae0ea99d2e8cd68d772b77606 */}
+## Dépendances
+
+- dnf-generator v0.3.0

@@ -74,28 +74,42 @@ A usage-oriented presentation is available in the
 [user guide](/en/doc/user-guide/understand/profiles/).
 :::
 
-{/* t:p 316c7a085538ac869e59923a8b0f996b31bb02481f4f5088d6dfd8ce864632fd */}
+{/* t:p 3bf4e09093ff201233280d37c4a5bb6c8b767325f61cfd4910d6aca74a996362 */}
 ## The GNOME desktop
 
 | Element | Profiles | Behavior |
 |---|---|---|
 | Qt5 / Qt6 settings, NixOS manual | all | Icons hidden (manual accessible via `nixos-help`) |
+| vim, btop, htop | all | Icons hidden, programs still launchable from a terminal |
 | "Support GNOME" notification | all | Disabled |
 | Document viewer | all | Papers, default PDF application (replaces Evince) |
 | Image viewer | all | Geeqie by default, if the `imagery` module is active |
 | GNOME extensions | non-technical | Icon hidden |
-| Terminal | non-technical | Console, absent from the dash, present in the application grid |
-| Terminal | technical | Ghostty in the dash, if `darkone.home.advanced.enableTools` is active |
+| Terminal | non-technical | Console, absent from the dash, present in the applications grid |
+| Terminal | technical | Ghostty, first dash favorite and Ctrl+Alt+T |
+| "Local Network" folder | `nix-admin`, admin host | DNF Doc, Onboarding (the home page), Network Sources (terminal in `/etc/nixos`) |
 | Element (Matrix) | all except `minimal`, `baby` | Launched hidden if the network has Matrix |
 
 :::note[Dash locked]
-The favorites list (`favorite-apps`) is locked for the whole host: a
-technical profile without Ghostty therefore has no Console in its dash either.
+The favorites list (`favorite-apps`) is locked for the entire host: Console,
+the terminal of non-technical profiles, is not listed there.
+:::
+
+:::tip[Hide other icons]
+`darkone.home.gnome.hiddenApps` lists the hidden entries (`.desktop`
+identifiers). Redefining it in `usr/users/<login>/default.nix` replaces the
+default list.
+:::
+
+:::note[The "Local Network" folder]
+Added only once, at the first session: once deleted or renamed, it does not
+come back. To recreate it, delete `~/.local/state/dnf/network-folder` then log
+back in.
 :::
 
 :::note[Ghostty and SSH]
 From Ghostty, `ssh` installs the `xterm-ghostty` terminfo on the remote host
-on first connection (`~/.terminfo`, via `tic`), otherwise it falls back to
+at first connection (`~/.terminfo`, via `tic`), otherwise it falls back to
 `xterm-256color`. DNF hosts already provide it to all accounts, `root`
 included.
 :::
@@ -127,11 +141,24 @@ Setting the option back to `null` leaves the extension in place: remove it via
 *Tools → Extension Manager*.
 :::
 
-{/* t:p a7eee07e5797df7222dc62a48c37711e11b823edf4ee22ac080034edb6b492e9 */}
+{/* t:p 53b2f6a5686d0e1d8871b7c0ab2255ce57996881bbd565799e960931e418f7ae */}
 ## Heavy applications on demand
 
-To lighten the first workstation, `advanced` and the profiles inheriting from
-it install neither VS Code (0.3 GiB) nor Slidev (0.4 GiB): Zed remains the
+The `admin` and `nix-admin` profiles install neither image creation (GIMP,
+Geeqie) nor music (Audacious). To get them back for an account:
+
+```nix
+# usr/users/<login>/default.nix
+darkone.home.imagery.enable = true;
+darkone.home.music.enable = true;
+```
+
+FileZilla is no longer installed (SFTP from Files or `sftp`), and KeePassXC
+remains the only KeePass manager of technical profiles, with no Secrets
+alongside.
+
+To lighten the first machine, `advanced` and the profiles inheriting from it
+install neither VS Code (0.3 GiB) nor Slidev (0.4 GiB): Zed remains the
 default editor. To add them to an account, including to restore the previous
 behavior:
 

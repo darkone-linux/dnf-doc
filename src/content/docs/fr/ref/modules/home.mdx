@@ -13,30 +13,42 @@ sidebar:
 **Un module home manager** fonctionne avec les profils [home manager](https://github.com/nix-community/home-manager).
 :::
 
-{/* t:p 8fdf13f9221c980f32acc19a9d3d633063d5c863d640eb309353e6ec7c992596 */}
-### &#x1F3E0; darkone.home.advanced
+{/* t:p 436859f829d8044f8f91f9e15b27cc091c57079c74ef82804af785faf4d1f52d */}
+### &#x1F3E0; darkone.home.advanced.network-folder
+Dossier « Réseau local » de la grille d'applications : nix-admin sur l'hôte d'administration.
 
-Profil `home` pour les utilisateurs avancés (informaticiens, développeurs, administrateurs).
+<hr/>
+
+{/* t:p 5e0d691209900b5d8dc703da37f423999dae61e1aaf24d55e0cc368bd06285d2 */}
+### &#x1F3E0; darkone.home.advanced
+Profil maison pour les utilisateurs avancés (informaticiens, développeurs, administrateurs).
 
 :::note[Clés SSH depuis Vaultwarden]
-`enableVaultwardenSsh` transforme `rbw` en agent SSH : les clés privées restent dans
-le coffre de l'utilisateur (chiffrées de bout en bout), jamais en clair sur le disque ni dans sops.
-L'utilisateur exécute `rbw unlock` une fois par session.
+`enableVaultwardenSsh` transforme `rbw` en agent SSH : les clés privées restent
+dans le coffre de l'utilisateur (chiffré de bout en bout), jamais en clair sur le
+disque ni dans sops. L'utilisateur lance `rbw unlock` une fois par session.
+:::
+
+:::note[Dossier Réseau local]
+Un nix-admin sur l'hôte d'administration dispose d'un dossier « Réseau local »
+dans la grille d'applications (`advanced/network-folder.nix`) : DNF Doc,
+Onboarding (la page d'accueil) et Sources réseau (un terminal dans
+`/etc/nixos`). Ajouté une fois par utilisateur, à la connexion.
 :::
 
 * **enable** `bool` Activer les fonctionnalités pour utilisateurs avancés
 * **enableTools** `bool` Divers outils pour utilisateurs avancés
 * **enablePhoneTools** `bool` Outils pour smartphone (scrcpy)
-* **enableAdmin** `bool` Activer les fonctionnalités d'administration (réseau, outils système)
+* **enableAdmin** `bool` Activer les fonctionnalités administrateur (réseau, outils système)
 * **enableNixAdmin** `bool` Activer les fonctionnalités d'administration Nix
-* **enableDnfDeveloper** `bool` Activer tous les outils pour un développeur Codev DNF
+* **enableDnfDeveloper** `bool` Activer tous les outils pour le développeur DNF Codev
 * **enableDeveloper** `bool` Activer les outils pour développeur
-* **enableVscode** `bool` VS Code. Opt-in : ~0,3 GiB à télécharger, Zed est l'éditeur par défaut
-* **enableSlidev** `bool` Présentations Slidev (`slidev-cli`, plus son extension VS Code si
-  `enableVscode`). Opt-in : ~0,4 GiB à télécharger
+* **enableVscode** `bool` VS Code. Opt-in : ~0,3 Gio à télécharger, Zed est l'éditeur par défaut
+* **enableSlidev** `bool` Presentations Slidev (`slidev-cli`, plus son extension VS Code quand
+  `enableVscode`). Opt-in : ~0,4 Gio à télécharger
 * **enableEssentials** `bool` Outils fréquemment utilisés
-* **enableVaultwardenSsh** `bool` Agent SSH s'appuyant sur le coffre Vaultwarden de l'utilisateur (rbw). À ne pas activer sur
-  un hôte atteint via `ssh -A` : l'agent local masquerait celui transmis
+* **enableVaultwardenSsh** `bool` Agent SSH reposant sur le coffre Vaultwarden de l'utilisateur (rbw). Ne pas activer sur
+  un hôte atteint avec `ssh -A` : l'agent local masquerait celui qui est transféré
 
 ```nix
 darkone.home.advanced = {
@@ -201,34 +213,35 @@ darkone.home.games = {
 
 <hr/>
 
-{/* t:p 1b44d5c67d18f80e640f8cb6b017fa17f337dff61244f49e80456f5f168bcfd3 */}
+{/* t:p 7eadd764803870cf618ad6eba7f67d03e6b6c95ea0206617cf9fce2098100a25 */}
 ### &#x1F3E0; darkone.home.gnome
+Réglages Gnome pour home-manager.
 
-Réglages GNOME pour home-manager.
-
-Masque les lanceurs : le simple `xterm`, les paramètres Qt5/Qt6 et le manuel
-NixOS pour tous les profils, `scrcpy` et `scrcpy-console` s'ils sont installés,
-Extensions pour les profils non techniques, et (`hideTechnicalIcons`)
-Paramètres, Imprimantes et File Roller pour les profils débutant / enfant.
+Masque les lanceurs : le `xterm` nu, les réglages Qt5/Qt6 et le manuel NixOS pour
+chaque profil, `scrcpy` et `scrcpy-console` s'ils sont installés, Extensions pour
+les profils non techniques, et (`hideTechnicalIcons`) Paramètres, Imprimantes et
+File Roller pour les profils débutant / enfant. `hiddenApps` (par défaut : vim, btop,
+htop) masque davantage d'entrées, toujours lançables par identifiant.
 `keepKeyring` dispense l'utilisateur de la réinitialisation du trousseau de
-connexion qui suit un changement de mot de passe administrateur (lu par le
-module gnome de NixOS).
+connexion qui suit un changement de mot de passe administrateur (lu par le module
+gnome de NixOS).
 
 :::caution[Signets NFS]
-Ne pas déclarer `gtk.gtk3.bookmarks` depuis ce module — tant que les partages
-home NFS sont actifs, `home/profiles/minimal/nfs.nix` détient ce fichier et
-l'écrase.
+Ne pas déclarer `gtk.gtk3.bookmarks` depuis ce module : tant que les partages home
+NFS sont actifs, `home/profiles/minimal/nfs.nix` détient ce fichier et l'écrase.
 :::
 
 * **enable** `bool` Activer les réglages gnome pour home manager
 * **hideTechnicalIcons** `bool` Masquer certaines icônes pour débutants / enfants / bébés
-* **keepKeyring** `bool` Conserver le trousseau de connexion quand l'administrateur change le mot de passe de session (trousseau avec un mot de passe propre)
+* **keepKeyring** `bool` Conserver le trousseau de connexion quand l'administrateur change le mot de passe de la session (trousseau avec son propre mot de passe)
+* **hiddenApps** `listOf str` Entrées de bureau masquées de la grille d'applications, toujours lançables par identifiant
 
 ```nix
 darkone.home.gnome = {
   enable = false;
   hideTechnicalIcons = false;
   keepKeyring = false;
+  hiddenApps = [ ];
 };
 ```
 

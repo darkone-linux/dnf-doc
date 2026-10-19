@@ -13,6 +13,24 @@ sidebar:
 **A mixin module** defines a collection of standard modules with a consistent common configuration.
 :::
 
+{/* t:p 699533a16a23ea68c7854a5b9ee9bf1872593d4ad059a7d0ae76e8c3c77f09ff */}
+### &#x1F4E6; darkone.host.ai-space
+
+AI space: headless host running the agents of one space (owner + members).
+
+Server base with secrets isolated from the fleet: agents read untrusted
+input (mail, web, chat), so the host only decrypts its own
+`usr/secrets/hosts/<hostname>.yaml`. Usually a microVM guest
+(`features: ["microvm-guest:<hypervisor>"]`), bare metal works too.
+
+* **enable** `bool` AI space host (isolated agents workspace)
+
+```nix
+darkone.host.ai-space.enable = false;
+```
+
+<hr/>
+
 {/* t:p f452ad958a6c4529c9874e2525fd01071a5d109ee726ac179c83e0fc5cfc4e5b */}
 ### &#x1F4E6; darkone.host.desktop
 

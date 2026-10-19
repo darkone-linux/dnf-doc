@@ -1,0 +1,102 @@
+---
+title: AI spaces
+sidebar:
+  label: AI spaces
+  order: 19
+lang: en
+---
+
+import { Steps } from '@astrojs/starlight/components';
+
+{/* t:translated-from fr */}
+{/* t:h 11de2bde9cbdda137e28d65b7cfe3c1bdef70f8dfa7cace99e12f676a7d2835c */}
+
+{/* t:p 79f2fa5cd94d854403f912f00c8bec4576e0d764ea3ab5802c66bf5f0a27cfee */}
+An **AI space** is a DNF host with the `ai-space` profile, generally a
+[microVM guest](/en/doc/admin-guide/operate/microvm/). It hosts an
+[OpenClaw](https://openclaw.ai) assistant reserved for its members, with its own
+secrets and its own data.
+
+:::caution[In progress]
+Web access and SSO in place. The Matrix channel, the tools (Claude Code, Codex)
+and the MCPs are coming in the next releases.
+:::
+
+{/* t:p 7b0901b02b6e1f21a39e40172e20d7df21a539df86b387a5ff27076f5d0e19bc */}
+## Create a space
+
+<Steps>
+
+1. **Declare the host and its members**
+
+   The host's `users` are its members: DNF creates for them the Kanidm group
+   `space-<host>`.
+
+   ```yaml
+   # etc/config.yaml
+   - hostname: "ia-pro"
+     zone: "lan:1.40"
+     profile: "ai-space"
+     features: ["microvm-guest:hyperviseur"]
+     users: ["alice", "bob"]
+     services:
+       openclaw: {}
+   ```
+
+2. **Initialize its secrets**
+
+   `just space-init ia-pro` (see
+   [Isolated hosts](/en/doc/admin-guide/operate/secrets/)).
+
+3. **Deploy**
+
+   The hypervisor, the zone gateway (vhost, DNS) and the HCS (Kanidm
+   group): `just apply hyperviseur,gw,hcs`.
+
+4. **Connect an AI provider**
+
+   Once per space, from the host (`just enter ia-pro`):
+
+   ```bash
+   sudo -u openclaw openclaw models auth login --provider openai-codex
+   ```
+
+   The connection stays in `/var/lib/openclaw`, persistent.
+
+</Steps>
+
+{/* t:p e41cf39346914d439e1ed2d25b8be397f185ac1ae05f8a8527556b94669e9604 */}
+## Member accounts
+
+Each member has a Linux account on the space, streamlined:
+
+| Item | On the space |
+|---|---|
+| Home Manager profile | `space-member` (zsh, git, vim, tmux), instead of their own |
+| Customizations | `usr/users/<login>/space.nix` (all their spaces), then `usr/users/<login>/spaces/<host>.nix` (this space), if they exist |
+| `usr/users/<login>/default.nix` | Ignored: reserved for their workstations |
+| Rights | No group (no `sudo`), whatever their profile |
+
+Administration of the space goes through the `nix` account
+(`just enter <host>`).
+
+:::tip[Customize a space]
+These files are ordinary Home Manager modules: packages, aliases, git
+configuration, other imported modules.
+:::
+
+{/* t:p 7d5debd839e6a5410a5863f982e79b826ce39a70c4b7351f7d6751e15a44514a */}
+## Access
+
+| Item | Rule |
+|---|---|
+| Address | `https://openclaw.<zone>.<domaine>` |
+| Login | Kanidm SSO, reserved to the group `space-<host>` |
+| Device | Paired on first visit, without administration rights |
+| Administration | Command line on the host (`openclaw …`) |
+| Assistant port | Reachable from the zone gateway only |
+
+:::note[One subscription per person]
+A personal subscription (ChatGPT, Claude) shared by several members goes
+against the terms of use: a team space takes a team plan or API keys.
+:::

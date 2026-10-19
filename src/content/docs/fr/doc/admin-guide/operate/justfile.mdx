@@ -576,7 +576,7 @@ just roaming-clear myserver
 just roaming-clear
 ```
 
-{/* t:p 85e0cb7cb36935cd94477dd21a189ba0f4396f16ff26983db66404d5bbe49858 */}
+{/* t:p cb5d8f32e3e3fe38e3a33f966638056e6eea1876fa049a857d0ae77a47f09d14 */}
 ### ✳️ `configure-admin-host` ⭐
 
 Configure la machine d'administration : clés SSH, clés age SOPS,
@@ -883,7 +883,6 @@ just invite alice a '<hash>'  # technicien, empreinte envoyée à distance
 
 Voir [Créer un compte utilisateur](/fr/doc/admin-guide/operate/onboarding/).
 
-{/* t:p 69245d1df6a76baa409e908bab2818947b89d962cd041c354fffc0780a336cd4 */}
 {/* t:p 9fc1d5444b672479f1d02143444f1f4e13007ceaa6ee0e604e52baecb38fdf71 */}
 ### ✳️ `passwd <utilisateur> [empreinte]` ⭐
 
@@ -909,7 +908,7 @@ just yubikey darkone backup     # enrôle la clé de secours
 just yubikey darkone main revoke
 ```
 
-{/* t:p c721a639832b45fbdbb521264d00054fd9c54ef53c41e0d1c85d79114186406b */}
+{/* t:p 79da9afbf128b3be67e5b86e36713ebe3a5faa90abad1289648a8b30560ddeb0 */}
 ### ✳️ `rotate init|push-keys|finalize`
 
 Rotation de la clé age `/etc/sops/age/infra.key` en 3 étapes avec vérifications
@@ -931,6 +930,7 @@ just rotate push-keys
 just rotate finalize
 ```
 
+{/* t:p 668bcc6fdb3097472f1003e2a4a80998699732c7230c2bc2aa7e6f086c32fcf9 */}
 ### ✳️ `space-init <hôte>`
 
 Prépare un [hôte isolé](/fr/doc/admin-guide/operate/secrets/#hôtes-isolés)&nbsp;:
@@ -941,6 +941,7 @@ et cette clé seule, secrets internes. Relançable sans risque.
 just space-init espace1
 ```
 
+{/* t:p 089e3d9c555abe904ba5a80d77f6b4b4388ae9d7553c9eed872ee977944c8ead */}
 ### ✳️ `space-sops <hôte>`
 
 Ouvre les secrets d'un hôte isolé dans vim (via l'utilisateur `nix`).

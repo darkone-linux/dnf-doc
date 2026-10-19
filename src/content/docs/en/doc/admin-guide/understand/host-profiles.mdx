@@ -14,8 +14,8 @@ A **host profile** is a template that defines the role of a machine. It is
 chosen with `profile:` in `etc/config.yaml`. Profiles are inherited: each
 starts from another and adds its specifics.
 
-{/* t:p 703d240860edd11b73aeaf7e73be9683cd351d5afc1cec7c7e65b950debcf62d */}
-## Inheritance
+{/* t:p f8fad2a94c12e60b447df19cabe295153d365b76abade53a44f081bf71aa9876 */}
+## Heritatge
 
 ```d2
 style.fill: transparent
@@ -25,11 +25,12 @@ minimal: minimal
 
 server: server
 desktop: desktop
-portable: portable (usb stick)
+portable: portable (usb key)
 
 gateway: gateway
 hcs: hcs
 vm: vm
+ai-space: ai-space
 laptop: laptop
 umi: umi
 
@@ -39,26 +40,28 @@ minimal -> portable
 server -> gateway
 server -> hcs
 server -> vm
+server -> ai-space
 desktop -> laptop
 desktop -> umi
 ```
 
-{/* t:p 93d2fd3f1a2633638ed02f8ab4e0b23e632d7625e172ea15c0d6734be72da4a0 */}
+{/* t:p e0e89e823c29b7c008898fd1abb753acb1a08a18c8058b4eca48d79036c31254 */}
 ## Profiles
 
-| Profile | For what | Inherits from | Provides |
+| Profile | Purpose | Inherits from | Provides |
 |---|---|---|---|
 | `minimal` | Base for every host | | Hardware, firewall, i18n, zsh, sudo |
-| `server` | Screenless server | `minimal` | No sleep, watchdog, limited boot |
+| `server` | Headless server | `minimal` | No sleep, watchdog, limited boot |
 | `desktop` | Workstation | `minimal` | GNOME, multimedia, office suite |
 | `laptop` | Laptop | `desktop` | Battery, sensors, thermald |
 | `umi` | Accessible workstation | `desktop` | Autologin, uinput, Tobii udev |
-| `portable` | Bootable USB stick | `minimal` | Extended hardware drivers |
+| `portable` | Bootable USB drive | `minimal` | Extended hardware drivers |
 | `gateway` | Zone gateway | `server` | Router, firewall, DNS/DHCP, VPN |
 | `hcs` | VPN coordination | `server` | Headscale + shared services |
 | `vm` | Virtual machine | `server` | Guest tools (VirtualBox/QEMU/Xen) |
+| `ai-space` | AI space (agents) | `server` | Secrets isolated from the fleet; its `users` form the Kanidm group `space-<host>` |
 
-Every host loads the full set of firmware, except a virtual machine&nbsp;:
+Every host loads the full set of firmwares, except a virtual machine&nbsp;:
 `just install` and `just copy-hw` detect it, whatever its profile
 (0.8 GiB less to download).
 

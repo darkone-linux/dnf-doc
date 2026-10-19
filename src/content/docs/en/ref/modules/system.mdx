@@ -124,14 +124,15 @@ darkone.system.documentation.enable = false;
 
 <hr/>
 
-{/* t:p 7af786e622f6d8bf032c6aed476f87d48d2c99ea95167d7b607adb9ffad2659f */}
+{/* t:p cc16323a77517256ce985e66bacad8b50f0db3166ca6c1e57c5864fccc86464a */}
 ### &#x2699; darkone.system.hardware
 
 Hardware configuration improvements.
 
 Every firmware is loaded (`hardware.enableAllFirmware`), except on a virtual
 machine: `just detect-hw` probes it (`systemd-detect-virt --vm`) and sets
-`darkone.system.hardware.virtual` in `hardware/detected-hardware.nix`.
+`darkone.system.hardware.virtual` in `hardware/detected-hardware.nix`. A
+guest also lets Zed run on its emulated GPU (`ZED_ALLOW_EMULATED_GPU`).
 
 * **enable** `bool` Enable hardware optimisations
 * **enableIntel** `bool` Enable intel microcode updates
@@ -270,6 +271,70 @@ darkone.system.luks = {
   enable = true;
   sshPort = 2222;
   volumes = [ ];
+};
+```
+
+<hr/>
+
+{/* t:p a55ad40a297ecc2ef43035967cb2cc96b6d6bca87a9684e97d2e3badd95c6453 */}
+### &#x2699; darkone.system.microvm.guest
+
+MicroVM guest side: hypervisor, routed link, shares, persistent host key.
+
+<hr/>
+
+{/* t:p a834c6d46b0b8741c5853d04eb20d135292a6f39da722234858a0bb0802a6f48 */}
+### &#x2699; darkone.system.microvm.host
+
+MicroVM hypervisor side: guests, routed taps, isolation.
+
+<hr/>
+
+{/* t:p ca384d4e236e8c01920acaf36f37189434da05890aa09b1c78f989e640cbfee1 */}
+### &#x2699; darkone.system.microvm
+
+MicroVM guests (microvm.nix, cloud-hypervisor) on a DNF hypervisor host.
+
+A guest is an ordinary DNF host of the inventory, flagged with the
+`microvm-guest:<hypervisor>` feature in `etc/config.yaml`. It keeps its zone
+IP, services and monitoring; the hypervisor runs it and deploys it.
+
+```yaml
+- hostname: "space1"
+  zone: "cp:1.40"              # fixed IP: tap + MAC are derived from it
+  profile: "ai-space"
+  features: ["microvm-guest:ms-a2"]
+```
+
+- Guest side (`microvm/guest.nix`): virtiofs shares under
+  `<stateDir>/<guest>/{persist,var-lib,home}`, read-only host store, host
+  key on `/persist`, static `/32` link routed by the hypervisor.
+- Hypervisor side (`microvm/host.nix`): one routed tap per guest (no bridge,
+  uplink untouched), proxy ARP on the LAN, nftables isolation (`dnf-microvm`
+  table).
+
+:::note[Deployment]
+Guests are no colmena nodes: deploying the hypervisor builds and restarts
+the guests whose system changed.
+:::
+
+:::caution[Isolation]
+A guest reaches the Internet and the zone gateway DNS, nothing else on the
+LAN, not even the hypervisor. Only the zone gateway (reverse proxy,
+monitoring) reaches a guest.
+:::
+
+* **hypervisor** `nullOr str` Hypervisor running this host as a microVM guest, null when bare metal.
+* **stateDir** `str` Hypervisor directory holding one sub-directory of shares per guest.
+* **guest.vcpu** `ints.positive` Guest virtual CPUs.
+* **guest.mem** `ints.positive` Guest RAM, in MiB.
+
+```nix
+darkone.system.microvm = {
+  hypervisor = dnfLib.getMicrovmHypervisor hosts host;
+  stateDir = "/var/lib/microvms";
+  guest.vcpu = 2;
+  guest.mem = 4096;
 };
 ```
 
@@ -426,7 +491,7 @@ gateways and of the HCS.
 - `external-hosts`: zone services the HCS fronts, proxied to their gateway.
 :::
 
-{/* t:p 7134724ea25686c17aa00bbfd26d0c6e202b306ef9eefa302c8fa0281348ff9b */}
+{/* t:p 6aa3e72674e7de020bffd26362d1bc5ea68242949e18f313817503d6826aeb28 */}
 #### SSO (`oauth2-proxy.nix`)
 
 oauth2-proxy in front of the protected services of a zone, backed by the
@@ -465,6 +530,7 @@ session across its services.
   * **proxy.enable** `bool` Whether to create virtualHost configuration (false for services that manage their own)
   * **proxy.isProtected** `bool` Oauth2 protected service
   * **proxy.allowedGroups** `listOf str` Kanidm groups allowed on this protected service (empty = any authenticated user)
+  * **proxy.spaceMembersOnly** `bool` Restrict to the members of the instance host's AI space (Kanidm group `space-&lt;host&gt;`); implies isProtected
   * **proxy.isInternal** `bool` Bind service on internal interface only (not internet accessible)
   * **proxy.hasReverseProxy** `bool` This is a reverse proxy (or another virtualhost configuration via extraConfig)
   * **proxy.defaultService** `bool` Is the default service
@@ -501,6 +567,7 @@ darkone.system.services = {
   service.proxy.enable = true;
   service.proxy.isProtected = false;
   service.proxy.allowedGroups = [ ];
+  service.proxy.spaceMembersOnly = false;
   service.proxy.isInternal = false;
   service.proxy.hasReverseProxy = true;
   service.proxy.defaultService = false;
@@ -515,7 +582,7 @@ darkone.system.services = {
 
 <hr/>
 
-{/* t:p 85d0d6ce5c9e942e2a09a264d8077616e67c4d522474e74c424f1b53c4645d90 */}
+{/* t:p fbecadf768e9ff08a67d4ffd1c2614a4f56e60eb55320065145b3da2fae799db */}
 ### &#x2699; darkone.system.sops
 
 DNF sops, passwords and secrets management.
@@ -533,14 +600,23 @@ age key (`/etc/sops/age/infra.key`). Declares one
 are created.
 
 Nothing else is materialised here: a secret belongs on the hosts that
-consume it, declared by the module that reads it. `default-password-hash`
-stays in the encrypted file, unread by any host — it records the fleet
-default password for `just passwd <login>`.
+consume it, declared by the module that reads it.
+
+:::caution[Isolated hosts]
+`isolated = true` (default of the `ai-space` profile) points the host at
+its own `usr/secrets/hosts/<hostname>.yaml`, without the infra key: a host
+running untrusted agents never holds the fleet secrets. No password hash
+either, its accounts are SSH-key only.
+:::
 
 * **enable** `bool` Enable sops automated configuration for DNF
+* **isolated** `bool` own secrets file, no infra key, no password hashes
 
 ```nix
-darkone.system.sops.enable = false;
+darkone.system.sops = {
+  enable = false;
+  isolated = false;
+};
 ```
 
 <hr/>
