@@ -80,17 +80,31 @@ Une présentation orientée usage figure dans le
 | Élément | Profils | Comportement |
 |---|---|---|
 | Paramètres Qt5 / Qt6, manuel NixOS | tous | Icônes masquées (manuel accessible via `nixos-help`) |
+| vim, btop, htop | tous | Icônes masquées, programmes toujours lançables depuis un terminal |
 | Notification « Soutenir GNOME » | tous | Désactivée |
 | Visionneur de documents | tous | Papers, application PDF par défaut (remplace Evince) |
 | Visionneur d'images | tous | Geeqie par défaut, si le module `imagery` est actif |
 | Extensions GNOME | non techniques | Icône masquée |
 | Terminal | non techniques | Console, absente du dash, présente dans la grille d'applications |
-| Terminal | techniques | Ghostty dans le dash, si `darkone.home.advanced.enableTools` est actif |
+| Terminal | techniques | Ghostty, premier favori du dash et Ctrl+Alt+T |
+| Dossier « Réseau local » | `nix-admin`, hôte admin | DNF Doc, Onboarding (la page d'accueil), Network Sources (terminal dans `/etc/nixos`) |
 | Element (Matrix) | tous sauf `minimal`, `baby` | Lancé masqué si le réseau a Matrix |
 
 :::note[Dash verrouillé]
 La liste des favoris (`favorite-apps`) est verrouillée pour tout l'hôte&nbsp;:
-un profil technique sans Ghostty n'a donc pas non plus Console dans son dash.
+Console, terminal des profils non techniques, n'y figure pas.
+:::
+
+:::tip[Masquer d'autres icônes]
+`darkone.home.gnome.hiddenApps` liste les entrées masquées (identifiants
+`.desktop`). La redéfinir dans `usr/users/<login>/default.nix` remplace la
+liste par défaut.
+:::
+
+:::note[Le dossier « Réseau local »]
+Ajouté une seule fois, à la première session : supprimé ou renommé, il ne
+revient pas. Pour le recréer, effacer `~/.local/state/dnf/network-folder` puis
+rouvrir la session.
 :::
 
 :::note[Ghostty et SSH]
@@ -129,6 +143,18 @@ Repasser l'option à `null` laisse l'extension en place : la retirer via
 
 {/* t:p a7eee07e5797df7222dc62a48c37711e11b823edf4ee22ac080034edb6b492e9 */}
 ## Applications lourdes à la demande
+
+Les profils `admin` et `nix-admin` n'installent ni la création d'images (GIMP,
+Geeqie) ni la musique (Audacious). Pour les rendre à un compte&nbsp;:
+
+```nix
+# usr/users/<login>/default.nix
+darkone.home.imagery.enable = true;
+darkone.home.music.enable = true;
+```
+
+FileZilla n'est plus installé (SFTP depuis Fichiers ou `sftp`), et KeePassXC
+reste le seul gestionnaire KeePass des profils techniques, sans Secrets à côté.
 
 Pour alléger le premier poste, `advanced` et les profils qui en héritent
 n'installent ni VS Code (0,3 Gio) ni Slidev (0,4 Gio)&nbsp;: Zed reste l'éditeur
