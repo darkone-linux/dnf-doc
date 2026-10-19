@@ -281,6 +281,10 @@ just try reset chemin/de/dnf-generator     # disque neuf, générateur local
 template&nbsp;: le système installé porte le code non publié. Disque&nbsp;:
 `~/.local/share/dnf-try-local`.
 
+Le store de la machine sert de cache de paquets (nix-serve-ng sur
+`127.0.0.1:5000`, lancé par `just try` si le port est libre). L'ISO fixe
+`DNF_URL` et `DNF_CACHE`&nbsp;: une relance de `darkone new` dans la VM les garde.
+
 <Aside type="caution" title="Tag poussé, release absente">
 Ne jamais déplacer ni recréer le tag&nbsp;: FlakeHub l'a déjà publié.
 
