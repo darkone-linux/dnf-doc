@@ -60,6 +60,24 @@ les MCP arrivent dans les prochaines versions.
 
 </Steps>
 
+## Comptes des membres
+
+Chaque membre a un compte Linux sur l'espace, allégé&nbsp;:
+
+| Élément | Sur l'espace |
+|---|---|
+| Profil Home Manager | `space-member` (zsh, git, vim, tmux), à la place du sien |
+| Personnalisations | `usr/users/<login>/space.nix` (tous ses espaces), puis `usr/users/<login>/spaces/<hôte>.nix` (cet espace), s'ils existent |
+| `usr/users/<login>/default.nix` | Ignoré&nbsp;: réservé à ses postes |
+| Droits | Aucun groupe (pas de `sudo`), quel que soit son profil |
+
+L'administration de l'espace passe par le compte `nix` (`just enter <hôte>`).
+
+:::tip[Personnaliser un espace]
+Ces fichiers sont des modules Home Manager ordinaires&nbsp;: paquets, alias,
+configuration git, autres modules importés.
+:::
+
 ## Accès
 
 | Élément | Règle |
