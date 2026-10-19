@@ -135,9 +135,14 @@ Code, Codex) reçoivent les mêmes.
       command = "uvx";
       args = [ "mcp-server-fetch" ];
     };
+    mcp.github = {
+      command = "github-mcp-server";
+      args = [ "stdio" ];
+      secretEnv = [ "GITHUB_PERSONAL_ACCESS_TOKEN" ];
+    };
     mcp.docs.url = "https://mcp.example.com/mcp";
     skills.rapport = ./skills/rapport;   # dossier avec SKILL.md
-    packages = [ pkgs.uv pkgs.pandoc ];
+    packages = [ pkgs.uv pkgs.pandoc pkgs.github-mcp-server ];
   };
 
   darkone.service.openclaw = {
@@ -149,7 +154,7 @@ Code, Codex) reçoivent les mêmes.
 
 | Option | Rôle |
 |---|---|
-| `darkone.host.ai-space.mcp` | Serveurs MCP, locaux (`command`, `args`, `env`) ou distants (`url`, `headers`) |
+| `darkone.host.ai-space.mcp` | Serveurs MCP, locaux (`command`, `args`, `env`, `secretEnv`) ou distants (`url`, `headers`) |
 | `darkone.host.ai-space.skills` | Skills par nom&nbsp;: contenu de `SKILL.md`, fichier ou dossier |
 | `darkone.host.ai-space.packages` | Outils dans le PATH de l'assistant et chez les membres |
 | `darkone.host.ai-space.enableClaude`, `enableCodex` | Claude Code et Codex, actifs par défaut |
@@ -159,8 +164,12 @@ Code, Codex) reçoivent les mêmes.
 | `darkone.service.openclaw.projects` | Dépôts git clonés une fois dans `workspace/projects/<nom>` |
 | `darkone.service.openclaw.transcription` | Transcription locale des notes vocales (whisper.cpp) |
 
-:::danger[Pas de secret dans les MCP]
-`env` et `headers` sont écrits dans le store Nix, lisible par tous.
+:::danger[Secrets des MCP&nbsp;: `secretEnv` seulement]
+`env` et `headers` sont écrits dans le store Nix, lisible par tous. Une clé
+d'API passe par `secretEnv`, pour un serveur local&nbsp;: chaque variable est
+lue dans le fichier de secrets de l'espace, sous la clé
+`mcp/<serveur>/<VARIABLE>` (`just space-sops <hôte>`, avant le déploiement).
+Un serveur distant ne reçoit aucun secret.
 :::
 
 :::note[Workspace]
