@@ -580,9 +580,9 @@ just roaming-clear
 ### ✳️ `configure-admin-host` ⭐
 
 Configure la machine d'administration : clés SSH, clés age SOPS,
-`.sops.yaml`, secrets par défaut, clé de signature Harmonia, et **tous les
-secrets internes** que réclament les services déclarés (clients OAuth2,
-sauvegarde, jetons de service…).
+`.sops.yaml`, clé de signature Harmonia, et **tous les secrets internes** que
+réclament les services déclarés (clients OAuth2, sauvegarde, jetons de
+service…).
 
 :::tip[Idempotent]
 Peut être relancé sans risque : chaque étape vérifie si elle est déjà faite, et
@@ -884,15 +884,6 @@ just invite alice a '<hash>'  # technicien, empreinte envoyée à distance
 Voir [Créer un compte utilisateur](/fr/doc/admin-guide/operate/onboarding/).
 
 {/* t:p 69245d1df6a76baa409e908bab2818947b89d962cd041c354fffc0780a336cd4 */}
-### ✳️ `passwd-default`
-
-Enregistre le mot de passe de référence du parc (empreinte bcrypt dans sops).
-Ne configure aucun compte : `just passwd <utilisateur>` s'en charge.
-
-```sh
-just passwd-default
-```
-
 {/* t:p 9fc1d5444b672479f1d02143444f1f4e13007ceaa6ee0e604e52baecb38fdf71 */}
 ### ✳️ `passwd <utilisateur> [empreinte]` ⭐
 
