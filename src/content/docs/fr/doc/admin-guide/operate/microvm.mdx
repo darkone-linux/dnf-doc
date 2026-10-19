@@ -98,8 +98,8 @@ Les invités démarrent avec l'hyperviseur.
 ## Isolation réseau
 
 Chaque invité a sa propre interface `vm-X-Y`, routée en `/32` par
-l'hyperviseur, qui répond pour lui sur le LAN (proxy ARP). Le lien de
-l'hyperviseur vers le LAN n'est pas modifié, il n'y a pas de pont.
+l'hyperviseur, qui répond pour lui sur le LAN (proxy ARP), sans pont.
+L'hyperviseur passe sous systemd-networkd, DNS fixé sur la passerelle de zone.
 
 | Flux | Autorisé |
 |---|---|
