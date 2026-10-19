@@ -45,6 +45,13 @@ nix run github:darkone-linux/darkone-nixos-framework#try
 
 Le disque est gardé d'une fois sur l'autre (`~/.local/share/dnf-try`)&nbsp;;
 `nix run …#try -- --reset` repart de zéro.
+
+Pour ne pas retélécharger le système à chaque essai, servir le store de
+l'hôte, puis répondre `http://10.0.2.2:5000` à la question du cache&nbsp;:
+
+```sh
+nix run nixpkgs#nix-serve-ng -- --host 127.0.0.1 --port 5000
+```
 :::
 
 <Steps>
@@ -71,9 +78,15 @@ Le disque est gardé d'une fois sur l'autre (`~/.local/share/dnf-try`)&nbsp;;
    Il demande la langue et le clavier, l'identité et le mot de passe de
    l'administrateur, le domaine du réseau, le nom de la machine, le disque s'il
    y en a plusieurs (pas en dessous de 20&nbsp;Go&nbsp;: la clé de sauvegarde
-   n'est jamais proposée), puis le chiffrement du disque et sa passphrase. Le reste
-   se détecte&nbsp;: portable ou poste fixe, UEFI ou BIOS, fuseau horaire du
-   pays. Disque en clair&nbsp;: une passphrase pour la sauvegarde des clés.
+   n'est jamais proposée), le chiffrement du disque, un cache de paquets
+   facultatif, puis la passphrase du disque. Le reste se détecte&nbsp;:
+   portable ou poste fixe, UEFI ou BIOS, fuseau horaire du pays. Disque en
+   clair&nbsp;: une passphrase pour la sauvegarde des clés.
+
+   Le cache (URL, clé publique facultative) sert à l'installation seulement,
+   à côté de cache.nixos.org&nbsp;: une machine du réseau local qui sert son
+   store évite de télécharger les quelque 5&nbsp;Go du système. La clé est
+   inutile pour les paquets déjà signés par cache.nixos.org.
 
 4. **Confirmer**
 
@@ -135,6 +148,9 @@ locale:
   language: "fr_FR.UTF-8"
 backup:
   device: "/dev/disk/by-label/SECOURS"   # clé USB de la sauvegarde
+cache:                                   # facultatif
+  url: "http://cache.lan:5000"
+  publicKey: "cache.lan-1:..."           # inutile si signé par cache.nixos.org
 ```
 
 ```sh
