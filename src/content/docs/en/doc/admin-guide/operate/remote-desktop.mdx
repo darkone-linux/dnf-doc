@@ -9,20 +9,21 @@ lang: en
 {/* t:translated-from fr */}
 {/* t:h 150e59b8ac8f7c4963b3c3ffddc29b63f462d42b90330b5e87ef8dfb709d0d99 */}
 
-{/* t:p 1b1f354f9b8a544ad946d1fc079dd53a451793b19f0944306e5dd5a51b1562a9 */}
-Take control of a graphical workstation in the fleet to help its user, without
-installing anything permanently and without entering a password.
+{/* t:p b426febc82a8e50a9f2c472afa044f038ed3568cecf93d23f34a66839c847e7e */}
+Take control of a graphics workstation in the fleet to troubleshoot its user,
+without installing anything permanent and without typing a password.
 
 ```sh
 just rd clemence            # observation only (default)
 just rd clemence rw         # take control
 just rd clemence login      # your own session, via GDM
+just rd clemence stop       # disarm a session left open
 ```
 
-`ro` and `rw` attach to the session **already open** on the host: if no one is
-logged in, the command stops with an error. `login` does the opposite and opens
-**your own session** behind a GDM login screen, whether or not someone is at
-the machine. See [Open your own session
+`ro` and `rw` attach to the session **already open** on the host: if
+no one is logged in, the command fails. `login` does the opposite and opens
+**your own session** behind a GDM login screen, whether someone is
+at the machine or not. See [Open your own session
 (`login`)](#opening-your-own-session-login).
 
 {/* t:p a4b6838ccdbc9ecccde2fc912eec4c8ca0edf5a660bb8e64b1bb8525f49b6d4c */}
@@ -173,13 +174,17 @@ off to the login session, which presents its own certificate. Pinning the
 first one would break the second step. It is then the tunnel, and the tunnel
 alone, that carries the trust.
 
-{/* t:p f55837e8f930415225c2a30df1e8502feff0cb61d03ac62c40c3a2c1ce8bd60d */}
-## Automatic shutdown
+{/* t:p 11d2c9c3ca3c2031c72b038370aadb0c36c77cfefd1a10e49969b3a6c370e3e6 */}
+## Automatic closure
 
-The host disarms itself after **60 minutes** (adjustable with
-`darkone.graphic.remote-desktop.timeout`). This safeguard covers the case where
-your machine shuts down, the network goes down, or the command is killed
-brutally: access cannot stay open by accident.
+The host disarms itself after **60 minutes** (configurable with
+`darkone.graphic.remote-desktop.timeout`). This safety net covers the case
+where your machine powers off, the network drops, or the command is killed
+abruptly: access cannot stay open by accident.
+
+As long as it stays armed, the host refuses any new session.
+`just rd <hôte> stop` closes it immediately, even for whoever is still
+using it.
 
 {/* t:p dd5f8a2930231aafade2ec0d5b10f7d1623139b48e03d38b780a78de7ecba804 */}
 ## The three engines
@@ -233,25 +238,25 @@ can be troubleshooted. To opt out:
 darkone.graphic.remote-desktop.embedCursor = false;
 ```
 
-{/* t:p a809db27ff44b07a0f1e97c736e10b41a10327a450fb22085297ff837fdc778d */}
-## Troubleshooting
+{/* t:p 3576a03093d0ad2dcbfcd8be4f7c8761a273f9c4cf1121ccd0d5ecf370b98f58 */}
+## In case of problem
 
 | Symptom | Likely cause |
 |---|---|
-| `nobody is logged in` | No one is logged in: `ro`/`rw` have nothing to reflect, use `login` |
+| `nobody is logged in` | No one is logged in: `ro`/`rw` have nothing to mirror, use `login` |
 | `could not arm a … session` | The `remote-desktop` feature is not declared on this host, or the host has not been redeployed |
-| `Failed to enable service: … EROFS` | Host not redeployed since the `login` mode was added: `just apply <host>` |
-| `screen sharing is already enabled` | GNOME sharing was manually enabled on this session |
-| `several active graphical sessions` | Multiple accounts have an active session on the same workstation |
-| `a support session is already open` | A session is still actually armed on the host: close it first |
-| `no DISPLAY among the processes of session …` | X11 session whose X server has disappeared (session closing): try again |
-| `the shadow server did not get port …` | The RDP port is already occupied on the host by something else |
-| The window opens then immediately closes | Verify that the host is reachable and that the tunnel could be established |
+| `Failed to enable service: … EROFS` | Host not redeployed since the `login` mode was added: `just apply <hôte>` |
+| `screen sharing is already enabled` | GNOME screen sharing was enabled manually on this session |
+| `several active graphical sessions` | Several accounts have an active session on the same machine |
+| `a support session is already armed` | Previous session not disarmed: `just rd <hôte> stop` |
+| `no DISPLAY among the processes of session …` | X11 session whose X server is gone (session being closed): try again |
+| `the shadow server did not get port …` | The RDP port is already taken on the host by something else |
+| The window opens then closes right away | Check that the host is reachable and that the tunnel could be established |
 
-To inspect host-side state:
+To inspect the state on the host side:
 
 ```sh
 just enter clemence
 sudo dnf-remote-desktop probe    # which session would be chosen
-sudo dnf-remote-desktop stop     # manually disarm
+sudo dnf-remote-desktop stop     # disarm manually
 ```

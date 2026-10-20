@@ -1119,7 +1119,7 @@ darkone.service.nfs = {
 
 <hr/>
 
-{/* t:p 06621fc3a7f49992fea52f210b113c71812328cc2dd2c7ab4fa911809c61f0b8 */}
+{/* t:p eae4a372d18481ec0cb87cfc44537262ad69819f565d43e53b8fa04eb54a03c8 */}
 ### &#x2728; darkone.service.nix-cache
 
 Per-zone Nix binary-cache proxy (nginx `proxy_cache`).
@@ -1166,7 +1166,7 @@ clients verify them. No rewrite, no database, no such bug by construction.
 ```nix
 darkone.service.nix-cache = {
   enable = false;
-  maxSize = "40g";
+  maxSize = "100g";
   roaming = (host.features or { }) ? "roaming";
 };
 ```

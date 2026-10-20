@@ -691,16 +691,21 @@ On a host without a LUKS volume, it is a logged no-op.
 just unlock myserver
 ```
 
-{/* t:p 02fa3ced2db0dd6fdcdf8d51363f67974b3c73d0ae89e57b14dcf6bd883d56c4 */}
-### ✳️ `remote-desktop <host> [ro|rw|login]` / `rd` ⭐
+{/* t:p 2715e281177819a120618eb9ca91e938906c3b2bd80d0857e4387c1c4abec02b */}
+### ✳️ `remote-desktop <host> [ro|rw|login|stop]` / `rd` ⭐
 
-Opens the remote desktop of a host. `ro` (default) watches the **already open** graphical session, `rw` takes control of it; both fail if nobody is logged in. `login` opens **your own session** behind a GDM login screen instead. No port is opened on the host: the stream goes through an SSH tunnel set up by `nix`. See
+Opens the remote desktop of a host. `ro` (default) observes the **already open**
+ graphical session, `rw` takes control of it; both fail if no one is logged in.
+`login` instead opens **your own session** behind a GDM login screen.
+`stop` disarms a session left open. No port is opened on the host: the stream
+goes through an SSH tunnel mounted by `nix`. See
 [Remote desktop](/en/doc/admin-guide/operate/remote-desktop/).
 
 ```sh
 just rd mypc                # observation
-just rd mypc rw             # take control
-just rd mypc login          # own session, via GDM
+just rd mypc rw             # prise en main
+just rd mypc login          # session à soi, via GDM
+just rd mypc stop           # désarmer une session restée ouverte
 ```
 
 {/* t:p 9b7b4e97dc24da8d0af1bcb9ff36b375c3556753bead84315fd0c1df5f548041 */}
