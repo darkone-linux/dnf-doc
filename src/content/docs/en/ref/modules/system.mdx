@@ -290,7 +290,7 @@ MicroVM hypervisor side: guests, routed taps, isolation.
 
 <hr/>
 
-{/* t:p 009e2ca2eecf34c8ea63fc92f5827290969895418ff84bd7750232f39d93eff4 */}
+{/* t:p 0f9daa663b9b571521e0f6fdafaf3202e81fb844f7bc268ea04bed99c00da68b */}
 ### &#x2699; darkone.system.microvm
 
 MicroVM guests (microvm.nix, cloud-hypervisor) on a DNF hypervisor host.
@@ -309,14 +309,21 @@ IP, services and monitoring; the hypervisor runs it and deploys it.
 - Guest side (`microvm/guest.nix`): virtiofs shares under
   `<stateDir>/<guest>/{persist,var-lib,home}`, read-only host store, host
   key on `/persist`, static `/32` link routed by the hypervisor.
-- Hypervisor side (`microvm/host.nix`): one routed tap per guest (no bridge,
-  uplink untouched), proxy ARP on the LAN, nftables isolation (`dnf-microvm`
-  table), `<stateDir>` closed to the hypervisor's users (0770) and bound
-  `nosuid,nodev` (setuid files, device nodes of a guest inert).
+- Hypervisor side (`microvm/host.nix`): one routed tap per guest (no bridge),
+  whole host on networkd with the zone gateway as static resolver, proxy ARP
+  on the LAN, nftables isolation (`dnf-microvm` table), `<stateDir>` closed
+  to the hypervisor's users (0770) and bound `nosuid,nodev` (setuid files,
+  device nodes of a guest inert).
 
 :::note[Deployment]
 Guests are no colmena nodes: deploying the hypervisor builds and restarts
 the guests whose system changed.
+:::
+
+:::caution[Store optimisation]
+Off on a hypervisor: its store is the lower layer of the guests' store
+overlay, which answers ESTALE once `nix-store --optimise` relinks a file a
+running guest has read. Never run it by hand there either.
 :::
 
 :::caution[Isolation]

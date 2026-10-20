@@ -202,6 +202,49 @@ On a `v*` tag, `release.yml` refuses to publish if&nbsp;:
 
 The three checks in `ci.yml` (unit tests, evaluation, and lint) are rerun via `workflow_call`, and the corresponding changelog section becomes the GitHub release notes.
 
+{/* t:p 090375394da0ca2783b843ea2d7935f61b8c4371cdcf476268b10a0c187b0d1a */}
+### Installer test
+
+The `installer-test.yml` workflow runs `darkone new` end-to-end in a QEMU VM (runner KVM, real network)&nbsp;: the generic ISO boots, the assistant is driven via its serial console (pexpect), then the installed system reboots and is controlled over SSH. Two scenarios run in parallel, around 25&nbsp;minutes each&nbsp;:
+
+- **scripted**&nbsp;: response file, `--non-interactive`, unencrypted disk, backup passphrase stored in a file
+- **interactive**&nbsp;: each question answered on the console, encrypted disk, backup USB key unplugged then replugged (QMP), first boot unlocked via the initrd's sshd
+
+Checks&nbsp;: auto-start on tty1, system `running` with no failed units, clean `/etc/nixos`, home page installed, second backup via `just backup-admin` from the installed system (the first is kept by date), backup opened from the host. The serial log is attached to the run.
+
+Three triggers&nbsp;:
+
+- **tag**&nbsp;: called by `release.yml`, a failure prevents the ISO from being included in the release
+- **every Monday** on `main**&nbsp;: catches breakage from nixpkgs unstable before the next tag
+- **manual**&nbsp;: `gh workflow run installer-test.yml --ref <branch>`, before a release or after ISO changes
+
+Same test locally, on the current tree's ISO or another&nbsp;:
+
+```sh
+just test-installer                 # both scenarios
+just test-installer interactive /path/to/iso
+```
+
+Disks and logs&nbsp;: `~/.cache/dnf-installer-test/<scenario>/`, around 25&nbsp;GB per scenario. Code&nbsp;: `dnf/tests/installer/`.
+
+To try the current tree manually in a QEMU window&nbsp;:
+
+```sh
+just try                                   # keep disk
+just try reset path/to/dnf-generator     # new disk, local generator
+```
+
+Unlike `nix run …#try`, the project created by the assistant is pinned to the ISO's framework via `path:` rather than the template release&nbsp;: the installed system contains unpublished code. Disk&nbsp;: `~/.local/share/dnf-try-local`.
+
+The machine's store acts as a package cache (nix-serve-ng on `127.0.0.1:5000`, started by `just try` if the port is free). The ISO sets `DNF_URL` and `DNF_CACHE`&nbsp;: relaunching `darkone new` in the VM keeps them.
+
+<Aside type="caution" title="Tag pushed, release missing">
+Never move or recreate the tag&nbsp;: FlakeHub has already published it.
+
+- Transient failure (runner down, network)&nbsp;: `gh run rerun <id> --failed` re-runs failed jobs using the tag's workflows.
+- Defect in the tagged tree&nbsp;: the version number is lost. Fix on `main`, then `just release patch`.
+</Aside>
+
 {/* t:p 76bf7c0ae965537388dc68bc0a93388c26f12d5dae428fd2ad7c9594d61c1900 */}
 ## Shared configuration
 

@@ -242,15 +242,14 @@ Côté hyperviseur MicroVM&nbsp;: invités, taps routés, isolation.
 
 <hr/>
 
-{/* t:p 009e2ca2eecf34c8ea63fc92f5827290969895418ff84bd7750232f39d93eff4 */}
+{/* t:p 0f9daa663b9b571521e0f6fdafaf3202e81fb844f7bc268ea04bed99c00da68b */}
 ### &#x2699; darkone.system.microvm
 
 Invités MicroVM (microvm.nix, cloud-hypervisor) sur un hôte hyperviseur DNF.
 
 Un invité est un hôte DNF ordinaire de l'inventaire, marqué par la
-fonctionnalité `microvm-guest:<hypervisor>` dans `etc/config.yaml`. Il conserve
-son IP de zone, ses services et sa supervision ; l'hyperviseur l'exécute et le
-déploie.
+caractéristique `microvm-guest:<hypervisor>` dans `etc/config.yaml`. Il garde son IP
+de zone, ses services et sa supervision ; l'hyperviseur l'exécute et le déploie.
 
 ```yaml
 - hostname: "space1"
@@ -260,30 +259,35 @@ déploie.
 ```
 
 - Côté invité (`microvm/guest.nix`) : partages virtiofs sous
-  `<stateDir>/<guest>/{persist,var-lib,home}`, magasin de l'hôte en lecture
-  seule, clé de l'hôte sur `/persist`, lien `/32` statique routé par
-  l'hyperviseur.
-- Côté hyperviseur (`microvm/host.nix`) : un tap routé par invité (pas de
-  bridge, uplink inchangé), proxy ARP sur le LAN, isolation nftables (table
-  `dnf-microvm`), `<stateDir>` fermé aux utilisateurs de l'hyperviseur (0770)
-  et monté `nosuid,nodev` (fichiers setuid et nœuds de périphériques d'un
-  invité inerts).
+  `<stateDir>/<guest>/{persist,var-lib,home}`, store hôte en lecture seule, clé
+  hôte sur `/persist`, lien `/32` statique routé par l'hyperviseur.
+- Côté hyperviseur (`microvm/host.nix`) : un tap routé par invité (pas de bridge),
+  tout l'hôte sur networkd avec la passerelle de zone comme résolveur statique, proxy ARP
+  sur le LAN, isolation nftables (table `dnf-microvm`), `<stateDir>` fermé
+  aux utilisateurs de l'hyperviseur (0770) et monté `nosuid,nodev` (fichiers setuid,
+  nœuds de périphériques d'un invité inertes).
 
 :::note[Déploiement]
-Les invités ne sont pas des nœuds colmena : déployer l'hyperviseur construit
-et redémarre les invités dont le système a changé.
+Les invités ne sont pas des nœuds colmena : déployer l'hyperviseur construit et redémarre
+les invités dont le système a changé.
+:::
+
+:::caution[Optimisation du store]
+Désactivée sur un hyperviseur : son store est la couche inférieure de l'overlay
+de store des invités, qui répond ESTALE une fois que `nix-store --optimise` relink un fichier qu'un
+invité en cours d'exécution a lu. Ne jamais la lancer à la main non plus.
 :::
 
 :::caution[Isolation]
-Un invité atteint Internet et le DNS de la passerelle de zone, rien d'autre sur
-le LAN, pas même l'hyperviseur. Seule la passerelle de zone (proxy inverse,
+Un invité atteint Internet et le DNS de la passerelle de zone, rien d'autre sur le
+LAN, pas même l'hyperviseur. Seule la passerelle de zone (reverse proxy,
 supervision) atteint un invité.
 :::
 
-* **hypervisor** `nullOr str` Hyperviseur exécutant cet hôte en invité microVM, null si métal nu.
+* **hypervisor** `nullOr str` Hyperviseur exécutant cet hôte comme invité microVM, null en bare metal.
 * **stateDir** `str` Répertoire de l'hyperviseur contenant un sous-répertoire de partages par invité.
-* **guest.vcpu** `ints.positive` VCPU de l'invité.
-* **guest.mem** `ints.positive` RAM de l'invité, en Mio.
+* **guest.vcpu** `ints.positive` CPUs virtuels de l'invité.
+* **guest.mem** `ints.positive` RAM de l'invité, en MiB.
 
 ```nix
 darkone.system.microvm = {

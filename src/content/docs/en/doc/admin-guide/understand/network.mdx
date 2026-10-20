@@ -197,37 +197,39 @@ Anyone who reaches port 3100 can read **and** write logs: it is
 only open on the tailnet.
 </Aside>
 
-{/* t:p 64bf8614600f988c4425408fa65e279fc8ce12ef3c29da70af870fb28cee3b4f */}
-## Names and DNS resolution
+{/* t:p a1017522b9b8c0955a4de689af72463757fa6352b456bd113d9157f30bef5df9 */}
+## DNS names and resolution
 
 Three families of names coexist on the network. All are generated from
 `etc/config.yaml`.
 
 | Name | Form | Scope | Example |
 |---|---|---|---|
-| **Simple name** | `<host>` | Entire internal network | `server` |
-| **Zone FQDN** | `<name>.<zone>.<domain>` | Entire internal network | `cloud.home.domain.tld` |
-| **Global service** | `<name>.<domain>` | Including the Internet | `git.domain.tld` |
+| **Short name** | `<hôte>` | Entire internal network | `serveur` |
+| **Zone FQDN** | `<nom>.<zone>.<domaine>` | Entire internal network | `cloud.maison.domain.tld` |
+| **Global service** | `<nom>.<domaine>` | Internet included | `git.domain.tld` |
 
-- **Simple names**: these are the **machines** (declared hosts). Resolved
+- **Short names**: these are the **machines** (declared hosts). Resolved
   everywhere on the network, to the machine's real address, whatever its zone.
 - **Zone FQDN**: these are the **services of a zone**. They point to that
   zone's gateway, which serves them through its reverse proxy.
 - **Global services**: services marked `global` in `etc/config.yaml`.
-  Exposed on the HCS with **public DNS**: reachable from anywhere.
+  Exposed on the HCS with a **public DNS**: reachable from anywhere.
 
 Who resolves what:
 
 - `dnsmasq`, on **every gateway**, knows all internal names (machines and
-  services of **all** zones): it resolves simple names and FQDNs.
+  services of **all** zones): it resolves short names and FQDNs.
 - The current zone is resolved locally; the other zones and the global domain
   are routed to the right gateway, or to the HCS pivot resolver.
-- Public (Internet) names are sent upstream to encrypted DNS, filtered by
-  AdGuardHome if it is enabled.
-- Only declared names exist&nbsp;: an unknown name under a zone answers
-  `NXDOMAIN`, without redirecting to the gateway.
-- Tailnet names (`<node>.tailnet.internal`) are relayed by each gateway to
-  MagicDNS&nbsp;: also resolved from the LANs.
+- With AdGuardHome, public (Internet) names go out encrypted (DoT/DoH),
+  filtered and cached; without it, dnsmasq relays them in clear.
+- Only declared names exist: an unknown name under a zone answers
+  `NXDOMAIN`, with no referral to the gateway.
+- Reverse resolution of an address yields the FQDN of its machine, never a
+  service it hosts.
+- Tailnet names (`<nœud>.tailnet.internal`) are relayed by each gateway to
+  MagicDNS: resolved from the LANs too.
 
 {/* t:p 85f3fe6956a70f9611dbcb98bd9f85a9a205238c879b765a9ed130bc2f4ddf0b */}
 ### The pivot resolver (HCS)

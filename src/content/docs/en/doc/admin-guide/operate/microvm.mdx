@@ -88,14 +88,15 @@ A guest is not a deployment target: `just apply <hypervisor>` builds the guests,
 | Root `/` | In memory, wiped at each boot |
 | Nix store | The hypervisor's one in read-only, plus an in-memory layer for what the guest installs (`nix shell`, Home Manager), wiped at each boot |
 
-{/* t:p 6f8c514064dc3325c5757e21a4db0858ca9cd20b9a60819f62bc35b83dab8991 */}
+{/* t:p 9ec58bcca8d6f566ab07c61e513f2dfdc6afb1214cc8b8a978f9bd71fc07413e */}
 ## Network isolation
 
-Each guest has its own `vm-X-Y` interface, routed in `/32` by the hypervisor,
-which answers for it on the LAN (proxy ARP). The hypervisor's link to the LAN
-is unchanged, there is no bridge.
+Each guest has its own `vm-X-Y` interface, routed in `/32` by the
+hypervisor, which answers for it on the LAN (proxy ARP), without a bridge.
+The hypervisor runs on systemd-networkd, with DNS fixed to the zone gateway&nbsp;:
+it can be neither this gateway, nor a host under NetworkManager.
 
-| Flow | Allowed |
+| Traffic | Allowed |
 |---|---|
 | Guest → Internet | Yes |
 | Guest → gateway DNS | Yes |
@@ -113,6 +114,13 @@ is unchanged, there is no bridge.
 Like any host, from an administration workstation: `just enter <guest>`. Its
 name is published by the gateways' DNS, which must therefore be redeployed
 after adding the guest.
+
+{/* t:p 5ef4fa8e5ab88cbc463ed0e05e92ee2c6088b35ee4794b230a5ce29f75be2983 */}
+### Optimize the hypervisor's store?
+
+No: the guest reads this store through an overlay layer, which returns *Stale
+file handle* when a file read becomes a hard link. DNF therefore does not run
+`nix-store --optimise` (the GC stays active); done manually, restart the guests.
 
 {/* t:p 5edf6712e8f1a6fb19617f07ba341ad1037ebe941aea82d9a3a530eabbd8ca37 */}
 ### How to wipe a guest?

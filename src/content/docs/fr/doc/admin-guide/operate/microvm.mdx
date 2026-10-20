@@ -94,7 +94,7 @@ Les invités démarrent avec l'hyperviseur.
 | Racine `/` | En mémoire, vidée à chaque démarrage |
 | Store Nix | Celui de l'hyperviseur en lecture seule, plus une couche en mémoire pour ce que l'invité installe (`nix shell`, Home Manager), vidée à chaque démarrage |
 
-{/* t:p 6f8c514064dc3325c5757e21a4db0858ca9cd20b9a60819f62bc35b83dab8991 */}
+{/* t:p 9ec58bcca8d6f566ab07c61e513f2dfdc6afb1214cc8b8a978f9bd71fc07413e */}
 ## Isolation réseau
 
 Chaque invité a sa propre interface `vm-X-Y`, routée en `/32` par
@@ -121,13 +121,14 @@ Comme tout hôte, depuis un poste d'administration&nbsp;: `just enter <invité>`
 Son nom est publié par le DNS des passerelles, qui doivent donc être
 redéployées après l'ajout de l'invité.
 
-{/* t:p 5edf6712e8f1a6fb19617f07ba341ad1037ebe941aea82d9a3a530eabbd8ca37 */}
+{/* t:p 5ef4fa8e5ab88cbc463ed0e05e92ee2c6088b35ee4794b230a5ce29f75be2983 */}
 ### Optimiser le store de l'hyperviseur ?
 
 Non&nbsp;: l'invité lit ce store sous une couche overlay, qui renvoie *Stale
 file handle* quand un fichier lu devient un lien dur. DNF n'y lance donc pas
 `nix-store --optimise` (le GC reste actif)&nbsp;; fait à la main, redémarrer les invités.
 
+{/* t:p 5edf6712e8f1a6fb19617f07ba341ad1037ebe941aea82d9a3a530eabbd8ca37 */}
 ### Effacer un invité ?
 
 Le retirer de `etc/config.yaml`, déployer l'hyperviseur, puis supprimer
