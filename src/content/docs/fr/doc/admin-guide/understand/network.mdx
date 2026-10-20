@@ -228,8 +228,8 @@ Qui résout quoi :
   et services de **toutes** les zones) : il résout les noms simples et les FQDN.
 - La zone courante est résolue localement ; les autres zones et le domaine global
   sont aiguillés vers la bonne passerelle, ou vers le résolveur pivot du HCS.
-- Les noms publics (Internet) partent vers les DNS chiffrés en amont, filtrés et
-  mis en cache par AdGuardHome s'il est activé.
+- Avec AdGuardHome, les noms publics (Internet) partent chiffrés (DoT/DoH),
+  filtrés et mis en cache&nbsp;; sans lui, dnsmasq les relaie en clair.
 - Seuls les noms déclarés existent&nbsp;: un nom inconnu sous une zone répond
   `NXDOMAIN`, sans renvoi vers la passerelle.
 - La résolution inverse d'une adresse donne le FQDN de sa machine, jamais un
