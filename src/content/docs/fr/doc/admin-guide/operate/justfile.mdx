@@ -759,12 +759,13 @@ just unlock myserver
 ```
 
 {/* t:p 02fa3ced2db0dd6fdcdf8d51363f67974b3c73d0ae89e57b14dcf6bd883d56c4 */}
-### ✳️ `remote-desktop <hôte> [ro|rw|login]` / `rd` ⭐
+### ✳️ `remote-desktop <hôte> [ro|rw|login|stop]` / `rd` ⭐
 
 Ouvre le bureau à distance d'un hôte. `ro` (défaut) observe la session
 graphique **déjà ouverte**, `rw` y prend la main ; les deux échouent si
 personne n'est connecté. `login` ouvre à la place **votre propre session**
-derrière un écran de login GDM. Aucun port n'est ouvert sur l'hôte : le flux
+derrière un écran de login GDM. `stop` désarme une session restée ouverte.
+Aucun port n'est ouvert sur l'hôte : le flux
 passe par un tunnel SSH monté par `nix`. Voir
 [Bureau à distance](/fr/doc/admin-guide/operate/remote-desktop/).
 
@@ -772,6 +773,7 @@ passe par un tunnel SSH monté par `nix`. Voir
 just rd mypc                # observation
 just rd mypc rw             # prise en main
 just rd mypc login          # session à soi, via GDM
+just rd mypc stop           # désarmer une session restée ouverte
 ```
 
 {/* t:p 9b7b4e97dc24da8d0af1bcb9ff36b375c3556753bead84315fd0c1df5f548041 */}

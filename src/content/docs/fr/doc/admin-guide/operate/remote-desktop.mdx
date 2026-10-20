@@ -17,6 +17,7 @@ sans rien installer de permanent et sans mot de passe à saisir.
 just rd clemence            # observation seule (défaut)
 just rd clemence rw         # prise en main
 just rd clemence login      # votre propre session, via GDM
+just rd clemence stop       # désarmer une session restée ouverte
 ```
 
 `ro` et `rw` se rattachent à la session **déjà ouverte** sur l'hôte : si
@@ -184,6 +185,10 @@ L'hôte se désarme tout seul au bout de **60 minutes** (réglable avec
 poste s'éteint, où le réseau tombe, ou où la commande est tuée brutalement :
 l'accès ne peut pas rester ouvert par accident.
 
+Tant qu'elle reste armée, l'hôte refuse toute nouvelle session.
+`just rd <hôte> stop` la ferme sans attendre, y compris pour qui l'utilise
+encore.
+
 {/* t:p dd5f8a2930231aafade2ec0d5b10f7d1623139b48e03d38b780a78de7ecba804 */}
 ## Les trois moteurs
 
@@ -246,7 +251,7 @@ darkone.graphic.remote-desktop.embedCursor = false;
 | `Failed to enable service: … EROFS` | Hôte pas redéployé depuis l'ajout du mode `login` : `just apply <hôte>` |
 | `screen sharing is already enabled` | Le partage GNOME a été activé à la main sur cette session |
 | `several active graphical sessions` | Plusieurs comptes ont une session active sur le même poste |
-| `a support session is already open` | Une session est réellement encore armée sur l'hôte : la fermer d'abord |
+| `a support session is already armed` | Session précédente non désarmée : `just rd <hôte> stop` |
 | `no DISPLAY among the processes of session …` | Session X11 dont le serveur X a disparu (session en cours de fermeture) : réessayer |
 | `the shadow server did not get port …` | Le port RDP est déjà occupé sur l'hôte par autre chose |
 | La fenêtre s'ouvre puis se ferme aussitôt | Vérifier que l'hôte est joignable et que le tunnel a pu se monter |
