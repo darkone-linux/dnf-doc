@@ -171,6 +171,7 @@ Options de `darkone.home.umi`, à poser dans `usr/users/<login>/default.nix`.
 | `enable` | activé par le profil | Active le profil d'utilisateur |
 | `enableTalonAutostart` | `true` | Lance Talon à l'ouverture de session |
 | `communityScripts` | `null` | Arbre `talonhub/community` déployé dans `~/.talon/user/community` |
+| `enableSpeech` | `false` | Reconnaissance vocale active au démarrage de Talon |
 | `enableDwell` | `false` | Clic par temporisation permanent |
 | `enableTrackerAuto` | `true` | Regard et clic suivent le traqueur |
 | `gazeFilterSpeed` | `1.0` | Réactivité du regard (celle de Talon) |
@@ -204,6 +205,13 @@ survole**. `enableDwell` ne sert alors que sous GNOME.
 `enableGazeControl`, `enableHeadControl`, `enableHeadJump`, `enableMouseJump`
 et `enableGazeFocus` sont réimposés à chaque démarrage de Talon. Un changement
 fait depuis le menu dure jusqu'au prochain démarrage.
+:::
+
+:::note[Reconnaissance vocale en veille]
+Sans `enableSpeech`, Talon met la reconnaissance vocale en veille à chaque
+démarrage&nbsp;: une parole fortuite ne déclenche aucune commande. Le menu de
+Talon ou `actions.speech.enable()` (REPL) la réveille jusqu'au prochain
+démarrage.
 :::
 
 :::tip[Apports communautaires]
