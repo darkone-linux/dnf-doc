@@ -255,10 +255,11 @@ Code, Codex, OpenCode) reçoivent les mêmes.
 | `darkone.host.ai-space.skills` | Skills par nom&nbsp;: contenu de `SKILL.md`, fichier ou dossier |
 | `darkone.host.ai-space.packages` | Outils dans le PATH de l'assistant et chez les membres |
 | `darkone.host.ai-space.enableClaude`, `enableCodex`, `enableOpenCode` | Claude Code, Codex et OpenCode, actifs par défaut |
+| `darkone.host.ai-space.projectsDir` | Dossier projets partagé (défaut `/var/lib/projects`) |
 | `darkone.service.openclaw.exec` | Politique des commandes (cf. [Sécurité](#sécurité)) |
 | `darkone.service.openclaw.identity` | Nom, emoji et avatar de l'assistant (`name`, `emoji`, `avatar`) |
 | `darkone.service.openclaw.workspace` | Fichiers du workspace de l'assistant (`AGENTS.md`, `SOUL.md`…) |
-| `darkone.service.openclaw.projects` | Dépôts git clonés une fois dans `workspace/projects/<nom>` |
+| `darkone.service.openclaw.projects` | Dépôts git clonés une fois dans le dossier projets |
 | `darkone.service.openclaw.transcription` | Transcription des notes vocales (cf. [Transcription](#transcription)) |
 
 :::danger[Secrets des MCP&nbsp;: `secretEnv` seulement]
@@ -295,6 +296,36 @@ lui-même avec `small`. `transcription.backend = "local"` garde toujours la
 transcription dans l'invité. La langue est détectée à chaque note&nbsp;;
 `transcription.language = "fr"` la fixe.
 
+## Projets et agents de code
+
+Le dossier projets (`/var/lib/projects`, lien `~/projects` chez chaque membre)
+est partagé&nbsp;: tout fichier créé par un membre ou par l'assistant reste
+modifiable par les autres. C'est le dossier de travail de l'assistant&nbsp;; ses
+consignes et sa mémoire restent dans son workspace.
+
+Depuis la conversation (web ou Matrix), l'assistant confie du code à Claude
+Code, Codex ou OpenCode&nbsp;:
+
+| Mode | Usage |
+|---|---|
+| `/acp spawn claude` (ou `codex`, `opencode`) | Session de code liée à la conversation, reprise possible |
+| Tâche de fond (skill `coding-agent`) | Travail long, fin signalée par message |
+
+Chaque outil se connecte une fois, sur l'hôte&nbsp;:
+
+| Outil | Connexion |
+|---|---|
+| Claude Code | Celle du propriétaire (cf. [Créer un espace](#créer-un-espace)) |
+| Codex (session) | `sudo -u openclaw -H codex login --device-auth` |
+| Codex (tâche de fond) | `sudo -u openclaw -H env CODEX_HOME=/var/lib/openclaw/.codex-coding-agent codex login --device-auth` |
+| OpenCode | `sudo -u openclaw -H opencode auth login` |
+
+:::caution[Mise à jour]
+Les `projects` étaient clonés dans `/var/lib/openclaw/workspace/projects/`.
+Ils le sont désormais dans le dossier projets&nbsp;: y déplacer les clones
+existants, ou les laisser se recloner au prochain démarrage.
+:::
+
 {/* t:p af852a791264318fe5372ce41ab42561d6c0a6566b69718303a03d2184a6480d */}
 ## Comptes des membres
 
@@ -306,7 +337,7 @@ Chaque membre a un compte Linux sur l'espace, allégé&nbsp;:
 | Outils de l'espace | Claude Code, Codex et OpenCode, avec les MCP et skills de l'espace (`darkone.home.aiSpace`) |
 | Personnalisations | `usr/users/<login>/space.nix` (tous ses espaces), puis `usr/users/<login>/spaces/<hôte>.nix` (cet espace), s'ils existent |
 | `usr/users/<login>/default.nix` | Ignoré&nbsp;: réservé à ses postes |
-| Droits | Aucun groupe (pas de `sudo`), quel que soit son profil |
+| Droits | Groupe `projects` seulement (pas de `sudo`), quel que soit son profil |
 
 L'administration de l'espace passe par le compte `nix` (`just enter <hôte>`).
 
@@ -356,8 +387,8 @@ avec sa valeur.
 Par défaut, l'assistant exécute ses commandes sans validation, comme
 OpenClaw&nbsp;: la barrière est l'espace lui-même (microVM coupée du LAN,
 secrets propres à l'espace). Son service est en plus confiné&nbsp;: il n'écrit
-que dans `/var/lib/openclaw` et ne voit ni les dossiers ni les processus des
-membres.
+que dans `/var/lib/openclaw` et le dossier projets, et ne voit ni les dossiers
+personnels ni les processus des membres.
 
 `darkone.service.openclaw.exec` choisit la politique&nbsp;:
 
