@@ -18,7 +18,8 @@ Un **espace IA** est un hôte DNF de profil `ai-space`, en général un
 et ses propres données.
 
 :::caution[En cours]
-Accès web, SSO, canal Matrix, Claude Code, Codex, MCP et skills en place.
+Accès web, SSO, canal Matrix, Claude Code, Codex, OpenCode, MCP et skills en
+place.
 Hermes arrive dans une prochaine version.
 :::
 
@@ -127,7 +128,7 @@ ses messages comme non vérifiés.
 
 Les MCP, les skills et les outils se déclarent une seule fois par espace, dans
 `usr/machines/<hôte>/configuration.nix`. L'assistant et chaque membre (Claude
-Code, Codex) reçoivent les mêmes.
+Code, Codex, OpenCode) reçoivent les mêmes.
 
 ```nix
 { pkgs, ... }:
@@ -159,7 +160,7 @@ Code, Codex) reçoivent les mêmes.
 | `darkone.host.ai-space.mcp` | Serveurs MCP, locaux (`command`, `args`, `env`, `secretEnv`) ou distants (`url`, `headers`) |
 | `darkone.host.ai-space.skills` | Skills par nom&nbsp;: contenu de `SKILL.md`, fichier ou dossier |
 | `darkone.host.ai-space.packages` | Outils dans le PATH de l'assistant et chez les membres |
-| `darkone.host.ai-space.enableClaude`, `enableCodex` | Claude Code et Codex, actifs par défaut |
+| `darkone.host.ai-space.enableClaude`, `enableCodex`, `enableOpenCode` | Claude Code, Codex et OpenCode, actifs par défaut |
 | `darkone.service.openclaw.exec` | Politique des commandes (cf. [Sécurité](#sécurité)) |
 | `darkone.service.openclaw.identity` | Nom, emoji et avatar de l'assistant (`name`, `emoji`, `avatar`)&nbsp;: la configuration étant en lecture seule, l'assistant ne peut pas les changer lui-même |
 | `darkone.service.openclaw.workspace` | Fichiers du workspace de l'assistant (`AGENTS.md`, `SOUL.md`…) |
@@ -197,7 +198,7 @@ Chaque membre a un compte Linux sur l'espace, allégé&nbsp;:
 | Élément | Sur l'espace |
 |---|---|
 | Profil Home Manager | `space-member` (zsh, git, vim, tmux), à la place du sien |
-| Outils de l'espace | Claude Code et Codex, avec les MCP et skills de l'espace (`darkone.home.aiSpace`) |
+| Outils de l'espace | Claude Code, Codex et OpenCode, avec les MCP et skills de l'espace (`darkone.home.aiSpace`) |
 | Personnalisations | `usr/users/<login>/space.nix` (tous ses espaces), puis `usr/users/<login>/spaces/<hôte>.nix` (cet espace), s'ils existent |
 | `usr/users/<login>/default.nix` | Ignoré&nbsp;: réservé à ses postes |
 | Droits | Aucun groupe (pas de `sudo`), quel que soit son profil |
@@ -211,7 +212,8 @@ configuration git, autres modules importés. Un MCP personnel s'y ajoute par
 :::
 
 Chaque membre connecte ses propres abonnements, une fois&nbsp;: `claude` (puis
-`/login`) et `codex login --device-auth`.
+`/login`), `codex login --device-auth` et `opencode auth login`. OpenCode
+accepte un abonnement ChatGPT ou une clé d'API, pas l'abonnement Claude.
 
 {/* t:p 13d78da76f2e42a7f786ae3486d440dee2d4f0a9b03a5322383514efc9962f0f */}
 ## Accès
