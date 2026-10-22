@@ -326,6 +326,45 @@ Ils le sont désormais dans le dossier projets&nbsp;: y déplacer les clones
 existants, ou les laisser se recloner au prochain démarrage.
 :::
 
+## Workflows
+
+| Outil | Usage |
+|---|---|
+| Automatisations | Tâches planifiées de l'assistant (briefing du matin, veille) |
+| [Lobster](https://docs.openclaw.ai/tools/lobster) | Enchaînement d'étapes avec validations, reprise sans tout refaire |
+
+L'assistant et l'interface créent leurs propres automatisations&nbsp;; Nix
+peut aussi en déclarer&nbsp;:
+
+```nix
+# usr/machines/ia-pro/configuration.nix
+{
+  darkone.service.openclaw.automations.briefing = {
+    schedule = "0 7 * * 1-5"; # cron, ou "every 2h"
+    message = "Résume mon agenda et mes mails non lus.";
+  };
+}
+```
+
+| Option | Rôle |
+|---|---|
+| `schedule`, `message` | Quand, et la demande faite à l'assistant |
+| `announce` | Envoie la réponse dans la conversation (défaut) |
+| `model` | Modèle propre à cette tâche |
+| `enable` | `false`&nbsp;: désactivée, puis réactivable depuis l'interface seulement |
+
+Les automatisations déclarées sont resynchronisées à chaque démarrage&nbsp;: une
+modification faite dans l'interface est écrasée, une déclaration retirée
+supprime sa tâche. Les autres ne sont jamais touchées.
+
+Lobster s'active par `lobster = true`&nbsp;; ses fichiers passent par le
+workspace (`workspace."workflows/tri.lobster" = ./tri.lobster;`), et
+l'assistant les lance à la demande.
+
+:::caution[À valider]
+Lobster n'a pas encore été essayé sur un espace.
+:::
+
 {/* t:p af852a791264318fe5372ce41ab42561d6c0a6566b69718303a03d2184a6480d */}
 ## Comptes des membres
 
