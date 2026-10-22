@@ -73,13 +73,14 @@ Hermes arrive dans une prochaine version.
 
 4. **Connecter le fournisseur d'IA**
 
-   Une fois par espace, depuis l'hôte (`just enter ia-pro`), selon le modèle
-   de l'espace (`darkone.service.openclaw.model`)&nbsp;:
+   Une fois par espace, depuis l'hôte (`just enter ia-pro`), pour chaque
+   abonnement du propriétaire qui sert aux modèles de l'espace (cf.
+   [Modèles et abonnements](#modèles-et-abonnements))&nbsp;:
 
-   | Modèle | Abonnement | Connexion |
+   | Abonnement | Modèles | Connexion |
    |---|---|---|
-   | `anthropic/*` (défaut&nbsp;: `anthropic/claude-sonnet-5-5`) | Claude Pro/Max, par le CLI `claude` | `sudo -u openclaw -H claude auth login` |
-   | `openai/*` | ChatGPT Plus/Pro, par le plugin `codex` | `openclaw models auth login --provider openai` |
+   | Claude Pro/Max, par le CLI `claude` | `anthropic/*` (défaut&nbsp;: `anthropic/claude-sonnet-5-5`) | `sudo -u openclaw -H claude auth login` |
+   | ChatGPT Plus/Pro, par le plugin `codex` | `openai/*` | `openclaw models auth login --provider openai` |
 
    La commande `openclaw` de l'hôte passe d'elle-même sous l'utilisateur du
    service. `openclaw models status` vérifie la connexion, qui reste dans
@@ -100,6 +101,71 @@ Un espace créé avant le mot de passe local de l'assistant doit repasser par
 `openclaw-gateway-password`, par lequel la commande `openclaw` de l'hôte joint
 le service.
 :::
+
+## Modèles et abonnements
+
+Un modèle passe par l'abonnement du propriétaire quand son fournisseur figure
+dans `subscriptions`, sinon par une clé d'API.
+
+```nix
+# usr/machines/ia-pro/configuration.nix
+{
+  darkone.service.openclaw = {
+    model = "anthropic/claude-sonnet-5-5";
+    extraModels = [ "openai/gpt-6-astra" "openrouter/moonshotai/kimi-k3" ];
+    subscriptions = [ "anthropic" "openai" ]; # défaut
+    apiKeys = [ "OPENROUTER_API_KEY" ];
+  };
+}
+```
+
+| Option | Rôle |
+|---|---|
+| `model` | Modèle principal, `<fournisseur>/<modèle>` |
+| `extraModels` | Autres modèles, choisis dans la conversation par `/model` |
+| `subscriptions` | Abonnements du propriétaire&nbsp;: `anthropic`, `openai` |
+| `apiKeys` | Clés d'API, par nom de variable |
+| `providers` | Fournisseurs absents d'OpenClaw, compatibles OpenAI |
+
+Chaque clé (`apiKeys`, `providers.<nom>.apiKey`) se range avant le
+déploiement dans les secrets de l'espace, sous `openclaw/<VARIABLE>`
+(`just space-sops <hôte>`).
+
+:::caution[Clé Anthropic et abonnement Claude]
+Le CLI `claude` préfère `ANTHROPIC_API_KEY` à sa connexion&nbsp;: à côté de
+l'abonnement `anthropic`, DNF ne transmet pas cette clé. Pour payer Claude à
+l'usage, retirer `anthropic` de `subscriptions`.
+:::
+
+### Fournisseur compatible OpenAI
+
+Un fournisseur absent d'OpenClaw, comme Nous Portal, se déclare avec son
+adresse, sa clé et ses modèles&nbsp;:
+
+```nix
+# usr/machines/ia-pro/configuration.nix
+{
+  darkone.service.openclaw = {
+    providers.nous = {
+      baseUrl = "https://inference-api.nousresearch.com/v1";
+      apiKey = "NOUS_API_KEY";
+      models = [ "Hermes-4-405B" ];
+    };
+    model = "nous/Hermes-4-405B";
+  };
+}
+```
+
+### Abonnements partagés
+
+| Usage | Compte |
+|---|---|
+| Assistant (web, Matrix, tâches planifiées) | Celui du propriétaire, quota partagé par les membres |
+| Claude Code, Codex, OpenCode d'un membre | Le sien |
+
+Un abonnement personnel (ChatGPT, Claude) partagé par plusieurs membres sort
+des conditions d'utilisation&nbsp;: un espace d'équipe prend un plan équipe ou
+des clés d'API (`subscriptions = [ ]`).
 
 {/* t:p 40b4d7b161383c61324360dbbbbbfc669a55a4a7a8640d6b3d356a9eceb36ee2 */}
 ## Matrix
@@ -236,12 +302,6 @@ accepte un abonnement ChatGPT ou une clé d'API, pas l'abonnement Claude.
 | Appareil | Appairé à la première visite, sans droit d'administration ni de validation (propriétaire seul, cf. [Configuration modifiable](#configuration-modifiable)) |
 | Administration | `openclaw …` sur l'hôte, depuis le compte `nix` |
 | Port de l'assistant | Joignable depuis la passerelle de la zone seulement |
-
-:::note[Un abonnement par personne]
-Un abonnement personnel (ChatGPT, Claude) partagé par plusieurs membres sort
-des conditions d'utilisation&nbsp;: un espace d'équipe prend un plan équipe ou
-des clés d'API.
-:::
 
 ## Configuration modifiable
 
