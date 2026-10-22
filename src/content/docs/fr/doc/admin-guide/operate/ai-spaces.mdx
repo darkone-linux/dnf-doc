@@ -189,6 +189,34 @@ verify status` sur l'hôte). Tant qu'elle n'est pas vérifiée, Element signale
 ses messages comme non vérifiés.
 :::
 
+## Conversation orale
+
+Le bouton micro de l'interface web ouvre une conversation à la voix,
+interruptible, sur PC comme sur téléphone. La voix temps réel d'OpenAI
+(GPT-Live) répond&nbsp;; l'assistant de l'espace fait le travail (outils,
+fichiers, MCP), quel que soit son modèle.
+
+```nix
+# usr/machines/ia-pro/configuration.nix
+{ darkone.service.openclaw.talk.enable = true; }
+```
+
+| Option | Défaut | Rôle |
+|---|---|---|
+| `talk.model` | `gpt-live-1-codex` | Abonnement ChatGPT, sinon `OPENAI_API_KEY` |
+| `talk.voice` | `cove` | Aussi `arbor`, `breeze`, `ember`, `juniper`, `maple`, `sol`, `spruce`, `vale` |
+| `talk.instructions` | aucune | Consignes ajoutées (langue, ton) |
+
+Il faut la connexion ChatGPT du propriétaire
+(`openclaw models auth login --provider openai`), même avec un assistant sous
+Claude, ou une clé `OPENAI_API_KEY` (cf.
+[Modèles et abonnements](#modèles-et-abonnements)). Huit conversations au plus
+à la fois, de 30 minutes chacune.
+
+:::caution[À valider]
+Pas encore essayé dans un navigateur ni sur téléphone.
+:::
+
 {/* t:p d9ef2b38d1574d50c3ecf8d8ff8bbc03610ec08e3bd1fbd08679559b292d38c1 */}
 ## Outils des agents
 
