@@ -162,7 +162,7 @@ Code, Codex, OpenCode) reçoivent les mêmes.
 | `darkone.host.ai-space.packages` | Outils dans le PATH de l'assistant et chez les membres |
 | `darkone.host.ai-space.enableClaude`, `enableCodex`, `enableOpenCode` | Claude Code, Codex et OpenCode, actifs par défaut |
 | `darkone.service.openclaw.exec` | Politique des commandes (cf. [Sécurité](#sécurité)) |
-| `darkone.service.openclaw.identity` | Nom, emoji et avatar de l'assistant (`name`, `emoji`, `avatar`)&nbsp;: la configuration étant en lecture seule, l'assistant ne peut pas les changer lui-même |
+| `darkone.service.openclaw.identity` | Nom, emoji et avatar de l'assistant (`name`, `emoji`, `avatar`) |
 | `darkone.service.openclaw.workspace` | Fichiers du workspace de l'assistant (`AGENTS.md`, `SOUL.md`…) |
 | `darkone.service.openclaw.projects` | Dépôts git clonés une fois dans `workspace/projects/<nom>` |
 | `darkone.service.openclaw.transcription` | Transcription des notes vocales (cf. [Transcription](#transcription)) |
@@ -233,7 +233,7 @@ accepte un abonnement ChatGPT ou une clé d'API, pas l'abonnement Claude.
 |---|---|
 | Adresse | `https://openclaw.<zone>.<domaine>` |
 | Connexion | SSO Kanidm, réservé au groupe `space-<hôte>` |
-| Appareil | Appairé à la première visite, sans droit d'administration ni de validation (propriétaire seul) |
+| Appareil | Appairé à la première visite, sans droit d'administration ni de validation (propriétaire seul, cf. [Configuration modifiable](#configuration-modifiable)) |
 | Administration | `openclaw …` sur l'hôte, depuis le compte `nix` |
 | Port de l'assistant | Joignable depuis la passerelle de la zone seulement |
 
@@ -241,6 +241,25 @@ accepte un abonnement ChatGPT ou une clé d'API, pas l'abonnement Claude.
 Un abonnement personnel (ChatGPT, Claude) partagé par plusieurs membres sort
 des conditions d'utilisation&nbsp;: un espace d'équipe prend un plan équipe ou
 des clés d'API.
+:::
+
+## Configuration modifiable
+
+Par défaut, Nix fige la configuration de l'assistant&nbsp;: l'interface web
+l'affiche en lecture seule. `darkone.service.openclaw.mutableConfig = true` la
+rend modifiable, dans l'interface ou par `openclaw config set` sur l'hôte, et
+donne au propriétaire le droit d'administration.
+
+| Réglages | Qui décide |
+|---|---|
+| Accès, canal Matrix, plugins, MCP, transcription | Nix&nbsp;: rétablis au démarrage et à chaque modification |
+| Modèle, commandes, identité | Nix au premier démarrage, puis l'interface |
+| Autres | L'interface |
+
+:::caution[Réglage semé par Nix]
+Une fois écrit, un réglage du modèle, des commandes ou de l'identité ne suit
+plus Nix. `openclaw config unset <clé>` le retire&nbsp;: Nix le réécrit aussitôt
+avec sa valeur.
 :::
 
 {/* t:p 6d7ba3ce71d1bc2bce1ee9ec7097ed48e80f06502d206dcb65c36560e9517843 */}
