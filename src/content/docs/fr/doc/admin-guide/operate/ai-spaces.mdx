@@ -165,7 +165,7 @@ Code, Codex, OpenCode) reçoivent les mêmes.
 | `darkone.service.openclaw.identity` | Nom, emoji et avatar de l'assistant (`name`, `emoji`, `avatar`)&nbsp;: la configuration étant en lecture seule, l'assistant ne peut pas les changer lui-même |
 | `darkone.service.openclaw.workspace` | Fichiers du workspace de l'assistant (`AGENTS.md`, `SOUL.md`…) |
 | `darkone.service.openclaw.projects` | Dépôts git clonés une fois dans `workspace/projects/<nom>` |
-| `darkone.service.openclaw.transcription` | Transcription locale des notes vocales (whisper.cpp) |
+| `darkone.service.openclaw.transcription` | Transcription des notes vocales (cf. [Transcription](#transcription)) |
 
 :::danger[Secrets des MCP&nbsp;: `secretEnv` seulement]
 `env` et `headers` sont écrits dans le store Nix, lisible par tous. Une clé
@@ -186,9 +186,20 @@ SSH utilise la clé de l'utilisateur `openclaw`, à créer une fois
 acceptée au premier clonage.
 :::
 
-Les notes vocales, Matrix ou web, sont transcrites sur l'espace avec le modèle
-`small` de whisper.cpp (466&nbsp;Mo, sur CPU), sans service externe. La langue
-est détectée à chaque note&nbsp;; `transcription.language = "fr"` la fixe.
+### Transcription
+
+Les notes vocales, Matrix ou web, sont transcrites par whisper.cpp, sans
+service externe&nbsp;:
+
+| Espace | Transcription |
+|---|---|
+| Invité microVM | Serveur de l'hyperviseur, modèle `large-v3-turbo` |
+| Machine physique | Sur l'espace, modèle `small` (466&nbsp;Mo, CPU) |
+
+Serveur de l'hyperviseur injoignable ou trop lent&nbsp;: l'espace transcrit
+lui-même avec `small`. `transcription.backend = "local"` garde toujours la
+transcription dans l'invité. La langue est détectée à chaque note&nbsp;;
+`transcription.language = "fr"` la fixe.
 
 {/* t:p af852a791264318fe5372ce41ab42561d6c0a6566b69718303a03d2184a6480d */}
 ## Comptes des membres
