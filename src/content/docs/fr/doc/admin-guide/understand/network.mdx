@@ -190,7 +190,7 @@ jamais sur toutes. Trois périmètres coexistent&nbsp;:
 |---|---|---|
 | Tailnet | `tailscale0` | Loki (journaux), relais des services exposés |
 | Réseau local | `lan0` sur une passerelle, l'interface unique ailleurs | DNS, DHCP, page d'accueil, cache Nix |
-| Liste d'adresses | règle `ip saddr`, ou liste de clients côté service | partages NFS, jeux en réseau local |
+| Liste d'adresses | règle `ip saddr`, ou liste de clients côté service | partages NFS, jeux en réseau (zones et tailnet) |
 
 Le troisième cas existe parce qu'un préfixe de zone n'est pas une
 identité&nbsp;: toute machine qui obtient une adresse locale en fait partie,
