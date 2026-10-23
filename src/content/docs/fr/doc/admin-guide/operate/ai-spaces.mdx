@@ -83,7 +83,8 @@ Hermes arrive dans une prochaine version.
    | ChatGPT Plus/Pro, par le plugin `codex` | `openai/*` | `openclaw models auth login --provider openai` |
 
    La commande `openclaw` de l'hôte passe d'elle-même sous l'utilisateur du
-   service. `openclaw models status` vérifie la connexion, qui reste dans
+   service, aussi depuis le compte du propriétaire (cf. [Accès](#accès)).
+   `openclaw models status` vérifie la connexion, qui reste dans
    `/var/lib/openclaw`, persistant.
 
 </Steps>
@@ -91,8 +92,8 @@ Hermes arrive dans une prochaine version.
 :::note[Pourquoi un utilisateur `openclaw`]
 L'assistant lit des contenus non fiables (web, messages, documents)&nbsp;: un
 utilisateur système dédié le tient à l'écart des comptes des membres, de
-leurs clés et de leurs connexions. Les membres n'ont pas `sudo` (réservé au
-groupe `wheel`)&nbsp;: l'administration passe par le compte `nix`.
+leurs clés et de leurs connexions. Les membres n'ont pas `sudo`, hors le CLI
+`openclaw` (cf. [Accès](#accès))&nbsp;: l'administration passe par le compte `nix`.
 :::
 
 :::caution[Mise à jour]
@@ -383,7 +384,7 @@ Chaque membre a un compte Linux sur l'espace, allégé&nbsp;:
 | Outils de l'espace | Claude Code, Codex et OpenCode, avec les MCP et skills de l'espace (`darkone.home.aiSpace`) |
 | Personnalisations | `usr/users/<login>/space.nix` (tous ses espaces), puis `usr/users/<login>/spaces/<hôte>.nix` (cet espace), s'ils existent |
 | `usr/users/<login>/default.nix` | Ignoré&nbsp;: réservé à ses postes |
-| Droits | Groupe `projects` seulement (pas de `sudo`), quel que soit son profil |
+| Droits | Groupe `projects`, pas de `sudo` hors CLI `openclaw`, quel que soit son profil |
 
 L'administration de l'espace passe par le compte `nix` (`just enter <hôte>`).
 
@@ -405,8 +406,19 @@ accepte un abonnement ChatGPT ou une clé d'API, pas l'abonnement Claude.
 | Adresse | `https://openclaw.<zone>.<domaine>` |
 | Connexion | SSO Kanidm, réservé au groupe `space-<hôte>` |
 | Appareil | Appairé à la première visite, sans droit d'administration ni de validation (propriétaire seul, cf. [Configuration modifiable](#configuration-modifiable)) |
-| Administration | `openclaw …` sur l'hôte, depuis le compte `nix` |
+| Administration | CLI `openclaw` sur l'hôte |
 | Port de l'assistant | Joignable depuis la passerelle de la zone seulement |
+
+Seul, `openclaw` ouvre le terminal de l'assistant (comme `openclaw tui`). Il
+tourne sous l'utilisateur du service, pour le compte `nix` et, par une règle
+sudo, pour `darkone.service.openclaw.cliUsers` (défaut&nbsp;: le propriétaire).
+Les autres membres passent par l'interface web.
+
+:::caution[Le CLI vaut le compte `openclaw`]
+Connexions aux abonnements, droit d'administration, commandes `!` du
+terminal&nbsp;: n'ajouter à `cliUsers` que des membres à qui confier le service.
+Avec `sudo` réservé au groupe `wheel` (durcissement R38), `cliUsers` reste vide.
+:::
 
 {/* t:p 2cdacb9687eb7834712a6a8a05a723cf9dc7efc459f080caf225ab4462bd568e */}
 ## Configuration modifiable
