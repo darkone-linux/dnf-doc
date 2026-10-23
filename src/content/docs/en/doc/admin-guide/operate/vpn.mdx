@@ -146,36 +146,39 @@ A gateway enrolls like any machine&nbsp;; two points are specific to it.
 
 </Steps>
 
-{/* t:p 3d4ec5d7b872481a857d69b7835d59c93c148bf5ce73d82110d52dc163160d9c */}
-## Connect a personal device
+{/* t:p 27a1e350c3b555a2d63a16c60c944b1292d82bbc1ff0dd111890d14f55f9d447 */}
+## Connecting a personal device
 
-A smartphone or personal computer connects with the [Kanidm](/en/doc/admin-guide/understand/auth-idm/) identity of its owner&nbsp;: no key, no manual approval.
+A smartphone or personal computer connects with its owner's
+[Kanidm](/en/doc/admin-guide/understand/auth-idm/) identity&nbsp;: no key,
+no manual approval.
 
 | Can connect | Condition in `etc/config.yaml` |
 |---|---|
 | Administrator | `admin` or `nix-admin` profile |
-| Zone member | `zone-<zone>` group |
+| Member of a zone | `zone-<zone>` group |
 
-These accounts form the `tailnet` Kanidm group, provisioned automatically&nbsp;; Kanidm refuses the others. To open access, add the group to the user, regenerate, then `just apply hcs`. The user then follows [Connect a device](/en/doc/how-to/user/connect-device/#from-outside).
+These accounts form the `tailnet` Kanidm group, provisioned automatically&nbsp;; Kanidm
+refuses the others. To open access, add the group to the user,
+regenerate, then `just apply hcs`. The user then follows [Connecting a
+device](/en/doc/how-to/user/connect-device/#from-outside).
 
-The device reaches the **web services** (HTTPS) of its zones and of the HCS, nothing else. A Samba share, a printer or SSH requires a rule&nbsp;: see [Adapt the access policy](#adapt-the-access-policy).
+The device reaches the **web services** (HTTPS) of its zones and of the HCS, nothing else.
+A Samba share, a printer or SSH require a rule&nbsp;: see [Adapting
+the access policy](#adapt-the-access-policy).
 
-The device belongs to the person (`alice@`) and **expires after 180 days**&nbsp;: they then reconnect with their identifier.
+The device belongs to the person (`alice@`) and **expires after 180 days**&nbsp;:
+the person then reconnects with their credentials.
 
-**Remove access**&nbsp;: remove the group, `just apply hcs`, then delete its devices. Otherwise, they keep the HCS DNS and HTTPS until they expire (`HeadscaleUnexpectedNode` alert).
+**Removing access**&nbsp;: remove the group, `just apply hcs`, then delete its
+devices. Otherwise, they keep the HCS DNS and HTTPS until they expire
+(`HeadscaleUnexpectedNode` alert).
 
 ```sh
 sudo headscale nodes list                 # appareils, propriétaires, expiration
 sudo headscale nodes expire -i <id>       # forcer une reconnexion
 sudo headscale nodes delete -i <id>       # retirer l'appareil
 ```
-
-:::caution[Login page not found]
-Split DNS sends all `domain.tld` to the HCS **through the tunnel**, including
-`headscale.domain.tld` and `idm.domain.tld`. As long as the tunnel is not up, the
-browser does not resolve them. Workaround&nbsp;: disable "Use Tailscale DNS" in
-the application for the duration of the connection, then re-enable it.
-:::
 
 {/* t:p bfc8c6e031c1f72338f914c3615b95ea222620ea438e76e7239539c3435c52cb */}
 ## Adapt the access policy
@@ -310,22 +313,23 @@ real nodes** and runs its `tests` block, without touching the policy in place.
 
 </Steps>
 
-{/* t:p 99411ce62935b9e824f40c28db4b62aa4f1041e71d2e72baa66388b452b02115 */}
+{/* t:p 326fa59bfdc053b1862bfd901db355e7c25fc731009e040ac102ea254c6fe6f2 */}
 ### Common failures
 
 | Symptom | Check | Remedy |
 |---|---|---|
-| `TailscaleUnhealthy`, backend `NeedsLogin` | `tailscale status` on the node | `just tailnet-enroll <host>` |
+| `TailscaleUnhealthy`, `NeedsLogin` backend | `tailscale status` on the node | `just tailnet-enroll <host>` |
 | Connection showing `headscale auth register` | `HeadscaleOidcFallback` alert | `sudo systemctl restart headscale` on the HCS |
 | Kanidm refuses access to Headscale VPN | user's groups | admin profile or `zone-<zone>`, `just apply hcs` |
 | Zone unreachable from the tailnet | `headscale nodes list-routes` | gateway enrolled with its tag, route approved |
-| Zone service denied to a device | user's groups, `tailscale whois <ip>` | add `zone-<zone>`, `just apply hcs` |
+| Zone service refused to a device | user's groups, `tailscale whois <ip>` | add `zone-<zone>`, `just apply hcs` |
 | Non-web service unreachable (Samba, ping) | policy rules | `policy.extraAcls` rule |
-| SSH refused on a tailnet address | `tag:admin` machine or `adminDevices` device | declare the device |
+| SSH refused on a tailnet address | `tag:admin` host or `adminDevices` device | declare the device |
 | Internal names not resolved outside the zone | `tailscale dns status` | enable "Use Tailscale DNS" |
-| Slow traffic | `tailscale ping` shows `via DERP` | outbound UDP filtered, or strict NAT on both sides |
+| Login page not found | "Use Tailscale DNS" enabled | disable it for the duration of the connection |
+| Slow traffic | `tailscale ping` shows `via DERP` | filtered outbound UDP, or strict NAT on both sides |
 | `no declared tailnet identity` | tagged host, HCS deployed from its declaration | `just apply hcs` |
-| `named … is online, not deleting it` | two machines share the same name | shut down the old one or rename the host |
+| `named … is online, not deleting it` | two machines share the same name | turn off the old one or rename the host |
 
 {/* t:p 702252ad2e0a674c19922c89deb880560eb21efddc50996bee3169dcdf362783 */}
 ## Audit and alerts
@@ -413,7 +417,7 @@ the old entry, they do not reconnect, even with a correct public DNS.
 ## Outside a zone
 
 - **Personal device**&nbsp;: see [Connect a personal
-  device](#connect-a-personal-device).
+  device](#connecting-a-personal-device).
 - **Admin laptop**&nbsp;: on the move, it joins all zones through the tailnet
   (`just enter <hôte>`). Plugged back into a zone, its client pauses and the local
   gateway takes over again.
