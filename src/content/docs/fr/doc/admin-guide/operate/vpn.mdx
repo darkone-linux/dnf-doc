@@ -179,13 +179,6 @@ sudo headscale nodes expire -i <id>       # forcer une reconnexion
 sudo headscale nodes delete -i <id>       # retirer l'appareil
 ```
 
-:::caution[Page de connexion introuvable]
-Le DNS scindé envoie tout `domain.tld` au HCS **par le tunnel**, y compris
-`headscale.domain.tld` et `idm.domain.tld`. Tant que le tunnel n'est pas monté, le
-navigateur ne les résout pas. Contournement&nbsp;: désactiver « Use Tailscale DNS »
-dans l'application le temps de la connexion, puis le réactiver.
-:::
-
 {/* t:p bfc8c6e031c1f72338f914c3615b95ea222620ea438e76e7239539c3435c52cb */}
 ## Adapter la politique d'accès
 
@@ -332,6 +325,7 @@ vrais nœuds** et exécute son bloc `tests`, sans toucher à la politique en pla
 | Service non web injoignable (Samba, ping) | règles de la politique | règle `policy.extraAcls` |
 | SSH refusé sur une adresse tailnet | poste `tag:admin` ou appareil `adminDevices` | déclarer l'appareil |
 | Noms internes non résolus hors zone | `tailscale dns status` | activer « Use Tailscale DNS » |
+| Page de connexion introuvable | « Use Tailscale DNS » actif | le couper le temps de la connexion |
 | Trafic lent | `tailscale ping` affiche `via DERP` | UDP sortant filtré, ou NAT strict des deux côtés |
 | `no declared tailnet identity` | hôte tagué, HCS déployé depuis sa déclaration | `just apply hcs` |
 | `named … is online, not deleting it` | deux machines portent le même nom | éteindre l'ancienne ou renommer l'hôte |
