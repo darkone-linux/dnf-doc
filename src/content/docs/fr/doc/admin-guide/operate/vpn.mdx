@@ -307,6 +307,7 @@ vrais nœuds** et exécute son bloc `tests`, sans toucher à la politique en pla
 | Symptôme | Vérifier | Remède |
 |---|---|---|
 | `TailscaleUnhealthy`, backend `NeedsLogin` | `tailscale status` sur le nœud | `just tailnet-enroll <hôte>` |
+| Connexion qui affiche `headscale auth register` | alerte `HeadscaleOidcFallback` | `sudo systemctl restart headscale` sur le HCS |
 | Zone injoignable depuis le tailnet | `headscale nodes list-routes` | passerelle enrôlée avec son tag, route approuvée |
 | Service de zone refusé à un appareil | groupes de l'utilisateur, `tailscale whois <ip>` | ajouter `zone-<zone>`, `just apply hcs` |
 | SSH refusé sur une adresse tailnet | poste `tag:admin` ou appareil `adminDevices` | déclarer l'appareil |
@@ -339,7 +340,9 @@ d'administration absent n'est pas une anomalie&nbsp;; présent, ses tags sont
 vérifiés.
 
 :::tip[Après `HeadscaleOidcFallback`]
-Kanidm revenu, relancer Headscale&nbsp;: `sudo systemctl restart headscale`.
+Kanidm revenu, relancer Headscale&nbsp;: `sudo systemctl restart headscale`. D'ici
+là, la connexion d'un appareil affiche une commande `headscale auth register`&nbsp;:
+ne pas l'exécuter, elle crée un compte sans lien avec l'identité Kanidm.
 :::
 
 {/* t:p 7cb3c8a4d88bffa9c2fb9e975f7385d0b8c9435a10a952b17737b43a0cc0c076 */}
