@@ -383,11 +383,13 @@ de chacun&nbsp;: un poste compromis pourrait entrer sous l'identité d'une passe
 1. L'application Tailscale contacte Headscale, qui la renvoie vers Kanidm.
 2. Kanidm n'accepte que les membres du groupe `tailnet`&nbsp;; Headscale le vérifie
    aussi.
-3. L'appareil est enregistré au nom de la personne (`alice@`) et expire après
+3. Headscale affiche l'appareil (nom, clé de machine) et attend sa confirmation
+   (*Confirm registration*).
+4. L'appareil est enregistré au nom de la personne (`alice@`) et expire après
    180 jours (`nodeExpiry`)&nbsp;: elle se reconnecte alors.
 
 <Aside type="caution" title="Kanidm indisponible au démarrage de Headscale">
-Headscale démarre quand même, mais sans OIDC jusqu'à son prochain redémarrage&nbsp;:
-aucun appareil personnel ne peut se connecter. L'alerte `HeadscaleOidcFallback` le
-signale.
+Headscale l'attend jusqu'à 100 secondes, puis démarre sans OIDC jusqu'à son
+prochain redémarrage&nbsp;: aucun appareil personnel ne peut se connecter. L'alerte
+`HeadscaleOidcFallback` le signale.
 </Aside>

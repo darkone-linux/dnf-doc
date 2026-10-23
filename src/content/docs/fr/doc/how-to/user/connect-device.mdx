@@ -56,12 +56,24 @@ services internes à une zone.
 <Steps>
 
 1. **Installe Tailscale** sur l'appareil (iOS, Android, Windows, macOS, Linux).
-2. **Choisis un serveur personnalisé** dans les réglages de compte de
-   l'application, puis saisis l'adresse donnée par ton administrateur (du type
-   `https://headscale.domain.tld`).
+2. **Choisis le serveur** : l'adresse donnée par ton administrateur, du type
+   `https://headscale.domain.tld`.
+
+   - **Android** : réglages (en haut à droite) → *Accounts* → ⋮ → *Use an alternate server*
+   - **iPhone, iPad** : icône du compte → *Log in…* → menu → *Use custom coordination server*
+   - **Windows** : dans PowerShell, `tailscale login --login-server <adresse>`
+   - **macOS** : Option + clic sur l'icône → *Debug* → *Custom Login Server* → *Add Account…*
+   - **Linux** : `sudo tailscale login --login-server <adresse>`
+
+   Ton serveur rappelle la marche à suivre sur `/windows` et `/apple`
+   (`https://headscale.domain.tld/windows`).
 3. **Connecte-toi avec ton identifiant habituel** : la page de connexion du réseau
-   s'ouvre, comme pour les autres services.
-4. **C'est prêt.** Les services de tes zones répondent à leur adresse habituelle.
+   s'ouvre, comme pour les autres services. La première fois, autorise
+   *Headscale VPN*.
+4. **Confirme l'appareil** : la page affiche son nom, clique sur
+   *Confirm registration*.
+5. **C'est prêt.** Les services web de tes zones répondent à leur adresse
+   habituelle ; pour un partage de fichiers, demande l'accès à ton administrateur.
 
 </Steps>
 
