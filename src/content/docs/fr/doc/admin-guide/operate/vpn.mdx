@@ -162,8 +162,16 @@ refuse les autres. Pour ouvrir l'accès, ajouter le groupe à l'utilisateur,
 régénérer, puis `just apply hcs`. L'utilisateur suit ensuite [Connecter un
 appareil](/fr/doc/how-to/user/connect-device/#depuis-lextérieur).
 
+L'appareil joint les **services web** (HTTPS) de ses zones et du HCS, rien d'autre.
+Un partage Samba, une imprimante ou le SSH demandent une règle&nbsp;: voir [Adapter
+la politique d'accès](#adapter-la-politique-daccès).
+
 L'appareil appartient à la personne (`alice@`) et **expire après 180 jours**&nbsp;:
 elle se reconnecte alors avec son identifiant.
+
+**Retirer l'accès**&nbsp;: retirer le groupe, `just apply hcs`, puis supprimer ses
+appareils. Sinon, ils gardent le DNS et le HTTPS du HCS jusqu'à leur expiration
+(alerte `HeadscaleUnexpectedNode`).
 
 ```sh
 sudo headscale nodes list                 # appareils, propriétaires, expiration
@@ -318,8 +326,10 @@ vrais nœuds** et exécute son bloc `tests`, sans toucher à la politique en pla
 |---|---|---|
 | `TailscaleUnhealthy`, backend `NeedsLogin` | `tailscale status` sur le nœud | `just tailnet-enroll <hôte>` |
 | Connexion qui affiche `headscale auth register` | alerte `HeadscaleOidcFallback` | `sudo systemctl restart headscale` sur le HCS |
+| Kanidm refuse l'accès à Headscale VPN | groupes de l'utilisateur | profil admin ou `zone-<zone>`, `just apply hcs` |
 | Zone injoignable depuis le tailnet | `headscale nodes list-routes` | passerelle enrôlée avec son tag, route approuvée |
 | Service de zone refusé à un appareil | groupes de l'utilisateur, `tailscale whois <ip>` | ajouter `zone-<zone>`, `just apply hcs` |
+| Service non web injoignable (Samba, ping) | règles de la politique | règle `policy.extraAcls` |
 | SSH refusé sur une adresse tailnet | poste `tag:admin` ou appareil `adminDevices` | déclarer l'appareil |
 | Noms internes non résolus hors zone | `tailscale dns status` | activer « Use Tailscale DNS » |
 | Trafic lent | `tailscale ping` affiche `via DERP` | UDP sortant filtré, ou NAT strict des deux côtés |
@@ -350,9 +360,9 @@ d'administration absent n'est pas une anomalie&nbsp;; présent, ses tags sont
 vérifiés.
 
 :::tip[Après `HeadscaleOidcFallback`]
-Kanidm revenu, relancer Headscale&nbsp;: `sudo systemctl restart headscale`. D'ici
-là, la connexion d'un appareil affiche une commande `headscale auth register`&nbsp;:
-ne pas l'exécuter, elle crée un compte sans lien avec l'identité Kanidm.
+Kanidm revenu, relancer Headscale&nbsp;: `sudo systemctl restart headscale`. Ne pas
+créer à la main le compte que réclame `headscale auth register`&nbsp;: homonyme du
+compte OIDC, il ferait refuser toute politique qui cite cet utilisateur.
 :::
 
 {/* t:p 7cb3c8a4d88bffa9c2fb9e975f7385d0b8c9435a10a952b17737b43a0cc0c076 */}
