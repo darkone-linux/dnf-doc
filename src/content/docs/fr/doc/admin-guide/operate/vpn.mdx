@@ -189,10 +189,13 @@ Des options l'ajustent, sur le HCS&nbsp;:
 |---|---|---|
 | `policy.adminDevices` | `{ }` | appareils personnels autorisés en SSH&nbsp;: nom → IPv4 tailnet |
 | `policy.exitNodeSources` | `[ ]` | sources autorisées à sortir sur Internet par le HCS |
-| `policy.extraHosts` | `{ }` | alias supplémentaires&nbsp;: nom → CIDR |
+| `policy.extraHosts` | `{ }` | alias d'appareils non déclarés&nbsp;: nom → CIDR |
 | `policy.extraAcls` | `[ ]` | règles ajoutées après les règles générées |
 | `policy.enforce` | `true` | `false`&nbsp;: tout autorisé, pour une migration seulement |
 | `nodeExpiry` | `"180d"` | expiration des appareils personnels (`0`&nbsp;: jamais) |
+
+Chaque hôte déclaré d'une zone est déjà un alias (son nom → son adresse LAN)&nbsp;:
+une règle vise `nas:445` sans passer par `extraHosts`.
 
 ```nix
 # usr/machines/hcs/configuration.nix
@@ -211,6 +214,13 @@ darkone.service.headscale.policy = {
       action = "accept";
       src = [ "autogroup:member" ];
       dst = [ "printer:631" ];
+    }
+
+    # Partage Samba du serveur `nas` (hôte déclaré) pour Alice
+    {
+      action = "accept";
+      src = [ "alice@" ];
+      dst = [ "nas:445" ];
     }
   ];
 };

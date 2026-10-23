@@ -289,7 +289,7 @@ La politique n'est pas écrite à la main&nbsp;: DNF la génère depuis
 |---|---|
 | `groups` | `group:admins` (profils `admin`, `nix-admin`), `group:zone-<zone>` (groupe `zone-<zone>`) |
 | `tagOwners` | `tag:hcs`, `tag:gw-<zone>`, `tag:admin`, détenus par `group:admins` |
-| `hosts` | `zone-<zone>` (sous-réseau), `gateway-<zone>` (adresse LAN de la passerelle), postes d'administration (adresse LAN), `adminDevices`, `extraHosts` |
+| `hosts` | `zone-<zone>` (sous-réseau), `gateway-<zone>` (adresse LAN de la passerelle), chaque hôte d'une zone (son adresse LAN), `adminDevices`, `extraHosts` |
 | `autoApprovers` | route de chaque zone → `tag:gw-<zone>`&nbsp;; exit node → `tag:hcs` |
 | `acls` | les règles ci-dessous |
 
