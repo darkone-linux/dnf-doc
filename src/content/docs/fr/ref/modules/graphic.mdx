@@ -172,31 +172,36 @@ darkone.graphic.remote-desktop = {
 
 <hr/>
 
-{/* t:p 1f672ff4b679e1c262a61929f551af992d25cb7e572738132eb35ae671af55ae */}
+{/* t:p b11e63c898dd5d49c1578fb0d4c269983aafb447135da24e237c8bcc07858f66 */}
 ### &#x1F5BC; darkone.graphic.supertuxkart
 
-SuperTuxKart avec des configurations pour jouer en réseau local.
+SuperTuxKart avec les configurations pour jouer en réseau local.
 
 :::tip
-À utiliser en complément du module games du home manager !
+À utiliser conjointement avec le module de jeux de homemanager&nbsp;!
 :::
 
-:::note[Pistes partagées]
-Le partage de pistes lui-même réside dans `service/stk.nix`. `enableNfsClient` et
-`nfsServer` sont les seuls paramètres dont un hôte a besoin&nbsp;: ils relient
-`darkone.service.stk.{enableClient,serverName}` afin qu'une configuration
-d'hôte n'ait jamais besoin de nommer deux modules pour un seul jeu.
+:::note[Circuits partagés]
+Le partage des circuits vit dans `service/stk.nix`. `enableNfsClient` et
+`nfsServer` sont les seuls réglages nécessaires sur un hôte&nbsp;: ils câblent
+`darkone.service.stk.{enableClient,serverName}`, ainsi une configuration machine
+n'a jamais à nommer deux modules pour un seul jeu.
 :::
 
-:::caution[Pare-feu limité à la zone]
-Les ports de jeu et de découverte ne sont acceptés que depuis le préfixe de
-la zone. Un hôte STK qui détient également une adresse WAN ou tailnet ne
-publie pas le jeu sur celle-ci.
+:::tip[Jouer entre zones]
+Les ports de jeu et de découverte acceptent tous les préfixes de zone et le tailnet. La découverte
+par diffusion reste dans la zone&nbsp;: depuis une autre zone, se connecter avec «&nbsp;Enter server
+address&nbsp;» (IP du serveur, port 2759).
+:::
+
+:::caution[Pare-feu à l'échelle de la flotte]
+Les sources sont filtrées sur les préfixes de flotte, jamais sur une interface&nbsp;: un hôte STK qui
+possède aussi une adresse WAN ne publie pas le jeu sur celle-ci.
 :::
 
 * **enable** `bool` SuperTuxKart + configuration du pare-feu
-* **enableNfsClient** `bool` Monter les pistes partagées du serveur `stk` de la zone
-* **nfsServer** `nullOr str` Nom d'hôte servant les pistes, par défaut c'est l'hôte du service `stk` de la zone
+* **enableNfsClient** `bool` Monte les circuits partagés du serveur `stk` de la zone
+* **nfsServer** `nullOr str` Nom d'hôte servant les circuits, par défaut l'hôte du service `stk` de la zone
 
 ```nix
 darkone.graphic.supertuxkart = {

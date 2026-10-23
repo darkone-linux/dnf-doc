@@ -68,25 +68,23 @@ darkone.home.advanced = {
 
 <hr/>
 
-{/* t:p e65a4abb0564f071f818836f3bfef60d3bd7cf2f3068d7c8d633a7d26fd590e2 */}
+{/* t:p b36d5c772b6965495236404d5b3fa9beb10dce21bd8e3c05f066d5b6802b2a33 */}
 ### &#x1F3E0; darkone.home.ai-space
 
-Outils d'agent d'un espace IA dans le domicile d'un membre : Claude Code, Codex, MCP, skills.
+Outils d'agent d'un espace IA dans le foyer d'un membre&nbsp;: Claude Code, Codex, OpenCode, MCP, skills.
 
-Tout provient de l'espace (`darkone.host.ai-space` de l'hôte), donc
-OpenClaw et chaque membre partagent les mêmes serveurs MCP et skills. Activé
-par défaut dans le domicile `space-member` ; désactivé sur tout autre hôte.
+Tout vient de l'espace (`darkone.host.ai-space` de l'hôte), donc OpenClaw et chaque membre partagent les mêmes serveurs MCP et skills. Activé par défaut dans le foyer `space-member`&nbsp;; désactivé sur tout autre hôte.
 
-- MCP : HM `programs.mcp`, intégré à Claude Code et Codex ;
-- skills : `~/.claude/skills`, `~/.codex/skills` ;
-- connexions : une fois par membre, `claude` (`/login`), `codex login --device-auth`.
+- MCP&nbsp;: HM `programs.mcp`, intégré à Claude Code, Codex et OpenCode&nbsp;;
+- skills&nbsp;: `~/.claude/skills`, `~/.codex/skills`, `~/.config/opencode/skills`&nbsp;;
+- connexions&nbsp;: une fois par membre, `claude` (`/login`), `codex login --device-auth`, `opencode auth login`&nbsp;;
+- `~/projects`&nbsp;: les projets partagés de l'espace (`projectsDir`).
 
 :::note[Par membre, par espace]
-`usr/users/<login>/spaces/<host>.nix` ajoute ou surcharge, ex. un serveur MCP
-personnel : `programs.mcp.servers.<name> = { ... };`.
+`usr/users/<login>/spaces/<host>.nix` ajoute ou remplace, par exemple un serveur MCP personnel&nbsp;: `programs.mcp.servers.<name> = { ... };`.
 :::
 
-* **enable** `bool` Outils d'agent de l'espace IA (Claude Code, Codex, MCP, skills)
+* **enable** `bool` Outils d'agent de l'espace IA (Claude Code, Codex, OpenCode, MCP, skills)
 
 ```nix
 darkone.home.ai-space.enable = false;
@@ -588,152 +586,90 @@ DNF UMI : SuperTuxKart piloté uniquement à la souris (`enableStkWithMouse`). D
 
 <hr/>
 
-{/* t:p 60d66c5a708e87d6085511c30b3031b531650e4d4a4e9601259f2747bc189203 */}
+{/* t:p b4fbc10c762f22104c34fea1a3e4643ceb8c85f5f4e0e284719cec30b1bd3c41 */}
 ### &#x1F3E0; darkone.home.umi
 
-Saisie multimodale unifiée (UMI)
+Entrée multimodale unifiée (UMI)
 
-Écran tactile + voix + regard (autodémarrage de Talon + Onboard).
+Écran tactile + voix + regard (autostart de Talon + Onboard).
 
-:::note[Dépendance de session à l'hôte]
-- **Hôte `darkone.host.umi`** : session Cinnamon X11 (udev, uinput, Talon fourni par l'hôte).
-  Talon et un clavier Onboard ancré (prédiction de mots, modificateurs persistants) démarrent avec la session,
-  le clavier étant masqué jusqu'à ce qu'il soit sollicité. Le tableau de bord, les icônes et le texte
-  sont agrandis pour faciliter le ciblage par le regard (`panelHeight`, `textScaling`).
-  Tableau de bord DNF (`enablePanel`) : lanceurs | fenêtres ouvertes, puis types de clic au survol,
-  zone de pause, commutateur de regard (applet `umi-mouse`), menu d'accessibilité, bascule Onboard.
-  Les favoris du menu (`menuFavorites`) s'ouvrent avec l'étalonnage du suivi oculaire.
-  Les fenêtres d'application s'ouvrent en mode maximisé, le tableau de bord restant à portée (`enableMaximize`).
-- **Tout autre hôte** : GNOME Wayland avec son accessibilité native : clavier virtuel, gros pointeur et texte agrandi.
-  Talon et Onboard, réservés à X11, restent désactivés.
+:::note[La session dépend de l'hôte]
+- **Hôte `darkone.host.umi`**&nbsp;: session Cinnamon X11 (udev, uinput, Talon fournis par l'hôte). Talon et un clavier Onboard ancré (prédiction de mots, modificateurs collants) démarrent avec la session, le clavier masqué jusqu'à demande. Panneau, icônes et texte agrandis pour les cibles du regard (`panelHeight`, `textScaling`). Panneau DNF (`enablePanel`)&nbsp;: lanceurs | fenêtres ouvertes, puis types de clic au survol, zone de pause, bascule du regard (applet `umi-mouse`), menu d'accessibilité, bascule Onboard. Les favoris du menu (`menuFavorites`) s'ouvrent avec la calibration de l'eye tracker. Les fenêtres d'application s'ouvrent maximisées, panneau à portée (`enableMaximize`).
+- **Tout autre hôte**&nbsp;: GNOME Wayland avec son accessibilité native&nbsp;: clavier à l'écran, grand pointeur et grand texte. Talon et Onboard, réservés à X11, restent désactivés.
 
-Clic au maintien (dwell click) : opt-in (`enableDwell`) sous GNOME. Sous Cinnamon, un script utilisateur Talon
-le fait suivre le suivi oculaire, avec contrôle du regard (`enableTrackerAuto`).
-Talon 0.4 et 1.0 pris en charge ; le mode « Always On » de la 1.0 est désactivé, le suiveur
-s'éteint avec le contrôle du regard.
+Clic par maintien&nbsp;: opt-in (`enableDwell`) sous GNOME. Dans Cinnamon, un script utilisateur Talon le fait suivre l'eye tracker, avec contrôle du regard (`enableTrackerAuto`). Talon 0.4 comme 1.0&nbsp;; l'« Always On » de la 1.0 est désactivé, le tracker s'éteint avec le contrôle du regard.
+
+Reconnaissance vocale&nbsp;: en veille à chaque démarrage de Talon sauf avec `enableSpeech`.
 :::
 
 :::note[Grille d'applications (hôte UMI)]
-`enableRofiMenu` : le premier lanceur du tableau de bord ouvre une grille rofi plein écran,
-pages de tuiles `rofiGridResolution` tournées par des boutons en bordure, un clic lance
-l'application, les panneaux de paramètres sont exclus. `hiddenApps` masque les entrées de la grille
-et du menu Cinnamon. rofi capte le pointeur : le tableau de bord est hors de portée.
+`enableRofiMenu`&nbsp;: le premier lanceur du panneau ouvre une grille rofi plein écran, des pages de `rofiGridResolution` tuiles tournées par des boutons en bordure haute, un clic lance, les panneaux de réglages exclus. `hiddenApps` masque des entrées de la grille comme du menu Cinnamon. rofi accapare le pointeur&nbsp;: panneau hors de portée.
 :::
 
-:::note[SuperTuxKart uniquement à la souris (hôte UMI)]
-`enableStkWithMouse` : le lanceur du jeu exécute `dnf-stk-mouse`, qui transforme
-toute souris physique en touches par défaut de STK tant que la fenêtre du jeu a le focus.
-Stick avant/arrière : accélérer/freiner, latéral : virer ; clic gauche : dérapage,
-double-clic : tir, clic droit : nitro. Le pointeur reste inchangé (menus).
+:::note[SuperTuxKart à la souris seule (hôte UMI)]
+`enableStkWithMouse`&nbsp;: le lanceur du jeu exécute `dnf-stk-mouse`, qui transforme chaque souris physique en touches par défaut de STK tant que la fenêtre du jeu a le focus. Stick avant/arrière&nbsp;: accélérer/freiner, latéral&nbsp;: diriger&nbsp;; clic gauche&nbsp;: dérapage, double clic&nbsp;: tir, clic droit&nbsp;: nitro. Pointeur intact (menus).
 :::
 
-:::note[Positions du regard, la tête affine (Talon 1.0)]
-Valeurs par défaut mesurées sur un Tobii 5 : filtre de regard Talon (`gazeFilterSpeed`),
-filtre plus rapide du curseur (`cursorFilterSpeed`), contrôle de la tête activé avec une tête
-sensible (`headSpeed` 5, `head_bezier.vmax` mis à l'échelle). Les modes du menu Eye Tracking
-sont déclarés (`enableGazeControl`, `enableHeadControl`, `enableHeadJump`,
-`enableMouseJump`, `enableGazeFocus`) et réappliqués à chaque démarrage de Talon.
+:::note[Le regard place, la tête affine (Talon 1.0)]
+Valeurs par défaut mesurées sur un Tobii 5&nbsp;: filtre de regard de Talon (`gazeFilterSpeed`), un filtre de curseur plus rapide (`cursorFilterSpeed`), contrôle de la tête activé avec une tête sensible (`headSpeed` 5, `head_bezier.vmax` mis à l'échelle). Les modes du menu Eye Tracking sont déclarés (`enableGazeControl`, `enableHeadControl`, `enableHeadJump`, `enableMouseJump`, `enableGazeFocus`) et réappliqués à chaque démarrage de Talon.
 :::
 
-:::tip[Réglage à chaud]
-Depuis la REPL de Talon (perdu au redémarrage) : `actions.user.umi_head_speed(5)`,
-`actions.user.umi_filter_speed(1, 4)`, `print(actions.user.umi_tuning())`.
+:::tip[Réglage en direct]
+Depuis le REPL de Talon, perdu au redémarrage&nbsp;: `actions.user.umi_head_speed(5)`, `actions.user.umi_filter_speed(1, 4)`, `print(actions.user.umi_tuning())`.
 :::
 
 :::tip[Scripts communautaires]
-Définir `communityScripts` vers un arbre github:talonhub/community récupéré permet d'obtenir
-déclarativement le contrôle vocal et le contrôle du curseur par le regard (zoom mouse, pop click).
+Définir `communityScripts` sur une arborescence github:talonhub/community récupérée pour obtenir, de façon déclarative, un contrôle complet de la souris à la voix et au regard (zoom mouse, pop click).
 :::
 
-:::note[Double schéma de configuration]
-Les paramètres s'écrivent dans deux familles : `org/cinnamon/*` pour la session hôte UMI,
-`org/gnome/*` pour les sessions GNOME ailleurs. Sous Cinnamon, csd synchronise
-les touches souris d'accessibilité dans les deux sens entre les deux familles.
-Exception : les clés verrouillées par le module GNOME DNF ne sont jamais écrites ici ;
-l'écriture d'une clé verrouillée annule l'ensemble du `dconf load` de Home Manager.
-Le verrouillage de l'écran reste activé côté GNOME (verrouillé par le module GNOME DNF) ;
-`idle-delay = 0` évite de le déclencher, et la session Cinnamon a son propre verrouillage
-totalement désactivé.
+:::note[Double schéma]
+Les réglages vont vers les deux familles&nbsp;: org/cinnamon/* pour la session de l'hôte UMI, org/gnome/* pour les sessions GNOME ailleurs. Dans Cinnamon, csd recopie les clés souris d'accessibilité entre les deux familles, dans les deux sens.
+Exception&nbsp;: les clés verrouillées par le module gnome de DNF ne sont jamais écrites ici&nbsp;; une écriture sur une clé verrouillée annule tout le `dconf load` de home-manager.
+Le verrouillage d'écran reste activé côté GNOME (verrouillé par le module gnome de DNF)&nbsp;; `idle-delay = 0` évite de le déclencher, et la session Cinnamon a son propre verrou entièrement désactivé.
 :::
 
-:::caution[Trousseau de connexion de l'utilisateur en autologin : sans mot de passe, sur tous les hôtes]
-Une session en autologin ne saisit aucun mot de passe : un trousseau scellé par un mot de passe
-provoque une invite gcr que l'utilisateur UMI ne peut pas répondre. Son trousseau de connexion
-est initialisé avec un mot de passe vide (ini brut, déverrouillé sans invite) ; un trousseau scellé
-est supprimé à chaque activation, `user.keystore` inclus, et ses secrets sont perdus.
+:::caution[Trousseau de connexion de l'utilisateur autologin&nbsp;: sans mot de passe, sur chaque hôte]
+Une session autologin ne saisit aucun mot de passe&nbsp;: un trousseau scellé par un mot de passe déclenche une invite gcr à laquelle l'utilisateur UMI ne peut répondre. Son trousseau de connexion est amorcé avec un mot de passe vide (ini en clair, déverrouillé sans invite)&nbsp;; un trousseau scellé est supprimé à chaque activation, `user.keystore` inclus, et ses secrets sont perdus.
 
-- Au repos, LUKS le protège ; l'autologin donne déjà la session à quiconque démarre la machine.
-- L'hôte UMI éloigne tout mot de passe de gnome-keyring pour cet utilisateur :
-  un trousseau brut déverrouillé par un mot de passe est rechiffré avec celui-ci
-  à la prochaine écriture (`pam_gdm` et la phrase de passe de démarrage incluses).
-- Les autres utilisateurs, et toute connexion par mot de passe ailleurs : inchangés.
+- Au repos, LUKS le protège&nbsp;; l'autologin confie déjà la session à quiconque démarre la machine.
+- L'hôte UMI tient tous les mots de passe à l'écart de gnome-keyring pour cet utilisateur&nbsp;: un trousseau en clair déverrouillé avec un mot de passe est rechiffré avec celui-ci à la prochaine écriture (`pam_gdm` et la phrase de passe de démarrage inclus).
+- Les autres utilisateurs, et toute connexion par mot de passe ailleurs&nbsp;: inchangés.
 :::
 
-* **enable** `bool` Configuration UMI de saisie multimodale (Talon + Onboard)
-* **enableTalonAutostart** `bool` Démarrer Talon à la connexion de session, une fois le tableau de bord initialisé (talon doit être dans le PATH).
-* **communityScripts** `nullOr package` Arbre talonhub/community déployé dans ~/.talon/user/community.
-* **enableDwell** `bool` Clic au maintien : clic en maintenant le pointeur immobile. Désactivé par défaut — uniquement utilisable
-  avec un suivi oculaire, et avec une souris il se déclenche sur l'emplacement laissé
-  (typiquement le menu d'accessibilité basculant le zoom ou le clavier virtuel)
-* **dwellTime** `float` Délai du clic au maintien en secondes.
-* **enableTrackerAuto** `bool` Suivi oculaire branché : contrôle du curseur par le regard Talon et clic au survol activés ;
-  débranché : clic au survol désactivé (session Cinnamon). Prend le dessus sur
-  `enableDwell` sous Cinnamon.
-* **gazeFilterSpeed** `nullOr numbers.positive` Coefficient de filtre de regard Talon (par œil), avec
-  `enableTrackerAuto` : plus haut = plus réactif et moins lissé. Par défaut :
-  celui de Talon, la tête affine les derniers millimètres ; `null` conserve
-  la valeur de Talon.
-* **cursorFilterSpeed** `nullOr numbers.positive` Coefficient de filtre du curseur Talon, avec
-  `enableTrackerAuto` : plus haut = plus réactif, plus de dépassement. `null`
-  conserve la valeur de Talon (2,0).
-* **headSpeed** `nullOr numbers.positive` Sensibilité du contrôle de la tête Talon, avec `enableTrackerAuto` et
-  `enableHeadControl` : au-dessus de 1, un léger mouvement de tête déplace le curseur,
-  en dessous de 1, les mouvements amples ou mal contrôlés sont amortis. `null`
-  conserve la valeur de Talon (1).
-* **enableGazeControl** `bool` Contrôle du regard Talon, avec `enableTrackerAuto` : le curseur suit le regard.
-* **enableHeadControl** `bool` Contrôle de la tête Talon, avec `enableTrackerAuto` : les mouvements de tête affinent
-  le curseur placé par le regard (`headSpeed`). À désactiver si la tête est instable,
-  car cela éloigne le curseur du point de regard.
-* **enableHeadJump** `bool` Saut de tête Talon, avec `enableTrackerAuto` : un mouvement de tête amène
-  le curseur au point de regard
-* **enableMouseJump** `bool` Saut de souris Talon, avec `enableTrackerAuto` : déplacer une souris physique
-  vers le point de regard y amène le curseur. Désactivé par défaut, cela déplace
-  brutalement le pointeur d'un aidant
-* **enableGazeFocus** `bool` Focus par le regard Talon (expérimental), avec `enableTrackerAuto` : la fenêtre
-  regardée obtient le focus
-* **panelHeight** `ints.between 40 96` Hauteur du tableau de bord Cinnamon en pixels, ses icônes suivent (cibles pour le regard).
-* **textScaling** `float` Facteur de mise à l'échelle du texte de la session Cinnamon (les boutons grandissent avec leurs libellés).
-* **enablePanel** `bool` Tableau de bord Cinnamon géré par DNF : lanceurs et fenêtres ouvertes séparés,
-  contrôles de clic au survol (types de clic, zone de pause), menu d'accessibilité,
-  bascule clavier ; pas d'icône Bluetooth ni de barre d'angle. Réécrit à
-  chaque activation.
-* **enableMaximize** `bool` Les fenêtres d'application s'ouvrent en mode maximisé (extension Cinnamon), le tableau de bord
-  reste à portée. Les boîtes de dialogue, Onboard et les fenêtres à taille fixe conservent
-  leur taille.
-* **panelLaunchers** `listOf str` Lanceurs du tableau de bord (identifiants de fichiers .desktop), avec `enablePanel`.
-* **menuFavorites** `listOf str` Favoris du menu Cinnamon (identifiants de fichiers .desktop), réécrits à chaque
-  activation. `dnf-umi-calibrate.desktop`, avec `enableTrackerAuto`,
-  lance l'étalonnage du suivi oculaire.
-* **enableRofiMenu** `bool` Grille d'applications plein écran (rofi), hôte UMI uniquement : pages de grandes
-  tuiles tournées par des boutons en bordure, un clic lance l'application, les panneaux
-  de paramètres sont exclus. Ouverte par le premier lanceur du tableau de bord (avec `enablePanel`).
-* **rofiGridResolution** `submodule` Grille d'applications par page, en tuiles, avec `enableRofiMenu`. La valeur
-  par défaut 6 × 4 correspond à des icônes de 96 px sur un écran 1600×900 ; moins de tuiles
-  les agrandit.
+* **enable** `bool` Configuration de l'entrée multimodale UMI (Talon + Onboard)
+* **enableTalonAutostart** `bool` Démarrer Talon à la connexion à la session, une fois la zone de notification du panneau prête (talon doit être dans le PATH).
+* **communityScripts** `nullOr package` Arborescence talonhub/community déployée dans ~/.talon/user/community.
+* **enableSpeech** `bool` Reconnaissance vocale de Talon au démarrage. Désactivée par défaut&nbsp;: mise en veille à chaque démarrage de Talon, des mots parasites ne doivent pas déclencher de commandes
+* **enableDwell** `bool` clic par maintien&nbsp;: cliquer en laissant reposer le pointeur. Désactivé par défaut&nbsp;: il n'est utilisable qu'avec un eye tracker, et avec une souris il se déclenche sur ce qui se trouvait sous le pointeur (le menu d'accessibilité basculant le zoom ou le clavier à l'écran, typiquement)
+* **dwellTime** `float` Délai du clic par maintien en secondes.
+* **enableTrackerAuto** `bool` Eye tracker branché&nbsp;: contrôle de la souris au regard et clic au survol de Talon activés&nbsp;; débranché&nbsp;: clic au survol désactivé (session Cinnamon). Prend le pas sur `enableDwell` dans Cinnamon.
+* **gazeFilterSpeed** `nullOr numbers.positive` Coefficient du filtre de regard par œil de Talon Control Mouse, avec `enableTrackerAuto`&nbsp;: plus haut réagit plus vite et lisse moins. Défaut&nbsp;: celui de Talon, la tête affine les derniers millimètres&nbsp;; `null` conserve celui de Talon quelle que soit sa version.
+* **cursorFilterSpeed** `nullOr numbers.positive` Coefficient du filtre de curseur de Talon Control Mouse, avec `enableTrackerAuto`&nbsp;: plus haut réagit plus vite, dépasse davantage. `null` conserve celui de Talon (2.0).
+* **headSpeed** `nullOr numbers.positive` Sensibilité de Talon Head Control, avec `enableTrackerAuto` et `enableHeadControl`&nbsp;: au-dessus de 1 un léger mouvement de tête déplace le curseur, en dessous de 1 les mouvements amples et peu contrôlés sont amortis. `null` conserve celui de Talon (1).
+* **enableGazeControl** `bool` Talon Gaze Control, avec `enableTrackerAuto`&nbsp;: le curseur suit le regard.
+* **enableHeadControl** `bool` Talon Head Control, avec `enableTrackerAuto`&nbsp;: les mouvements de tête affinent le curseur placé par le regard (`headSpeed`). Désactivé pour une tête instable, qui entraîne le curseur hors du regard.
+* **enableHeadJump** `bool` Talon Head Jump, avec `enableTrackerAuto`&nbsp;: un mouvement de tête amène le curseur sur le regard
+* **enableMouseJump** `bool` Talon Mouse Jump, avec `enableTrackerAuto`&nbsp;: déplacer une vraie souris vers le regard y amène le curseur. Désactivé par défaut, il arrache le pointeur d'un aidant
+* **enableGazeFocus** `bool` Talon Gaze Focus (expérimental), avec `enableTrackerAuto`&nbsp;: la fenêtre regardée reçoit le focus
+* **panelHeight** `ints.between 40 96` Hauteur du panneau Cinnamon en pixels, ses icônes suivent (cibles du regard).
+* **textScaling** `float` Facteur d'échelle du texte de la session Cinnamon (les boutons grandissent avec leurs libellés).
+* **enablePanel** `bool` Panneau Cinnamon géré par DNF&nbsp;: lanceurs et fenêtres ouvertes séparés, contrôles de clic au survol (types de clic, zone de pause), menu d'accessibilité, bascule du clavier&nbsp;; ni icône Bluetooth ni barre d'angle. Réécrit à chaque activation.
+* **enableMaximize** `bool` Les fenêtres d'application s'ouvrent maximisées (extension Cinnamon), le panneau reste à portée. Les dialogues, Onboard et les fenêtres à taille fixe gardent leur taille.
+* **panelLaunchers** `listOf str` Lanceurs du panneau (ids de fichiers desktop), avec `enablePanel`.
+* **menuFavorites** `listOf str` Favoris du menu Cinnamon (ids de fichiers desktop), réécrits à chaque activation. `dnf-umi-calibrate.desktop`, avec `enableTrackerAuto`, lance la calibration de l'eye tracker.
+* **enableRofiMenu** `bool` Grille d'applications plein écran (rofi), hôte UMI uniquement&nbsp;: pages de grandes tuiles tournées par des boutons de bord, un clic lance, les panneaux de réglages exclus. Ouverte par le premier lanceur du panneau (avec `enablePanel`).
+* **rofiGridResolution** `submodule` Page de la grille d'applications, en tuiles, avec `enableRofiMenu`. Le défaut 6 × 4 loge des icônes de 96 px sur un écran 1600×900&nbsp;; moins de tuiles les élargit.
   * **columns** `ints.between 1 12` Tuiles par ligne.
-  * **rows** `ints.between 1 8` Lignes de tuiles par page.
-* **hiddenApps** `listOf str` Applications masquées de la grille et du menu Cinnamon (identifiants de fichiers .desktop),
-  hôte UMI uniquement. Les lancements par identifiant et les associations de fichiers restent fonctionnels.
-* **enableStkWithMouse** `bool` SuperTuxKart piloté uniquement à la souris, hôte UMI uniquement : le stick (ou
-  les mouvements de souris) accélère, freine et vire, clic gauche dérape, double-clic
-  tire, clic droit utilise le nitro. Installe le jeu, son lanceur
-  exécute le convertisseur
+  * **rows** `ints.between 1 8` Rangées de tuiles par page.
+* **hiddenApps** `listOf str` Applications masquées de la grille et du menu Cinnamon (ids de fichiers desktop), hôte UMI uniquement. Les lancements par id et les associations de fichiers fonctionnent toujours.
+* **enableStkWithMouse** `bool` SuperTuxKart piloté à la souris seule, hôte UMI uniquement&nbsp;: le stick (ou les mouvements de souris) accélère, freine et dirige, clic gauche dérape, double clic tire, clic droit utilise la nitro. Installe le jeu, son lanceur exécute le convertisseur
 
 ```nix
 darkone.home.umi = {
   enable = false;
   enableTalonAutostart = true;
   communityScripts = null;
+  enableSpeech = false;
   enableDwell = false;
   dwellTime = 1.6;
   enableTrackerAuto = true;

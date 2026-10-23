@@ -94,7 +94,7 @@ Les invités démarrent avec l'hyperviseur.
 | Racine `/` | En mémoire, vidée à chaque démarrage |
 | Store Nix | Celui de l'hyperviseur en lecture seule, plus une couche en mémoire pour ce que l'invité installe (`nix shell`, Home Manager), vidée à chaque démarrage |
 
-{/* t:p 9ec58bcca8d6f566ab07c61e513f2dfdc6afb1214cc8b8a978f9bd71fc07413e */}
+{/* t:p 6c31eefbe734e4658c0764b40a47664b0d72f31a7efd368583d19e34e6276ed0 */}
 ## Isolation réseau
 
 Chaque invité a sa propre interface `vm-X-Y`, routée en `/32` par
@@ -128,6 +128,7 @@ Non&nbsp;: l'invité lit ce store sous une couche overlay, qui renvoie *Stale
 file handle* quand un fichier lu devient un lien dur. DNF n'y lance donc pas
 `nix-store --optimise` (le GC reste actif)&nbsp;; fait à la main, redémarrer les invités.
 
+{/* t:p d2397719c0cf1901bc40ae7c433b49be27417b61f5c7cb32a1e5cb7045e35602 */}
 ### Transcrire la voix pour les invités ?
 
 L'hyperviseur porte un serveur [whisper.cpp](https://github.com/ggml-org/whisper.cpp),

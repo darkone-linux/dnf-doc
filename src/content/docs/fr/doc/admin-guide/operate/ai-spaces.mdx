@@ -11,7 +11,7 @@ import { Steps } from '@astrojs/starlight/components';
 {/* t:main */}
 {/* t:h 11de2bde9cbdda137e28d65b7cfe3c1bdef70f8dfa7cace99e12f676a7d2835c */}
 
-{/* t:p f34a54cb30311578b2eb6b2e1ce57ee5927fbac4963791bf54a40946b4ea5eda */}
+{/* t:p 6daa07c425b5318f31ac9ffdebdb9642a00697ec40dd4f8ab38d6d734bec36a2 */}
 Un **espace IA** est un hôte DNF de profil `ai-space`, en général un
 [invité microVM](/fr/doc/admin-guide/operate/microvm/). Il porte un assistant
 [OpenClaw](https://openclaw.ai) réservé à ses membres, avec ses propres secrets
@@ -23,7 +23,7 @@ place.
 Hermes arrive dans une prochaine version.
 :::
 
-{/* t:p d3b8afe279512f13df8e26f7c59be54d888895a54658af79f48e0a96b72fb65a */}
+{/* t:p 82d359b9635ce0fcc6523ba19fc74927a7bc1db570492ab33aec6e559dfcb0dc */}
 ## Créer un espace
 
 <Steps>
@@ -102,6 +102,7 @@ Un espace créé avant le mot de passe local de l'assistant doit repasser par
 le service.
 :::
 
+{/* t:p 95b754ad3b6475b0cc4d07869b21df69689e5d4df10cd50fecae5b22c6842a51 */}
 ## Modèles et abonnements
 
 Un modèle passe par l'abonnement du propriétaire quand son fournisseur figure
@@ -137,6 +138,7 @@ l'abonnement `anthropic`, DNF ne transmet pas cette clé. Pour payer Claude à
 l'usage, retirer `anthropic` de `subscriptions`.
 :::
 
+{/* t:p 90d2863ad227679915633b64ee648d59cf369a20e4c8356224d1b4d462710127 */}
 ### Fournisseur compatible OpenAI
 
 Un fournisseur absent d'OpenClaw, comme Nous Portal, se déclare avec son
@@ -156,6 +158,7 @@ adresse, sa clé et ses modèles&nbsp;:
 }
 ```
 
+{/* t:p e42d421a5350edb6310836fde3cd6058987fa7e41887a2c44d7c74e36476df4a */}
 ### Abonnements partagés
 
 | Usage | Compte |
@@ -189,6 +192,7 @@ verify status` sur l'hôte). Tant qu'elle n'est pas vérifiée, Element signale
 ses messages comme non vérifiés.
 :::
 
+{/* t:p 494aee0ed65a54b5b4c998cc0786220c763b68f4efb0f445a47eb95d539323a3 */}
 ## Conversation orale
 
 Le bouton micro de l'interface web ouvre une conversation à la voix,
@@ -217,7 +221,7 @@ Claude, ou une clé `OPENAI_API_KEY` (cf.
 Pas encore essayé dans un navigateur ni sur téléphone.
 :::
 
-{/* t:p d9ef2b38d1574d50c3ecf8d8ff8bbc03610ec08e3bd1fbd08679559b292d38c1 */}
+{/* t:p 7bcc5c3e82f244a9dd91a95789bf8ddd11e6dc9dffa2eaa9db95972ed94641e1 */}
 ## Outils des agents
 
 Les MCP, les skills et les outils se déclarent une seule fois par espace, dans
@@ -281,6 +285,7 @@ SSH utilise la clé de l'utilisateur `openclaw`, à créer une fois
 acceptée au premier clonage.
 :::
 
+{/* t:p ef121b8b7dd604eb2cc6e9a755b45439eb2667d0ec278477e741fe54b773f81a */}
 ### Transcription
 
 Les notes vocales, Matrix ou web, sont transcrites par whisper.cpp, sans
@@ -296,6 +301,7 @@ lui-même avec `small`. `transcription.backend = "local"` garde toujours la
 transcription dans l'invité. La langue est détectée à chaque note&nbsp;;
 `transcription.language = "fr"` la fixe.
 
+{/* t:p ba2ec90741997843a76afc225e2392bcfc72ed8306621d6fe3afccb63f7dfe9e */}
 ## Projets et agents de code
 
 Le dossier projets (`/var/lib/projects`, lien `~/projects` chez chaque membre)
@@ -326,6 +332,7 @@ Ils le sont désormais dans le dossier projets&nbsp;: y déplacer les clones
 existants, ou les laisser se recloner au prochain démarrage.
 :::
 
+{/* t:p 516ea179869ea6952ab9cf2c0bae297a760c7c554f0bfeb7da38d4b746fc5dc9 */}
 ## Workflows
 
 | Outil | Usage |
@@ -365,7 +372,7 @@ l'assistant les lance à la demande.
 Lobster n'a pas encore été essayé sur un espace.
 :::
 
-{/* t:p af852a791264318fe5372ce41ab42561d6c0a6566b69718303a03d2184a6480d */}
+{/* t:p bba899a4878f2bb70a14f493070a4a5d50c9fd7da8bd4d1bb515bcad26d6336c */}
 ## Comptes des membres
 
 Chaque membre a un compte Linux sur l'espace, allégé&nbsp;:
@@ -390,7 +397,7 @@ Chaque membre connecte ses propres abonnements, une fois&nbsp;: `claude` (puis
 `/login`), `codex login --device-auth` et `opencode auth login`. OpenCode
 accepte un abonnement ChatGPT ou une clé d'API, pas l'abonnement Claude.
 
-{/* t:p 13d78da76f2e42a7f786ae3486d440dee2d4f0a9b03a5322383514efc9962f0f */}
+{/* t:p 84f6f0e7c8f7eee5f3922034b5e742182c6fc7842425a221f3a47062ba62a246 */}
 ## Accès
 
 | Élément | Règle |
@@ -401,6 +408,7 @@ accepte un abonnement ChatGPT ou une clé d'API, pas l'abonnement Claude.
 | Administration | `openclaw …` sur l'hôte, depuis le compte `nix` |
 | Port de l'assistant | Joignable depuis la passerelle de la zone seulement |
 
+{/* t:p 2cdacb9687eb7834712a6a8a05a723cf9dc7efc459f080caf225ab4462bd568e */}
 ## Configuration modifiable
 
 Par défaut, Nix fige la configuration de l'assistant&nbsp;: l'interface web
@@ -420,7 +428,7 @@ plus Nix. `openclaw config unset <clé>` le retire&nbsp;: Nix le réécrit aussi
 avec sa valeur.
 :::
 
-{/* t:p 6d7ba3ce71d1bc2bce1ee9ec7097ed48e80f06502d206dcb65c36560e9517843 */}
+{/* t:p 1e5c1818b3defae50cc5b1b6b838a4dc39a7d6f15197ddc925abb99a33cfa7ec */}
 ## Sécurité
 
 Par défaut, l'assistant exécute ses commandes sans validation, comme

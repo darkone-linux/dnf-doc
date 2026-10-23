@@ -88,21 +88,21 @@ A guest is not a deployment target: `just apply <hypervisor>` builds the guests,
 | Root `/` | In memory, wiped at each boot |
 | Nix store | The hypervisor's one in read-only, plus an in-memory layer for what the guest installs (`nix shell`, Home Manager), wiped at each boot |
 
-{/* t:p 9ec58bcca8d6f566ab07c61e513f2dfdc6afb1214cc8b8a978f9bd71fc07413e */}
+{/* t:p 6c31eefbe734e4658c0764b40a47664b0d72f31a7efd368583d19e34e6276ed0 */}
 ## Network isolation
 
-Each guest has its own `vm-X-Y` interface, routed in `/32` by the
-hypervisor, which answers for it on the LAN (proxy ARP), without a bridge.
-The hypervisor runs on systemd-networkd, with DNS fixed to the zone gateway&nbsp;:
-it can be neither this gateway, nor a host under NetworkManager.
+Each guest has its own interface `vm-X-Y`, routed as a `/32` by the
+hypervisor, which answers for it on the LAN (ARP proxy), without a bridge.
+The hypervisor runs systemd-networkd, with DNS set to the zone gateway&nbsp;:
+it cannot be that gateway, nor a host running NetworkManager.
 
-| Traffic | Allowed |
+| Flow | Allowed |
 |---|---|
 | Guest → Internet | Yes |
-| Guest → gateway DNS | Yes |
+| Guest → Gateway DNS | Yes |
 | Guest → LAN, tailnet, other guests | No |
-| Guest → hypervisor | No |
-| Gateway → guest | Yes (proxy, monitoring) |
+| Guest → hypervisor | Transcription only, if requested |
+| Gateway → guest | Yes (proxy, supervision) |
 | Other host → guest | Ping and SSH only |
 
 {/* t:p 938609b64e2e1217c0db6ceeca57cfadea52087e1a0a2c4319be9b6fdb6ff3b2 */}
@@ -121,6 +121,15 @@ after adding the guest.
 No: the guest reads this store through an overlay layer, which returns *Stale
 file handle* when a file read becomes a hard link. DNF therefore does not run
 `nix-store --optimise` (the GC stays active); done manually, restart the guests.
+
+{/* t:p d2397719c0cf1901bc40ae7c433b49be27417b61f5c7cb32a1e5cb7045e35602 */}
+### Transcribe voice for guests?
+
+The hypervisor hosts a [whisper.cpp](https://github.com/ggml-org/whisper.cpp) server,
+started and opened only for the guests that request it (voice notes from an
+[AI space](/en/doc/admin-guide/operate/ai-spaces/#transcription)). Nothing to
+declare&nbsp;; `darkone.system.microvm.whisper.model` (default
+`large-v3-turbo`) and `.threads` (default 8) configure it.
 
 {/* t:p 5edf6712e8f1a6fb19617f07ba341ad1037ebe941aea82d9a3a530eabbd8ca37 */}
 ### How to wipe a guest?

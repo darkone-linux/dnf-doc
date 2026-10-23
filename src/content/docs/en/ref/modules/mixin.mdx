@@ -13,7 +13,7 @@ sidebar:
 **A mixin module** defines a collection of standard modules with a consistent common configuration.
 :::
 
-{/* t:p 0bb788564455bcb779a535d30c8f7bcd94fa4527137b33a62ff88396596826d2 */}
+{/* t:p 9e67fa74940b23f245d37bb20dafde2f69a945e9814ad2ab2010af9ca9bada60 */}
 ### &#x1F4E6; darkone.host.ai-space
 
 AI space: headless host running the agents of one space (owner + members).
@@ -24,13 +24,16 @@ input (mail, web, chat), so the host only decrypts its own
 (`features: ["microvm-guest:<hypervisor>"]`), bare metal works too.
 
 Agent tooling, declared once per space (`usr/machines/<host>/configuration.nix`)
-and shared by the OpenClaw assistant and every member's Claude Code / Codex
-(`darkone.home.aiSpace`, on by default in the `space-member` home):
+and shared by the OpenClaw assistant and every member's Claude Code / Codex /
+OpenCode (`darkone.home.aiSpace`, on by default in the `space-member` home):
 
 - `mcp`: MCP servers, local (`command`) or remote (`url`);
 - `skills`: `SKILL.md` content, a file or a skill directory, by name;
-- `enableClaude`, `enableCodex`: CLIs for members and for OpenClaw delegation;
-- `packages`: tools on the agents' PATH and in members' homes.
+- `enableClaude`, `enableCodex`, `enableOpenCode`: CLIs for members and for
+  OpenClaw delegation;
+- `packages`: tools on the agents' PATH and in members' homes;
+- `projectsDir`: shared projects, writable by every member and the agent
+  (group `projects`, setgid, default ACL), `~/projects` in members' homes.
 
 ```nix
 darkone.host.ai-space = {
@@ -52,12 +55,16 @@ secret.
 :::
 
 * **enable** `bool` AI space host (isolated agents workspace)
-* **mcp** `attrs` MCP servers of the space: OpenClaw and members' Claude Code / Codex.
+* **mcp** `attrs` MCP servers of the space: OpenClaw and members' Claude Code / Codex / OpenCode.
 * **skills** `attrs` Skills of the space, by name: inline `SKILL.md`, a `SKILL.md` file or
-  a skill directory. Given to OpenClaw and members' Claude Code / Codex.
+  a skill directory. Given to OpenClaw and members' Claude Code / Codex /
+  OpenCode.
 * **enableClaude** `bool` Claude Code for members and for OpenClaw (coding-agent delegation).
 * **enableCodex** `bool` Codex CLI for members and for OpenClaw (coding-agent delegation).
+* **enableOpenCode** `bool` OpenCode for members and for OpenClaw (coding-agent delegation).
 * **packages** `listOf package` Tools of the space: OpenClaw PATH and members' homes.
+* **projectsDir** `str` Shared projects of the space: every member and the OpenClaw agent
+  (its working dir) read and write them, `~/projects` in members' homes.
 
 ```nix
 darkone.host.ai-space = {
@@ -66,7 +73,9 @@ darkone.host.ai-space = {
   skills = { };
   enableClaude = true;
   enableCodex = true;
+  enableOpenCode = true;
   packages = [ ];
+  projectsDir = "/var/lib/projects";
 };
 ```
 

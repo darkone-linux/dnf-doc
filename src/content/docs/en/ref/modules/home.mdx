@@ -69,25 +69,27 @@ darkone.home.advanced = {
 
 <hr/>
 
-{/* t:p e65a4abb0564f071f818836f3bfef60d3bd7cf2f3068d7c8d633a7d26fd590e2 */}
+{/* t:p b36d5c772b6965495236404d5b3fa9beb10dce21bd8e3c05f066d5b6802b2a33 */}
 ### &#x1F3E0; darkone.home.ai-space
 
-Agent tools of an AI space in a member's home: Claude Code, Codex, MCP, skills.
+Agent tools of an AI space in a member's home: Claude Code, Codex, OpenCode, MCP, skills.
 
 Everything comes from the space (`darkone.host.ai-space` of the host), so
 OpenClaw and every member share the same MCP servers and skills. On by
 default in the `space-member` home; off on any other host.
 
-- MCP: HM `programs.mcp`, integrated into Claude Code and Codex;
-- skills: `~/.claude/skills`, `~/.codex/skills`;
-- logins: once per member, `claude` (`/login`), `codex login --device-auth`.
+- MCP: HM `programs.mcp`, integrated into Claude Code, Codex and OpenCode;
+- skills: `~/.claude/skills`, `~/.codex/skills`, `~/.config/opencode/skills`;
+- logins: once per member, `claude` (`/login`), `codex login --device-auth`,
+  `opencode auth login`;
+- `~/projects`: the space's shared projects (`projectsDir`).
 
 :::note[Per member, per space]
 `usr/users/<login>/spaces/<host>.nix` adds or overrides, e.g. a personal MCP
 server: `programs.mcp.servers.<name> = { ... };`.
 :::
 
-* **enable** `bool` Agent tools of the AI space (Claude Code, Codex, MCP, skills)
+* **enable** `bool` Agent tools of the AI space (Claude Code, Codex, OpenCode, MCP, skills)
 
 ```nix
 darkone.home.ai-space.enable = false;
@@ -588,7 +590,7 @@ DNF UMI: SuperTuxKart driven by the mouse alone (`enableStkWithMouse`). Doc: `..
 
 <hr/>
 
-{/* t:p 60d66c5a708e87d6085511c30b3031b531650e4d4a4e9601259f2747bc189203 */}
+{/* t:p b4fbc10c762f22104c34fea1a3e4643ceb8c85f5f4e0e284719cec30b1bd3c41 */}
 ### &#x1F3E0; darkone.home.umi
 
 Unified Multimodal Input (UMI)
@@ -612,6 +614,8 @@ Dwell click: opt-in (`enableDwell`) under GNOME. In Cinnamon, a Talon user
 script makes it follow the eye tracker, with gaze control (`enableTrackerAuto`).
 Talon 0.4 and 1.0 alike; 1.0's "Always On" is switched off, the tracker goes
 dark with gaze control.
+
+Speech recognition: asleep at each Talon start unless `enableSpeech`.
 :::
 
 :::note[Application grid (UMI host)]
@@ -674,6 +678,8 @@ each activation, `user.keystore` included, and its secrets are lost.
 * **enable** `bool` UMI multimodal input configuration (Talon + Onboard)
 * **enableTalonAutostart** `bool` Start Talon on session login, once the panel tray is up (talon must be in PATH).
 * **communityScripts** `nullOr package` talonhub/community tree deployed to ~/.talon/user/community.
+* **enableSpeech** `bool` Talon speech recognition at start. Off by default: put to sleep at
+  each Talon start, stray words must not trigger commands
 * **enableDwell** `bool` dwell click: clicking by resting the pointer. Off by default — it is
   only usable with an eye tracker, and with a mouse it fires on whatever
   the pointer was left over (the a11y menu toggling zoom or the on-screen
@@ -736,6 +742,7 @@ darkone.home.umi = {
   enable = false;
   enableTalonAutostart = true;
   communityScripts = null;
+  enableSpeech = false;
   enableDwell = false;
   dwellTime = 1.6;
   enableTrackerAuto = true;

@@ -290,7 +290,14 @@ MicroVM hypervisor side: guests, routed taps, isolation.
 
 <hr/>
 
-{/* t:p 0f9daa663b9b571521e0f6fdafaf3202e81fb844f7bc268ea04bed99c00da68b */}
+{/* t:p 73260e5eb8fd43f6ea389a48e6d8442c516b1a323618aff9e42f486d0bb0f704 */}
+### &#x2699; darkone.system.microvm.whisper
+
+MicroVM hypervisor side: whisper.cpp server for the guests that ask for it.
+
+<hr/>
+
+{/* t:p 22d500f52fa574a3a45f06ad8ac02745875297643d40b0695b9db5b96052ac9b */}
 ### &#x2699; darkone.system.microvm
 
 MicroVM guests (microvm.nix, cloud-hypervisor) on a DNF hypervisor host.
@@ -314,6 +321,10 @@ IP, services and monitoring; the hypervisor runs it and deploys it.
   on the LAN, nftables isolation (`dnf-microvm` table), `<stateDir>` closed
   to the hypervisor's users (0770) and bound `nosuid,nodev` (setuid files,
   device nodes of a guest inert).
+- Speech to text (`microvm/whisper.nix`): one whisper.cpp server on the
+  hypervisor for the guests with `darkone.system.microvm.guest.whisper`
+  (OpenClaw voice notes), started and opened for them only; `whisper.model`,
+  `whisper.threads` tune it.
 
 :::note[Deployment]
 Guests are no colmena nodes: deploying the hypervisor builds and restarts
@@ -328,14 +339,18 @@ running guest has read. Never run it by hand there either.
 
 :::caution[Isolation]
 A guest reaches the Internet and the zone gateway DNS, nothing else on the
-LAN, not even the hypervisor. Only the zone gateway (reverse proxy,
-monitoring) reaches a guest.
+LAN; of the hypervisor, only the services it asks for (whisper). Only the
+zone gateway (reverse proxy, monitoring) reaches a guest.
 :::
 
 * **hypervisor** `nullOr str` Hypervisor running this host as a microVM guest, null when bare metal.
 * **stateDir** `str` Hypervisor directory holding one sub-directory of shares per guest.
 * **guest.vcpu** `ints.positive` Guest virtual CPUs.
 * **guest.mem** `ints.positive` Guest RAM, in MiB.
+* **guest.whisper** `bool` Use the hypervisor's whisper.cpp server (speech to text): started and opened to this guest.
+* **guestInputRules** `lines` nftables rules of the hypervisor's `dnf-microvm` input chain, before the drop of guest traffic.
+* **whisper.model** `path` whisper.cpp ggml model of the hypervisor's server, loaded once for all guests.
+* **whisper.threads** `ints.positive` Threads of the hypervisor's whisper.cpp server, one transcription at a time.
 
 ```nix
 darkone.system.microvm = {
@@ -343,6 +358,13 @@ darkone.system.microvm = {
   stateDir = "/var/lib/microvms";
   guest.vcpu = 2;
   guest.mem = 4096;
+  guest.whisper = false;
+  guestInputRules = "";
+  whisper.model = pkgs.fetchurl {
+        url = "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3-turbo.bin";
+        sha256 = "1fc70f774d38eb169993ac391eea357ef47c88757ef72ee5943879b7e8e2bc69";
+      };
+  whisper.threads = 8;
 };
 ```
 

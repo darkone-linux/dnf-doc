@@ -13,29 +13,27 @@ sidebar:
 **Un module mixin** définit un ensemble de modules standards avec une configuration commune cohérente.
 :::
 
-{/* t:p 0bb788564455bcb779a535d30c8f7bcd94fa4527137b33a62ff88396596826d2 */}
+{/* t:p 9e67fa74940b23f245d37bb20dafde2f69a945e9814ad2ab2010af9ca9bada60 */}
 ### &#x1F4E6; darkone.host.ai-space
 
-Espace IA : hôte headless exécutant les agents d'un espace (propriétaire +
-membres).
+Espace IA : hôte headless exécutant les agents d'un espace (propriétaire + membres).
 
 Base serveur avec secrets isolés de la flotte : les agents lisent des entrées
 non fiables (mail, web, chat), l'hôte ne déchiffre donc que son propre
-`usr/secrets/hosts/<hostname>.yaml`. En général invité microVM
-(`features: ["microvm-guest:<hypervisor>"]`), mais fonctionne aussi en bare
-metal.
+`usr/secrets/hosts/<hostname>.yaml`. Généralement un invité microVM
+(`features: ["microvm-guest:<hypervisor>"]`), le métal nu fonctionne aussi.
 
-Outils de l'espace, déclarés une fois par espace
-(`usr/machines/<host>/configuration.nix`) et partagés par l'assistant OpenClaw
-et le Claude Code / Codex de chaque membre (`darkone.home.aiSpace`, activé par
-défaut dans le home `space-member`) :
+Outillage des agents, déclaré une fois par espace (`usr/machines/<host>/configuration.nix`)
+et partagé par l'assistant OpenClaw et le Claude Code / Codex / OpenCode de chaque
+membre (`darkone.home.aiSpace`, actif par défaut dans le home `space-member`) :
 
 - `mcp` : serveurs MCP, locaux (`command`) ou distants (`url`) ;
-- `skills` : contenu `SKILL.md`, un fichier skill ou un répertoire de skills,
-  par nom ;
-- `enableClaude`, `enableCodex` : CLI pour les membres et pour la délégation
-  OpenClaw ;
-- `packages` : outils sur le PATH des agents et dans les homes des membres.
+- `skills` : contenu `SKILL.md`, un fichier ou un dossier de skill, par nom ;
+- `enableClaude`, `enableCodex`, `enableOpenCode` : CLI pour les membres et pour
+  la délégation OpenClaw ;
+- `packages` : outils dans le PATH des agents et dans les homes des membres ;
+- `projectsDir` : projets partagés, inscriptibles par chaque membre et l'agent
+  (groupe `projects`, setgid, ACL par défaut), `~/projects` dans les homes des membres.
 
 ```nix
 darkone.host.ai-space = {
@@ -51,18 +49,22 @@ darkone.host.ai-space = {
 ```
 
 :::caution[Secrets : `secretEnv` uniquement]
-`env` et `headers` finissent dans le magasin Nix lisible par tous.
-`secretEnv` lit le fichier sops de l'espace&nbsp;: pour les serveurs locaux
-seulement, un serveur distant ne prend aucun secret.
+`env` et `headers` finissent dans le store Nix lisible par tous. `secretEnv`
+lit le fichier sops de l'espace, pour les serveurs locaux : un serveur distant ne
+prend pas de secret.
 :::
 
-* **enable** `bool` Hôte d'espace IA (espace de travail agent isolé).
-* **mcp** `attrs` Serveurs MCP de l'espace : OpenClaw et le Claude Code / Codex des membres.
+* **enable** `bool` Hôte d'espace IA (espace de travail isolé des agents)
+* **mcp** `attrs` Serveurs MCP de l'espace : OpenClaw et Claude Code / Codex / OpenCode des membres.
 * **skills** `attrs` Skills de l'espace, par nom : `SKILL.md` en ligne, un fichier `SKILL.md` ou
-  un répertoire de skills. Donnés à OpenClaw et au Claude Code / Codex des membres.
-* **enableClaude** `bool` Claude Code pour les membres et pour OpenClaw (délégation d'agent de codage).
-* **enableCodex** `bool` CLI Codex pour les membres et pour OpenClaw (délégation d'agent de codage).
+  un dossier de skill. Fournis à OpenClaw et au Claude Code / Codex /
+  OpenCode des membres.
+* **enableClaude** `bool` Claude Code pour les membres et pour OpenClaw (délégation d'agent de code).
+* **enableCodex** `bool` Codex CLI pour les membres et pour OpenClaw (délégation d'agent de code).
+* **enableOpenCode** `bool` OpenCode pour les membres et pour OpenClaw (délégation d'agent de code).
 * **packages** `listOf package` Outils de l'espace : PATH d'OpenClaw et homes des membres.
+* **projectsDir** `str` Projets partagés de l'espace : chaque membre et l'agent OpenClaw
+  (son répertoire de travail) les lisent et y écrivent, `~/projects` dans les homes des membres.
 
 ```nix
 darkone.host.ai-space = {
@@ -71,7 +73,9 @@ darkone.host.ai-space = {
   skills = { };
   enableClaude = true;
   enableCodex = true;
+  enableOpenCode = true;
   packages = [ ];
+  projectsDir = "/var/lib/projects";
 };
 ```
 

@@ -161,54 +161,62 @@ accessibility) and Talon can be launched manually from the upstream archive,
 which preserves its automatic update.
 :::
 
-{/* t:p 3a172023a2d1d1588dd51de3ea154a78cf7f91d7228e6c751d7330910cdeef1e */}
-## Configuring the user
+{/* t:p 3e8aa6368d668a482cdb5318a673ef43e9790db6719aa080d8201fc6b78333a8 */}
+## Configure the user
 
-Options of `darkone.home.umi`, set in `usr/users/<login>/default.nix`.
+Options of `darkone.home.umi`, to set in `usr/users/<login>/default.nix`.
 
-| Option | Default | Role |
+| Option | Default | Purpose |
 |---|---|---|
 | `enable` | enabled by the profile | Enables the user profile |
 | `enableTalonAutostart` | `true` | Starts Talon at login |
-| `communityScripts` | `null` | `talonhub/community` tree deployed in `~/.talon/user/community` |
+| `communityScripts` | `null` | `talonhub/community` tree deployed to `~/.talon/user/community` |
+| `enableSpeech` | `false` | Speech recognition active when Talon starts |
 | `enableDwell` | `false` | Permanent dwell clicking |
 | `enableTrackerAuto` | `true` | Gaze and click follow the tracker |
-| `gazeFilterSpeed` | `1.0` | Gaze responsiveness (Talon's) |
+| `gazeFilterSpeed` | `1.0` | Gaze responsiveness (Talon's own value) |
 | `cursorFilterSpeed` | `4.0` | Pointer responsiveness (Talon&nbsp;: `2.0`) |
 | `enableGazeControl` | `true` | The pointer follows the gaze |
 | `enableHeadControl` | `true` | The head refines the pointer placed by the gaze |
 | `headSpeed` | `5.0` | Head sensitivity (Talon&nbsp;: `1`) |
 | `enableHeadJump` | `false` | A head movement brings the pointer back to the gaze |
 | `enableMouseJump` | `false` | Moving a mouse toward the gaze brings the pointer there |
-| `enableGazeFocus` | `false` | The gazed window takes focus (experimental) |
+| `enableGazeFocus` | `false` | The window being looked at takes focus (experimental) |
 | `dwellTime` | `1.6` | Dwell click delay, in seconds |
 | `panelHeight` | `64` | Cinnamon panel height, in pixels |
-| `textScaling` | `1.5` | Text magnification factor (Cinnamon) |
-| `enablePanel` | `true` | Imposed panel, rewritten at each deployment |
+| `textScaling` | `1.5` | Text scaling factor (Cinnamon) |
+| `enablePanel` | `true` | Enforced panel, rewritten on each deployment |
 | `enableMaximize` | `true` | Application windows open maximized (Cinnamon) |
 | `panelLaunchers` | Files, Firefox | Panel launchers (`.desktop` files) |
-| `menuFavorites` | Calibration, Calculator, Calendar, Settings | Menu favorites, rewritten at deployment |
+| `menuFavorites` | Calibration, Calculator, Calendar, Settings | Menu favorites, rewritten on deployment |
 | `enableRofiMenu` | `true` | Full-screen application grid |
 | `rofiGridResolution` | `{ columns = 6; rows = 4; }` | Tiles per grid page |
-| `hiddenApps` | Terminals, duplicates, NixOS manual | Hidden from the grid and menu |
+| `hiddenApps` | Terminals, duplicates, NixOS manual | Hidden from the grid and the menu |
 | `enableStkWithMouse` | `false` | [SuperTuxKart with the mouse](#supertuxkart-with-the-mouse) |
 
 :::caution[Dwell clicking follows the tracker]
-Under Cinnamon, `enableTrackerAuto` enables pointer control by gaze and dwell
-clicking when the tracker is plugged in, and turns off that click when it is
-unplugged&nbsp;: **with a mouse, it clicks on everything the pointer hovers
-over**. `enableDwell` is then only useful under GNOME.
+Under Cinnamon, `enableTrackerAuto` enables gaze-driven pointer control
+and dwell clicking when the tracker is plugged in, and turns this click off
+when it is unplugged&nbsp;: **with a mouse, it clicks on everything the pointer
+hovers over**. `enableDwell` then only applies under GNOME.
 :::
 
 :::note[Eye Tracking menu modes]
 `enableGazeControl`, `enableHeadControl`, `enableHeadJump`, `enableMouseJump`
-and `enableGazeFocus` are re-imposed at each Talon start. A change made from
-the menu lasts until the next start.
+and `enableGazeFocus` are reimposed each time Talon starts. A change
+made from the menu lasts until the next start.
+:::
+
+:::note[Speech recognition on standby]
+Without `enableSpeech`, Talon puts speech recognition on standby each
+start&nbsp;: an accidental word triggers no command. Talon's menu
+or `actions.speech.enable()` (REPL) wakes it until the next
+start.
 :::
 
 :::tip[Community contributions]
-The community scripts `talonhub/community` bring mouse zoom and tongue-click
-clicking. They are declared reproducibly&nbsp;:
+The `talonhub/community` community scripts provide mouse zoom and
+tongue-click clicking. They are declared reproducibly&nbsp;:
 
 ```nix
 # usr/users/alice/default.nix

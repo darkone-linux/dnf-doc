@@ -1173,7 +1173,7 @@ darkone.service.nix-cache = {
 
 <hr/>
 
-{/* t:p d3e3c476ce1a04ea1805517e05be68c447be0ebd52a43d703d6316998d5e4f65 */}
+{/* t:p 0b412183a552eb6a07f8c24fa759b2fa14fbcb49baeb3fc920303e427df4a6a3 */}
 ### &#x2728; darkone.service.openclaw
 
 OpenClaw assistant of an AI space (gateway + control UI, behind the zone SSO).
@@ -1205,14 +1205,27 @@ One instance per `ai-space` host, declared like any service:
   Matrix and `just space-init <host>` created the bot (marker
   `var/generated/spaces/<host>.nix`, token in the space's sops file); exec
   approvals asked to the owner in DM;
-- agent tooling: MCP, skills, Claude Code / Codex and `packages` of the
-  space (`darkone.host.ai-space`), shared with the members' homes;
+- agent tooling: MCP, skills, Claude Code / Codex / OpenCode and `packages`
+  of the space (`darkone.host.ai-space`), shared with the members' homes;
 - identity (`identity`: name, emoji, avatar): declared, the config being
   read-only (`openclaw agents set-identity` fails);
+- `mutableConfig`: config writable from the UI and the CLI, Nix keys merged
+  at each start (imposed: access, channels, plugins, store paths; seeded
+  once: model, exec, identity...), owner gets `operator.admin`;
 - workspace (`/var/lib/openclaw/workspace`): `workspace` files (AGENTS.md,
-  SOUL.md...) replaced at each start, others left to the agent; `projects`
-  git-cloned once into `projects/<name>`;
-- voice notes: local whisper.cpp (`transcription`, ggml `small` model).
+  SOUL.md...) replaced at each start, others left to the agent;
+- projects: the space's shared `projectsDir` is the agent's working dir
+  (`agents.defaults.cwd`), `projects` git-cloned once into it;
+- coding agents (Claude Code, Codex, OpenCode of the space): background
+  workers (`coding-agent` skill), chat-bound sessions (`/acp spawn`, acpx);
+- Talk (`talk`): live voice conversation in the browser, OpenAI GPT-Live,
+  work delegated to the agent (`agent-consult`), ChatGPT login first;
+- workflows: Lobster pipelines (`lobster`, `.lobster` files through
+  `workspace`), declared automations (`automations`, kept in sync, others
+  left to the agent and the UI);
+- voice notes: whisper.cpp (`transcription`); on a microVM guest the
+  hypervisor's server (`large-v3-turbo`), local ggml `small` as fallback;
+  local only on bare metal.
 
 ```nix
 darkone.service.openclaw = {
@@ -1233,20 +1246,45 @@ One gateway, one operator domain: every member's UI shows every session,
 DMs included. Members who do not trust each other get separate spaces.
 :::
 
+Models: `model` + `extraModels` (`/model` in the chat), the owner's
+`subscriptions` first, else an API key (`apiKeys`, sops `openclaw/<VAR>`);
+`providers` adds OpenAI-compatible endpoints (Nous Portal...).
+
 :::note[Provider login]
 Once per space, from the host as `nix` (the `openclaw` CLI re-runs itself as
-the service user), by `model` provider. Logins stay in the state.
-- `anthropic/*` (default): `sudo -u openclaw -H claude auth login`;
-- `openai/*`: `openclaw models auth login --provider openai`.
+the service user), by subscription. Logins stay in the state.
+- `anthropic`: `sudo -u openclaw -H claude auth login`;
+- `openai`: `openclaw models auth login --provider openai`.
 :::
 
 * **enable** `bool` Enable the OpenClaw assistant of an AI space
 * **owner** `nullOr str` Member owning the space: its subscription logs the agent in
   (`model`), it receives approval requests and proactive messages.
   Required with several members (`users` order is not kept).
-* **model** `str` Main model. Subscription runtime from its provider: `anthropic/*`
-  through the `claude` CLI (with `darkone.host.ai-space.enableClaude`),
-  `openai/*` through the `codex` plugin (ChatGPT OAuth).
+* **model** `str` Main model, `&lt;provider&gt;/&lt;model&gt;`: through the owner's subscription
+  when its provider is in `subscriptions`, else an API key (`apiKeys`).
+* **extraModels** `listOf str` Other models of the catalog, picked in the chat with `/model`; same rules as `model`.
+* **subscriptions** `listOf ( enum [ "anthropic" "openai" ] )` Subscriptions of the owner, used first by the models of their provider:
+  - `anthropic`: Claude Pro/Max through the `claude` CLI (needs
+    `darkone.host.ai-space.enableClaude`);
+  - `openai`: ChatGPT Plus/Pro through the `codex` plugin.
+
+  Other providers, or one left out, go through an API key (`apiKeys`).
+* **apiKeys** `listOf (strMatching "[A-Z][A-Z0-9_]*")` Provider API keys, by variable: read from the space's sops file
+  (`openclaw/&lt;VAR&gt;`, `just space-sops &lt;host&gt;`) into the gateway
+  environment. `ANTHROPIC_API_KEY` is dropped beside the `anthropic`
+  subscription, which it would override.
+* **providers** `attrs` Providers absent from OpenClaw (Nous Portal...), OpenAI-compatible by default.
+  * **baseUrl** `str` API endpoint.
+  * **api** `str` API flavour (OpenClaw `models.providers.&lt;id&gt;.api`).
+  * **apiKey** `nullOr (strMatching "[A-Z][A-Z0-9_]*")` Key variable, read like `apiKeys`.
+  * **models** `listOf str` Model ids, referenced as `&lt;provider&gt;/&lt;id&gt;`.
+* **mutableConfig** `bool` Config writable from the UI and `openclaw config set`, the owner being
+  operator admin. Nix keys merged at each start:
+  - imposed, rewritten (also on any change of the file): gateway and
+    access, Matrix channel, plugins, MCP servers, store paths;
+  - seeded, written when absent, then the UI rules: `model`, `exec`,
+    `identity`, talk, ACP, skill switches.
 * **exec** `enum [ "full" "auto" "ask" "allowlist" "deny" ]` Command policy of the agent (OpenClaw `tools.exec.mode`):
   - `full`: any command, unapproved (OpenClaw default);
   - `ask`: allowlisted commands run, any other asks the owner;
@@ -1261,11 +1299,34 @@ the service user), by `model` provider. Logins stay in the state.
 * **identity.avatar** `nullOr str` Avatar image (URL or workspace-relative path).
 * **workspace** `attrs` Files of the agent workspace, by relative path: content or file.
   Replaced at each gateway start; undeclared files belong to the agent.
-* **projects** `attrs` Git repositories cloned once into `workspace/projects/&lt;name&gt;`, never
-  pulled. SSH remotes use the key of `openclaw` (`/var/lib/openclaw/.ssh`,
-  created by hand); the server key is accepted on first clone.
-* **transcription.enable** `bool` Transcribe voice notes locally (whisper.cpp, CPU).
-* **transcription.model** `path` whisper.cpp ggml model.
+* **projects** `attrs` Git repositories cloned once into `&lt;projectsDir&gt;/&lt;name&gt;`
+  (`darkone.host.ai-space.projectsDir`), never pulled. SSH remotes use
+  the key of `openclaw` (`/var/lib/openclaw/.ssh`, created by hand); the
+  server key is accepted on first clone.
+* **talk.enable** `bool` Talk: live voice conversation in the browser (OpenAI GPT-Live)
+* **talk.model** `str` Realtime model. `gpt-live-1-codex`: the owner's ChatGPT login
+  (`openclaw models auth login --provider openai`), else a Platform
+  key (`OPENAI_API_KEY`); `gpt-live-1`, `gpt-realtime-2.1` (camera):
+  Platform key only. Pinned: unset, a Platform key wins over ChatGPT.
+* **talk.voice** `str` Voice of the model's route (`gpt-live-1-codex`: `cove`, `arbor`, `breeze`, `ember`, `juniper`, `maple`, `sol`, `spruce`, `vale`).
+* **talk.instructions** `nullOr lines` Instructions appended to OpenClaw's realtime prompt.
+* **lobster** `bool` Lobster workflows: pipelines run by the gateway, with approval steps
+  and resume, plus `llm-task` (structured LLM step). Workflow files go
+  through `workspace` (`"workflows/&lt;name&gt;.lobster"`).
+* **automations** `attrs` Scheduled agent runs declared in Nix, kept in sync at each start
+  (`nix-&lt;name&gt;`, edits from the UI overwritten); those of the agent and
+  the UI are left alone.
+  * **schedule** `str` Cron expression (5 or 6 fields), or `every &lt;duration&gt;` (`every 2h`).
+  * **message** `lines` Prompt of the agent's run.
+  * **announce** `bool` Send the final reply to the chat (owner's last channel).
+  * **model** `nullOr str` Model override, `&lt;provider&gt;/&lt;model&gt;` or alias.
+  * **enable** `bool` False: kept disabled; once so, re-enabled from the UI only (`openclaw automations enable &lt;id&gt;`).
+* **transcription.enable** `bool` Transcribe voice notes (whisper.cpp, CPU).
+* **transcription.backend** `enum [ "hypervisor" "local" ]` Where voice notes are transcribed:
+  - `hypervisor`: the hypervisor's whisper.cpp server (bigger model,
+    more cores), `model` as fallback;
+  - `local`: on this host, with `model`.
+* **transcription.model** `path` whisper.cpp ggml model of local transcription (`local` backend, fallback).
 * **transcription.language** `str` Spoken language (`auto`: detected per note).
 
 ```nix
@@ -1273,13 +1334,32 @@ darkone.service.openclaw = {
   enable = false;
   owner = "alice";
   model = "openai/gpt-6-astra";
+  extraModels = [ ];
+  subscriptions = [ ];
+  apiKeys = [ ];
+  providers.baseUrl = "https://inference-api.nousresearch.com/v1";
+  providers.api = "openai-completions";
+  providers.apiKey = "NOUS_API_KEY";
+  providers.models = [ ];
+  mutableConfig = false;
   exec = "ask";
   identity.name = "Jarvis";
   identity.emoji = "🦉";
   identity.avatar = null;
   workspace = { };
   projects = { };
+  talk.enable = false;
+  talk.model = "gpt-live-1-codex";
+  talk.voice = "sol";
+  talk.instructions = "Réponds en français, en phrases courtes.";
+  lobster = false;
+  automations.schedule = "0 7 * * 1-5";
+  automations.message = "";
+  automations.announce = true;
+  automations.model = null;
+  automations.enable = true;
   transcription.enable = true;
+  transcription.backend = if config.darkone.system.microvm.hypervisor != null then "hypervisor" else "local";
   transcription.model = pkgs.fetchurl {
             url = "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-small.bin";
             sha256 = "0ywqxbziyp2bv72riyjpw4brk9v46d4cfbjfwqvvjrrq0srakqqv";

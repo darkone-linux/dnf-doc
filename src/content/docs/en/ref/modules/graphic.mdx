@@ -168,7 +168,7 @@ darkone.graphic.remote-desktop = {
 
 <hr/>
 
-{/* t:p 1f672ff4b679e1c262a61929f551af992d25cb7e572738132eb35ae671af55ae */}
+{/* t:p b11e63c898dd5d49c1578fb0d4c269983aafb447135da24e237c8bcc07858f66 */}
 ### &#x1F5BC; darkone.graphic.supertuxkart
 
 SuperTuxKart with configurations to play in local network.
@@ -184,9 +184,15 @@ The tracks share itself lives in `service/stk.nix`. `enableNfsClient` and
 never has to name two modules for one game.
 :::
 
-:::caution[Zone-scoped firewall]
-Game and discovery ports are accepted from the zone prefix only. A STK host
-that also holds a WAN or tailnet address does not publish the game there.
+:::tip[Playing across zones]
+Game and discovery ports accept every zone prefix and the tailnet. Broadcast
+discovery stays inside the zone: from another zone, join with "Enter server
+address" (server IP, port 2759).
+:::
+
+:::caution[Fleet-scoped firewall]
+Sources are matched on fleet prefixes, never on an interface: a STK host that
+also holds a WAN address does not publish the game there.
 :::
 
 * **enable** `bool` SuperTuxKart + firewall config
