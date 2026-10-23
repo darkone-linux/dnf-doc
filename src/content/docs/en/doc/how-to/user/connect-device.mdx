@@ -39,7 +39,7 @@ access everywhere.
 - **Mobile apps** (photos, files, email): enter the service address provided by
   the administrator, then your usual username.
 
-{/* t:p a4ba6398a48b3ecd920c1e7d4900a8bb4e49497313d9662ca696d7991964b031 */}
+{/* t:p a920fe628d08143d45dafd14bdfae51cbd53bd874c1e8a2892dba33b6c498cdb */}
 ## From outside
 
 Outside a zone, the [Tailscale](https://tailscale.com/download) app connects your device to the network, as if you were at home.
@@ -51,20 +51,36 @@ Most services published online are already accessible **without a VPN**, directl
 <Steps>
 
 1. **Install Tailscale** on the device (iOS, Android, Windows, macOS, Linux).
-2. **Choose a custom server** in the account settings of the app, then enter the address given by your administrator (like `https://headscale.domain.tld`).
-3. **Sign in with your usual identifier**: the network's sign-in page opens, just like for the other services.
-4. **You're all set.** Your zones' services answer at their usual address.
+2. **Choose the server**: the address given by your administrator, such as
+   `https://headscale.domain.tld`.
+
+   - **Android**: settings (top right) → *Accounts* → ⋮ → *Use an alternate server*
+   - **iPhone, iPad**: account icon → *Log in…* → menu → *Use custom coordination server*
+   - **Windows**: in PowerShell, `tailscale login --login-server <address>`
+   - **macOS**: Option + click the icon → *Debug* → *Custom Login Server* → *Add Account…*
+   - **Linux**: `sudo tailscale login --login-server <address>`
+
+   Your server reminds you of the procedure at `/windows` and `/apple`
+   (`https://headscale.domain.tld/windows`).
+3. **Log in with your usual credentials**: the network login page opens, as for the other services. The first time, authorize
+   *Headscale VPN*.
+4. **Confirm the device**: the page shows its name, click
+   *Confirm registration*.
+5. **You're all set.** The web services in your zones respond at their usual address; for file sharing, ask your administrator for access.
 
 </Steps>
 
-:::tip[The sign-in page does not show up?]
-Disable "Use Tailscale DNS" in the app while you sign in, then turn it back on.
+:::tip[The login page doesn't appear?]
+Disable "Use Tailscale DNS" in the app while you log in, then
+re-enable it.
 :::
 
 :::note[Every six months]
-For security, your device is disconnected after six months: simply sign back in with your identifier.
+For security, your device is logged out after six months: simply log back in
+with your credentials.
 :::
 
 :::tip[Administrator side]
-Opening the access is described in the [administrator guide](/en/doc/admin-guide/operate/vpn/#administration).
+Opening access is described in the
+[administrator guide](/en/doc/admin-guide/operate/vpn/#connect-a-personal-device).
 :::

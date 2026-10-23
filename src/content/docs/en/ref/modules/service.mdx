@@ -319,7 +319,7 @@ DNF headscale: `dnf-tailnet-enroll`. Doc: `../headscale.nix` header.
 
 <hr/>
 
-{/* t:p 1c5c73cfa0239db48f8312afda270fee90f64c897f01d3e5efb2b50efbb1b4ca */}
+{/* t:p 987636579447486bbaee16a99bf309427a6c3a162cd347188f2ce74eac409ffc */}
 ### &#x2728; darkone.service.headscale
 
 A full-configured headscale service for HCS.
@@ -333,6 +333,8 @@ time, then reloaded on change (SIGHUP) without restarting headscale.
 - Machines and zone LANs reach each other. Personal devices: DNS and HTTPS
   on the HCS, HTTPS on zone gateways (every zone for admins, else their
   `zone-*` groups). SSH from admin stations and `policy.adminDevices`.
+- Every addressed zone host is a policy alias (`nas` -&gt; its LAN IP): any
+  other service opens through `policy.extraAcls` (`nas:445`).
 - Personal devices log in through Kanidm (OIDC), for members of the Kanidm
   `tailnet` group; their keys expire after `nodeExpiry`.
 
@@ -373,7 +375,7 @@ IPs from headscale, declared nowhere.
 Metrics for the `dnf-headscale-<zone>` alerts, details in its journal. It
 never tags nor deletes.
 
-{/* t:p ad5d40e1917ed192cca38d18dd6062fde4a92374e6d5e3cb4e77cad41a39c5a9 */}
+{/* t:p f25bf2c1ea7a847207ffd49839d4e8c7149ca77060837c3af9e2f7bac7402e8b */}
 #### Enrollment (`enroll.nix`)
 
 `dnf-tailnet-enroll`, root side of `just tailnet-enroll`: single-use keys
@@ -386,7 +388,7 @@ and tags.
 * **policy.enforce** `bool` Default-deny tailnet ACLs. `false` allows all traffic, for a migration only.
 * **policy.adminDevices** `attrs` Personal devices granted SSH on every machine and zone: name -&gt; tailnet IPv4.
 * **policy.exitNodeSources** `listOf str` Policy sources allowed to use the HCS as exit node.
-* **policy.extraHosts** `attrs` Extra policy host aliases (name -&gt; CIDR), to use in `extraAcls`.
+* **policy.extraHosts** `attrs` Extra policy host aliases (name -&gt; CIDR), to use in `extraAcls`. Declared zone hosts already have one.
 * **policy.extraAcls** `listOf (attrsOf anything)` ACL rules appended after the generated ones.
 * **shared** `raw` Headscale values shared with the `headscale/` sub-modules.
 
@@ -1173,7 +1175,7 @@ darkone.service.nix-cache = {
 
 <hr/>
 
-{/* t:p 0b412183a552eb6a07f8c24fa759b2fa14fbcb49baeb3fc920303e427df4a6a3 */}
+{/* t:p d657b9f2ea5b0fb6e4c3d1a1439966edd419db188e38015a190a2c148248e663 */}
 ### &#x2728; darkone.service.openclaw
 
 OpenClaw assistant of an AI space (gateway + control UI, behind the zone SSO).
@@ -1194,8 +1196,9 @@ One instance per `ai-space` host, declared like any service:
 - devices: a member's browser is paired on first visit, without operator
   admin (granted from the host CLI only);
 - port: reachable from the zone gateway only;
-- host CLI: `openclaw`, re-run as the service user, past `trusted-proxy`
-  with the gateway password (`openclaw-gateway-password`, `just space-init`);
+- host CLI: `openclaw` (alone: the TUI), re-run as the service user, past
+  `trusted-proxy` with the gateway password (`openclaw-gateway-password`,
+  `just space-init`); admins and `cliUsers` (default: the owner) only;
 - state: `/var/lib/openclaw` (provider logins, sessions, workspace,
   Matrix E2EE keys);
 - owner (`owner`, default: the only member): its subscription runs the
@@ -1252,7 +1255,8 @@ Models: `model` + `extraModels` (`/model` in the chat), the owner's
 
 :::note[Provider login]
 Once per space, from the host as `nix` (the `openclaw` CLI re-runs itself as
-the service user), by subscription. Logins stay in the state.
+the service user, also for `cliUsers`), by subscription. Logins stay in the
+state.
 - `anthropic`: `sudo -u openclaw -H claude auth login`;
 - `openai`: `openclaw models auth login --provider openai`.
 :::
@@ -1261,6 +1265,9 @@ the service user), by subscription. Logins stay in the state.
 * **owner** `nullOr str` Member owning the space: its subscription logs the agent in
   (`model`), it receives approval requests and proactive messages.
   Required with several members (`users` order is not kept).
+* **cliUsers** `listOf str` Members running the host CLI (`openclaw`) as the service user, by a
+  sudo rule: TUI, provider logins, admin. Its `!` shell commands run as
+  `openclaw` too, the space's tokens within reach.
 * **model** `str` Main model, `&lt;provider&gt;/&lt;model&gt;`: through the owner's subscription
   when its provider is in `subscriptions`, else an API key (`apiKeys`).
 * **extraModels** `listOf str` Other models of the catalog, picked in the chat with `/model`; same rules as `model`.
@@ -1333,6 +1340,7 @@ the service user), by subscription. Logins stay in the state.
 darkone.service.openclaw = {
   enable = false;
   owner = "alice";
+  cliUsers = [ ];
   model = "openai/gpt-6-astra";
   extraModels = [ ];
   subscriptions = [ ];

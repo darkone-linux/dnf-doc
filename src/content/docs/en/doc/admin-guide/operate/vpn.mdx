@@ -146,41 +146,39 @@ A gateway enrolls like any machine&nbsp;; two points are specific to it.
 
 </Steps>
 
-{/* t:p 2aa4f2ec3235c034f85c5dd331468459a074712747a4af663271ff067b77f372 */}
-## Connecting a personal device
+{/* t:p 3d4ec5d7b872481a857d69b7835d59c93c148bf5ce73d82110d52dc163160d9c */}
+## Connect a personal device
 
-A smartphone or a personal computer connects with the
-[Kanidm](/en/doc/admin-guide/understand/auth-idm/) identity of its owner&nbsp;: neither
-key, nor manual validation.
+A smartphone or personal computer connects with the [Kanidm](/en/doc/admin-guide/understand/auth-idm/) identity of its owner&nbsp;: no key, no manual approval.
 
 | Can connect | Condition in `etc/config.yaml` |
 |---|---|
 | Administrator | `admin` or `nix-admin` profile |
-| Member of a zone | `zone-<zone>` group |
+| Zone member | `zone-<zone>` group |
 
-These accounts form the Kanidm group `tailnet`, provisioned on its own&nbsp;; Kanidm
-refuses the others. To open access, add the group to the user, regenerate, then
-`just apply hcs`. The user then follows [Connect a
-device](/en/doc/how-to/user/connect-device/#from-outside).
+These accounts form the `tailnet` Kanidm group, provisioned automatically&nbsp;; Kanidm refuses the others. To open access, add the group to the user, regenerate, then `just apply hcs`. The user then follows [Connect a device](/en/doc/how-to/user/connect-device/#from-outside).
 
-The device belongs to the person (`alice@`) and **expires after 180 days**&nbsp;:
-they then reconnect with their identifier.
+The device reaches the **web services** (HTTPS) of its zones and of the HCS, nothing else. A Samba share, a printer or SSH requires a rule&nbsp;: see [Adapt the access policy](#adapt-the-access-policy).
+
+The device belongs to the person (`alice@`) and **expires after 180 days**&nbsp;: they then reconnect with their identifier.
+
+**Remove access**&nbsp;: remove the group, `just apply hcs`, then delete its devices. Otherwise, they keep the HCS DNS and HTTPS until they expire (`HeadscaleUnexpectedNode` alert).
 
 ```sh
-sudo headscale nodes list                 # devices, owners, expiration
-sudo headscale nodes expire -i <id>       # force a reconnection
-sudo headscale nodes delete -i <id>       # remove the device
+sudo headscale nodes list                 # appareils, propriétaires, expiration
+sudo headscale nodes expire -i <id>       # forcer une reconnexion
+sudo headscale nodes delete -i <id>       # retirer l'appareil
 ```
 
-:::caution[Connection page not found]
-Split DNS sends every `domain.tld` to the HCS **through the tunnel**, including
+:::caution[Login page not found]
+Split DNS sends all `domain.tld` to the HCS **through the tunnel**, including
 `headscale.domain.tld` and `idm.domain.tld`. As long as the tunnel is not up, the
-browser cannot resolve them. Workaround&nbsp;: disable “Use Tailscale DNS”
-in the app while connecting, then enable it again.
+browser does not resolve them. Workaround&nbsp;: disable "Use Tailscale DNS" in
+the application for the duration of the connection, then re-enable it.
 :::
 
-{/* t:p 97840bc78749ac8e5241630ecf6230d826437c509c436faa6d19f8a5469a4b3a */}
-## Adjust the access policy
+{/* t:p bfc8c6e031c1f72338f914c3615b95ea222620ea438e76e7239539c3435c52cb */}
+## Adapt the access policy
 
 The policy is generated from the topology&nbsp;: its rules are detailed in
 [Access policy](/en/doc/admin-guide/understand/tailnet/#access-policy-acl).
@@ -188,12 +186,15 @@ Options adjust it, on the HCS&nbsp;:
 
 | Option `darkone.service.headscale.` | Default | Effect |
 |---|---|---|
-| `policy.adminDevices` | `{ }` | personal devices allowed in SSH&nbsp;: name → tailnet IPv4 |
-| `policy.exitNodeSources` | `[ ]` | sources allowed to reach the Internet via the HCS |
-| `policy.extraHosts` | `{ }` | additional aliases&nbsp;: name → CIDR |
-| `policy.extraAcls` | `[ ]` | rules appended after the generated rules |
-| `policy.enforce` | `true` | `false`&nbsp;: everything allowed, migration only |
-| `nodeExpiry` | `"180d"` | expiration of personal devices (`0`&nbsp;: never) |
+| `policy.adminDevices` | `{ }` | personal devices allowed over SSH&nbsp;: name → tailnet IPv4 |
+| `policy.exitNodeSources` | `[ ]` | sources allowed to exit to the Internet through the HCS |
+| `policy.extraHosts` | `{ }` | aliases for undeclared devices&nbsp;: name → CIDR |
+| `policy.extraAcls` | `[ ]` | rules added after the generated rules |
+| `policy.enforce` | `true` | `false`&nbsp;: everything allowed, for a migration only |
+| `nodeExpiry` | `"180d"` | expiry of personal devices (`0`&nbsp;: never) |
+
+Each declared host of a zone is already an alias (its name → its LAN address)&nbsp;:
+a rule targets `nas:445` without going through `extraHosts`.
 
 ```nix
 # usr/machines/hcs/configuration.nix
@@ -213,6 +214,13 @@ darkone.service.headscale.policy = {
       src = [ "autogroup:member" ];
       dst = [ "printer:631" ];
     }
+
+    # Partage Samba du serveur `nas` (hôte déclaré) pour Alice
+    {
+      action = "accept";
+      src = [ "alice@" ];
+      dst = [ "nas:445" ];
+    }
   ];
 };
 ```
@@ -220,13 +228,13 @@ darkone.service.headscale.policy = {
 Then `just apply hcs`&nbsp;: the policy is checked at build time, and Headscale
 reloads it without restarting.
 
-:::caution[Declared device address]
+:::caution[Address of a declared device]
 `adminDevices` targets an IPv4 address. A device re-registered as a new node
 changes address&nbsp;: `HeadscaleNodeDrift` reports it, report the new one.
 :::
 
 :::note[Exit node]
-Opening `exitNodeSources` is not enough&nbsp;: the user picks the HCS as exit
+Opening `exitNodeSources` is not enough&nbsp;: the user chooses the HCS as exit
 node in their application.
 :::
 
@@ -302,25 +310,28 @@ real nodes** and runs its `tests` block, without touching the policy in place.
 
 </Steps>
 
-{/* t:p 28b0e94abdf6b0dda0ea316acbaa540b6eecb76af5ae81021a636ba8108a122b */}
+{/* t:p 99411ce62935b9e824f40c28db4b62aa4f1041e71d2e72baa66388b452b02115 */}
 ### Common failures
 
 | Symptom | Check | Remedy |
 |---|---|---|
 | `TailscaleUnhealthy`, backend `NeedsLogin` | `tailscale status` on the node | `just tailnet-enroll <host>` |
+| Connection showing `headscale auth register` | `HeadscaleOidcFallback` alert | `sudo systemctl restart headscale` on the HCS |
+| Kanidm refuses access to Headscale VPN | user's groups | admin profile or `zone-<zone>`, `just apply hcs` |
 | Zone unreachable from the tailnet | `headscale nodes list-routes` | gateway enrolled with its tag, route approved |
-| Zone service refused to a device | user's groups, `tailscale whois <ip>` | add `zone-<zone>`, `just apply hcs` |
+| Zone service denied to a device | user's groups, `tailscale whois <ip>` | add `zone-<zone>`, `just apply hcs` |
+| Non-web service unreachable (Samba, ping) | policy rules | `policy.extraAcls` rule |
 | SSH refused on a tailnet address | `tag:admin` machine or `adminDevices` device | declare the device |
-| Internal names unresolved outside the zone | `tailscale dns status` | enable “Use Tailscale DNS” |
+| Internal names not resolved outside the zone | `tailscale dns status` | enable "Use Tailscale DNS" |
 | Slow traffic | `tailscale ping` shows `via DERP` | outbound UDP filtered, or strict NAT on both sides |
-| `no declared tailnet identity` | host tagged, HCS deployed since its declaration | `just apply hcs` |
-| `named … is online, not deleting it` | two machines carry the same name | shut down the older one or rename the host |
+| `no declared tailnet identity` | tagged host, HCS deployed from its declaration | `just apply hcs` |
+| `named … is online, not deleting it` | two machines share the same name | shut down the old one or rename the host |
 
-{/* t:p d629ec6af8ec775ba08208ec500c5c9d9793f20d770afc02205e0ae249246900 */}
+{/* t:p 702252ad2e0a674c19922c89deb880560eb21efddc50996bee3169dcdf362783 */}
 ## Audit and alerts
 
-Every 15 minutes, `headscale-audit` compares the real nodes against the declared
-topology, without modifying anything. The details of the discrepancies are in its
+Every 15 minutes, `headscale-audit` compares the real nodes with the declared
+topology, without changing anything. Details of the discrepancies are in its
 journal&nbsp;:
 
 ```sh
@@ -330,17 +341,20 @@ journalctl -u headscale-audit -n 20
 | Alert | Reports | After |
 |---|---|---|
 | `HeadscaleNodeDrift` | HCS or gateway missing, wrong tags, address different from the declared one | 30 min |
-| `HeadscaleUnexpectedNode` | tagged node not declared, or device from an account outside the `tailnet` group | immediately |
+| `HeadscaleUnexpectedNode` | undeclared tagged node, or device of an account outside the `tailnet` group | immediately |
 | `HeadscalePolicyInvalid` | policy refused, or served policy different from the file | 30 min |
 | `HeadscaleOidcFallback` | Kanidm missing at Headscale startup&nbsp;: OIDC connections cut | immediately |
 | `HeadscaleNodeExpiring` | personal device expiring within 7 days | 1 h |
-| `HeadscaleAuditStale` | audit without success for over an hour | immediately |
+| `HeadscaleAuditStale` | audit without success for more than an hour | immediately |
 
-All are in `warning`, on the Prometheus that supervises the HCS. A missing admin
-machine is not an anomaly&nbsp;; if present, its tags are checked.
+All are `warning`, on the Prometheus that supervises the HCS. A missing
+administration machine is not an anomaly&nbsp;; when present, its tags are
+checked.
 
 :::tip[After `HeadscaleOidcFallback`]
-Kanidm is back, restart Headscale&nbsp;: `sudo systemctl restart headscale`.
+Once Kanidm is back, restart Headscale&nbsp;: `sudo systemctl restart headscale`. Do not
+create by hand the account that `headscale auth register` asks for&nbsp;: a namesake of
+the OIDC account, it would cause any policy citing that user to be refused.
 :::
 
 {/* t:p 7cb3c8a4d88bffa9c2fb9e975f7385d0b8c9435a10a952b17737b43a0cc0c076 */}
@@ -399,7 +413,7 @@ the old entry, they do not reconnect, even with a correct public DNS.
 ## Outside a zone
 
 - **Personal device**&nbsp;: see [Connect a personal
-  device](#connecting-a-personal-device).
+  device](#connect-a-personal-device).
 - **Admin laptop**&nbsp;: on the move, it joins all zones through the tailnet
   (`just enter <hôte>`). Plugged back into a zone, its client pauses and the local
   gateway takes over again.

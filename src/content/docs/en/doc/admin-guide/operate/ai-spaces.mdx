@@ -23,15 +23,15 @@ place.
 Hermes comes in a future release.
 :::
 
-{/* t:p 82d359b9635ce0fcc6523ba19fc74927a7bc1db570492ab33aec6e559dfcb0dc */}
+{/* t:p 5936db0d86b32006f91d48e6d8810769a310101a3b1c8c4ee76698a168adeb08 */}
 ## Create a space
 
 <Steps>
 
 1. **Declare the host and its members**
 
-   The host's `users` are its members&nbsp;: DNF creates for them the Kanidm
-   group `space-<hôte>`.
+   The host's `users` are its members: DNF creates the Kanidm group
+   `space-<host>` for them.
 
    ```yaml
    # etc/config.yaml
@@ -44,15 +44,14 @@ Hermes comes in a future release.
        openclaw: {}
    ```
 
-   `monitoring-node` places the space under the zone's supervision&nbsp;: without
+   `monitoring-node` places the space under the zone's supervision: without
    it, neither a space failure nor the assistant stopping triggers an alert.
 
-   The **owner** is the member whose subscription runs the assistant&nbsp;: they
+   The **owner** is the member whose subscription runs the assistant: they
    receive approval requests and spontaneous messages (reminders, scheduled
-   tasks). As the only member, they are implicit.
-   With several members, the owner is declared in
-   `usr/machines/ia-pro/configuration.nix` (the order of `users` is not
-   preserved)&nbsp;:
+   tasks). As the only member, they are implicit. With several members, they
+   are declared in `usr/machines/ia-pro/configuration.nix` (the order of
+   `users` is not preserved):
 
    ```nix
    { darkone.service.openclaw.owner = "alice"; }
@@ -60,44 +59,44 @@ Hermes comes in a future release.
 
 2. **Initialize the space**
 
-   `just space-init ia-pro`&nbsp;: host key, secrets (see
+   `just space-init ia-pro`: host key, secrets (see
    [Isolated hosts](/en/doc/admin-guide/operate/secrets/)) and, if the network
-   has Matrix, the `@ia-pro:<domaine>` bot. Then commit `usr/secrets/` and
+   has Matrix, the bot `@ia-pro:<domain>`. Then commit `usr/secrets/` and
    `var/generated/spaces/`.
 
 3. **Deploy**
 
-   The hypervisor, the zone gateway (vhost, DNS) and the HCS (Kanidm
-   group)&nbsp;: `just apply hyperviseur,gw,hcs`.
+   The hypervisor, the zone gateway (vhost, DNS) and the HCS (Kanidm group):
+   `just apply hyperviseur,gw,hcs`.
 
 4. **Connect the AI provider**
 
    Once per space, from the host (`just enter ia-pro`), for each owner
-   subscription used by the space's models (see
-   [Models and subscriptions](#models-and-subscriptions))&nbsp;:
+   subscription used for the space's models (see
+   [Models and subscriptions](#models-and-subscriptions)):
 
-   | Subscription | Models | Sign-in |
+   | Subscription | Models | Login |
    |---|---|---|
-   | Claude Pro/Max, via the `claude` CLI | `anthropic/*` (default&nbsp;: `anthropic/claude-sonnet-5-5`) | `sudo -u openclaw -H claude auth login` |
+   | Claude Pro/Max, via the `claude` CLI | `anthropic/*` (default: `anthropic/claude-sonnet-5-5`) | `sudo -u openclaw -H claude auth login` |
    | ChatGPT Plus/Pro, via the `codex` plugin | `openai/*` | `openclaw models auth login --provider openai` |
 
-   The host's `openclaw` command automatically switches to the service user.
-   `openclaw models status` checks the connection, which stays in
-   `/var/lib/openclaw`, persistent.
+   The host's `openclaw` command switches to the service user by itself, even
+   from the owner's account (see [Access](#access)). `openclaw models status`
+   checks the connection, which stays in `/var/lib/openclaw`, persistent.
 
 </Steps>
 
 :::note[Why an `openclaw` user]
-The assistant reads untrusted content (web, messages, documents)&nbsp;: a
-dedicated system user keeps it away from member accounts, their keys and their
-sign-ins. Members have no `sudo` (reserved for the `wheel` group)&nbsp;:
-administration goes through the `nix` account.
+The assistant reads untrusted content (web, messages, documents): a dedicated
+system user keeps it away from members' accounts, their keys and their
+connections. Members have no `sudo`, except for the `openclaw` CLI (see
+[Access](#access)): administration goes through the `nix` account.
 :::
 
 :::caution[Update]
 A space created before the assistant's local password must go through
-`just space-init <hôte>` again before deployment&nbsp;: it generates the
-`openclaw-gateway-password` secret, through which the host's `openclaw` command
+`just space-init <host>` again before deployment: it generates the
+`openclaw-gateway-password` secret, with which the host's `openclaw` command
 reaches the service.
 :::
 
@@ -371,42 +370,52 @@ assistant runs them on demand.
 Lobster has not been tried on a space yet.
 :::
 
-{/* t:p bba899a4878f2bb70a14f493070a4a5d50c9fd7da8bd4d1bb515bcad26d6336c */}
+{/* t:p 1c60fd3e5e0f5bf63f3cd59d428429b2842acf897c0620052d7221f1886efa0b */}
 ## Member accounts
 
-Each member has a Linux account on the space, kept minimal&nbsp;:
+Each member has a Linux account on the space, lightweight:
 
 | Item | On the space |
 |---|---|
 | Home Manager profile | `space-member` (zsh, git, vim, tmux), instead of their own |
-| Space tools | Claude Code, Codex and OpenCode, with the space's MCP servers and skills (`darkone.home.aiSpace`) |
-| Customizations | `usr/users/<login>/space.nix` (all their spaces), then `usr/users/<login>/spaces/<hôte>.nix` (this space), if they exist |
-| `usr/users/<login>/default.nix` | Ignored&nbsp;: reserved for their workstations |
-| Rights | `projects` group only (no `sudo`), whatever their profile |
+| Space tools | Claude Code, Codex and OpenCode, with the space's MCP and skills (`darkone.home.aiSpace`) |
+| Customizations | `usr/users/<login>/space.nix` (all their spaces), then `usr/users/<login>/spaces/<host>.nix` (this space), if they exist |
+| `usr/users/<login>/default.nix` | Ignored: reserved for their workstations |
+| Rights | `projects` group, no `sudo` except for the `openclaw` CLI, whatever their profile |
 
-Administering the space goes through the `nix` account
-(`just enter <hôte>`).
+Administration of the space goes through the `nix` account (`just enter <host>`).
 
-:::tip[Customizing a space]
-These files are ordinary Home Manager modules&nbsp;: packages, aliases, git
-configuration, other imported modules. A personal MCP server is added there
-with `programs.mcp.servers.<nom>`.
+:::tip[Customize a space]
+These files are ordinary Home Manager modules: packages, aliases, git
+configuration, other imported modules. A personal MCP is added there via
+`programs.mcp.servers.<name>`.
 :::
 
-Each member signs in to their own subscriptions, once&nbsp;: `claude` (then
+Each member connects their own subscriptions, once: `claude` (then
 `/login`), `codex login --device-auth` and `opencode auth login`. OpenCode
 accepts a ChatGPT subscription or an API key, not the Claude subscription.
 
-{/* t:p 84f6f0e7c8f7eee5f3922034b5e742182c6fc7842425a221f3a47062ba62a246 */}
+{/* t:p b4cdf4c84e561992ddd45c85d4963c776d8e9532b4d21083d8ba830f0e068d86 */}
 ## Access
 
 | Item | Rule |
 |---|---|
-| Address | `https://openclaw.<zone>.<domaine>` |
-| Sign-in | Kanidm SSO, reserved for the `space-<hôte>` group |
-| Device | Paired on first visit, with no administration or approval rights (owner only, see [Editable configuration](#modifiable-configuration)) |
-| Administration | `openclaw …` on the host, from the `nix` account |
+| Address | `https://openclaw.<zone>.<domain>` |
+| Login | Kanidm SSO, restricted to the `space-<host>` group |
+| Device | Paired on first visit, without administration or approval rights (owner only, see [Editable configuration](#modifiable-configuration)) |
+| Administration | `openclaw` CLI on the host |
 | Assistant port | Reachable from the zone gateway only |
+
+Alone, `openclaw` opens the assistant's terminal (like `openclaw tui`). It
+runs under the service user, for the `nix` account and, through a sudo rule,
+for `darkone.service.openclaw.cliUsers` (default: the owner). Other members
+go through the web interface.
+
+:::caution[The CLI is worth the `openclaw` account]
+Subscription logins, administration rights, terminal `!` commands: only add
+to `cliUsers` members to whom the service can be entrusted. With `sudo`
+restricted to the `wheel` group (R38 hardening), `cliUsers` stays empty.
+:::
 
 {/* t:p 2cdacb9687eb7834712a6a8a05a723cf9dc7efc459f080caf225ab4462bd568e */}
 ## Modifiable configuration

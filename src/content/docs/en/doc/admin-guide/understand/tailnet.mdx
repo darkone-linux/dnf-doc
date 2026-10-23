@@ -282,15 +282,15 @@ The policy is not hand-written: DNF generates it from `etc/config.yaml` (zones,
 hosts, users), validates it at build time (`headscale policy check`), then
 Headscale hot-reloads it at deployment.
 
-{/* t:p dbfcafbe239a0ff0d3d51e5ab74e66a2f852c3be9657b41b8fc5e507d21bc447 */}
+{/* t:p e681be3291c8014b9c6c606fd8375f80dce8fac8c56705c6d4a69260fac86a9c */}
 ### The building blocks
 
 | Block | Generated content |
 |---|---|
-| `groups` | `group:admins` (`admin`, `nix-admin` profiles), `group:zone-<zone>` (`zone-<zone>` group) |
+| `groups` | `group:admins` (profiles `admin`, `nix-admin`), `group:zone-<zone>` (group `zone-<zone>`) |
 | `tagOwners` | `tag:hcs`, `tag:gw-<zone>`, `tag:admin`, owned by `group:admins` |
-| `hosts` | `zone-<zone>` (subnet), `gateway-<zone>` (gateway LAN address), admin workstations (LAN address), `adminDevices`, `extraHosts` |
-| `autoApprovers` | route of each zone → `tag:gw-<zone>`; exit node → `tag:hcs` |
+| `hosts` | `zone-<zone>` (subnet), `gateway-<zone>` (LAN address of the gateway), each host of a zone (its LAN address), `adminDevices`, `extraHosts` |
+| `autoApprovers` | route of each zone → `tag:gw-<zone>`&nbsp;; exit node → `tag:hcs` |
 | `acls` | the rules below |
 
 {/* t:p aceb36cc31b05f033a037a983c6334db953abd9a7bd43e372b9604e5fe66d4fb */}
@@ -376,15 +376,19 @@ All hosts decrypt the same sops file. A common key would be within everyone's
 reach: a compromised workstation could enter under a gateway's identity.
 </Aside>
 
-{/* t:p 217114493079e1d6c3821f255474d326ebd5e7389ff6fabdf63b68139bcdac08 */}
+{/* t:p 991a5e6718b02b5ce29fdd43f9573ab957c8e5ddc3304cff9313333aa689f12f */}
 ### Personal devices: OIDC
 
-1. The Tailscale app contacts Headscale, which redirects it to Kanidm.
-2. Kanidm only accepts members of the `tailnet` group; Headscale checks it too.
-3. The device is enrolled under the person's name (`alice@`) and expires after
-   180 days (`nodeExpiry`): they then sign in again.
+1. The Tailscale application contacts Headscale, which redirects it to Kanidm.
+2. Kanidm only accepts members of the `tailnet` group&nbsp;; Headscale checks this
+   too.
+3. Headscale displays the device (name, machine key) and waits for its confirmation
+   (*Confirm registration*).
+4. The device is registered in the person's name (`alice@`) and expires after
+   180 days (`nodeExpiry`)&nbsp;: the person then reconnects.
 
-<Aside type="caution" title="Kanidm unavailable at Headscale startup">
-Headscale still starts, but without OIDC until its next restart: no personal
-device can connect. The `HeadscaleOidcFallback` alert reports it.
+<Aside type="caution" title="Kanidm unavailable when Headscale starts">
+Headscale waits for it for up to 100 seconds, then starts without OIDC until its
+next restart&nbsp;: no personal device can connect. The `HeadscaleOidcFallback`
+alert reports it.
 </Aside>

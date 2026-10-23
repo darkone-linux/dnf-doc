@@ -318,42 +318,33 @@ DNF headscale : `dnf-tailnet-enroll`. Doc : en-tête de `../headscale.nix`.
 
 <hr/>
 
-{/* t:p 1c5c73cfa0239db48f8312afda270fee90f64c897f01d3e5efb2b50efbb1b4ca */}
+{/* t:p 987636579447486bbaee16a99bf309427a6c3a162cd347188f2ce74eac409ffc */}
 ### &#x2728; darkone.service.headscale
 
-Un service headscale entièrement configuré pour le HCS.
+Un service headscale entièrement configuré pour HCS.
 
-La politique ACL du tailnet est générée depuis la topologie (zones, hôtes,
-utilisateurs) par `dnfLib.mkHeadscalePolicy`, validée par `headscale policy check`
-à la construction, puis rechargée au changement (SIGHUP) sans redémarrer headscale.
+La politique ACL du tailnet est générée à partir de la topologie (zones, hôtes, utilisateurs) par `dnfLib.mkHeadscalePolicy`, validée par `headscale policy check` au moment du build, puis rechargée à chaque changement (SIGHUP) sans redémarrer headscale.
 
-- Les machines sont taguées : `tag:hcs`, `tag:gw-<zone>`, `tag:admin` (hôte dont
-  `groups` contient `admin`).
-- Les machines et les LAN de zone joignent les autres. Appareils personnels : DNS
-  et HTTPS sur le HCS, HTTPS sur les passerelles de zone (toutes les zones pour
-  les admin, sinon leurs groupes `zone-*`). SSH depuis les postes d'admin et
-  `policy.adminDevices`.
-- Les appareils personnels se connectent via Kanidm (OIDC), pour les membres du
-  groupe Kanidm `tailnet` ; leurs clés expirent après `nodeExpiry`.
+- Les machines sont taguées : `tag:hcs`, `tag:gw-<zone>`, `tag:admin` (hôte dont les `groups` contiennent `admin`).
+- Les machines et les LAN de zone communiquent entre eux. Appareils personnels : DNS et HTTPS sur le HCS, HTTPS sur les passerelles de zone (toutes les zones pour les administrateurs, sinon leurs groupes `zone-*`). SSH depuis les postes d'administration et `policy.adminDevices`.
+- Chaque hôte de zone adressé est un alias de politique (`nas` -&gt; son IP LAN) : tout autre service s'ouvre via `policy.extraAcls` (`nas:445`).
+- Les appareils personnels se connectent via Kanidm (OIDC), pour les membres du groupe Kanidm `tailnet` ; leurs clés expirent après `nodeExpiry`.
 
 ```nix
 darkone.service.headscale.policy.adminDevices.phone-alice = "100.64.0.9";
 ```
 
 :::caution[Mode ouvert]
-`policy.enforce = false` conserve les identités mais autorise tout trafic : pour
-une migration uniquement, pendant que les nœuds sont tagués.
+`policy.enforce = false` conserve les identités mais autorise tout le trafic : uniquement pour une migration, le temps que les nœuds soient tagués.
 :::
 
-:::note[Indisponibilité de Kanidm]
-headscale démarre quand même sans Kanidm et bascule sur l'enregistrement CLI
-jusqu'à son prochain redémarrage. Les nœuds déjà enregistrés ne sont pas
-affectés.
+:::note[Panne de Kanidm]
+headscale démarre toujours sans Kanidm et bascule vers l'enregistrement en CLI jusqu'à son prochain redémarrage. Les nœuds enregistrés ne sont pas affectés.
 :::
 
 Sous-modules (`headscale/`) :
-- `dns.nix` : unbound, le DNS pivot du tailnet et sa vue `tailnet-machines` ;
-- `audit.nix` : `headscale-audit`, nœuds actifs confrontés à la topologie déclarée ;
+- `dns.nix` : unbound, le DNS pivot du tailnet, et sa vue `tailnet-machines` ;
+- `audit.nix` : `headscale-audit`, les nœuds actifs confrontés à la topologie déclarée ;
 - `enroll.nix` : `dnf-tailnet-enroll`, derrière `just tailnet-enroll`.
 
 {/* t:p 4cd662808c91c5d1e78ab3611e8587866070b81b52a07cb50eca1f93c4452b13 */}
@@ -376,20 +367,18 @@ nulle part ailleurs.
 déclarée. Métriques pour les alertes `dnf-headscale-<zone>`, détails dans son
 journal. Ne tague ni ne supprime jamais.
 
-{/* t:p ad5d40e1917ed192cca38d18dd6062fde4a92374e6d5e3cb4e77cad41a39c5a9 */}
+{/* t:p f25bf2c1ea7a847207ffd49839d4e8c7149ca77060837c3af9e2f7bac7402e8b */}
 #### Enrôlement (`enroll.nix`)
 
-`dnf-tailnet-enroll`, côté root de `just tailnet-enroll` : clés à usage unique
-taguées depuis la topologie déclarée ; le nœud enrôlé reçoit son nom et ses
-tags déclarés.
+`dnf-tailnet-enroll`, côté root de `just tailnet-enroll` : clés à usage unique taguées depuis la topologie déclarée ; le nœud enrôlé reçoit son nom et ses tags déclarés.
 
-* **enable** `bool` Activer le service DNF headscale
-* **enableGRPC** `bool` Ouvrir le port TCP GRPC
+* **enable** `bool` Active le service headscale de DNF
+* **enableGRPC** `bool` Ouvre le port TCP GRPC
 * **nodeExpiry** `str` Expiration des clés des appareils personnels (`0` : jamais). Les machines taguées n'expirent jamais.
-* **policy.enforce** `bool` ACL du tailnet en refus par défaut. `false` autorise tout trafic, pour une migration uniquement.
-* **policy.adminDevices** `attrs` Appareils personnels autorisés en SSH sur chaque machine et zone : nom -&gt; IPv4 de tailnet.
+* **policy.enforce** `bool` ACL du tailnet en refus par défaut. `false` autorise tout le trafic, uniquement pour une migration.
+* **policy.adminDevices** `attrs` Appareils personnels autorisés en SSH sur chaque machine et zone : nom -&gt; IPv4 du tailnet.
 * **policy.exitNodeSources** `listOf str` Sources de politique autorisées à utiliser le HCS comme nœud de sortie.
-* **policy.extraHosts** `attrs` Alias d'hôte de politique supplémentaires (nom -&gt; CIDR), à utiliser dans `extraAcls`.
+* **policy.extraHosts** `attrs` Alias d'hôtes de politique supplémentaires (nom -&gt; CIDR), à utiliser dans `extraAcls`. Les hôtes de zone déclarés en ont déjà un.
 * **policy.extraAcls** `listOf (attrsOf anything)` Règles ACL ajoutées après celles générées.
 * **shared** `raw` Valeurs headscale partagées avec les sous-modules `headscale/`.
 
@@ -1154,10 +1143,10 @@ darkone.service.nix-cache = {
 
 <hr/>
 
-{/* t:p 0b412183a552eb6a07f8c24fa759b2fa14fbcb49baeb3fc920303e427df4a6a3 */}
+{/* t:p d657b9f2ea5b0fb6e4c3d1a1439966edd419db188e38015a190a2c148248e663 */}
 ### &#x2728; darkone.service.openclaw
 
-Assistant OpenClaw d'un espace IA (passerelle + interface de contrôle, derrière le SSO de la zone).
+Assistant OpenClaw d'un espace IA (passerelle + interface de contrôle, derrière le SSO de zone).
 
 Une instance par hôte `ai-space`, déclarée comme tout service :
 
@@ -1169,47 +1158,22 @@ Une instance par hôte `ai-space`, déclarée comme tout service :
   services: { openclaw: {} }
 ```
 
-- accès : authentification déléguée par Caddy, membres de `space-<host>` uniquement
-  (`proxy.spaceMembersOnly`) ; OpenClaw fait confiance à la passerelle de la zone
-  comme proxy (`trusted-proxy`) et lit l'identité dans `x-auth-request-email` ;
-- appareils : le navigateur d'un membre est appairé à sa première visite, sans
-  admin opérateur (accordé depuis la CLI de l'hôte uniquement) ;
-- port : joignable depuis la passerelle de la zone uniquement ;
-- CLI de l'hôte : `openclaw`, relancé en tant qu'utilisateur du service, au-delà de
-  `trusted-proxy` avec le mot de passe de la passerelle (`openclaw-gateway-password`,
-  `just space-init`) ;
-- état : `/var/lib/openclaw` (connexions fournisseur, sessions, espace de travail,
-  clés Matrix E2EE) ;
-- propriétaire (`owner`, par défaut : le seul membre) : son abonnement fait
-  tourner l'agent, il reçoit les demandes d'approbation et les messages proactifs ;
-- Matrix : canal DM avec le bot `@<host>:<domain>`, membres uniquement, salons
-  ignorés, une session par membre s'il y en a plusieurs, quand le réseau a
-  Matrix et que `just space-init <host>` a créé le bot (marqueur
-  `var/generated/spaces/<host>.nix`, jeton dans le fichier sops de l'espace) ; les
-  approbations d'exécution sont demandées au propriétaire en DM ;
-- outillage de l'agent : MCP, skills, Claude Code / Codex / OpenCode et `packages`
-  de l'espace (`darkone.host.ai-space`), partagés avec les homes des membres ;
-- identité (`identity` : nom, emoji, avatar) : déclarée, la configuration étant
-  en lecture seule (`openclaw agents set-identity` échoue) ;
-- `mutableConfig` : configuration modifiable depuis l'interface et la CLI, clés
-  Nix fusionnées à chaque démarrage (imposées : accès, canaux, plugins, chemins
-  du store ; initialisées une fois : modèle, exec, identité...), le propriétaire
-  obtient `operator.admin` ;
-- espace de travail (`/var/lib/openclaw/workspace`) : fichiers `workspace`
-  (AGENTS.md, SOUL.md...) remplacés à chaque démarrage, les autres laissés à
-  l'agent ;
-- projets : le `projectsDir` partagé de l'espace est le répertoire de travail de
-  l'agent (`agents.defaults.cwd`), les `projects` y sont clonés une fois ;
-- agents de code (Claude Code, Codex, OpenCode de l'espace) : workers en
-  arrière-plan (skill `coding-agent`), sessions liées au chat (`/acp spawn`, acpx) ;
-- Talk (`talk`) : conversation vocale en direct dans le navigateur, OpenAI GPT-Live,
-  travail délégué à l'agent (`agent-consult`), connexion ChatGPT d'abord ;
-- workflows : pipelines Lobster (`lobster`, fichiers `.lobster` via
-  `workspace`), automatisations déclarées (`automations`, maintenues synchronisées,
-  les autres laissées à l'agent et à l'interface) ;
-- notes vocales : whisper.cpp (`transcription`) ; sur un invité microVM, le
-  serveur de l'hyperviseur (`large-v3-turbo`), le ggml `small` local en secours ;
-  local uniquement sur machine nue.
+- accès : forward auth Caddy, membres de `space-<host>` uniquement (`proxy.spaceMembersOnly`) ; OpenClaw fait confiance à la passerelle de zone comme proxy (`trusted-proxy`) et lit l'identité dans `x-auth-request-email` ;
+- appareils : le navigateur d'un membre est appairé à la première visite, sans admin opérateur (accordé uniquement depuis la CLI de l'hôte) ;
+- port : joignable uniquement depuis la passerelle de zone ;
+- CLI de l'hôte : `openclaw` (seul : la TUI), relancé en tant qu'utilisateur du service, via `trusted-proxy` avec le mot de passe de la passerelle (`openclaw-gateway-password`, `just space-init`) ; administrateurs et `cliUsers` (par défaut : le propriétaire) uniquement ;
+- état : `/var/lib/openclaw` (connexions aux fournisseurs, sessions, espace de travail, clés E2EE Matrix) ;
+- propriétaire (`owner`, par défaut : l'unique membre) : son abonnement fait tourner l'agent, il reçoit les demandes d'approbation et les messages proactifs ;
+- Matrix : canal DM avec le bot `@<host>:<domain>`, membres uniquement, salons ignorés, une session par membre en cas de plusieurs, lorsque le réseau dispose de Matrix et que `just space-init <host>` a créé le bot (marqueur `var/generated/spaces/<host>.nix`, jeton dans le fichier sops de l'espace) ; les approbations d'exécution sont demandées au propriétaire en DM ;
+- outillage de l'agent : MCP, skills, Claude Code / Codex / OpenCode et les `packages` de l'espace (`darkone.host.ai-space`), partagés avec les homes des membres ;
+- identité (`identity` : nom, emoji, avatar) : déclarée, la configuration étant en lecture seule (`openclaw agents set-identity` échoue) ;
+- `mutableConfig` : configuration modifiable depuis l'interface et la CLI, clés Nix fusionnées à chaque démarrage (imposées : accès, canaux, plugins, chemins du store ; initialisées une fois : modèle, exec, identité...), le propriétaire obtient `operator.admin` ;
+- espace de travail (`/var/lib/openclaw/workspace`) : fichiers `workspace` (AGENTS.md, SOUL.md...) remplacés à chaque démarrage, les autres laissés à l'agent ;
+- projets : le `projectsDir` partagé de l'espace est le répertoire de travail de l'agent (`agents.defaults.cwd`), les `projects` y sont clonés une fois avec git ;
+- agents de codage (Claude Code, Codex, OpenCode de l'espace) : workers en arrière-plan (skill `coding-agent`), sessions liées au chat (`/acp spawn`, acpx) ;
+- Talk (`talk`) : conversation vocale en direct dans le navigateur, OpenAI GPT-Live, travail délégué à l'agent (`agent-consult`), connexion ChatGPT d'abord ;
+- workflows : pipelines Lobster (`lobster`, fichiers `.lobster` via `workspace`), automatisations déclarées (`automations`, maintenues synchronisées, les autres laissées à l'agent et à l'interface) ;
+- notes vocales : whisper.cpp (`transcription`) ; sur un invité microVM, le serveur de l'hyperviseur (`large-v3-turbo`), le ggml local `small` en secours ; en local uniquement sur bare metal.
 
 ```nix
 darkone.service.openclaw = {
@@ -1219,27 +1183,17 @@ darkone.service.openclaw = {
 ```
 
 :::caution[Commandes exécutées sans approbation par défaut]
-`exec = "full"` (défaut d'OpenClaw) : l'agent exécute n'importe quelle commande
-comme `openclaw`, les jetons de l'espace à portée. La microVM est la frontière,
-l'unité durcie une seconde paroi (écritures dans l'état uniquement). `ask`, `auto` :
-les ratés vont au propriétaire, un garde-fou contre les erreurs, pas une paroi
-(même utilisateur).
+`exec = "full"` (valeur par défaut d'OpenClaw) : l'agent exécute n'importe quelle commande en tant que `openclaw`, les jetons de l'espace étant à sa portée. La microVM est la frontière, l'unité durcie une seconde muraille (écritures vers l'état uniquement). `ask`, `auto` : les cas non couverts sont soumis au propriétaire, une garde contre les erreurs, pas une muraille (même utilisateur).
 :::
 
 :::note[Les membres se font confiance]
-Une passerelle, un domaine opérateur : l'interface de chaque membre montre
-toutes les sessions, DM compris. Des membres qui ne se font pas confiance
-prennent des espaces séparés.
+Une passerelle, un domaine opérateur : l'interface de chaque membre affiche toutes les sessions, DM compris. Les membres qui ne se font pas confiance disposent d'espaces séparés.
 :::
 
-Modèles : `model` + `extraModels` (`/model` dans le chat), les
-`subscriptions` du propriétaire d'abord, sinon une clé API (`apiKeys`, sops
-`openclaw/<VAR>`) ; `providers` ajoute des points de terminaison compatibles
-OpenAI (Nous Portal...).
+Modèles : `model` + `extraModels` (`/model` dans le chat), les `subscriptions` du propriétaire d'abord, sinon une clé API (`apiKeys`, sops `openclaw/<VAR>`) ; `providers` ajoute des points de terminaison compatibles OpenAI (Nous Portal...).
 
-:::note[Connexion fournisseur]
-Une fois par espace, depuis l'hôte en `nix` (la CLI `openclaw` se relance comme
-utilisateur du service), par abonnement. Les connexions restent dans l'état.
+:::note[Connexion aux fournisseurs]
+Une fois par espace, depuis l'hôte en tant que `nix` (la CLI `openclaw` se relance en tant qu'utilisateur du service, aussi pour `cliUsers`), par abonnement. Les connexions restent dans l'état.
 - `anthropic` : `sudo -u openclaw -H claude auth login` ;
 - `openai` : `openclaw models auth login --provider openai`.
 :::
@@ -1247,36 +1201,37 @@ utilisateur du service), par abonnement. Les connexions restent dans l'état.
 * **enable** `bool` Active l'assistant OpenClaw d'un espace IA
 * **owner** `nullOr str` Membre propriétaire de l'espace : son abonnement connecte l'agent
   (`model`), il reçoit les demandes d'approbation et les messages proactifs.
-  Requis avec plusieurs membres (l'ordre de `users` n'est pas conservé).
+  Requis avec plusieurs membres (l'ordre des `users` n'est pas conservé).
+* **cliUsers** `listOf str` Membres exécutant la CLI de l'hôte (`openclaw`) en tant qu'utilisateur du service, via
+  une règle sudo : TUI, connexions aux fournisseurs, administration. Ses commandes shell `!` s'exécutent aussi en tant que
+  `openclaw`, les jetons de l'espace étant à leur portée.
 * **model** `str` Modèle principal, `&lt;provider&gt;/&lt;model&gt;` : via l'abonnement du propriétaire
-  quand son fournisseur est dans `subscriptions`, sinon une clé API (`apiKeys`).
+  lorsque son fournisseur figure dans `subscriptions`, sinon une clé API (`apiKeys`).
 * **extraModels** `listOf str` Autres modèles du catalogue, choisis dans le chat avec `/model` ; mêmes règles que `model`.
-* **subscriptions** `listOf ( enum [ "anthropic" "openai" ] )` Abonnements du propriétaire, utilisés en premier par les modèles de leur fournisseur :
+* **subscriptions** `listOf ( enum [ "anthropic" "openai" ] )` Abonnements du propriétaire, utilisés en priorité par les modèles de leur fournisseur :
   - `anthropic` : Claude Pro/Max via la CLI `claude` (nécessite
     `darkone.host.ai-space.enableClaude`) ;
   - `openai` : ChatGPT Plus/Pro via le plugin `codex`.
 
-  Les autres fournisseurs, ou un abonnement omis, passent par une clé API (`apiKeys`).
-* **apiKeys** `listOf (strMatching "[A-Z][A-Z0-9_]*")` Clés API des fournisseurs, par variable : lues dans le fichier sops de l'espace
-  (`openclaw/&lt;VAR&gt;`, `just space-sops &lt;host&gt;`) vers l'environnement de la
-  passerelle. `ANTHROPIC_API_KEY` est écartée à côté de l'abonnement `anthropic`,
-  qu'elle écraserait.
+  Les autres fournisseurs, ou celui qui est omis, passent par une clé API (`apiKeys`).
+* **apiKeys** `listOf (strMatching "[A-Z][A-Z0-9_]*")` Clés API des fournisseurs, par variable : lues depuis le fichier sops de l'espace
+  (`openclaw/&lt;VAR&gt;`, `just space-sops &lt;host&gt;`) dans l'environnement de la passerelle. `ANTHROPIC_API_KEY` est supprimée en présence de l'abonnement `anthropic`, qu'elle écraserait.
 * **providers** `attrs` Fournisseurs absents d'OpenClaw (Nous Portal...), compatibles OpenAI par défaut.
   * **baseUrl** `str` Point de terminaison de l'API.
-  * **api** `str` Variante d'API (OpenClaw `models.providers.&lt;id&gt;.api`).
+  * **api** `str` Variante de l'API (OpenClaw `models.providers.&lt;id&gt;.api`).
   * **apiKey** `nullOr (strMatching "[A-Z][A-Z0-9_]*")` Variable de clé, lue comme `apiKeys`.
-  * **models** `listOf str` Ids de modèles, référencés en `&lt;provider&gt;/&lt;id&gt;`.
-* **mutableConfig** `bool` Configuration modifiable depuis l'interface et `openclaw config set`, le propriétaire étant
+  * **models** `listOf str` Identifiants de modèles, référencés sous la forme `&lt;provider&gt;/&lt;id&gt;`.
+* **mutableConfig** `bool` Configuration modifiable depuis l'interface et avec `openclaw config set`, le propriétaire étant
   admin opérateur. Clés Nix fusionnées à chaque démarrage :
-  - imposées, réécrites (aussi à tout changement du fichier) : passerelle et
+  - imposées, réécrites (aussi à chaque modification du fichier) : passerelle et
     accès, canal Matrix, plugins, serveurs MCP, chemins du store ;
   - initialisées, écrites si absentes, puis l'interface fait foi : `model`, `exec`,
-    `identity`, talk, ACP, commutateurs de skills.
+    `identity`, talk, ACP, activation des skills.
 * **exec** `enum [ "full" "auto" "ask" "allowlist" "deny" ]` Politique de commandes de l'agent (OpenClaw `tools.exec.mode`) :
-  - `full` : n'importe quelle commande, sans approbation (défaut d'OpenClaw) ;
-  - `ask` : les commandes en liste blanche passent, toute autre demande au propriétaire ;
-  - `auto` : un modèle examine les ratés, le propriétaire tranche en cas de doute ;
-  - `allowlist`, `deny` : commandes en liste blanche uniquement, aucune.
+  - `full` : toute commande, sans approbation (par défaut dans OpenClaw) ;
+  - `ask` : les commandes de la liste blanche s'exécutent, toute autre demande au propriétaire ;
+  - `auto` : un modèle examine les cas non couverts, le propriétaire décide en cas de doute ;
+  - `allowlist`, `deny` : uniquement les commandes de la liste blanche, ou aucune.
 
   Liste blanche : `openclaw approvals allowlist add --agent main &lt;path&gt;`. Avec
   le runtime `claude-cli`, les pipes, redirections et substitutions sont
@@ -1287,27 +1242,27 @@ utilisateur du service), par abonnement. Les connexions restent dans l'état.
 * **workspace** `attrs` Fichiers de l'espace de travail de l'agent, par chemin relatif : contenu ou fichier.
   Remplacés à chaque démarrage de la passerelle ; les fichiers non déclarés appartiennent à l'agent.
 * **projects** `attrs` Dépôts Git clonés une fois dans `&lt;projectsDir&gt;/&lt;name&gt;`
-  (`darkone.host.ai-space.projectsDir`), jamais tirés. Les remotes SSH utilisent
-  la clé d'`openclaw` (`/var/lib/openclaw/.ssh`, créée à la main) ; la
+  (`darkone.host.ai-space.projectsDir`), jamais récupérés par pull. Les remotes SSH utilisent
+  la clé de `openclaw` (`/var/lib/openclaw/.ssh`, créée à la main) ; la
   clé du serveur est acceptée au premier clone.
 * **talk.enable** `bool` Talk : conversation vocale en direct dans le navigateur (OpenAI GPT-Live)
 * **talk.model** `str` Modèle temps réel. `gpt-live-1-codex` : la connexion ChatGPT du propriétaire
   (`openclaw models auth login --provider openai`), sinon une clé Platform
   (`OPENAI_API_KEY`) ; `gpt-live-1`, `gpt-realtime-2.1` (caméra) :
-  clé Platform uniquement. Épinglé : non défini, une clé Platform l'emporte sur ChatGPT.
+  clé Platform uniquement. Pinned : non défini, une clé Platform prime sur ChatGPT.
 * **talk.voice** `str` Voix de la route du modèle (`gpt-live-1-codex` : `cove`, `arbor`, `breeze`, `ember`, `juniper`, `maple`, `sol`, `spruce`, `vale`).
-* **talk.instructions** `nullOr lines` Instructions ajoutées à l'invite temps réel d'OpenClaw.
+* **talk.instructions** `nullOr lines` Instructions ajoutées au prompt temps réel d'OpenClaw.
 * **lobster** `bool` Workflows Lobster : pipelines exécutés par la passerelle, avec étapes d'approbation
   et reprise, plus `llm-task` (étape LLM structurée). Les fichiers de workflow passent
   par `workspace` (`"workflows/&lt;name&gt;.lobster"`).
 * **automations** `attrs` Exécutions planifiées de l'agent déclarées en Nix, maintenues synchronisées à chaque démarrage
-  (`nix-&lt;name&gt;`, les modifications depuis l'interface écrasées) ; celles de l'agent et
-  de l'interface sont laissées tranquilles.
+  (`nix-&lt;name&gt;`, les modifications faites depuis l'interface sont écrasées) ; celles de l'agent et
+  de l'interface sont laissées intactes.
   * **schedule** `str` Expression cron (5 ou 6 champs), ou `every &lt;duration&gt;` (`every 2h`).
-  * **message** `lines` Invite de l'exécution de l'agent.
-  * **announce** `bool` Envoie la réponse finale au chat (dernier canal du propriétaire).
-  * **model** `nullOr str` Modèle de remplacement, `&lt;provider&gt;/&lt;model&gt;` ou alias.
-  * **enable** `bool` Faux : maintenue désactivée ; une fois ainsi, réactivée depuis l'interface uniquement (`openclaw automations enable &lt;id&gt;`).
+  * **message** `lines` Prompt de l'exécution de l'agent.
+  * **announce** `bool` Envoie la réponse finale dans le chat (dernier canal du propriétaire).
+  * **model** `nullOr str` Surcharge du modèle, `&lt;provider&gt;/&lt;model&gt;` ou alias.
+  * **enable** `bool` Faux : reste désactivée ; une fois dans cet état, réactivée uniquement depuis l'interface (`openclaw automations enable &lt;id&gt;`).
 * **transcription.enable** `bool` Transcrit les notes vocales (whisper.cpp, CPU).
 * **transcription.backend** `enum [ "hypervisor" "local" ]` Où les notes vocales sont transcrites :
   - `hypervisor` : le serveur whisper.cpp de l'hyperviseur (modèle plus gros,
@@ -1320,6 +1275,7 @@ utilisateur du service), par abonnement. Les connexions restent dans l'état.
 darkone.service.openclaw = {
   enable = false;
   owner = "alice";
+  cliUsers = [ ];
   model = "openai/gpt-6-astra";
   extraModels = [ ];
   subscriptions = [ ];
