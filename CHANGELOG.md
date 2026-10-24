@@ -5,6 +5,85 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-10-24
+
+### ⚠ Breaking
+
+- **openclaw**: Clone projects into shared projectsDir, coding agents
+
+### Added
+
+- **remote-desktop**: Rd stop mode, host reason on arming failure
+- **ai-space**: Opencode for members and the openclaw agent
+- **microvm**: Hypervisor whisper.cpp server for guests' voice notes
+- **openclaw**: Mutable config option, owner admin in the UI
+- **openclaw**: Model catalog, subscriptions first, API keys, providers
+- **openclaw**: Browser Talk with OpenAI GPT-Live, ChatGPT login first
+- **openclaw**: Lobster workflows, automations declared in Nix
+- **openclaw**: CliUsers run the host CLI, bare openclaw opens the TUI
+- **headscale**: Policy alias for every declared zone host
+
+### Fixed
+
+- **microvm**: Hypervisor fully on networkd, static zone resolver
+- **microvm**: No store optimise on a hypervisor, guest overlays go ESTALE
+- **headscale**: Wait for a real 200 from the OIDC issuer before starting
+
+### Documentation
+
+- **releasing**: Installer test weekly, by hand or on a tag
+- **releasing**: Installer scenarios swap disk modes, check the rotation
+- **install**: Backup step skippable where no stick plugs in
+- **install**: Wi-Fi wait on the ISO, dnf/ link kept by the GC
+- **microvm**: MicroVM guests, ai-space profile, isolated hosts
+- **space**: Space-init and space-sops, isolated hosts procedure
+- **secrets**: No fleet default password, just passwd-default removed
+- **profiles**: Ghostty, hidden icons, lighter admin profiles, network folder
+- **install**: Local network folder and README of the new admin host
+- **microvm**: Guest store gets a writable in-memory layer
+- **microvm**: Guests answer ping and ssh, just enter works
+- **space**: Kanidm group per AI space, proxy.spaceMembersOnly
+- **space**: AI spaces page, OpenClaw service in the catalogue
+- **space**: Provider login through the openclaw host command
+- **space**: Light Linux accounts for AI space members
+- **translate**: Ai spaces, release, onboarding
+- **space**: Matrix bot of an AI space, just space-bot
+- **space**: Matrix bot created by just space-init, only with a network Matrix
+- **space**: Agent tooling of AI spaces, MCP, skills, workspace, voice notes
+- **space**: Provider login by model, host CLI, gateway password migration
+- **space**: Owner of an AI space, Matrix DMs with members only
+- **space**: Declared identity of the assistant
+- **sso**: Group changes apply within 15 minutes, forced sign-out URL
+- **installer**: Just try, this tree in the installer VM
+- **installer**: Optional package cache, store of the host for #try
+- **microvm**: Guest state closed to the hypervisor's accounts
+- **space**: Commands run without approval, members share one trust circle
+- **space**: SSH key of the project clones, server key accepted once
+- **space**: Monitoring-node in the space and guest examples
+- **space**: Exec policy option, owner-only approvals, confined service
+- **microvm**: Guest state mounted nosuid,nodev on the hypervisor
+- **space**: MCP server secrets through secretEnv
+- **translate**: Installer, ai spaces, microvm, sso, module reference -> en
+- **installer**: Just try serves the store, the VM keeps the pin on relaunch
+- **install**: Install-here cache arguments, darkone new --cache, no host tip
+- **profiles**: Geeqie for every graphic profile, GIMP alone off admins
+- **profiles**: Local network launchers under their French names
+- **dns**: Service domain never a host name, PTR answers the host
+- **microvm**: Hypervisor neither zone gateway nor NetworkManager host
+- **dns**: Public names cached by AdGuardHome on the gateway
+- **security**: C8 held by the zone resolvers, DoT/DoH upstream
+- **translate**: Microvm, security, services, network
+- **translate**: Remote desktop, justfile, service modules ref
+- **umi**: Talon speech recognition asleep at start, enableSpeech option
+- **network**: Network games now reach every zone and the tailnet
+- **translate**: Openclaw options, accessibility, microvm, network, modules reference
+- **vpn**: Reachable services, access removal, OIDC fallback trap
+- **vpn**: Per-OS server setup and registration confirmation
+- **translate**: Ai spaces, vpn, tailnet, connect device, module reference
+- **vpn**: Drop the Tailscale DNS login callouts, keep a fallback row
+- **user-guide**: Add games page
+- **translate**: Vpn, connect-device, user-guide, games, sso
+
 ## [0.5.0] - 2026-10-17
 
 ### Added
@@ -504,7 +583,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Initial Astro/Starlight documentation site for Darkone NixOS Framework.
 - Upgrade to Astro 6.
 
-[Unreleased]: https://github.com/darkone-linux/dnf-doc/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/darkone-linux/dnf-doc/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/darkone-linux/dnf-doc/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/darkone-linux/dnf-doc/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/darkone-linux/dnf-doc/compare/v0.3.1...v0.4.0
 [0.3.1]: https://github.com/darkone-linux/dnf-doc/compare/v0.3.0...v0.3.1
