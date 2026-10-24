@@ -63,8 +63,8 @@ Hermes arrive dans une prochaine version.
 
    `just space-init ia-pro`&nbsp;: clé d'hôte, secrets (cf.
    [Hôtes isolés](/fr/doc/admin-guide/operate/secrets/)) et, si le réseau a
-   Matrix, le bot `@ia-pro:<domaine>`. Committer ensuite `usr/secrets/` et
-   `var/generated/spaces/`.
+   Matrix, le bot `@ia-pro:<domaine>` et son [identité](#identité). Committer
+   ensuite `usr/secrets/` et `var/generated/spaces/`.
 
 3. **Déployer**
 
@@ -186,12 +186,42 @@ sans lui, l'espace fonctionne par son interface web seule.
 | Validation des commandes | Aucune par défaut (cf. [Sécurité](#sécurité))&nbsp;; une demande éventuelle va au propriétaire, en MP |
 | Messages spontanés | Envoyés au propriétaire, en MP |
 | Clés de chiffrement | Dans `/var/lib/openclaw`, persistant |
+| Nom et avatar | Ceux de l'[identité](#identité) |
 
 :::caution[Vérification de l'appareil]
 Au premier démarrage, le bot demande à vérifier sa session (`openclaw matrix
 verify status` sur l'hôte). Tant qu'elle n'est pas vérifiée, Element signale
 ses messages comme non vérifiés.
 :::
+
+### Identité
+
+`darkone.service.openclaw.identity` présente l'assistant dans l'interface web
+et sur Matrix, où son nom remplace celui de l'hôte. Nix l'impose, même avec
+`mutableConfig`.
+
+```nix
+# usr/machines/ia-pro/configuration.nix
+{
+  darkone.service.openclaw.identity = {
+    name = "Jarvis";
+    emoji = "🦉";
+    avatar = ./jarvis.png; # ou "https://…"
+  };
+}
+```
+
+| Avatar | Interface web | Matrix |
+|---|---|---|
+| Fichier png, jpg, gif ou webp | Oui (2&nbsp;Mo maximum) | Oui |
+| URL `https://` | Oui | Oui |
+| Chemin relatif au workspace | Oui | Emoji dessiné |
+| Aucun | Emoji | Emoji dessiné |
+
+Le nom suit au déploiement. L'avatar Matrix est envoyé par
+`just space-init <hôte>`, à relancer après un changement (un avertissement
+d'évaluation le rappelle)&nbsp;; committer ensuite `var/generated/spaces/`.
+Un fichier doit être suivi par git.
 
 {/* t:p 494aee0ed65a54b5b4c998cc0786220c763b68f4efb0f445a47eb95d539323a3 */}
 ## Conversation orale
@@ -262,7 +292,7 @@ Code, Codex, OpenCode) reçoivent les mêmes.
 | `darkone.host.ai-space.enableClaude`, `enableCodex`, `enableOpenCode` | Claude Code, Codex et OpenCode, actifs par défaut |
 | `darkone.host.ai-space.projectsDir` | Dossier projets partagé (défaut `/var/lib/projects`) |
 | `darkone.service.openclaw.exec` | Politique des commandes (cf. [Sécurité](#sécurité)) |
-| `darkone.service.openclaw.identity` | Nom, emoji et avatar de l'assistant (`name`, `emoji`, `avatar`) |
+| `darkone.service.openclaw.identity` | Nom, emoji et avatar de l'assistant (cf. [Identité](#identité)) |
 | `darkone.service.openclaw.workspace` | Fichiers du workspace de l'assistant (`AGENTS.md`, `SOUL.md`…) |
 | `darkone.service.openclaw.projects` | Dépôts git clonés une fois dans le dossier projets |
 | `darkone.service.openclaw.transcription` | Transcription des notes vocales (cf. [Transcription](#transcription)) |
@@ -430,12 +460,12 @@ donne au propriétaire le droit d'administration.
 
 | Réglages | Qui décide |
 |---|---|
-| Accès, canal Matrix, plugins, MCP, transcription | Nix&nbsp;: rétablis au démarrage et à chaque modification |
-| Modèle, commandes, identité | Nix au premier démarrage, puis l'interface |
+| Accès, canal Matrix, plugins, MCP, transcription, identité | Nix&nbsp;: rétablis au démarrage et à chaque modification |
+| Modèle, commandes | Nix au premier démarrage, puis l'interface |
 | Autres | L'interface |
 
 :::caution[Réglage semé par Nix]
-Une fois écrit, un réglage du modèle, des commandes ou de l'identité ne suit
+Une fois écrit, un réglage du modèle ou des commandes ne suit
 plus Nix. `openclaw config unset <clé>` le retire&nbsp;: Nix le réécrit aussitôt
 avec sa valeur.
 :::
