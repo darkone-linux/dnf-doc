@@ -790,9 +790,11 @@ déplacement ponctuel, l'option `darkone.service.nix-cache.roaming` seule suffit
 :::
 
 **À l'installation**, `just install` confie à l'installeur les caches de l'hôte
-quand l'adresse cible appartient au réseau d'une zone. Hors zone (IP publique,
-LAN d'une box), il n'interroge que `cache.nixos.org`, le reste vient du poste
-d'administration.
+quand l'adresse cible appartient au réseau d'une zone.
+
+Hors zone (IP publique, LAN d'une box) et pour toute passerelle (ses caches de
+zone passent par elle), l'installeur n'interroge que `cache.nixos.org`&nbsp;: le
+reste vient du poste d'administration.
 
 :::note[Activation]
 `harmonia` et `nix-cache` sont des [services](/fr/doc/admin-guide/operate/services/)
