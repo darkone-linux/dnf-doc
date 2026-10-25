@@ -86,7 +86,7 @@ enrôlement](/fr/doc/admin-guide/understand/tailnet/#clés-dactivation-et-enrôl
 :::caution[Déployer le HCS après avoir déclaré l'hôte]
 Le HCS ne crée une clé que pour un hôte qu'il connaît. Un hôte tout juste ajouté à
 `etc/config.yaml` exige d'abord `just apply hcs`, sinon&nbsp;:
-`no declared tailnet identity`.
+`no declared tailnet identity`. `just install` le vérifie avant de formater.
 :::
 
 :::note[Échec pendant une installation]

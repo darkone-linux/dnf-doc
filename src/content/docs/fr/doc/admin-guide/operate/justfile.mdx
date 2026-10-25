@@ -329,6 +329,18 @@ affiche celles qu'il accepte. Avant d'installer par-dessus un OS existant,
 redémarrez la machine pour qu'elle prenne son adresse réservée.
 :::
 
+Avant de formater, la recette signale ce qui ferait échouer la suite, puis
+demande confirmation&nbsp;:
+
+| Alerte | À faire |
+|---|---|
+| Nom de l'hôte inconnu du poste | `just apply <passerelle locale>` |
+| HCS pas à jour pour l'hôte | `just apply hcs` |
+| Hôte chiffré hors de toute zone | Rediriger aussi le port 2222 |
+
+Avant la toute première question, elle liste aussi les modifications non
+commitées hors de l'hôte&nbsp;: elles partiront dans ses commits.
+
 La recette dépose aussi sur la cible, **avant** l'installation du système, la
 clé age `/etc/sops/age/infra.key` (sauf sur un
 [hôte isolé](/fr/doc/admin-guide/operate/secrets/#hôtes-isolés)) et, sur un hôte
