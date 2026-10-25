@@ -138,12 +138,16 @@ Une passerelle s'enrôle comme toute machine&nbsp;; deux points lui sont propres
    ```sh
    just generate
    just apply hcs
+   just apply gw-atelier   # passerelle du poste d'administration, si autre zone
    just apply gw
    ```
 
+   Le poste d'administration résout le nom court `gw` par la passerelle de sa zone.
+   Pas redéployée depuis l'ajout de `gw`, elle l'ignore et `just apply gw` échoue.
+
    Appliquer la passerelle referme son SSH public (WAN, ouvert jusque-là).
-   Redéployer aussi les hôtes qui visent cette adresse. `HeadscaleNodeDrift` signale
-   une adresse déclarée qui ne correspond plus.
+   Redéployer aussi les autres passerelles et les hôtes qui visent cette adresse.
+   `HeadscaleNodeDrift` signale une adresse déclarée qui ne correspond plus.
 
 </Steps>
 
