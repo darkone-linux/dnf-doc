@@ -113,9 +113,11 @@ La phase par défaut ajoute ce qui demande la machine&nbsp;:
 5. repose la **clé d'initrd** depuis sops si elle manque sur la cible (elle
    n'en régénère jamais une nouvelle, cela invaliderait celle qu'a posée
    l'installation) ;
-6. sur une **passerelle**, relève l'**IP WAN** courante dans le manifeste
+6. sur une **passerelle**, relève son **adresse publique** dans le manifeste
    (repli de `just unlock`, voir plus bas), à relancer si le
-   fournisseur d'accès renumérote ;
+   fournisseur d'accès renumérote. Derrière une box, l'interface WAN ne porte
+   qu'une IP privée&nbsp;: l'adresse publique est celle qui a servi à joindre la
+   machine, ou se passe en argument (`just luks <hôte> '' auto <IP ou nom DDNS>`) ;
 7. si **aucune passphrase gérée** ne déverrouille le volume (hôte installé
    avant la bascule vers le formatage partagé), demande sa passphrase
    d'installation une dernière fois et enrôle la partagée avec.
@@ -238,7 +240,8 @@ Le VPN d'une zone meurt avec sa passerelle : quand celle-ci attend sa
 passphrase, seule sa patte WAN est joignable. Son initrd réplique d'ailleurs
 l'adressage de production (IP statique sur le pont `lan0`, DHCP côté WAN),
 puisqu'elle est elle-même le serveur DHCP que son initrd attendrait sinon.
-Les autres hôtes font un simple DHCP sur leurs interfaces filaires.
+Les autres hôtes font un simple DHCP sur leurs interfaces filaires. Derrière
+une box, ce repli exige une redirection du port 2222 vers la passerelle.
 :::
 
 :::note[Portables en Wi-Fi]
@@ -324,7 +327,7 @@ Un second bloc audite le **déverrouillage distant**, point par point&nbsp;:
 | Chargeur d'amorçage postérieur à la clé | **Le** piège&nbsp;: clé absente de l'initrd qui démarre |
 | Pilotes des cartes filaires présents dans l'initrd | Pas de réseau en stage 1&nbsp;: rien ne répond sur 2222 |
 | Système démarré = configuration auditée | Un apply en attente rendrait l'audit trompeur |
-| IP WAN relevée (passerelles) | Injoignable en initrd une fois le VPN tombé |
+| Adresse publique relevée (passerelles) | Injoignable en initrd une fois le VPN tombé |
 
 {/* t:p 018691bf21721672315d60b94b99d685b47b750bf369738c69b4e480c9e4aa59 */}
 ## Sous le capot
