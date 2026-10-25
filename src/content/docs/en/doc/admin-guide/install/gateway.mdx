@@ -69,49 +69,50 @@ A free port or a wifi card can serve as a backup link (phone tethering, 4G). See
 [Backup links](/en/doc/how-to/admin/gateway-backup-links/).
 :::
 
-{/* t:p 1d165317914e3e8c08a28c2cbf73859d95db13fdcffe6b05e4722a4e51c20b12 */}
-## Installing the gateway
+{/* t:p 98554b1607570cb4d01b143341ac9f955b808ca04936dca4702a25e136955595 */}
+## Install the gateway
 
-Installation is often done **remotely**: someone on site prepares the
-machine, and the administrator installs it via SSH.
+Installation is often done **remotely**: someone on site prepares the machine,
+the administrator installs over SSH.
 
 <Steps>
 
 1. **Prepare the gateway** (on site)
 
-   1. Plug the gateway into the router.
-   2. Boot from the USB key (image `just build-iso`).
-   3. Note down the gateway's IP address.
-   4. Forward port 22 from the router to the gateway.
+   1. Plug the gateway into the box.
+   2. Boot from the USB key (`just build-iso` image).
+   3. Note the gateway's IP address.
+   4. Forward port 22 on the box to the gateway.
 
    :::note[Why forward port 22?]
-   It allows SSH access during installation. The USB key only accepts
-   authentication keys (no password).
+   It allows SSH access for the duration of the installation. The USB key only
+   accepts authentication keys (no password).
 
-   **Remove the forwarding once installation is complete**&nbsp;: the installed
-   gateway no longer responds to SSH from the Internet; remote access goes
-   through the VPN (`just enter gw`). See [SSH access by
-   role](/en/doc/admin-guide/understand/network/).
+   Once installed, the gateway keeps this SSH open on its WAN until its VPN
+   address is declared (`vpn.ipv4`), then no longer responds from the Internet:
+   access goes through the VPN (`just enter gw`). **Then remove the
+   forwarding.** See [SSH access by
+   role](/en/doc/admin-guide/understand/network/#ssh-access-by-role).
    :::
 
 2. **Install** (administrator)
 
-   A single command chains disk formatting, hardware configuration,
-   deployment, and cleanup&nbsp;:
+   A single command chains disk formatting, hardware configuration, deployment
+   and cleanup&nbsp;:
 
    ```sh
    just full-install gw nixos <ip>
    ```
 
-   - `gw`: hostname declared in `etc/config.yaml`.
-   - `nixos`: USB live key user (DNF image).
-   - `<ip>`: address noted in the previous step.
+   - `gw`: host name declared in `etc/config.yaml`.
+   - `nixos`: user of the live USB key (DNF image).
+   - `<ip>`: address noted in the previous step, or the box's public IP
+     (port 22 forwarding) for a remote installation.
 
-   :::tip[Do without the address]
-   If the gateway's `mac` key appears in `etc/config.yaml`, its address
-   is reserved in advance and does not change between the USB key and the
-   installed system. `just full-install gw` is then enough, with nothing
-   to read or enter.
+   :::tip[Doing without the address]
+   If the gateway's `mac` key is in `etc/config.yaml`, its address is reserved in
+   advance and does not change between the USB key and the installed system.
+   `just full-install gw` is then enough, without noting or entering anything.
    :::
 
 </Steps>
@@ -146,7 +147,7 @@ just tailnet-enroll gw
 ```
 
 All that remains is to declare its tailnet address: see [Enregister a
-gateway](/en/doc/admin-guide/operate/vpn/#registering-a-gateway).
+gateway](/en/doc/admin-guide/operate/vpn/#enrolling-a-gateway).
 
 {/* t:p 61db6fbe1ce1034ab649b1b95dfbf897a78af5208463a659932ba8a06f78ef1f */}
 ## Connecting other machines

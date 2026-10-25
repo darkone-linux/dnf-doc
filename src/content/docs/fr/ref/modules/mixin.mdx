@@ -125,52 +125,64 @@ darkone.host.gateway.backup-links = {
 
 <hr/>
 
-{/* t:p dee26eb5124c1600214d1dcdc1d5b2d9a3c72e32c9c96e5ae6baf62f0dcc6b1e */}
+{/* t:p b1da1882afdf9a925760d98eee0841d820eb5738ad77ecf003c2fd1e19d79a2a */}
 ### &#x1F4E6; darkone.host.gateway
 
 La passerelle / routeur principal d'une zone de réseau local.
 
-:::tip[Une passerelle prête à l'emploi&nbsp;!]
+:::tip[Une passerelle prête à l'emploi !]
 La passerelle est configurée dans le fichier `etc/config.yaml`.
-Les services activés en supplément (homepage, adguardhome, forgejo, nix-cache...)
-sont configurés automatiquement avec une interconnexion réseau cohérente sur la
-passerelle et toutes les machines du réseau local.
+Les services activés en plus (homepage, adguardhome, forgejo, nix-cache...)
+sont configurés automatiquement avec un câblage réseau cohérent sur la
+passerelle et sur toutes les machines du réseau local.
 :::
 
-:::caution[Trafic routé filtré]
-`filterForward = true`&nbsp;: seuls LAN &lt;-&gt; WAN et LAN &lt;-&gt; tailnet passent. Tout le
-reste est jeté — ajoutez-le à `networking.firewall.extraForwardRules`.
+:::caution[SSH public jusqu'à la prise en charge par le tailnet]
+`wanSsh.enable` ouvre sshd sur l'interface WAN (clé uniquement, fail2ban), pour
+installer une passerelle distante joignable via une redirection de port de la box. Par défaut : activé
+tant que headscale est actif et que la zone ne déclare pas de `gateway.vpn.ipv4` ;
+le déclarer puis appliquer ferme le port. L'initrd (déverrouillage LUKS, 2222)
+n'a pas de pare-feu : cette option ne s'y applique pas.
 :::
 
-Sous-module (`gateway/`)&nbsp;: `backup-links.nix`, liens de secours.
+:::caution[Le trafic routé est filtré]
+`filterForward = true` : seuls LAN &lt;-&gt; WAN et LAN &lt;-&gt; tailnet se croisent. Tout
+le reste est supprimé : ajoutez-le à `networking.firewall.extraForwardRules`.
+:::
 
-{/* t:p 090f2b0cda40fa5b9621158a96d67bed77a6415df76ee294e62381c1a76b2825 */}
-#### Liens de secours (`backup-links.nix`)
+Sous-module (`gateway/`) : `backup-links.nix`, liaisons montantes de secours.
 
-:::tip[Liens de secours&nbsp;: Internet en mode dégradé]
-`backupLinks` ajoute des liens de repli (port ethernet libre, client wifi type
-point d'accès de téléphone) auxquels la zone se rabat quand le WAN perd son
-lien, son bail ou Internet&nbsp;:
+{/* t:p f7e4f97eb755dfcde71a957348f5b9839413ce9205f946a3e551936e35dc1a44 */}
+#### Liaisons montantes de secours (`backup-links.nix`)
+
+:::tip[Liaisons de secours : Internet en mode dégradé]
+`backupLinks` ajoute des liaisons montantes (port ethernet de rechange, client
+wifi comme un partage de connexion de téléphone) vers lesquelles la zone bascule quand le WAN perd sa liaison, son bail
+ou l'Internet&nbsp;:
 
 ```nix
 darkone.host.gateway.backupLinks.phone = {
-  type = "wifi";          # SSID + phrase de passe: sops `backup-link/phone/{ssid,psk}`
+  type = "wifi";          # SSID + passphrase: sops `backup-link/phone/{ssid,psk}`
   interface = "wlp4s0";
-  priority = 10;          # plus bas = préféré parmi les secours
+  priority = 10;          # lower = preferred among backups
 };
 ```
 
-Les métriques de route orientent la route par défaut&nbsp;; `dnf-uplink-monitor`
-pinge via chaque lien, pénalise celui sans Internet et remet celui revenu
-d'une panne à l'épreuve jusqu'à ce qu'il réponde. Un lien wifi garde sa
-radio éteinte tant qu'aucun lien préféré n'atteint Internet&nbsp;; un lien
-ethernet reste actif, inactif. Détails&nbsp;: `lib/uplinks.nix`.
+Les métriques de route pilotent la route par défaut ; `dnf-uplink-monitor` fait un ping via
+chaque liaison, pénalise celle sans Internet et en retient une après une panne
+en probation jusqu'à ce qu'elle réponde. Une liaison wifi garde sa radio
+éteinte jusqu'à ce qu'aucune liaison préférée n'atteigne Internet ; une liaison ethernet reste active,
+au repos. Détails : `lib/uplinks.nix`.
 :::
 
-* **enable** `bool` Activer les fonctions de passerelle pour l'hôte courant (dhcp, dns, proxy, etc.)
+* **enable** `bool` Active les fonctionnalités de passerelle pour l'hôte courant (dhcp, dns, proxy, etc.)
+* **wanSsh.enable** `bool` SSH public sur l'interface WAN, pour joindre une passerelle distante pas encore sur le tailnet
 
 ```nix
-darkone.host.gateway.enable = false;
+darkone.host.gateway = {
+  enable = false;
+  wanSsh.enable = dnfLib.gatewayAwaitsTailnet network zone;
+};
 ```
 
 <hr/>

@@ -103,16 +103,16 @@ in `vpn.ipv4`. To keep it, restore the client state rather than re-enrolling (se
 hardware](/en/doc/admin-guide/install/gateway-hardware-migration/)).
 :::
 
-{/* t:p 1bf0e4f69bd5d4a698f0e2074033bcba6642dd9078caf78a0700e151761820b5 */}
-## Registering a gateway
+{/* t:p ff6d334cbc19262fba5aea794e22731a1d3bd83d05692aed3f30c17ec0db328c */}
+## Enrolling a gateway
 
-A gateway enrolls like any machine&nbsp;; two points are specific to it.
+A gateway enrolls like any other machine&nbsp;; two points are specific to it.
 
 <Steps>
 
-1. **Check its zone's route**
+1. **Check its zone route**
 
-   The gateway advertises its zone's `/16`, which the policy approves by default
+   The gateway advertises its zone's `/16`, which the policy approves automatically
    for `tag:gw-<zone>`. On the HCS&nbsp;:
 
    ```sh
@@ -121,8 +121,8 @@ A gateway enrolls like any machine&nbsp;; two points are specific to it.
 
 2. **Declare its tailnet address**
 
-   The HCS reaches the zone's resolver through this address (DNS pivot), like the
-   services that target it (backups, monitoring). Read it in the output of
+   The HCS reaches the zone's resolver through this address (pivot DNS), like the
+   services that target it (backups, monitoring). Read it from the output of
    `just tailnet-enroll`, then report it&nbsp;:
 
    ```yaml
@@ -139,8 +139,10 @@ A gateway enrolls like any machine&nbsp;; two points are specific to it.
    ```sh
    just generate
    just apply hcs
+   just apply gw
    ```
 
+   Applying the gateway closes its public SSH (WAN, open until then).
    Also redeploy the hosts that target this address. `HeadscaleNodeDrift` reports
    a declared address that no longer matches.
 

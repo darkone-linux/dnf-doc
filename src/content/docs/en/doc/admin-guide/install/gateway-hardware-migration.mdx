@@ -302,7 +302,7 @@ find /var/lib/forgejo \( -nouser -o -nogroup \)
 Restoring the VPN client's state directory, then restarting its service, makes the new gateway resume **the old node's identity**, and thus its mesh address. Nothing to change in `etc/config.yaml`.
 
 Do this only once the old machine is permanently shut down, never with both running. Otherwise, `just tailnet-enroll gw` enrolls it as a new machine (the old node, offline, is replaced): record its new address, see [Registering a
-gateway](/en/doc/admin-guide/operate/vpn/#registering-a-gateway).
+gateway](/en/doc/admin-guide/operate/vpn/#enrolling-a-gateway).
 :::
 
 {/* t:p 90bd5dbe10c5ce86f1cf53aeec9c966ecdadb08e23250410493bdb2bb5279ff9 */}

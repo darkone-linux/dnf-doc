@@ -127,7 +127,7 @@ darkone.host.gateway.backup-links = {
 
 <hr/>
 
-{/* t:p dee26eb5124c1600214d1dcdc1d5b2d9a3c72e32c9c96e5ae6baf62f0dcc6b1e */}
+{/* t:p b1da1882afdf9a925760d98eee0841d820eb5738ad77ecf003c2fd1e19d79a2a */}
 ### &#x1F4E6; darkone.host.gateway
 
 The main gateway / router of a local network zone.
@@ -139,6 +139,14 @@ are automatically configured with consistent network plumbing on the
 gateway and all machines on the local network.
 :::
 
+:::caution[Public SSH until the tailnet takes over]
+`wanSsh.enable` opens sshd on the WAN interface (key-only, fail2ban), to
+install a remote gateway reached through a box port forward. Default: on
+while headscale is active and the zone declares no `gateway.vpn.ipv4`;
+declaring it then applying closes the port. The initrd (LUKS unlock, 2222)
+has no firewall: this option does not apply there.
+:::
+
 :::caution[Routed traffic is filtered]
 `filterForward = true`: only LAN &lt;-&gt; WAN and LAN &lt;-&gt; tailnet cross. Anything
 else is dropped — add it to `networking.firewall.extraForwardRules`.
@@ -146,7 +154,7 @@ else is dropped — add it to `networking.firewall.extraForwardRules`.
 
 Sub-module (`gateway/`): `backup-links.nix`, backup uplinks.
 
-{/* t:p 090f2b0cda40fa5b9621158a96d67bed77a6415df76ee294e62381c1a76b2825 */}
+{/* t:p f7e4f97eb755dfcde71a957348f5b9839413ce9205f946a3e551936e35dc1a44 */}
 #### Backup uplinks (`backup-links.nix`)
 
 :::tip[Backup links: Internet in degraded mode]
@@ -170,9 +178,13 @@ idle. Details: `lib/uplinks.nix`.
 :::
 
 * **enable** `bool` Enable gateway features for the current host (dhcp, dns, proxy, etc.)
+* **wanSsh.enable** `bool` Public SSH on the WAN interface, to reach a remote gateway not yet on the tailnet
 
 ```nix
-darkone.host.gateway.enable = false;
+darkone.host.gateway = {
+  enable = false;
+  wanSsh.enable = dnfLib.gatewayAwaitsTailnet network zone;
+};
 ```
 
 <hr/>

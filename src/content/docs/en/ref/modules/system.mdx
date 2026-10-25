@@ -370,7 +370,7 @@ darkone.system.microvm = {
 
 <hr/>
 
-{/* t:p 2ae0ce3c72ee9d5c96840f5e2da781eee35b67fef1719dd58e9cb2cdd966c8c2 */}
+{/* t:p 530f27a77bba4d36322b4e3d8690ea5c8a2f5d4ee7eb870c3ba84736d1e8ed6d */}
 ### &#x2699; darkone.system.security
 
 ANSSI BP-028 v2.0 (GNU/Linux) system hardening. (wip)
@@ -442,7 +442,8 @@ Independent of `host.profile` — to be explicitly defined in each host profile.
 
 :::note[Per-rule exceptions]
 A rule with an exception is excluded from activation even if the level would cover it.
-Mandatory rationale in `rationale`.
+Mandatory rationale in `rationale`. Host exceptions add to the structural
+SELinux ones (R46–R49), never replace them.
 :::
 
 :::caution[Side effects]
@@ -456,7 +457,7 @@ comments in each themed file before raising the level on a production system.
 * **level** `enum [ "minimal" "intermediary" "reinforced" "high" ]` Targeted ANSSI hardening level.
 * **category** `enum [ "base" "client" "server" ]` Machine category that selects rule subsets.
 * **excludes** `listOf str` Tags that disable entire rule groups.
-* **exceptions** `attrs` Per-rule exceptions with mandatory rationale.
+* **exceptions** `attrs` Per-rule exceptions with mandatory rationale. Merged with the structural SELinux exceptions (R46–R49).
 * **adminMailbox** `str` Administrator email address (sudo R39, MTA aliases R75).
 * **useHardenedKernel** `bool` Use linuxPackages_hardened (R60, C1) instead of the default kernel.
 * **allowedActiveUsers** `listOf str` Human accounts allowed to authenticate (R30). Defaults to every user

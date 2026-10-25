@@ -1,0 +1,138 @@
+---
+title: "Version 0.6.0"
+description: "Ruptures de compatibilité : secrets, espaces IA et microVM routés"
+sidebar:
+  label: "0.6.0"
+lang: fr
+prev:
+  link: /fr/changelog/v0-5-0/
+  label: "Version 0.5.0"
+---
+
+{/* t:translated-from en */}
+{/* t:h c970a6ac82388349c5a37a7837948f99e35164e06db05207516be419c858fec8 */}
+
+{/* t:p 682a06538b85e211734ae3bd8f252a1cb9116a97e20b5f7f5b6c62c7b35941c0 */}
+Publiée le **2026-10-24** : ruptures de compatibilité sur les secrets, les espaces IA et les microVM routés.
+
+[Modifications sur GitHub](https://github.com/darkone-linux/darkone-nixos-framework/compare/v0.5.0...v0.6.0) · [Toutes les versions](/fr/changelog/)
+
+:::caution[Ruptures de compatibilité]
+- **secrets** : abandon de default-password-hash et de just passwd-default
+- **space** : space-bot fusionné dans space-init, le bot exige un réseau Matrix
+- **openclaw** : secret du mot de passe de la passerelle pour le CLI de l'hôte, exécution selon le fournisseur
+- **openclaw** : clonage des projets dans le projectsDir partagé, agents de code
+:::
+
+{/* t:p 5741bf1edda7244e71827a1fd61285c7f86479c52a6dd63c9a05e96912620979 */}
+## Ajouté
+
+- **microvm** : invités microVM routés, profil ai-space, sops isolés
+- **space** : just space-init, fichier sops propre aux hôtes isolés
+- **home** : Ghostty pour tous les profils techniques, indépendant d'enableTools
+- **home** : profils admin sans création d'images, musique et Filezilla, une seule application KeePass
+- **gnome** : Vim, btop et htop masqués de la grille d'applications (hiddenApps)
+- **home** : dossier du réseau local pour le nix-admin : doc, onboarding, sources
+- **microvm** : disponibilité de l'invité via vsock, CID dérivé de l'IP de la zone
+- **microvm** : invités joignables par ping et ssh depuis le parc
+- **space** : groupe Kanidm par espace IA, proxy.spaceMembersOnly par instance
+- **openclaw** : assistant OpenClaw d'un espace IA derrière le SSO de la zone
+- **space** : comptes allégés pour les membres, sans sudo, home space-member
+- **openclaw** : canal Matrix d'un espace IA, just space-bot
+- **space** : outillage d'agent de l'espace IA, MCP, skills, Claude Code, Codex, whisper
+- **openclaw** : le propriétaire de l'espace valide, reçoit des MP spontanés ; les salons Matrix sont ignorés
+- **openclaw** : identité déclarée de l'assistant, configuration en lecture seule
+- **installer** : just try, VM d'installation avec le projet épinglé sur cet arbre
+- **install** : install-here accepte un cache binaire supplémentaire pour nixos-install
+- **openclaw** : option de politique des commandes, validations réservées au propriétaire
+- **space** : secrets des serveurs MCP depuis le fichier sops de l'espace (secretEnv)
+- **installer** : just try sert le store de cette machine, un relancement conserve l'épinglage
+- **home** : lanceurs du réseau local nommés en français dans une session française
+- **microvm** : hyperviseur qui ne peut être ni passerelle ni NetworkManager
+- **remote-desktop** : mode d'arrêt rd, motif de l'hôte en cas d'échec d'armement
+- **home** : plus de jeux et d'applications éducatives et de productivité pour enfant/ado
+- **home** : outils scolaires, d'accessibilité et de code pour enfant/ado
+- **umi** : reconnaissance vocale Talon endormie au démarrage par défaut
+- **supertuxkart** : accepte les joueurs de toutes les zones et du tailnet
+- **ai-space** : OpenCode pour les membres et l'agent openclaw
+- **microvm** : serveur whisper.cpp de l'hyperviseur pour les notes vocales des invités
+- **openclaw** : option de configuration modifiable, propriétaire administrateur dans l'interface
+- **openclaw** : catalogue de modèles, abonnements en priorité, clés d'API, fournisseurs
+- **openclaw** : conversation orale dans le navigateur avec OpenAI GPT-Live, connexion ChatGPT en priorité
+- **openclaw** : workflows Lobster, automatisations déclarées dans Nix
+- **openclaw** : les CliUsers exécutent le CLI de l'hôte, openclaw seul ouvre le TUI
+- **headscale** : alias de politique pour chaque hôte de zone déclaré
+- **headscale** : journalise les vraies IP clientes derrière le Caddy local
+
+{/* t:p fa91821bf5f2f55528879f9c8a172a604e60eb90a3a056c042290695415024d2 */}
+## Corrigé
+
+- **iso** : tty1 attend le réseau, Entrée ouvre nmtui pour le Wi-Fi
+- **init** : le lien Dnf/ est une racine GC, conservé par le GC hebdomadaire
+- **iso** : NetworkManager seul sur les cartes réseau, pas de dhcpcd à côté
+- **oauth2-proxy** : ne tourne que là où Caddy l'appelle, pas sur chaque hôte de zone
+- **hardware** : Zed démarre sans l'avertissement de GPU émulé sur une VM
+- **space** : space-init vérifie les destinataires du fichier, pas le déchiffrement de la clé d'infra
+- **microvm** : pas de wait-online networkd sur un hyperviseur dhcpcd
+- **microvm** : conserve le DNS de dhcpcd sur l'hyperviseur, pas de resolved tiré par networkd
+- **microvm** : couche de store inscriptible dans les invités, Home Manager s'active
+- **space** : space-bot analyse la ligne de journal du jeton MAS, permissions restaurées en cas d'échec
+- **space** : space-bot écrit son marqueur avec sudo, var/generated n'appartient pas à nix
+- **space** : space-init écrit le marqueur du bot au format nixfmt
+- **sso** : oauth2-proxy rafraîchit les claims toutes les 15 min, les changements de groupe s'appliquent
+- **microvm** : l'hyperviseur vérifie que ses invités conservent son stateDir
+- **openclaw** : une session de MP par membre quand un espace en compte plusieurs
+- **openclaw** : les clones de projets acceptent une nouvelle clé de serveur SSH
+- **home** : visionneuse d'images pour chaque profil graphique, Geeqie dans les essentiels
+- **home** : le dossier du réseau local attend les dossiers du shell, réessayé en cas d'erreur
+- **gnome** : une seule liste d'applications masquées avec UMI, les applications absentes ne sont plus occultées
+- **microvm** : hyperviseur entièrement sous networkd, résolveur de zone statique
+- **microvm** : l'invité résout uniquement via la zone, sans repli ni LLMNR
+- **microvm** : pas d'optimisation du store sur un hyperviseur, les overlays des invités passent en ESTALE
+- **nix-cache** : les NAR repris contournent le cache, épingles stables pour les applications cassées
+- **tests** : fixture sops pour l'hôte isolé space1 d'eval-all
+- **virtualbox** : signature des modules noyau avec kmodigest, l'agrégateur exige .ko.cer
+- **nextcloud** : création de l'admin via occ, option adminuser retirée en amont
+- **openclaw** : amorçage de la configuration modifiable clé par clé, les structures définies dans l'interface sont conservées
+- **openclaw** : icône et description
+- **openclaw** : correctif du runtime Node avec patchelf --no-sort, segfault de ld.so
+- **headscale** : attend un vrai 200 de l'émetteur OIDC avant de démarrer
+- **headscale** : joint le Kanidm local via loopback, pas de repli OIDC au démarrage
+
+{/* t:p 1b3c5179ff9e11d9702d5df8b2a4295af909658775a34220deea7f7c0c188837 */}
+## Sécurité
+
+- **microvm** : répertoires d'état des invités fermés aux utilisateurs de l'hyperviseur (0770)
+- **openclaw** : unité de passerelle durcie, l'agent écrit uniquement dans son état
+- **microvm** : état des invités monté nosuid,nodev sur l'hyperviseur
+- **adguardhome** : DNS amont et de repli uniquement via TLS/HTTPS
+- **c8** : les résolveurs de zone chiffrent l'amont, les clients ne suppriment que le repli
+
+{/* t:p 8ccf73d03806143407201af7309d0d2ebb82492eb4716469afe07d649a266481 */}
+## Retiré
+
+- **adguardhome** : abandon de host/port dépréciés, réglage de settings.http.address
+- **games** : abandon de warzone2100, compilation cassée contre abseil 20260817
+- **headscale** : abandon de :443 dans server_url, aligné sur la redirection OIDC
+
+{/* t:p 7a7c673172d6e414a95936b6384316b8585d1a794e9e7e3ee0585e11a06367ce */}
+## Modifié
+
+- **adguardhome** : cache DNS activé, les réponses locales de dnsmasq restent hors cache
+- **nix-cache** : taille de cache par défaut portée de 40g à 100g
+- **microvm** : threads OpenMP de whisper alignés sur ceux du serveur
+
+{/* t:p 47fff08b4af1973dcde07b41f94210dff2d40f9bab30998b920ff7ed5bee073f */}
+## Documentation
+
+- **template** : README du projet réécrit comme guide d'accueil de l'administrateur
+- **openclaw** : commandes exécutées sans validation, la microVM est la frontière
+- **space** : monitoring-node dans les exemples d'en-tête, les alertes en ont besoin
+- **template** : le README demande git add avant un build, des commits pour l'historique
+
+{/* t:p 1584a70d67bf1081ed20654cc47e3a06d253145e21baf5a77c82dfc705aeabd1 */}
+## Dépendances
+
+- dnf-generator v0.3.1
+- dnf-generator v0.3.2
+- fleet-update v0.7.5

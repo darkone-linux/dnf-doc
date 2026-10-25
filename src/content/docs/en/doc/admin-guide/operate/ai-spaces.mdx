@@ -23,15 +23,15 @@ place.
 Hermes comes in a future release.
 :::
 
-{/* t:p 5936db0d86b32006f91d48e6d8810769a310101a3b1c8c4ee76698a168adeb08 */}
+{/* t:p 73496e404c531df3444ac91058d3fefa3ef7c6d605aa644de2ba9a5f8b2f6a00 */}
 ## Create a space
 
 <Steps>
 
 1. **Declare the host and its members**
 
-   The host's `users` are its members: DNF creates the Kanidm group
-   `space-<host>` for them.
+   A host's `users` are its members&nbsp;: DNF creates the Kanidm group
+   `space-<hôte>` for them.
 
    ```yaml
    # etc/config.yaml
@@ -44,14 +44,15 @@ Hermes comes in a future release.
        openclaw: {}
    ```
 
-   `monitoring-node` places the space under the zone's supervision: without
+   `monitoring-node` places the space under the zone's supervision&nbsp;: without
    it, neither a space failure nor the assistant stopping triggers an alert.
 
-   The **owner** is the member whose subscription runs the assistant: they
-   receive approval requests and spontaneous messages (reminders, scheduled
-   tasks). As the only member, they are implicit. With several members, they
-   are declared in `usr/machines/ia-pro/configuration.nix` (the order of
-   `users` is not preserved):
+   The **owner** is the member whose subscription runs the
+   assistant&nbsp;: they receive validation requests and spontaneous messages
+   (reminders, scheduled tasks). As the only member, they are implicit.
+   With several members, they are declared in
+   `usr/machines/ia-pro/configuration.nix` (the order of `users` is not
+   preserved)&nbsp;:
 
    ```nix
    { darkone.service.openclaw.owner = "alice"; }
@@ -59,44 +60,45 @@ Hermes comes in a future release.
 
 2. **Initialize the space**
 
-   `just space-init ia-pro`: host key, secrets (see
-   [Isolated hosts](/en/doc/admin-guide/operate/secrets/)) and, if the network
-   has Matrix, the bot `@ia-pro:<domain>`. Then commit `usr/secrets/` and
-   `var/generated/spaces/`.
+   `just space-init ia-pro`&nbsp;: host key, secrets (cf.
+   [Isolated hosts](/en/doc/admin-guide/operate/secrets/)) and, if the network has
+   Matrix, the bot `@ia-pro:<domaine>` and its [identity](#identity). Then commit
+   `usr/secrets/` and `var/generated/spaces/`.
 
 3. **Deploy**
 
-   The hypervisor, the zone gateway (vhost, DNS) and the HCS (Kanidm group):
-   `just apply hyperviseur,gw,hcs`.
+   The hypervisor, the zone gateway (vhost, DNS) and the HCS (Kanidm
+   group)&nbsp;: `just apply hyperviseur,gw,hcs`.
 
 4. **Connect the AI provider**
 
-   Once per space, from the host (`just enter ia-pro`), for each owner
-   subscription used for the space's models (see
-   [Models and subscriptions](#models-and-subscriptions)):
+   Once per space, from the host (`just enter ia-pro`), for each
+   subscription of the owner that serves the space's models (cf.
+   [Models and subscriptions](#models-and-subscriptions))&nbsp;:
 
    | Subscription | Models | Login |
    |---|---|---|
-   | Claude Pro/Max, via the `claude` CLI | `anthropic/*` (default: `anthropic/claude-sonnet-5-5`) | `sudo -u openclaw -H claude auth login` |
+   | Claude Pro/Max, via the `claude` CLI | `anthropic/*` (default&nbsp;: `anthropic/claude-sonnet-5-5`) | `sudo -u openclaw -H claude auth login` |
    | ChatGPT Plus/Pro, via the `codex` plugin | `openai/*` | `openclaw models auth login --provider openai` |
 
-   The host's `openclaw` command switches to the service user by itself, even
-   from the owner's account (see [Access](#access)). `openclaw models status`
-   checks the connection, which stays in `/var/lib/openclaw`, persistent.
+   The host's `openclaw` command switches to the service user on its own,
+   including from the owner's account (cf. [Access](#access)).
+   `openclaw models status` checks the connection, which stays in
+   `/var/lib/openclaw`, persistent.
 
 </Steps>
 
 :::note[Why an `openclaw` user]
-The assistant reads untrusted content (web, messages, documents): a dedicated
-system user keeps it away from members' accounts, their keys and their
-connections. Members have no `sudo`, except for the `openclaw` CLI (see
-[Access](#access)): administration goes through the `nix` account.
+The assistant reads untrusted content (web, messages, documents)&nbsp;: a
+dedicated system user keeps it away from members' accounts, their keys and
+their connections. Members have no `sudo`, except for the `openclaw` CLI
+(cf. [Access](#access))&nbsp;: administration goes through the `nix` account.
 :::
 
 :::caution[Update]
 A space created before the assistant's local password must go through
-`just space-init <host>` again before deployment: it generates the
-`openclaw-gateway-password` secret, with which the host's `openclaw` command
+`just space-init <hôte>` again before deployment&nbsp;: it generates the
+`openclaw-gateway-password` secret, through which the host's `openclaw` command
 reaches the service.
 :::
 
@@ -168,27 +170,58 @@ A personal subscription (ChatGPT, Claude) shared by several members falls
 outside the terms of use&nbsp;: a team space takes a team plan or API keys
 (`subscriptions = [ ]`).
 
-{/* t:p 40b4d7b161383c61324360dbbbbbfc669a55a4a7a8640d6b3d356a9eceb36ee2 */}
+{/* t:p 420a4788138165f7efd5c1d4556e9f8c3d349188d21e5e6d53fccb0f18885dd3 */}
 ## Matrix
 
-Members write to the bot `@<hôte>:<domaine>` in direct message, end-to-end
-encrypted. The channel only exists if the network declares the `matrix`
-service: without it, the space runs on its web interface alone.
+Members write to the bot `@<hôte>:<domaine>` in a direct, end-to-end encrypted
+message. The channel only exists if the network declares the `matrix`
+service&nbsp;: without it, the space works through its web interface alone.
 
 | Element | Rule |
 |---|---|
-| Who is listened to | The space's members (`@<login>:<domaine>`), DM only; other accounts are ignored |
-| Rooms | Ignored: non-members would read the replies there |
+| Who is listened to | Members of the space (`@<login>:<domaine>`), in DM only&nbsp;; other accounts are ignored |
+| Rooms | Ignored&nbsp;: non-members would read the answers there |
 | Sessions | One per member when there are several, otherwise a single one for all channels |
-| Command validation | None by default (see [Security](#security)); any request goes to the owner, via DM |
-| Unsolicited messages | Sent to the owner, via DM |
+| Command validation | None by default (cf. [Security](#security))&nbsp;; any request goes to the owner, in DM |
+| Spontaneous messages | Sent to the owner, in DM |
 | Encryption keys | In `/var/lib/openclaw`, persistent |
+| Name and avatar | Those of the [identity](#identity) |
 
 :::caution[Device verification]
-On first startup, the bot asks for its session to be verified (`openclaw
-matrix verify status` on the host). Until it is verified, Element flags its
-messages as unverified.
+On first startup, the bot asks to verify its session (`openclaw matrix
+verify status` on the host). Until it is verified, Element reports
+its messages as unverified.
 :::
+
+{/* t:p a8982a834c86eb5ec8b5f5ebf572c5e09768fedfb935ca2bd3aeefdc7269d7f9 */}
+### Identity
+
+`darkone.service.openclaw.identity` presents the assistant in the web interface
+and on Matrix, where its name replaces the host's. Nix enforces it, even with
+`mutableConfig`.
+
+```nix
+# usr/machines/ia-pro/configuration.nix
+{
+  darkone.service.openclaw.identity = {
+    name = "Jarvis";
+    emoji = "🦉";
+    avatar = ./jarvis.png; # ou "https://…"
+  };
+}
+```
+
+| Avatar | Web interface | Matrix |
+|---|---|---|
+| png, jpg, gif or webp file | Yes (2&nbsp;MB maximum) | Yes |
+| `https://` URL | Yes | Yes |
+| Path relative to the workspace | Yes | Drawn emoji |
+| None | Emoji | Drawn emoji |
+
+The name follows at deployment. The Matrix avatar is sent by
+`just space-init <hôte>`, to be run again after a change (an evaluation
+warning reminds you of this)&nbsp;; then commit `var/generated/spaces/`.
+A file must be tracked by git.
 
 {/* t:p 494aee0ed65a54b5b4c998cc0786220c763b68f4efb0f445a47eb95d539323a3 */}
 ## Voice conversation
@@ -219,7 +252,7 @@ conversations at a time, 30 minutes each.
 Not yet tried in a browser or on a phone.
 :::
 
-{/* t:p 7bcc5c3e82f244a9dd91a95789bf8ddd11e6dc9dffa2eaa9db95972ed94641e1 */}
+{/* t:p e4c739f0058f00b58dca958879b3726f003552363afb9defda9c82cddffec073 */}
 ## Agent tools
 
 MCP servers, skills and tools are declared once per space, in
@@ -254,33 +287,33 @@ Code, Codex, OpenCode) receive the same ones.
 | Option | Role |
 |---|---|
 | `darkone.host.ai-space.mcp` | MCP servers, local (`command`, `args`, `env`, `secretEnv`) or remote (`url`, `headers`) |
-| `darkone.host.ai-space.skills` | Skills by name&nbsp;: `SKILL.md` content, file or directory |
+| `darkone.host.ai-space.skills` | Skills by name&nbsp;: `SKILL.md` content, file or folder |
 | `darkone.host.ai-space.packages` | Tools in the assistant's and members' PATH |
 | `darkone.host.ai-space.enableClaude`, `enableCodex`, `enableOpenCode` | Claude Code, Codex and OpenCode, enabled by default |
-| `darkone.host.ai-space.projectsDir` | Shared projects directory (default `/var/lib/projects`) |
-| `darkone.service.openclaw.exec` | Command policy (see [Security](#security)) |
-| `darkone.service.openclaw.identity` | Assistant name, emoji and avatar (`name`, `emoji`, `avatar`) |
+| `darkone.host.ai-space.projectsDir` | Shared projects folder (default `/var/lib/projects`) |
+| `darkone.service.openclaw.exec` | Command policy (cf. [Security](#security)) |
+| `darkone.service.openclaw.identity` | Assistant name, emoji and avatar (cf. [Identity](#identity)) |
 | `darkone.service.openclaw.workspace` | Assistant workspace files (`AGENTS.md`, `SOUL.md`…) |
-| `darkone.service.openclaw.projects` | Git repositories cloned once into the projects directory |
-| `darkone.service.openclaw.transcription` | Voice note transcription (see [Transcription](#transcription)) |
+| `darkone.service.openclaw.projects` | Git repositories cloned once into the projects folder |
+| `darkone.service.openclaw.transcription` | Voice note transcription (cf. [Transcription](#transcription)) |
 
 :::danger[MCP secrets&nbsp;: `secretEnv` only]
 `env` and `headers` are written to the Nix store, readable by everyone. An API
-key goes through `secretEnv`, for a local server&nbsp;: each variable is read
-from the space's secrets file, under the `mcp/<serveur>/<VARIABLE>` key
-(`just space-sops <hôte>`, before deployment). A remote server receives no
-secret.
+key goes through `secretEnv`, for a local server&nbsp;: each variable is
+read from the space's secrets file, under the key
+`mcp/<serveur>/<VARIABLE>` (`just space-sops <hôte>`, before deployment).
+A remote server receives no secret.
 :::
 
 :::note[Workspace]
-Declared files are rewritten each time the assistant starts. The others
-(memory, files created by the agent) belong to it. Projects are never updated
-automatically&nbsp;; a failed clone is reported in
+The declared files are rewritten each time the assistant starts. The
+others (memory, files created by the agent) belong to it. Projects are never
+updated automatically&nbsp;; a failed clone is reported in
 `journalctl -u openclaw-projects` without blocking deployment. An SSH
 repository uses the `openclaw` user's key, to be created once
 (`sudo -u openclaw -H ssh-keygen -t ed25519`) then declared on the forge
-(`/var/lib/openclaw/.ssh/id_ed25519.pub`)&nbsp;; the server key is accepted on
-the first clone.
+(`/var/lib/openclaw/.ssh/id_ed25519.pub`)&nbsp;; the server key is
+accepted on the first clone.
 :::
 
 {/* t:p ef121b8b7dd604eb2cc6e9a755b45439eb2667d0ec278477e741fe54b773f81a */}
@@ -402,7 +435,7 @@ accepts a ChatGPT subscription or an API key, not the Claude subscription.
 |---|---|
 | Address | `https://openclaw.<zone>.<domain>` |
 | Login | Kanidm SSO, restricted to the `space-<host>` group |
-| Device | Paired on first visit, without administration or approval rights (owner only, see [Editable configuration](#modifiable-configuration)) |
+| Device | Paired on first visit, without administration or approval rights (owner only, see [Editable configuration](#editable-configuration)) |
 | Administration | `openclaw` CLI on the host |
 | Assistant port | Reachable from the zone gateway only |
 
@@ -417,23 +450,23 @@ to `cliUsers` members to whom the service can be entrusted. With `sudo`
 restricted to the `wheel` group (R38 hardening), `cliUsers` stays empty.
 :::
 
-{/* t:p 2cdacb9687eb7834712a6a8a05a723cf9dc7efc459f080caf225ab4462bd568e */}
-## Modifiable configuration
+{/* t:p c0055281990bf61f63f24f80ab61f8f18d54d29aea4eaa1fbd0d9af4ef9c4b67 */}
+## Editable configuration
 
 By default, Nix freezes the assistant's configuration&nbsp;: the web interface
-displays it read-only. `darkone.service.openclaw.mutableConfig = true` makes it
-modifiable, in the interface or via `openclaw config set` on the host, and
+shows it read-only. `darkone.service.openclaw.mutableConfig = true` makes it
+editable, in the interface or via `openclaw config set` on the host, and
 gives the owner administrative rights.
 
 | Settings | Who decides |
 |---|---|
-| Access, Matrix channel, plugins, MCP, transcription | Nix&nbsp;: restored at startup and on every change |
-| Model, commands, identity | Nix on first startup, then the interface |
+| Access, Matrix channel, plugins, MCP, transcription, identity | Nix&nbsp;: restored at startup and on every change |
+| Model, commands | Nix at first startup, then the interface |
 | Others | The interface |
 
 :::caution[Setting seeded by Nix]
-Once written, a model, command or identity setting no longer follows Nix.
-`openclaw config unset <clé>` removes it&nbsp;: Nix immediately rewrites it
+Once written, a model or command setting no longer follows
+Nix. `openclaw config unset <clé>` removes it&nbsp;: Nix rewrites it immediately
 with its value.
 :::
 

@@ -1175,7 +1175,7 @@ darkone.service.nix-cache = {
 
 <hr/>
 
-{/* t:p d657b9f2ea5b0fb6e4c3d1a1439966edd419db188e38015a190a2c148248e663 */}
+{/* t:p ba7fbbd49bc734ac33645580bf0d204922ad1b92dc8ce839fad9db9650fd7d6d */}
 ### &#x2728; darkone.service.openclaw
 
 OpenClaw assistant of an AI space (gateway + control UI, behind the zone SSO).
@@ -1210,11 +1210,12 @@ One instance per `ai-space` host, declared like any service:
   approvals asked to the owner in DM;
 - agent tooling: MCP, skills, Claude Code / Codex / OpenCode and `packages`
   of the space (`darkone.host.ai-space`), shared with the members' homes;
-- identity (`identity`: name, emoji, avatar): declared, the config being
-  read-only (`openclaw agents set-identity` fails);
+- identity (`identity`: name, emoji, avatar): imposed, also on the Matrix
+  bot (display name; avatar, else the emoji drawn), the avatar uploaded by
+  `just space-init <host>` (eval warning when out of date);
 - `mutableConfig`: config writable from the UI and the CLI, Nix keys merged
-  at each start (imposed: access, channels, plugins, store paths; seeded
-  once: model, exec, identity...), owner gets `operator.admin`;
+  at each start (imposed: access, channels, plugins, identity, store paths;
+  seeded once: model, exec, talk...), owner gets `operator.admin`;
 - workspace (`/var/lib/openclaw/workspace`): `workspace` files (AGENTS.md,
   SOUL.md...) replaced at each start, others left to the agent;
 - projects: the space's shared `projectsDir` is the agent's working dir
@@ -1289,9 +1290,10 @@ state.
 * **mutableConfig** `bool` Config writable from the UI and `openclaw config set`, the owner being
   operator admin. Nix keys merged at each start:
   - imposed, rewritten (also on any change of the file): gateway and
-    access, Matrix channel, plugins, MCP servers, store paths;
+    access, Matrix channel, plugins, MCP servers, `identity`, store
+    paths;
   - seeded, written when absent, then the UI rules: `model`, `exec`,
-    `identity`, talk, ACP, skill switches.
+    talk, ACP, skill switches.
 * **exec** `enum [ "full" "auto" "ask" "allowlist" "deny" ]` Command policy of the agent (OpenClaw `tools.exec.mode`):
   - `full`: any command, unapproved (OpenClaw default);
   - `ask`: allowlisted commands run, any other asks the owner;
@@ -1301,9 +1303,13 @@ state.
   Allowlist: `openclaw approvals allowlist add --agent main &lt;path&gt;`. With
   the `claude-cli` runtime, pipes, redirections and substitutions are
   refused before any prompt outside `full`.
-* **identity.name** `nullOr str` Name of the assistant, shown in the UI.
-* **identity.emoji** `nullOr str` Emoji of the assistant, shown in the UI.
-* **identity.avatar** `nullOr str` Avatar image (URL or workspace-relative path).
+* **identity.name** `nullOr str` Name of the assistant, in the UI and on the Matrix bot (default there: the host's `name`).
+* **identity.emoji** `nullOr str` Emoji of the assistant, in the UI; drawn as the Matrix bot's avatar without `avatar`.
+* **identity.avatar** `nullOr (either str path)` Avatar of the assistant:
+  - file (png, jpg, gif, webp; 2 MB at most for the UI) or `https://`
+    URL: UI and Matrix bot, uploaded by `just space-init &lt;host&gt;`;
+  - path relative to the workspace: UI only, the emoji on Matrix.
+* **matrixProfile** `raw` Profile of the Matrix bot: display name, avatar and its fingerprint.
 * **workspace** `attrs` Files of the agent workspace, by relative path: content or file.
   Replaced at each gateway start; undeclared files belong to the agent.
 * **projects** `attrs` Git repositories cloned once into `&lt;projectsDir&gt;/&lt;name&gt;`
@@ -1353,7 +1359,8 @@ darkone.service.openclaw = {
   exec = "ask";
   identity.name = "Jarvis";
   identity.emoji = "🦉";
-  identity.avatar = null;
+  identity.avatar = lib.literalExpression "./jarvis.png";
+  matrixProfile = matrixProfile;
   workspace = { };
   projects = { };
   talk.enable = false;

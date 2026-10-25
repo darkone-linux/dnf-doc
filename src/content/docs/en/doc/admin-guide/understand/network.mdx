@@ -153,25 +153,37 @@ networking.firewall.extraForwardRules = ''
 '';
 ```
 
-{/* t:p cd47e55798a067ab5021c5ac2ec3d7ed130cadd17cc162cf42aeb09d363b5337 */}
+{/* t:p 32655a4a054fd2f954c2d0b26d2b2e76ecc558789c7c1f11773839c60c3ab356 */}
 ## SSH access by role
 
-Port 22 is never open "everywhere". A rule without an interface name applies to **all** interfaces, WAN included: on a gateway, this would expose SSH to the Internet.
+Port 22 is never opened "everywhere". A rule without an interface name
+applies to **all** interfaces, WAN included&nbsp;: on a gateway, that would
+publish SSH on the Internet.
 
 | Host | SSH reachable from |
 |---|---|
-| Zone gateway | Its local network and the VPN |
-| Global zone host (HCS) | The Internet — an intentional decision, since it hosts the VPN |
-| Zone machine (workstation, server) | Its own interface only, i.e. the local network |
+| Zone gateway | its local network and the VPN |
+| Gateway not yet enrolled | also the Internet (WAN) |
+| Host of the global zone (HCS) | Internet — deliberate decision, it carries the VPN |
+| Zone machine (workstation, server) | its only interface, therefore the local network |
 
-Practical consequence: **a gateway does not respond to SSH from the Internet.** Remote access goes through the VPN:
+Practical consequence&nbsp;: **an enrolled gateway does not answer SSH from
+the Internet.** Remote access goes through the VPN&nbsp;:
 
 ```sh
 just enter gw
 ```
 
-<Aside type="caution" title="A gateway does not open any port without an interface">
-The `gateway` profile refuses to build if a port is opened without an interface name. A gateway service declares itself on `lan0` (the zone) or `tailscale0` (the VPN); a truly public port is placed on the WAN interface, explicitly.
+Before enrolment, the WAN is the only access&nbsp;: the option
+`darkone.host.gateway.wanSsh.enable` opens port 22 there as long as the zone
+does not declare `gateway.vpn.ipv4`. Declaring the address and then applying
+closes it.
+
+<Aside type="caution" title="A gateway opens no port without an interface">
+The `gateway` profile refuses to build if a port is opened without an
+interface name. A gateway service is declared on `lan0` (the zone) or
+`tailscale0` (the VPN)&nbsp;; a genuinely public port is set on the WAN
+interface, explicitly.
 </Aside>
 
 {/* t:p 0553f159b0df79292efa23dabe693056719a56376fc0105e3575015f615d48a3 */}
