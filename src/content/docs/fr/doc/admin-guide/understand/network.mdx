@@ -163,15 +163,20 @@ cela publierait le SSH sur Internet.
 | Hôte | SSH joignable depuis |
 |---|---|
 | Passerelle de zone | son réseau local et le VPN |
+| Passerelle pas encore enrôlée | aussi Internet (WAN) |
 | Hôte de la zone globale (HCS) | Internet — décision assumée, il porte le VPN |
 | Machine de zone (poste, serveur) | sa seule interface, donc le réseau local |
 
-Conséquence pratique&nbsp;: **une passerelle ne répond pas au SSH depuis
+Conséquence pratique&nbsp;: **une passerelle enrôlée ne répond pas au SSH depuis
 Internet.** L'accès distant passe par le VPN&nbsp;:
 
 ```sh
 just enter gw
 ```
+
+Avant l'enrôlement, le WAN est le seul accès&nbsp;: l'option
+`darkone.host.gateway.wanSsh.enable` y ouvre le port 22 tant que la zone ne
+déclare pas `gateway.vpn.ipv4`. Déclarer l'adresse puis appliquer le referme.
 
 <Aside type="caution" title="Une passerelle n'ouvre aucun port sans interface">
 Le profil `gateway` refuse de construire si un port est ouvert sans nom

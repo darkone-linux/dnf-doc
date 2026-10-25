@@ -93,10 +93,11 @@ machine, l'administrateur installe par SSH.
    Il permet l'accès SSH le temps de l'installation. La clé USB n'accepte que les
    clés d'authentification (pas de mot de passe).
 
-   **Retirez la redirection une fois l'installation finie**&nbsp;: la passerelle
-   installée ne répond plus au SSH depuis Internet, l'accès distant passe par le
-   VPN (`just enter gw`). Voir [Accès SSH selon le
-   rôle](/fr/doc/admin-guide/understand/network/).
+   La passerelle installée garde ce SSH ouvert sur son WAN jusqu'à la
+   déclaration de son adresse VPN (`vpn.ipv4`), puis ne répond plus depuis
+   Internet&nbsp;: l'accès passe par le VPN (`just enter gw`). **Retirez alors la
+   redirection.** Voir [Accès SSH selon le
+   rôle](/fr/doc/admin-guide/understand/network/#accès-ssh-selon-le-rôle).
    :::
 
 2. **Installer** (administrateur)
