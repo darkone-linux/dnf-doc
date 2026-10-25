@@ -789,6 +789,11 @@ sur lui-même, comme un hôte [`auto-build`](#construction-distribuée). Pour un
 déplacement ponctuel, l'option `darkone.service.nix-cache.roaming` seule suffit.
 :::
 
+**À l'installation**, `just install` confie à l'installeur les caches de l'hôte
+quand l'adresse cible appartient au réseau d'une zone. Hors zone (IP publique,
+LAN d'une box), il n'interroge que `cache.nixos.org`, le reste vient du poste
+d'administration.
+
 :::note[Activation]
 `harmonia` et `nix-cache` sont des [services](/fr/doc/admin-guide/operate/services/)
 à activer sur un hôte du réseau (`nix-cache` sur la passerelle de zone). La clé
