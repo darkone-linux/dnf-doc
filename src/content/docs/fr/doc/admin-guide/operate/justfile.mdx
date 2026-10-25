@@ -330,10 +330,11 @@ redémarrez la machine pour qu'elle prenne son adresse réservée.
 :::
 
 La recette dépose aussi sur la cible, **avant** l'installation du système, la
-clé age `/etc/sops/age/infra.key` et, sur un hôte chiffré, la clé d'hôte SSH de
-son initrd&nbsp;: sops fonctionne dès la première activation et le tout premier
-démarrage écoute déjà sur le port 2222. Le volume est formaté avec la
-passphrase partagée du parc, il n'y a donc rien à saisir.
+clé age `/etc/sops/age/infra.key` (sauf sur un
+[hôte isolé](/fr/doc/admin-guide/operate/secrets/#hôtes-isolés)) et, sur un hôte
+chiffré, la clé d'hôte SSH de son initrd&nbsp;: sops fonctionne dès la première
+activation et le tout premier démarrage écoute déjà sur le port 2222. Le volume
+est formaté avec la passphrase partagée du parc, il n'y a donc rien à saisir.
 
 ```sh
 just install myserver
@@ -509,7 +510,8 @@ just detect-hw myserver
 {/* t:p bb952125c6373caa2bd08e413b62d65d906bb079653af1e5a91e8a718b2ec038 */}
 ### ✳️ `push-key <hôte>`
 
-Transfère la clé age `/etc/sops/age/infra.key` vers l'hôte cible.
+Transfère la clé age `/etc/sops/age/infra.key` vers l'hôte cible, sauf s'il ne
+la lit pas (hôte isolé).
 
 ```sh
 just push-key myserver
@@ -924,6 +926,8 @@ d'intégrité.
 | `init` | Génère une nouvelle clé, conserve l'ancienne, rechiffre les secrets |
 | `push-keys` | Pousse la clé combinée (nouvelle + ancienne) vers tous les hôtes |
 | `finalize` | Vérifie que tous les hôtes ont la nouvelle clé, supprime l'ancienne |
+
+Les hôtes isolés sont ignorés&nbsp;: ils ne lisent pas cette clé.
 
 :::danger[Rotation non terminée]
 Ne pas interrompre une rotation. Les sidecars `.cur` / `.old` marquent une rotation en cours.
