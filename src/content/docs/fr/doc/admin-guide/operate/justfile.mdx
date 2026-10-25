@@ -354,6 +354,9 @@ just install myserver nixos 10.0.0.5     # IP personnalisée
 just install myserver nix auto test      # VM test uniquement
 ```
 
+`nixos-anywhere` et `disko` sont ceux que verrouille le framework, testés avec
+lui&nbsp;: `nix run .#nixos-anywhere` et `nix run .#disko` depuis le projet.
+
 :::note[L'installation scelle l'hôte]
 Juste avant le formatage, `install` écrit `usr/machines/<hôte>/install/state.nix`
 (`stateVersion` de la release nixpkgs courante)&nbsp;: la disposition disque et le
