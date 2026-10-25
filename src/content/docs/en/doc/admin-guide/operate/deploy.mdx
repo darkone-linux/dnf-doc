@@ -597,79 +597,64 @@ The scope follows the mode&nbsp;: in co-development, the project and `dnf/`&nbsp
 otherwise the project alone (a finding that only the framework can fix is not
 filed).
 
-{/* t:p 5cf462f3f0d73201d9b95d814d866b6040ee4466f8a2d4d63fc174896ae49ee6 */}
+{/* t:p 2b180331e0cd01212767c926bfde0abcdc24039bec0a0711c95ce5fd14c34d35 */}
 ### Report and Matrix alerts
 
-Each deployment writes its directory under
-`var/deployments/<date>-<mode>/`&nbsp;:
-`report.md` (the report), `state.json` (the state `--resume` picks up),
-`events.jsonl` and the per-host logs. The path is displayed at the end of the
-deployment.
+Each run writes its folder to `var/deployments/<date>-<mode>/`: `report.md` (the report), `state.json` (the state that `--resume` picks up), `events.jsonl` and the per-host logs. The path is displayed at the end of the run.
 
-The report details what the deployment actually did&nbsp;:
+The report details what the run actually did:
 
 | Section | What it gives |
 |---|---|
 | **Steps**, **Waves** | Duration of each step, composition and duration of each wave |
-| **Builders** | Who built what, including fallbacks |
-| **Copies** | Per host: pulled paths and by which substituter, pushed paths, volume |
-| **Zones without a cache** | Deployment zones that no `harmonia` serves |
-| **Hosts not deployed** | Hosts left aside, and the reason |
-| **Diagnostics** | Per failed host: failed units, then an excerpt of the error |
-| **Notes** | What the deployment observed: probable activation order after a unit restart |
-| **AI analysis** | AI analysis: one entry per analyzed host, then the deployment summary |
-| **AI repair** | AI actions: host, action, outcome, and the reason for a refusal. A repair commit also appears in the header, `Repaired in flight` |
-| **Suggestions** | Improvement suggestions filed or reviewed by the deployment, except the ignored ones |
-| **Known errors** | Pitfalls recognized by the signature table, in plain language |
+| **Builders** | Who built what, fallbacks included |
+| **Copies** | Per host: paths pulled and by which substituter, paths pushed, volume |
+| **Zones without a cache** | Zones in the run that no `harmonia` serves |
+| **Hosts not deployed** | Hosts left aside, and why |
+| **Diagnostics** | Per failed host: failed units, then error excerpt |
+| **Notes** | What the run observed: likely activation order after a unit restart |
+| **AI analysis** | AI analysis: one entry per analyzed host, then the run summary |
+| **AI repair** | AI actions: host, action, outcome, and reason for a refusal. A repair commit also appears in the header, `Repaired in flight` |
+| **Suggestions** | Improvement suggestions filed or reviewed by the run, excluding ignored ones |
+| **Known errors** | Pitfalls recognized by the signature table, in plain words |
 
-:::tip[Reading the copy counters]
-A host that pulls most of its data from `harmonia <zone>` proves that its
-zone's cache does its job. A host that gets **pushed** a lot of volume is
-instead a candidate for a `harmonia` in its zone, or for `auto-build`. No copy
-line for a host&nbsp;→ it already had everything, nothing travelled.
+:::tip[Reading copy counters]
+A host that pulls most of its content from `harmonia <zone>` proves that its zone's cache plays its role. A host that gets **pushed** a lot of volume is on the contrary a candidate for a `harmonia` in its zone, or for `auto-build`. No copy line for a host → it already held everything, nothing traveled.
 :::
 
-The `--send-report` option sends this report to the
-[alert bot](/en/doc/admin-guide/operate/alerts/) rooms, installed beforehand by
+The `--send-report` option sends this report to the channels of the
+[alert bot](/en/doc/admin-guide/operate/alerts/), installed beforehand by
 `just configure-alert-bot`.
 
-| Situation | Room | Content |
+| Situation | Channel | Content |
 |---|---|---|
-| Deployment finished | warnings | Summary&nbsp;: hosts by state, duration, known errors |
-| Critical hosts not deployed | incidents | Separate message&nbsp;: hosts concerned, reasons and failed units |
-| Stopped on error | incidents | Error that stopped the deployment, then the summary |
+| Run finished | warnings | Summary: hosts by state, duration, known errors |
+| Critical hosts not deployed | incidents | Separate message: affected hosts, reasons and failed units |
+| Stopped on error | incidents | Error that stopped the run, then summary |
 
-A host is critical when its profile is listed in `criticalProfiles`. After a
-stop, the hosts left in `test` complete the incident message&nbsp;: a restart
-would bring them back to their previous generation.
+A host is critical when its profile appears in `criticalProfiles`. After a stop, hosts left in `test` complete the incident message: a reboot would bring them back to their previous generation.
 
-**Only the end-of-deployment summary** joins the message, never the per-host
-analyses, and it is capped at six lines there&nbsp;: beyond that, the message
-refers to `report.md`. An alert room is not a report.
+**Only the end-of-run summary** joins the message, never the per-host analyses, and it is capped at six lines: beyond that, the message points to `report.md`. An alert channel is not a report.
 
-The message reuses the report's header, with the exit code in the title&nbsp;:
+The message mirrors the report header, with the exit code in the title:
 
 ```markdown
 **Fleet Update Report** (1)
 
-Error: srv-ag: activation failed
+Error: srv-maison: activation failed
 
 - Started at 2026-09-17 02:00:00 UTC, duration: 4m12s
-- Options: partial run, selection gw-*, test skipped, 10 in parallel
-- Hosts: 5 deployed (hcs, gw-ag, pc-ag, gw-cp, lt-cp), 1 failed (srv-ag)
+- Options: full run, selection all, test skipped, 10 in parallel
+- Hosts: 5 deployed (hcs, gw-maison, pc-maison, gw-atelier, lt-atelier), 1 failed (srv-maison)
 - Run stopped on error
 ```
 
-:::note[Sending not possible]
-The deployment remains valid and the report is written, but the command exits
-with `3`. Under the timer, the unit fails, hence the `SystemdUnitFailed` alert.
+:::note[Sending failed]
+The run remains valid and the report is written, but the command exits with `3`. Under the timer, the unit fails, hence the `SystemdUnitFailed` alert.
 :::
 
 :::caution[What sending requires]
-Sending goes through the [`just send-msg`](/en/doc/admin-guide/operate/alerts/#sending-a-message-to-a-room)
-recipe&nbsp;: rooms and token remain the framework's business, the tool only
-writes the text. Nothing goes out if the bot is not provisioned, nor on an
-abort (`^C`, service stop).
+Sending goes through the [`just send-msg`](/en/doc/admin-guide/operate/alerts/#sending-a-message-to-a-room) recipe: channels and token remain the framework's concern, the tool only writes the text. Nothing is sent if the bot is not provisioned, nor on an abort (`^C`, service stop).
 :::
 
 {/* t:p 826bb022475cb8d9781021ef6fd0bc3511cbb2f47710deaa651789017a429b58 */}
@@ -713,59 +698,59 @@ version of the tool knows how to send it. Add it in the meantime, after checking
 the delivery by hand.
 :::
 
-{/* t:p e15c5fd254f0a8c71d2819086e27695f5a131645bc14804189a7f98604c01ae8 */}
+{/* t:p fdeb8b77cc7c001574b394ea24f09825516cb243c05b43cca28a4183223bff62 */}
 ## Binary cache
 
-Two services combine to avoid recompiling or re-downloading derivations oneach deployment.
+Two services combine to avoid recompiling or re-downloading derivations on each
+deployment.
 
 | Service | Role |
 |---|---|
-| `harmonia` | Serves the local, signed `/nix/store` **directly** to the hosts (LAN, or VPN if it is `global`). |
+| `harmonia` | Serves the local `/nix/store`, signed, **directly** to hosts (LAN, or VPN if it is `global`). |
 | `nix-cache` | Per-zone `nginx` proxy that caches the public `cache.nixos.org` cache on the gateway. |
 
-A `harmonia` host has a second role&nbsp;: it is the
-[elected builder](#distributed-builds) of its zone, because it knows how to serve
-what it builds.
+A `harmonia` host has a second role: it is the
+[elected builder](#distributed-builds) of its zone, because it can serve what
+it builds.
 
-A host queries these sources in the following order of priority. The first
-fetch from the Internet is thus shared across the whole zone.
+A host queries these sources in the following priority order. The first fetch
+from the Internet is thus pooled for the whole zone.
 
 | Priority | Source | Scope |
 |---|---|---|
-| 20 | The zone's `harmonia` | LAN, what the zone has compiled |
-| 35 | The zone's `nix-cache` proxy | LAN, shared mirror of the public cache |
-| 40 | `cache.nixos.org` directly | Safety net if the gateway is down |
-| 45 | `global` `harmonia` | Last resort, over the VPN |
+| 20 | zone `harmonia` | LAN, what the zone has compiled |
+| 35 | zone `nix-cache` proxy | LAN, pooled mirror of the public cache |
+| 40 | `cache.nixos.org` direct | safety net if the gateway is down |
+| 45 | `global` `harmonia` | last resort, over the VPN |
 
 :::note[How the order is guaranteed]
-Nix does not follow the order of the `substituters` list, it sorts the caches
-according to the priority each one announces in its `nix-cache-info`. Now these
-announced values are tied&nbsp;: all `harmonia` declare 30, and the proxy
-relaying `cache.nixos.org` as is declares 40, like direct access to the public
-cache. DNF therefore sets the priority in the substituter's URL
-(`?priority=35`), which overrides the announced value and makes the table order
-explicit.
+Nix does not follow the order of the `substituters` list; it sorts caches by the
+priority each announces in its `nix-cache-info`. But these announced values are
+equal: all `harmonia` declare 30, and the proxy relaying `cache.nixos.org` as-is
+declares 40, like direct access to the public cache. DNF therefore sets the
+priority in the substituter URL (`?priority=35`), which overrides the announced
+value and makes the table order explicit.
 
 Two intended consequences. The zone proxy comes **before** direct access to the
-public cache, otherwise zone-level sharing would never happen. And a `global`
-`harmonia` comes **after** that public cache&nbsp;: `harmonia` serves an entire
-`/nix/store`, without being able to distinguish what it has compiled from the
-rest, so a well-stocked host would capture all the traffic the public cache is
-supposed to serve. As a last resort, it is only consulted for what
-`cache.nixos.org` does not have, that is its own builds.
+public cache, without which zone pooling would never happen. And a `global`
+`harmonia` comes **after** that public cache: `harmonia` serves an entire
+`/nix/store`, without being able to tell what it compiled from the rest, so a
+well-stocked host would capture all the traffic the public cache should serve. As
+a last resort, it is only queried for what `cache.nixos.org` does not have, that
+is, its own builds.
 :::
 
 :::note[A host does not use its own `harmonia`]
 This service serves its own `/nix/store`, so it can only provide paths already
-present locally. On that host, everything missing necessarily comes from another
-source&nbsp;: that is normal, its `harmonia` only benefits the **other** machines
-of the zone.
+present locally. On this host, everything missing necessarily comes from another
+source: that is normal, its `harmonia` only benefits the **other** machines in the
+zone.
 :::
 
-:::tip[Roaming host (portable across zones)]
-A laptop that changes zones must not keep substituters hardwired to its declared
-zone&nbsp;: unreachable elsewhere, they cost a timeout on every request. Declare it
-roaming&nbsp;:
+:::tip[Roaming host (multi-zone laptop)]
+A laptop that changes zone must not keep substituters pinned to its declared
+zone: unreachable elsewhere, they cost timeouts on every request. Declare it
+roaming:
 
 ```yaml
 # etc/config.yaml
@@ -773,27 +758,34 @@ roaming&nbsp;:
 ```
 
 Its substituters become **neutral** names (`harmonia.dnf.internal`,
-`nix-cache.dnf.internal`) that each zone's DNS resolves to its own caches
-→ the cache follows the machine. Outside any zone, immediate NXDOMAIN
-response → direct fallback to `cache.nixos.org`, without delay. Since the signing
-keys are common to the whole network, nothing else to configure.
+`nix-cache.dnf.internal`) that each zone's DNS resolves to its own caches → the
+cache follows the machine. Outside any zone, immediate NXDOMAIN response → direct
+fallback to `cache.nixos.org`, with no delay. Signature keys being common to the
+whole network, nothing else to configure.
 
-Outside a zone, no fleet cache serves it&nbsp;: `fleet-update` therefore builds it
-on itself, like an [`auto-build`](#distributed-builds) host. For a one-off move,
-the `darkone.service.nix-cache.roaming` option alone is enough.
+Outside a zone, no cache in the fleet serves it: `fleet-update` therefore builds it
+on itself, like an [`auto-build`](#distributed-builds) host. For a one-off
+move, the `darkone.service.nix-cache.roaming` option alone is enough.
 :::
+
+**At installation**, `just install` hands the host's caches to the installer when
+the target address belongs to a zone network.
+
+Outside a zone (public IP, box LAN) and for any gateway (its zone caches go
+through it), the installer only queries `cache.nixos.org`: the rest comes from the
+administration workstation.
 
 :::note[Activation]
 `harmonia` and `nix-cache` are [services](/en/doc/admin-guide/operate/services/)
-to enable on a network host (`nix-cache` on the zone gateway). The signing key of
-harmonia is managed by
+to activate on a host in the network (`nix-cache` on the zone gateway). The
+harmonia signing key is managed by
 [sops](/en/doc/admin-guide/operate/secrets/) (`just configure-admin-host`).
 :::
 
-:::tip[Why a proxy with a single upstream]
-`nix-cache` relays only **one** upstream (`cache.nixos.org`)&nbsp;: it caches
-`narinfo` and `nar` as is, signatures intact. No URL rewriting and no database,
-hence no HTTP 500 "invalid nar hash" error from the old `ncps` relay.
+:::tip[Why a single-upstream proxy]
+`nix-cache` relays only **one** upstream (`cache.nixos.org`): it caches `narinfo`
+and `nar` as-is, signatures intact. No URL rewriting and no database, hence no
+HTTP 500 "invalid nar hash" error from the old `ncps` relay.
 :::
 
 {/* t:p 54036d97ac85014a52079c024508dd3fbf02c05c1a43782ae13514626aaf9fa1 */}

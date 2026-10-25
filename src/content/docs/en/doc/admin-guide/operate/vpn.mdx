@@ -103,27 +103,27 @@ in `vpn.ipv4`. To keep it, restore the client state rather than re-enrolling (se
 hardware](/en/doc/admin-guide/install/gateway-hardware-migration/)).
 :::
 
-{/* t:p ff6d334cbc19262fba5aea794e22731a1d3bd83d05692aed3f30c17ec0db328c */}
-## Enrolling a gateway
+{/* t:p 6951256e3967afc5dfbee6c127b4571a72e61f9b8177d6800e4c8b45aa2bed1d */}
+## Enregistrer une passerelle
 
-A gateway enrolls like any other machine&nbsp;; two points are specific to it.
+Une passerelle s'enrôle comme toute machine&nbsp;; deux points lui sont propres.
 
 <Steps>
 
-1. **Check its zone route**
+1. **Vérifier la route de sa zone**
 
-   The gateway advertises its zone's `/16`, which the policy approves automatically
-   for `tag:gw-<zone>`. On the HCS&nbsp;:
+   La passerelle annonce le `/16` de sa zone, que la politique approuve d'office
+   pour `tag:gw-<zone>`. Sur le HCS&nbsp;:
 
    ```sh
    sudo headscale nodes list-routes
    ```
 
-2. **Declare its tailnet address**
+2. **Déclarer son adresse tailnet**
 
-   The HCS reaches the zone's resolver through this address (pivot DNS), like the
-   services that target it (backups, monitoring). Read it from the output of
-   `just tailnet-enroll`, then report it&nbsp;:
+   Le HCS joint le résolveur de la zone par cette adresse (DNS pivot), comme les
+   services qui la visent (sauvegardes, supervision). La relever dans la sortie de
+   `just tailnet-enroll`, puis la reporter&nbsp;:
 
    ```yaml
    # etc/config.yaml
@@ -134,17 +134,21 @@ A gateway enrolls like any other machine&nbsp;; two points are specific to it.
            ipv4: "100.64.0.8"
    ```
 
-3. **Propagate the address**
+3. **Propager l'adresse**
 
    ```sh
    just generate
    just apply hcs
+   just apply gw-atelier   # passerelle du poste d'administration, si autre zone
    just apply gw
    ```
 
-   Applying the gateway closes its public SSH (WAN, open until then).
-   Also redeploy the hosts that target this address. `HeadscaleNodeDrift` reports
-   a declared address that no longer matches.
+   Le poste d'administration résout le nom court `gw` par la passerelle de sa zone.
+   Pas redéployée depuis l'ajout de `gw`, elle l'ignore et `just apply gw` échoue.
+
+   Appliquer la passerelle referme son SSH public (WAN, ouvert jusque-là).
+   Redéployer aussi les autres passerelles et les hôtes qui visent cette adresse.
+   `HeadscaleNodeDrift` signale une adresse déclarée qui ne correspond plus.
 
 </Steps>
 
