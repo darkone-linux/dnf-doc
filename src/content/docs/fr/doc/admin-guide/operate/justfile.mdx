@@ -348,6 +348,10 @@ chiffré, la clé d'hôte SSH de son initrd&nbsp;: sops fonctionne dès la premi
 activation et le tout premier démarrage écoute déjà sur le port 2222. Le volume
 est formaté avec la passphrase partagée du parc, il n'y a donc rien à saisir.
 
+Sur un hôte isolé, elle scelle d'abord son fichier `usr/secrets/hosts/<hôte>.yaml`
+pour la clé d'hôte de l'installeur, que le système installé reprend&nbsp;: le
+build le trouve, sans passer par `just space-init`.
+
 ```sh
 just install myserver
 just install myserver nixos 10.0.0.5     # IP personnalisée
