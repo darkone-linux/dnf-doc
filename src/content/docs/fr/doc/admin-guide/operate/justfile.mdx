@@ -769,6 +769,9 @@ l'hôte apparaisse (un point par tentative), ce qui permet de l'enchaîner juste
 après un redémarrage. Appelée automatiquement par `just full-install`. Aucune
 passphrase stockée acceptée&nbsp;: depuis un terminal, la demande est présentée.
 
+Rien ne part vers un initrd dont la clé d'hôte n'est pas celle de sops. Voir
+[Chiffrement LUKS](/fr/doc/admin-guide/operate/luks/#déverrouiller-au-démarrage).
+
 Sur un hôte sans volume LUKS, c'est un no-op journalisé.
 
 ```sh

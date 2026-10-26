@@ -210,6 +210,10 @@ refusée, il réessaie avec la passphrase par hôte. C'est ce que
 `just full-install` appelle tout seul après le premier redémarrage. Sur un hôte
 non chiffré, c'est un no-op journalisé.
 
+Avant tout envoi, `just unlock` vérifie que la **clé d'hôte de l'initrd** est
+celle rangée dans sops, puis l'impose à chaque connexion. Clé absente de sops
+ou différente → arrêt, rien n'est envoyé&nbsp;: un imposteur peut écouter sur le 2222.
+
 :::note[Pourquoi la partagée d'abord]
 Au tout premier démarrage, le slot par hôte n'existe pas encore : disko formate
 avec la passphrase partagée, et `luks-passphrase-sync` n'ajoute le slot par hôte
@@ -338,6 +342,7 @@ Un second bloc audite le **déverrouillage distant**, point par point&nbsp;:
 | `secrets.yaml` → `luks-passphrase` | Passphrase partagée du parc | Chiffré sops |
 | `secrets.yaml` → `luks/<hôte>/passphrase` | Passphrase par hôte | Chiffré sops |
 | `secrets.yaml` → `luks/<hôte>/initrd-key` | Clé d'hôte SSH de l'initrd (base64) | Chiffré sops |
+| `secrets.yaml` → `luks/<hôte>/initrd-key-pub` | Sa clé publique, épinglée par `just unlock` | Chiffré sops |
 | `/var/lib/luks-initrd/` (cible) | Copie de travail de la clé d'initrd | Persistant, hors dépôt |
 | `/var/lib/luks-passphrase/ledger` (cible) | Registre des keyslots gérés (détection des rotations) | Persistant, hors dépôt |
 
