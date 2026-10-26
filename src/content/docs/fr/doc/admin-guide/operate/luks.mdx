@@ -152,11 +152,35 @@ sur la cible. En cas de doute, `just luks <hôte> show` le vérifie.
   keyslot est supprimé et remplacé au déploiement suivant.
 - **Partagée** : modifier `luks-passphrase` via `just sops`, puis apply sur
   tout le parc — chaque hôte chiffré fait tourner son keyslot au passage.
+- **Hôte isolé** : `just luks <hôte> passwd`, machine démarrée. La rotation se
+  fait sur-le-champ, sans apply (voir [Hôte isolé chiffré](#hôte-isolé-chiffré)).
 
 Le service de synchronisation détecte les changements grâce à un registre
 local (`/var/lib/luks-passphrase/ledger`)&nbsp;: une valeur sops modifiée
 enrôle la nouvelle passphrase **puis** tue l'ancien slot. Les slots absents du
 registre (FIDO2, enrôlements manuels) ne sont jamais touchés.
+
+## Hôte isolé chiffré
+
+Un [hôte isolé](/fr/doc/admin-guide/operate/secrets/#hôtes-isolés) ne détient
+aucun secret du parc, son chiffrement non plus&nbsp;:
+
+| Élément | Hôte isolé |
+|---|---|
+| Keyslots | Sa passphrase seule, pas de partagée |
+| Formatage | Avec sa passphrase |
+| `luks/<hôte>/*` | `usr/secrets/hosts/<hôte>.yaml` |
+| YubiKeys | Non enrôlées : passphrase seule |
+| `just unlock` | N'envoie que sa passphrase |
+| Rotation | `just luks <hôte> passwd`, immédiate |
+
+Sans service de synchronisation, `passwd` agit sur la machine elle-même&nbsp;:
+nouveau slot, sops, puis suppression de l'ancien. À chaque étape, la valeur
+rangée dans sops ouvre le volume.
+
+Un hôte qui devient isolé se réinstalle (`just install`)&nbsp;: ses anciennes
+entrées `luks/<hôte>` restent dans `secrets.yaml`, signalées par `just luks`,
+à supprimer avec `just sops`.
 
 {/* t:p 00e18eec0ed0466600dffc97351b7ee7180f60cf2c0bcad464461c52b1ebc548 */}
 ## Déverrouiller au démarrage

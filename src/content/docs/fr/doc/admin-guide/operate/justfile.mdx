@@ -560,7 +560,7 @@ dans sops, clé SSH de l'initrd dans sops puis sur la cible, manifeste
 |---|---|
 | (défaut) | Prépare les secrets, puis converge la machine |
 | `pre` | Moitié hors ligne seulement, sans toucher à la machine |
-| `passwd` | Fait tourner la passphrase par hôte, puis converge |
+| `passwd` | Fait tourner la passphrase par hôte, puis converge (sur-le-champ pour un hôte isolé) |
 | `show` | Audit en lecture seule&nbsp;: keyslots et déverrouillage distant |
 
 :::tip[Idempotent]
