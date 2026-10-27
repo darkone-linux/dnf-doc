@@ -382,10 +382,9 @@ d'activité&nbsp;: `under repair` en jaune pendant la réparation déterministe,
 
 L'IA **explique** un échec&nbsp;: elle lit l'état du lancement, les journaux et,
 au besoin, le code, puis rend une analyse en clair. Avec `--ai-error-action
-repair` elle peut ensuite **agir sur les unités tombées**, et rien d'autre
-(voir [Réparer un service](#réparer-un-service)). Le lancement n'attend jamais
-après elle&nbsp;— une analyse qui échoue, dépasse son délai ou son budget laisse
-l'hôte exactement où il était.
+repair` elle peut ensuite **agir**&nbsp;: sur les unités tombées, ou sur le code
+(voir [Réparer un service](#réparer-un-service)). Une analyse qui échoue,
+dépasse son délai ou son budget laisse l'hôte exactement où il était.
 
 Deux options la commandent, **toutes deux à `none` par défaut**&nbsp;: rien ne
 part vers une IA tant qu'on ne l'a pas demandé. Une troisième choisit l'outil.
@@ -453,7 +452,7 @@ neutralisées&nbsp;: l'IA ne voit que ce qu'on lui montre.
 | Chemin de lecture | Confiné au projet et à `dnf/`, après résolution des liens&nbsp;; `usr/secrets/` et `.trash/` refusés |
 | Hôte, unité | Vérifiés contre la table du lancement avant toute commande |
 | Extraits | 200 lignes de journal, 400 lignes de source, tronqués par la fin&nbsp;: l'erreur est en bas |
-| Délai, budget | 300 secondes par analyse&nbsp;; budget en dollars pour `claude` |
+| Délai, budget | 300 secondes par analyse, une heure par session de réparation&nbsp;; budget en dollars pour `claude` |
 
 **Chaque appel d'outil laisse une trace** — une ligne au fil du lancement
 (`AI reads usr/modules/nginx.nix`) et une ligne dans `logs/ai.log` du dossier de
@@ -464,10 +463,11 @@ lancement. Un appel refusé par un garde-fou est tracé aussi, avec sa raison.
 
 <Steps>
 1. **Un hôte échoue**, avec `--ai-error-action` ≠ `none` : après la collecte déterministe et le redémarrage des unités, avant la question qui décide de son sort. L'hôte porte `AI analysis` en magenta pendant ce temps, puis revient à son état.
-2. **Un hôte se rétablit** après un redémarrage d'unités, avec `--ai-analysis` ≠ `none` : l'analyse explique l'ordre d'activation, sans toucher à l'état de l'hôte.
-3. **Fin de lancement**, avec `--ai-analysis` ≠ `none` : une synthèse de l'ensemble, écrite avant le rapport qui la porte.
-4. **Fin de lancement**, avec `--ai-analysis active` : une revue des avertissements, qui dépose des [suggestions d'amélioration](#suggestions-damélioration).
-5. **Touche `a`**, à tout moment : une question libre. Elle reçoit une réponse même sous `--ai-analysis none` — sans aucun outil : `none` supprime les outils et l'analyse automatique, pas la conversation.
+2. **Un build échoue**, avec `--ai-error-action` ≠ `none` : à la fin du build, une analyse par groupe d'hôtes cassés par la même erreur, avant la décision (voir [Réparer un build](#réparer-un-build)).
+3. **Un hôte se rétablit** après un redémarrage d'unités, avec `--ai-analysis` ≠ `none` : l'analyse explique l'ordre d'activation, sans toucher à l'état de l'hôte.
+4. **Fin de lancement**, avec `--ai-analysis` ≠ `none` : une synthèse de l'ensemble, écrite avant le rapport qui la porte.
+5. **Fin de lancement**, avec `--ai-analysis active` : une revue des avertissements, qui dépose des [suggestions d'amélioration](#suggestions-damélioration).
+6. **Touche `a`**, à tout moment : une question libre. Elle reçoit une réponse même sous `--ai-analysis none` — sans aucun outil : `none` supprime les outils et l'analyse automatique, pas la conversation.
 </Steps>
 
 {/* t:p 2cf96bc85ae42256523f7f27abb300866f40d4ceb9f6f5b61675cbe346b1c92e */}
@@ -512,14 +512,14 @@ raison. Un hôte réparé porte aussi une note au rapport.
 #### Réparer par le code
 
 Quand aucun redémarrage ne peut aider, l'IA **écrit la correction** dans le
-projet, la valide, la commite, et **l'hôte seul** est reconstruit puis
-redéployé.
+projet, la valide et la commite&nbsp;; l'hôte est reconstruit puis redéployé, et
+le reste du parc suit le commit ([Aligner le parc](#aligner-le-parc)).
 
 <Steps>
 1. `edit_code` remplace un passage exact (présent une seule fois), ou réécrit un fichier en entier. L'arbre git doit être propre avant la première édition, et le diff part dans `logs/ai.log`.
 2. `validate` lance le nettoyage du projet, puis réévalue et reconstruit **cet hôte seul**.
 3. `commit` écrit `fix(<scope>): <sujet>`, le scope nommant ce que la correction touche (`fix(nginx): …`). En co-développement, `dnf/` est commité d'abord, puis le projet et son lock réaligné.
-4. L'hôte repasse en `built` avec son nouveau chemin&nbsp;; sa vague le sert une fois de plus : copie, activation, conclusion.
+4. L'hôte repasse en `built` avec le chemin commité&nbsp;; sa vague le sert une fois de plus : copie, activation, conclusion.
 </Steps>
 
 | Garde-fou | Effet |
@@ -528,23 +528,16 @@ redéployé.
 | Hors co-développement | `dnf/` est un chemin du store&nbsp;: l'écrire est refusé, et n'aurait rien changé |
 | Arbre | Sale avant la première édition → refus&nbsp;: un commit de réparation ne porte que la correction |
 | Essais | **Un essai est un changement.** Valider et commiter n'en coûtent aucun, sinon corriger coûterait trois fois plus que redémarrer |
+| Validation | `commit` refusé si la dernière édition n'est pas validée&nbsp;: ce qui se redéploie est ce qui est commité |
+| Un commit par correction | Recorriger **amende** le commit `fix` de la correction, tant qu'il est en tête&nbsp;; jamais le `chore(update)` ni un commit humain |
+| Une session à la fois | Les réparations passent l'une après l'autre&nbsp;: un commit prend tout l'arbre |
+| Fin de session | Édition non commitée annulée, arbre ramené au dernier commit&nbsp;; le diff reste dans `logs/ai.log` |
 | Hooks | Jamais contournés&nbsp;: le commit passe par la porte du dépôt comme n'importe quel autre |
 | Message | `dnf/` est publié&nbsp;: un commit du framework qui nomme un hôte du parc est refusé |
 
-:::danger[Le parc se retrouve à cheval sur deux révisions]
-Seul l'hôte réparé est reconstruit&nbsp;: **tous les autres gardent le chemin
-que le lancement avait construit au départ**, et basculent avec. Jusqu'au
-lancement suivant, le parc tourne donc sur deux révisions. Le rapport et le
-message d'alerte le disent en toutes lettres&nbsp;: `Repaired in flight: <hôte>`.
-
-Conséquence sur la reprise&nbsp;: après un commit de réparation, `--resume`
-**reconstruit tout**. C'est la garantie elle-même — on ne redéploie pas des
-chemins construits avant la correction.
-:::
-
 :::caution[En non interactif aussi]
-Sous le timer de nuit, l'IA édite, commite et redéploie **sans demander**. Un
-commit non relu peut donc atterrir sur la branche. Ce qui rend la chose
+Sous le timer de nuit, l'IA édite, commite et redéploie **sans demander**, un
+build en échec compris. Un commit non relu peut donc atterrir sur la branche. Ce qui rend la chose
 tenable&nbsp;: l'arbre propre exigé, les chemins confinés, le diff journalisé,
 les trois essais, et le retour arrière automatique qui reste armé. Si ce n'est
 pas ce que vous voulez, laissez `--ai-error-action` à `none` ou à `analysis`
@@ -563,6 +556,53 @@ La raison brute d'un hôte, ses unités en échec et la trace entière de `logs/
 restent ce qu'elles étaient. L'analyse les complète, comme le message en clair
 d'une erreur connue.
 :::
+
+#### Réparer un build
+
+Un build peut échouer par le code&nbsp;: tests d'un paquet, option mal écrite.
+Avec `--ai-error-action` ≠ `none`, l'IA s'en charge à la **fin du build**,
+avant la décision habituelle&nbsp;; les hôtes construits attendent.
+
+<Steps>
+1. Les hôtes cassés par la même erreur forment **un groupe**&nbsp;: une session pour tous.
+2. L'IA analyse le groupe, dans l'état `AI analysis`, en lecture seule.
+3. Avec `repair`, elle corrige dans l'état `AI repair`, par l'hôte qui a construit la dérivation en échec&nbsp;: `edit_code`, `validate` (qui reconstruit cet hôte), `commit`.
+4. Correction commitée → le parc s'aligne, les hôtes du groupe compris. Rien de commité → la décision habituelle&nbsp;: exclusion ou arrêt.
+</Steps>
+
+| Cas | Effet |
+|---|---|
+| Erreur connue `stop`, `exclude` | Décide seule, sans IA |
+| Échec hors code (builder tué, réseau) | Décision habituelle, sans IA |
+| Évaluation du parc en échec | Rien à attribuer, aucune session |
+| Tous les hôtes cassés | Réparation tentée avant l'arrêt `no host built` |
+| `--build-only` | Répare aussi |
+
+#### Aligner le parc
+
+Tout ce que le lancement publie et active vient d'**une seule révision**, le
+dernier commit. Une correction peut exiger que plusieurs hôtes bougent ensemble
+(un serveur et ses clients)&nbsp;: chaque commit de réparation réaligne le parc.
+
+<Steps>
+1. Tous les hôtes encore dans le lancement sont réévalués au dernier commit, en une évaluation.
+2. Seuls ceux dont le chemin change sont reconstruits&nbsp;; les autres ne bougent pas.
+3. Hôte pas encore servi par l'étape → sa vague le sert, nouveau chemin compris. Hôte déjà servi → servi à nouveau dans une **passe finale** de l'étape, même phase.
+</Steps>
+
+Un hôte que l'alignement casse va à la décision, jamais à une nouvelle
+réparation. Un hôte peut aussi rester **en arrière**&nbsp;:
+
+| Cas | L'hôte |
+|---|---|
+| Reconstruction en échec, en vagues | Garde sa génération et son chemin |
+| Injoignable à la passe finale | Reprend l'état et le chemin d'avant |
+| Commit pendant la passe finale | Plus d'alignement après elle |
+
+Le parc tourne alors **sur deux révisions**&nbsp;: le rapport et le salon des
+incidents le disent, avec les hôtes concernés (voir
+[Rapport et alertes Matrix](#rapport-et-alertes-matrix)). `--resume` réutilise
+les chemins alignés&nbsp;; coupé avant l'alignement, il reconstruit tout.
 
 {/* t:p 4aa701759fa2970a3e20435506d8cb3b5518cae075ba892c1b4b7607530a92da */}
 #### Suggestions d'amélioration
@@ -623,9 +663,18 @@ Le rapport détaille ce que le lancement a réellement fait&nbsp;:
 | **Diagnostics** | Par hôte en échec : unités en échec, puis extrait de l'erreur |
 | **Notes** | Ce que le lancement a constaté : ordre d'activation probable après un redémarrage d'unités |
 | **AI analysis** | Analyse de l'IA : une entrée par hôte analysé, puis la synthèse du lancement |
-| **AI repair** | Actions de l'IA : hôte, action, issue, et la raison d'un refus. Un commit de réparation apparaît aussi dans l'en-tête, `Repaired in flight` |
+| **AI repair** | Actions de l'IA : hôte, action, issue, et la raison d'un refus |
 | **Suggestions** | Suggestions d'amélioration déposées ou revues par le lancement, hors celles ignorées |
 | **Known errors** | Pièges reconnus par la table de signatures, en clair |
+
+L'en-tête liste les commits du lancement, une correction amendée comptée
+(`amended 2×`). Après un commit de réparation, il dit si le parc est
+[aligné](#aligner-le-parc)&nbsp;:
+
+| Parc | Ligne de l'en-tête |
+|---|---|
+| Aligné | `Repaired by commit: <hôte>, fleet aligned on it` |
+| Sur deux révisions | `Repaired by commit: <hôte>, fleet on two revisions — <raisons>` |
 
 :::tip[Lire les compteurs de copie]
 Un hôte qui tire l'essentiel depuis `harmonia <zone>` prouve que le cache de sa
@@ -642,6 +691,7 @@ L'option `--send-report` envoie ce rapport aux salons du
 |---|---|---|
 | Lancement terminé | warnings | Résumé&nbsp;: hôtes par état, durée, erreurs connues |
 | Hôtes critiques non déployés | incidents | Message séparé&nbsp;: hôtes concernés, raisons et unités en échec |
+| Parc sur deux révisions | incidents | Hôtes en arrière, et pourquoi |
 | Arrêt sur erreur | incidents | Erreur qui a arrêté le lancement, puis résumé |
 
 Un hôte est critique quand son profil figure dans `criticalProfiles`. Après un
