@@ -287,6 +287,33 @@ n'occupent aucun emplacement sur la clé, le nombre de comptes est illimité.
 Une révocation (`just yubikey <login> main revoke`) ne touche que le login
 visé.
 
+## Hôtes isolés chiffrés
+
+Un [hôte isolé](/fr/doc/admin-guide/operate/secrets/#hôtes-isolés) ne reçoit
+jamais la valeur du parc&nbsp;: chaque clé y est enrôlée à un **sel propre à
+l'hôte** ([pourquoi](/fr/doc/admin-guide/understand/yubikey-salts/)).
+
+<Steps>
+
+1. **Installer** l'hôte avec `just install`&nbsp;: son fichier de secrets
+   existe alors.
+
+2. **Capturer**, chaque clé branchée seule sur le poste admin&nbsp;:
+
+   ```sh
+   just yubikey <login>          # une pression par hôte isolé chiffré
+   just yubikey <login> backup
+   ```
+
+   Une clé déjà enrôlée ne calcule que ce qui lui manque.
+
+3. **Déployer** : committer `usr/secrets/`, puis `just apply <hôte>`.
+
+</Steps>
+
+Une clé restée loin du poste admin n'est pas enrôlée sur cet hôte, sa
+passphrase reste. `just luks <hôte> show` liste les clés à rattraper.
+
 {/* t:p bf73b616d1b62102dae18da269fc58fb7def64edad402a43a46734c715f5b428 */}
 ## Sous le capot
 
@@ -295,6 +322,8 @@ visé.
 | `usr/secrets/yubikeys.json` | Credentials publics (PAM, id FIDO2, sel) | Public, versionné |
 | `secrets.yaml` → `yubikey/<login>/<clé>/luks-secret` | Secret LUKS dérivé de la clé | Chiffré sops |
 | `secrets.yaml` → `luks-passphrase` | Passphrase saisie à l'installation disko | Chiffré sops (demandée au 1ᵉʳ enrôlement) |
+| `yubikeys.json` → `hostSalts.<hôte>` | Sel propre à un hôte isolé | Public, versionné |
+| `hosts/<hôte>.yaml` → `luks/<hôte>/fido2/<login>/<clé>` | Valeur au sel de l'hôte | Chiffré sops (admin et hôte) |
 
 - **PAM** : l'origine est fixe (`pam://<domaine>`), donc un credential vaut sur
   tout le parc. Le module `darkone.system.yubikey` (activé automatiquement dès
@@ -320,7 +349,8 @@ just commit "user(yubikey): revoke <login>" && just apply
 ```
 
 Au déploiement, le credential PAM disparaît des hôtes et les keyslots LUKS
-correspondants sont supprimés. Penser aussi à retirer la passkey côté Kanidm
+correspondants sont supprimés, hôtes isolés compris (leurs valeurs partent
+avec la révocation). Penser aussi à retirer la passkey côté Kanidm
 (interface web ou jeton de réinitialisation) et Vaultwarden.
 
 {/* t:p 95d3d08f2a70d18ebcc573678073bd726de12fa51b6aeb79d17525c721896ae4 */}

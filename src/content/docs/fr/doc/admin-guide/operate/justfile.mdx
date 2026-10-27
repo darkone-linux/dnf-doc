@@ -928,8 +928,10 @@ just passwd darkone '<empreinte>'
 
 Enrôle une YubiKey (`main` par défaut, ou `backup`) pour un utilisateur : PAM
 (session/sudo), LUKS et lien d'enrôlement Kanidm, en un seul passage sur le
-poste admin. `action=revoke` révoque la clé sur tout le parc au prochain
-déploiement. Voir [Authentification forte](/fr/doc/admin-guide/operate/yubikey/).
+poste admin. Ajoute une pression par hôte isolé chiffré, au sel de cet hôte&nbsp;:
+relancée avec une clé déjà enrôlée, ne calcule que ce qui lui manque.
+`action=revoke` révoque la clé sur tout le parc au prochain déploiement. Voir
+[Authentification forte](/fr/doc/admin-guide/operate/yubikey/).
 
 ```sh
 just yubikey darkone            # enrôle la clé principale

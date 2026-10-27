@@ -1,0 +1,178 @@
+---
+title: YubiKey, sels et hôtes isolés
+sidebar:
+  label: YubiKey et disques
+  order: 10
+lang: fr
+---
+
+Une YubiKey ouvre les disques chiffrés du parc d'une pression, sans jamais être
+branchée sur les hôtes à l'avance. Cette page explique le mécanisme, ce qui est
+public ou secret, et pourquoi un [hôte isolé](/fr/doc/admin-guide/operate/secrets/#hôtes-isolés)
+ne partage pas les valeurs du reste du parc.
+
+## Une clé, une formule
+
+À l'enrôlement (`just yubikey`), la clé crée un **credential** FIDO2&nbsp;: un
+secret interne qui ne sort jamais d'elle, et un identifiant public, le
+`credId`. Ensuite, on peut lui demander un calcul (extension
+[`hmac-secret`](https://fidoalliance.org/specs/fido-v2.1-ps-20210615/fido-client-to-authenticator-protocol-v2.1-ps-errata-20220621.html#sctn-hmac-secret-extension))&nbsp;:
+
+```text
+valeur = HMAC(secret interne du credential, sel)
+```
+
+- Même credential, même sel → toujours la même valeur.
+- Autre sel → une valeur sans rapport, impossible à déduire de la première.
+- Chaque calcul exige la clé en main et une **pression** (règle du firmware).
+
+| Élément | Où il vit | Statut |
+|---|---|---|
+| Secret interne | Dans la clé seule | Ne sort jamais |
+| `credId` | `usr/secrets/yubikeys.json` | Public |
+| Sel | Registre et en-tête LUKS | Public |
+| Valeur | Fichier sops | Secret |
+
+Le `credId` et le sel ne servent à rien sans la clé physique&nbsp;: c'est pour
+cela qu'ils sont versionnés en clair.
+
+## Le déverrouillage au démarrage
+
+La valeur est la passphrase d'un keyslot LUKS. L'en-tête du disque garde, à
+côté, un jeton `systemd-fido2` qui contient le `credId` et le sel&nbsp;:
+
+```d2
+style.fill: transparent
+shape: sequence_diagram
+initrd: Initrd de l'hôte
+key: YubiKey { shape: person }
+disk: En-tête LUKS { shape: cylinder }
+disk -> initrd: credId + sel (jeton)
+initrd -> key: Calcule au sel
+key -> initrd: Valeur, après pression
+initrd -> disk: Ouvre le keyslot
+```
+
+L'hôte ne connaît que ce que lui envoie la clé&nbsp;: la valeur **au sel qu'il
+demande**. Tout le reste de cette page découle de ce point.
+
+## Le parc ordinaire : un sel par clé
+
+Chaque clé reçoit un sel à l'enrôlement. Une pression sur le poste admin
+calcule la valeur, rangée dans `secrets.yaml`. Chaque hôte chiffré la reçoit au
+déploiement et s'enrôle lui-même&nbsp;:
+
+```d2
+style.fill: transparent
+direction: right
+admin: Poste admin {
+  key: YubiKey { shape: person }
+  capture: Une pression
+  key -> capture
+}
+sops: secrets.yaml { shape: cylinder }
+fleet: Hôtes chiffrés {
+  a: Poste
+  b: Serveur
+  c: Passerelle
+}
+admin.capture -> sops: valeur
+sops -> fleet.a
+sops -> fleet.b
+sops -> fleet.c
+```
+
+- **Avantage** : un nouvel hôte chiffré ne coûte aucune pression, la clé ne
+  voyage jamais.
+- **Prix** : cette valeur ouvre **tous** les disques où la clé est enrôlée.
+  Acceptable sur un hôte ordinaire&nbsp;: il détient déjà la clé d'infra, donc
+  tout `secrets.yaml`.
+
+## Pourquoi pas sur un hôte isolé
+
+Un hôte isolé fait tourner des agents qui lisent des contenus non fiables. On
+suppose qu'il peut être compromis. Si son disque portait un jeton au sel du
+parc&nbsp;:
+
+1. l'attaquant devient root et modifie l'initrd de l'hôte&nbsp;;
+2. l'administrateur redémarre et touche sa clé, comme d'habitude&nbsp;;
+3. l'initrd demande la valeur au sel du parc, et la garde&nbsp;;
+4. l'attaquant détient de quoi ouvrir **tous les autres disques**.
+
+Ne pas lui donner la valeur par sops ne suffit donc pas&nbsp;: la clé la
+calcule pour lui. Le protocole accepte même **deux sels par requête**&nbsp;: une
+seule pression peut renvoyer la valeur de l'hôte **et** celle du parc, si
+l'hôte connaît le sel du parc.
+
+## Le sel propre à l'hôte
+
+La réponse&nbsp;: le même credential, mais un sel tiré **pour cet hôte**. La
+valeur obtenue n'ouvre que son disque, que l'hôte lit déjà de toute façon.
+
+| Élément | Hôte ordinaire | Hôte isolé chiffré |
+|---|---|---|
+| Sel | Celui de la clé | Tiré pour l'hôte |
+| Valeur rangée dans | `secrets.yaml` | `hosts/<hôte>.yaml` |
+| Autorise l'enrôlement | Passphrase partagée | Sa propre passphrase |
+| Pressions | Une, à l'enrôlement | Une par hôte isolé |
+| Clés enrôlées | Toutes celles du registre | Celles capturées pour lui |
+
+:::note[Ce n'est pas un réenrôlement]
+Credential, PIN, PAM, Kanidm et Vaultwarden ne changent pas. La clé ne stocke
+rien de plus&nbsp;: un sel n'occupe aucune place, leur nombre est illimité. Les
+hôtes ordinaires restent à zéro pression.
+:::
+
+La pression est incontournable, et c'est voulu&nbsp;: si une valeur se
+calculait sans la clé, un attaquant le pourrait aussi.
+
+## Des clés loin du poste admin
+
+Les clés des membres ne sont pas toutes à portée du poste admin. Ce n'est pas
+bloquant&nbsp;:
+
+- **Clé non capturée** : elle n'est pas enrôlée sur l'hôte isolé, qui reste
+  ouvrable par sa passphrase (console ou `just unlock`).
+- **Rattrapage** : la clé de passage sur le poste admin, `just yubikey <login>
+  <clé>` calcule seulement ce qui lui manque, une pression par hôte isolé.
+- **Suivi** : `just luks <hôte> show` liste les clés pas encore capturées.
+- **Nouvel hôte isolé chiffré** : chaque clé repasse une fois.
+
+En pratique, l'hôte isolé est surtout déverrouillé à distance, ou par
+l'administrateur devant sa console&nbsp;: ses propres clés suffisent.
+
+## Garde-fous
+
+| Erreur | Ce qui l'arrête |
+|---|---|
+| Un module déclare une valeur du parc sur un hôte isolé | L'évaluation échoue |
+| Un sel du parc dans ses données d'enrôlement | L'évaluation échoue |
+| Un keyslot au sel du parc dans son en-tête | `just luks <hôte> show` : `FLEET SALT` |
+
+Le message d'échec nomme les secrets fautifs&nbsp;: les retirer de l'hôte, ne
+jamais les copier dans son fichier.
+
+## Limites
+
+- **Le sel du parc n'est pas secret** : il figure dans le registre et dans le
+  store des hôtes ordinaires. La séparation tient tant que l'attaquant de
+  l'hôte isolé n'a pas aussi pied sur le reste du parc.
+- **Toucher sa clé sur un hôte isolé compromis** ne lui livre que sa propre
+  valeur, celle d'un disque qu'il contrôle déjà.
+
+## FAQ
+
+### Faut-il réenrôler les clés existantes ?
+
+Non. Le credential reste le même&nbsp;; seule une valeur de plus est calculée,
+pour chaque hôte isolé chiffré, quand la clé passe sur le poste admin.
+
+### La clé demande-t-elle son PIN ?
+
+Non, ni au calcul ni au démarrage&nbsp;: LUKS reste à la pression seule, comme
+sur le reste du parc.
+
+### Que devient une clé révoquée ?
+
+`just yubikey <login> <clé> revoke` retire aussi ses valeurs des fichiers des
+hôtes isolés. Au déploiement suivant, chaque hôte supprime son keyslot.

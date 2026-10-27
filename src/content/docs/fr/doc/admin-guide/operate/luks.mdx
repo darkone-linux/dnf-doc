@@ -167,16 +167,20 @@ aucun secret du parc, son chiffrement non plus&nbsp;:
 
 | Élément | Hôte isolé |
 |---|---|
-| Keyslots | Sa passphrase seule, pas de partagée |
+| Keyslots | Sa passphrase, ses YubiKeys, pas de partagée |
 | Formatage | Avec sa passphrase |
 | `luks/<hôte>/*` | `usr/secrets/hosts/<hôte>.yaml` |
-| YubiKeys | Non enrôlées : passphrase seule |
+| YubiKeys | Au sel de l'hôte, une fois capturées |
 | `just unlock` | N'envoie que sa passphrase |
 | Rotation | `just luks <hôte> passwd`, immédiate |
 
 Sans service de synchronisation, `passwd` agit sur la machine elle-même&nbsp;:
 nouveau slot, sops, puis suppression de l'ancien. À chaque étape, la valeur
 rangée dans sops ouvre le volume.
+
+Chaque clé y est enrôlée à un sel propre à l'hôte, autorisée par sa
+passphrase&nbsp;: voir [Hôtes isolés chiffrés](/fr/doc/admin-guide/operate/yubikey/#hôtes-isolés-chiffrés)
+et [YubiKey, sels et hôtes isolés](/fr/doc/admin-guide/understand/yubikey-salts/).
 
 Un hôte qui devient isolé se réinstalle (`just install`)&nbsp;: ses anciennes
 entrées `luks/<hôte>` restent dans `secrets.yaml`, signalées par `just luks`,
