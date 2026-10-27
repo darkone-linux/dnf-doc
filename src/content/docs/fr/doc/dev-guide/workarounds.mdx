@@ -1,0 +1,101 @@
+---
+title: Les corrections temporaires
+sidebar:
+  label: Corrections temporaires
+  order: 10
+lang: fr
+---
+
+import { Steps } from '@astrojs/starlight/components';
+
+Le framework suit nixpkgs unstable : un paquet casse, une PR tarde. Chaque
+contournement posé en attendant le correctif amont est inscrit au registre
+`dnf/config/workarounds.nix`, et retiré avec son entrée.
+
+## Ce qui s'inscrit
+
+| `kind` | Contournement |
+|---|---|
+| `overlay` | Correctif dans `dnf/lib/overlays/` |
+| `backport` | Module copié dans `dnf/backports/nixos/` |
+| `pin` | Paquet pris dans un autre nixpkgs |
+| `inline` | Contournement dans un module |
+| `insecure` | Entrée `permittedInsecurePackages` |
+
+:::caution[Inscription obligatoire]
+Un test unitaire refuse un overlay, un backport ou un input `nixpkgs-*` non
+inscrit, ainsi qu'une entrée dont un fichier ou un input a disparu.
+:::
+
+## Une entrée
+
+```nix
+# dnf/config/workarounds.nix
+posthog = {
+  kind = "overlay";
+  files = [ "lib/overlays/posthog.nix" ];
+  reason = "posthog marked broken since mcp 2: aider-chat refuses to evaluate";
+  upstream = "NixOS/nixpkgs#578265"; # PR ou issue attendue
+  package = "python3Packages.posthog"; # sondé sur unstable
+  dropWhen = "nixpkgs#578265 in the locked nixpkgs";
+  since = "2026-10-27";
+};
+```
+
+`upstream`, `package` et `inputs` (inputs de flake à retirer avec) sont
+facultatifs. Omettre `package` quand un build vert ne prouve pas la correction
+(plantage à l'exécution, par exemple).
+
+## Suivre l'état amont
+
+Dans `dnf/` ou à la racine d'un projet de co-développement :
+
+```sh
+just workarounds
+```
+
+- **upstream** : état de la PR ou de l'issue, via `gh`. Une PR nixpkgs fusionnée
+  est comparée à la révision verrouillée.
+- **unstable** : le paquet, évalué sur le nixpkgs verrouillé, est-il construit
+  par [Hydra](https://hydra.nixos.org) ? Pour un `pin`, la version stable est
+  affichée en regard.
+
+```
+gimp · overlay · since 2026-06-17  [drop?]
+  why       gimp build breaks under `__structuredAttrs`
+  unstable  gimp 3.2.6: built by Hydra
+  drop      when Hydra builds unstable gimp
+  files     lib/overlays/gimp.nix
+```
+
+`[drop?]` signale une piste, pas un verdict : `dropWhen` tranche.
+
+## Retirer une correction
+
+<Steps>
+
+1. **Vérifier** la condition `dropWhen`, en reconstruisant un hôte concerné au
+   besoin.
+
+2. **Supprimer** le contournement : fichiers de `files`, câblage dans
+   `dnf/lib/mk-configuration.nix` (overlay, backport), `inputs` de
+   `dnf/flake.nix`.
+
+3. **Désinscrire** : retirer l'entrée du registre.
+
+4. **Valider** : `just clean`, `just unit-tests`, puis commiter.
+
+</Steps>
+
+## FAQ
+
+### Un overlay permanent ?
+
+Un overlay qui expose le paquet d'une flake tierce (`talon`, `claude-code`)
+n'est pas une correction : l'ajouter à `permanentOverlays`, dans
+`dnf/tests/unit/config/workarounds_test.nix`.
+
+### Sans `gh` ?
+
+Les états amont sont ignorés, le reste du rapport s'affiche. `gh auth login`
+les rétablit.

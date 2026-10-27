@@ -26,7 +26,7 @@ intentions différentes.
 | Emplacement | Pour quoi | Durée de vie |
 |---|---|---|
 | `dnf/pkgs/` | Absent de nixpkgs, installé par les hôtes ou les utilisateurs. | Jusqu'à publication dans nixpkgs. |
-| `dnf/lib/overlays/` | Correctif sur un paquet nixpkgs existant (build cassé, PR en attente). | Temporaire, retiré dès le correctif amont. |
+| `dnf/lib/overlays/` | Correctif sur un paquet nixpkgs existant (build cassé, PR en attente). | Temporaire, [inscrit au registre](/fr/doc/dev-guide/workarounds/). |
 | `inputs` de `dnf/flake.nix` | Ce dont la machinerie du framework a besoin (`dnf-generator`, `colmena`). | Permanente. |
 
 :::note[Pourquoi pas un input de flake]
