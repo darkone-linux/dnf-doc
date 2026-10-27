@@ -8,10 +8,15 @@ lang: fr
 
 import { Steps } from '@astrojs/starlight/components';
 
+{/* t:main */}
+{/* t:h 0739ca3bde7033fa9533d7a5867b228304e6e14ee746804e5d0665fbcbeb05ab */}
+
+{/* t:p fbe47ec735db7861b62b1f98f24babfd60f3cfa312fe26b6c95b2d07e2a1455c */}
 Le framework suit nixpkgs unstable : un paquet casse, une PR tarde. Chaque
 contournement posé en attendant le correctif amont est inscrit au registre
 `dnf/config/workarounds.nix`, et retiré avec son entrée.
 
+{/* t:p fb591ff39d3a5a6d32c8e095647beab2a29737dd32dae4d3a97f46f33396a120 */}
 ## Ce qui s'inscrit
 
 | `kind` | Contournement |
@@ -27,6 +32,7 @@ Un test unitaire refuse un overlay, un backport ou un input `nixpkgs-*` non
 inscrit, ainsi qu'une entrée dont un fichier ou un input a disparu.
 :::
 
+{/* t:p ee513526ee5fd421756e8c2f07b65a54e6f053418e67359ddbe9ae658aa4594c */}
 ## Une entrée
 
 ```nix
@@ -46,6 +52,7 @@ posthog = {
 facultatifs. Omettre `package` quand un build vert ne prouve pas la correction
 (plantage à l'exécution, par exemple).
 
+{/* t:p 1414b1be83748cd853b15096894c8832a116ceb14f29411741f5299766a47e06 */}
 ## Suivre l'état amont
 
 Dans `dnf/` ou à la racine d'un projet de co-développement :
@@ -70,6 +77,7 @@ gimp · overlay · since 2026-06-17  [drop?]
 
 `[drop?]` signale une piste, pas un verdict : `dropWhen` tranche.
 
+{/* t:p cc962640633de4a9225dcc4af15724751d121918d8383cc654771b58b2f9d62d */}
 ## Retirer une correction
 
 <Steps>
@@ -87,14 +95,17 @@ gimp · overlay · since 2026-06-17  [drop?]
 
 </Steps>
 
+{/* t:p 938609b64e2e1217c0db6ceeca57cfadea52087e1a0a2c4319be9b6fdb6ff3b2 */}
 ## FAQ
 
+{/* t:p 1ce1b8e169774b101122d8e3627c2c476945e409b1e7bc0655835f4fe95959a9 */}
 ### Un overlay permanent ?
 
 Un overlay qui expose le paquet d'une flake tierce (`talon`, `claude-code`)
 n'est pas une correction : l'ajouter à `permanentOverlays`, dans
 `dnf/tests/unit/config/workarounds_test.nix`.
 
+{/* t:p b146fff9bc1618b8e590a524dfa28795e5011b4346fb5befc9d6336d490ed54d */}
 ### Sans `gh` ?
 
 Les états amont sont ignorés, le reste du rapport s'affiche. `gh auth login`

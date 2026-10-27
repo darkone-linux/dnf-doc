@@ -377,7 +377,7 @@ d'activité&nbsp;: `under repair` en jaune pendant la réparation déterministe,
 `AI analysis` et `AI repair` en magenta quand l'IA prendra le relais.
 :::
 
-{/* t:p 7d3d3b7e3cefcffb201ee5eeff485ccaa471ecd641b3a52191b96c787fca1056 */}
+{/* t:p 2c3384ba13366ddd2216784bfd722ee28528c2237a8f297c349b3722644b335e */}
 ### Analyse par l'IA
 
 L'IA **explique** un échec&nbsp;: elle lit l'état du lancement, les journaux et,
@@ -428,7 +428,7 @@ sont cherchés dans le `PATH`&nbsp;; l'option `aiPackages` du module les y met
 pour le lancement quotidien. Absents ou refusés&nbsp;→ un avertissement au fil
 du lancement, une note au rapport, et la suite se déroule sans IA.
 
-{/* t:p 87d4ecb9ebf39f82061d809939d8bbe237c715f4c58321f41b1183c88baf5313 */}
+{/* t:p c2518bf13c8d09a101768c0a99c7d1bb6dfcf881b0f1c94346ec7eaaa0b25d91 */}
 #### Ce que l'IA a le droit de faire
 
 L'IA n'a **ni shell ni SSH libre**. Elle n'agit que par les outils de
@@ -458,7 +458,7 @@ neutralisées&nbsp;: l'IA ne voit que ce qu'on lui montre.
 (`AI reads usr/modules/nginx.nix`) et une ligne dans `logs/ai.log` du dossier de
 lancement. Un appel refusé par un garde-fou est tracé aussi, avec sa raison.
 
-{/* t:p c4c33a450d18233e2d487a22438877c147d3cce40fd921b3db29ce11f3658efc */}
+{/* t:p 9684c00e6ed4bb36a4b06aa1a0fed37f43485ff305157938278f94c6e4fc5a15 */}
 #### Quand elle intervient
 
 <Steps>
@@ -508,7 +508,7 @@ Chaque action est **comptée**, pas seulement tracée&nbsp;: elle se retrouve da
 `state.json` et dans la section **AI repair** du rapport, refus compris, avec sa
 raison. Un hôte réparé porte aussi une note au rapport.
 
-{/* t:p e025206fe401ec49904350edac3aa2b95d5137268e783a96f53e4be264d3baa6 */}
+{/* t:p 86f6d752fa293fa16232119cd1211c170221ca69a8a11efcf4ffc6f09e51b573 */}
 #### Réparer par le code
 
 Quand aucun redémarrage ne peut aider, l'IA **écrit la correction** dans le
@@ -557,6 +557,7 @@ restent ce qu'elles étaient. L'analyse les complète, comme le message en clair
 d'une erreur connue.
 :::
 
+{/* t:p af06bb9658dbb5b52bf144c41d63083632738a8a99f666810646150b7df77a22 */}
 #### Réparer un build
 
 Un build peut échouer par le code&nbsp;: tests d'un paquet, option mal écrite.
@@ -578,6 +579,7 @@ avant la décision habituelle&nbsp;; les hôtes construits attendent.
 | Tous les hôtes cassés | Réparation tentée avant l'arrêt `no host built` |
 | `--build-only` | Répare aussi |
 
+{/* t:p b5fc12b1de7425df843b9d4b6933b9767dac75b1c551af62dec1a84a2d0d5ec4 */}
 #### Aligner le parc
 
 Tout ce que le lancement publie et active vient d'**une seule révision**, le
@@ -644,7 +646,7 @@ La portée suit le mode&nbsp;: en co-développement, le projet et `dnf/`&nbsp;;
 sinon, le projet seul (un constat que seul le framework corrige n'est pas
 déposé).
 
-{/* t:p 2b180331e0cd01212767c926bfde0abcdc24039bec0a0711c95ce5fd14c34d35 */}
+{/* t:p 2c2fbd5c5f6918465212c870ab473fc7f5fb90c992cae8fd555c2043028d2aae */}
 ### Rapport et alertes Matrix
 
 Chaque lancement écrit son dossier dans `var/deployments/<date>-<mode>/`&nbsp;:
