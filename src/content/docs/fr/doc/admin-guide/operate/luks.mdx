@@ -145,7 +145,7 @@ un hôte à `luks.json` à la main, et ne jamais déployer avant que la clé ne 
 sur la cible. En cas de doute, `just luks <hôte> show` le vérifie.
 :::
 
-{/* t:p 16e9cd0c08aff5bc972154684e2d9f6e1b96d39c78d7f5eb2c0a2499ba80fea1 */}
+{/* t:p fec023e7f1b096c5c9267334540ef9aacb48c8a7b7737ce7e5977b713384c1b2 */}
 ## Rotation des passphrases
 
 - **Par hôte** : `just luks <hôte> passwd`, puis commit et apply. L'ancien
@@ -160,6 +160,7 @@ local (`/var/lib/luks-passphrase/ledger`)&nbsp;: une valeur sops modifiée
 enrôle la nouvelle passphrase **puis** tue l'ancien slot. Les slots absents du
 registre (FIDO2, enrôlements manuels) ne sont jamais touchés.
 
+{/* t:p 1383b6b0903a11b4aced8e7e81df2cac70cb4a681da0adc7bfad35e525af446f */}
 ## Hôte isolé chiffré
 
 Un [hôte isolé](/fr/doc/admin-guide/operate/secrets/#hôtes-isolés) ne détient
@@ -186,7 +187,7 @@ Un hôte qui devient isolé se réinstalle (`just install`)&nbsp;: ses anciennes
 entrées `luks/<hôte>` restent dans `secrets.yaml`, signalées par `just luks`,
 à supprimer avec `just sops`.
 
-{/* t:p 00e18eec0ed0466600dffc97351b7ee7180f60cf2c0bcad464461c52b1ebc548 */}
+{/* t:p 0475ef42622c9afc227e54d579a3058dfde478f03d574df10ec884810b887000 */}
 ## Déverrouiller au démarrage
 
 Tout hôte chiffré suit la même séquence, sans rien à régler :
@@ -361,7 +362,7 @@ Un second bloc audite le **déverrouillage distant**, point par point&nbsp;:
 | Système démarré = configuration auditée | Un apply en attente rendrait l'audit trompeur |
 | Adresse publique relevée (passerelles) | Injoignable en initrd une fois le VPN tombé |
 
-{/* t:p 018691bf21721672315d60b94b99d685b47b750bf369738c69b4e480c9e4aa59 */}
+{/* t:p 1b8aa558cb41e362ba5fb697119a54be8087a25ea2e92649766cdd23a3036f1d */}
 ## Sous le capot
 
 | Emplacement | Contenu | Statut |

@@ -190,7 +190,7 @@ darkone.system.i18n = {
 
 <hr/>
 
-{/* t:p e64e364746893de53c4992b80741a6ff11b1b8f815f4379cc7f741ae4545bac6 */}
+{/* t:p b80027582b626f85f5a9dc19e958e9e75e616de99c417fd2206bb946ad080600 */}
 ### &#x2699; darkone.system.luks
 
 LUKS passphrase policy & remote unlock: shared + per-host passphrases, initrd SSH.
@@ -240,6 +240,14 @@ The module then keeps everything converged at each apply:
   layout instead — static LAN IP on the lan0 bridge, DHCP on the WAN side —
   since they are themselves the DHCP server their initrd would otherwise wait
   on.
+
+:::caution[Isolated hosts]
+An isolated host (`darkone.system.sops.isolated`) never holds a fleet secret:
+no shared keyslot, disko formats with its own passphrase, and
+`luks/<host>/*` lives in its own `usr/secrets/hosts/<host>.yaml`. No sync
+unit either, a lone passphrase cannot authorize its own rotation:
+`just luks <host> passwd` rotates it from the admin host. Remote unlock stays.
+:::
 
 :::note[Zero configuration]
 Enabled by default but fully inert until the host appears in
@@ -613,7 +621,7 @@ darkone.system.services = {
 
 <hr/>
 
-{/* t:p fbecadf768e9ff08a67d4ffd1c2614a4f56e60eb55320065145b3da2fae799db */}
+{/* t:p bb813b9b0ef4c1069cecc399ff85f2338a67ab565377a97fd35247ccddd18c49 */}
 ### &#x2699; darkone.system.sops
 
 DNF sops, passwords and secrets management.
@@ -636,8 +644,10 @@ consume it, declared by the module that reads it.
 :::caution[Isolated hosts]
 `isolated = true` (default of the `ai-space` profile) points the host at
 its own `usr/secrets/hosts/<hostname>.yaml`, without the infra key: a host
-running untrusted agents never holds the fleet secrets. No password hash
-either, its accounts are SSH-key only.
+running untrusted agents never holds the fleet secrets, and a key an
+earlier install left is deleted. No password hash either, its accounts are
+SSH-key only. Declaring a fleet value there (`luks-passphrase`, a password
+hash, a FIDO2 secret at the fleet salt) fails the eval.
 :::
 
 * **enable** `bool` Enable sops automated configuration for DNF
@@ -728,7 +738,7 @@ darkone.system.testing = {
 
 <hr/>
 
-{/* t:p 9756d9cf6ffd16c6f4ae056a30b70b4b2acd604a82f648ca05884b87641b5bff */}
+{/* t:p a20c0a0f3caa2faa6bd8e122331579b204422877a372ccbd5d662b6b3730d6eb */}
 ### &#x2699; darkone.system.yubikey
 
 YubiKey strong authentication: fleet-wide PAM U2F + declarative FIDO2 LUKS.
@@ -754,6 +764,14 @@ ever plugging the key on the target hosts:
   every disko-declared LUKS2 header (keyslot + `systemd-fido2` token, the
   exact format `systemd-cryptenroll` writes) and prunes revoked ones. The
   physical key is only ever needed at boot to unlock the disk.
+
+:::caution[Isolated hosts: salts of their own]
+An isolated host (`darkone.system.sops.isolated`) never sees the fleet salt
+nor its value: `just yubikey` derives one value per (key, isolated encrypted
+host) at a salt of that host (`hostSalts` in the registry, value in the
+host's own sops file, one touch each), authorized there by the host's own
+passphrase. A key not captured for a host is not enrolled on it.
+:::
 
 :::note[Zero configuration]
 Enabled by default, but fully inert until the registry file exists.

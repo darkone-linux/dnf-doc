@@ -294,7 +294,7 @@ just bump          # niveau déduit des commits
 
 L'installation d'un nouvel hôte suit un enchaînement précis.
 
-{/* t:p 4a9315d11ba05a8997b84fdfcd785d2cf15c52f7f77e1776597a521dbfc348c2 */}
+{/* t:p 8f333d6c834ca17fab76b1d064a7937c1cf1bd05b63ef3b608258cd040d84214 */}
 ### ✳️ `install <hôte> [user] [ip]`
 
 Formate les disques via **disko** et installe NixOS via **nixos-anywhere**.
@@ -526,7 +526,7 @@ Appelé par `install` (utilisateur `nixos` de l'ISO) et par `copy-hw`.
 just detect-hw myserver
 ```
 
-{/* t:p bb952125c6373caa2bd08e413b62d65d906bb079653af1e5a91e8a718b2ec038 */}
+{/* t:p c1feef99574aed9a1907e85c326def1059e84c81f4e6936edba5cf60f4786819 */}
 ### ✳️ `push-key <hôte>`
 
 Transfère la clé age `/etc/sops/age/infra.key` vers l'hôte cible, sauf s'il ne
@@ -548,7 +548,7 @@ dynamique relevée sur son écran.
 just host-info myserver 10.0.0.50
 ```
 
-{/* t:p ee689c0e9bae99379c06bca18a6ce3f940095f7d52c6a39480ebfd7c131bd167 */}
+{/* t:p 78246665289790d39a9584bba9b94f0a001b21d1242b5373ef02ad780a2fd6a1 */}
 ### ✳️ `luks <hôte> [action] [ip]`
 
 Provisionne le chiffrement d'un hôte&nbsp;: passphrases partagée et par hôte
@@ -764,7 +764,7 @@ Un hôte qui attend sa passphrase LUKS relève de `just unlock`.
 just enter myserver
 ```
 
-{/* t:p e99600d63e174503edb2110d8a6fb6bd9f080610effa9bd6ec6c5b23dcb7f9fa */}
+{/* t:p f49fb84d7bab14e69ba295979c2f53803d3a7e38c4205ab8c15ec42571e9b3af */}
 ### ✳️ `unlock <hôte> [ip] [délai]`
 
 Répond au prompt LUKS d'un hôte resté dans son initrd, **sans humain**&nbsp;:
@@ -923,7 +923,7 @@ just passwd darkone
 just passwd darkone '<empreinte>'
 ```
 
-{/* t:p 492a5aa3b45a9f68964c089348bdb4f0284b5dd11ec4ad7a6c1922473d97cb9d */}
+{/* t:p d4c235cb8402b4452960cafbc01e2145d5e8872019f9b6082b2ef3bf497cc811 */}
 ### ✳️ `yubikey <utilisateur> [clé] [action]`
 
 Enrôle une YubiKey (`main` par défaut, ou `backup`) pour un utilisateur : PAM
@@ -939,7 +939,7 @@ just yubikey darkone backup     # enrôle la clé de secours
 just yubikey darkone main revoke
 ```
 
-{/* t:p 79da9afbf128b3be67e5b86e36713ebe3a5faa90abad1289648a8b30560ddeb0 */}
+{/* t:p 09295a4de2533fd8039093f6d35bb18924cc38b44d43ffadf8262684496741a5 */}
 ### ✳️ `rotate init|push-keys|finalize`
 
 Rotation de la clé age `/etc/sops/age/infra.key` en 3 étapes avec vérifications

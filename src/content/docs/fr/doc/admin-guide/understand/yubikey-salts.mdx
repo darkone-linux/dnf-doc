@@ -6,11 +6,16 @@ sidebar:
 lang: fr
 ---
 
+{/* t:main */}
+{/* t:h e77a7931a37ea92656987adf85a5e599f9db0627bc818ca8d296f5ad729dd8df */}
+
+{/* t:p 11d51e8576bc2eef193082b132d911b4e56256baa5b2cfcb82d01a965f399280 */}
 Une YubiKey ouvre les disques chiffrés du parc d'une pression, sans jamais être
 branchée sur les hôtes à l'avance. Cette page explique le mécanisme, ce qui est
 public ou secret, et pourquoi un [hôte isolé](/fr/doc/admin-guide/operate/secrets/#hôtes-isolés)
 ne partage pas les valeurs du reste du parc.
 
+{/* t:p f73fb4f33019d996fb96c281c1cad2001a38295a82775cc8fd4abe2c3dfa62b5 */}
 ## Une clé, une formule
 
 À l'enrôlement (`just yubikey`), la clé crée un **credential** FIDO2&nbsp;: un
@@ -36,6 +41,7 @@ valeur = HMAC(secret interne du credential, sel)
 Le `credId` et le sel ne servent à rien sans la clé physique&nbsp;: c'est pour
 cela qu'ils sont versionnés en clair.
 
+{/* t:p f709fd161bcd3edee6be4e6e572526757af2ebe66b7461cf2894a3f904d44129 */}
 ## Le déverrouillage au démarrage
 
 La valeur est la passphrase d'un keyslot LUKS. L'en-tête du disque garde, à
@@ -56,6 +62,7 @@ initrd -> disk: Ouvre le keyslot
 L'hôte ne connaît que ce que lui envoie la clé&nbsp;: la valeur **au sel qu'il
 demande**. Tout le reste de cette page découle de ce point.
 
+{/* t:p 1d4589f05228d9a2d3da0b371d6ffd6e6b9e5f4220acae78ed5ab0a6f94f8aaf */}
 ## Le parc ordinaire : un sel par clé
 
 Chaque clé reçoit un sel à l'enrôlement. Une pression sur le poste admin
@@ -88,6 +95,7 @@ sops -> fleet.c
   Acceptable sur un hôte ordinaire&nbsp;: il détient déjà la clé d'infra, donc
   tout `secrets.yaml`.
 
+{/* t:p 94a9402cbb828c18c1e96096f4debbf819f6e0cc54b629c9b93f1b51cb5aa205 */}
 ## Pourquoi pas sur un hôte isolé
 
 Un hôte isolé fait tourner des agents qui lisent des contenus non fiables. On
@@ -104,6 +112,7 @@ calcule pour lui. Le protocole accepte même **deux sels par requête**&nbsp;: u
 seule pression peut renvoyer la valeur de l'hôte **et** celle du parc, si
 l'hôte connaît le sel du parc.
 
+{/* t:p 2a5eb1ef67dfc796b707ec5b6510279a7cc12f84f54ca415e9e0e93161660fce */}
 ## Le sel propre à l'hôte
 
 La réponse&nbsp;: le même credential, mais un sel tiré **pour cet hôte**. La
@@ -126,6 +135,7 @@ hôtes ordinaires restent à zéro pression.
 La pression est incontournable, et c'est voulu&nbsp;: si une valeur se
 calculait sans la clé, un attaquant le pourrait aussi.
 
+{/* t:p 17b2139890d018690652fc0203be14f6a15549b77b685a6a04269f66a7fa4632 */}
 ## Des clés loin du poste admin
 
 Les clés des membres ne sont pas toutes à portée du poste admin. Ce n'est pas
@@ -141,6 +151,7 @@ bloquant&nbsp;:
 En pratique, l'hôte isolé est surtout déverrouillé à distance, ou par
 l'administrateur devant sa console&nbsp;: ses propres clés suffisent.
 
+{/* t:p 8d076a8c51175da7958529f59bbf8aa6cdd3719d36621cfad2eeb104f9652d68 */}
 ## Garde-fous
 
 | Erreur | Ce qui l'arrête |
@@ -152,6 +163,7 @@ l'administrateur devant sa console&nbsp;: ses propres clés suffisent.
 Le message d'échec nomme les secrets fautifs&nbsp;: les retirer de l'hôte, ne
 jamais les copier dans son fichier.
 
+{/* t:p a4a4765f855208c8da51bc62e1c7361a1622ea33c31d2d329eaa03ce1d1e475f */}
 ## Limites
 
 - **Le sel du parc n'est pas secret** : il figure dans le registre et dans le
@@ -160,18 +172,22 @@ jamais les copier dans son fichier.
 - **Toucher sa clé sur un hôte isolé compromis** ne lui livre que sa propre
   valeur, celle d'un disque qu'il contrôle déjà.
 
+{/* t:p 938609b64e2e1217c0db6ceeca57cfadea52087e1a0a2c4319be9b6fdb6ff3b2 */}
 ## FAQ
 
+{/* t:p bea57d76580143b09bb47d4a4a7525a06ca66db299988c3fd4450b540450f8b4 */}
 ### Faut-il réenrôler les clés existantes ?
 
 Non. Le credential reste le même&nbsp;; seule une valeur de plus est calculée,
 pour chaque hôte isolé chiffré, quand la clé passe sur le poste admin.
 
+{/* t:p 24aec10e8a30aa7ca742123d487fd7f92150cc211c24760c612c5df080b5910c */}
 ### La clé demande-t-elle son PIN ?
 
 Non, ni au calcul ni au démarrage&nbsp;: LUKS reste à la pression seule, comme
 sur le reste du parc.
 
+{/* t:p 10706af751dc9acb297d03de385f1b375146dbcea28f7b0acbd2116d19b5f1bd */}
 ### Que devient une clé révoquée ?
 
 `just yubikey <login> <clé> revoke` retire aussi ses valeurs des fichiers des
