@@ -428,7 +428,7 @@ sont cherchés dans le `PATH`&nbsp;; l'option `aiPackages` du module les y met
 pour le lancement quotidien. Absents ou refusés&nbsp;→ un avertissement au fil
 du lancement, une note au rapport, et la suite se déroule sans IA.
 
-{/* t:p c2518bf13c8d09a101768c0a99c7d1bb6dfcf881b0f1c94346ec7eaaa0b25d91 */}
+{/* t:p e3247543ece0e12ab348f73767b648fb99f9b90567096cfe61a29e701d72f1cd */}
 #### Ce que l'IA a le droit de faire
 
 L'IA n'a **ni shell ni SSH libre**. Elle n'agit que par les outils de
@@ -452,7 +452,7 @@ neutralisées&nbsp;: l'IA ne voit que ce qu'on lui montre.
 | Chemin de lecture | Confiné au projet et à `dnf/`, après résolution des liens&nbsp;; `usr/secrets/` et `.trash/` refusés |
 | Hôte, unité | Vérifiés contre la table du lancement avant toute commande |
 | Extraits | 200 lignes de journal, 400 lignes de source, tronqués par la fin&nbsp;: l'erreur est en bas |
-| Délai, budget | 300 secondes par analyse, une heure par session de réparation&nbsp;; budget en dollars pour `claude` |
+| Délai, budget | 300 secondes par analyse, deux heures par session de réparation&nbsp;; 4 dollars par session pour `claude` |
 
 **Chaque appel d'outil laisse une trace** — une ligne au fil du lancement
 (`AI reads usr/modules/nginx.nix`) et une ligne dans `logs/ai.log` du dossier de
@@ -508,7 +508,7 @@ Chaque action est **comptée**, pas seulement tracée&nbsp;: elle se retrouve da
 `state.json` et dans la section **AI repair** du rapport, refus compris, avec sa
 raison. Un hôte réparé porte aussi une note au rapport.
 
-{/* t:p 86f6d752fa293fa16232119cd1211c170221ca69a8a11efcf4ffc6f09e51b573 */}
+{/* t:p 8f0a3fc4facaac969338dc45d429c00ef06f32b27ad958a258cbaee1e16bc4a3 */}
 #### Réparer par le code
 
 Quand aucun redémarrage ne peut aider, l'IA **écrit la correction** dans le
@@ -517,7 +517,7 @@ le reste du parc suit le commit ([Aligner le parc](#aligner-le-parc)).
 
 <Steps>
 1. `edit_code` remplace un passage exact (présent une seule fois), ou réécrit un fichier en entier. L'arbre git doit être propre avant la première édition, et le diff part dans `logs/ai.log`.
-2. `validate` lance le nettoyage du projet, puis réévalue et reconstruit **cet hôte seul**.
+2. `validate` lance le nettoyage du projet, puis réévalue et reconstruit **cet hôte seul**, depuis les arbres de travail&nbsp;: une édition de `dnf/` non commitée et un fichier créé y sont vus. Une édition qui ne change pas l'hôte est signalée.
 3. `commit` écrit `fix(<scope>): <sujet>`, le scope nommant ce que la correction touche (`fix(nginx): …`). En co-développement, `dnf/` est commité d'abord, puis le projet et son lock réaligné.
 4. L'hôte repasse en `built` avec le chemin commité&nbsp;; sa vague le sert une fois de plus : copie, activation, conclusion.
 </Steps>
@@ -527,11 +527,11 @@ le reste du parc suit le commit ([Aligner le parc](#aligner-le-parc)).
 | Chemins | Le projet, et `dnf/` en co-développement&nbsp;; jamais `usr/secrets/`, `.trash/`, `.git/`, `var/generated/`, `etc/config.yaml` ni un `*.lock` |
 | Hors co-développement | `dnf/` est un chemin du store&nbsp;: l'écrire est refusé, et n'aurait rien changé |
 | Arbre | Sale avant la première édition → refus&nbsp;: un commit de réparation ne porte que la correction |
-| Essais | **Un essai est un changement.** Valider et commiter n'en coûtent aucun, sinon corriger coûterait trois fois plus que redémarrer |
+| Essais | **Six par hôte, un essai par changement**&nbsp;: une action de service, ou les éditions jusqu'au `validate` suivant. Valider et commiter n'en coûtent aucun |
 | Validation | `commit` refusé si la dernière édition n'est pas validée&nbsp;: ce qui se redéploie est ce qui est commité |
 | Un commit par correction | Recorriger **amende** le commit `fix` de la correction, tant qu'il est en tête&nbsp;; jamais le `chore(update)` ni un commit humain |
 | Une session à la fois | Les réparations passent l'une après l'autre&nbsp;: un commit prend tout l'arbre |
-| Fin de session | Édition non commitée annulée, arbre ramené au dernier commit&nbsp;; le diff reste dans `logs/ai.log` |
+| Fin de session | Édition non commitée annulée, arbre ramené au dernier commit&nbsp;; le diff reste dans `logs/ai.log`, et en patch `logs/<hôte>.dnf.patch` (ou `.consumer.patch`) pour `git apply` |
 | Hooks | Jamais contournés&nbsp;: le commit passe par la porte du dépôt comme n'importe quel autre |
 | Message | `dnf/` est publié&nbsp;: un commit du framework qui nomme un hôte du parc est refusé |
 
@@ -539,7 +539,7 @@ le reste du parc suit le commit ([Aligner le parc](#aligner-le-parc)).
 Sous le timer de nuit, l'IA édite, commite et redéploie **sans demander**, un
 build en échec compris. Un commit non relu peut donc atterrir sur la branche. Ce qui rend la chose
 tenable&nbsp;: l'arbre propre exigé, les chemins confinés, le diff journalisé,
-les trois essais, et le retour arrière automatique qui reste armé. Si ce n'est
+les essais bornés, et le retour arrière automatique qui reste armé. Si ce n'est
 pas ce que vous voulez, laissez `--ai-error-action` à `none` ou à `analysis`
 dans `timer.extraArgs`.
 :::
@@ -606,17 +606,18 @@ incidents le disent, avec les hôtes concernés (voir
 [Rapport et alertes Matrix](#rapport-et-alertes-matrix)). `--resume` réutilise
 les chemins alignés&nbsp;; coupé avant l'alignement, il reconstruit tout.
 
-{/* t:p 4aa701759fa2970a3e20435506d8cb3b5518cae075ba892c1b4b7607530a92da */}
+{/* t:p ade7d48f8119a0bde2ab5efd314b9626b4b792b96de645fb45e4b2bfe4d7d269 */}
 #### Suggestions d'amélioration
 
 Avec `--ai-analysis active`, le lancement se termine par une **revue de ses
-avertissements**&nbsp;: option renommée ou dépréciée, changement qui ferait
-taire un avertissement, problème à investiguer. L'IA propose, elle ne change
-**ni le code ni le parc**.
+avertissements**, et de ce que les réparations ont laissé à un humain&nbsp;:
+option renommée ou dépréciée, changement qui ferait taire un avertissement,
+problème à investiguer, limite de l'outil de réparation. L'IA propose, elle ne
+change **ni le code ni le parc**.
 
 <Steps>
-1. Les avertissements de tous les journaux du lancement sont regroupés par forme&nbsp;: le même sur dix hôtes compte une fois. Aucun avertissement → aucune revue, rien n'est payé.
-2. L'IA lit les suggestions déjà déposées, puis cherche dans le code d'où vient chaque avertissement.
+1. Les avertissements de tous les journaux du lancement sont regroupés par forme&nbsp;: le même sur dix hôtes compte une fois. Aucun avertissement ni réparation → aucune revue, rien n'est payé.
+2. L'IA lit les suggestions déjà déposées et les conclusions des réparations, puis cherche dans le code d'où vient chaque avertissement.
 3. Chaque constat utile devient un fichier `var/deployments/suggestions/<slug>.md`&nbsp;: quoi, où (`fichier:ligne`), pourquoi, et l'amélioration proposée.
 4. La section **Suggestions** du rapport liste ce que le lancement a déposé ou revu. Rien ne part dans Matrix&nbsp;: ce n'est pas une alerte.
 </Steps>
