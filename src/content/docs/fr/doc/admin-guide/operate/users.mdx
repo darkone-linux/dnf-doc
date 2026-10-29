@@ -241,7 +241,7 @@ recrée vide&nbsp;: aucune invite, l'ancien mot de passe n'ouvre plus rien.
 
 - Applications : identifiants à ressaisir une fois (Nextcloud, comptes en ligne, Chromium).
 - Ouverture par YubiKey, ou trousseau encore actif : suppression reportée à une prochaine session.
-- Trousseau sans mot de passe ([remède YubiKey](/fr/doc/admin-guide/operate/yubikey/#le-trousseau-gnome-redemande-un-mot-de-passe), accessibilité) : conservé.
+- [Trousseau sans mot de passe](#un-trousseau-sans-mot-de-passe-) : conservé.
 
 Pour garder un trousseau protégé par un mot de passe propre&nbsp;:
 
@@ -249,6 +249,27 @@ Pour garder un trousseau protégé par un mot de passe propre&nbsp;:
 # usr/users/<login>/default.nix
 darkone.home.gnome.keepKeyring = true;
 ```
+
+### Un trousseau sans mot de passe ?
+
+Par défaut pour les profils non techniques d'un hôte chiffré (LUKS)&nbsp;: le
+trousseau de connexion s'ouvre sans invite, y compris quand la session s'ouvre
+par [YubiKey](/fr/doc/admin-guide/operate/yubikey/#le-trousseau-gnome-redemande-un-mot-de-passe).
+
+- Secrets : en clair dans `~/.local/share/keyrings`, protégés au repos par LUKS seul.
+- Sauvegardes restic : copiés tels quels, dans un dépôt chiffré par restic.
+- Trousseau déjà chiffré : supprimé au déploiement, identifiants à ressaisir une fois.
+- Session ouverte pendant le déploiement : suppression au démarrage suivant.
+- Mot de passe de session : jamais transmis au trousseau, qui ne se rechiffre donc pas.
+
+Pour l'activer (profil technique) ou le désactiver&nbsp;:
+
+```nix
+# usr/users/<login>/default.nix
+darkone.home.gnome.passwordlessKeyring = true; # ou false
+```
+
+`keepKeyring = true` le désactive aussi.
 
 {/* t:p c543bae382a43528fa23c6446c3d6b59ef3445163d818d87cd9b6bac969d27e3 */}
 ### Un fichier `.bkp` dans un home ?
