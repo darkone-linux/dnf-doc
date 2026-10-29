@@ -74,36 +74,44 @@ A usage-oriented presentation is available in the
 [user guide](/en/doc/user-guide/understand/profiles/).
 :::
 
-{/* t:p e63260fff648762bb11ec29e6f86212d56e1073e7a4a44df1aab56a5e2d265d3 */}
+{/* t:p b9d1a9328c00256723b0a5584098e7744a0de1bec8a5709c8552e6ce36ae22c5 */}
 ## The GNOME desktop
 
-| Element | Profiles | Behavior |
+| Item | Profiles | Behavior |
 |---|---|---|
-| Qt5 / Qt6 settings, NixOS manual | all | Icons hidden (manual accessible via `nixos-help`) |
+| Qt5 / Qt6 settings, NixOS manual | all | Icons hidden (manual available via `nixos-help`) |
 | vim, btop, htop | all | Icons hidden, programs still launchable from a terminal |
 | "Support GNOME" notification | all | Disabled |
 | Document viewer | all | Papers, default PDF application (replaces Evince) |
 | Image viewer | all except `minimal`, `baby` | Geeqie by default |
 | GNOME extensions | non-technical | Icon hidden |
-| Terminal | non-technical | Console, absent from the dash, present in the applications grid |
+| Login keyring | non-technical, encrypted host | [Passwordless](/en/doc/admin-guide/operate/users/#a-passwordless-keyring) |
+| Terminal | non-technical | Console, absent from the dash, present in the application grid |
 | Terminal | technical | Ghostty, first dash favorite and Ctrl+Alt+T |
-| "Local Network" folder | `nix-admin`, admin host | *DNF Docs*, *Getting Started* (the home page), *Network Sources* (terminal in `/etc/nixos`) |
+| "Local network" folder | `nix-admin`, admin host | *DNF Doc*, *Getting started* (the home page), *Network sources* (terminal in `/etc/nixos`) |
 | Element (Matrix) | all except `minimal`, `baby` | Launched hidden if the network has Matrix |
 
-:::note[Dash locked]
-The favorites list (`favorite-apps`) is locked for the whole host: Console, the terminal of non-technical profiles, is not part of it.
+:::note[Locked dash]
+The favorites list (`favorite-apps`) is locked for the whole host&nbsp;:
+Console, the terminal of non-technical profiles, is not in it.
 :::
 
-:::tip[Hide other icons]
-`darkone.home.gnome.hiddenApps` lists the hidden entries (`.desktop` identifiers). Redefining it in `usr/users/<login>/default.nix` replaces the default list.
+:::tip[Hiding other icons]
+`darkone.home.gnome.hiddenApps` lists the hidden entries (`.desktop` IDs).
+Redefining it in `usr/users/<login>/default.nix` replaces the default list.
 :::
 
-:::note[The "Local Network" folder]
-Added only once, at the first session: once deleted or renamed, it does not come back. To recreate it, delete `~/.local/state/dnf/network-folder` then log in again.
+:::note[The "Local network" folder]
+Added only once, at the first session: deleted or renamed, it does not come
+back. To recreate it, delete `~/.local/state/dnf/network-folder` then reopen
+the session.
 :::
 
 :::note[Ghostty and SSH]
-From Ghostty, `ssh` installs the `xterm-ghostty` terminfo on the remote host at first connection (`~/.terminfo`, via `tic`), otherwise it falls back to `xterm-256color`. DNF hosts already provide it to all accounts, `root` included.
+From Ghostty, `ssh` installs the `xterm-ghostty` terminfo on the remote host
+at the first connection (`~/.terminfo`, via `tic`), otherwise it falls back
+to `xterm-256color`. DNF hosts already provide it to all accounts, `root`
+included.
 :::
 
 {/* t:p b4c95365a038f88f9b775d5035126894628c65f52cb581f8329f6bb8e0240f29 */}

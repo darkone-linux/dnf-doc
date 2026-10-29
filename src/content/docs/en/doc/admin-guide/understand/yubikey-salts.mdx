@@ -1,0 +1,191 @@
+---
+title: YubiKey, salts and isolated hosts
+sidebar:
+  label: YubiKey and disks
+  order: 10
+lang: en
+---
+
+{/* t:translated-from fr */}
+{/* t:h e77a7931a37ea92656987adf85a5e599f9db0627bc818ca8d296f5ad729dd8df */}
+
+{/* t:p 11d51e8576bc2eef193082b132d911b4e56256baa5b2cfcb82d01a965f399280 */}
+A YubiKey unlocks the fleet's encrypted disks with one press, without ever
+being plugged into the hosts beforehand. This page explains the mechanism, what
+is public or secret, and why an [isolated host](/en/doc/admin-guide/operate/secrets/#isolated-hosts)
+does not share the rest of the fleet's values.
+
+{/* t:p f73fb4f33019d996fb96c281c1cad2001a38295a82775cc8fd4abe2c3dfa62b5 */}
+## One key, one formula
+
+At enrollment (`just yubikey`), the key creates a FIDO2 **credential**: an
+internal secret that never leaves it, and a public identifier, the
+`credId`. Afterwards, it can be asked for a computation (the
+[`hmac-secret`](https://fidoalliance.org/specs/fido-v2.1-ps-20210615/fido-client-to-authenticator-protocol-v2.1-ps-errata-20220621.html#sctn-hmac-secret-extension) extension):
+
+```text
+value = HMAC(credential internal secret, salt)
+```
+
+- Same credential, same salt → always the same value.
+- Another salt → an unrelated value, impossible to deduce from the first one.
+- Each computation requires the key at hand and a **press** (firmware rule).
+
+| Element | Where it lives | Status |
+|---|---|---|
+| Internal secret | In the key only | Never leaves |
+| `credId` | `usr/secrets/yubikeys.json` | Public |
+| Salt | Registry and LUKS header | Public |
+| Value | sops file | Secret |
+
+The `credId` and the salt are useless without the physical key: that is why
+they are versioned in clear text.
+
+{/* t:p f709fd161bcd3edee6be4e6e572526757af2ebe66b7461cf2894a3f904d44129 */}
+## Unlocking at boot
+
+The value is the passphrase of a LUKS keyslot. The disk header keeps, alongside, a `systemd-fido2` token containing the `credId` and the salt&nbsp;:
+
+```d2
+style.fill: transparent
+shape: sequence_diagram
+initrd: Host initrd
+key: YubiKey { shape: person }
+disk: LUKS header { shape: cylinder }
+disk -> initrd: credId + salt (token)
+initrd -> key: Computes with the salt
+key -> initrd: Value, after a press
+initrd -> disk: Opens the keyslot
+```
+
+The host only knows what the key sends it&nbsp;: the value **with the salt it
+asks for**. Everything else on this page follows from that point.
+
+{/* t:p 1d4589f05228d9a2d3da0b371d6ffd6e6b9e5f4220acae78ed5ab0a6f94f8aaf */}
+## The ordinary fleet: one salt per key
+
+Each key receives a salt at enrolment. A press on the admin workstation
+computes the value, stored in `secrets.yaml`. Each encrypted host receives it at
+deployment and enrols itself&nbsp;:
+
+```d2
+style.fill: transparent
+direction: right
+admin: Admin workstation {
+  key: YubiKey { shape: person }
+  capture: One press
+  key -> capture
+}
+sops: secrets.yaml { shape: cylinder }
+fleet: Encrypted hosts {
+  a: Workstation
+  b: Server
+  c: Gateway
+}
+admin.capture -> sops: value
+sops -> fleet.a
+sops -> fleet.b
+sops -> fleet.c
+```
+
+- **Benefit** : a new encrypted host costs no press, the key never
+  travels.
+- **Cost** : this value opens **all** the disks where the key is enrolled.
+  Acceptable on an ordinary host&nbsp;: it already holds the infra key, hence
+  every `secrets.yaml`.
+
+{/* t:p 94a9402cbb828c18c1e96096f4debbf819f6e0cc54b629c9b93f1b51cb5aa205 */}
+## Why not on an isolated host
+
+An isolated host runs agents that read untrusted content. It is assumed it can
+be compromised. If its disk carried a token using the fleet salt:
+
+1. the attacker becomes root and modifies the host's initrd;
+2. the administrator reboots and touches their key, as usual;
+3. the initrd requests the value for the fleet salt, and keeps it;
+4. the attacker holds what it takes to open **all the other disks**.
+
+So not giving it the value through sops is not enough: the key computes it for
+it. The protocol even accepts **two salts per request**: a single press can
+return the host's value **and** the fleet's, if the host knows the fleet salt.
+
+{/* t:p 2a5eb1ef67dfc796b707ec5b6510279a7cc12f84f54ca415e9e0e93161660fce */}
+## The host's own salt
+
+The answer: the same credential, but a salt drawn **for that host**. The value
+obtained only opens its disk, which the host already reads anyway.
+
+| Element | Ordinary host | Encrypted isolated host |
+|---|---|---|
+| Salt | The key's own | Drawn for the host |
+| Value stored in | `secrets.yaml` | `hosts/<host>.yaml` |
+| Allows enrollment | Shared passphrase | Its own passphrase |
+| Presses | One, at enrollment | One per isolated host |
+| Enrolled keys | All those in the registry | Those captured for it |
+
+:::note[This is not a re-enrollment]
+Credential, PIN, PAM, Kanidm and Vaultwarden do not change. The key stores
+nothing more: a salt takes no room, their number is unlimited. Ordinary hosts
+stay at zero presses.
+:::
+
+The press is unavoidable, and deliberately so: if a value could be computed
+without the key, an attacker could too.
+
+{/* t:p 17b2139890d018690652fc0203be14f6a15549b77b685a6a04269f66a7fa4632 */}
+## Keys far from the admin workstation
+
+Members' keys are not all within reach of the admin workstation. This is not a
+blocker:
+
+- **Key not captured**: it is not enrolled on the isolated host, which remains
+  unlockable with its passphrase (console or `just unlock`).
+- **Catching up**: the key passes on the admin workstation, `just yubikey <login>
+  <key>` only computes what it is missing, one press per isolated host.
+- **Tracking**: `just luks <host> show` lists the keys not yet captured.
+- **New encrypted isolated host**: every key goes through once again.
+
+In practice, the isolated host is mostly unlocked remotely, or by the
+administrator at its console: their own keys are enough.
+
+{/* t:p 8d076a8c51175da7958529f59bbf8aa6cdd3719d36621cfad2eeb104f9652d68 */}
+## Safeguards
+
+| Error | What stops it |
+|---|---|
+| A module declares a fleet value on an isolated host | Evaluation fails |
+| A fleet salt in its enrollment data | Evaluation fails |
+| A keyslot with the fleet salt in its header | `just luks <host> show`: `FLEET SALT` |
+
+The failure message names the offending secrets: remove them from the host,
+never copy them into its file.
+
+{/* t:p a4a4765f855208c8da51bc62e1c7361a1622ea33c31d2d329eaa03ce1d1e475f */}
+## Limits
+
+- **The fleet salt is not secret**: it appears in the registry and in the store
+  of ordinary hosts. The separation holds as long as the isolated host's
+  attacker does not also have a foothold on the rest of the fleet.
+- **Touching your key on a compromised isolated host** only hands it your own
+  value, that of a disk it already controls.
+
+{/* t:p 938609b64e2e1217c0db6ceeca57cfadea52087e1a0a2c4319be9b6fdb6ff3b2 */}
+## FAQ
+
+{/* t:p bea57d76580143b09bb47d4a4a7525a06ca66db299988c3fd4450b540450f8b4 */}
+### Do existing keys need to be re-enrolled?
+
+No. The credential stays the same; only one more value is computed, for each
+encrypted isolated host, when the key passes on the admin workstation.
+
+{/* t:p 24aec10e8a30aa7ca742123d487fd7f92150cc211c24760c612c5df080b5910c */}
+### Does the key ask for its PIN?
+
+No, neither for the computation nor at boot: LUKS stays press-only, as on the
+rest of the fleet.
+
+{/* t:p 10706af751dc9acb297d03de385f1b375146dbcea28f7b0acbd2116d19b5f1bd */}
+### What happens to a revoked key?
+
+`just yubikey <login> <key> revoke` also removes its values from the isolated
+hosts' files. At the next deployment, each host deletes its keyslot.

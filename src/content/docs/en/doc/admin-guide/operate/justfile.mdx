@@ -280,64 +280,85 @@ just bump          # level inferred from commits
 
 Installing a new host follows a precise sequence.
 
-{/* t:p 4a9315d11ba05a8997b84fdfcd785d2cf15c52f7f77e1776597a521dbfc348c2 */}
+{/* t:p 8f333d6c834ca17fab76b1d064a7937c1cf1bd05b63ef3b608258cd040d84214 */}
 ### ✳️ `install <host> [user] [ip]`
 
-Formats disks via **disko** and installs NixOS via **nixos-anywhere**.
+Formats the disks via **disko** and installs NixOS via **nixos-anywhere**.
 
 :::danger[Destructive]
-All data on the target host is wiped. A confirmation is requested before
-running.
+All data on the target host is erased. A confirmation is
+requested before running.
 :::
 
 :::note[Required configuration]
 The host must have a complete `disko` block in `etc/config.yaml` (profile and
-`devices`, hence `usr/machines/<host>/install/disko.nix`), a `mac` key and a
-fixed address (`zone: "<zone>:<x.y>"`). The last two points are checked before
-any formatting: without them, the machine changes address at the reboot that
-follows installation. See [Initial
+`devices`, giving `usr/machines/<host>/install/disko.nix`), a `mac` key and a
+fixed address (`zone: "<zone>:<x.y>"`). The last two points are checked before any
+formatting&nbsp;: without them, the machine changes address on the reboot that follows
+installation. See [Initial
 installation](/en/doc/admin-guide/install/first-network-installation/#installing-a-workstation).
 :::
 
-The `ip` argument defaults to `auto`: the address is computed the same way as
-for `full-install`, no need to look it up.
+The `ip` argument defaults to `auto`&nbsp;: the address is computed as for
+`full-install`, no need to look it up.
 
 :::caution[The address must be the one the machine keeps]
-`nixos-anywhere` pins its target address for the whole run and cannot track a
-renumbering. Yet the installer performs a new DHCP: if the machine was running
-on a dynamic lease older than its reservation until now (the typical case of an
-installation **on top of another system**), it switches to its reserved address
-mid-installation and the run talks into the void.
+`nixos-anywhere` freezes its target address for the whole run and cannot
+follow a renumbering. Yet the installer performs another DHCP&nbsp;: if the
+machine had been running until then on a dynamic lease older than its reservation
+(the typical case of an installation **on top of another system**), it
+switches to its reserved address mid-installation and the run talks into the
+void.
 
 The recipe therefore refuses to start on an address the host does not keep, and
-shows the ones it accepts. Before installing over an existing OS, reboot the
-machine so it takes its reserved address.
+displays the ones it accepts. Before installing over an existing OS,
+reboot the machine so that it takes its reserved address.
 :::
 
-The recipe also drops on the target, **before** the system installation, the
-age key `/etc/sops/age/infra.key` and, on an encrypted host, the SSH host key
-of its initrd: sops works from the first activation and the very first boot
-already listens on port 2222. The volume is formatted with the shared fleet
-passphrase, so there is nothing to type.
+Before formatting, the recipe reports what would make the rest fail, then
+asks for confirmation&nbsp;:
+
+| Alert | What to do |
+|---|---|
+| Host name unknown to the workstation | `just apply <local gateway>` |
+| HCS not up to date for the host | `just apply hcs` |
+| Encrypted host outside any zone | Also redirect port 2222 |
+
+Before the very first question, it also lists the uncommitted changes outside
+the host&nbsp;: they will go into its commits.
+
+The recipe also places on the target, **before** installing the system, the
+age key `/etc/sops/age/infra.key` (except on an
+[isolated host](/en/doc/admin-guide/operate/secrets/#isolated-hosts)) and, on an encrypted host,
+the SSH host key of its initrd&nbsp;: sops works from the first
+activation and the very first boot already listens on port 2222. The volume
+is formatted with the fleet's shared passphrase, so there is nothing to type.
+
+On an isolated host, it first seals its `usr/secrets/hosts/<host>.yaml` file
+for the installer's host key, which the installed system takes over&nbsp;: the
+build finds it, without going through `just space-init`.
 
 ```sh
 just install myserver
-just install myserver nixos 10.0.0.5     # custom IP
-just install myserver nix auto test      # test VM only
+just install myserver nixos 10.0.0.5     # IP personnalisée
+just install myserver nix auto test      # VM test uniquement
 ```
+
+`nixos-anywhere` and `disko` are the ones locked by the framework, tested with
+it&nbsp;: `nix run .#nixos-anywhere` and `nix run .#disko` from the project.
 
 :::note[Installation seals the host]
 Just before formatting, `install` writes `usr/machines/<host>/install/state.nix`
-(`stateVersion` of the current nixpkgs release): the disk layout and the
-`stateVersion` are now frozen, even in case of reinstallation. The hardware
-survey (`hardware/`) is committed as soon as `nixos-anywhere` finishes. See
-[Machine folder](/en/doc/how-to/admin/machines-layout/).
+(`stateVersion` of the current nixpkgs release)&nbsp;: the disk layout and the
+`stateVersion` are now frozen, even in case of reinstall. The hardware survey
+(`hardware/`) is committed as soon as `nixos-anywhere` finishes. See [Machine
+folder](/en/doc/how-to/admin/machines-layout/).
 :::
 
 :::caution[LUKS and `do=test`]
-`nixos-anywhere` refuses `--vm-test` together with the options that drop files
-and the formatting key: the test mode therefore cannot format an encrypted
-volume. The recipe reports it.
+`nixos-anywhere` refuses `--vm-test` together with the options that place
+files and the formatting key&nbsp;: test mode therefore cannot
+format an encrypted volume. The recipe reports it.
 :::
 
 {/* t:p 332f678ae6aba4cf91ff9de59d833c42c4410666cb70c507792612466a979694 */}
@@ -455,10 +476,11 @@ Collects on the machine the kernel modules of its wired network cards and writes
 just detect-hw myserver
 ```
 
-{/* t:p bb952125c6373caa2bd08e413b62d65d906bb079653af1e5a91e8a718b2ec038 */}
+{/* t:p c1feef99574aed9a1907e85c326def1059e84c81f4e6936edba5cf60f4786819 */}
 ### ✳️ `push-key <host>`
 
-Transfers the age key `/etc/sops/age/infra.key` to the target host.
+Transfers the age key `/etc/sops/age/infra.key` to the target host, unless it does not
+read it (isolated host).
 
 ```sh
 just push-key myserver
@@ -476,25 +498,25 @@ on its screen.
 just host-info myserver 10.0.0.50
 ```
 
-{/* t:p ee689c0e9bae99379c06bca18a6ce3f940095f7d52c6a39480ebfd7c131bd167 */}
-### ✳️ `luks <hôte> [action] [ip]`
+{/* t:p 78246665289790d39a9584bba9b94f0a001b21d1242b5373ef02ad780a2fd6a1 */}
+### ✳️ `luks <host> [action] [ip]`
 
-Provisions a host's encryption&nbsp;: shared and per-host passphrases in sops,
-initrd SSH key in sops then on the target, `usr/secrets/luks.json` manifest,
-gateways' WAN IP. See
+Provisions an encrypted host&nbsp;: shared and per-host passphrases
+in sops, initrd SSH key in sops then on the target, `usr/secrets/luks.json`
+manifest, WAN IP of the gateways. See
 [Disk encryption (LUKS)](/en/doc/admin-guide/operate/luks/).
 
 | Action | Effect |
 |---|---|
 | (default) | Prepares the secrets, then converges the machine |
 | `pre` | Offline half only, without touching the machine |
-| `passwd` | Rotates the per-host passphrase, then converges |
+| `passwd` | Rotates the per-host passphrase, then converges (immediately for an isolated host) |
 | `show` | Read-only audit&nbsp;: keyslots and remote unlocking |
 
 :::tip[Idempotent]
-`pre` is called by `just install` before the build, the default version by
-`just configure`. Without a LUKS volume in the host's disko, it is a logged
-no-op.
+`pre` is called by `just install` before building, the default version by
+`just configure`. Without a LUKS volume in the host's disko, it is a
+logged no-op.
 :::
 
 ```sh
@@ -676,14 +698,17 @@ A host waiting for its LUKS passphrase falls under `just unlock`.
 just enter myserver
 ```
 
-{/* t:p e99600d63e174503edb2110d8a6fb6bd9f080610effa9bd6ec6c5b23dcb7f9fa */}
-### ✳️ `unlock <hôte> [ip] [délai]`
+{/* t:p f49fb84d7bab14e69ba295979c2f53803d3a7e38c4205ab8c15ec42571e9b3af */}
+### ✳️ `unlock <host> [ip] [delay]`
 
-Answers the LUKS prompt of a host still sitting in its initrd, **with no human present**&nbsp;:
-the passphrase is read from sops and pushed through the sshd on port 2222. It waits for
-the host to show up (one dot per attempt), which makes it possible to chain it right
-after a reboot. Called automatically by `just full-install`. No stored passphrase
-accepted&nbsp;: from a terminal, the request is presented.
+Answers the LUKS prompt of a host left in its initrd, **without a human**&nbsp;:
+the passphrase is read from sops and pushed by the sshd on port 2222. Waits for
+the host to appear (one dot per attempt), which allows chaining it right
+after a reboot. Called automatically by `just full-install`. No stored
+passphrase accepted&nbsp;: from a terminal, the prompt is presented.
+
+Nothing is sent to an initrd whose host key is not the one from sops. See
+[LUKS encryption](/en/doc/admin-guide/operate/luks/#unlocking-at-boot).
 
 On a host without a LUKS volume, it is a logged no-op.
 
@@ -831,31 +856,35 @@ just passwd darkone
 just passwd darkone '<fingerprint>'
 ```
 
-{/* t:p 492a5aa3b45a9f68964c089348bdb4f0284b5dd11ec4ad7a6c1922473d97cb9d */}
+{/* t:p d4c235cb8402b4452960cafbc01e2145d5e8872019f9b6082b2ef3bf497cc811 */}
 ### ✳️ `yubikey <user> [key] [action]`
 
 Enrolls a YubiKey (`main` by default, or `backup`) for a user: PAM
-(session/sudo), LUKS and Kanidm enrollment link, in a single pass on the
-admin machine. `action=revoke` revokes the key across all machines at next
-deployment. See [Strong authentication](/en/doc/admin-guide/operate/yubikey/).
+(session/sudo), LUKS and Kanidm enrollment link, in a single pass on the admin
+workstation. Adds one press per encrypted isolated host, with that host's salt&nbsp;:
+rerun with an already enrolled key, it only computes what it is missing.
+`action=revoke` revokes the key across the fleet on the next deployment. See
+[Strong authentication](/en/doc/admin-guide/operate/yubikey/).
 
 ```sh
-just yubikey darkone            # enrolls the primary key
-just yubikey darkone backup     # enrolls the backup key
+just yubikey darkone            # enrôle la clé principale
+just yubikey darkone backup     # enrôle la clé de secours
 just yubikey darkone main revoke
 ```
 
-{/* t:p 79da9afbf128b3be67e5b86e36713ebe3a5faa90abad1289648a8b30560ddeb0 */}
+{/* t:p 09295a4de2533fd8039093f6d35bb18924cc38b44d43ffadf8262684496741a5 */}
 ### ✳️ `rotate init|push-keys|finalize`
 
-Rotation of the age key `/etc/sops/age/infra.key` in 3 steps with integrity
-checks.
+Rotation of the age key `/etc/sops/age/infra.key` in 3 steps with
+integrity checks.
 
 | Step | Action |
 |---|---|
 | `init` | Generates a new key, keeps the old one, re-encrypts the secrets |
 | `push-keys` | Pushes the combined key (new + old) to all hosts |
-| `finalize` | Checks that all hosts have the new key, removes the old one |
+| `finalize` | Verifies that all hosts have the new key, removes the old one |
+
+Isolated hosts are ignored&nbsp;: they do not read this key.
 
 :::danger[Rotation not finished]
 Do not interrupt a rotation. The `.cur` / `.old` sidecars mark a rotation in progress.

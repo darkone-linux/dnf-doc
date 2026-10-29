@@ -1,0 +1,112 @@
+---
+title: Temporary workarounds
+sidebar:
+  label: Temporary workarounds
+  order: 10
+lang: en
+---
+
+import { Steps } from '@astrojs/starlight/components';
+
+{/* t:translated-from fr */}
+{/* t:h 0739ca3bde7033fa9533d7a5867b228304e6e14ee746804e5d0665fbcbeb05ab */}
+
+{/* t:p fbe47ec735db7861b62b1f98f24babfd60f3cfa312fe26b6c95b2d07e2a1455c */}
+The framework tracks nixpkgs unstable: a package breaks, a PR is slow. Every
+workaround added while waiting for the upstream fix is registered in
+`dnf/config/workarounds.nix`, and removed along with its entry.
+
+{/* t:p fb591ff39d3a5a6d32c8e095647beab2a29737dd32dae4d3a97f46f33396a120 */}
+## What gets registered
+
+| `kind` | Workaround |
+|---|---|
+| `overlay` | Fix in `dnf/lib/overlays/` |
+| `backport` | Module copied into `dnf/backports/nixos/` |
+| `pin` | Package taken from another nixpkgs |
+| `inline` | Workaround inside a module |
+| `insecure` | `permittedInsecurePackages` entry |
+
+:::caution[Registration required]
+A unit test rejects an overlay, a backport or a `nixpkgs-*` input that is not
+registered, as well as an entry whose file or input has disappeared.
+:::
+
+{/* t:p ee513526ee5fd421756e8c2f07b65a54e6f053418e67359ddbe9ae658aa4594c */}
+## An entry
+
+```nix
+# dnf/config/workarounds.nix
+posthog = {
+  kind = "overlay";
+  files = [ "lib/overlays/posthog.nix" ];
+  reason = "posthog marked broken since mcp 2: aider-chat refuses to evaluate";
+  upstream = "NixOS/nixpkgs#578265"; # PR ou issue attendue
+  package = "python3Packages.posthog"; # sondé sur unstable
+  dropWhen = "nixpkgs#578265 in the locked nixpkgs";
+  since = "2026-10-27";
+};
+```
+
+`upstream`, `package` and `inputs` (flake inputs to remove along with it) are
+optional. Omit `package` when a green build does not prove the fix
+(a runtime crash, for example).
+
+{/* t:p 1414b1be83748cd853b15096894c8832a116ceb14f29411741f5299766a47e06 */}
+## Tracking upstream status
+
+In `dnf/` or at the root of a co-development project:
+
+```sh
+just workarounds
+```
+
+- **upstream**: status of the PR or issue, via `gh`. A merged nixpkgs PR
+  is compared with the locked revision.
+- **unstable**: is the package, evaluated against the locked nixpkgs, built
+  by [Hydra](https://hydra.nixos.org)? For a `pin`, the stable version is
+  shown alongside.
+
+```
+gimp · overlay · since 2026-06-17  [drop?]
+  why       gimp build breaks under `__structuredAttrs`
+  unstable  gimp 3.2.6: built by Hydra
+  drop      when Hydra builds unstable gimp
+  files     lib/overlays/gimp.nix
+```
+
+`[drop?]` flags a lead, not a verdict: `dropWhen` decides.
+
+{/* t:p cc962640633de4a9225dcc4af15724751d121918d8383cc654771b58b2f9d62d */}
+## Removing a fix
+
+<Steps>
+
+1. **Check** the `dropWhen` condition, rebuilding a relevant host if
+   needed.
+
+2. **Delete** the workaround: files from `files`, wiring in
+   `dnf/lib/mk-configuration.nix` (overlay, backport), `inputs` from
+   `dnf/flake.nix`.
+
+3. **Unregister**: remove the entry from the registry.
+
+4. **Validate**: `just clean`, `just unit-tests`, then commit.
+
+</Steps>
+
+{/* t:p 938609b64e2e1217c0db6ceeca57cfadea52087e1a0a2c4319be9b6fdb6ff3b2 */}
+## FAQ
+
+{/* t:p 1ce1b8e169774b101122d8e3627c2c476945e409b1e7bc0655835f4fe95959a9 */}
+### A permanent overlay?
+
+An overlay that exposes a third-party flake's package (`talon`, `claude-code`)
+is not a fix: add it to `permanentOverlays`, in
+`dnf/tests/unit/config/workarounds_test.nix`.
+
+{/* t:p b146fff9bc1618b8e590a524dfa28795e5011b4346fb5befc9d6336d490ed54d */}
+### Without `gh`?
+
+Upstream statuses are skipped, the rest of the report is displayed. `gh auth login`
+restores them.

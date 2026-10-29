@@ -13,7 +13,7 @@ sidebar:
 **A GUI application module** installs graphical applications and their configuration optimized for DNF.
 :::
 
-{/* t:p 1aa8d95dad4a0944cba52168608d34a66279be9e586481cb56612a612826dd68 */}
+{/* t:p 913030f2f0ab03a7ec05d6616075f1bf8495f6a36f267584d764d1377baeb6f6 */}
 ### &#x1F5BC; darkone.graphic.gnome
 
 Pre-configured gnome environment with dependences.
@@ -28,6 +28,11 @@ password. No prompt, and the old password opens nothing anymore.
 :::caution[Keyring secrets lost on each admin password change]
 Apps ask once again for their credentials. Opt-out, for a keyring with a
 password of its own: `darkone.home.gnome.keepKeyring`.
+:::
+
+:::note[Passwordless login keyring]
+Users with `darkone.home.gnome.passwordlessKeyring` skip `pam_gnome_keyring`
+at auth: a password would re-encrypt their plain keyring at its next write.
 :::
 
 * **enable** `bool` Pre-configured gnome WM

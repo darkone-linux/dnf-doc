@@ -53,13 +53,10 @@ darkone.service.tailscale.autoPauseOnLan.enable = true;
 `autoPauseOnLan` pauses the client when the laptop is plugged into a zone
 (NetworkManager required).
 
-{/* t:p 5d79bed90933c20274551bac203f54f849c31d80cf66906280037b3d472d168c */}
+{/* t:p 96ef3e0fc36fced33b28193432d0b1509cf8431cbc1c06ce288d705787373393 */}
 ## Enrolling a machine
 
-Machines join the tailnet **without a shared key**&nbsp;: the HCS creates a
-single-use key for each of them, with their declared tags. `just configure` handles
-this, and so does `just full-install`. The recipe alone can be re-run at any
-time&nbsp;:
+Machines join the tailnet **without a shared key**&nbsp;: the HCS creates a single-use key for each one, with its declared tags. `just configure` handles it, so does `just full-install`. The recipe alone can be re-run at any time&nbsp;:
 
 ```sh
 just tailnet-enroll gw
@@ -74,20 +71,20 @@ It is **idempotent**&nbsp;:
 
 | Situation | Effect |
 |---|---|
-| Node enrolled, name and tags conform | nothing (`already enrolled`) |
-| Different tags or name | corrected on the HCS, without reconnection |
+| Node enrolled, name and tags compliant | nothing (`already enrolled`) |
+| Different tags or name | fixed on the HCS, without reconnecting |
 | Never enrolled, deleted or reinstalled | new key, registration |
-| Older offline node with the same name | deleted, the new one takes the name |
-| Older online node with the same name | refused&nbsp;: two machines carry this name |
-| Host without Tailscale client | ignored |
+| Old offline node with the same name | deleted, the new one takes the name |
+| Old online node with the same name | refused&nbsp;: two machines carry this name |
+| Host without a Tailscale client | ignored |
 
 The mechanism is detailed in [Activation keys and
 enrollment](/en/doc/admin-guide/understand/tailnet/#pre-authorized-keys-and-enrollment).
 
-:::caution[Deploying the HCS after declaring the host]
+:::caution[Deploy the HCS after declaring the host]
 The HCS only creates a key for a host it knows. A host just added to
 `etc/config.yaml` first requires `just apply hcs`, otherwise&nbsp;:
-`no declared tailnet identity`.
+`no declared tailnet identity`. `just install` checks it before formatting.
 :::
 
 :::note[Failure during an installation]
@@ -96,10 +93,9 @@ HCS unreachable, `just configure` warns without stopping&nbsp;: re-run
 :::
 
 :::note[New address after a reinstallation]
-Headscale assigns addresses in order and does not allow fixing them. A
-reinstalled machine receives a new tailnet address&nbsp;: for a gateway, report it
-in `vpn.ipv4`. To keep it, restore the client state rather than re-enrolling (see
-[Migrating a gateway's
+Headscale assigns addresses in order and does not allow setting them. A
+reinstalled machine gets a new tailnet address&nbsp;: for a gateway, report it in
+`vpn.ipv4`. To keep it, restore the client state rather than re-enrolling (see [Migrating gateway
 hardware](/en/doc/admin-guide/install/gateway-hardware-migration/)).
 :::
 

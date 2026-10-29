@@ -13,33 +13,32 @@ sidebar:
 **Un module d'application GUI** installe des applications graphiques et leur configuration optimisée pour DNF.
 :::
 
-{/* t:p 1aa8d95dad4a0944cba52168608d34a66279be9e586481cb56612a612826dd68 */}
+{/* t:p 913030f2f0ab03a7ec05d6616075f1bf8495f6a36f267584d764d1377baeb6f6 */}
 ### &#x1F5BC; darkone.graphic.gnome
 
 Environnement GNOME pré-configuré avec ses dépendances.
 
 :::note[Trousseau de connexion après `just passwd`]
-PAM déverrouille le trousseau de connexion avec le mot de passe de session,
-qu'un changement effectué par l'administrateur ne peut pas rechiffrer (l'ancien
-mot de passe est inconnu). À la connexion suivante par mot de passe, le trousseau
-tombe&nbsp;: GNOME le recrée, vide, sur le nouveau mot de passe. Aucune invite, et
-l'ancien mot de passe n'ouvre plus rien.
+PAM déverrouille le trousseau de connexion avec le mot de passe de session, qu'un changement effectué par l'administrateur ne peut pas re-chiffrer (l'ancien mot de passe est inconnu). La connexion suivante par mot de passe abandonne le trousseau&nbsp;: GNOME le recrée, vide, sur le nouveau mot de passe. Aucune invite, et l'ancien mot de passe n'ouvre plus rien.
 :::
 
-:::caution[Secrets du trousseau perdus à chaque changement de mot de passe admin]
-Les applications redemandent leurs identifiants. Pour y renoncer, au profit d'un
-trousseau doté de son propre mot de passe&nbsp;: `darkone.home.gnome.keepKeyring`.
+:::caution[Secrets du trousseau perdus à chaque changement de mot de passe administrateur]
+Les applications redemandent une fois leurs identifiants. Pour y renoncer, avec un trousseau doté de son propre mot de passe&nbsp;: `darkone.home.gnome.keepKeyring`.
+:::
+
+:::note[Trousseau de connexion sans mot de passe]
+Les utilisateurs avec `darkone.home.gnome.passwordlessKeyring` évitent `pam_gnome_keyring` à l'authentification&nbsp;: un mot de passe re-chiffrerait leur trousseau en clair à sa prochaine écriture.
 :::
 
 * **enable** `bool` WM GNOME pré-configuré
 * **enableDashToDock** `bool` Plugin Dash to dock
-* **enableLightDM** `bool` Activer LightDM à la place de GDM
-* **enableGdmSelector** `bool` Liste d'utilisateurs GDM à la place d'une connexion saisie
+* **enableLightDM** `bool` Activer LightDM au lieu de GDM
+* **enableGdmSelector** `bool` Liste d'utilisateurs GDM au lieu d'une connexion saisie
 * **enableCaffeine** `bool` Désactiver la mise en veille automatique
 * **enableGsConnect** `bool` Communication avec les appareils
 * **enableOnlineServices** `bool` Comptes en ligne, CalDAV, CardDAV...
-* **xkbVariant** `nullOr str` Variante de clavier&nbsp;; null suit la locale (`config/locales.json`), comme la disposition.
-* **screenBlankDelay** `ints.unsigned` Délai d'extinction de l'écran en secondes (0 = jamais). Les portables le remplacent par 900 (15 min).
+* **xkbVariant** `nullOr str` Variante du clavier ; null suit la locale (`config/locales.json`), comme la disposition.
+* **screenBlankDelay** `ints.unsigned` Délai de mise en veille de l'écran en secondes (0 = jamais). Les portables le remplacent par 900 (15 min).
 * **cursorSize** `ints.positive` Taille par défaut du pointeur en pixels, modifiable par l'utilisateur (Paramètres &gt; Accessibilité).
 
 ```nix

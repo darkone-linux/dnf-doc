@@ -17,22 +17,22 @@ Some programs installed by the framework do not exist in
 `dnf/pkgs/`, and are exposed to all hosts like any other package, under
 `pkgs.<name>`.
 
-{/* t:p a4d36c64ae861e6346bef83a18d33957d529af4ddee3ffe1ffa5e7cb74da8b35 */}
+{/* t:p 680ed9a6e4a9eae44cfe07552a57eae70a3627225321682a812433894591f2ce */}
 ## Where to put what
 
 Three locations exist for a package that is out of the ordinary, with three
-different intents.
+different intentions.
 
-| Location | Purpose | Lifetime |
+| Location | For what | Lifespan |
 |---|---|---|
-| `dnf/pkgs/` | Not in nixpkgs, installed by hosts or users. | Until published in nixpkgs. |
-| `dnf/lib/overlays/` | Patch on an existing nixpkgs package (broken build, pending PR). | Temporary, removed as soon as the upstream fix lands. |
+| `dnf/pkgs/` | Absent from nixpkgs, installed by hosts or users. | Until published in nixpkgs. |
+| `dnf/lib/overlays/` | Fix for an existing nixpkgs package (broken build, pending PR). | Temporary, [listed in the registry](/en/doc/dev-guide/workarounds/). |
 | `inputs` of `dnf/flake.nix` | What the framework machinery needs (`dnf-generator`, `colmena`). | Permanent. |
 
 :::note[Why not a flake input]
-An input is downloaded on **every evaluation**, on **every** consumer, even on
-a host that does not install the tool. A package from `dnf/pkgs/` is only
-downloaded at the **build** of its derivation.
+An input is downloaded on **every evaluation**, on **every** consumer,
+even on a host that does not install the tool. A package from `dnf/pkgs/` is
+downloaded only at the **build** of its derivation.
 :::
 
 {/* t:p 6010c88dafb8d6d178610dfcbb8fee91fa447accf72c39687a69fa720ec5aae3 */}

@@ -180,43 +180,61 @@ darkone.system.i18n = {
 
 <hr/>
 
-{/* t:p e64e364746893de53c4992b80741a6ff11b1b8f815f4379cc7f741ae4545bac6 */}
+{/* t:p b80027582b626f85f5a9dc19e958e9e75e616de99c417fd2206bb946ad080600 */}
 ### &#x2699; darkone.system.luks
 
-Politique de mots de passe LUKS et déverrouillage à distance&nbsp;: mots de passe partagés et par hôte, SSH en initrd.
+Politique de phrases de passe LUKS et déverrouillage à distance : phrases de passe partagée et par hôte, SSH en initrd.
 
-Complète `modules/system/yubikey.nix` (emplacements de clés FIDO2) avec la partie mots de passe de la politique LUKS du parc. Chaque volume chiffré dispose exactement de deux mots de passe gérés, ainsi que d'un emplacement de clé par YubiKey enregistré&nbsp;:
+Complète `modules/system/yubikey.nix` (slots de clés FIDO2) avec le volet phrases de passe de la politique LUKS du parc. Chaque volume chiffré porte exactement deux phrases de passe gérées, plus un slot par YubiKey enrôlée :
 
-| Keyslot | Secret | Audience |
+| Slot de clés | Secret | Destinataire |
 |---|---|---|
-| shared | sops `luks-passphrase` | l'administrateur du parc. Autorise également les opérations sur les emplacements (`luksAddKey` / `luksKillSlot`) pour les unités ci-dessous, et est la clé utilisée par disko pour formater le disque. |
-| per-host | sops `luks/<host>/passphrase` | l'utilisateur de cette machine uniquement, sans donner accès au parc entier. |
-| FIDO2 | registry `usr/secrets/yubikeys.json` | un emplacement par clé, sur chaque hôte chiffré. |
+| partagée | sops `luks-passphrase` | l'administrateur du parc. **Autorise** aussi les opérations sur les slots de clés (`luksAddKey` / `luksKillSlot`) pour les unités ci-dessous, et c'est la clé avec laquelle disko formate le disque. |
+| par hôte | sops `luks/<host>/passphrase` | l'utilisateur de cette seule machine, sans livrer le parc. |
+| FIDO2 | registre `usr/secrets/yubikeys.json` | un slot par clé, sur chaque hôte chiffré. |
 
-Deux mots de passe gérés plutôt qu'un seul, car ils s'adressent à des publics différents&nbsp;; et parce que la rotation de l'un peut toujours être autorisée par l'autre, le service de synchronisation n'est jamais laissé sans autorisateur (il ajoute le nouvel emplacement avant de supprimer l'ancien).
+Deux phrases de passe gérées et non une, parce qu'elles servent des personnes différentes, et parce que la rotation de l'une reste autorisée par l'autre : l'unité de synchronisation n'est donc jamais sans autorisateur (elle ajoute le nouveau slot avant de tuer l'ancien).
 
-Il n'existe pas de «&nbsp;mot de passe d'installation&nbsp;» distinct&nbsp;: `just install` formate le volume via `nixos-anywhere --disk-encryption-keys` avec le mot de passe partagé, de sorte que l'emplacement de clé de formatage *est* l'emplacement partagé. Sur le premier hôte (`darkone new`, `just install-here`), le mot de passe saisi dans l'assistant devient ce mot de passe.
+Il n'y a pas de « phrase de passe d'installation » séparée : `just install` formate le volume via `nixos-anywhere --disk-encryption-keys` avec la phrase de passe partagée, donc le slot de format *est* le slot partagé. Sur le premier hôte (`darkone new`, `just install-here`), la phrase de passe saisie dans l'assistant le devient.
 
-`just luks <host>` provisionne un hôte (idempotent, également appelé par `just configure`)&nbsp;; sa phase `pre` s'exécute hors ligne et est appelée par `just install` avant la compilation. Elle enregistre l'hôte dans le manifeste **public** `usr/secrets/luks.json` (committé), stocke le mot de passe par hôte et la clé hôte SSH initrd dans sops, et s'assure que le `luks-passphrase` partagé existe. `just luks <host> show` affiche la table des emplacements de clés et vérifie le déverrouillage à distance. Le module assure ensuite la convergence à chaque application&nbsp;:
+`just luks <host>` provisionne un hôte (idempotent, aussi appelé par `just configure`) ; sa phase `pre` s'exécute hors ligne et est appelée par `just install` avant le build. Il inscrit l'hôte dans le manifeste **public** `usr/secrets/luks.json` (versionné), stocke la phrase de passe par hôte et la clé d'hôte SSH de l'initrd dans sops, et garantit que la `luks-passphrase` partagée existe. `just luks <host> show` affiche le tableau des slots de clés et audite le déverrouillage à distance. Le module maintient ensuite tout convergé à chaque apply :
 
-- **keyslots**&nbsp;: un service oneshot synchronise les mots de passe partagé et par hôte dans l'en-tête LUKS2 de chaque volume déclaré par disko. Toute modification d'une valeur dans sops fait tourner l'emplacement correspondant (ancien supprimé, nouveau ajouté). Les opérations sur les emplacements sont autorisées par le mot de passe géré qui déverrouille encore le volume&nbsp;; l'un d'eux doit donc rester valide. Les emplacements hors de son registre (FIDO2, enrôlements manuels) ne sont jamais modifiés.
-- **remote unlock**&nbsp;: sshd en initrd sur un port dédié (2222), avec sa propre clé hôte persistante (`/var/lib/luks-initrd/`), connexion root autorisée avec la clé de déploiement `nix` (`usr/secrets/nix.pub`). `just unlock <host>` répond à l'invite de mot de passe sans intervention humaine (via l'assistant `dnf-unlock` inclus dans l'initrd), ou interactivement depuis un terminal si aucun mot de passe stocké ne fonctionne. En cas d'échec de la route VPN, il se replie sur l'IP WAN enregistrée dans le manifeste. Les hôtes classiques obtiennent leur IP par DHCP sur les interfaces filaires (un portable en Wi-Fi n'a pas de réseau en initrd et se replie sur le déverrouillage par console)&nbsp;; les passerelles de zone répliquent leur configuration de production&nbsp;: IP LAN statique sur le pont lan0, DHCP côté WAN, car elles sont elles-mêmes le serveur DHCP et l'initrd attendrait sinon.
+- **slots de clés** : un service oneshot synchronise les phrases de passe partagée et par hôte dans chaque en-tête LUKS2 déclaré par disko. Une valeur sops modifiée fait tourner le slot correspondant (ancien slot tué, nouveau ajouté). Les opérations sur les slots de clés sont autorisées par la phrase de passe gérée qui déverrouille encore le volume : l'une d'elles doit donc rester valide. Les slots hors de son registre (FIDO2, enrôlements manuels) ne sont jamais touchés.
+- **déverrouillage à distance** : sshd en initrd sur un port dédié (2222), clé d'hôte persistante propre (`/var/lib/luks-initrd/`), connexion root avec la clé de déploiement `nix` (`usr/secrets/nix.pub`). `just unlock <host>` répond à l'invite de phrase de passe sans humain (via l'assistant `dnf-unlock` livré dans l'initrd), puis de façon interactive depuis un terminal quand aucune phrase de passe stockée ne fonctionne. Il se rabat sur l'IP WAN enregistrée dans le manifeste quand la route VPN est morte. Les hôtes ordinaires font du DHCP sur les interfaces filaires (un portable en Wi-Fi n'a pas de réseau en initrd et retombe sur le déverrouillage en console) ; les passerelles de zone répliquent plutôt leur disposition de production, IP LAN statique sur le bridge lan0 et DHCP côté WAN, puisqu'elles sont elles-mêmes le serveur DHCP que leur initrd attendrait sinon.
+
+:::caution[Hôtes isolés]
+Un hôte isolé (`darkone.system.sops.isolated`) ne détient jamais de secret du parc :
+pas de slot partagé, disko formate avec sa propre phrase de passe, et
+`luks/<host>/*` vit dans son propre `usr/secrets/hosts/<host>.yaml`. Pas d'unité
+de synchronisation non plus : une phrase de passe seule ne peut pas autoriser sa
+propre rotation, c'est `just luks <host> passwd` qui la fait tourner depuis l'hôte
+d'administration. Le déverrouillage à distance reste.
+:::
 
 :::note[Zéro configuration]
-Activé par défaut, mais totalement inactif tant que l'hôte n'apparaît pas dans `usr/secrets/luks.json` ET ne déclare pas de volume LUKS dans sa configuration disko. Les hôtes chiffrés existants ne sont pas affectés avant d'exécuter `just luks <host>`.
+Activé par défaut mais totalement inerte tant que l'hôte n'apparaît pas dans
+`usr/secrets/luks.json` ET ne déclare pas de volume LUKS dans sa configuration disko.
+Les hôtes chiffrés existants ne sont pas affectés tant que `just luks <host>` n'a pas été lancé.
 :::
 
-:::caution[La clé initrd doit précéder l'installation du chargeur d'amorçage]
-Les secrets initrd sont ajoutés lors de l'installation du chargeur d'amorçage, *avant* l'activation. L'installation initiale est couverte&nbsp;: `just install` place la clé sous `/mnt` (`nixos-anywhere --extra-files`) afin que le tout premier démarrage écoute déjà sur le port 2222. Sur un hôte déjà en service, `just luks <host>` la place via SSH&nbsp;; ne jamais ajouter un hôte à `luks.json` manuellement, et ne jamais appliquer avant que la clé n'existe sur la cible.
+:::caution[La clé de l'initrd doit précéder le bootloader]
+Les secrets de l'initrd sont ajoutés à l'installation du bootloader, *avant*
+l'activation. Une installation neuve est couverte : `just install` place la clé sous
+`/mnt` (`nixos-anywhere --extra-files`) pour que le tout premier démarrage écoute déjà
+sur 2222. Sur un hôte déjà en marche, `just luks <host>` la met en place par
+SSH ; n'ajoutez jamais un hôte à `luks.json` à la main, et n'appliquez jamais avant que la clé
+n'existe sur la cible.
 :::
 
-:::danger[Plafond d'emplacements de clés]
-Les en-têtes LUKS2 ne peuvent contenir au plus que 32 emplacements de clés. Chaque YubiKey enregistré consomme un emplacement sur chaque hôte chiffré (politique à l'échelle du parc), en plus des mots de passe partagé et par hôte&nbsp;: le module avertit lorsque le total projeté approche de cette limite.
+:::danger[Budget de slots de clés]
+Les en-têtes LUKS2 acceptent au plus 32 slots de clés. Chaque YubiKey enrôlée consomme un
+slot sur chaque hôte chiffré (politique à l'échelle du parc), plus les phrases de passe
+partagée et par hôte : le module avertit quand le total projeté approche de la limite.
 :::
 
-* **enable** `bool` Politique de mots de passe LUKS du parc (inactive tant que `just luks <host>` n'a pas provisionné l'hôte)
-* **sshPort** `port` Port sshd en initrd&nbsp;; distinct de 22 afin que la clé hôte initrd ne entre jamais en conflit avec celle du système
-* **volumes** `listOf str` Volumes LUKS déclarés par la configuration disko de l'hôte.
+* **enable** `bool` Politique de phrases de passe LUKS du parc (inerte tant que `just luks &lt;host&gt;` n'a pas provisionné l'hôte)
+* **sshPort** `port` Port du sshd de l'initrd ; distinct de 22 pour que la clé d'hôte de l'initrd n'entre jamais en conflit avec celle du système
+* **volumes** `listOf str` Volumes LUKS déclarés par la disposition disko de l'hôte.
 
 ```nix
 darkone.system.luks = {
@@ -566,35 +584,37 @@ darkone.system.services = {
 
 <hr/>
 
-{/* t:p fbecadf768e9ff08a67d4ffd1c2614a4f56e60eb55320065145b3da2fae799db */}
+{/* t:p bb813b9b0ef4c1069cecc399ff85f2338a67ab565377a97fd35247ccddd18c49 */}
 ### &#x2699; darkone.system.sops
 
-sops DNF, gestion des mots de passe et des secrets.
+Gestion sops, mots de passe et secrets de DNF.
 
 :::danger[Module critique]
 Ce module est activé par défaut dans le module core.
-Il est recommandé de le garder activé et de le configurer (commandes `just passwd*`).
+Il est recommandé de le laisser activé et de le configurer (commandes `just passwd*`).
 :::
 
-Câble sops-nix sur `usr/secrets/secrets.yaml` et le déverrouille avec la
-clé SSH hôte (`ssh_host_ed25519_key`) plus la clé age d'infrastructure
-dédiée (`/etc/sops/age/infra.key`). Déclare un secret
-`user/<login>/password-hash` par utilisateur hôte, avec
+Branche sops-nix sur `usr/secrets/secrets.yaml` et le déverrouille avec la
+clé SSH de l'hôte (`ssh_host_ed25519_key`) plus la clé age dédiée à
+l'infrastructure (`/etc/sops/age/infra.key`). Déclare un
+secret `user/<login>/password-hash` par utilisateur de l'hôte, avec
 `neededForUsers = true` pour que le hash soit disponible avant la création
 des comptes utilisateurs.
 
-Rien d'autre n'est matérialisé ici&nbsp;: un secret appartient aux hôtes qui le
+Rien d'autre n'est matérialisé ici : un secret appartient aux hôtes qui le
 consomment, déclaré par le module qui le lit.
 
 :::caution[Hôtes isolés]
-`isolated = true` (défaut du profil `ai-space`) pointe l'hôte vers son propre
-`usr/secrets/hosts/<hostname>.yaml`, sans la clé infra&nbsp;: un hôte exécutant
-des agents non fiables ne détient jamais les secrets de la flotte. Pas de
-hash de mot de passe non plus, ses comptes ne sont qu'en clé SSH.
+`isolated = true` (défaut du profil `ai-space`) pointe l'hôte vers
+son propre `usr/secrets/hosts/<hostname>.yaml`, sans la clé d'infrastructure : un hôte
+qui exécute des agents non fiables ne détient jamais les secrets du parc, et une clé
+laissée par une installation antérieure est supprimée. Pas de hash de mot de passe non plus, ses comptes
+fonctionnent uniquement par clé SSH. Déclarer une valeur du parc à cet endroit (`luks-passphrase`, un hash
+de mot de passe, un secret FIDO2 au sel du parc) fait échouer l'évaluation.
 :::
 
-* **enable** `bool` Activer la configuration automatisée sops pour DNF
-* **isolated** `bool` Fichier de secrets propre, sans clé infra, sans hash de mots de passe
+* **enable** `bool` Active la configuration automatisée sops pour DNF
+* **isolated** `bool` Fichier de secrets propre, pas de clé d'infrastructure, pas de hash de mot de passe
 
 ```nix
 darkone.system.sops = {
@@ -683,75 +703,73 @@ darkone.system.testing = {
 
 <hr/>
 
-{/* t:p 9756d9cf6ffd16c6f4ae056a30b70b4b2acd604a82f648ca05884b87641b5bff */}
+{/* t:p d8ee69a1311058a821db8cf18d1c45f33c619b1cdfacb0f42a986bd5cbd2e36e */}
 ### &#x2699; darkone.system.yubikey
 
-Authentification forte par YubiKey&nbsp;: PAM U2F à l'échelle du parc + déchiffrement LUKS déclaratif par FIDO2.
+Authentification forte par YubiKey : PAM U2F à l'échelle du parc et LUKS FIDO2 déclaratif.
 
-Un seul enrôlement physique par (utilisateur, clé) sur l'hôte admin&nbsp;: `just
-yubikey <user> [key] [action]` alimente&nbsp;:
+Un enrôlement physique par (utilisateur, clé) sur l'hôte d'administration (`just yubikey
+<user> [key] [action]`) alimente :
 
-- un registre **public** `usr/secrets/yubikeys.json` dans l'espace de travail
-  consommateur&nbsp;: l'identifiant de l'attestation pamu2fcfg, l'id du
-  credential FIDO2 hmac-secret et le sel (inutilisables sans la clé physique,
-  donc committables)&nbsp;;
-- un secret sops `yubikey/<user>/<key>/luks-secret` (le mot de passe LUKS
-  dérivé de FIDO2) ainsi que le `luks-passphrase` partagé (le mot de passe
-  saisi à l'installation disko, requis pour autoriser de nouveaux keyslots).
+- un registre **public** `usr/secrets/yubikeys.json` dans l'espace de travail consommateur :
+  identifiant pamu2fcfg, identifiant et sel de l'identifiant hmac-secret FIDO2
+  (tout inutile sans la clé physique, donc versionnable) ;
+- un secret sops `yubikey/<user>/<key>/luks-secret` (la phrase de passe LUKS
+  dérivée du FIDO2) plus la `luks-passphrase` partagée (la phrase de passe saisie
+  à l'installation disko, nécessaire pour autoriser de nouveaux slots de clés).
 
-Le module propage ensuite tout déclarativement (`just apply`), sans jamais
-brancher la clé sur les hôtes cibles&nbsp;:
+Le module propage ensuite tout de façon déclarative (`just apply`), sans
+jamais brancher la clé sur les hôtes cibles :
 
-- **connexion / sudo / greeter**&nbsp;: pam_u2f comme *alternative* au mot de
-  passe (`sufficient`)&nbsp;: toucher la clé connecte, le mot de passe sops
-  reste le repli automatique. Un seul credential est valable sur tout le parc
-  grâce à l'origine fixe (`pam://<network.domain>`).
-- **hôtes chiffrés**&nbsp;: un service oneshot auto-enrôle chaque clé déclarée
-  dans chaque en-tête LUKS2 déclaré par disko (keyslot + jeton `systemd-fido2`,
-  le format exact écrit par `systemd-cryptenroll`) et retire les révoquées. La
-  clé physique n'est nécessaire qu'au démarrage, pour déverrouiller le disque.
+- **connexion / sudo / greeter** : pam_u2f en *alternative* au mot de passe
+  (`sufficient`) : toucher la clé connecte, le mot de passe sops reste le
+  repli automatique. Un identifiant est valable à l'échelle du parc grâce à
+  l'origine fixe (`pam://<network.domain>`).
+- **hôtes chiffrés** : un service oneshot auto-enrôle chaque clé déclarée dans
+  chaque en-tête LUKS2 déclaré par disko (slot de clés et jeton `systemd-fido2`,
+  exactement le format qu'écrit `systemd-cryptenroll`) et élague les clés révoquées. La clé
+  physique n'est nécessaire qu'au démarrage pour déverrouiller le disque.
+
+:::caution[Hôtes isolés : sels propres]
+Un hôte isolé (`darkone.system.sops.isolated`) ne voit jamais le sel du parc
+ni sa valeur : `just yubikey` dérive une valeur par (clé, hôte chiffré isolé)
+à partir d'un sel de cet hôte (`hostSalts` dans le registre, valeur dans le
+fichier sops de l'hôte, une touche à chaque fois), autorisé là par la phrase de passe propre
+à l'hôte. Une clé non capturée pour un hôte n'y est pas enrôlée.
+:::
 
 :::note[Zéro configuration]
-Activé par défaut, mais totalement inerte jusqu'à ce que le fichier du
-registre existe. Le support LUKS porte sur les volumes LUKS trouvés dans la
-config disko de l'hôte (`usr/machines/<host>/install/disko.nix`, importée au
-runtime).
+Activé par défaut, mais totalement inerte tant que le fichier de registre n'existe pas.
+La prise en charge LUKS s'appuie sur les volumes LUKS trouvés dans la configuration disko de l'hôte
+(`usr/machines/<host>/install/disko.nix`, importée à l'exécution).
 :::
 
 :::caution[Aucun verrouillage par conception]
-Le keyslot du mot de passe d'installation et les mots de passe de session sops
-ne sont jamais touchés&nbsp;: perdre une clé retombe au pire sur
-mot de passe/secret. C'est vrai aussi au démarrage&nbsp;: la tentative FIDO2
-tourne dans une unité dédiée autorisée à échouer, si bien qu'une clé absente,
-inutilisable ou non retirée aboutit toujours à la requête de mot de passe&nbsp;;
-voir le commentaire sur le bloc initrd ci-dessous.
+Le slot de clé de la phrase de passe d'installation et les mots de passe de session sops ne sont jamais
+touchés : perdre une clé se rabat au pire sur la phrase de passe ou le mot de passe. Cela vaut
+aussi au démarrage : la tentative FIDO2 s'exécute dans une unité à part autorisée à
+échouer, si bien qu'une clé inutilisable, non touchée ou absente aboutit toujours à l'invite
+de phrase de passe ; voir le commentaire sur le bloc initrd ci-dessous.
 :::
 
-:::caution[Le toucher au démarrage ne peut être levé]
-Les YubiKeys imposent la présence utilisateur pour l'extension `hmac-secret`&nbsp;:
-une assertion demandant `up=false` est refusée avec `FIDO_ERR_UP_REQUIRED`
-avant même que le credential soit confronté. Le toucher est une règle
-matérielle, pas un réglage du jeton, et aucun flag d'en-tête ne peut le lever.
-Le déverrouillage sans intervention (passerelles, hôtes sans tête) relève du
-TPM2 (`systemd-cryptenroll --tpm2-device=auto`), qui coexiste avec ces keyslots
-FIDO2 dans le même en-tête LUKS.
+:::caution[La touche au démarrage est inévitable]
+Les YubiKey imposent la présence utilisateur pour l'extension `hmac-secret` : une assertion
+demandant `up=false` est refusée avec `FIDO_ERR_UP_REQUIRED` avant même que
+l'identifiant ne soit comparé. La touche est une règle matérielle, pas un réglage du jeton,
+et aucun indicateur d'en-tête ne peut la lever. Le déverrouillage sans intervention (passerelles,
+hôtes sans écran) relève du TPM2 (`systemd-cryptenroll --tpm2-device=auto`),
+qui coexiste avec ces slots de clés FIDO2 dans le même en-tête LUKS.
 :::
 
 :::caution[Le trousseau GNOME reste verrouillé lors d'une connexion par clé]
-`sufficient` court-circuite la pile d'authentification&nbsp;: le toucher de la
-clé y met fin avant que `pam_gnome_keyring` ne s'exécute, si bien que le démon
-démarre sans mot de passe et que GNOME demande celui du trousseau à l'ouverture
-de session (GNOME Online Accounts et evolution-data-server sollicitent
-immédiatement le service de secret). Une connexion par mot de passe n'est pas
-affectée. Remède sur les postes concernés&nbsp;: donner un mot de passe vide au
-trousseau *login* dans Seahorse — il se déverrouille alors tout seul, les
-secrets atterrissant en clair sur un disque déjà chiffré par LUKS. Voir
-`doc/admin-guide/operate/yubikey`.
+`sufficient` termine la pile d'authentification avant `pam_gnome_keyring` : un trousseau de connexion
+scellé demande une saisie au démarrage de session. Remède : `darkone.home.gnome.passwordlessKeyring`,
+activé par défaut pour les utilisateurs non avancés d'un hôte LUKS.
 :::
 
-* **enable** `bool` Authentification par YubiKey (défaut&nbsp;: activée si usr/secrets/yubikeys.json existe)
-* **origin** `str` Origine/appid pam_u2f fixe&nbsp;: un seul enrôlement est valable sur tout le parc
-* **luks.enable** `bool` Déverrouillage FIDO2 des volumes LUKS de l'hôte (inerte sans LUKS disko + clés enrôlées)
+* **enable** `bool` Authentification par YubiKey (défaut : activée quand usr/secrets/yubikeys.json existe)
+* **origin** `str` Origine/appid pam_u2f fixe : un enrôlement est valable à l'échelle du parc
+* **luks.enable** `bool` Déverrouillage FIDO2 des volumes LUKS de l'hôte (inerte sans LUKS disko et clés enrôlées)
 
 ```nix
 darkone.system.yubikey = {

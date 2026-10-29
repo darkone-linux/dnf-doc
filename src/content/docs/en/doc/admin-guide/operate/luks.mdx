@@ -144,133 +144,165 @@ SSH&nbsp;: never add a host to `luks.json` by hand, and never deploy before the
 key is on the target. In case of doubt, `just luks <hôte> show` checks it.
 :::
 
-{/* t:p 16e9cd0c08aff5bc972154684e2d9f6e1b96d39c78d7f5eb2c0a2499ba80fea1 */}
+{/* t:p fec023e7f1b096c5c9267334540ef9aacb48c8a7b7737ce7e5977b713384c1b2 */}
 ## Passphrase rotation
 
-- **Per host**: `just luks <host> passwd`, then commit and apply. The old
-  keyslot is removed and replaced at the next deployment.
-- **Shared**: modify `luks-passphrase` via `just sops`, then apply on the whole
-  fleet — each encrypted host rotates its keyslot along the way.
+- **Per host**: `just luks <hôte> passwd`, then commit and apply. The old
+  keyslot is removed and replaced on the next deployment.
+- **Shared**: edit `luks-passphrase` via `just sops`, then apply across
+  the whole fleet: each encrypted host rotates its keyslot in the process.
+- **Isolated host**: `just luks <hôte> passwd`, machine booted. Rotation happens
+  on the spot, without apply (see [Isolated encrypted host](#isolated-encrypted-host)).
 
-The synchronization service detects changes thanks to a local registry
-(`/var/lib/luks-passphrase/ledger`): a modified sops value enrolls the new
-passphrase **then** kills the old slot. Slots absent from the registry (FIDO2,
-manual enrollments) are never touched.
+The synchronization service detects changes through a local ledger
+(`/var/lib/luks-passphrase/ledger`)&nbsp;: a modified sops value
+enrolls the new passphrase **then** kills the old slot. Slots missing from
+the ledger (FIDO2, manual enrollments) are never touched.
 
-{/* t:p 00e18eec0ed0466600dffc97351b7ee7180f60cf2c0bcad464461c52b1ebc548 */}
-## Unlock at boot
+{/* t:p 1383b6b0903a11b4aced8e7e81df2cac70cb4a681da0adc7bfad35e525af446f */}
+## Isolated encrypted host
+
+An [isolated host](/en/doc/admin-guide/operate/secrets/#isolated-hosts) holds
+no fleet secret, nor does its encryption&nbsp;:
+
+| Item | Isolated host |
+|---|---|
+| Keyslots | Its passphrase, its YubiKeys, no shared one |
+| Formatting | With its passphrase |
+| `luks/<hôte>/*` | `usr/secrets/hosts/<hôte>.yaml` |
+| YubiKeys | At the host's salt, once captured |
+| `just unlock` | Sends only its passphrase |
+| Rotation | `just luks <hôte> passwd`, immediate |
+
+Without a synchronization service, `passwd` acts on the machine itself&nbsp;:
+new slot, sops, then removal of the old one. At every step, the value
+stored in sops opens the volume.
+
+Each key there is enrolled to a salt specific to the host, authorized by its
+passphrase&nbsp;: see [Isolated encrypted hosts](/en/doc/admin-guide/operate/yubikey/#encrypted-isolated-hosts)
+and [YubiKey, salts and isolated hosts](/en/doc/admin-guide/understand/yubikey-salts/).
+
+A host that becomes isolated is reinstalled (`just install`)&nbsp;: its old
+`luks/<hôte>` entries remain in `secrets.yaml`, flagged by `just luks`,
+to be deleted with `just sops`.
+
+{/* t:p 0475ef42622c9afc227e54d579a3058dfde478f03d574df10ec884810b887000 */}
+## Unlocking at boot
 
 Every encrypted host follows the same sequence, with nothing to configure:
 
-1. **YubiKey** — an enrolled and plugged-in key makes its LED blink&nbsp;: touching
-   it opens the volume, nothing to type. No key plugged in, the step lasts
-   ~6 s ; a key nobody touches, ~30 s (firmware limit).
-2. **Passphrase** — a prompt is then shown, **with no time limit**.
-   It accepts the per-host passphrase, the shared one or the install one.
+1. **YubiKey**: an enrolled and plugged-in key blinks its LED: touching it
+   opens the volume, nothing to type. With no key plugged in, the step lasts
+   ~6 s; with a key nobody touches, ~30 s (firmware limit).
+2. **Passphrase**: a prompt is then raised, **with no time limit**.
+   It accepts the per-host passphrase, the shared one, or the installation one.
 
-The prompt of step 2 is **one and the same request**, served in parallel
+The step 2 prompt is **one and the same request**, served in parallel
 on the physical console (`/dev/tty1`) and over ssh on port 2222. Nothing to
-choose, no window to miss&nbsp;: the first to answer opens the volume.
+choose, no window to miss: the first to answer opens the volume.
 
 :::note[How the key is tried]
 `fido2-device=` is not written in the `crypttab` entry but in a **separate
 initrd unit**, `yubikey-luks-unlock-<volume>`, ordered before
-`systemd-cryptsetup@<volume>` and only linked to it by a `Wants=`&nbsp;:
+`systemd-cryptsetup@<volume>` and only linked to it by a `Wants=`:
 it is allowed to fail, and its failure changes nothing at boot.
 
-This separation avoids two contradictory flaws&nbsp;:
+This separation avoids two conflicting flaws:
 
-- **the option in `crypttab` kills boot** when a key is plugged in
-  without anyone touching it&nbsp;: `systemd-cryptsetup` exits with an error
-  instead of offering the passphrase, no prompt is shown — neither console nor
-  port 2222 — and the initrd falls into `emergency`. A power cut on a host with
-  nobody in front of it was enough to freeze it ;
+- **the option in `crypttab` kills the boot** when a key is plugged in
+  and nobody touches it: `systemd-cryptsetup` exits with an error instead of
+  offering the passphrase, no prompt is raised (neither console nor port 2222),
+  and the initrd switches to `emergency`. A power cut on a host with nobody
+  in front was enough to immobilize it;
 - **without the option, the token is only tried if it is already enumerated**.
-  Yet `hidraw0` appears about a second after `systemd-cryptsetup` starts&nbsp;:
-  never in time. The key then stops unlocking anything, silently, with nothing
-  in the journal.
+  Yet `hidraw0` appears about one second after `systemd-cryptsetup` starts:
+  never in time. The key then stops unlocking anything, silently,
+  with nothing in the log.
 
-What the option really brings is the **waiting** for the device
+What the option actually brings is the **wait** for the device
 (`token-timeout=`, set to 5 s).
 :::
 
-Remotely, the initrd starts a **dedicated sshd on port 2222**, with its own
-persistent host key, reachable only with the `nix` deployment key. `just
-unlock` answers there&nbsp;:
+Remotely, the initrd starts a **dedicated sshd on port 2222**, with its
+own persistent host key, accessible only with the `nix` deployment key.
+`just unlock` answers there&nbsp;:
 
 ```sh
 just unlock <hôte>     # passphrase lue dans sops, sinon demandée au terminal
 ```
 
-`just unlock` waits for port 2222 to appear (one dot per attempt), reads the
-**shared** passphrase from sops and pushes it into the initrd, then checks
+`just unlock` waits for port 2222 to appear (one dot per attempt), reads
+the **shared** passphrase from sops and pushes it into the initrd, then checks
 that the machine has indeed left its initrd before announcing success. If it is
 refused, it retries with the per-host passphrase. This is what
-`just full-install` calls on its own after the first reboot. On a
-non-encrypted host, it is a logged no-op.
+`just full-install` calls on its own after the first reboot. On an unencrypted
+host, it is a logged no-op.
+
+Before any sending, `just unlock` checks that the **initrd host key** is
+the one stored in sops, then enforces it on every connection. Key missing from sops
+or different → stop, nothing is sent&nbsp;: an impostor may be listening on 2222.
 
 :::note[Why the shared one first]
-On the very first boot, the per-host slot does not exist yet&nbsp;: disko formats
+On the very first boot, the per-host slot does not exist yet: disko formats
 with the shared passphrase, and `luks-passphrase-sync` only adds the per-host
-slot from the booted system, so *after* unlocking. The shared one is
+slot from the booted system, therefore *after* unlocking. The shared one is
 the only way in at that moment.
 
-Moreover `dnf-unlock` only knows that it has **answered** the request, never
-whether the passphrase was accepted&nbsp;: systemd simply asks again. The only
-reliable witness is therefore the machine leaving its initrd and answering on
-port 22, and that is what `just unlock` observes from the administration
-workstation.
+Moreover `dnf-unlock` only knows that it **answered** the request, never
+whether the passphrase was accepted: systemd simply asks again. The only
+reliable witness is therefore the machine leaving its initrd and answering on port 22,
+and that is what `just unlock` observes from the administration workstation.
 :::
 
 No stored passphrase accepted, or no infrastructure key on the
 workstation&nbsp;: from a terminal, `just unlock` presents the LUKS prompt via
 `systemd-tty-ask-password-agent`. It probes 2222 on the explicit IP (if
-provided), the hostname, then the **WAN IP recorded in the manifest**. In
-both cases, once the passphrase is accepted, boot continues and port 22 returns.
+provided), the host name, then the **WAN IP recorded in the manifest**. In
+both cases, once the passphrase is accepted, the boot continues and port 22 comes back.
 
 :::note[Why two paths]
 `systemd-tty-ask-password-agent` only talks to a terminal&nbsp;: no script
 can drive it. The initrd therefore embeds a small `dnf-unlock` utility that
 takes the passphrase from a pipe and answers all pending requests.
-That is what `just unlock` calls.
+This is what `just unlock` calls.
 :::
 
 :::note[Why the WAN IP?]
-A zone's VPN dies with its gateway&nbsp;: when it is waiting for its
+A zone's VPN dies with its gateway: when the latter waits for its
 passphrase, only its WAN leg is reachable. Its initrd also replicates
 the production addressing (static IP on the `lan0` bridge, DHCP on the WAN side),
-since it is itself the DHCP server its initrd would otherwise wait for.
+since it is itself the DHCP server that its initrd would otherwise wait for.
 The other hosts do a simple DHCP on their wired interfaces. Behind
-a home router, this fallback requires a port 2222 redirect to the gateway.
+a router, this fallback requires a port 2222 redirect to the gateway.
 :::
 
 :::note[Laptops on Wi-Fi]
-No network in initrd without a cable&nbsp;: an encrypted laptop is unlocked at the
-console (passphrase or YubiKey), remote unlock does not apply.
+No network in the initrd without a cable: an encrypted laptop unlocks at the
+console (passphrase or YubiKey), remote unlocking does not apply.
 :::
 
 :::caution[A NIC driver is not always enough]
-A virtio card does not attach to its PCI slot but to the `virtio0`
-device created by its **transport** (`virtio_pci`, `virtio_mmio`).
-Without this module in the initrd, `virtio_net` is never loaded&nbsp;: no link,
-no IP, and the sshd on port 2222 listens into the void — the host waits
-indefinitely for its passphrase, with nothing in the journal to say so.
+A virtio card does not attach to its PCI slot but to the
+`virtio0` device created by its **transport** (`virtio_pci`, `virtio_mmio`).
+Without this module in the initrd, `virtio_net` is never loaded: no link,
+no IP, and the port 2222 sshd listens in a vacuum: the host waits
+indefinitely for its passphrase, with nothing in the log to say so.
 
 Both transports are now embedded by default, and
 `just luks <hôte> show` compares the drivers actually used by the machine's
 wired cards with those carried by the built initrd.
 :::
 
-:::note[Network drivers detected at install time]
+:::note[Network drivers detected at installation]
 `nixos-generate-config` never puts a network driver in the initrd. A
 card outside the default embedded list (Broadcom `tg3` for example) therefore leaves
 the host unreachable in the initrd.
 
-`just install` and `just copy-hw` run `just detect-hw`&nbsp;: it reads on
-the machine the modules of its wired cards and writes them into
+`just install` and `just copy-hw` run `just detect-hw`&nbsp;: it collects on
+the machine the modules of its wired cards and writes them to
 `usr/machines/<hôte>/hardware/detected-hardware.nix`, imported automatically. These
 modules are only added to the initrd if it has network (remote
-unlock).
+unlocking).
 
 On an already installed host, if `just luks <hôte> show` reports a missing
 driver&nbsp;: `just detect-hw <hôte>`, then `just apply <hôte>`.
@@ -328,26 +360,27 @@ A second block audits **remote unlock**, point by point&nbsp;:
 | Booted system = audited configuration | A pending apply would make the audit misleading |
 | Public address recorded (gateways) | Unreachable in initrd once the VPN is down |
 
-{/* t:p 018691bf21721672315d60b94b99d685b47b750bf369738c69b4e480c9e4aa59 */}
+{/* t:p 1b8aa558cb41e362ba5fb697119a54be8087a25ea2e92649766cdd23a3036f1d */}
 ## Under the hood
 
 | Location | Content | Status |
 |---|---|---|
-| `usr/secrets/luks.json` | Manifest of provisioned hosts + WAN IP of gateways | Public, versioned |
-| `secrets.yaml` → `luks-passphrase` | Shared fleet passphrase | Encrypted sops |
-| `secrets.yaml` → `luks/<host>/passphrase` | Per-host passphrase | Encrypted sops |
-| `secrets.yaml` → `luks/<host>/initrd-key` | Initrd SSH host key (base64) | Encrypted sops |
-| `/var/lib/luks-initrd/` (target) | Working copy of the initrd key | Persistent, outside the repo |
-| `/var/lib/luks-passphrase/ledger` (target) | Registry of managed keyslots (rotation detection) | Persistent, outside the repo |
+| `usr/secrets/luks.json` | Manifest of provisioned hosts + gateway WAN IPs | Public, versioned |
+| `secrets.yaml` → `luks-passphrase` | Fleet shared passphrase | sops-encrypted |
+| `secrets.yaml` → `luks/<hôte>/passphrase` | Per-host passphrase | sops-encrypted |
+| `secrets.yaml` → `luks/<hôte>/initrd-key` | initrd SSH host key (base64) | sops-encrypted |
+| `secrets.yaml` → `luks/<hôte>/initrd-key-pub` | Its public key, pinned by `just unlock` | sops-encrypted |
+| `/var/lib/luks-initrd/` (target) | Working copy of the initrd key | Persistent, outside the repository |
+| `/var/lib/luks-passphrase/ledger` (target) | Ledger of managed keyslots (rotation detection) | Persistent, outside the repository |
 
 The module exposes two options: `darkone.system.luks.enable` (default `true`)
 and `darkone.system.luks.sshPort` (default `2222`).
 
 :::danger[Keyslot budget]
-A LUKS2 header contains at most **32 keyslots**. Each enrolled YubiKey consumes
-one on **every** encrypted host (fleet policy), on top of the shared and
-per-host passphrases. The module warns when the projected total approaches the
-limit.
+A LUKS2 header contains at most **32 keyslots**. Each enrolled YubiKey
+consumes one on **every** encrypted host (fleet policy), in addition to the
+shared and per-host passphrases. The module warns when the projected total
+approaches the limit.
 :::
 
 {/* t:p dfceb630353cb65ed8c0887148b11be424125fce0a38013882e9f28165469e56 */}

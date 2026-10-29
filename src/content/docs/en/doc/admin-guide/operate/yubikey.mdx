@@ -36,7 +36,7 @@ The session password (sops) and the installation LUKS passphrase are
 At boot, a plugged-in key that nobody touches also blocks nothing —
 the passphrase prompt appears after about thirty seconds, on the console
 as well as remotely (see
-[Unlock at boot](/en/doc/admin-guide/operate/luks/#unlock-at-boot)).
+[Unlock at boot](/en/doc/admin-guide/operate/luks/#unlocking-at-boot)).
 :::
 
 :::caution[Boot touch cannot be bypassed]
@@ -225,42 +225,22 @@ the PIN of the plugged YubiKey even when the targeted passkey is software.
 Workaround: unplug the key.
 :::
 
-{/* t:p 69251f7d2b072e8a8f2caf8986f223a387bd28a22680c880d306c1efe2b100a9 */}
+{/* t:p b7f22d1a010e82f3b1b90e74c31a10ebf68adfb1ae91f18ab8106319c948fef0 */}
 ## GNOME keyring asks for a password again
 
-On a desktop, logging in by touching the key shortly brings up
-a window **"Enter password to unlock your login keyring"**. This symptom never
-occurs when the session is opened with a password.
+On a desktop machine, opening the session by touching the key brings up a window shortly after: **"Enter the password to unlock your login keyring"**. The symptom never occurs when the session is opened with the password.
 
-The cause is structural. pam_u2f is declared `sufficient`: as soon as the
-key is touched, the authentication stack stops — before
-`pam_gnome_keyring`, which therefore receives no password. The daemon then
-starts locked (`auto_start`), and GNOME Online Accounts as well as
-evolution-data-server require the secrets service at login.
+Cause&nbsp;: pam_u2f is declared `sufficient`. As soon as the key is touched, the authentication stack stops before `pam_gnome_keyring`, which therefore receives no password.
 
-Remedy, once per machine and per user: set an **empty** password on the
-login keyring.
+Remedy&nbsp;: a [passwordless keyring](/en/doc/admin-guide/operate/users/#a-passwordless-keyring), enabled by default for non-technical profiles on an encrypted host. For a technical profile&nbsp;:
 
-<Steps>
+```nix
+# usr/users/<login>/default.nix
+darkone.home.gnome.passwordlessKeyring = true;
+```
 
-1. Open **Passwords and Keys** (`seahorse`).
-
-2. Right-click the **Login** keyring → *Change Password*.
-
-3. Current password: the session password. New password: leave it
-   empty, confirm, accept the warning.
-
-</Steps>
-
-The keyring then unlocks itself at each session. The secrets it contains
-are stored in plain text in `~/.local/share/keyrings`, on a disk already
-encrypted with LUKS. Nothing else changes: online accounts, calendars and
-Wi-Fi secrets continue to work.
-
-:::note[The alternatives are worse]
-Disabling `gnome-keyring` breaks GNOME Online Accounts, evolution-data-server
-and per-user Wi-Fi secrets. Removing pam_u2f from `gdm-password` preserves
-keyring encryption but loses single-touch login.
+:::caution[Seahorse is not enough]
+Clearing the keyring password in Seahorse does not hold&nbsp;: the first session opened with the password re-encrypts it with that password. The option, however, never passes this password to the keyring.
 :::
 
 {/* t:p f3a81a37690c7a0b53b9fff99e04621b5b386bb92666e2115c57a24cbf773bcc */}
@@ -280,42 +260,57 @@ Kanidm passkeys are non-resident: they do not occupy any slot on the key, the
 number of accounts is unlimited. A revocation (`just yubikey <login> main
 revoke`) only affects the targeted login.
 
-{/* t:p bf73b616d1b62102dae18da269fc58fb7def64edad402a43a46734c715f5b428 */}
+{/* t:p 9c9b35d598f9992250968a9fd36d9f5620ff00a5b016668a4f29fc7dc87bafa4 */}
+## Encrypted isolated hosts
+
+An [isolated host](/en/doc/admin-guide/operate/secrets/#isolated-hosts) never receives the fleet value&nbsp;: each key is enrolled there with a **salt specific to the host** ([why](/en/doc/admin-guide/understand/yubikey-salts/)).
+
+<Steps>
+
+1. **Install** the host with `just install`&nbsp;: its secrets file then exists.
+
+2. **Capture**, with each key plugged alone into the admin machine&nbsp;:
+
+   ```sh
+   just yubikey <login>          # une pression par hôte isolé chiffré
+   just yubikey <login> backup
+   ```
+
+   A key already enrolled only computes what it is missing.
+
+3. **Deploy**: commit `usr/secrets/`, then `just apply <hôte>`.
+
+</Steps>
+
+A key left away from the admin machine is not enrolled on that host, its passphrase remains. `just luks <hôte> show` lists the keys to catch up.
+
+{/* t:p 7bd00e5bed7a809ea6231d9b57ea8765b00cc07a27b0c9e939efbfe8bf6d0583 */}
 ## Under the hood
 
 | File | Content | Status |
 |---|---|---|
 | `usr/secrets/yubikeys.json` | Public credentials (PAM, FIDO2 id, salt) | Public, versioned |
-| `secrets.yaml` → `yubikey/<login>/<key>/luks-secret` | LUKS secret derived from the key | sops-encrypted |
-| `secrets.yaml` → `luks-passphrase` | Passphrase entered at disko install time | sops-encrypted (requested at first enrollment) |
+| `secrets.yaml` → `yubikey/<login>/<clé>/luks-secret` | LUKS secret derived from the key | sops-encrypted |
+| `secrets.yaml` → `luks-passphrase` | Passphrase entered at disko install | sops-encrypted (requested on first enrollment) |
+| `yubikeys.json` → `hostSalts.<hôte>` | Salt specific to an isolated host | Public, versioned |
+| `hosts/<hôte>.yaml` → `luks/<hôte>/fido2/<login>/<clé>` | Value with the host salt | sops-encrypted (admin and host) |
 
-- **PAM** : the origin is fixed (`pam://<domain>`), so a credential works
-  across the whole fleet. The `darkone.system.yubikey` module (enabled
-  automatically as soon as the registry exists) distributes
-  `/etc/u2f_mappings` to every host.
-- **LUKS** : the derived secret (`HMAC(key, salt)`) can only be computed with
-  the physical key. Each encrypted host writes it to its LUKS header (keyslot +
-  `systemd-fido2` token, the exact `systemd-cryptenroll` format) via an
-  idempotent service, and removes those that are no longer declared. The full
-  passphrase policy and remote unlocking are described in
-  [Disk encryption (LUKS)](/en/doc/admin-guide/operate/luks/).
+- **PAM**&nbsp;: the origin is fixed (`pam://<domaine>`), so one credential is valid across the whole fleet. The `darkone.system.yubikey` module (enabled automatically as soon as the registry exists) distributes `/etc/u2f_mappings` on each host.
+- **LUKS**&nbsp;: the derived secret (`HMAC(clé, sel)`) can only be computed with the physical key. Each encrypted host writes it into its LUKS header (keyslot + `systemd-fido2` token, the exact format of `systemd-cryptenroll`) via an idempotent service, and removes those no longer declared. The full passphrase policy and remote unlocking are described in [Disk encryption (LUKS)](/en/doc/admin-guide/operate/luks/).
 
 :::caution[Fixed origin]
-Changing `darkone.system.yubikey.origin` (or the network domain) invalidates
-all PAM credentials: every key would need to be re-enrolled.
+Changing `darkone.system.yubikey.origin` (or the network domain) invalidates all PAM credentials&nbsp;: every key would have to be re-enrolled.
 :::
 
-{/* t:p d1ff1ba1dc7323f7a1896d61c07ea485223df86d69f3af7cb23b712f04600f77 */}
+{/* t:p b07a3acc8807f53847a44df42b4057bfed5ddb211586adb4937ce7563c713430 */}
 ## Revoking a lost key
 
 ```sh
-just yubikey <login> main revoke   # or backup
+just yubikey <login> main revoke   # ou backup
 just commit "user(yubikey): revoke <login>" && just apply
 ```
 
-Upon deployment, the PAM credential disappears from hosts and the corresponding
-LUKS keyslots are removed. Remember to also remove the passkey from Kanidm
-(web interface or reset token) and Vaultwarden.
+On deployment, the PAM credential disappears from the hosts and the corresponding LUKS keyslots are removed, isolated hosts included (their values go away with the revocation). Also remember to remove the passkey on the Kanidm side (web interface or reset token) and Vaultwarden.
 
 {/* t:p 95d3d08f2a70d18ebcc573678073bd726de12fa51b6aeb79d17525c721896ae4 */}
 ## Limitations and next steps

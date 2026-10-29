@@ -254,7 +254,7 @@ darkone.home.gnome.hidden-apps.hiddenEntries = [ ];
 
 <hr/>
 
-{/* t:p db881b9c5941a758dd69a8049aa85b5f1a6b3e1627bd339b763bc333fe5fa274 */}
+{/* t:p 88e5ddc9b46ed5b739f50d14e521c10c2c3dcfc30030a3dc71c3f51211d69dfa */}
 ### &#x1F3E0; darkone.home.gnome
 
 Gnome tweaks for home-manager.
@@ -267,6 +267,14 @@ htop) hides more, entries still launchable by id (`gnome/hidden-apps.nix`,
 shared with the UMI module).
 `keepKeyring` opts the user out of the login keyring reset that follows an
 admin password change (read by the NixOS gnome module).
+`passwordlessKeyring` (default: non-advanced users on a LUKS host) gives the
+login keyring no password: a key login (`pam_u2f`) opens it without a prompt.
+
+:::caution[Passwordless keyring: secrets in clear text]
+Protected at rest by LUKS only, and copied as is into restic backups. A
+keyring sealed with a password is deleted at activation (never under a
+running session): apps ask for their credentials once again.
+:::
 
 :::caution[NFS bookmarks]
 Do not declare `gtk.gtk3.bookmarks` from this module — while NFS home shares
@@ -276,6 +284,7 @@ are on, `home/profiles/minimal/nfs.nix` owns this file and overwrites it.
 * **enable** `bool` Enable gnome settings for home manager
 * **hideTechnicalIcons** `bool` Hide some icons for beginners / children / babies
 * **keepKeyring** `bool` Keep the login keyring when the admin changes the session password (keyring with a password of its own)
+* **passwordlessKeyring** `bool` Login keyring with no password, opened without a prompt (key or password login). Secrets in clear text, protected at rest by LUKS only.
 * **hiddenApps** `listOf str` Desktop entries hidden from the app grid, still launchable by id
 
 ```nix
@@ -283,6 +292,9 @@ darkone.home.gnome = {
   enable = false;
   hideTechnicalIcons = false;
   keepKeyring = false;
+  passwordlessKeyring = !config.darkone.home.advanced.enable
+        && !cfg.keepKeyring
+        && (osConfig.boot.initrd.luks.devices or { }) != { };
   hiddenApps = [ ];
 };
 ```
@@ -590,7 +602,7 @@ DNF UMI: SuperTuxKart driven by the mouse alone (`enableStkWithMouse`). Doc: `..
 
 <hr/>
 
-{/* t:p b4fbc10c762f22104c34fea1a3e4643ceb8c85f5f4e0e284719cec30b1bd3c41 */}
+{/* t:p f57c7e1c4d7dd4c705643c54efe93dbe0fe6a62c6c3eb8cadd3631a32b8c9d30 */}
 ### &#x1F3E0; darkone.home.umi
 
 Unified Multimodal Input (UMI)
@@ -663,16 +675,9 @@ own lock fully disabled.
 
 :::caution[Login keyring of the autologin user: no password, on every host]
 An autologin session types no password: a keyring sealed with one pops a gcr
-prompt the UMI user cannot answer. Its login keyring is seeded with an empty
-password (plain ini, unlocked without prompt); a sealed one is deleted at
-each activation, `user.keystore` included, and its secrets are lost.
-
-- At rest, LUKS protects it; autologin already hands the session to whoever
-  boots the machine.
-- The UMI host keeps every password away from gnome-keyring for this user:
-  a plain keyring unlocked with a password is re-encrypted with it at the
-  next write (`pam_gdm` and the boot passphrase included).
-- Other users, and every password login elsewhere: untouched.
+prompt the UMI user cannot answer. `darkone.home.gnome.passwordlessKeyring`
+is forced on for this user, encrypted host or not (secrets of a sealed
+keyring lost once). The UMI host also strips `pam_gdm` from gdm-autologin.
 :::
 
 * **enable** `bool` UMI multimodal input configuration (Talon + Onboard)

@@ -258,43 +258,43 @@ Thresholds and release delay tuned without the real device. The game keys
 must stay the default ones (arrows, `V`, `Space`, `N`).
 :::
 
-{/* t:p 5322fcd481f28695dd4c7833dbbd235ceaea19a054d7e932eee9dc3464f40661 */}
+{/* t:p dbdea8d1b291552d5636e01cc28300200a4f0f53519cc92afab95dec0149b8f5 */}
 ## What the profile changes
 
-The workstation is deliberately stripped of everything that assumes a
-keyboard or mouse.
+The workstation is deliberately stripped of everything that assumes a keyboard or a
+mouse.
 
 | Change | Reason |
 |---|---|
-| Cinnamon session on X11 | Talon does not (unfortunately) run under Wayland |
+| Cinnamon session on X11 | Talon does not (unfortunately) work under Wayland |
 | Automatic login | No password can be typed |
-| Lock and sleep disabled | A locked screen is a dead end |
-| Keyring without password | Avoids a prompt that cannot be satisfied |
+| Locking and sleep disabled | A locked screen is a dead end |
+| Keyring without a password | Avoids a prompt that cannot be satisfied |
 | Accessibility active from login | No activation prompt (Onboard) |
-| Cursor, text, panel and icons enlarged | Limited gaze precision (a few tens of pixels) and finger precision |
-| Application windows maximized | Large targets, panel always reachable |
-| Open with a single click (Nemo) | A dwell double click would require changing modes |
-| Visual keyboard anchored at the bottom | Large targets, word prediction |
-| Visual keyboard hidden at startup | Uncluttered screen, shown by its button |
+| Larger cursor, text, panel and icons | Limited precision of gaze (a few dozen pixels) and finger |
+| Application windows maximized | Large targets, panel always accessible |
+| Open with a single click (Nemo) | Double-click by dwell requires switching modes |
+| On-screen keyboard docked at the bottom | Large targets, word prediction |
+| On-screen keyboard hidden at startup | Clear screen, shown by its button |
 | Dark theme by default (Cinnamon) | Like GNOME sessions |
 
-:::danger[The workstation is not protected at boot]
-Automatic login, no screen lock&nbsp;: anyone who powers on the machine is in
-the session. The only useful bulwark is [disk
-encryption](/en/doc/admin-guide/operate/luks/), to plan from installation if
-the workstation is mobile.
+:::danger[The workstation is not protected at startup]
+Automatic login, no screen locking&nbsp;: anyone who turns on the machine is in
+the session. The only useful safeguard is
+[disk encryption](/en/doc/admin-guide/operate/luks/), to be planned from
+installation if the workstation is mobile.
 
-Facial-recognition login is on the TODO list.
+Login by facial recognition is on the TODO list.
 :::
 
-:::note[Keyring without password]
-Only the automatically logged-in account is concerned, encrypted workstation
-or not&nbsp;: without a password, its keyring opens without a prompt. On an
-encrypted workstation, LUKS protects its secrets at rest.
+:::note[Keyring without a password]
+The automatically opened account has one on every workstation, encrypted or not&nbsp;: its
+keyring opens without a prompt. On an encrypted workstation, LUKS protects its secrets
+at rest ([details](/en/doc/admin-guide/operate/users/#a-passwordless-keyring)).
 
-No password reaches it, password login included&nbsp;: GNOME would re-encrypt
-with it. A password-protected keyring is deleted at the next update or boot,
-its secrets lost.
+No password ever reaches it, password login included&nbsp;:
+GNOME would re-encrypt it with it. A protected keyring is deleted on the next
+update or startup, and its secrets are lost.
 :::
 
 {/* t:p e1d18a68bec4d2a29ee0c38a968410a7f139d8e67c3b46b74d535209c5527ba8 */}
