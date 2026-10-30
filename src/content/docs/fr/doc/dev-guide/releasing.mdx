@@ -95,11 +95,13 @@ forcent la décision. Des commits non publiés seuls (un `chore(deps)`, par
 exemple) donnent un correctif.
 
 `just bump` ne pousse jamais : il affiche la commande de poussée. Il refuse de
-publier si `HEAD` porte déjà le dernier tag `v*`. Trois drapeaux passent au
-script&nbsp;:
+publier si `HEAD` porte déjà le dernier tag `v*`. Tout arrêt avant le commit de
+release (refus, interruption, hook) remet l'arbre de travail en l'état&nbsp;: on
+peut relancer aussitôt. Trois drapeaux passent au script&nbsp;:
 
 - `--dry-run` : montre l'entrée puis restaure le fichier, sans rien commiter ;
-- `--yes` : enchaîne sans confirmation ni passage dans `$EDITOR` ;
+- `--yes` : enchaîne sans confirmation ni passage dans `$EDITOR`, obligatoire
+  sans terminal ;
 - `--next` : affiche la version que prendrait la release, puis s'arrête.
 
 <Aside type="tip" title="Lancer depuis l'environnement de développement">
