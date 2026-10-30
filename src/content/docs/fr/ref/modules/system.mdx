@@ -584,37 +584,43 @@ darkone.system.services = {
 
 <hr/>
 
-{/* t:p bb813b9b0ef4c1069cecc399ff85f2338a67ab565377a97fd35247ccddd18c49 */}
+{/* t:p 82b0f572138eaea22ec06f702ca6764843bcc2f957c2741ac2dd8e0442a0a0d6 */}
 ### &#x2699; darkone.system.sops
 
-Gestion sops, mots de passe et secrets de DNF.
+Gestion des sops, des mots de passe et des secrets DNF.
 
 :::danger[Module critique]
 Ce module est activé par défaut dans le module core.
-Il est recommandé de le laisser activé et de le configurer (commandes `just passwd*`).
+Il est recommandé de le garder activé et de le configurer (commandes `just passwd*`).
 :::
 
-Branche sops-nix sur `usr/secrets/secrets.yaml` et le déverrouille avec la
-clé SSH de l'hôte (`ssh_host_ed25519_key`) plus la clé age dédiée à
-l'infrastructure (`/etc/sops/age/infra.key`). Déclare un
-secret `user/<login>/password-hash` par utilisateur de l'hôte, avec
-`neededForUsers = true` pour que le hash soit disponible avant la création
-des comptes utilisateurs.
+Relie sops-nix à `usr/secrets/secrets.yaml` et le déverrouille avec la
+clé SSH de l'hôte (`ssh_host_ed25519_key`) plus la clé age
+d'infrastructure dédiée (`/etc/sops/age/infra.key`). Déclare un secret
+`user/<login>/password-hash` par utilisateur de l'hôte, avec
+`neededForUsers = true` pour que le hachage soit disponible avant la
+création des comptes utilisateurs.
 
-Rien d'autre n'est matérialisé ici : un secret appartient aux hôtes qui le
-consomment, déclaré par le module qui le lit.
+Les secrets ordinaires sont installés par `sops-install-secrets.service`
+(`sops.useSystemdActivation`), avant `sysinit.target` ; un secret modifié
+redémarre ses `restartUnits` dans le même switch. Les hachages de mots de
+passe restent dans le script d'activation, avant les comptes utilisateurs.
+
+Rien d'autre n'est matérialisé ici&nbsp;: un secret appartient aux hôtes qui
+le consomment, déclaré par le module qui le lit.
 
 :::caution[Hôtes isolés]
 `isolated = true` (défaut du profil `ai-space`) pointe l'hôte vers
-son propre `usr/secrets/hosts/<hostname>.yaml`, sans la clé d'infrastructure : un hôte
-qui exécute des agents non fiables ne détient jamais les secrets du parc, et une clé
-laissée par une installation antérieure est supprimée. Pas de hash de mot de passe non plus, ses comptes
-fonctionnent uniquement par clé SSH. Déclarer une valeur du parc à cet endroit (`luks-passphrase`, un hash
-de mot de passe, un secret FIDO2 au sel du parc) fait échouer l'évaluation.
+son propre `usr/secrets/hosts/<hostname>.yaml`, sans la clé infra&nbsp;: un hôte
+qui exécute des agents non fiables ne détient jamais les secrets de la flotte,
+et une clé laissée par une installation antérieure est supprimée. Pas de hachage
+de mot de passe non plus, ses comptes sont uniquement par clé SSH. Déclarer une
+valeur de flotte à cet endroit (`luks-passphrase`, un hachage de mot de passe,
+un secret FIDO2 au sel de la flotte) fait échouer l'éval.
 :::
 
 * **enable** `bool` Active la configuration automatisée sops pour DNF
-* **isolated** `bool` Fichier de secrets propre, pas de clé d'infrastructure, pas de hash de mot de passe
+* **isolated** `bool` fichier de secrets propre, pas de clé infra, pas de hachages de mots de passe
 
 ```nix
 darkone.system.sops = {

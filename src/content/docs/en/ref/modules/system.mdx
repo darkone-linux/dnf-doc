@@ -621,7 +621,7 @@ darkone.system.services = {
 
 <hr/>
 
-{/* t:p bb813b9b0ef4c1069cecc399ff85f2338a67ab565377a97fd35247ccddd18c49 */}
+{/* t:p 82b0f572138eaea22ec06f702ca6764843bcc2f957c2741ac2dd8e0442a0a0d6 */}
 ### &#x2699; darkone.system.sops
 
 DNF sops, passwords and secrets management.
@@ -637,6 +637,11 @@ age key (`/etc/sops/age/infra.key`). Declares one
 `user/<login>/password-hash` secret per host user, with
 `neededForUsers = true` so the hash is available before the user accounts
 are created.
+
+Regular secrets are installed by `sops-install-secrets.service`
+(`sops.useSystemdActivation`), before `sysinit.target`; a changed secret
+restarts its `restartUnits` within the same switch. Password hashes stay
+in the activation script, ahead of the user accounts.
 
 Nothing else is materialised here: a secret belongs on the hosts that
 consume it, declared by the module that reads it.
