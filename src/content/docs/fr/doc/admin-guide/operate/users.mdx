@@ -236,11 +236,12 @@ Procédure non testée sur le parc.
 ### Le trousseau GNOME après `just passwd` ?
 
 Le trousseau de connexion reste chiffré par l'ancien mot de passe de session.
-À la session suivante ouverte au mot de passe, DNF le supprime et GNOME le
-recrée vide&nbsp;: aucune invite, l'ancien mot de passe n'ouvre plus rien.
+À la session suivante ouverte au mot de passe, DNF le déplace dans
+`~/.local/share/keyrings.sealed/` et GNOME le recrée vide&nbsp;: aucune invite.
 
 - Applications : identifiants à ressaisir une fois (Nextcloud, comptes en ligne, Chromium).
-- Ouverture par YubiKey, ou trousseau encore actif : suppression reportée à une prochaine session.
+- Element Desktop : [session perdue](#session-element-non-restaurée-).
+- Ouverture par YubiKey, ou trousseau encore actif : déplacement reporté à une prochaine session.
 - [Trousseau sans mot de passe](#un-trousseau-sans-mot-de-passe-) : conservé.
 
 Pour garder un trousseau protégé par un mot de passe propre&nbsp;:
@@ -259,8 +260,9 @@ par [YubiKey](/fr/doc/admin-guide/operate/yubikey/#le-trousseau-gnome-redemande-
 
 - Secrets : en clair dans `~/.local/share/keyrings`, protégés au repos par LUKS seul.
 - Sauvegardes restic : copiés tels quels, dans un dépôt chiffré par restic.
-- Trousseau déjà chiffré : supprimé au déploiement, identifiants à ressaisir une fois.
-- Session ouverte pendant le déploiement : suppression au démarrage suivant.
+- Trousseau déjà chiffré : déplacé dans `~/.local/share/keyrings.sealed/` au déploiement.
+- Conséquences : identifiants à ressaisir une fois, session Element Desktop perdue.
+- Session ouverte pendant le déploiement : déplacement au démarrage suivant.
 - Mot de passe de session : jamais transmis au trousseau, qui ne se rechiffre donc pas.
 
 Pour l'activer (profil technique) ou le désactiver&nbsp;:
@@ -271,6 +273,49 @@ darkone.home.gnome.passwordlessKeyring = true; # ou false
 ```
 
 `keepKeyring = true` le désactive aussi.
+
+### Session Element non restaurée ?
+
+Element Desktop affiche *Impossible de restaurer la session*, avec *Supprimer cet
+appareil* et *Rafraîchir*. Sa clé de déchiffrement était dans le trousseau déplacé&nbsp;:
+*Rafraîchir* n'y peut rien. Le journal du poste le confirme&nbsp;:
+
+```sh
+sudo journalctl _UID=$(id -u <login>) | grep 'Failed to decrypt secret'
+```
+
+:::caution[À valider]
+Réparation et prévention par Seahorse non testées sur le parc. Seahorse est absent des hôtes UMI.
+:::
+
+Réparer avec la copie de `~/.local/share/keyrings.sealed/` et l'ancien mot de passe&nbsp;:
+
+<Steps>
+
+1. **Remettre la copie**, session fermée et sous le compte de l'utilisateur&nbsp;:
+
+   ```sh
+   cd ~/.local/share/keyrings
+   mv login.keyring ../keyrings.sealed/login.keyring.plain
+   cp ../keyrings.sealed/login.keyring.<date> login.keyring
+   ```
+
+2. **Ouvrir la session**, sans redémarrer : l'ancien mot de passe déverrouille le trousseau, Element repart.
+
+3. **Vider le mot de passe** : *Mots de passe et clés*, trousseau `login`, *Modifier le mot de passe*, nouveau mot de passe vide.
+
+4. **Contrôler** : `head -c 9 ~/.local/share/keyrings/login.keyring` affiche `[keyring]`.
+
+</Steps>
+
+Sans copie ou sans l'ancien mot de passe, *Supprimer cet appareil* reste la seule issue&nbsp;:
+
+- Reconnexion : vérifier le nouvel appareil depuis un autre, ou avec la clé de récupération.
+- Historique : les messages absents de la sauvegarde de clés restent illisibles.
+- Ancien appareil : toujours listé sur le serveur, à retirer avec [matrix-admin](/fr/doc/admin-guide/operate/matrix/#administrer-les-comptes-avec-mas).
+
+Pour ne rien perdre, vider le mot de passe (étape 3) **avant** le déploiement, session
+ouverte&nbsp;: un trousseau en clair n'est pas déplacé.
 
 {/* t:p c543bae382a43528fa23c6446c3d6b59ef3445163d818d87cd9b6bac969d27e3 */}
 ### Un fichier `.bkp` dans un home ?
