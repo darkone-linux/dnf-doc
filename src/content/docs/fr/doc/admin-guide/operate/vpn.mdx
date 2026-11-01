@@ -162,13 +162,15 @@ ni validation manuelle.
 |---|---|
 | Administrateur | profil `admin` ou `nix-admin` |
 | Membre d'une zone | groupe `zone-<zone>` |
+| Membre d'un espace IA | dans les `users` d'un hôte `ai-space` |
 
 Ces comptes forment le groupe Kanidm `tailnet`, provisionné tout seul&nbsp;; Kanidm
 refuse les autres. Pour ouvrir l'accès, ajouter le groupe à l'utilisateur,
 régénérer, puis `just apply hcs`. L'utilisateur suit ensuite [Connecter un
 appareil](/fr/doc/how-to/user/connect-device/#depuis-lextérieur).
 
-L'appareil joint les **services web** (HTTPS) de ses zones et du HCS, rien d'autre.
+L'appareil joint les **services web** (HTTPS) de ses zones, de celles de ses espaces
+IA et du HCS, rien d'autre.
 Un partage Samba, une imprimante ou le SSH demandent une règle&nbsp;: voir [Adapter
 la politique d'accès](#adapter-la-politique-daccès).
 
@@ -325,7 +327,7 @@ vrais nœuds** et exécute son bloc `tests`, sans toucher à la politique en pla
 |---|---|---|
 | `TailscaleUnhealthy`, backend `NeedsLogin` | `tailscale status` sur le nœud | `just tailnet-enroll <hôte>` |
 | Connexion qui affiche `headscale auth register` | alerte `HeadscaleOidcFallback` | `sudo systemctl restart headscale` sur le HCS |
-| Kanidm refuse l'accès à Headscale VPN | groupes de l'utilisateur | profil admin ou `zone-<zone>`, `just apply hcs` |
+| Kanidm refuse l'accès à Headscale VPN | groupes de l'utilisateur | profil admin, `zone-<zone>` ou membre d'un espace IA, `just apply hcs` |
 | Zone injoignable depuis le tailnet | `headscale nodes list-routes` | passerelle enrôlée avec son tag, route approuvée |
 | Service de zone refusé à un appareil | groupes de l'utilisateur, `tailscale whois <ip>` | ajouter `zone-<zone>`, `just apply hcs` |
 | Service non web injoignable (Samba, ping) | règles de la politique | règle `policy.extraAcls` |

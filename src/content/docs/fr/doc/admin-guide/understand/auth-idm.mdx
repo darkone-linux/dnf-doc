@@ -153,6 +153,24 @@ privé et VPN tailnet) atteignent le service **sans connexion**, tandis que les
 accès **depuis l'extérieur** passent par la mire Kanidm. Pratique pour un portail
 ouvert à la maison mais protégé sur Internet.
 
+### Identité tailnet
+
+Un client natif (application Android) ne suit pas la mire. Un service d'espace IA
+qui déclare `proxy.tailnetIdentity` reconnaît alors un **appareil personnel** du
+[tailnet](/fr/doc/admin-guide/understand/tailnet/)&nbsp;: Caddy demande son
+propriétaire à `tailscaled` (`tailscale.nginx-auth`), puis compare son e-mail aux
+membres de l'espace.
+
+| Client | Résultat |
+|---|---|
+| Appareil personnel d'un membre | Accès, identité du propriétaire |
+| Appareil personnel d'un autre compte | 403 |
+| Machine taguée | Mire Kanidm |
+| Hors tailnet | Mire Kanidm |
+
+Caddy retire les en-têtes d'identité envoyés par le client. Les groupes Kanidm ne
+sont pas transmis sur ce chemin&nbsp;: Headscale ne les connaît pas.
+
 {/* t:p 0817b35898933197994b0cb9bf95d4a9723c229833ea49d7701f58844b22d1fa */}
 ## Secrets et certificats
 

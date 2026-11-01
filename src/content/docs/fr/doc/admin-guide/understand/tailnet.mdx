@@ -74,7 +74,8 @@ qui dit leur rôle, et les **appareils personnels**, rattachés à leur proprié
   dont `groups` contient `admin` et qui active le client Tailscale.
 - Un nœud tagué n'appartient à personne (`tagged-devices` dans Headscale).
 - Seuls les comptes du groupe Kanidm `tailnet` connectent un appareil&nbsp;:
-  administrateurs et membres d'une zone (groupe `zone-<zone>`).
+  administrateurs, membres d'une zone (groupe `zone-<zone>`) et membres d'un
+  [espace IA](/fr/doc/admin-guide/operate/ai-spaces/).
 - Les `tags` libres d'un hôte dans `etc/config.yaml` n'accordent aucun droit.
 - Chaque nœud porte un nom MagicDNS&nbsp;: `<nœud>.tailnet.internal`.
 
@@ -287,7 +288,7 @@ La politique n'est pas écrite à la main&nbsp;: DNF la génère depuis
 
 | Brique | Contenu généré |
 |---|---|
-| `groups` | `group:admins` (profils `admin`, `nix-admin`), `group:zone-<zone>` (groupe `zone-<zone>`) |
+| `groups` | `group:admins` (profils `admin`, `nix-admin`), `group:zone-<zone>` (groupe `zone-<zone>`), `group:space-<hôte>` (membres de l'espace IA d'une zone locale) |
 | `tagOwners` | `tag:hcs`, `tag:gw-<zone>`, `tag:admin`, détenus par `group:admins` |
 | `hosts` | `zone-<zone>` (sous-réseau), `gateway-<zone>` (adresse LAN de la passerelle), chaque hôte d'une zone (son adresse LAN), `adminDevices`, `extraHosts` |
 | `autoApprovers` | route de chaque zone → `tag:gw-<zone>`&nbsp;; exit node → `tag:hcs` |
@@ -302,10 +303,11 @@ La politique n'est pas écrite à la main&nbsp;: DNF la génère depuis
 | 2 | appareils personnels (`autogroup:member`) | HCS, ports 53 et 443 | DNS interne, services globaux |
 | 3 | `group:admins` | passerelles de toutes les zones, port 443 | les services de toutes les zones |
 | 4 | `group:zone-<zone>` | passerelle de la zone, port 443 | les services de ses zones |
-| 5 | appareils personnels | appareils du même propriétaire | entre ses propres appareils |
-| 6 | `tag:admin`, postes d'administration, `adminDevices` | toutes les machines et zones, port 22 | l'administration SSH |
-| 7 | `policy.exitNodeSources` | Internet | l'exit node du HCS, s'il est ouvert |
-| 8 | `policy.extraAcls` | libre | les besoins propres au réseau |
+| 5 | `group:space-<hôte>` | passerelle de la zone de l'espace, port 443 | les services de cette zone |
+| 6 | appareils personnels | appareils du même propriétaire | entre ses propres appareils |
+| 7 | `tag:admin`, postes d'administration, `adminDevices` | toutes les machines et zones, port 22 | l'administration SSH |
+| 8 | `policy.exitNodeSources` | Internet | l'exit node du HCS, s'il est ouvert |
+| 9 | `policy.extraAcls` | libre | les besoins propres au réseau |
 
 - **Le SSH suit le poste, pas la personne**&nbsp;: un administrateur sur son téléphone
   n'a pas le SSH, sauf appareil déclaré dans `adminDevices`.
