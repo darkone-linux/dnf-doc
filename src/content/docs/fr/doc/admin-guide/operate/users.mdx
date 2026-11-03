@@ -137,6 +137,7 @@ déploiement part d'un état incohérent ou non versionné.
 
 :::note[Seul `just passwd` fait foi]
 - Pas de session avant `just passwd <login>`.
+- Empreinte absente → ses hôtes ne se construisent pas ; `just generate` (donc `just clean`) liste chaque compte concerné.
 - Changé sur un hôte, le mot de passe est écrasé au déploiement suivant.
 - Pas de mot de passe par défaut du parc : chaque compte a le sien ([Secrets](/fr/doc/admin-guide/operate/secrets/)).
 :::
