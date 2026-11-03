@@ -223,33 +223,42 @@ The name follows at deployment. The Matrix avatar is sent by
 warning reminds you of this)&nbsp;; then commit `var/generated/spaces/`.
 A file must be tracked by git.
 
-{/* t:p 494aee0ed65a54b5b4c998cc0786220c763b68f4efb0f445a47eb95d539323a3 */}
+{/* t:p 67716822f258e9d581788a1d72aa3ae97d5490e8758e3137e4ddeb49daf0aa63 */}
 ## Voice conversation
 
-The microphone button in the web interface opens a voice conversation,
-interruptible, on desktop and phone alike. OpenAI's real-time voice
-(GPT-Live) answers&nbsp;; the space's assistant does the work (tools, files,
-MCP), whatever its model.
+The mic button in the web interface opens a voice conversation, interruptible, on both PC and phone (Android app). A real-time voice answers (OpenAI GPT-Live or Google Gemini Live)&nbsp;; the space's assistant does the work (tools, files, MCP), whatever its model.
 
 ```nix
 # usr/machines/ia-pro/configuration.nix
-{ darkone.service.openclaw.talk.enable = true; }
+{
+  darkone.service.openclaw = {
+    talk.enable = true;
+
+    # Gemini Live au lieu de GPT-Live
+    talk.provider = "google";
+    apiKeys = [ "GEMINI_API_KEY" ];
+  };
+}
 ```
 
 | Option | Default | Role |
 |---|---|---|
-| `talk.model` | `gpt-live-1-codex` | ChatGPT subscription, otherwise `OPENAI_API_KEY` |
-| `talk.voice` | `cove` | Also `arbor`, `breeze`, `ember`, `juniper`, `maple`, `sol`, `spruce`, `vale` |
+| `talk.provider` | `openai` | `openai` or `google` |
+| `talk.model` | depends on provider | Real-time model |
+| `talk.voice` | depends on provider | Voice |
 | `talk.instructions` | none | Added instructions (language, tone) |
 
-The owner's ChatGPT sign-in is required
-(`openclaw models auth login --provider openai`), even with an assistant on
-Claude, or an `OPENAI_API_KEY` key (see
-[Models and subscriptions](#models-and-subscriptions)). At most eight
-conversations at a time, 30 minutes each.
+| Provider | Access | Default model, voice |
+|---|---|---|
+| `openai` (GPT-Live) | ChatGPT login, otherwise `OPENAI_API_KEY` | `gpt-live-1-codex`, `cove` |
+| `google` (Gemini Live) | `GEMINI_API_KEY` key | `gemini-3.1-flash-live-preview`, `Kore` |
+
+The owner's ChatGPT login is done with `openclaw models auth login --provider openai`, even with an assistant running Claude. The Gemini key is created on [Google AI Studio](https://aistudio.google.com/apikey) and stored like the others (see [Models and subscriptions](#models-and-subscriptions)). Other GPT-Live voices&nbsp;: `arbor`, `breeze`, `ember`, `juniper`, `maple`, `sol`, `spruce`, `vale`&nbsp;; Gemini Live offers 30 (`Puck`, `Charon`, `Aoede`…).
+
+With `mutableConfig`, the voice conversation no longer follows Nix after the first start&nbsp;: after changing provider, run `openclaw config unset talk` on the host (see [Editable configuration](#editable-configuration)). At most eight conversations at a time, 30 minutes each.
 
 :::caution[To be validated]
-Not yet tried in a browser or on a phone.
+Not yet validated in a browser or on a phone. GPT-Live through the ChatGPT subscription fails there (error 502, see [openclaw#180858](https://github.com/openclaw/openclaw/issues/180858)).
 :::
 
 {/* t:p e4c739f0058f00b58dca958879b3726f003552363afb9defda9c82cddffec073 */}
@@ -428,46 +437,72 @@ Each member connects their own subscriptions, once: `claude` (then
 `/login`), `codex login --device-auth` and `opencode auth login`. OpenCode
 accepts a ChatGPT subscription or an API key, not the Claude subscription.
 
-{/* t:p b4cdf4c84e561992ddd45c85d4963c776d8e9532b4d21083d8ba830f0e068d86 */}
+{/* t:p 19d4c7c393c88783ca73a26def1dd103cfdaa6251911f3d6a14e8d622ec34cdf */}
 ## Access
 
 | Item | Rule |
 |---|---|
 | Address | `https://openclaw.<zone>.<domain>` |
 | Login | Kanidm SSO, restricted to the `space-<host>` group |
-| Device | Paired on first visit, without administration or approval rights (owner only, see [Editable configuration](#editable-configuration)) |
+| A member's personal device | Recognized by the tailnet, without SSO&nbsp;: see [Android app](#android-app) |
+| Device | Paired on first visit, without admin or approval rights (owner only, see [Editable configuration](#editable-configuration)) |
 | Administration | `openclaw` CLI on the host |
 | Assistant port | Reachable from the zone gateway only |
 
-Alone, `openclaw` opens the assistant's terminal (like `openclaw tui`). It
-runs under the service user, for the `nix` account and, through a sudo rule,
-for `darkone.service.openclaw.cliUsers` (default: the owner). Other members
-go through the web interface.
+On its own, `openclaw` opens the assistant terminal (like `openclaw tui`). It runs under the service user, for the `nix` account and, through a sudo rule, for `darkone.service.openclaw.cliUsers` (default&nbsp;: the owner). Other members go through the web interface.
 
-:::caution[The CLI is worth the `openclaw` account]
-Subscription logins, administration rights, terminal `!` commands: only add
-to `cliUsers` members to whom the service can be entrusted. With `sudo`
-restricted to the `wheel` group (R38 hardening), `cliUsers` stays empty.
+:::caution[The CLI is as powerful as the `openclaw` account]
+Subscription logins, admin rights, terminal `!` commands&nbsp;: only add to `cliUsers` members you would trust with the service. With `sudo` restricted to the `wheel` group (hardening R38), `cliUsers` stays empty.
 :::
 
-{/* t:p c0055281990bf61f63f24f80ab61f8f18d54d29aea4eaa1fbd0d9af4ef9c4b67 */}
+{/* t:p 3fd96353d250a141618309c04b4f8ef9a6d5f107f331569ea3809b7cdab06e79 */}
+## Android app
+
+The [OpenClaw app](https://docs.openclaw.ai/platforms/android) cannot follow the Kanidm login. The gateway therefore recognizes a member's personal device by its [tailnet](/en/doc/admin-guide/understand/auth-idm/#tailnet-identity) identity.
+
+:::caution[To be validated]
+Path tested in a VM with Headscale, Tailscale and Caddy. Still to be checked&nbsp;: the app itself and a phone on Wi-Fi on the zone LAN.
+:::
+
+<Steps>
+
+1. **Connect the phone**
+
+   [Connect the device](/en/doc/how-to/user/connect-device/#from-outside)
+   with the member's account, subnets accepted. Tailscale must stay active.
+
+2. **Create the pairing code**
+
+   On the host&nbsp;:
+
+   ```sh
+   openclaw qr --limited
+   ```
+
+   Without `--limited`, the phone keeps a permanent admin token.
+
+3. **Pair the app**
+
+   Choose *Scan QR or setup code*. If a request stays pending&nbsp;:
+   `openclaw devices list`, then `openclaw devices approve <requestId>`.
+
+</Steps>
+
+Any member's personal device thus gets through without Kanidm, browser included, with its owner's rights&nbsp;: admin included if the [configuration is editable](#editable-configuration). Lost device&nbsp;: [delete it from Headscale](/en/doc/admin-guide/operate/vpn/#connecting-a-personal-device).
+
+{/* t:p 25502bc815a611b14ab8005c1a5fd13019df2990d82b36ebeeef2b21c0e0e1e9 */}
 ## Editable configuration
 
-By default, Nix freezes the assistant's configuration&nbsp;: the web interface
-shows it read-only. `darkone.service.openclaw.mutableConfig = true` makes it
-editable, in the interface or via `openclaw config set` on the host, and
-gives the owner administrative rights.
+By default, Nix locks the assistant configuration&nbsp;: the web interface shows it read-only. `darkone.service.openclaw.mutableConfig = true` makes it editable, in the interface or via `openclaw config set` on the host, and gives the owner admin rights.
 
 | Settings | Who decides |
 |---|---|
-| Access, Matrix channel, plugins, MCP, transcription, identity | Nix&nbsp;: restored at startup and on every change |
-| Model, commands | Nix at first startup, then the interface |
+| Access, Matrix channel, plugins, MCP, transcription, identity | Nix&nbsp;: restored on startup and on each change |
+| Model, commands, voice conversation | Nix on first start, then the interface |
 | Others | The interface |
 
 :::caution[Setting seeded by Nix]
-Once written, a model or command setting no longer follows
-Nix. `openclaw config unset <clé>` removes it&nbsp;: Nix rewrites it immediately
-with its value.
+Once written, a model, commands or voice conversation setting no longer follows Nix. `openclaw config unset <clé>` removes it&nbsp;: Nix rewrites it immediately with its value.
 :::
 
 {/* t:p 1e5c1818b3defae50cc5b1b6b838a4dc39a7d6f15197ddc925abb99a33cfa7ec */}

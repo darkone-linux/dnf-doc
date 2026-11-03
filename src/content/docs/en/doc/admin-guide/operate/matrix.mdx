@@ -681,12 +681,12 @@ them or remove their devices — which would break a bridge in one click.
 Display name and avatar remain editable.
 </Aside>
 
-{/* t:p ce89bb11502bc4f4f785a1b01cb78b4cf4d2071907c78521d1f49bbe01f69e87 */}
+{/* t:p 47786ba21b7dc055eb4fb10661fabde8d40eb3fcfa8502ff423998b4055b5f7d */}
 ### Diagnosing a refused SSO connection
 
-After a migration, sessions that are already open keep working: a broken
-connection therefore only shows up **on the first fresh login**. Watch MAS
-during an attempt:
+After a migration, already-open sessions keep working&nbsp;:
+so a broken connection only shows up **on the first fresh login**. Follow MAS
+during an attempt&nbsp;:
 
 ```sh
 journalctl -u matrix-authentication-service -f
@@ -694,16 +694,17 @@ journalctl -u matrix-authentication-service -f
 
 | Message | Cause | Fix |
 |---|---|---|
-| `wrong signature alg` on `/upstream/callback/…` | MAS expects an RS256 `id_token`, Kanidm signs with ES256 | `id_token_signed_response_alg` of the upstream provider: set to `ES256` by the module |
-| `client registration denied by the policy: invalid redirect_uri` | The `client_uri` advertised by the client does not match its redirect scheme | Do not force `oidc_metadata` in the Element config; its defaults pass |
+| `wrong signature alg` on `/upstream/callback/…` | MAS expects an RS256 `id_token`, Kanidm signs with ES256 | Upstream provider `id_token_signed_response_alg`&nbsp;: set to `ES256` by the module |
+| `client registration denied by the policy: invalid redirect_uri` | The `client_uri` advertised by the client does not match its redirect scheme | Do not force `oidc_metadata` in the Element config&nbsp;; its default values work |
+| *Unable to restore the session* on Element Desktop | Key lost with the local keychain | [Repair the session](/en/doc/admin-guide/operate/users/#element-session-not-restored) |
 | `M_UNRECOGNIZED` on `/login/sso/redirect` | The path goes to Synapse instead of MAS | Check the `@masCompat` matcher of the Caddy vhost |
-| Page `User exists`: 'returned "bob" as username, which is not linked' | Another account already occupies the declared user's identifier | Merge or rename (see [identifier collision](#identifier-collision-with-a-declared-user)) |
-| "The QR code is not supported" on the client side | The MSC4108 rendezvous channel is missing | `experimental_features.msc4108_enabled`: enabled by the module along with MAS |
-| "The call is not supported", `MISSING_MATRIX_RTC_TRANSPORT` | No MatrixRTC backend advertised | Enable `matrixRtc.enable` (see [Audio and video calls](#audio-and-video-calls)) |
-| Call that rings but stays silent, or drops after a few seconds | Media ports do not reach the host | Open 30000-30100/udp and 7881/tcp up to it |
-| Call slow to establish, or failing outright, with all traffic going through coturn | Clients get no *server-reflexive* candidates, hence no direct path | coturn must answer **anonymous** STUN Binding requests (see [Permanently relayed calls](#permanently-relayed-calls)) |
+| `User exists` page: "&nbsp;returned "bob" as username, which is not linked&nbsp;" | A friend account already holds the identifier of the declared user | Merge or rename (see [identifier collision](#identifier-collision-with-a-declared-user)) |
+| "&nbsp;QR code not supported&nbsp;" on the client side | The MSC4108 rendezvous channel is missing | `experimental_features.msc4108_enabled`&nbsp;: enabled by the module with MAS |
+| "&nbsp;Call not supported&nbsp;", `MISSING_MATRIX_RTC_TRANSPORT` | No MatrixRTC backend advertised | Enable `matrixRtc.enable` (see [Audio and video calls](#audio-and-video-calls)) |
+| A call that rings but stays silent, or drops after a few seconds | Media ports do not reach the host | Open 30000-30100/udp and 7881/tcp up to it |
+| A call that takes a long time to establish, or even fails, and all traffic goes through coturn | Clients get no *server-reflexive* candidate, hence no direct path | coturn must answer **anonymous** STUN Binding requests (see [Calls relayed permanently](#permanently-relayed-calls)) |
 
-Quick checks, without logging in:
+Quick checks, without connecting&nbsp;:
 
 ```sh
 # org.matrix.msc4108 doit valoir true
@@ -715,9 +716,9 @@ curl -A Mozilla/5.0 -X POST --data probe \
 ```
 
 <Aside type="note" title="Two symptoms, two causes">
-A client falling back to authentication **in the browser** instead of its
-native screen signals a dynamic registration refusal; any error that may
-follow is a separate problem. Address both.
+A client that switches to an authentication **in the browser** instead
+of its native screen signals a dynamic registration refusal&nbsp;; the error
+that possibly follows is a separate problem. Handle both.
 </Aside>
 
 {/* t:p 54aa52c1f59ff607eec0a2fa9ace69a976ed97dc8baebadd36446c5e4fd98df4 */}

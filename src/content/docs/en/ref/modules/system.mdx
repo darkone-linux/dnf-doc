@@ -530,7 +530,7 @@ gateways and of the HCS.
 - `external-hosts`: zone services the HCS fronts, proxied to their gateway.
 :::
 
-{/* t:p 6aa3e72674e7de020bffd26362d1bc5ea68242949e18f313817503d6826aeb28 */}
+{/* t:p a5ec7cf3dca122820275baf22a28c989135c72e8075336cad09a5d99223c8ac4 */}
 #### SSO (`oauth2-proxy.nix`)
 
 oauth2-proxy in front of the protected services of a zone, backed by the
@@ -541,6 +541,13 @@ Caddy `forward_auth` checks every request against `/oauth2/auth`. The login
 flow is anchored on the zone homepage FQDN, which hosts oauth2-proxy's
 public `/oauth2/*` endpoints; a cookie scoped to the zone domain keeps the
 session across its services.
+:::
+
+:::note[Tailnet identity]
+`proxy.tailnetIdentity`, for clients unable to follow the login flow (native
+apps): a personal tailnet device is identified by tailscaled
+(`tailscale.nginx-auth`) and passes as its owner, if member of the space.
+Tagged machines, unknown addresses, off-tailnet clients: the SSO, unchanged.
 :::
 
 * **enable** `bool` Enable DNF services manager to register and expose services
@@ -570,6 +577,7 @@ session across its services.
   * **proxy.isProtected** `bool` Oauth2 protected service
   * **proxy.allowedGroups** `listOf str` Kanidm groups allowed on this protected service (empty = any authenticated user)
   * **proxy.spaceMembersOnly** `bool` Restrict to the members of the instance host's AI space (Kanidm group `space-&lt;host&gt;`); implies isProtected
+  * **proxy.tailnetIdentity** `bool` Identify a member's personal tailnet device without the SSO, for clients unable to follow the login flow; requires spaceMembersOnly
   * **proxy.isInternal** `bool` Bind service on internal interface only (not internet accessible)
   * **proxy.hasReverseProxy** `bool` This is a reverse proxy (or another virtualhost configuration via extraConfig)
   * **proxy.defaultService** `bool` Is the default service
@@ -607,6 +615,7 @@ darkone.system.services = {
   service.proxy.isProtected = false;
   service.proxy.allowedGroups = [ ];
   service.proxy.spaceMembersOnly = false;
+  service.proxy.tailnetIdentity = false;
   service.proxy.isInternal = false;
   service.proxy.hasReverseProxy = true;
   service.proxy.defaultService = false;

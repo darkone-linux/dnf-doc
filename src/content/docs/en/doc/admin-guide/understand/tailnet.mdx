@@ -57,26 +57,27 @@ control.headscale -> data: Keys, addresses, routes, DNS, ACL { style.stroke-dash
 - HCS unavailable: established tunnels keep working, but nothing changes (new node,
   new route, new policy) until it is back.
 
-{/* t:p 0da41f50b999eff27fa0adc72d97b2247e1d8dbbf555e4e1f1c8683d7ef44b6d */}
+{/* t:p 2b8307bb69a1127e4a765cb11d036e4b73edd00d5cf4a292aecc5faa24891159 */}
 ## Who is on the tailnet
 
-Two kinds of identities coexist: **machines**, identified by a tag that tells
-their role, and **personal devices**, attached to their owner.
+Two kinds of identity coexist&nbsp;: **machines**, identified by a tag
+that states their role, and **personal devices**, attached to their owner.
 
-| Node | Identity | Obtained by | Expiration |
+| Node | Identity | Obtained by | Expiry |
 |---|---|---|---|
-| HCS | `tag:hcs` | one-time key (`just tailnet-enroll`) | never |
-| Zone gateway | `tag:gw-<zone>` | one-time key | never |
-| Admin workstation | `tag:admin` | one-time key | never |
-| Personal device | its owner (`alice@`) | [Kanidm](/en/doc/admin-guide/understand/auth-idm/) sign-in | 180 days |
+| HCS | `tag:hcs` | single-use key (`just tailnet-enroll`) | never |
+| Zone gateway | `tag:gw-<zone>` | single-use key | never |
+| Administration workstation | `tag:admin` | single-use key | never |
+| Personal device | its owner (`alice@`) | sign-in with [Kanidm](/en/doc/admin-guide/understand/auth-idm/) | 180 days |
 
-- Tags derive from the topology: `hcs` profile, zone gateway, host whose
-  `groups` contains `admin` and which enables the Tailscale client.
+- Tags are inferred from the topology&nbsp;: profile `hcs`, zone gateway, host
+  whose `groups` contains `admin` and which enables the Tailscale client.
 - A tagged node belongs to no one (`tagged-devices` in Headscale).
-- Only accounts in the Kanidm `tailnet` group connect a device: admins and
-  zone members (group `zone-<zone>`).
-- A host's free `tags` in `etc/config.yaml` grant no rights.
-- Each node carries a MagicDNS name: `<node>.tailnet.internal`.
+- Only accounts of the Kanidm group `tailnet` connect a device&nbsp;:
+  administrators, members of a zone (group `zone-<zone>`) and members of an
+  [AI space](/en/doc/admin-guide/operate/ai-spaces/).
+- The free-form `tags` of a host in `etc/config.yaml` grant no rights.
+- Each node carries a MagicDNS name&nbsp;: `<node>.tailnet.internal`.
 
 {/* t:p 1023e48a76ada045e7fb51ebdae3b007c6707db084b37145c98c6eb15d365978 */}
 ## Routing
@@ -282,43 +283,44 @@ The policy is not hand-written: DNF generates it from `etc/config.yaml` (zones,
 hosts, users), validates it at build time (`headscale policy check`), then
 Headscale hot-reloads it at deployment.
 
-{/* t:p e681be3291c8014b9c6c606fd8375f80dce8fac8c56705c6d4a69260fac86a9c */}
+{/* t:p 8596d4ddedeb406321520b5a0d6e911b3afa4b9abee9f8160f3fa826fc518b77 */}
 ### The building blocks
 
-| Block | Generated content |
+| Building block | Generated content |
 |---|---|
-| `groups` | `group:admins` (profiles `admin`, `nix-admin`), `group:zone-<zone>` (group `zone-<zone>`) |
+| `groups` | `group:admins` (profiles `admin`, `nix-admin`), `group:zone-<zone>` (group `zone-<zone>`), `group:space-<host>` (members of the AI space of a local zone) |
 | `tagOwners` | `tag:hcs`, `tag:gw-<zone>`, `tag:admin`, owned by `group:admins` |
 | `hosts` | `zone-<zone>` (subnet), `gateway-<zone>` (LAN address of the gateway), each host of a zone (its LAN address), `adminDevices`, `extraHosts` |
 | `autoApprovers` | route of each zone → `tag:gw-<zone>`&nbsp;; exit node → `tag:hcs` |
 | `acls` | the rules below |
 
-{/* t:p aceb36cc31b05f033a037a983c6334db953abd9a7bd43e372b9604e5fe66d4fb */}
+{/* t:p 71aaa14f8ddd66e8324edfad813e9fed0261b8dcf1eefa789dc2dd2b21e9e3b2 */}
 ### The rules
 
 | # | Source | Destination | Purpose |
 |---|---|---|---|
-| 1 | tagged machines, zone subnets | all machines and zones, all ports | infrastructure: DNS, monitoring, backups, deployment |
+| 1 | tagged machines, zone subnets | all machines and zones, all ports | infrastructure&nbsp;: DNS, monitoring, backups, deployment |
 | 2 | personal devices (`autogroup:member`) | HCS, ports 53 and 443 | internal DNS, global services |
-| 3 | `group:admins` | gateways of all zones, port 443 | all zones' services |
-| 4 | `group:zone-<zone>` | its zone's gateway, port 443 | its zones' services |
-| 5 | personal devices | devices of the same owner | between one's own devices |
-| 6 | `tag:admin`, admin workstations, `adminDevices` | all machines and zones, port 22 | SSH administration |
-| 7 | `policy.exitNodeSources` | Internet | the HCS exit node, if enabled |
-| 8 | `policy.extraAcls` | free | the network's own needs |
+| 3 | `group:admins` | gateways of all zones, port 443 | the services of all zones |
+| 4 | `group:zone-<zone>` | gateway of the zone, port 443 | the services of its zones |
+| 5 | `group:space-<host>` | gateway of the space's zone, port 443 | the services of that zone |
+| 6 | personal devices | devices of the same owner | between its own devices |
+| 7 | `tag:admin`, administration workstations, `adminDevices` | all machines and zones, port 22 | SSH administration |
+| 8 | `policy.exitNodeSources` | Internet | the HCS exit node, if it is open |
+| 9 | `policy.extraAcls` | free | the network's own needs |
 
-- **SSH follows the workstation, not the person**: an admin on their phone has
-  no SSH, except for a device declared in `adminDevices`.
-- **`gateway-<zone>` in addition to the tag**: a zone's services resolve to the
-  LAN address of its gateway, which `tag:gw-<zone>` does not cover (it only
-  designates its tailnet addresses).
-- **An empty group disappears** from the policy: a rule citing it would get the
-  whole policy rejected.
-- **Open mode** (`policy.enforce = false`): a single rule allows everything.
+- **SSH follows the workstation, not the person**&nbsp;: an administrator on their phone
+  has no SSH, unless the device is declared in `adminDevices`.
+- **`gateway-<zone>` in addition to the tag**&nbsp;: the services of a zone resolve to
+  the LAN address of its gateway, which `tag:gw-<zone>` does not cover (it designates
+  only its tailnet addresses).
+- **An empty group disappears** from the policy&nbsp;: a rule citing it would
+  cause the whole rule to be denied.
+- **Open mode** (`policy.enforce = false`)&nbsp;: a single rule allows everything.
   Reserved for a migration, while nodes are being tagged.
 
-The options that fine-tune the policy are described in [Adapting the access
-policy](/en/doc/admin-guide/operate/vpn/#client-self-repair).
+The options that adjust the policy are described in [Adapt the access
+policy](/en/doc/admin-guide/operate/vpn/#adapt-the-access-policy).
 
 {/* t:p f94c4e5b7b9d7c14f9d75ae2016a602edd2ce5b245f75960ca76585111dd516e */}
 ## Pre-authorized keys and enrollment

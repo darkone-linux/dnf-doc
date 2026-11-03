@@ -254,7 +254,7 @@ darkone.home.gnome.hidden-apps.hiddenEntries = [ ];
 
 <hr/>
 
-{/* t:p 88e5ddc9b46ed5b739f50d14e521c10c2c3dcfc30030a3dc71c3f51211d69dfa */}
+{/* t:p bda6c7d9e497524ecd360eb4f2c12f88101d3d7d1943d4ac44b4ce391d9f1ff0 */}
 ### &#x1F3E0; darkone.home.gnome
 
 Gnome tweaks for home-manager.
@@ -271,9 +271,13 @@ admin password change (read by the NixOS gnome module).
 login keyring no password: a key login (`pam_u2f`) opens it without a prompt.
 
 :::caution[Passwordless keyring: secrets in clear text]
-Protected at rest by LUKS only, and copied as is into restic backups. A
-keyring sealed with a password is deleted at activation (never under a
-running session): apps ask for their credentials once again.
+Protected at rest by LUKS only, and copied as is into restic backups.
+:::
+
+:::caution[Sealed keyring set aside at activation]
+Moved to `~/.local/share/keyrings.sealed/`, never under a running session.
+Apps ask for their credentials once again; Element Desktop loses its session
+(`safeStorage` key gone), repair in the admin guide (`operate/users.mdx`).
 :::
 
 :::caution[NFS bookmarks]
@@ -602,7 +606,7 @@ DNF UMI: SuperTuxKart driven by the mouse alone (`enableStkWithMouse`). Doc: `..
 
 <hr/>
 
-{/* t:p f57c7e1c4d7dd4c705643c54efe93dbe0fe6a62c6c3eb8cadd3631a32b8c9d30 */}
+{/* t:p 583c867a1a03dc9319f00b57edd57fa264d424b0c842cfc5c928300200225bf4 */}
 ### &#x1F3E0; darkone.home.umi
 
 Unified Multimodal Input (UMI)
@@ -677,7 +681,7 @@ own lock fully disabled.
 An autologin session types no password: a keyring sealed with one pops a gcr
 prompt the UMI user cannot answer. `darkone.home.gnome.passwordlessKeyring`
 is forced on for this user, encrypted host or not (secrets of a sealed
-keyring lost once). The UMI host also strips `pam_gdm` from gdm-autologin.
+keyring set aside once). The UMI host also strips `pam_gdm` from gdm-autologin.
 :::
 
 * **enable** `bool` UMI multimodal input configuration (Talon + Onboard)

@@ -151,6 +151,20 @@ and tailnet VPN) reach the service **without login**, while access **from the
 outside** goes through the Kanidm login page. Useful for a portal open at home
 but protected on the Internet.
 
+{/* t:p 57884dc5c0b76e1dc3ec72d8ee3a75a16b5553b4ea7d1eec7b2b79d846fb5d06 */}
+### Tailnet identity
+
+A native client (Android application) does not follow the redirect. An AI space service that declares `proxy.tailnetIdentity` then recognizes a **personal device** on the [tailnet](/en/doc/admin-guide/understand/tailnet/)&nbsp;: Caddy asks `tailscaled` for its owner (`tailscale.nginx-auth`), then compares its email with the members of the space.
+
+| Client | Result |
+|---|---|
+| Member's personal device | Access, owner identity |
+| Personal device of another account | 403 |
+| Tagged machine | Kanidm redirect |
+| Outside tailnet | Kanidm redirect |
+
+Caddy strips the identity headers sent by the client. Kanidm groups are not passed on this path&nbsp;: Headscale does not know them.
+
 {/* t:p 0817b35898933197994b0cb9bf95d4a9723c229833ea49d7701f58844b22d1fa */}
 ## Secrets and certificates
 

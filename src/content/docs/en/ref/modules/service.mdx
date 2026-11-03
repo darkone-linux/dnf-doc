@@ -319,7 +319,7 @@ DNF headscale: `dnf-tailnet-enroll`. Doc: `../headscale.nix` header.
 
 <hr/>
 
-{/* t:p 987636579447486bbaee16a99bf309427a6c3a162cd347188f2ce74eac409ffc */}
+{/* t:p 6672ad63c747c66afca2019038c0384a768d314aecb424c6c8b8b8400c3eb850 */}
 ### &#x2728; darkone.service.headscale
 
 A full-configured headscale service for HCS.
@@ -332,7 +332,8 @@ time, then reloaded on change (SIGHUP) without restarting headscale.
   `groups` contains `admin`).
 - Machines and zone LANs reach each other. Personal devices: DNS and HTTPS
   on the HCS, HTTPS on zone gateways (every zone for admins, else their
-  `zone-*` groups). SSH from admin stations and `policy.adminDevices`.
+  `zone-*` groups and the zones of their AI spaces). SSH from admin stations
+  and `policy.adminDevices`.
 - Every addressed zone host is a policy alias (`nas` -&gt; its LAN IP): any
   other service opens through `policy.extraAcls` (`nas:445`).
 - Personal devices log in through Kanidm (OIDC), for members of the Kanidm
@@ -1175,7 +1176,7 @@ darkone.service.nix-cache = {
 
 <hr/>
 
-{/* t:p ba7fbbd49bc734ac33645580bf0d204922ad1b92dc8ce839fad9db9650fd7d6d */}
+{/* t:p 5f00ad87222f37226a245d3f9106aa9ea9ba3b1b895abb2d1341d60e8105525b */}
 ### &#x2728; darkone.service.openclaw
 
 OpenClaw assistant of an AI space (gateway + control UI, behind the zone SSO).
@@ -1193,8 +1194,10 @@ One instance per `ai-space` host, declared like any service:
 - access: Caddy forward auth, members of `space-<host>` only
   (`proxy.spaceMembersOnly`); OpenClaw trusts the zone gateway as proxy
   (`trusted-proxy`) and reads the identity from `x-auth-request-email`;
+- tailnet: a member's personal device passes without the SSO
+  (`proxy.tailnetIdentity`), the only way in for the Android app;
 - devices: a member's browser is paired on first visit, without operator
-  admin (granted from the host CLI only);
+  admin (granted from the host CLI only); the app with `openclaw qr`;
 - port: reachable from the zone gateway only;
 - host CLI: `openclaw` (alone: the TUI), re-run as the service user, past
   `trusted-proxy` with the gateway password (`openclaw-gateway-password`,
@@ -1222,8 +1225,9 @@ One instance per `ai-space` host, declared like any service:
   (`agents.defaults.cwd`), `projects` git-cloned once into it;
 - coding agents (Claude Code, Codex, OpenCode of the space): background
   workers (`coding-agent` skill), chat-bound sessions (`/acp spawn`, acpx);
-- Talk (`talk`): live voice conversation in the browser, OpenAI GPT-Live,
-  work delegated to the agent (`agent-consult`), ChatGPT login first;
+- Talk (`talk`): live voice conversation (browser, Android app), OpenAI
+  GPT-Live (ChatGPT login first) or Gemini Live (`GEMINI_API_KEY`), work
+  delegated to the agent (`agent-consult`);
 - workflows: Lobster pipelines (`lobster`, `.lobster` files through
   `workspace`), declared automations (`automations`, kept in sync, others
   left to the agent and the UI);
@@ -1316,12 +1320,23 @@ state.
   (`darkone.host.ai-space.projectsDir`), never pulled. SSH remotes use
   the key of `openclaw` (`/var/lib/openclaw/.ssh`, created by hand); the
   server key is accepted on first clone.
-* **talk.enable** `bool` Talk: live voice conversation in the browser (OpenAI GPT-Live)
-* **talk.model** `str` Realtime model. `gpt-live-1-codex`: the owner's ChatGPT login
-  (`openclaw models auth login --provider openai`), else a Platform
-  key (`OPENAI_API_KEY`); `gpt-live-1`, `gpt-realtime-2.1` (camera):
-  Platform key only. Pinned: unset, a Platform key wins over ChatGPT.
-* **talk.voice** `str` Voice of the model's route (`gpt-live-1-codex`: `cove`, `arbor`, `breeze`, `ember`, `juniper`, `maple`, `sol`, `spruce`, `vale`).
+* **talk.enable** `bool` Talk: live voice conversation (browser, Android app)
+* **talk.provider** `enum [ "openai" "google" ]` Realtime voice:
+  - `openai`: GPT-Live, browser WebRTC, SDP through the gateway;
+  - `google`: Gemini Live, audio relayed by the gateway, needs
+    `GEMINI_API_KEY` in `apiKeys` (Google AI Studio key).
+* **talk.model** `str` Realtime model, by provider:
+  - `openai`: `gpt-live-1-codex` through the owner's ChatGPT login
+    (`openclaw models auth login --provider openai`), else a Platform
+    key (`OPENAI_API_KEY`); `gpt-live-1`, `gpt-realtime-2.1`
+    (camera): Platform key only. Pinned: unset, a Platform key wins
+    over ChatGPT;
+  - `google`: `gemini-3.1-flash-live-preview`, `gemini-3.8-live`.
+* **talk.voice** `str` Voice of the model's route:
+  - `gpt-live-1-codex`: `cove`, `arbor`, `breeze`, `ember`, `juniper`,
+    `maple`, `sol`, `spruce`, `vale`;
+  - Gemini Live: `Kore`, `Puck`, `Charon`, `Aoede`, `Zephyr`... (30
+    prebuilt voices, listed in Settings → Talk).
 * **talk.instructions** `nullOr lines` Instructions appended to OpenClaw's realtime prompt.
 * **lobster** `bool` Lobster workflows: pipelines run by the gateway, with approval steps
   and resume, plus `llm-task` (structured LLM step). Workflow files go
@@ -1364,7 +1379,12 @@ darkone.service.openclaw = {
   workspace = { };
   projects = { };
   talk.enable = false;
-  talk.model = "gpt-live-1-codex";
+  talk.provider = "google";
+  talk.model = {
+              openai = "gpt-live-1-codex";
+              google = "gemini-3.1-flash-live-preview";
+            }
+            .${cfg.talk.provider};
   talk.voice = "sol";
   talk.instructions = "Réponds en français, en phrases courtes.";
   lobster = false;

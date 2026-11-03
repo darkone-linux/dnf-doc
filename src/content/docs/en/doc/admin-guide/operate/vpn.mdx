@@ -148,7 +148,7 @@ Une passerelle s'enrôle comme toute machine&nbsp;; deux points lui sont propres
 
 </Steps>
 
-{/* t:p 27a1e350c3b555a2d63a16c60c944b1292d82bbc1ff0dd111890d14f55f9d447 */}
+{/* t:p e314ab5dfa1d94ef3909fd80ff20673cb3722d06c4768328fd1e7cd146641055 */}
 ## Connecting a personal device
 
 A smartphone or personal computer connects with its owner's
@@ -159,21 +159,23 @@ no manual approval.
 |---|---|
 | Administrator | `admin` or `nix-admin` profile |
 | Member of a zone | `zone-<zone>` group |
+| Member of an AI space | in the `users` of an `ai-space` host |
 
 These accounts form the `tailnet` Kanidm group, provisioned automatically&nbsp;; Kanidm
 refuses the others. To open access, add the group to the user,
 regenerate, then `just apply hcs`. The user then follows [Connecting a
 device](/en/doc/how-to/user/connect-device/#from-outside).
 
-The device reaches the **web services** (HTTPS) of its zones and of the HCS, nothing else.
+The device reaches the **web services** (HTTPS) of its zones, of those of its AI
+spaces and of the HCS, nothing else.
 A Samba share, a printer or SSH require a rule&nbsp;: see [Adapting
 the access policy](#adapt-the-access-policy).
 
 The device belongs to the person (`alice@`) and **expires after 180 days**&nbsp;:
-the person then reconnects with their credentials.
+they then reconnect with their identifier.
 
 **Removing access**&nbsp;: remove the group, `just apply hcs`, then delete its
-devices. Otherwise, they keep the HCS DNS and HTTPS until they expire
+devices. Otherwise, they keep the HCS DNS and HTTPS until their expiry
 (`HeadscaleUnexpectedNode` alert).
 
 ```sh
@@ -315,23 +317,23 @@ real nodes** and runs its `tests` block, without touching the policy in place.
 
 </Steps>
 
-{/* t:p 326fa59bfdc053b1862bfd901db355e7c25fc731009e040ac102ea254c6fe6f2 */}
+{/* t:p ba4143bf9320dc4dc87b8b0f8fd4ac2f3ca9d86ef587285919f218df329706a7 */}
 ### Common failures
 
 | Symptom | Check | Remedy |
 |---|---|---|
-| `TailscaleUnhealthy`, `NeedsLogin` backend | `tailscale status` on the node | `just tailnet-enroll <host>` |
+| `TailscaleUnhealthy`, `NeedsLogin` backend | `tailscale status` on the node | `just tailnet-enroll <hôte>` |
 | Connection showing `headscale auth register` | `HeadscaleOidcFallback` alert | `sudo systemctl restart headscale` on the HCS |
-| Kanidm refuses access to Headscale VPN | user's groups | admin profile or `zone-<zone>`, `just apply hcs` |
-| Zone unreachable from the tailnet | `headscale nodes list-routes` | gateway enrolled with its tag, route approved |
-| Zone service refused to a device | user's groups, `tailscale whois <ip>` | add `zone-<zone>`, `just apply hcs` |
+| Kanidm refuses access to Headscale VPN | user groups | admin profile, `zone-<zone>` or AI space member, `just apply hcs` |
+| Zone unreachable from the tailnet | `headscale nodes list-routes` | gateway enrolled with its tag, approved route |
+| Zone service refused to a device | user groups, `tailscale whois <ip>` | add `zone-<zone>`, `just apply hcs` |
 | Non-web service unreachable (Samba, ping) | policy rules | `policy.extraAcls` rule |
 | SSH refused on a tailnet address | `tag:admin` host or `adminDevices` device | declare the device |
-| Internal names not resolved outside the zone | `tailscale dns status` | enable "Use Tailscale DNS" |
-| Login page not found | "Use Tailscale DNS" enabled | disable it for the duration of the connection |
-| Slow traffic | `tailscale ping` shows `via DERP` | filtered outbound UDP, or strict NAT on both sides |
+| Internal names unresolved outside the zone | `tailscale dns status` | enable "Use Tailscale DNS" |
+| Login page not found | "Use Tailscale DNS" enabled | turn it off while connecting |
+| Slow traffic | `tailscale ping` shows `via DERP` | outgoing UDP filtered, or strict NAT on both sides |
 | `no declared tailnet identity` | tagged host, HCS deployed from its declaration | `just apply hcs` |
-| `named … is online, not deleting it` | two machines share the same name | turn off the old one or rename the host |
+| `named … is online, not deleting it` | two machines share the same name | shut down the old one or rename the host |
 
 {/* t:p 702252ad2e0a674c19922c89deb880560eb21efddc50996bee3169dcdf362783 */}
 ## Audit and alerts

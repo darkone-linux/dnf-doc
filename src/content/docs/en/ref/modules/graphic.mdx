@@ -13,7 +13,7 @@ sidebar:
 **A GUI application module** installs graphical applications and their configuration optimized for DNF.
 :::
 
-{/* t:p 913030f2f0ab03a7ec05d6616075f1bf8495f6a36f267584d764d1377baeb6f6 */}
+{/* t:p ea38534451de623dd0646fffa1f840c79c1efd421a63353df25fb6ee9de3b251 */}
 ### &#x1F5BC; darkone.graphic.gnome
 
 Pre-configured gnome environment with dependences.
@@ -21,13 +21,14 @@ Pre-configured gnome environment with dependences.
 :::note[Login keyring after `just passwd`]
 PAM unlocks the login keyring with the session password, which a change
 made by the admin cannot re-encrypt (the old password is unknown). The next
-password login drops the keyring: GNOME recreates it, empty, on the new
-password. No prompt, and the old password opens nothing anymore.
+password login moves the keyring to `~/.local/share/keyrings.sealed/`: GNOME
+recreates it, empty, on the new password. No prompt.
 :::
 
-:::caution[Keyring secrets lost on each admin password change]
-Apps ask once again for their credentials. Opt-out, for a keyring with a
-password of its own: `darkone.home.gnome.keepKeyring`.
+:::caution[Keyring secrets set aside on each admin password change]
+Apps ask once again for their credentials; Element Desktop loses its session
+(repair: `operate/users.mdx`). Opt-out, for a keyring with a password of its
+own: `darkone.home.gnome.keepKeyring`.
 :::
 
 :::note[Passwordless login keyring]

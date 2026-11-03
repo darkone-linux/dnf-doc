@@ -230,15 +230,17 @@ cd ~/.ssh && ssh-keygen -K && mv id_ed25519_sk_rk id_ed25519_sk
 Procedure not tested on the estate.
 :::
 
-{/* t:p b6cd645e2cd1d8d8b7625ac8da8778981eb11f1451bf49da6348706068b88aae */}
+{/* t:p 41aad58e068f90adb71f8033ccefe1b556c5d00b478e76d3edfe620db05111e7 */}
 ### The GNOME keyring after `just passwd`?
 
 The login keyring remains encrypted with the old session password.
-On the next session opened with that password, DNF deletes it and GNOME recreates an empty one&nbsp;: no prompt appears, and the old password no longer unlocks anything.
+At the next session opened with the password, DNF moves it to
+`~/.local/share/keyrings.sealed/` and GNOME recreates it empty&nbsp;: no prompt.
 
-- Applications: credentials need to be re-entered once (Nextcloud, online accounts, Chromium).
-- Unlocking with a YubiKey, or if the keyring is still active: deletion is postponed to a later session.
-- [Passwordless keyring](#a-passwordless-keyring) : kept.
+- Applications: credentials to re-enter once (Nextcloud, online accounts, Chromium).
+- Element Desktop: [session lost](#element-session-not-restored).
+- Unlocking by YubiKey, or keyring still active: move postponed to a later session.
+- [Passwordless keyring](#a-passwordless-keyring): kept.
 
 To keep a keyring protected by its own password&nbsp;:
 
@@ -247,25 +249,72 @@ To keep a keyring protected by its own password&nbsp;:
 darkone.home.gnome.keepKeyring = true;
 ```
 
-{/* t:p 861d91781bdecfaecdfb1109b8bb26594014c024ad05cac8646d960d980e2102 */}
+{/* t:p 2c94abae4f8467ce6cf79ff6ed5c7365faebc41702a05fd237d314457228cff2 */}
 ### A passwordless keyring?
 
-By default for non-technical profiles on an encrypted host (LUKS)&nbsp;: the login keyring opens without a prompt, even when the session is unlocked with a [YubiKey](/en/doc/admin-guide/operate/yubikey/#gnome-keyring-asks-for-a-password-again).
+Default for non-technical profiles on an encrypted host (LUKS)&nbsp;: the
+login keyring opens without a prompt, including when the session is opened
+by [YubiKey](/en/doc/admin-guide/operate/yubikey/#gnome-keyring-asks-for-a-password-again).
 
-- Secrets: stored in plain text in `~/.local/share/keyrings`, protected at rest by LUKS only.
-- Restic backups: copied as-is into a repository encrypted by restic.
-- Keyring already encrypted: deleted on deployment, credentials need to be re-entered once.
-- Session open during deployment: deletion occurs at the next boot.
-- Session password: never passed to the keyring, so it is not re-encrypted.
+- Secrets: in plain text in `~/.local/share/keyrings`, protected at rest by LUKS alone.
+- Restic backups: copied as is, into a repository encrypted by restic.
+- Keyring already encrypted: moved to `~/.local/share/keyrings.sealed/` at deployment.
+- Consequences: credentials to re-enter once, Element Desktop session lost.
+- Session opened during deployment: move at the next boot.
+- Session password: never passed to the keyring, which therefore does not re-encrypt itself.
 
-To enable it (for a technical profile) or disable it&nbsp;:
+To enable it (technical profile) or disable it&nbsp;:
 
 ```nix
 # usr/users/<login>/default.nix
-darkone.home.gnome.passwordlessKeyring = true; # or false
+darkone.home.gnome.passwordlessKeyring = true; # ou false
 ```
 
 `keepKeyring = true` also disables it.
+
+{/* t:p b6e05b87e2354ef99febf9eb205cf5b38b6452c3e8aaa56989690beff34f6c3a */}
+### Element session not restored?
+
+Element Desktop shows *Unable to restore session*, with *Remove this device*
+and *Refresh*. Its decryption key was in the moved keyring&nbsp;:
+*Refresh* cannot help. The machine log confirms it&nbsp;:
+
+```sh
+sudo journalctl _UID=$(id -u <login>) | grep 'Failed to decrypt secret'
+```
+
+:::caution[To be validated]
+Repair and prevention with Seahorse not tested on the fleet. Seahorse is absent from UMI hosts.
+:::
+
+Repair with the copy in `~/.local/share/keyrings.sealed/` and the old password&nbsp;:
+
+<Steps>
+
+1. **Put the copy back**, session closed and under the user's account&nbsp;:
+
+   ```sh
+   cd ~/.local/share/keyrings
+   mv login.keyring ../keyrings.sealed/login.keyring.plain
+   cp ../keyrings.sealed/login.keyring.<date> login.keyring
+   ```
+
+2. **Open the session**, without rebooting: the old password unlocks the keyring, Element starts again.
+
+3. **Clear the password**: *Passwords and Keys*, `login` keyring, *Change Password*, new empty password.
+
+4. **Check**: `head -c 9 ~/.local/share/keyrings/login.keyring` shows `[keyring]`.
+
+</Steps>
+
+Without a copy or without the old password, *Remove this device* remains the only way out&nbsp;:
+
+- Reconnection: verify the new device from another one, or with the recovery key.
+- History: messages missing from the key backup remain unreadable.
+- Old device: still listed on the server, to be removed with [matrix-admin](/en/doc/admin-guide/operate/matrix/#administer-accounts-with-mas).
+
+To lose nothing, clear the password (step 3) **before** deployment, session
+open&nbsp;: a plain-text keyring is not moved.
 
 {/* t:p c543bae382a43528fa23c6446c3d6b59ef3445163d818d87cd9b6bac969d27e3 */}
 ### A `.bkp` file in a home directory?
