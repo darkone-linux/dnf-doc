@@ -5,6 +5,51 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.6.1] - 2026-11-03
+
+### Added
+
+- **openclaw**: Identity imposed, also as the Matrix bot's name and avatar
+- **secrets**: Warn about host users without a password hash on generate
+
+### Fixed
+
+- **sops**: Install secrets via systemd unit, restartUnits ready for 26.11
+- **release**: Restore the tree on a stopped bump, gate just release on audit
+- **gnome**: Keep sealed keyrings instead of deleting them
+
+### Documentation
+
+- **gateway**: Public SSH on WAN until the tailnet takes over (wanSsh)
+- **luks**: Gateway public address behind a box (NAT, 2222 forward)
+- **gateway**: Remote install on the box public IP
+- **translate**: Changelog 0.6.0, gateway, luks, ai spaces, network, ref modules
+- **deploy**: Caches handed to the installer, inside or outside a zone
+- **deploy**: A gateway installer only uses the public cache
+- **vpn**: Deploy the admin zone gateway before a new remote gateway
+- **deploy**: Generic host names in the fleet-update report example
+- **translate**: Deploy, vpn, changelog index
+- **secrets**: Infra key follows sops.age.keyFile, isolated hosts skipped
+- **install**: Preflight checks and pending changes before formatting
+- **install**: Install tools at the framework-locked revisions
+- **secrets**: An isolated host loses a leftover infra key
+- **luks**: Just unlock pins the initrd host key
+- **secrets**: Just install seals an isolated host's file
+- **luks**: Encrypted isolated hosts, own passphrase only
+- **secrets**: An isolated host fails on a fleet secret
+- **yubikey**: Per-host salts on isolated hosts, how salts work
+- **translate**: System, justfile, luks, secrets, vpn, yubikey, yubikey-salts
+- **dev-guide**: Temporary workarounds registry and just workarounds
+- **deploy**: Repair a failed build, align the fleet on a repair commit
+- **translate**: Refresh tags
+- **deploy**: AI repair validates working trees, counts edit series, keeps a patch
+- **gnome**: Passwordless login keyring
+- **translate**: Yubikey salts, workarounds, luks, deploy, justfile, user profiles, ref modules
+- **translate**: Secrets, releasing, system module
+- **openclaw**: Document the Android app access through the tailnet
+- **translate**: Ai spaces, tailnet, users, vpn, auth idm, service module, modules reference
+- **ref**: Regenerate for dnf v0.6.1
+
 ## [0.6.0] - 2026-10-24
 
 ### ⚠ Breaking
@@ -583,7 +628,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Initial Astro/Starlight documentation site for Darkone NixOS Framework.
 - Upgrade to Astro 6.
 
-[Unreleased]: https://github.com/darkone-linux/dnf-doc/compare/v0.6.0...HEAD
+[Unreleased]: https://github.com/darkone-linux/dnf-doc/compare/v0.6.1...HEAD
+[0.6.1]: https://github.com/darkone-linux/dnf-doc/compare/v0.6.0...v0.6.1
 [0.6.0]: https://github.com/darkone-linux/dnf-doc/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/darkone-linux/dnf-doc/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/darkone-linux/dnf-doc/compare/v0.3.1...v0.4.0
