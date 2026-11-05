@@ -193,3 +193,16 @@ A program from a profile is removed with `excludePackages` (`games`,
 The publisher replaces the `.oxt` file without changing the URL. Recalculate the
 `hashes` of `dnf/pkgs/cartable-fantastique/package.nix` with
 `nix store prefetch-file <url>`.
+
+{/* t:p 90d7202104e526dd6a23927fdd6a183e55cbd3e01e9cd93dd7dfcbc41c4a2b1f */}
+### Ghostty does not open on an old machine
+
+Ghostty requires OpenGL 4.3: on an older GPU, its window does not open
+(`failed to create EGL context` in the journal; actual version: `eglinfo -B`).
+Disable it for the host, in `usr/machines/<host>/configuration.nix`:
+
+```nix
+home-manager.sharedModules = [ { programs.ghostty.enable = false; } ];
+```
+
+Console replaces it, including Ctrl+Alt+T.

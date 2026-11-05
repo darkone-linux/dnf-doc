@@ -206,20 +206,21 @@ darkone.home.education = {
 
 <hr/>
 
-{/* t:p 2639c165d2e0173266adf6f27f4e29aeeb208128d6fb8665cc5c418045d3370a */}
+{/* t:p ba59eef5566cf2c5c846c5937f4b5eec958564a72b72410bcb26067b391720d0 */}
 ### &#x1F3E0; darkone.home.games
 
 Plusieurs paquets de jeux graphiques.
 
-* **enable** `bool` Activer les jeux
+* **enable** `bool` Active les jeux
 * **enableBaby** `bool` Jeux pour bébés (&lt;=6 ans)
 * **enableChild** `bool` Jeux pour enfants (6-12 ans)
 * **enableTeenager** `bool` Jeux pour adolescents et adultes (&gt;=12 ans)
 * **enable3D** `bool` Plus de jeux 3D
 * **enableCli** `bool` Jeux en ligne de commande
 * **enableStk** `bool` SuperTuxKart (uniquement)
-* **enableMore** `bool` Plus de jeux secondaires dans chaque catégorie
-* **excludePackages** `listOf package` Jeux des catégories activées à ne pas installer, identifiés par leur nom.
+* **enableMore** `bool` Plus de jeux (secondaires) dans chaque catégorie
+* **excludePackages** `listOf package` Jeux des catégories activées à ne pas installer, filtrés par nom.
+* **enableGnome** `bool` Active les jeux Gnome populaires
 
 ```nix
 darkone.home.games = {
@@ -232,6 +233,7 @@ darkone.home.games = {
   enableStk = false;
   enableMore = false;
   excludePackages = [ ];
+  enableGnome = true;
 };
 ```
 

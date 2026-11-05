@@ -1,0 +1,94 @@
+---
+title: "Version 0.6.1"
+description: "Secrets scellés hors des hôtes isolés"
+sidebar:
+  label: "0.6.1"
+lang: fr
+prev:
+  link: /fr/changelog/v0-6-0/
+  label: "Version 0.6.0"
+---
+
+{/* t:translated-from en */}
+{/* t:h 41410aca3b523ab2f4c93e94d2fb1317f29ce35cc9e10112b32277d1cd5afc66 */}
+
+{/* t:p ae029a575c37e1beb003aae09d82182c88080c968e276cf5e0bc94ee501575e5 */}
+Publié le **2026-11-03**&nbsp;: secrets scellés hors des hôtes isolés.
+
+[Changements sur GitHub](https://github.com/darkone-linux/darkone-nixos-framework/compare/v0.6.0...v0.6.1) · [Toutes les versions](/fr/changelog/)
+
+{/* t:p 39083cc9a22694b1fb7d6dee630b1f46086f6bc6fa726421999622ed5b928ada */}
+## Ajouts
+
+- **openclaw** : identité imposée, aussi comme nom et avatar du bot Matrix
+- **gateway** : WanSsh ouvre le SSH public jusqu'à ce que le tailnet prenne le relais
+- **install** : vérifications préalables et changements en attente avant le formatage
+- **workarounds** : registre des contournements amont temporaires, testés unitairement
+- **workarounds** : Just workarounds, statut amont et candidats au retrait
+- **gnome** : trousseau de connexion sans mot de passe sur les hôtes chiffrés
+- **headscale** : ouvrir le HTTPS de la passerelle de zone aux membres de l'espace IA
+- **caddy** : identifier les appareils tailnet des membres de l'espace avant le SSO
+- **openclaw** : laisser entrer l'application Android via l'identité tailnet
+- **secrets** : avertir des utilisateurs d'hôte sans hash de mot de passe à la génération
+- **fleet-update** : V0.8.3
+
+{/* t:p 419429c65a46f7aba7bc6541569e478e92a4efbd6598a721f5704f1be3cdd3af */}
+## Corrections
+
+- **security** : les exceptions d'hôte ne suppriment plus celles de SELinux (R46-R49)
+- **luks** : enregistrer l'adresse publique de la passerelle, pas son IP WAN côté machine
+- **install** : ignorer la vérification de réservation hors des réseaux de zone
+- **install** : aucun substituter machine pour un installateur hors de toute zone
+- **install** : aucun substituter machine non plus pour une passerelle de zone
+- **install** : conserver la config matérielle à la réinstallation, messages adaptés à l'installation complète
+- **install** : épingler nixos-anywhere et disko au lock du framework
+- **install** : normaliser une fois la config matérielle détectée, plus de commits de bruit
+- **install** : aucune indication d'étape suivante dans l'installation complète
+- **luks** : conserver le silence des indications de l'installation complète lors du ré-exec sudo
+- **install** : tenir les réponses pipées à l'écart du ssh de pré-vérification vers le HCS
+- **install** : sceller le fichier sops d'un hôte isolé avant le build
+- **ai** : réparer posthog pour aider-chat, marqué cassé depuis mcp 2
+- **ai** : réactiver herdr, l'unstable le lie à nouveau
+- **office** : réactiver librewolf, plus signalé comme non sûr
+- **posthog** : désactiver les tests dépendants du timing, instables sur des builders chargés
+- **ai** : ignorer le test instable de hash d'image fpdf2 dans open-webui stable
+- **sops** : installer les secrets via une unité systemd, restartUnits prêt pour 26.11
+- **release** : restaurer l'arbre sur un bump interrompu, conditionner just release à l'audit
+- **gnome** : conserver les trousseaux scellés au lieu de les supprimer
+- **openclaw** : sortir la synchro des automatisations de la transaction de démarrage
+- **digital** : builder avec le jdk complet, les tests AWT échouent en headless
+- **matrix** : démarrer MAS après nscd, son nom DynamicUser en a besoin
+
+{/* t:p 5542aca6ec24facd22e5d05cece37cad4b955f74aecd7d3b242bb62164e15da0 */}
+## Sécurité
+
+- **sops** : ne jamais donner la clé infra à un hôte qui ne la lit pas
+- **sops** : supprimer la clé infra laissée sur un hôte devenu isolé
+- **luks** : épingler la clé d'hôte initrd dans just unlock
+- **luks** : pas de secret LUKS de flotte sur un hôte isolé chiffré
+- **sops** : faire échouer l'éval sur un secret de flotte d'un hôte isolé
+- **yubikey** : sels FIDO2 par hôte sur les hôtes isolés chiffrés
+
+{/* t:p 7becd77de999bc62ba97ea5638c705efa20a85c6414bea3e0ec2199dc4f04e96 */}
+## Retraits
+
+- **luks** : retirer boot.initrd.systemd.enable, l'initrd scripté est supprimé
+- **gimp** : retirer l'overlay __structuredAttrs, l'unstable build à nouveau
+- **audio** : retirer l'épinglage stable d'audacity, l'unstable 4.0 build à nouveau
+- **music** : retirer l'épinglage stable de musescore, l'unstable build à nouveau
+- **matrix** : retirer l'épinglage stable de synapse, l'unstable build en 1.163.0
+- **ai** : retirer l'épinglage stable d'ollama, l'unstable est à nouveau plus récent
+- **advanced** : retirer l'épinglage stable de d2, l'unstable 0.9.0 rend la doc
+- **element** : retirer les métadonnées oidc kanidm obsolètes du client de bureau
+
+{/* t:p 5dd02a62809ad868a13168a98abb5c9a203100500e22b308c56b2cbe713b0059 */}
+## Documentation
+
+- **workarounds** : pointer les overlays et backports vers config/workarounds.nix
+- **headscale** : mentionner l'accès passerelle des membres de l'espace IA
+
+{/* t:p c739a9c6b22b23b56a7eece2b96dec133d52b69a3f3b2b69a4eb2dd9e4505b39 */}
+## Dépendances
+
+- fleet-update v0.8.2
+- rename-simple v2.0.1

@@ -210,7 +210,7 @@ darkone.home.education = {
 
 <hr/>
 
-{/* t:p 2639c165d2e0173266adf6f27f4e29aeeb208128d6fb8665cc5c418045d3370a */}
+{/* t:p ba59eef5566cf2c5c846c5937f4b5eec958564a72b72410bcb26067b391720d0 */}
 ### &#x1F3E0; darkone.home.games
 
 Several graphical game packages.
@@ -224,6 +224,7 @@ Several graphical game packages.
 * **enableStk** `bool` SuperTuxKart (only)
 * **enableMore** `bool` More (secondary) games in each categories
 * **excludePackages** `listOf package` Games of the enabled categories not to install, matched by name.
+* **enableGnome** `bool` Enable popular gnome games
 
 ```nix
 darkone.home.games = {
@@ -236,6 +237,7 @@ darkone.home.games = {
   enableStk = false;
   enableMore = false;
   excludePackages = [ ];
+  enableGnome = true;
 };
 ```
 
