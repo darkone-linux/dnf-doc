@@ -174,13 +174,13 @@ version en version** est supportée. DNF épingle donc explicitement le paquet,
 dans `dnf/modules/service/idm.nix`&nbsp;:
 
 ```nix
-services.kanidm.package = pkgs.kanidm_1_11.withSecretProvisioning;
+services.kanidm.package = pkgs.kanidm_1_12.withSecretProvisioning;
 ```
 
 L'évaluation prévient dès que la version épinglée est dépréciée&nbsp;:
 
 ```
-kanidm 1.10 is deprecated and will reach end-of-life on 2026-08-31
+kanidm 1.11 is deprecated and will reach end-of-life on 2026-12-01
 ```
 
 Passée cette date, nixpkgs marque la version comme non maintenue et
@@ -189,7 +189,7 @@ l'évaluation **échoue**. La montée est donc à planifier avant l'échéance.
 :::danger[Aucun retour arrière automatique]
 La base est migrée au premier démarrage de la nouvelle version, sans
 downgrade possible. Sauvegarder avant, et ne jamais sauter une version (une
-montée 1.10 → 1.12 doit passer par 1.11).
+montée 1.11 → 1.13 doit passer par 1.12).
 :::
 
 <Steps>
@@ -201,8 +201,9 @@ montée 1.10 → 1.12 doit passer par 1.11).
    sudo kanidmd domain upgrade-check -c /etc/kanidm/server.toml
    ```
 
-   Opération en lecture seule. Chaque item doit ressortir `PASS`&nbsp;; un `FAIL`
-   se corrige avant d'aller plus loin.
+   Opération en lecture seule. `domain_upgrade_level` doit valoir
+   `domain_current_level` + 1 (base migrée par la version en cours), et chaque
+   `status` ressortir `PASS`&nbsp;; un `FAIL` se corrige avant d'aller plus loin.
 
 2. Copie à froid de la base, seul rollback réellement fiable&nbsp;:
 
@@ -239,5 +240,6 @@ montée 1.10 → 1.12 doit passer par 1.11).
 
 </Steps>
 
-En cas d'échec&nbsp;: remettre l'épingle sur la version précédente, restaurer le
-fichier `.bak` à la place de `kanidm.db` (service arrêté), redéployer.
+En cas d'échec&nbsp;: remettre l'épingle sur la version précédente, recopier
+`pre-upgrade/kanidm.db*` dans `/var/lib/kanidm` (service arrêté, puis `chown`
+comme à l'étape 2), redéployer.
