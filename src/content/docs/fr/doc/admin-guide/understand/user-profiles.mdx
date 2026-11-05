@@ -197,3 +197,15 @@ Un programme d'un profil se retire avec `excludePackages` (modules `games`, `edu
 L'éditeur remplace le fichier `.oxt` sans changer d'URL. Recalculer les
 `hashes` de `dnf/pkgs/cartable-fantastique/package.nix` avec
 `nix store prefetch-file <url>`.
+
+### Ghostty ne s'ouvre pas sur un vieux poste
+
+Ghostty exige OpenGL 4.3 : sur un GPU plus ancien, sa fenêtre ne s'ouvre pas
+(`failed to create EGL context` dans le journal ; version réelle : `eglinfo -B`).
+Le désactiver pour l'hôte, dans `usr/machines/<hôte>/configuration.nix` :
+
+```nix
+home-manager.sharedModules = [ { programs.ghostty.enable = false; } ];
+```
+
+Console le remplace, Ctrl+Alt+T compris.
