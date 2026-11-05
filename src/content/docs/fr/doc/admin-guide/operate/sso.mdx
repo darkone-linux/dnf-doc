@@ -165,6 +165,20 @@ kanidm person credential create-reset-token <login> --name idm_admin
 Voir [Créer un compte utilisateur](/fr/doc/admin-guide/operate/onboarding/)
 et [Réinitialiser un mot de passe](/fr/doc/how-to/admin/reset-user-password/).
 
+## Sauvegarder Kanidm
+
+Chaque nuit à 22:00 UTC, Kanidm exporte sa base (JSON compressé) dans
+`/var/lib/kanidm/backups` et garde les 7 derniers exports, repris ensuite par la
+[sauvegarde système](/fr/doc/admin-guide/maintain/backup/) restic.
+
+Restauration&nbsp;: `kanidmd database restore <export>`, service arrêté (voir la
+[documentation Kanidm](https://kanidm.github.io/kanidm/stable/backup_and_restore.html)).
+
+:::caution[Même version uniquement]
+Un export ne se restaure qu'avec la version de Kanidm qui l'a produit. Avant
+une montée de version, la copie à froid reste nécessaire.
+:::
+
 {/* t:p 3e297a33a5949b91fe8e26bb4d91cdfc7acdfcbd59c74684189e27daf94e12a1 */}
 ## Mettre à jour Kanidm
 
