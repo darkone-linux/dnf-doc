@@ -114,8 +114,9 @@ La phase par défaut ajoute ce qui demande la machine&nbsp;:
    n'en régénère jamais une nouvelle, cela invaliderait celle qu'a posée
    l'installation) ;
 6. sur une **passerelle**, relève son **adresse publique** dans le manifeste
-   (repli de `just unlock`, voir plus bas), à relancer si le
-   fournisseur d'accès renumérote. Derrière une box, l'interface WAN ne porte
+   (repli de `just unlock`, voir plus bas). Elle n'est qu'un secours&nbsp;: la
+   passerelle [signale elle-même son adresse](#adresse-wan-des-passerelles)
+   au HCS. Derrière une box, l'interface WAN ne porte
    qu'une IP privée&nbsp;: l'adresse publique est celle qui a servi à joindre la
    machine, ou se passe en argument (`just luks <hôte> '' auto <IP ou nom DDNS>`) ;
 7. si **aucune passphrase gérée** ne déverrouille le volume (hôte installé
@@ -258,7 +259,7 @@ et c'est ce que `just unlock` observe depuis le poste d'administration.
 Aucune passphrase stockée acceptée, ou pas de clé d'infrastructure sur le
 poste&nbsp;: depuis un terminal, `just unlock` présente le prompt LUKS via
 `systemd-tty-ask-password-agent`. Il sonde le 2222 sur l'IP explicite (si
-fournie), le nom d'hôte, puis l'**IP WAN enregistrée dans le manifeste**. Dans
+fournie), le nom d'hôte, l'**IP WAN signalée au HCS**, puis celle du manifeste. Dans
 les deux cas, la passphrase acceptée, le démarrage continue et le port 22 revient.
 
 :::note[Pourquoi deux chemins]
@@ -311,6 +312,39 @@ manquant&nbsp;: `just detect-hw <hôte>`, puis `just apply <hôte>`.
 :::
 
 {/* t:p 0d4b429a963431fc2df8390f74f8b4606cacced102ff481a2cb033a347e88795 */}
+## Adresse WAN des passerelles
+
+Une passerelle qui redémarre peut revenir sur une **autre adresse publique**,
+en attente de sa passphrase et sans VPN. Elle signale donc son adresse au HCS,
+par SSH, et `just unlock` l'essaie en premier, avant celle du manifeste.
+
+| Moment | Qui signale | Fréquence |
+|---|---|---|
+| Attente en initrd | `dnf-wan-report` (initrd) | Toutes les 15 min |
+| Système démarré | `dnf-wan-report.timer` | Au boot, puis chaque heure |
+
+Côté HCS, le compte `dnf-wan-report` n'accepte qu'une clé par passerelle (sa
+clé d'initrd, liée à une commande forcée). L'adresse retenue est celle que voit
+sshd, rangée dans `/var/lib/dnf-wan-report/<hôte>`.
+
+Mise en service, dans cet ordre&nbsp;:
+
+1. `just luks <passerelle>` recopie la clé publique d'initrd dans
+   `usr/secrets/luks.json` (rien ne s'active avant) ;
+2. `git add usr/secrets/luks.json`, puis `just apply <hcs>` ;
+3. `just apply <passerelle>`, puis `just luks <passerelle> show` confirme le
+   premier signalement.
+
+:::caution[Le HCS d'abord]
+Une clé que le HCS ne connaît pas encore est refusée, et fail2ban bannit
+l'adresse de la zone après 3 refus. L'initrd ne retente une clé refusée que
+toutes les 15 minutes.
+:::
+
+Chaque changement d'adresse ou de phase (`initrd`, `system`) est journalisé sur
+le HCS&nbsp;: `journalctl -t dnf-wan-report` y retrace les redémarrages de
+chaque passerelle.
+
 ## Vérifier un hôte
 
 `just luks <hôte> show` n'écrit rien&nbsp;: il interroge la machine et rend
@@ -360,6 +394,7 @@ Un second bloc audite le **déverrouillage distant**, point par point&nbsp;:
 | Chargeur d'amorçage postérieur à la clé | **Le** piège&nbsp;: clé absente de l'initrd qui démarre |
 | Pilotes des cartes filaires présents dans l'initrd | Pas de réseau en stage 1&nbsp;: rien ne répond sur 2222 |
 | Système démarré = configuration auditée | Un apply en attente rendrait l'audit trompeur |
+| Adresse WAN signalée au HCS (passerelles) | Signalement absent ou de plus de 2 h |
 | Adresse publique relevée (passerelles) | Injoignable en initrd une fois le VPN tombé |
 
 {/* t:p 1b8aa558cb41e362ba5fb697119a54be8087a25ea2e92649766cdd23a3036f1d */}
@@ -367,16 +402,18 @@ Un second bloc audite le **déverrouillage distant**, point par point&nbsp;:
 
 | Emplacement | Contenu | Statut |
 |---|---|---|
-| `usr/secrets/luks.json` | Manifeste des hôtes provisionnés + IP WAN des passerelles | Public, versionné |
+| `usr/secrets/luks.json` | Hôtes provisionnés, IP WAN, clés publiques d'initrd | Public, versionné |
 | `secrets.yaml` → `luks-passphrase` | Passphrase partagée du parc | Chiffré sops |
 | `secrets.yaml` → `luks/<hôte>/passphrase` | Passphrase par hôte | Chiffré sops |
 | `secrets.yaml` → `luks/<hôte>/initrd-key` | Clé d'hôte SSH de l'initrd (base64) | Chiffré sops |
 | `secrets.yaml` → `luks/<hôte>/initrd-key-pub` | Sa clé publique, épinglée par `just unlock` | Chiffré sops |
 | `/var/lib/luks-initrd/` (cible) | Copie de travail de la clé d'initrd | Persistant, hors dépôt |
 | `/var/lib/luks-passphrase/ledger` (cible) | Registre des keyslots gérés (détection des rotations) | Persistant, hors dépôt |
+| `/var/lib/dnf-wan-report/<hôte>` (HCS) | Dernière adresse WAN signalée | Persistant, hors dépôt |
 
-Le module expose deux options : `darkone.system.luks.enable` (défaut `true`)
-et `darkone.system.luks.sshPort` (défaut `2222`).
+Le module expose trois options : `darkone.system.luks.enable` (défaut `true`),
+`darkone.system.luks.sshPort` (défaut `2222`) et
+`darkone.system.luks.wanReport.enable` (défaut `true`).
 
 :::danger[Budget de keyslots]
 Un en-tête LUKS2 contient au plus **32 keyslots**. Chaque YubiKey enrôlée en
