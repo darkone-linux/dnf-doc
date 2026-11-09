@@ -422,6 +422,15 @@ passphrases partagée et par hôte. Le module avertit quand le total projeté
 approche de la limite.
 :::
 
+## FAQ
+
+### Poste sans DNS après déverrouillage ?
+
+L'initrd prend un bail DHCP pour le port 2222. Gardé au démarrage, NetworkManager
+voit l'interface *connectée (en externe)* : ni DHCP, ni DNS, `resolv.conf` vide.
+L'initrd rend désormais son bail sur un hôte NetworkManager : effet au premier
+redémarrage après le déploiement.
+
 {/* t:p dfceb630353cb65ed8c0887148b11be424125fce0a38013882e9f28165469e56 */}
 ## Voir aussi
 
