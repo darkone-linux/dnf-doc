@@ -178,36 +178,36 @@ still in the store&nbsp;; otherwise they are redone. Nothing to resume&nbsp;:
 exit code `2`, no rollout.
 :::
 
-{/* t:p 4cbcc00e93172e4a8786902b1830beba2568953c2295cdece1cd5aea416d6347 */}
-### Distributed builds
+{/* t:p 01b27ebd6eaa8c073b3b750f0bdccb6c130c15ae5378bbfdbe90c565d64ad288 */}
+### Distributed build
 
-The deployment machine must not become the bottleneck of the fleet. Each host is
-therefore built by the **builder elected for it**. The election is recalculated on
+The deployment machine must not be the fleet's bottleneck. Each host is
+therefore built by the **elected builder** for it. The election is recomputed on
 each run from `var/generated/`, never declared&nbsp;: changing the deployment
 topology must not rebuild the fleet.
 
-| Order | Builder selected | Condition |
+| Order | Selected builder | Condition |
 |---|---|---|
 | 1 | The host itself | `auto-build` or `roaming` feature |
-| 2 | The `harmonia` host of its zone | The zone has one |
+| 2 | The zone's `harmonia` host | The zone has one |
 | 3 | The `global` `harmonia` host | One exists in the fleet |
 | 4 | The deployment machine | Default |
 
-The rule comes down to one sentence&nbsp;: **a builder must be able to serve what
+The rule boils down to one sentence&nbsp;: **a builder must be able to serve what
 it builds**. Hence the choice of `harmonia` hosts, whose `/nix/store` is already
-their zone's cache, with nothing to prime. A gateway without `harmonia` does not
-suit&nbsp;: its paths are in no substituter.
+the cache for their zone, with nothing to bootstrap. A gateway without `harmonia`
+is not suitable&nbsp;: its paths are not in any substituter.
 
-The result stays on the builder. It is the deployment that then brings it to the
-zone's hosts, over the LAN, through their usual substituter.
+The result stays on the builder. Publication then brings it to the zone's hosts,
+over LAN, through their usual substituter.
 
 :::note[`nixpkgs` sources downloaded by the builder]
-Every system embeds the `nixpkgs` source (about 200&nbsp;MiB), new with each
+Each system embeds the `nixpkgs` source (around 200&nbsp;MiB), new on each
 update and absent from any cache. Before sending it the derivations, the tool
-therefore asks the builder to download from GitHub, by itself, the sources locked
-in `flake.lock` that its builds need&nbsp;: they no longer go through the uplink of
-the deployment machine. A builder that cannot reach `github.com` receives them
-pushed, as before, without failure.
+therefore asks the builder to download itself, from GitHub, the sources locked in
+`flake.lock` that its builds need&nbsp;: they no longer go through the deployment
+machine's uplink. A builder that cannot reach `github.com` receives them pushed,
+as before, without failure.
 :::
 
 ```yaml
@@ -221,26 +221,29 @@ isolated host behind a slow link that embeds a large package absent from the
 public cache, and it is the answer for a host of another architecture.
 
 The choice is made **per host**, never per zone&nbsp;: RAM and disk are
-properties of the machine. The trade-off to weigh&nbsp;: the closure of the
-derivations, several hundred MiB, is pushed towards it on each run that moves
-`nixpkgs`. It is the report's copy counters that settle the case, not intuition.
+properties of the machine. Trade-off to weigh&nbsp;: the derivations closure,
+several hundred MiB, goes up to it on each run that moves `nixpkgs`. The report's
+copy counters settle the case, not intuition.
 :::
 
 :::note[Automatic fallback]
 Builder unreachable, failing, or of an architecture incompatible with its
-target&nbsp;→ the build falls back to the deployment machine. No host fails
-because of a delegation, and the report names the builder that actually built.
+target&nbsp;→ the build returns to the deployment machine. No host fails because
+of a delegation, and the report names the builder that actually built. A download
+that the builder's network misses (unresolved name, connection impossible) counts
+as a builder failure&nbsp;: fallback, and never a failure propagated to the other
+hosts.
 :::
 
-The `--no-distributed-build` option brings everything back to the center,
+The `--no-distributed-build` option brings everything back to the centre,
 whatever the election. It is a debugging escape hatch&nbsp;: the rule comes from
 the fleet, the exception from the command line.
 
-:::caution[A zone without `harmonia` costs a lot]
-Without a zone cache, there is neither a local builder nor a shared source&nbsp;:
-each host has its closure pushed to it, one by one, from the deployment machine.
-The report lists these zones and the number of pushed bytes shows it. Declare a
-[`harmonia`](#binary-cache) on a host of the zone.
+:::caution[A zone without `harmonia` is costly]
+Without a zone cache, there is neither a local builder nor a common
+source&nbsp;: each host gets its closure pushed, one by one, from the deployment
+machine. The report lists these zones and the number of bytes pushed shows it.
+Declare a [`harmonia`](#binary-cache) on a host of the zone.
 :::
 
 {/* t:p b140e2ce0eadf1058d08e62ea6b45ab657f3afb8135d13b213923d61ddf46539 */}
@@ -708,7 +711,7 @@ deployment.
 | `nix-cache` | Per-zone `nginx` proxy that caches the public `cache.nixos.org` cache on the gateway. |
 
 A `harmonia` host has a second role: it is the
-[elected builder](#distributed-builds) of its zone, because it can serve what
+[elected builder](#distributed-build) of its zone, because it can serve what
 it builds.
 
 A host queries these sources in the following priority order. The first fetch
@@ -762,7 +765,7 @@ fallback to `cache.nixos.org`, with no delay. Signature keys being common to the
 whole network, nothing else to configure.
 
 Outside a zone, no cache in the fleet serves it: `fleet-update` therefore builds it
-on itself, like an [`auto-build`](#distributed-builds) host. For a one-off
+on itself, like an [`auto-build`](#distributed-build) host. For a one-off
 move, the `darkone.service.nix-cache.roaming` option alone is enough.
 :::
 
@@ -824,7 +827,7 @@ Two distinct mechanisms, combinable on the same host.
 | `auto-build` | `fleet-update`, at fleet build | The whole system closure of the host that declares it |
 
 `build-farm` relieves an admin machine of its long compilations.
-[`auto-build`](#distributed-builds) removes a transfer to a host. They do
+[`auto-build`](#distributed-build) removes a transfer to a host. They do
 not replace each other.
 :::
 

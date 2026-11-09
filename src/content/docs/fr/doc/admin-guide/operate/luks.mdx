@@ -58,7 +58,7 @@ ne déclare pas de volume LUKS dans son disko. Les hôtes chiffrés existants ne
 bougent pas tant que `just luks <hôte>` n'a pas été lancé.
 :::
 
-{/* t:p b13702683758dd33056ebd30814f9ec86a9329faa0d8a0ce82cff5abc18d55e4 */}
+{/* t:p 12180141b8ccc6d1371327023030cd1ea7f43448cb7cfa9c22f0ac182334bd80 */}
 ## Provisionner un hôte
 
 ```sh
@@ -188,7 +188,7 @@ Un hôte qui devient isolé se réinstalle (`just install`)&nbsp;: ses anciennes
 entrées `luks/<hôte>` restent dans `secrets.yaml`, signalées par `just luks`,
 à supprimer avec `just sops`.
 
-{/* t:p 0475ef42622c9afc227e54d579a3058dfde478f03d574df10ec884810b887000 */}
+{/* t:p 1fdba3e4d93cd37126204f8b08e36d618e529de23ba3251f274485ed76719e6d */}
 ## Déverrouiller au démarrage
 
 Tout hôte chiffré suit la même séquence, sans rien à régler :
@@ -311,7 +311,7 @@ Sur un hôte déjà installé, si `just luks <hôte> show` signale un pilote
 manquant&nbsp;: `just detect-hw <hôte>`, puis `just apply <hôte>`.
 :::
 
-{/* t:p 0d4b429a963431fc2df8390f74f8b4606cacced102ff481a2cb033a347e88795 */}
+{/* t:p 25598a697b56fd59211e0b26fe7ee372b618b4b35e3541fd798b422755a392e5 */}
 ## Adresse WAN des passerelles
 
 Une passerelle qui redémarre peut revenir sur une **autre adresse publique**,
@@ -345,6 +345,7 @@ Chaque changement d'adresse ou de phase (`initrd`, `system`) est journalisé sur
 le HCS&nbsp;: `journalctl -t dnf-wan-report` y retrace les redémarrages de
 chaque passerelle.
 
+{/* t:p 237fafb07a7bb583addbdca2d2addca765406d85f8cb76bea9692241cf9c2cca */}
 ## Vérifier un hôte
 
 `just luks <hôte> show` n'écrit rien&nbsp;: il interroge la machine et rend
@@ -397,7 +398,7 @@ Un second bloc audite le **déverrouillage distant**, point par point&nbsp;:
 | Adresse WAN signalée au HCS (passerelles) | Signalement absent ou de plus de 2 h |
 | Adresse publique relevée (passerelles) | Injoignable en initrd une fois le VPN tombé |
 
-{/* t:p 1b8aa558cb41e362ba5fb697119a54be8087a25ea2e92649766cdd23a3036f1d */}
+{/* t:p 35c0920e53dea06f0336f8486390a75ce63c2129de7d9b2984561c20157d85d5 */}
 ## Sous le capot
 
 | Emplacement | Contenu | Statut |
@@ -422,8 +423,10 @@ passphrases partagée et par hôte. Le module avertit quand le total projeté
 approche de la limite.
 :::
 
+{/* t:p 938609b64e2e1217c0db6ceeca57cfadea52087e1a0a2c4319be9b6fdb6ff3b2 */}
 ## FAQ
 
+{/* t:p 99fe2fe10c64a3bf66b15c1e96b32edbdc4c73dda61e4009414d56f1897fc10d */}
 ### Poste sans DNS après déverrouillage ?
 
 L'initrd prend un bail DHCP pour le port 2222. Gardé au démarrage, NetworkManager

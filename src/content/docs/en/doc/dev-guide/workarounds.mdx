@@ -98,6 +98,15 @@ gimp · overlay · since 2026-06-17  [drop?]
 {/* t:p 938609b64e2e1217c0db6ceeca57cfadea52087e1a0a2c4319be9b6fdb6ff3b2 */}
 ## FAQ
 
+{/* t:p 1431ed80b2cfbd899309e1e0b4a731a6acfc072d0528de8be857f430c1ecb1c4 */}
+### Overlay or suspension?
+
+A broken service or library: overlay. A non-critical leaf application (game, office, education) already fixed upstream: commented line in its module, `inline` entry. No local build in the meantime.
+
+```nix
+#(lib.mkIf g3d veloren) # Minecraft like -> TMP: cargo system libs, back with nixpkgs#585129
+```
+
 {/* t:p 1ce1b8e169774b101122d8e3627c2c476945e409b1e7bc0655835f4fe95959a9 */}
 ### A permanent overlay?
 

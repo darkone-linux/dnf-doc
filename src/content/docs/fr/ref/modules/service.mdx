@@ -506,24 +506,27 @@ darkone.service.idm.replication.replication = { inherit isMainReplica isReplCons
 
 <hr/>
 
-{/* t:p ad8ac0ab2185114fe0502554b07ecbb52ecbc643d7ede8e59512366079167017 */}
+{/* t:p 1e8c769af0df205e8472dafafb14b919e3b3d298180b0480cf4045974d2cbe9a */}
 ### &#x2728; darkone.service.idm
 
-Service DNF Kanidm (gestionnaire d'identités).
+Kanidm (gestionnaire d'identité), service DNF.
 
-:::note[Les secrets sont générés, pas saisis]
-`just configure-admin-host` crée chaque entrée lue par ce module : les mots de
-passe du compte break-glass (`kanidm-admin-password`,
-`kanidm-idm-admin-password`), la paire auto-signée de l'écouteur HTTPS interne
-(`kanidm-tls-chain` / `kanidm-tls-key`, 10 ans, CN=127.0.0.1) et un
-`oidc-secret-<client>` par client OAuth2 provisionné. Relisez-les avec `just sops`
-aux rares occasions où un admin en a besoin.
+:::note[Les secrets sont générés, jamais saisis]
+`just configure-admin-host` crée chaque entrée lue par ce module&nbsp;:
+les mots de passe des comptes de secours (`kanidm-admin-password`,
+`kanidm-idm-admin-password`), la paire auto-signée de l'écouteur HTTPS
+interne (`kanidm-tls-chain` / `kanidm-tls-key`, 10 ans, CN=127.0.0.1) et
+un `oidc-secret-<client>` par client OAuth2 provisionné. Les relire avec
+`just sops` les rares fois où un administrateur en a besoin.
 :::
 
-Sous-modules (`idm/`) :
-- `replication.nix` : réplication en lecture seule multi-zones, du HCS vers les
-  passerelles de zone ;
-- `provision.nix` : clients OAuth2 (registre de gabarits), groupes et personnes.
+Sauvegarde en ligne&nbsp;: un dump par nuit, 7 conservés dans `/var/lib/kanidm/backups`
+(`services.kanidm.server.settings.online_backup`). Restaurable uniquement par la
+même version mineure de kanidm&nbsp;: une mise à niveau exige encore une copie à froid.
+
+Sous-modules (`idm/`)&nbsp;:
+- `replication.nix`&nbsp;: réplication multi-zone en lecture seule, du HCS vers les passerelles de zone&nbsp;;
+- `provision.nix`&nbsp;: clients OAuth2 (registre de modèles), groupes et personnes.
 
 {/* t:p c9d523f9c225056343b709b06602f0efa716c56a8fac18a0f30525abe02bf688 */}
 #### Réplication (`replication.nix`)
