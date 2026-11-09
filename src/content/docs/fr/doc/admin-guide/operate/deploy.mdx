@@ -234,7 +234,9 @@ pas l'intuition.
 Builder injoignable, en échec, ou d'une architecture incompatible avec sa
 cible&nbsp;→ la construction revient sur la machine de déploiement. Aucun hôte
 n'échoue à cause d'une délégation, et le rapport nomme le builder qui a
-réellement construit.
+réellement construit. Un téléchargement que le réseau du builder rate (nom non
+résolu, connexion impossible) compte comme un échec du builder&nbsp;: repli, et
+jamais d'échec propagé aux autres hôtes.
 :::
 
 L'option `--no-distributed-build` ramène tout au centre, quelle que soit
