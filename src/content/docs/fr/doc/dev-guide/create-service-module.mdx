@@ -449,7 +449,7 @@ récupérerait tout un arbre nixpkgs à chaque évaluation, sur chaque hôte.
    # (flashonfire/nixpkgs@739df6f3, unchanged but for `nixfmt -s`).
    ```
 
-2. L'ajouter à la `modules` list de `mkNode` (`dnf/lib/mk-configuration.nix`)
+2. L'ajouter à la `modules` list de `mkNode` (`dnf/lib/flake/mk-configuration.nix`)
    → importé sur chaque hôte, sans effet tant que
    `services.<nom>.enable = false`&nbsp;:
 

@@ -47,7 +47,7 @@ dnf/pkgs/
 
 Un dossier = un paquet. `default.nix` scanne les dossiers, il n'y a donc **aucun
 registre** à tenir à jour. L'overlay, lui, est appliqué une fois pour toutes par
-`dnf/lib/mk-configuration.nix`, sur tous les hôtes.
+`dnf/lib/flake/mk-configuration.nix`, sur tous les hôtes.
 
 :::tip[Forme nixpkgs dès le départ]
 `<nom>/package.nix` reprend la forme
@@ -89,7 +89,7 @@ NixOS ou [Home Manager](/fr/doc/dev-guide/modules/), comme un paquet nixpkgs&nbs
 Les médias d'installation reçoivent leur `pkgs` tout construit
 (`nixpkgs.pkgs`), sans cet overlay : `pkgs.<nom>` n'y est pas disponible. Le
 rendre visible demande d'appliquer l'overlay à cette instance, dans
-`dnf/lib/mk-configuration.nix`.
+`dnf/lib/flake/mk-configuration.nix`.
 :::
 
 {/* t:p e531d98c40944b8ba4ca35fc5df650917db3afb276f4763d3c10616d700baf37 */}

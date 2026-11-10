@@ -93,7 +93,7 @@ La liste exacte des arguments d'un module se lit en tête de son fichier (le blo
 
 Certaines valeurs n'ont rien à faire dans `etc/config.yaml` (manuel) : trop
 techniques, ou **provisionnées par un outil**. Le motif : un script écrit un
-fichier `var/generated/<x>.nix` que l'assembleur `dnf/lib/mk-configuration.nix`
+fichier `var/generated/<x>.nix` que l'assembleur `dnf/lib/flake/mk-configuration.nix`
 **fusionne** dans un argument injecté.
 
 Exemple : `just configure-alert-bot` écrit `var/generated/matrix.nix` (identité du
