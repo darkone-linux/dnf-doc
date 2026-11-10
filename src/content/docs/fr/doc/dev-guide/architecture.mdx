@@ -43,7 +43,7 @@ qui composent les profils, qui définissent les hôtes et les utilisateurs.
 
 | Couche | Où | Rôle |
 |---|---|---|
-| **Modules** | `dnf/modules/standard/` | Briques unitaires (un service, un réglage système). |
+| **Modules** | `dnf/modules/<catégorie>/` | Briques unitaires (un service, un réglage système). |
 | **Mixins** | `dnf/modules/mixin/` | Macro-modules : profils d'hôtes, compléments de profils. |
 | **Home** | `dnf/home/` | Modules et profils [Home Manager](https://github.com/nix-community/home-manager) (utilisateurs). |
 | **Librairie** | `dnf/lib/` | Helpers partagés (`dnfLib`) : réseau, OIDC, pare-feu, sécurité… |

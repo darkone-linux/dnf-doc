@@ -19,7 +19,7 @@ haut-niveau, regroupés par catégorie sous `dnf/modules/` et documentés dans l
 {/* t:p 09d5493fbcb2c54f2ad475c4d0e0d4f830ef87bccacb1e10edd9ac41630497bc */}
 ## Catégories
 
-- **standard** : système, console, graphic, service, admin, user.
+- **standard** : `system`, `security`, `console`, `graphic`, `service`, `admin`, `user`.
 - **mixin** : macro-modules composant des profils d'hôtes et compléments de profils utilisateurs.
 - **home** : modules et profils [Home Manager](https://github.com/nix-community/home-manager).
 
@@ -28,7 +28,7 @@ haut-niveau, regroupés par catégorie sous `dnf/modules/` et documentés dans l
 
 <Steps>
 
-1. Choisir la catégorie (`dnf/modules/standard/<catégorie>/` ou `mixin`).
+1. Choisir la catégorie (`dnf/modules/<catégorie>/` ou `dnf/modules/mixin/`).
 2. Écrire l'en-tête du fichier selon les règles (voir [headers de code](/fr/doc/how-to/dev/code-headers/)).
 3. Déclarer les `options` puis la `config` du module.
 4. Régénérer (`just generate`) et tester avant de commiter.
@@ -51,7 +51,7 @@ Un module DNF suit le patron NixOS classique : un en-tête, un bloc `options` et
 un bloc `config` activé par `enable`.
 
 ```nix
-# dnf/modules/standard/service/hello.nix
+# dnf/modules/service/hello.nix
 { lib, config, ... }:
 let
   cfg = config.darkone.service.hello;

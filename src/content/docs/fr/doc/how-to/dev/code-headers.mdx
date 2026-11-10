@@ -60,7 +60,20 @@ Pour changer un fichier généré, modifier **le générateur ou la source**
 [Le générateur](/fr/doc/dev-guide/generator/).
 :::
 
-:::note[Conventions complètes]
-Le style de commentaires et la structure des modules sont décrits dans
-`dnf/AGENTS.md` (framework). Côté documentation, voir l'[AGENTS.md](/fr/doc/dev-guide/documentation/) du site.
-:::
+## Commentaires dans le code
+
+Le lecteur **parcourt** le code : un commentaire relu deux fois a échoué.
+
+- **Pourquoi**, pas quoi : intention, contrainte, choix non évident.
+- **3 lignes** par bloc, 6 au plus ; au-delà, la page de doc et un renvoi d'une ligne.
+- **Une idée** par commentaire.
+- **Style télégraphique** : propositions courtes, pas de récit de l'incident.
+- **Nommer le mécanisme** (`mkDefault`, `br_netfilter`) plutôt que le décrire.
+
+```nix
+# `allowedTCPPorts` carries no `iifname`: on a host that also holds a WAN
+# address it publishes sshd on the Internet.
+```
+
+La structure des modules est décrite dans [Les modules](/fr/doc/dev-guide/modules/),
+la rédaction de la doc dans [Documentation](/fr/doc/dev-guide/documentation/).

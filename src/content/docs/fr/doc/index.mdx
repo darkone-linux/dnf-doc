@@ -88,20 +88,23 @@ A la racine :
 - Justfile Gestion du projet avec [just](https://github.com/casey/just)
 - dnf/ Framework (modules & common files)
   - modules/ [Framework modules](/fr/ref/modules/)
-    - standard Modules standards
-      - system/ Système & Matériel
-      - console/ Application CLI
-      - graphic/ Applications X
-      - service/ Services réseau
-      - admin/ Administration
-      - user/ Configurations utilisateurs (hors HM)
-    - mixin Macro-modules "Mixins"
+    - system/ Système & Matériel
+    - security/ Durcissement (ANSSI)
+    - console/ Application CLI
+    - graphic/ Applications X
+    - service/ Services réseau
+    - admin/ Administration
+    - user/ Configurations utilisateurs (hors HM)
+    - mixin/ Macro-modules "Mixins"
       - host/ Profiles d'hôtes (desktop, server...)
       - profile/ Compléments aux profils utilisateurs
   - home Configuration Home Manager (HM)
     - modules/ Modules nix (fonctionnalités, programmes)
     - profiles/ Profils : admin, student, advanced...
     - nixos/ Configurations NixOS (hors HM) additionnelles
+  - lib/ Helpers partagés (`dnfLib`)
+  - config/ Registres : services, ports, alertes
+  - pkgs/ Paquets absents de nixpkgs
 - **etc/** Configuration déclarative du réseau
   - config.yaml [Ma config principale](/fr/doc/dev-guide/generator/)
 - **usr/** Configuration spécifique de mon réseau
