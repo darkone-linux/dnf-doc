@@ -146,7 +146,8 @@ just check
 ### 💠 `check-code`
 
 Analyse statique avec `statix` et détection du code mort avec `deadnix`, sur
-tous les fichiers `*.nix`.
+tous les fichiers `*.nix`. `shellcheck` vérifie les scripts `*.sh` suivis par
+git, ceux de `dnf/` compris en co-développement.
 
 ```sh
 just check-code
