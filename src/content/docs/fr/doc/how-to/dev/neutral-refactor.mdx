@@ -1,0 +1,53 @@
+---
+title: Prouver qu'un refactor est neutre
+sidebar:
+  label: Refactor neutre
+  order: 4
+lang: fr
+---
+
+Un refactor du framework ne change **aucun** système déployé : la dérivation
+(`drvPath`) de chaque hôte reste identique. `just drv-diff` le vérifie, depuis
+la racine d'un projet de co-développement.
+
+```sh
+just drv-diff                   # tout le parc
+just drv-diff gw-main,nas       # deux hôtes, pendant le travail
+just drv-diff "" HEAD~3         # contre une révision antérieure de dnf/
+```
+
+La commande évalue chaque hôte deux fois : contre le dernier commit de `dnf/`,
+puis contre l'arbre de travail. Elle liste les hôtes dont la dérivation diffère
+et sort en erreur s'il y en a.
+
+:::tip[Pendant le refactor]
+Cibler deux ou trois hôtes de profils différents (passerelle, serveur, poste),
+puis lancer le parc entier avant de commiter.
+:::
+
+## Fichiers pris en compte
+
+L'arbre de travail est lu comme `just commit` le commiterait : fichiers suivis
+et nouveaux fichiers, sauf ceux que git ignore. Le projet consommateur est le
+même des deux côtés, seul `dnf/` varie.
+
+## Une dérivation diffère
+
+La sortie donne les deux `drvPath` de chaque hôte touché. Les comparer montre
+ce qui a changé :
+
+```sh
+nix run nixpkgs#nix-diff -- <avant.drv> <après.drv>
+```
+
+Un écart voulu n'est plus un refactor : le commit porte alors le type `feat` ou
+`fix`.
+
+## Ressources
+
+Deux évaluations se suivent, chacune sur deux processus. `WORKERS` en change le
+nombre, `WORKER_MEM` (Mo) plafonne la mémoire de chacun.
+
+```sh
+WORKERS=1 just drv-diff
+```

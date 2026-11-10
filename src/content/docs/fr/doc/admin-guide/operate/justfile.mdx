@@ -1175,6 +1175,17 @@ just cat                   # teste en local
 just cat myserver          # applique sur myserver
 ```
 
+### 🔗 `drv-diff [hôtes] [base]`
+
+Compare la dérivation de chaque hôte entre une révision de `dnf/` (`base`,
+`HEAD` par défaut) et son arbre de travail. Sort en erreur si l'une diffère.
+Voir [Refactor neutre](/fr/doc/how-to/dev/neutral-refactor/).
+
+```sh
+just drv-diff                   # tout le parc
+just drv-diff gw-main,nas       # deux hôtes
+```
+
 {/* t:p 51737696af1a90997dcc39b9fa1d0907bd1a12d8ebd738b211e1f04a1ddfe02e */}
 ### 🔗 `versions`
 
