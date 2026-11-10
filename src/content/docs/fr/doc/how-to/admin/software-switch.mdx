@@ -1,0 +1,103 @@
+---
+title: Transformer un hôte en switch
+sidebar:
+  label: Switch logiciel
+  order: 12
+lang: fr
+---
+
+import { Steps } from '@astrojs/starlight/components';
+
+Un hôte peut prêter ses ports réseau libres à sa zone. Une machine branchée
+dessus est dans la zone comme derrière un switch matériel&nbsp;: DHCP et DNS de
+la passerelle, aucune configuration de son côté.
+
+## Principe
+
+```d2
+style.fill: transparent
+direction: right
+
+gw: Passerelle
+host: Hôte switch {
+  br0: Pont br0
+}
+a: Machine A
+b: Machine B
+
+gw -> host.br0: uplink
+host.br0 -> a: downlink
+host.br0 -> b: downlink
+```
+
+- **Pont `br0`** : regroupe l'uplink (vers la zone) et les downlinks (ports libres).
+- **Adresse de l'hôte** : portée par `br0`, en DHCP, avec la MAC de l'uplink.
+- **Niveau 2 pur** : pas de STP, pas de filtrage par le pare-feu de l'hôte.
+- **Dès l'initrd** : l'aval garde le réseau pendant l'attente du [déverrouillage LUKS](/fr/doc/admin-guide/operate/luks/).
+
+L'hôte passe sur systemd-networkd. Une passerelle de zone ou un hôte sous
+NetworkManager ne peut pas être switch&nbsp;: l'évaluation le refuse.
+
+## Mise en place
+
+<Steps>
+
+1. **Une seule MAC**
+
+   Dans `etc/config.yaml`, `mac` ne garde que l'adresse de l'uplink&nbsp;: le
+   pont la reprend, la réservation DHCP suit le pont.
+
+   ```yaml
+   # etc/config.yaml
+   - hostname: "srv"
+     zone: "maison:1.2"
+     mac: "02:00:00:00:00:01"
+   ```
+
+   Puis `just generate`.
+
+2. **Déclarer le switch**
+
+   ```nix
+   # usr/machines/srv/configuration.nix
+   darkone.system.network.switch = {
+     enable = true;
+     uplink = "enp1s0f1";
+     downlinks = [
+       "enp1s0f0" # 10 GbE
+       "enp2s0"
+     ];
+   };
+   ```
+
+3. **Appliquer au redémarrage**
+
+   `just apply srv boot`, puis redémarrer. Un `switch` ferait entrer l'uplink
+   dans le pont en pleine activation, et couperait la session SSH.
+
+4. **Vérifier**
+
+   `ip -br addr` montre l'adresse sur `br0`, `bridge link` les ports du pont.
+
+</Steps>
+
+## FAQ
+
+### Les machines en aval perdent-elles le réseau ?
+
+Oui, pendant que l'hôte redémarre (firmware, noyau). Le pont revient dès
+l'initrd, avant le déverrouillage du disque.
+
+### Pourquoi une seule MAC ?
+
+Le pont doit reprendre l'adresse de l'uplink, et l'évaluation ne peut pas
+deviner laquelle des MAC c'est. Plusieurs MAC ou aucune → l'évaluation échoue.
+
+### Peut-on relier deux ports au même switch ?
+
+Non&nbsp;: sans STP, deux ports sur le même segment forment une boucle.
+
+### Quel débit attendre ?
+
+Le trafic ponté traverse le processeur de l'hôte, et l'uplink est partagé avec
+ses propres échanges. Mesurer de bout en bout avec `iperf3`.
