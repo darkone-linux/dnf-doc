@@ -200,6 +200,12 @@ Drapeaux disponibles :
 | `externalAccess` | `false` | Accès depuis l'extérieur |
 | `require` | `[ ]` | Dépendances à activer sur le même hôte (erreur sinon) |
 
+:::caution[Le registre, pas le module]
+Ces drapeaux ne se déclarent **que** dans le registre. Les options homonymes de
+`darkone.system.services.service.<nom>`, jamais lues, sont supprimées&nbsp;: les
+retirer d'un module qui les posait.
+:::
+
 Côté `config.yaml`, l'exemple
 suivant installe un OxiCloud complet sur `https://cloud.mondomaine.tld` :
 
