@@ -134,6 +134,12 @@ adguardhome = {
 | `require` | `[ ]` | Services à activer sur le **même hôte** (sinon erreur de génération). |
 | `activation.profiles.<profil>` | | Activé d'office sur les hôtes d'un profil. |
 
+:::caution[Valeurs littérales uniquement]
+Le générateur lit ce fichier comme du texte, sans l'évaluer : pas de `let`, de
+fonction, de `//`, d'`inherit` ni d'interpolation. Il refuse ce qu'il ne sait
+pas lire, plutôt que d'appliquer un défaut.
+:::
+
 {/* t:p 3fbdddc2eb619ea2e43aeb47e3703af2d9828e5e6373c6bfef5abde13fed73b1 */}
 ## Le `default.nix` généré
 
