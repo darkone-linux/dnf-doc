@@ -13,7 +13,7 @@ sidebar:
 **A system module** manages common, important, and general configurations.
 :::
 
-{/* t:p 19b9a849269fa414322361090aa75e1013617c2ec868794f85dc918a1e6679ad */}
+{/* t:p 2902356e686694b8dba90d1a38bd9dc147034254608a3e4dbdf3a9043c958b78 */}
 ### &#x2699; darkone.system.core
 
 The core DNF module.
@@ -28,7 +28,7 @@ Sets up:
 - JetBrains Mono Nerd Font, with `kmscon` for the TTY;
 - nightly store optimisation, weekly GC with 30 d retention (keep-last-N via
   `gcKeepGenerations` on disk-constrained hosts);
-- the firewall and key-only SSH;
+- key-only SSH (hostname, firewall and SSH exposure: `network.nix`);
 - Ghostty's `xterm-ghostty` terminfo, so every host accepts the terminal;
 - the suspend policy (`disableSuspend` for servers);
 - polkit rules letting `wheel` halt/reboot;
@@ -37,12 +37,6 @@ Sets up:
 :::note[Mixin entry point]
 Activates the host's profile mixin (`darkone.host.${host.profile}.enable`)
 and propagates `enableSops` to the sops module.
-:::
-
-:::caution[SSH is opened per interface]
-Port 22 is global only on hosts with no WAN leg. A gateway gets it on the LAN
-bridge and the tailnet; a global-zone host on the tailnet only — a public SSH
-there is decided in the host profile.
 :::
 
 :::danger[SSH is key-only]
@@ -418,6 +412,70 @@ darkone.system.microvm = {
         sha256 = "1fc70f774d38eb169993ac391eea357ef47c88757ef72ee5943879b7e8e2bc69";
       };
   whisper.threads = 8;
+};
+```
+
+<hr/>
+
+{/* t:p 7ab224d4694c4498999d0743c275590c532eec79bbe0d5ef6dfc34597c358361 */}
+### &#x2699; darkone.system.network
+
+Fleet-wide network configuration of DNF hosts.
+
+Sets up, on every host:
+- the hostname;
+- the nftables firewall (`darkone.system.core.enableFirewall`);
+- SSH opened per role (below).
+
+:::caution[SSH is opened per interface]
+Port 22 is global only on hosts with no WAN leg. A gateway gets it on the LAN
+bridge and the tailnet; a global-zone host on the tailnet only — a public SSH
+there is decided in the host profile.
+:::
+
+{/* t:p 9dbf2c6b1a8576facc2f71a43f0deb0babfcc9293530f3ff6246b2ef772c45d3 */}
+#### Software switch (`darkone.system.network.switch`)
+
+Bridges spare NICs with the uplink: a host plugged into a downlink sits in
+the zone as behind an unmanaged hardware switch (DHCP and DNS of the zone
+gateway, nothing to configure on its side).
+
+```nix
+darkone.system.network.switch = {
+  enable = true;
+  uplink = "enp1s0f1";
+  downlinks = [
+    "enp1s0f0" # 10 GbE
+    "enp2s0"
+  ];
+};
+```
+
+- bridge `br0` holds the host address (DHCP) with the uplink MAC;
+- pure L2: no STP, no `br_netfilter`, so bridged frames skip nftables;
+- same bridge in the initrd: downlinks keep the network while the host waits
+  for its LUKS unlock, and the address never changes interface at switch-root;
+- systemd-networkd is forced; a zone gateway or a NetworkManager host is refused.
+
+:::caution[One MAC in `config.yaml`]
+The host's `mac` must hold a single address, the uplink's: the bridge takes
+it, so the zone DHCP reservation follows the bridge. Asserted at evaluation.
+:::
+
+:::caution[Deploy with `boot`]
+`just apply <host> boot`, then reboot: a `switch` moves the uplink into the
+bridge mid-activation and drops the SSH session.
+:::
+
+* **enable** `bool` the software switch: spare NICs bridged with the uplink into the host's zone
+* **uplink** `str` Interface linked to the zone. Its MAC must be the only `mac` of the host in `config.yaml`.
+* **downlinks** `listOf str` Interfaces bridged with the uplink.
+
+```nix
+darkone.system.network = {
+  enable = false;
+  uplink = "enp1s0f1";
+  downlinks = [ ];
 };
 ```
 

@@ -8,10 +8,15 @@ lang: fr
 
 import { Steps } from '@astrojs/starlight/components';
 
+{/* t:main */}
+{/* t:h c0d4eeea3ed3c176a8c8c060cdc1eb040d1451b06e73727820f55497510e912b */}
+
+{/* t:p 0538bcbba00f7a1142edd0c8dc937e08aaf45bd7c4b252dd9719c8ce92e2666c */}
 Un hôte peut prêter ses ports réseau libres à sa zone. Une machine branchée
 dessus est dans la zone comme derrière un switch matériel&nbsp;: DHCP et DNS de
 la passerelle, aucune configuration de son côté.
 
+{/* t:p 4eb8f46896fbd24a7bd1826175fadbfb63ff5fa3f386f84db9f537a6130a3c5c */}
 ## Principe
 
 ```d2
@@ -38,6 +43,7 @@ host.br0 -> b: downlink
 L'hôte passe sur systemd-networkd. Une passerelle de zone ou un hôte sous
 NetworkManager ne peut pas être switch&nbsp;: l'évaluation le refuse.
 
+{/* t:p 3ca659a2a5a256b6c856da4019741347cece615d69158d1c14c67a40eb37a5c0 */}
 ## Mise en place
 
 <Steps>
@@ -81,22 +87,27 @@ NetworkManager ne peut pas être switch&nbsp;: l'évaluation le refuse.
 
 </Steps>
 
+{/* t:p 938609b64e2e1217c0db6ceeca57cfadea52087e1a0a2c4319be9b6fdb6ff3b2 */}
 ## FAQ
 
+{/* t:p 0e43bfa3bdd6722d9ca9d71f4880814ea21ac1855e58917c9c4964d40609c71f */}
 ### Les machines en aval perdent-elles le réseau ?
 
 Oui, pendant que l'hôte redémarre (firmware, noyau). Le pont revient dès
 l'initrd, avant le déverrouillage du disque.
 
+{/* t:p 8725957d95179bd1b370895c83b6abc94328e60eb305f86637682e9389a4a0b4 */}
 ### Pourquoi une seule MAC ?
 
 Le pont doit reprendre l'adresse de l'uplink, et l'évaluation ne peut pas
 deviner laquelle des MAC c'est. Plusieurs MAC ou aucune → l'évaluation échoue.
 
+{/* t:p 19f623d3332feeff6c8089631698a18f8aa294c1daf6733358cbc8e773e9c14c */}
 ### Peut-on relier deux ports au même switch ?
 
 Non&nbsp;: sans STP, deux ports sur le même segment forment une boucle.
 
+{/* t:p 626b006e14f6957976bfb0197d335669818c956ff621e634147430be82397bb1 */}
 ### Quel débit attendre ?
 
 Le trafic ponté traverse le processeur de l'hôte, et l'uplink est partagé avec

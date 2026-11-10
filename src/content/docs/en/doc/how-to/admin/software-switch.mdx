@@ -1,0 +1,114 @@
+---
+title: Turning a host into a switch
+sidebar:
+  label: Software switch
+  order: 12
+lang: en
+---
+
+import { Steps } from '@astrojs/starlight/components';
+
+{/* t:translated-from fr */}
+{/* t:h c0d4eeea3ed3c176a8c8c060cdc1eb040d1451b06e73727820f55497510e912b */}
+
+{/* t:p 0538bcbba00f7a1142edd0c8dc937e08aaf45bd7c4b252dd9719c8ce92e2666c */}
+A host can lend its free network ports to its zone. A machine plugged into it
+is in the zone as if behind a hardware switch&nbsp;: gateway DHCP and DNS, no
+configuration on its side.
+
+{/* t:p 4eb8f46896fbd24a7bd1826175fadbfb63ff5fa3f386f84db9f537a6130a3c5c */}
+## Principle
+
+```d2
+style.fill: transparent
+direction: right
+
+gw: Gateway
+host: Switch host {
+  br0: Bridge br0
+}
+a: Machine A
+b: Machine B
+
+gw -> host.br0: uplink
+host.br0 -> a: downlink
+host.br0 -> b: downlink
+```
+
+- **`br0` bridge** : groups the uplink (to the zone) and the downlinks (free ports).
+- **Host address** : carried by `br0`, via DHCP, with the uplink's MAC.
+- **Pure layer 2** : no STP, no filtering by the host firewall.
+- **From initrd onwards** : the downstream side keeps the network while waiting for [LUKS unlock](/en/doc/admin-guide/operate/luks/).
+
+The host switches to systemd-networkd. A zone gateway or a host running
+NetworkManager cannot be switched&nbsp;: the evaluation refuses it.
+
+{/* t:p 3ca659a2a5a256b6c856da4019741347cece615d69158d1c14c67a40eb37a5c0 */}
+## Setup
+
+<Steps>
+
+1. **A single MAC**
+
+   In `etc/config.yaml`, `mac` keeps only the uplink address&nbsp;: the bridge
+   takes it over, the DHCP reservation follows the bridge.
+
+   ```yaml
+   # etc/config.yaml
+   - hostname: "srv"
+     zone: "maison:1.2"
+     mac: "02:00:00:00:00:01"
+   ```
+
+   Then `just generate`.
+
+2. **Declare the switch**
+
+   ```nix
+   # usr/machines/srv/configuration.nix
+   darkone.system.network.switch = {
+     enable = true;
+     uplink = "enp1s0f1";
+     downlinks = [
+       "enp1s0f0" # 10 GbE
+       "enp2s0"
+     ];
+   };
+   ```
+
+3. **Apply on reboot**
+
+   `just apply srv boot`, then reboot. A `switch` would bring the uplink into
+   the bridge while it is activating, and cut the SSH session.
+
+4. **Check**
+
+   `ip -br addr` shows the address on `br0`, `bridge link` the bridge ports.
+
+</Steps>
+
+{/* t:p 938609b64e2e1217c0db6ceeca57cfadea52087e1a0a2c4319be9b6fdb6ff3b2 */}
+## FAQ
+
+{/* t:p 0e43bfa3bdd6722d9ca9d71f4880814ea21ac1855e58917c9c4964d40609c71f */}
+### Do downstream machines lose the network?
+
+Yes, while the host reboots (firmware, kernel). The bridge comes back from
+initrd, before the disk is unlocked.
+
+{/* t:p 8725957d95179bd1b370895c83b6abc94328e60eb305f86637682e9389a4a0b4 */}
+### Why a single MAC?
+
+The bridge must take over the uplink address, and the evaluation cannot guess
+which of the MACs it is. Several MACs or none → the evaluation fails.
+
+{/* t:p 19f623d3332feeff6c8089631698a18f8aa294c1daf6733358cbc8e773e9c14c */}
+### Can two ports be linked to the same switch?
+
+No&nbsp;: without STP, two ports on the same segment form a loop.
+
+{/* t:p 626b006e14f6957976bfb0197d335669818c956ff621e634147430be82397bb1 */}
+### What throughput to expect?
+
+Bridged traffic goes through the host processor, and the uplink is shared with
+its own exchanges. Measure end to end with `iperf3`.

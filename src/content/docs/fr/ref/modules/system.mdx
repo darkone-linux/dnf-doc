@@ -13,58 +13,52 @@ sidebar:
 **Un module système** gère les configurations communes, importantes et générales.
 :::
 
-{/* t:p 19b9a849269fa414322361090aa75e1013617c2ec868794f85dc918a1e6679ad */}
+{/* t:p 2902356e686694b8dba90d1a38bd9dc147034254608a3e4dbdf3a9043c958b78 */}
 ### &#x2699; darkone.system.core
 
-Le module DNF principal.
+Le module cœur de DNF.
 
 :::danger[Module requis]
 Ce module est activé par défaut (requis par la configuration DNF).
 Il est nécessaire au bon fonctionnement de chaque ordinateur NixOS du réseau local.
 :::
 
-Met en place&nbsp;:
-- systemd-boot et le noyau LTS (dernier mainline via `enableLatestKernel`);
-- JetBrains Mono Nerd Font, avec `kmscon` pour le TTY;
-- optimisation nightly du store, GC hebdomadaire avec rétention de 30 jours (keep-last-N via
-  `gcKeepGenerations` sur les hôtes au disque contraint);
-- le pare-feu et SSH à clé uniquement;
-- le terminfo `xterm-ghostty` de Ghostty, pour que chaque hôte accepte le terminal;
-- la politique de veille (`disableSuspend` pour les serveurs);
-- les règles polkit laissant `wheel` arrêter/redémarrer;
-- un groupe/utilisateur `common-files` partagé pour les dossiers médias inter-services.
+Configure :
+- systemd-boot et le noyau LTS (dernier mainline via `enableLatestKernel`) ;
+- JetBrains Mono Nerd Font, avec `kmscon` pour le TTY ;
+- optimisation nocturne du store, GC hebdomadaire avec rétention de 30 j (keep-last-N via
+  `gcKeepGenerations` sur les hôtes à disque contraint) ;
+- SSH par clé uniquement (nom d'hôte, pare-feu et exposition SSH : `network.nix`) ;
+- le terminfo `xterm-ghostty` de Ghostty, pour que chaque hôte accepte le terminal ;
+- la politique de suspension (`disableSuspend` pour les serveurs) ;
+- les règles polkit autorisant `wheel` à arrêter/redémarrer ;
+- un groupe/utilisateur `common-files` partagé pour les dossiers média inter-services.
 
 :::note[Point d'entrée du mixin]
 Active le mixin de profil de l'hôte (`darkone.host.${host.profile}.enable`)
 et propage `enableSops` au module sops.
 :::
 
-:::caution[SSH est ouvert par interface]
-Le port 22 n'est global que sur les hôtes sans jambe WAN. Une passerelle l'obtient sur le pont LAN
-et le tailnet&nbsp;; un hôte en zone globale sur le tailnet seulement — un SSH public
-là-bas se décide dans le profil d'hôte.
+:::danger[SSH par clé uniquement]
+Les mots de passe et keyboard-interactive sont désactivés sur tout le parc, et seul
+`/etc/ssh/authorized_keys.d/%u` est lu : un compte sans clé déclarée
+n'a aucun accès SSH, et `ssh-copy-id` n'a plus de canal d'amorçage.
 :::
 
-:::danger[SSH est à clé uniquement]
-Les mots de passe et l'interactif clavier sont désactivés sur toute la flotte, et seul
-`/etc/ssh/authorized_keys.d/%u` est lu&nbsp;: un compte sans clé déclarée
-n'a aucun accès SSH, et `ssh-copy-id` n'a plus de canal de bootstrap.
-:::
-
-* **enable** `bool` Système principal du framework Darkone (activé par défaut)
-* **enableSystemdBoot** `bool` Activer le chargeur de démarrage par défaut
+* **enable** `bool` Système cœur du framework Darkone (activé par défaut)
+* **enableSystemdBoot** `bool` Activer le chargeur d'amorçage par défaut
 * **enableLatestKernel** `bool` Utiliser le dernier noyau mainline (linuxPackages_latest) au lieu du LTS
 * **enableFstrim** `bool` Optimisation SSD avec fstrim
 * **enableFirewall** `bool` Activer le pare-feu (true par défaut)
-* **enableSops** `bool` Activer le module dnf sops (true par défaut)
-* **enableFlatpak** `bool` Activer la configuration DNF flatpak (uniquement pour les environnements graphiques)
+* **enableSops** `bool` Activer le module sops de DNF (true par défaut)
+* **enableFlatpak** `bool` Activer la configuration flatpak de DNF (environnements graphiques uniquement)
 * **enableKmscon** `bool` Activer la nerd font pour le TTY
-* **gcKeepGenerations** `int` Si &gt; 0, limiter le profil système aux N dernières générations avant
-  chaque collecte de déchets, et collecter quotidiennement sans rétention
-  basée sur l'âge. Pour les hôtes avec une partition racine étroite (passerelles).
+* **gcKeepGenerations** `int` Si &gt; 0, réduire le profil système aux N dernières générations avant
+  chaque garbage collection, et collecter quotidiennement sans rétention
+  basée sur l'âge. Pour les hôtes à partition racine serrée (passerelles).
 * **enableBoost** `bool` Activer l'overclocking, corectl
-* **enableAutoSuspend** `bool` Activer la veille automatique (pour les portables, ignoré si disableSuspend est true)
-* **disableSuspend** `bool` Désactivation complète de la veille (pour les serveurs)
+* **enableAutoSuspend** `bool` Activer la suspension automatique (portables, ignoré si disableSuspend est true)
+* **disableSuspend** `bool` Désactivation complète de la suspension (serveurs)
 * **enableCommonFilesUser** `bool` Activer l'utilisateur common-files utilisé par plusieurs services
 
 ```nix
@@ -361,6 +355,70 @@ darkone.system.microvm = {
         sha256 = "1fc70f774d38eb169993ac391eea357ef47c88757ef72ee5943879b7e8e2bc69";
       };
   whisper.threads = 8;
+};
+```
+
+<hr/>
+
+{/* t:p 7ab224d4694c4498999d0743c275590c532eec79bbe0d5ef6dfc34597c358361 */}
+### &#x2699; darkone.system.network
+
+Configuration réseau des hôtes DNF sur tout le parc.
+
+Configure, sur chaque hôte :
+- le nom d'hôte ;
+- le pare-feu nftables (`darkone.system.core.enableFirewall`) ;
+- l'ouverture SSH selon le rôle (ci-dessous).
+
+:::caution[SSH est ouvert par interface]
+Le port 22 n'est global que sur les hôtes sans patte WAN. Une passerelle l'obtient sur le bridge LAN
+et le tailnet ; un hôte de zone globale, sur le tailnet uniquement : un SSH public
+y est décidé dans le profil de l'hôte.
+:::
+
+{/* t:p 9dbf2c6b1a8576facc2f71a43f0deb0babfcc9293530f3ff6246b2ef772c45d3 */}
+#### Commutateur logiciel (`darkone.system.network.switch`)
+
+Relie les cartes réseau libres à l'uplink : un hôte branché sur un downlink se trouve
+dans la zone comme derrière un commutateur matériel non managé (DHCP et DNS de la passerelle
+de zone, rien à configurer de son côté).
+
+```nix
+darkone.system.network.switch = {
+  enable = true;
+  uplink = "enp1s0f1";
+  downlinks = [
+    "enp1s0f0" # 10 GbE
+    "enp2s0"
+  ];
+};
+```
+
+- le bridge `br0` porte l'adresse de l'hôte (DHCP) avec la MAC de l'uplink ;
+- pur L2 : pas de STP, pas de `br_netfilter`, donc les trames pontées contournent nftables ;
+- même bridge dans l'initrd : les downlinks gardent le réseau pendant que l'hôte attend
+  son déverrouillage LUKS, et l'adresse ne change jamais d'interface au switch-root ;
+- systemd-networkd est forcé ; une passerelle de zone ou un hôte NetworkManager est refusé.
+
+:::caution[Une seule MAC dans `config.yaml`]
+Le `mac` de l'hôte doit contenir une seule adresse, celle de l'uplink : le bridge la prend,
+donc la réservation DHCP de la zone suit le bridge. Vérifié à l'évaluation.
+:::
+
+:::caution[Déployer avec `boot`]
+`just apply <host> boot`, puis redémarrer : un `switch` déplace l'uplink dans le
+bridge en pleine activation et coupe la session SSH.
+:::
+
+* **enable** `bool` le commutateur logiciel : cartes réseau libres reliées à l'uplink dans la zone de l'hôte
+* **uplink** `str` Interface reliée à la zone. Sa MAC doit être le seul `mac` de l'hôte dans `config.yaml`.
+* **downlinks** `listOf str` Interfaces reliées à l'uplink.
+
+```nix
+darkone.system.network = {
+  enable = false;
+  uplink = "enp1s0f1";
+  downlinks = [ ];
 };
 ```
 
