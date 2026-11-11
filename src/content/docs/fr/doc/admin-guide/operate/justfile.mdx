@@ -240,6 +240,34 @@ régénération des clés et secrets jetables.
 just fixtures check
 ```
 
+### 🔆 `test-installer [scénario] [iso]`
+
+Teste l'ISO d'installation dans une VM QEMU&nbsp;: l'assistant `darkone new` y
+est piloté de bout en bout. Compter 30 minutes et 25 Go de disque par scénario.
+Voir [Test de l'installeur](/fr/doc/dev-guide/releasing/#test-de-linstalleur).
+
+| Scénario | Installation |
+|---|---|
+| `scripted` | Fichier de réponses, disque en clair |
+| `interactive` | Questions à la console, disque chiffré |
+| `all` (défaut) | Les deux |
+
+```sh
+just test-installer
+just test-installer interactive /chemin/de/l.iso
+```
+
+### 🔆 `try [disque] [générateur]`
+
+Ouvre l'ISO d'installation de cet arbre dans une fenêtre QEMU. Le projet écrit
+par l'assistant suit l'arbre local, code non publié compris. `reset` repart
+d'un disque neuf.
+
+```sh
+just try                                   # disque gardé
+just try reset chemin/de/dnf-generator     # disque neuf, générateur local
+```
+
 {/* t:p 04842afa271f51652d177f9d20a49f49f8763df08af84e80a5c846fe5ead27ed */}
 ### 🔆 `pkg-update <paquet> [version]`
 
@@ -256,6 +284,15 @@ seule.
 ```sh
 just pkg-update rename-simple
 just pkg-update fleet-update 0.2.0    # version explicite (train de release)
+```
+
+### 🔆 `workarounds`
+
+Liste les corrections temporaires avec leur état amont et signale celles à
+retirer. Voir [Corrections temporaires](/fr/doc/dev-guide/workarounds/).
+
+```sh
+just workarounds
 ```
 
 {/* t:p 9b5df38cc5488263f1dbc6f4a460e1c99b2e258429949798872002e4d4fdbd5d */}
@@ -618,6 +655,16 @@ ajouté un hôte ou une zone. Voir
 
 ```sh
 just configure-admin-host
+```
+
+### ✳️ `tailnet-enroll <hôte> [ip]`
+
+Enrôle un hôte dans le tailnet avec une clé à usage unique, portant les tags
+déclarés. Relançable sans risque&nbsp;: un hôte déjà enrôlé est laissé tel quel.
+Voir [Enrôler une machine](/fr/doc/admin-guide/operate/vpn/#enrôler-une-machine).
+
+```sh
+just tailnet-enroll gw
 ```
 
 {/* t:p 2aa934df4aa5afcbf4b93f71bfcd97f8d6bf3b510e9d001f6ffd6192a7d9d60d */}
@@ -1164,6 +1211,15 @@ Lance les tests unitaires du générateur.
 
 ```sh
 just gen-test
+```
+
+### 🔗 `gen-schema`
+
+Régénère `dnf/config/config.schema.json` avec le générateur local. Le train de
+release le réécrit ensuite avec le générateur épinglé.
+
+```sh
+just gen-schema
 ```
 
 {/* t:p 9a6969984aaf1a7ed01649b0872d3c366ce7503ab0ac814dc48f26b266c7c28d */}

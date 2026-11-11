@@ -80,6 +80,32 @@ déployer localement. Avec plusieurs zones, un VPN facilite cependant l'administ
 noeuds distants grâce à des accès directs sécurisés.
 :::
 
+### Courrier, Matrix et fleet-update
+
+Trois blocs facultatifs complètent la section.
+
+```yaml
+# etc/config.yaml
+network:
+  smtp:                             # relais du courrier sortant
+    server: "smtp.example.org"
+    port: 465
+    protocol: "submissions"         # http, https, submission ou submissions
+    tls: true
+    username: "relay@example.org"
+    sender: "noreply@domain.tld"
+  matrix:
+    admins: ["alice"]               # administrateurs Matrix
+  fleetUpdate:
+    deploymentOrder: "hcs:gateway:server:[others]:laptop"
+```
+
+| Bloc | Clés | Rôle |
+|---|---|---|
+| `smtp` | `server`, `port`, `protocol`, `tls`, `username`, `sender` | Relais des hôtes `postfix` ; mot de passe dans le secret `smtp/password`. |
+| `matrix` | `admins` | [Administrateurs Matrix](/fr/doc/admin-guide/operate/matrix/#activer-matrix). |
+| `fleetUpdate` | `deploymentOrder`, `criticalProfiles`, `pingInterval`, `timeouts`, `aiModel` | Réglages de [fleet-update](/fr/doc/admin-guide/operate/deploy/#mettre-à-jour-le-parc-avec-fleet-update). |
+
 {/* t:p 7d128f788a02a87c7251d108d7a89f3a99b700cf0f2aab21d842c6660d9265f0 */}
 ## Section "zones"
 
@@ -192,6 +218,7 @@ users:
 | `email` | texte | Adresse (sert aussi à l'identité SSO), par défaut `<login>@<domain.tld>`. |
 | `profile` | texte | Profil d'utilisateur (défaut `minimal`). |
 | `groups` | liste | Installe l'utilisateur sur les hôtes ayant le même groupe. |
+| `disabled` | booléen | Verrouille le compte sans le retirer (défaut `false`). |
 
 :::note[Utilisateur `nix`]
 Le compte de maintenance `nix` (profil `nix-admin`) est ajouté automatiquement à
