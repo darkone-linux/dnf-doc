@@ -1,0 +1,33 @@
+---
+title: darkone.service.turn
+sidebar:
+  label: "turn"
+---
+
+{/* t:translated-from en */}
+{/* t:h 1f8a122b19915149c4ceae7dfcfcf29fb8068c484602c76cb716f8becbd3dda0 */}
+
+{/* t:p e66900f8e2250654d79b70f1cda2ebb36c4072996162a876330e36ff3bfc856b */}
+Serveur Coturn (matrix).
+
+Ajoutez des entrées DNS pour optimiser :
+
+```
+Type,Name,Priority,Pds,Port,Target
+SRV,_stun._udp,0,0,3478,turn.mydomain.tld
+SRV,_stun._tcp,0,0,3478,turn.mydomain.tld
+SRV,_turn._udp,0,0,3478,turn.mydomain.tld
+SRV,_turn._tcp,0,0,3478,turn.mydomain.tld
+SRV,_turns._tcp,0,0,5349,turn.mydomain.tld
+```
+
+{/* t:p aac69d070971152659fc7084f73c95a5cffeb5a2c19e073494631eb0e33f8c27 */}
+## Options
+
+* **enable** `bool` Active le service TURN local (visio)
+
+```nix
+darkone.service.turn.enable = false;
+```
+
+Source : [`modules/service/turn.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/service/turn.nix)

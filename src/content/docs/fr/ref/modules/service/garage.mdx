@@ -1,0 +1,49 @@
+---
+title: darkone.service.garage
+sidebar:
+  label: "garage"
+---
+
+{/* t:translated-from en */}
+{/* t:h 5c216e2c2c64ae0f057813ec2c42497875dfe3791c7724e49238887b02ee4abc */}
+
+{/* t:p 60ec2b83dcc3113ac58635c682b247f5316da4c39b5cb201249e0e475fb249bb */}
+Un service Garage S3 local, entièrement configuré.
+
+Fournit un backend de stockage objet compatible S3, interne, accessible uniquement sur 127.0.0.1:3900.
+
+:::note[Création manuelle des buckets]
+Les buckets ne sont PAS créés automatiquement par ce module.
+Chaque service consommateur crée son propre bucket et sa clé d'accès via une unité systemd oneshot dédiée, ordonnée After= `garage-init.service`.
+Les identifiants de chaque consommateur sont stockés dans sops sous `garage-<consumer>-key-id` et `garage-<consumer>-key-secret`, puis importés dans Garage au premier démarrage.
+:::
+
+:::tip[Migration vers un cluster multi-nœuds]
+Mono-nœud, replication_factor = 1. Pour passer à un cluster multi-nœuds, augmenter `replication_factor`, exposer `rpc_public_addr` sur le mesh, et étendre `garage-init` pour piloter une disposition multi-nœuds.
+:::
+
+:::caution[Initialisation de la disposition du cluster]
+En cas d'échec, attendre que le service garage soit entièrement opérationnel, puis le redémarrer.
+:::
+
+{/* t:p ce83cca3157d7a4b32c3227de81bded133e647e15a4bd0eec87c151c4c99f233 */}
+## Options
+
+* **enable** `bool` Active le service Garage S3 local
+* **srvPort** `port` Port de l'API S3 exposé sur l'IP interne
+* **s3Region** `str` Nom de la région S3 (doit correspondre à la configuration du consommateur)
+* **capacity** `str` Indication de capacité de stockage du nœud, transmise à `garage layout assign`.
+  Utilisée uniquement au premier démarrage pour l'initialisation de la disposition ; ne constitue pas
+  un quota strict sur le système de fichiers sous-jacent.
+  Suffixes supportés : B, KB, MB, GB, TB, PB.
+
+```nix
+darkone.service.garage = {
+  enable = false;
+  srvPort = srvPort;
+  s3Region = s3Region;
+  capacity = "500GB";
+};
+```
+
+Source : [`modules/service/garage.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/service/garage.nix)

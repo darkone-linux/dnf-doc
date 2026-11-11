@@ -1,0 +1,88 @@
+---
+title: darkone.service.headscale
+sidebar:
+  label: "headscale"
+---
+
+{/* t:translated-from en */}
+{/* t:h 426fcef4df764e0ad6b4a677b9d074e83699dae7cca4a3c27a67a94af1f83959 */}
+
+{/* t:p a491f19e740cf4af01d4f1cdbbb4c7bf2d1d27ce0c85b4478e61e5b3327186c2 */}
+Un service headscale entièrement configuré pour HCS.
+
+La politique ACL du tailnet est générée à partir de la topologie (zones, hôtes, utilisateurs) par `dnfLib.mkHeadscalePolicy`, validée par `headscale policy check` au build, puis rechargée à chaque changement (SIGHUP) sans redémarrer headscale.
+
+- Les machines sont taguées : `tag:hcs`, `tag:gw-<zone>`, `tag:admin` (hôte dont `groups` contient `admin`).
+- Les machines et les LAN des zones se joignent entre elles. Appareils personnels : DNS et HTTPS sur le HCS, HTTPS sur les passerelles de zone (toutes les zones pour les administrateurs, sinon leurs groupes `zone-*` et les zones de leurs espaces IA). SSH depuis les postes d'administration et `policy.adminDevices`.
+- Chaque hôte de zone adressé est un alias de politique (`nas` -&gt; son IP LAN) : tout autre service s'ouvre via `policy.extraAcls` (`nas:445`).
+- Les appareils personnels se connectent via Kanidm (OIDC), pour les membres du groupe Kanidm `tailnet` ; leurs clés expirent après `nodeExpiry`.
+
+```nix
+darkone.service.headscale.policy.adminDevices.phone-alice = "100.64.0.9";
+```
+
+:::caution[Mode ouvert]
+`policy.enforce = false` conserve les identités mais autorise tout le trafic : pour une migration uniquement, le temps que les nœuds soient taggés.
+:::
+
+:::note[Panne de Kanidm]
+headscale démarre quand même sans Kanidm et bascule sur l'enregistrement en CLI jusqu'à son prochain redémarrage. Les nœuds déjà enregistrés ne sont pas touchés.
+:::
+
+Sous-modules (`headscale/`) :
+- `dns.nix` : unbound, le DNS pivot du tailnet, et sa vue `tailnet-machines` ;
+- `audit.nix` : `headscale-audit`, nœuds en ligne face à la topologie déclarée ;
+- `enroll.nix` : `dnf-tailnet-enroll`, derrière `just tailnet-enroll`.
+
+{/* t:p ce139ccb4faf88c051ebb43ed43b7f1ec3e8c155b883cd8d89f4361abcaedf13 */}
+## Pivot DNS (`dns.nix`)
+
+unbound sur le HCS. Les noms internes y parviennent via le split DNS de headscale ; il transmet chaque domaine de zone à la passerelle de zone, le reste à Quad9 en TLS.
+
+Vue `tailnet-machines` : les nœuds taggés (hors HCS) reçoivent l'adresse LAN de zone des services globaux servis par une zone (`git.<domain>` sur une passerelle), tous les autres l'adresse publique. `unbound-tailnet-view` liste leurs IP tailnet depuis headscale, déclarées nulle part.
+
+{/* t:p d158bd4838d94dd638f8e6323cebe1a89db4ff8180863dcea8feb358bca1712e */}
+## Audit (`audit.nix`)
+
+`headscale-audit`, toutes les 15 min : nœuds en ligne face à la topologie déclarée. Métriques pour les alertes `dnf-headscale-<zone>`, détails dans son journal. Il ne tague ni ne supprime jamais.
+
+{/* t:p ebc700a273a2a217d627c1d49b3f2c16c4f7475bcad95a14b6ab5d3b8f31d441 */}
+## Enrôlement (`enroll.nix`)
+
+`dnf-tailnet-enroll`, côté root de `just tailnet-enroll` : clés à usage unique taguées selon la topologie déclarée ; le nœud enrôlé reçoit son nom et ses tags déclarés.
+
+{/* t:p 7ed06ffc6240753aa24432400ed36ea4863de024cae3986696aa08faa11e6124 */}
+## Options
+
+* **enable** `bool` Activer le service headscale DNF
+* **enableGRPC** `bool` Ouvrir le port TCP GRPC
+* **nodeExpiry** `str` Expiration des clés des appareils personnels (`0` : jamais). Les machines taguées n'expirent jamais.
+* **policy.enforce** `bool` ACL du tailnet en refus par défaut. `false` autorise tout le trafic, pour une migration uniquement.
+* **policy.adminDevices** `attrs` Appareils personnels ayant le SSH sur toutes les machines et zones : nom -&gt; IPv4 du tailnet.
+* **policy.exitNodeSources** `listOf str` Sources de politique autorisées à utiliser le HCS comme nœud de sortie.
+* **policy.extraHosts** `attrs` Alias d'hôtes supplémentaires de la politique (nom -&gt; CIDR), à utiliser dans `extraAcls`. Les hôtes de zone déclarés en ont déjà un.
+* **policy.extraAcls** `listOf (attrsOf anything)` Règles ACL ajoutées après les règles générées.
+* **shared** `raw` Valeurs headscale partagées avec les sous-modules `headscale/`.
+
+```nix
+darkone.service.headscale = {
+  enable = false;
+  enableGRPC = false;
+  nodeExpiry = "180d";
+  policy.enforce = true;
+  policy.adminDevices = { };
+  policy.exitNodeSources = [ ];
+  policy.extraHosts = { };
+  policy.extraAcls = [ ];
+  shared = {
+        inherit
+          policy
+          auditSpec
+          idmUrl
+          hcsTailnetIpv4
+          ;
+      };
+};
+```
+
+Source : [`modules/service/headscale.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/service/headscale.nix)

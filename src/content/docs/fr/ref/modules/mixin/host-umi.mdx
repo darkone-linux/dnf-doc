@@ -1,0 +1,56 @@
+---
+title: darkone.host.umi
+sidebar:
+  label: "host.umi"
+---
+
+{/* t:translated-from en */}
+{/* t:h 48123fdd40a6513c1e55f06acba0b41a914ff80d5552e82b85340d94b7e8a04a */}
+
+{/* t:p 1734a1098480245583ee1e56a41835bbb298e5f840bab16217d3cfd2fea3632f */}
+Profil d'hôte : station de travail UMI (Unified Multimodal Input), utilisable sans clavier ni souris.
+
+:::note[UMI : Unified Multimodal Input]
+Objectif d'accessibilité : des entrées coordonnées (tactile, voix, regard…) remplacent le clavier et la souris, combinées pour s'adapter aux capacités de l'utilisateur. Pile logicielle actuelle : Onboard sur écran tactile, commandes vocales Talon, Tobii Eye Tracker 5 piloté via Talon.
+:::
+
+:::note[Étend le profil bureau]
+Hérite du profil bureau complet (GNOME, multimédia, bureautique) et ajoute les prérequis UMI : une session Cinnamon X11 pour les utilisateurs UMI (mode sombre par défaut), la connexion automatique, l'injection d'événements uinput et les règles udev Tobii.
+:::
+
+:::tip[Coexistence X11 / Wayland]
+Talon exige X11 (Wayland non pris en charge en amont, non prévu) et GNOME 50 a supprimé sa session Xorg. Les sessions UMI utilisent donc Cinnamon (X11, ergonomie proche de GNOME, zone de notification native) tandis que les autres utilisateurs restent sur GNOME Wayland. Les utilisateurs de l'hôte dont le home active `darkone.home.umi` (profil utilisateur `umi`) voient leur session GDM mémorisée figée sur « cinnamon » via AccountsService, à chaque démarrage : un utilisateur sans clavier ne peut pas choisir de session à l'écran de connexion.
+:::
+
+:::caution[Paquet Talon]
+`pkgs.talon` provient de l'entrée `talon-nix` câblée dans le flake DNF (x86_64-linux uniquement, archive amont non libre). Avec `package = null`, udev/uinput/a11y restent configurés et Talon peut être lancé manuellement (steam-run sur l'archive amont, ce qui conserve la mise à jour automatique).
+:::
+
+:::tip[Premier lancement]
+Le firmware du Tobii 5 doit être initialisé une fois sur une machine Windows (Tobii Experience). Au premier démarrage de Talon, rebranchez le capteur puis redémarrez Talon (udev), et lancez la calibration depuis le menu de Talon.
+:::
+
+:::caution[Pas de mousetweaks]
+muffin gère lui-même les clics par maintien (les types de clic se choisissent depuis le panneau). Un démon mousetweaks dans la session effectuerait des clics par maintien en parallèle des clics gauches normaux (le type choisi n'est jamais utilisé), ferait apparaître sa fenêtre « Hover Click » et capturerait la molette de la souris sur la fenêtre racine jusqu'à la déconnexion (`XGrabButton` sur les boutons 4/5).
+:::
+
+:::note[Bruit noyau attendu]
+Le capteur déclare deux interfaces de classe vidéo (caméras IR oculaires brutes) que uvcvideo ne sait pas gérer : `Unknown video format`, `No supported video formats found`, `probe with driver uvcvideo failed with error -22`. Sans gravité et normal : aucun pilote noyau ne réclame ces interfaces, libusb les obtient donc libres. Le capteur est joint via l'interface 0 (propre au fournisseur, points de terminaison bulk), jamais via `/dev/video*`.
+:::
+
+{/* t:p 912cb384e35e450fc512a0cd2cb7cc20dd4d098ef416172ee5161de2cbe6fc4e */}
+## Options
+
+* **enable** `bool` Configuration de l'hôte UMI : entrée multimodale (tactile, voix, regard ; Onboard, Talon, Tobii)
+* **autoLoginUser** `nullOr str` Utilisateur de connexion automatique (obligatoire pour une session sans clavier), un utilisateur de l'hôte avec le profil `umi`.
+* **package** `nullOr package` Paquet Talon (par défaut `pkgs.talon` issu de l'overlay talon-nix, si disponible).
+
+```nix
+darkone.host.umi = {
+  enable = false;
+  autoLoginUser = null;
+  package = pkgs.talon or null;
+};
+```
+
+Source : [`modules/mixin/host/umi.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/mixin/host/umi.nix)

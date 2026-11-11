@@ -4,6 +4,10 @@ sidebar:
   label: "monitoring"
 ---
 
+{/* t:main */}
+{/* t:h 01364a834a3d8f6b8ef17543a1702ad966d12b8880c7f3c932f61e6a5b9f3e08 */}
+
+{/* t:p b0202b055116bd5fa1204cbb0a5aaceb17780617aa453f5775fa9ff678079406 */}
 Supervision module: Grafana dashboards + per-node exporter.
 
 :::tip
@@ -21,6 +25,7 @@ Read-only watch (`monitoring/fs-readonly.nix`): every node exports
 turned read-only, behind `FilesystemReadOnly`. Intended `ro` mounts and binds
 never appear; the file lives on tmpfs, so it outlives the failing disk.
 
+{/* t:p 3998a64018b782999d518e36ea203dc121438e9f9516000c5a633499e99a5094 */}
 ## Options
 
 * **enable** `bool` Enable monitoring with prometheus, grafana and node exporter

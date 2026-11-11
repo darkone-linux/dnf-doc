@@ -1,0 +1,34 @@
+---
+title: darkone.system.testing
+sidebar:
+  label: "testing"
+---
+
+{/* t:translated-from en */}
+{/* t:h aaaab544ac38cd3dfa75dc74f3756a012c17497e691626d84c72c228811c40ac */}
+
+{/* t:p 1d4f6f550b9dc57c2564a2c7e3969c2d4021b31a18e52dc13d19a07492a8eccc */}
+Mode de test autonome pour le NixOS Test Driver.
+
+Lorsqu'il est activé, ce mode neutralise les éléments irréductiblement externes ou liés à l'exécution, afin qu'un nœud puisse être testé dans une VM : headscale et tailscale deviennent sans effet, et un certificat TLS fixe peut remplacer ACME. Il permet aussi d'ignorer la configuration réservée au workDir (nix.pub, harmonia.pub) dans core/nix-cache. sops reste RÉEL (haute fidélité).
+
+:::caution[Tests uniquement]
+Activé uniquement via `tests/lib/test-tuning.nix`. Ce module ne référence jamais de chemin sous `tests/` : le chemin du certificat est passé comme valeur d'option.
+:::
+
+{/* t:p 881d880dab8703d848e2420167d31b16899b8c8f20df88f51184837d3964cebd */}
+## Options
+
+* **standalone** `bool` Mode de test autonome : ignore la configuration réservée au workDir (nix.pub, harmonia.pub) et neutralise les services externes
+* **tlsCert** `nullOr path` Certificat auto-signé (PEM) fourni par le harnais de test pour remplacer ACME. Jamais un chemin `tests/` intégré au framework.
+* **tlsKey** `nullOr path` Clé privée (PEM) associée à tlsCert.
+
+```nix
+darkone.test = {
+  standalone = false;
+  tlsCert = null;
+  tlsKey = null;
+};
+```
+
+Source&nbsp;: [`modules/system/testing.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/system/testing.nix)

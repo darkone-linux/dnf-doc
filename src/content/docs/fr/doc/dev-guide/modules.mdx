@@ -16,14 +16,14 @@ Les fonctionnalités du framework sont fournies sous forme de **modules NixOS**
 haut-niveau, regroupés par catégorie sous `dnf/modules/` et documentés dans la
 [référence des modules](/fr/ref/modules/).
 
-{/* t:p 09d5493fbcb2c54f2ad475c4d0e0d4f830ef87bccacb1e10edd9ac41630497bc */}
+{/* t:p 3bf80247fe9f1844ccc35d0dadbe9a13f383bf4093b643b67a071c590dbb6c9e */}
 ## Catégories
 
 - **standard** : `system`, `security`, `console`, `graphic`, `service`, `admin`, `user`.
 - **mixin** : macro-modules composant des profils d'hôtes et compléments de profils utilisateurs.
 - **home** : modules et profils [Home Manager](https://github.com/nix-community/home-manager).
 
-{/* t:p ff784a3ca7ab70b99b97e118a5b73bd396fcece43e76ac03a4e7acf72c4e2cf9 */}
+{/* t:p 10a2f5c71d2c646b2d53ca8137f3e4f6072a9a49d2df2de909140905cf84f2ed */}
 ## Créer un module
 
 <Steps>
@@ -44,7 +44,7 @@ Le détail des options exposées par chaque module est généré automatiquement
 dans la [référence](/fr/ref/modules/) → ne pas l'éditer à la main.
 :::
 
-{/* t:p c124e11f3c67b7a874bd8014cf2b604bbbe8435780a93f841d8e43ea86f7e531 */}
+{/* t:p a07796b94ddf42216bde79bad54c009d3b31cbf36ba29ecedfe07a7b8febcaa0 */}
 ## Anatomie d'un module
 
 Un module DNF suit le patron NixOS classique : un en-tête, un bloc `options` et
@@ -111,7 +111,7 @@ Vérifier `dnf/lib/default.nix` : la fonction existe peut-être déjà. Réutili
 plutôt que dupliquer.
 :::
 
-{/* t:p a907db1ae5ae01cd173c0a512e3e8d5dbb864a39b7e6ff38af65486e1410ede9 */}
+{/* t:p 3c2e1d3c2bd5902f9474979cf69c0c5585767580d0bae5387c85062ca96eab5f */}
 ## Le registre des services
 
 Un service déclare sa **topologie** dans `dnf/config/modules.nix` (et non dans

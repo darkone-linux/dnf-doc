@@ -1,0 +1,40 @@
+---
+title: darkone.security.mac
+sidebar:
+  label: "mac"
+---
+
+{/* t:translated-from en */}
+{/* t:h 6f5d42acb4aaa00a0dc795c0d7c1e4bb740cea3aefd25970889f5f9ccdf6303c */}
+
+{/* t:p 9631744008a101f0d85347d804176975368c50dea5861ae5ca6f9cdd779e6879 */}
+Authentification obligatoire par contrôle d'accès MAC (R37, R45–R49). (à valider)
+
+R37 est une règle méta : valide si au moins R45 (AppArmor) ou R46 (SELinux) est active. SELinux (R46–R49) n'est pas pris en charge sur NixOS et est exclu par défaut via `exceptions`. AppArmor (R45) est partiellement pris en charge.
+
+:::tip[Bac à sable]
+Sans MAC, NixOS s'appuie souvent sur les options systemd (sandboxing systemd) pour isoler les services.
+:::
+
+:::note[NixOS et MAC]
+SELinux n'est pas pris en charge par NixOS (R46–R49 sont exclues par défaut). AppArmor est disponible, mais avec peu de profils prêts à l'emploi. L'absence de profil pour un service exposé donne un faux sentiment de sécurité.
+:::
+
+:::caution[Activation]
+L'option `enable` suit `darkone.system.security.enable` par défaut. Les règles (Rxx/Cxx) sont activées selon le niveau, la catégorie et les exclusions définies dans `darkone.system.security` (via `isActive`).
+:::
+
+:::caution[Étiquette no-mac]
+Utilisez l'étiquette `no-mac` dans `excludes` pour désactiver R37 et R45, avec une justification explicite dans `exceptions.R37.rationale`.
+:::
+
+{/* t:p 091bd4f2c0f4968f05e0e52d4ab416cce38b5a9945cc389aa65139f4bd1ad155 */}
+## Options
+
+* **enable** `bool` Active le module MAC ANSSI : AppArmor/SELinux (R37, R45–R49).
+
+```nix
+darkone.security.mac.enable = false;
+```
+
+Source : [`modules/security/mac.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/security/mac.nix)

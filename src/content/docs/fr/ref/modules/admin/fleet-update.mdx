@@ -1,0 +1,77 @@
+---
+title: darkone.admin.fleet-update
+sidebar:
+  label: "fleet-update"
+---
+
+{/* t:translated-from en */}
+{/* t:h dd196c15f368f9b5ffe5665545387df9b5fac4d6b42f3fff1a8523f7ab5f6aa2 */}
+
+{/* t:p 1bd9ef07f270349a41606ce4d25c37c2bd9785e98e53e207b202dc0381b4265d */}
+Outil de mise à jour de flotte (`fleet-update`) et son exécution quotidienne sans surveillance.
+
+`enable` installe l'outil sur un hôte de déploiement ; `just fleet-update` le lance ensuite. `timer.enable` ajoute une exécution quotidienne de `fleet-update --no-ui` : mise à jour du flake, build, test par vagues, switch.
+
+:::caution[Identité du service]
+L'exécution appartient à `user`, propriétaire de `workDir` : identité git, clé age sops, identifiants IA et Matrix. Elle nécessite `sudo` sans mot de passe (permissions de `just clean`, identité de déploiement `nix` dont la clé se trouve dans `~nix/.ssh`).
+:::
+
+:::tip[Outils IA]
+`--ai-model` lance `claude` ou `opencode` depuis `PATH`. Déclarez ce que l'exécution sans surveillance peut atteindre dans `aiPackages` ; sans cela, l'exécution avertit une fois et poursuit sans IA.
+:::
+
+:::tip[Contexte IA]
+`aiContext` (langue, style) est écrit dans `/etc/fleet-update/ai-context` : chaque exécution sur l'hôte le lit, `just fleet-update` comme le timer.
+:::
+
+:::note[Codes de sortie]
+`4` (une exécution détient déjà le verrou) compte comme un succès : aucune alerte. Tout autre échec fait échouer l'unité et déclenche l'alerte existante `SystemdUnitFailed`, de même qu'une exécution encore en cours après `timer.timeout`.
+:::
+
+:::tip[Activer sur l'hôte d'administration]
+```nix
+darkone.admin.fleet-update = {
+  enable = true;
+  user = "admin";
+  timer.enable = true;
+};
+```
+:::
+
+{/* t:p d856c6a85147f69b7cbb6fba9341220009d7e9ca3d95c65129e4009540931fe1 */}
+## Options
+
+* **enable** `bool` fleet-update, l'outil de mise à jour et de déploiement de la flotte
+* **package** `package` Le paquet fleet-update. Son `nix-eval-jobs` est aligné sur le Nix du système : l'outil évalue le flake consommateur avec lui.
+* **aiPackages** `listOf package` Outils IA accessibles depuis l'exécution sans surveillance (`--ai-model`). Facultatif :
+  l'outil avertit et poursuit sans IA si aucun n'est trouvé.
+
+  Pas une dépendance du paquet, car `pkgs.claude-code` n'est pas libre et forcerait `allowUnfree` chez chaque consommateur.
+  `pkgs.opencode` est sous licence MIT.
+* **aiContext** `nullOr str` Consignes de l'opérateur (langue, style) incluses dans chaque prompt IA d'une
+  exécution sur cet hôte, `just fleet-update` comme le timer. Écrit dans
+  `/etc/fleet-update/ai-context`, même sans `enable` : en
+  co-développement, la recette exécute les sources. `--ai-context`, en ligne de commande ou dans `timer.extraArgs`, le remplace.
+* **user** `nullOr str` Compte qui lance la mise à jour sans surveillance : propriétaire de `workDir`, détenteur de l'identité git, de la clé age sops et des identifiants IA et Matrix.
+* **workDir** `str` Espace de travail du consommateur sur le disque. Ne pas confondre avec l'argument de module `workDir`, qui en est la copie dans le store nix.
+* **timer.enable** `bool` l'exécution quotidienne sans surveillance (`fleet-update --no-ui`)
+* **timer.onCalendar** `str` Heure de début de l'exécution (`OnCalendar` de systemd).
+* **timer.extraArgs** `listOf str` Options passées après `--no-ui`, que le module définit toujours.
+* **timer.timeout** `str` Durée maximale d'une exécution avant son arrêt par systemd (`TimeoutStartSec`). Une exécution bloquée garderait sinon le verrou, et chaque exécution suivante sortirait avec `4` sans aucune alerte.
+
+```nix
+darkone.admin.fleet-update = {
+  enable = false;
+  package = pkgs.fleet-update.override { nix-eval-jobs = nixEvalJobs; };
+  aiPackages = [ ];
+  aiContext = "Answer in French and keep the response concise.";
+  user = "admin";
+  workDir = "/etc/nixos";
+  timer.enable = false;
+  timer.onCalendar = "*-*-* 04:00";
+  timer.extraArgs = [ ];
+  timer.timeout = "6h";
+};
+```
+
+Source : [`modules/admin/fleet-update.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/admin/fleet-update.nix)

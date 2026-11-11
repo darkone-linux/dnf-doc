@@ -1,0 +1,36 @@
+---
+title: darkone.home.imagery
+sidebar:
+  label: "imagery"
+---
+
+{/* t:translated-from en */}
+{/* t:h 3e98bcfde747f011b2ca7990885899f27e8ed2c5d341423400c0e07bc26105b7 */}
+
+{/* t:p 38a7e869cae8965d9d2d3784d6ff41c88f5328e6b8f0a1956f0f88126f24ac6b */}
+Logiciels de traitement d'images.
+
+Installe toujours l'éditeur (`gimp`) ; la visionneuse (`geeqie`) fait partie des indispensables bureautiques. Ensuite, les outils s'ajoutent selon le public : `enableBeginner` ajoute `pinta`, `enablePro` ajoute `inkscape`/`krita`/`yed`, `enable3D` (avec `enablePro`) ajoute `blender`, `enableCAD` ajoute `freecad`, et `enableCli` ajoute `imagemagick`/`jhead`.
+
+{/* t:p e88e41df17e754e4e203055dd1ed3a6a24e7461678a5482a3a7c01e1a34adce4 */}
+## Options
+
+* **enable** `bool` Création d'images
+* **enablePro** `bool` Logiciels de traitement d'images supplémentaires pour professionnels
+* **enableBeginner** `bool` Logiciels de traitement d'images supplémentaires pour débutants
+* **enable3D** `bool` Logiciels 3D
+* **enableCAD** `bool` Logiciels de CAO
+* **enableCli** `bool` Outils en ligne de commande (imagemagick, jhead...)
+
+```nix
+darkone.home.imagery = {
+  enable = false;
+  enablePro = false;
+  enableBeginner = false;
+  enable3D = false;
+  enableCAD = false;
+  enableCli = false;
+};
+```
+
+Source : [`home/modules/imagery.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/home/modules/imagery.nix)

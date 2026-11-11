@@ -1,0 +1,54 @@
+---
+title: darkone.home.music
+sidebar:
+  label: "music"
+---
+
+{/* t:translated-from en */}
+{/* t:h 368628cdad67f1e03d1ae93aba5b96027fb4dd9e9fbebb228d8331a78ee6d4d8 */}
+
+{/* t:p 799fd405157e349007ee317a660a887e5ef024ca177357d63fc7c0e71e133355 */}
+Applications graphiques de création musicale et sonore.
+
+Classées par public&nbsp;: `enablePro` (ardour, reaper, renoise,
+rosegarden), `enableCreator` (decibels, hydrogen), `enableScore`
+(musescore, muse-sounds-manager), `enableFun` (mixxx, mousai),
+`enableCli` (mpg123, cmus, lilypond), `enableEasy` (gnome-music vs.
+audacious, GNOME uniquement), `enableMpd` (démon MPD, ncmpcpp, mpd-mpris), et
+`enableDev` (lilypond).
+
+:::note[Bibliothèque musicale compatible NFS]
+Lorsque l'hôte est un client NFS et que le réseau expose un service `nfs` dans
+la même zone, MPD lit son répertoire musical depuis le montage NFS
+(`/mnt/nfs/homes/$USER/Music`). Sinon, il utilise la valeur locale
+`srv-dirs.homes`, puis `~/Music`.
+:::
+
+{/* t:p 0685e2bf0fd9ed0cb22b18be5588eb47598772d41d981ccbe073d28b4b11eb64 */}
+## Options
+
+* **enable** `bool` Module d'accueil de création musicale
+* **enablePro** `bool` Outils lourds pour professionnels (rose, ardour...)
+* **enableFun** `bool` Outils audio ludiques (mixxx...)
+* **enableCli** `bool` Outils audio en ligne de commande (mpg123, cmus, moc...)
+* **enableDev** `bool` Logiciels audio pour développeurs (lilypond...)
+* **enableMpd** `bool` Démon MPD et lecteurs (mpd, ncmpcpp...)
+* **enableEasy** `bool` Outils simples plutôt qu'efficaces (gnome-music vs audacious...)
+* **enableScore** `bool` Logiciels de partition (musescore...)
+* **enableCreator** `bool` Outils de création pour débutants (lmms, hydrogen...)
+
+```nix
+darkone.home.music = {
+  enable = false;
+  enablePro = false;
+  enableFun = false;
+  enableCli = false;
+  enableDev = false;
+  enableMpd = false;
+  enableEasy = false;
+  enableScore = false;
+  enableCreator = false;
+};
+```
+
+Source : [`home/modules/music.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/home/modules/music.nix)

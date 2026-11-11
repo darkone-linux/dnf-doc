@@ -1,0 +1,128 @@
+---
+title: darkone.service.restic
+sidebar:
+  label: "restic"
+---
+
+{/* t:translated-from en */}
+{/* t:h 6825c4d972da0d9dc2550aa47684bb7fb10437a1e7036f3b5f89d2fbdd4310c5 */}
+
+{/* t:p a4db4035256e603c367617a023e4caf68fbd1b8ac234c21bcf0e99564e662804 */}
+Module de sauvegarde Restic : serveur REST + cibles de sauvegarde par hôte.
+
+:::tip[Deux rôles, un module]
+- Serveur : un hôte qui déclare `restic` dans les services de son config.yaml fait tourner le serveur REST (`enableServer`) et stocke le dépôt de chaque hôte.
+- Client : tout hôte avec `enable = true` déclare des `targets` de sauvegarde (chemin local ou `rest:http://restic.<zone>:<port>`).
+:::
+
+:::note[Deux mots de passe, à ne pas confondre]
+- Phrase de passe du dépôt : `restic-password-<zone>`, chiffre le contenu du dépôt.
+- Identifiant REST : `restic/<hostname>/rest-password` par hôte, authentifie l'hôte auprès du serveur REST.
+
+Les deux sont créés par `just configure-admin-host` (idempotent), qui lit les hôtes et zones déclarés de la flotte.
+:::
+
+Exemple (configuration de la machine) :
+
+```nix
+darkone.service.restic = {
+  enable = true;
+  targets = [
+    { name = "main"; root = "rest:http://restic.my-zone.my-domain.tld:8888";
+      zone = "ag"; categories = [ "system" "nfs" ]; }
+  ];
+};
+```
+
+Disposition des dépôts par cible : un dépôt par catégorie, nommé d'après elle.
+
+```
+<root>/<hostname>/system  <- "system" category (/ minus excludes)
+<root>/<hostname>/nfs     <- "nfs" category    (/srv/nfs/<...>)
+<root>/<hostname>/medias  <- "medias" category (/srv/medias/<...>)
+```
+
+:::caution[Le chemin du dépôt fait exactement deux niveaux]
+rest-server sert les dépôts à deux composants maximum sous son `--path` :
+`<hostname>/medias` répond, `<hostname>/srv/medias` renvoie 404 et restic affiche un trompeur `repository does not exist`.
+Le sous-chemin est donc le seul nom de catégorie, jamais le répertoire source.
+Une disposition identique pour les cibles locales et REST permet de passer un dépôt de l'une à l'autre sans le renommer.
+:::
+
+:::note[Un serveur REST injoignable saute l'exécution]
+Chaque cible `rest:` porte une sonde d'accessibilité `ExecCondition`.
+Une sauvegarde dont le serveur est hors ligne est *ignorée*, jamais en échec : pas de SystemdUnitFailed la nuit, pas de quart d'heure de relances restic, et pas de `initialize` créant un dépôt vide sur un point d'accès mort.
+La sauvegarde manquante reste visible via ResticBackupStale / ResticBackupCritical, qui surveillent la dernière exécution réussie.
+:::
+
+:::note[Les dossiers de synchronisation cloud ne sont jamais sauvegardés]
+Un dossier de synchronisation Nextcloud/ownCloud réplique un original côté serveur, sauvegardé à part, et restic ne déduplique jamais entre dépôts. Détecté par chemin (`/home/*/Nextcloud`, variantes numérotées incluses) et par marqueur de journal.
+:::
+
+:::danger[Migrer les dépôts créés avant cette disposition]
+Les dépôts écrits quand le sous-chemin reproduisait le répertoire source se trouvent sous `<hostname>/srv/{nfs,medias}`. Renommez-les sur le serveur avant la prochaine exécution : `initialize = true` créerait sinon un dépôt vide au nouveau chemin et relancerait silencieusement un ré-amorçage complet.
+
+```sh
+mv <data-dir>/<hostname>/srv/medias <data-dir>/<hostname>/medias
+rmdir <data-dir>/<hostname>/srv
+```
+:::
+
+Sous-modules (`restic/`) :
+- `server.nix` : le serveur REST, un compte par hôte de la flotte ;
+- `metrics.nix` : métriques de fraîcheur des sauvegardes pour les alertes restic.
+
+{/* t:p 35248b52bd8beb264d1856e7251e0488eb3bad22054b4d71683ac581bfe5ff46 */}
+## Serveur REST (`server.nix`)
+
+Un compte par hôte de la flotte (`restic/<hostname>/rest-password`), vérifié contre un htpasswd assemblé au démarrage ; `privateRepos` cantonne chaque hôte à son préfixe `<hostname>/`.
+
+:::caution[`listenAll` élargit l'écoute, pas le pare-feu]
+Le serveur écoute sur `params.ip`, soit l'adresse LAN sur une passerelle.
+Les clients qui l'atteignent depuis une autre zone via le tailnet ont besoin de `listenAll = true` (écoute sur `0.0.0.0`).
+Le pare-feu reste la frontière : `lan0` reçoit le port via `getInternalInterfaceFwPath`, `tailscale0` est déjà une interface de confiance sur une passerelle, et le WAN ne l'ouvre jamais.
+:::
+
+{/* t:p 6e8575e92d2717a79bea3799fbe640565163ccc8a419b8864e831c5d1d86ccf5 */}
+## Métriques (`metrics.nix`)
+
+Nœuds surveillés uniquement (fonctionnalité `monitoring-node`) : chaque tâche inscrit sa dernière réussite dans le collecteur textfile, et `restic-declared` liste les tâches déclarées afin qu'une tâche qui ne réussit jamais vieillisse quand même jusqu'à une alerte `dnf-restic-<zone>`.
+
+{/* t:p 3907d445c8c1692e95bc3c13a65f98a460ddc414dfe9dda36ea016c92253a446 */}
+## Options
+
+* **enable** `bool` Activer le client de sauvegarde restic
+* **enableDryRun** `bool` Mode simulation (dry run)
+* **enableWaitRemoteFs** `bool` Lancer les sauvegardes seulement après remote-fs.target
+* **enableServer** `bool` Activer le serveur REST restic
+* **listenAll** `bool` Écouter sur 0.0.0.0 (clients hors site)
+* **serverDataDir** `str` Racine de stockage local du serveur REST (dépôts de tous les hôtes)
+* **targets** `listOf submodule` Destinations de sauvegarde de cet hôte (chemin local ou URL REST)
+  * **name** `str` Identifiant de la cible, utilisé dans les noms d'unités et de sauvegarde (&lt;category&gt;-&lt;name&gt;)
+  * **root** `str` Racine du dépôt : chemin local ou URL REST
+  * **zone** `str` Zone choisissant la phrase de passe du dépôt (restic-password-&lt;zone&gt;)
+  * **categories** `listOf ( enum [ "system" "nfs" "medias" ] )` Ce qui est sauvegardé vers cette cible
+* **nfsPaths** `listOf str` Répertoires NFS (/srv/nfs/&lt;xxx&gt;) inclus dans la catégorie 'nfs'
+* **mediasPaths** `listOf str` Répertoires médias (/srv/medias/&lt;xxx&gt;) inclus dans la catégorie 'medias'
+* **shared** `raw` Valeurs restic partagées avec les sous-modules `restic/`.
+
+```nix
+darkone.service.restic = {
+  enable = false;
+  enableDryRun = false;
+  enableWaitRemoteFs = false;
+  enableServer = false;
+  listenAll = false;
+  serverDataDir = "/mnt/backup/restic";
+  targets = [ ];
+  targets.name = "main";
+  targets.root = "rest:http://restic.${zone.domain}:${toString srvPort}";
+  targets.zone = zone.name;
+  targets.categories = [ ];
+  nfsPaths = [ ];
+  mediasPaths = [ ];
+  shared = { inherit params; };
+};
+```
+
+Source : [`modules/service/restic.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/service/restic.nix)

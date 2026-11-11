@@ -1,0 +1,28 @@
+---
+title: darkone.service.immich
+sidebar:
+  label: "immich"
+---
+
+{/* t:translated-from en */}
+{/* t:h c012c2e19064525cebac73f9c2473bb83599e6dd053891dce0e1b65fd70cd0b3 */}
+
+{/* t:p ee057abb110e8d2235d0219a5885bc007aeebbf244714c56bb16738f5b0326d9 */}
+Immich (gestion de photos) service entièrement configuré.
+
+{/* t:p 5884173eab9e790b5e60607816ae7da5c15305540dc5fdcb7d2e4297d6a60ff3 */}
+## Options
+
+* **enable** `bool` Activer le service Immich local
+* **enableMachineLearning** `bool` Activer les fonctions d'apprentissage automatique (reconnaissance faciale, détection d'objets)
+* **enableRedis** `bool` Activer Redis pour le cache (recommandé pour les performances)
+
+```nix
+darkone.service.immich = {
+  enable = false;
+  enableMachineLearning = false;
+  enableRedis = false;
+};
+```
+
+Source : [`modules/service/immich.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/service/immich.nix)

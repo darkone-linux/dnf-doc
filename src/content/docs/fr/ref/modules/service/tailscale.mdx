@@ -1,0 +1,69 @@
+---
+title: darkone.service.tailscale
+sidebar:
+  label: "tailscale"
+---
+
+{/* t:translated-from en */}
+{/* t:h 611fedf6b7a63a6b8da8279045dd84035d1f0930dcae7ac10e184a31636edea8 */}
+
+{/* t:p 9588d9845c729d348ab75d6bb7f964f063167187b59f079b4a69198ca932f8ab */}
+Client Tailscale du tailnet DNF (headscale sur le HCS).
+
+Rejoint le HCS, les passerelles de zone (`isGateway` : sous-réseau de zone annoncé, routes acceptées, résolveur propre conservé) et les hôtes itinérants.
+
+:::note[Enrôlement]
+Pas de clé partagée. `just tailnet-enroll <host>`, aussi lancé par `just configure`, crée une clé à usage unique étiquetée pour l'hôte sur le HCS et la transmet à `dnf-tailnet-join`. Idempotent : un nœud déjà enrôlé n'est pas modifié.
+:::
+
+Sous-modules (`tailscale/`)&nbsp;:
+- `cert-sync.nix` : les passerelles de zone récupèrent les certificats Caddy du HCS ;
+- `selfheal.nix` : watchdog redémarrant un tailscaled déconnecté ;
+- `autopause.nix` : les clients itinérants mettent tailscale en pause sur un LAN de zone.
+
+{/* t:p 6130406dceb1a49eac42e0e6c59f2dd2767551210083743a3c710d2e99567391 */}
+## Synchronisation des certificats (`cert-sync.nix`)
+
+Les certificats publics sont émis uniquement sur le HCS ; chaque passerelle de zone récupère tout le stockage Caddy via le tailnet (rsync en tant que `nix`, élevé en `caddy` côté HCS), puis le publie sur son propre Caddy.
+
+{/* t:p cb6475bdf4f872cb544f9ac1ed1328bb0f19a16b27700f759392acfe71dac60c */}
+## Auto-réparation (`selfheal.nix`)
+
+Toutes les minutes, vérifie que le backend tourne et que le plan de contrôle voit le nœud en ligne ; redémarre tailscaled après une perte prolongée. Exporte les métriques `dnf_tailscale_*` pour les alertes `TailscaleFlapping`/`TailscaleUnhealthy`.
+
+{/* t:p 1e5aeff77136765c156cc628356599a82ef3bbe1c14ef905a1f00bc2d131ba5a */}
+## Pause automatique (`autopause.nix`)
+
+Clients itinérants uniquement. Sur un LAN de zone DNF, `--accept-dns` détournerait resolv.conf (dnsmasq/AdGuard locaux) et `--accept-routes` entrerait en conflit avec le sous-réseau de zone connecté : un dispatcher NetworkManager met tailscale en pause ici et le reprend ailleurs.
+
+{/* t:p c9976d373fff10c3809f862052aa2ce81d1704658c28e181797777c8570da118 */}
+## Options
+
+* **enable** `bool` Active le client tailscale pour se connecter au HCS
+* **isGateway** `bool` Ce nœud tailscale est une passerelle de sous-réseau
+* **isExitNode** `bool` Configure ce client comme nœud de sortie
+* **selfHeal.enable** `bool` Watchdog : détecte la déconnexion de headscale et redémarre tailscaled.
+* **autoPauseOnLan.enable** `bool` Client itinérant : met tailscale en pause (down) lorsqu'il est branché sur un LAN de zone DNF connue, et le reprend ailleurs. Clients NetworkManager non passerelles uniquement.
+* **shared** `raw` Valeurs tailscale partagées avec les sous-modules `tailscale/`.
+
+```nix
+darkone.service.tailscale = {
+  enable = false;
+  isGateway = false;
+  isExitNode = false;
+  selfHeal.enable = true;
+  autoPauseOnLan.enable = false;
+  shared = {
+        inherit
+          tsBin
+          isHcsSubnetGateway
+          selfHealEnable
+          selfHealStateDir
+          autoPauseEnable
+          autoPauseStateFile
+          ;
+      };
+};
+```
+
+Source&nbsp;: [`modules/service/tailscale.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/service/tailscale.nix)

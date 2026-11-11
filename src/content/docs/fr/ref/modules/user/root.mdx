@@ -1,0 +1,26 @@
+---
+title: darkone.user.root
+sidebar:
+  label: "root"
+---
+
+{/* t:translated-from en */}
+{/* t:h 671e6130b5e8b584dbaa3668f855ca21716c2965e51ae64f93aa26a1f58f995d */}
+
+{/* t:p 653baf1fa26af3f926f3661c2e63e94390ff806617b7c70ae33f0e46a4d6df5b */}
+Paramètres propres à l'utilisateur root.
+
+:::danger[Module requis]
+Ce module est activé par défaut (requis par la configuration DNF).
+:::
+
+{/* t:p 7e0c84f64d5e7fc40a5ed8be83ac900fafb1d01b268fac9a4a78501c8abc9a3d */}
+## Options
+
+* **enable** `bool` Configuration propre à l'utilisateur root
+
+```nix
+darkone.user.root.enable = true;
+```
+
+Source : [`modules/user/root.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/user/root.nix)

@@ -1,0 +1,31 @@
+---
+title: darkone.host.server
+sidebar:
+  label: "host.server"
+---
+
+{/* t:translated-from en */}
+{/* t:h 35ba213f58b0989b319ca29275f83df63715ee85f2551026e70a5fae3552850c */}
+
+{/* t:p 63d8878ec273bef2756a881ade4ab2853b867113b8f0a493cd1d6848e0bbdca0 */}
+Configuration serveur améliorée (minimale, sans veille, watchdog...).
+
+:::caution[Mode d'urgence désactivé]
+Nous préférons que le système tente de poursuivre le démarrage afin
+de pouvoir, peut-être, y accéder encore à distance. (cf. srvos)
+:::
+
+{/* t:p b56d6d6606cdcbc0699cbbd165e06a415c645bbbee35865c8efff741b606ba27 */}
+## Options
+
+* **enable** `bool` Configuration minimale de l'hôte serveur
+* **enableWatchdog** `bool` Activer le watchdog systemd
+
+```nix
+darkone.host.server = {
+  enable = false;
+  enableWatchdog = true;
+};
+```
+
+Source : [`modules/mixin/host/server.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/mixin/host/server.nix)

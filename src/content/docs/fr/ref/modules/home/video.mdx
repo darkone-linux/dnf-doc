@@ -1,0 +1,42 @@
+---
+title: darkone.home.video
+sidebar:
+  label: "video"
+---
+
+{/* t:translated-from en */}
+{/* t:h 671dfcd26b2505de852a0deed8a4c7cc9ffcc18aa15ce943f0459d78b764dda8 */}
+
+{/* t:p 32b875bc2ce2cdf7aceba406e69ec54fa7e7e2841f8d06885ea72dd5a8f822fa */}
+Outils et applications vidéo.
+
+Installe toujours le lecteur par défaut (`celluloid`, interface GTK4/libadwaita au-dessus de mpv) et répartit le reste selon le public : `enableTools` (ffmpeg, mlt, vlc, video-trimmer, parabolic), `enableEditing` (kdenlive, shotcut), `enableCreator` (OBS Studio avec `obs-backgroundremoval`, `obs-vkcapture`, etc.), `enableUnfree` (davinci-resolve) et `enableAlternative` (mpv).
+
+:::caution[Pas Showtime de GNOME]
+Showtime 50 se bloque sur certains fichiers&nbsp;: `get_state(CLOCK_TIME_NONE)` sur le thread principal, [GNOME/showtime#299](https://gitlab.gnome.org/GNOME/showtime/-/work_items/299).
+Le processus bloqué garde le nom D-Bus `org.gnome.Showtime`, donc chaque lancement suivant y est redirigé et ne fait rien&nbsp;: ni fenêtre, ni journal.
+Non corrigé en amont à la version 50.0.
+:::
+
+{/* t:p 6bf7fc4cedbb2cd4f5db1c4d70b6ccb6da4a8fd083b9d01fca241748df5651d5 */}
+## Options
+
+* **enable** `bool` Module home de création et outils vidéo
+* **enableTools** `bool` Outils vidéo pour professionnels
+* **enableEditing** `bool` Outils de montage vidéo (kdenlive...)
+* **enableCreator** `bool` Outils de création vidéo (obs...)
+* **enableUnfree** `bool` Applications vidéo non libres (davinci...)
+* **enableAlternative** `bool` Applications vidéo alternatives (mpv...)
+
+```nix
+darkone.home.video = {
+  enable = false;
+  enableTools = false;
+  enableEditing = false;
+  enableCreator = false;
+  enableUnfree = false;
+  enableAlternative = false;
+};
+```
+
+Source&nbsp;: [`home/modules/video.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/home/modules/video.nix)

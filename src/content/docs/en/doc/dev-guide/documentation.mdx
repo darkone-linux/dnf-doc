@@ -32,19 +32,19 @@ Write in **French** (`fr/`) ; English is produced afterwards by
 - `Card`/`CardGrid` are reserved for the user guide.
 - See the [help & how-to dev](/en/doc/how-to/dev/) and role *skills*.
 
-{/* t:p 2a85f99d0f3e9e1a5c3d8b717f1371cf4216366032c0a11bcee7997eaad7076a */}
+{/* t:p d8b4d1fd0431678045561ae93aea0b44f6390c5f0c2587dfef5688eccbb496cf */}
 ## Tools
 
 ```sh
-just dev      # development server
-just tags     # refresh translation tags
-just build    # build the static site
-just test     # tests + internal link validation
+just dev      # serveur de développement
+just tags     # rafraîchit les tags de traduction
+just build    # construit le site statique
+just test     # tests + validation des liens internes
 ```
 
-:::caution[Do not touch]
-The `{/* t:* */}` markers and generated pages (`*/ref/modules.mdx`) are managed
-by scripts. See `AGENTS.md`.
+:::caution[Ne pas toucher]
+Les marqueurs `{/* t:* */}` et les pages générées (`*/ref/modules/`) sont
+gérés par les scripts : ne jamais les éditer à la main.
 :::
 
 {/* t:p 9eef01ab0f1f81b1bd1afec6eb431dcd070bc9746433a830216a9d76db2cc8f0 */}
@@ -91,19 +91,19 @@ run within `just update`. Do not edit these pages.
 - Broken anchor at build time (`invalid hash`) → fixed by `just build-fix`
   (AI agent, 3 attempts max), which `just update` runs.
 
-{/* t:p 10421bb3b19dc1b30577c0ffbacc0dbffc4e8322281950668400eba061ab61d1 */}
-## Making beautiful pages
+{/* t:p 0bd5fe2195444674796689d52d0d4aaccf14bda7514584e99734d91634f869b2 */}
+## Making nice pages
 
-The validated recipe (short items, colored callouts, `<Steps>`, tables,
-D2 diagrams, generic examples) is detailed in `AGENTS.md` → *Making "beautiful" pages*. To be followed according to the persona&nbsp;:
+The validated recipe: short items, colored callouts, `<Steps>`, tables,
+D2 diagrams, generic examples. To follow depending on the persona&nbsp;:
 
 | Persona | Tone |
 |---|---|
-| **User** | Inspire, no jargon; `Card`/`LinkCard` allowed. |
+| **User** | Make them want it, no jargon; `Card`/`LinkCard` allowed. |
 | **Administrator** | Precise, operational; tables and callouts. |
 | **Developer / AI** | Hierarchy (where → detail), step by step, concise. |
 
 :::danger[Public data]
-This documentation is **public**: never include data from the private network (`../`).
+This documentation is **public**: never private network data (`../`).
 Use generic examples (`domain.tld`, documentation IPs).
 :::

@@ -4,6 +4,10 @@ sidebar:
   label: "restic"
 ---
 
+{/* t:main */}
+{/* t:h 6825c4d972da0d9dc2550aa47684bb7fb10437a1e7036f3b5f89d2fbdd4310c5 */}
+
+{/* t:p a4db4035256e603c367617a023e4caf68fbd1b8ac234c21bcf0e99564e662804 */}
 Restic backup module: REST server + per-host backup targets.
 
 :::tip[Two roles, one module]
@@ -81,6 +85,7 @@ Sub-modules (`restic/`):
 - `server.nix`: the REST server, one account per fleet host;
 - `metrics.nix`: backup freshness metrics for the restic alerts.
 
+{/* t:p 35248b52bd8beb264d1856e7251e0488eb3bad22054b4d71683ac581bfe5ff46 */}
 ## REST server (`server.nix`)
 
 One account per fleet host (`restic/<hostname>/rest-password`), checked
@@ -95,6 +100,7 @@ reaching it from another zone over the tailnet need `listenAll = true`
 a gateway, and the WAN never opens it.
 :::
 
+{/* t:p 6e8575e92d2717a79bea3799fbe640565163ccc8a419b8864e831c5d1d86ccf5 */}
 ## Metrics (`metrics.nix`)
 
 Monitored nodes only (`monitoring-node` feature): each job stamps its last
@@ -102,6 +108,7 @@ success in the textfile collector, and `restic-declared` lists the declared
 jobs so a job that never succeeds still ages into a `dnf-restic-<zone>`
 alert.
 
+{/* t:p 3907d445c8c1692e95bc3c13a65f98a460ddc414dfe9dda36ea016c92253a446 */}
 ## Options
 
 * **enable** `bool` Enable restic backup client

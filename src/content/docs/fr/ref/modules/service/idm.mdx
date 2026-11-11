@@ -1,0 +1,100 @@
+---
+title: darkone.service.idm
+sidebar:
+  label: "idm"
+---
+
+{/* t:translated-from en */}
+{/* t:h 05360cec1529c0ffa9cb001e95e969ea05c4f0461bcea3ef5de26d4ce1386945 */}
+
+{/* t:p 89e789b89fb1c841e5843d6893a035c72f9e575c5cd887cd950018d30ea69058 */}
+Service DNF Kanidm (gestionnaire d'identités).
+
+:::note[Les secrets sont générés, pas saisis]
+`just configure-admin-host` crée toutes les entrées que ce module lit :
+les mots de passe des comptes d'urgence (`kanidm-admin-password`,
+`kanidm-idm-admin-password`), la paire auto-signée du listener HTTPS interne
+(`kanidm-tls-chain` / `kanidm-tls-key`, 10 ans, CN=127.0.0.1) et un
+`oidc-secret-<client>` par client OAuth2 provisionné. Relisez-les avec
+`just sops` dans les rares cas où un administrateur en a besoin.
+:::
+
+Sauvegarde en ligne : un dump par nuit, 7 conservés dans `/var/lib/kanidm/backups`
+(`services.kanidm.server.settings.online_backup`). Restaurable uniquement avec la
+même version mineure de kanidm : une mise à jour nécessite toujours une copie à froid.
+
+Sous-modules (`idm/`) :
+- `replication.nix` : réplication multi-zones en lecture seule, HCS vers les passerelles de zone ;
+- `provision.nix` : clients OAuth2 (registre de modèles), groupes et personnes.
+
+{/* t:p b87028ad2c6d691c34855253592b04c13cbfca475461fc34aac71d0fab56b929 */}
+## Réplication (`replication.nix`)
+
+Automatique, dérivée de l'endroit où `idm` est déclaré :
+- idm sur le HCS uniquement, ou sur une passerelle sans HCS : une instance ;
+- sur le HCS et &gt;= 1 passerelle de zone : le HCS fournit (WriteReplica), chaque
+  passerelle idm consomme.
+
+Amorçage en deux étapes : `just apply` génère tous les certificats de réplication
+(les passerelles restent en WriteReplicaNoUI), puis `just idm-sync-certs` + `just apply`
+ajoute les partenaires et bascule les passerelles en ReadOnlyReplica.
+
+{/* t:p 83a7e76eee86d977f88682a812c3bc9bfb09d7c38dd916e976ca956dd9d2cc56 */}
+## Provisionnement (`provision.nix`)
+
+Chaque module de service compatible OIDC apporte un modèle de client à
+`darkone.service.idm.oauth2` ; un client est provisionné par (modèle,
+instance), fusionné par `clientId` entre zones. Jamais sur un consommateur de
+réplication : il reflète le HCS.
+
+{/* t:p 344a3a2f09f9c8dc77cde390368ab567a1472fcf3913238345b23bf4d3f35443 */}
+## Options
+
+* **enable** `bool` Active le SSO local avec Kanidm
+
+```nix
+darkone.service.idm.enable = false;
+```
+
+{/* t:p 15d6281a7eef82f33e6c5523548d61d1c2a73335b7474df80d0e65cdcfb4d2c0 */}
+### `idm/provision.nix`
+
+* **oauth2** `attrs` Modèles de clients OAuth2/OIDC apportés par les modules de service.
+  Kanidm provisionne un client par entrée correspondante dans `network.services`,
+  avec `clientId = dnfLib.oauth2ClientName`.
+  * **enable** `bool` Provisionner ou non les clients OAuth2 pour ce modèle.
+  * **clientName** `nullOr str` Remplace le nom du client kanidm. Par défaut, dnfLib.oauth2ClientName.
+  * **displayName** `str` Nom lisible affiché sur l'écran de consentement kanidm.
+  * **imageFile** `path` Icône de l'application. Renvoyée à chaque exécution de kanidm-provision.
+  * **redirectPaths** `listOf str` Chemins de redirection OAuth2 (un par URL de callback acceptée).
+  * **landingPath** `str` Chemin du point d'entrée de connexion automatique sur le service.
+  * **enableLegacyCrypto** `bool` Autorise les algorithmes de signature JWT anciens (ex. RS256).
+  * **allowInsecureClientDisablePkce** `bool` Désactive PKCE sur le client (seulement pour les clients qui ne l'implémentent pas).
+  * **preferShortUsername** `nullOr bool` Utilise le nom court (sans domaine) dans la claim `preferred_username`.
+  * **extra** `attrs` Attributs supplémentaires fusionnés dans le client provisionné (claimMaps, etc.).
+
+```nix
+darkone.service.idm = {
+  oauth2.enable = true;
+  oauth2.clientName = null;
+  oauth2.displayName = null;
+  oauth2.imageFile = null;
+  oauth2.redirectPaths = [ ];
+  oauth2.landingPath = "/";
+  oauth2.enableLegacyCrypto = false;
+  oauth2.allowInsecureClientDisablePkce = false;
+  oauth2.preferShortUsername = null;
+  oauth2.extra = { };
+};
+```
+
+{/* t:p 495357e55a7e1d771081a404062f4c0402f981ec805275bec7023064df97f9d7 */}
+### `idm/replication.nix`
+
+* **replication** `raw` Faits de réplication de ce nœud.
+
+```nix
+darkone.service.idm.replication = { inherit isMainReplica isReplConsumer; };
+```
+
+Source : [`modules/service/idm.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/service/idm.nix)

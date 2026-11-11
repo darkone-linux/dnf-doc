@@ -6,6 +6,10 @@ sidebar:
 lang: fr
 ---
 
+{/* t:main */}
+{/* t:h 1a4c8422940106d5798c7e6ed1486a9ad78ce9f31ca97f9e0657f15dbbb8a22b */}
+
+{/* t:p 9c926b7fe50b18d26f889a83a664bc95d44337b0437b26902b58ea48a2fc7cbf */}
 Un refactor du framework ne change **aucun** système déployé : la dérivation
 (`drvPath`) de chaque hôte reste identique. `just drv-diff` le vérifie, depuis
 la racine d'un projet de co-développement.
@@ -25,12 +29,14 @@ Cibler deux ou trois hôtes de profils différents (passerelle, serveur, poste),
 puis lancer le parc entier avant de commiter.
 :::
 
+{/* t:p 1dae43d1df0e50a1cdfed0e04583249d92ff4e083f2db034b5ee377a90237726 */}
 ## Fichiers pris en compte
 
 L'arbre de travail est lu comme `just commit` le commiterait : fichiers suivis
 et nouveaux fichiers, sauf ceux que git ignore. Le projet consommateur est le
 même des deux côtés, seul `dnf/` varie.
 
+{/* t:p b599328025e2e45048cc93c3eac1ae45768c0abf295316daaca29c35c9cdf71c */}
 ## Mise à jour des inputs en attente
 
 Un `flake.lock` de `dnf/` modifié mais pas encore commité (`nix flake update`)
@@ -41,6 +47,7 @@ lit alors l'arbre de travail avec le verrou de la révision de base.
 LOCK=tree just drv-diff         # compter aussi la mise à jour des inputs
 ```
 
+{/* t:p 4991afb059a540450ddf0e47470112cb257ef8e9f7fc919e20d85bc47b3002a4 */}
 ## Une dérivation diffère
 
 La sortie donne les deux `drvPath` de chaque hôte touché. Les comparer montre
@@ -53,6 +60,7 @@ nix run nixpkgs#nix-diff -- <avant.drv> <après.drv>
 Un écart voulu n'est plus un refactor : le commit porte alors le type `feat` ou
 `fix`.
 
+{/* t:p 9ef67c1dda2c0fecef7cfd9ad30c5a11636205892d208ea0c665f3fb5515659e */}
 ## Ressources
 
 Deux évaluations se suivent, chacune sur deux processus. `WORKERS` en change le

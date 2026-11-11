@@ -4,6 +4,10 @@ sidebar:
   label: "host.gateway"
 ---
 
+{/* t:main */}
+{/* t:h 57650a141a8d13c3ce94a11b0b397a48eae32b30699c65130ce851a49f48dc92 */}
+
+{/* t:p ea3311dc4a78f8188480a49d422a1306b2916466cfc0d8ed6a343671c869e323 */}
 The main gateway / router of a local network zone.
 
 :::tip[A ready-to-use gateway!]
@@ -28,6 +32,7 @@ else is dropped — add it to `networking.firewall.extraForwardRules`.
 
 Sub-module (`gateway/`): `backup-links.nix`, backup uplinks.
 
+{/* t:p 8dc5e1d15465a2b98b32ad3c2d2071ad166c7474eeda87656162136d717bc1da */}
 ## Backup uplinks (`backup-links.nix`)
 
 :::tip[Backup links: Internet in degraded mode]
@@ -50,6 +55,7 @@ off until no preferred link reaches the Internet; an ethernet one stays up,
 idle. Details: `lib/uplinks.nix`.
 :::
 
+{/* t:p d2ce717be6beea9c3089c5faa799db686c84873126f476ea42657b587d6fbe45 */}
 ## Options
 
 * **enable** `bool` Enable gateway features for the current host (dhcp, dns, proxy, etc.)
@@ -62,6 +68,7 @@ darkone.host.gateway = {
 };
 ```
 
+{/* t:p 8ae091682909fbd4e45232a107652981060571a160868cf3fc2094b7567dc1aa */}
 ### `gateway/backup-links.nix`
 
 * **backupLinks** `attrs` Fallback uplinks, used when the WAN has no link, no lease or no

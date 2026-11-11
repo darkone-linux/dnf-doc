@@ -1,0 +1,26 @@
+---
+title: darkone.system.dnf-release
+sidebar:
+  label: "dnf-release"
+---
+
+{/* t:translated-from en */}
+{/* t:h 5655e24aa115740196f8f2b7ceae7082851c24e8ab85f51d4d7f90feb62c4c30 */}
+
+{/* t:p 1d07deee74b6b55f651436e2759deeea5fef412e5399841772e98c9367aef43f */}
+Appose la version du framework sur l'hôte : `/etc/dnf-release` et l'étiquette de démarrage.
+
+Répond à la question « quelle DNF fait tourner cette machine&nbsp;? » sans journal de déploiement, sur une flotte où les hôtes sont mis à jour un par un, et où un retour arrière peut laisser un nœud plusieurs versions en retard.
+
+:::note[Sans condition]
+Pas d'option `enable` : métadonnées pures, aucun service, aucun coût. `dnfVersion` vient de `lib/flake/mk-configuration.nix`, qui lit `dnf/VERSION` et la révision du flake.
+:::
+
+:::tip[Consulter-le]
+```sh
+cat /etc/dnf-release      # DNF_RELEASE + DNF_REV
+nixos-version             # release appears as a `dnf-X.Y.Z` label tag
+```
+:::
+
+Source&nbsp;: [`modules/system/dnf-release.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/system/dnf-release.nix)

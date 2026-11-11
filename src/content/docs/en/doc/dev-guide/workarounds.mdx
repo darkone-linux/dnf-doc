@@ -16,20 +16,19 @@ The framework tracks nixpkgs unstable: a package breaks, a PR is slow. Every
 workaround added while waiting for the upstream fix is registered in
 `dnf/config/workarounds.nix`, and removed along with its entry.
 
-{/* t:p fb591ff39d3a5a6d32c8e095647beab2a29737dd32dae4d3a97f46f33396a120 */}
-## What gets registered
+{/* t:p 8acd71af1f3d102117c5d525ec3610b3c93b26f01949c30af1b5ee9f4bfe5c25 */}
+## Registered workarounds
 
 | `kind` | Workaround |
 |---|---|
 | `overlay` | Fix in `dnf/lib/overlays/` |
-| `backport` | Module copied into `dnf/backports/nixos/` |
+| `backport` | Module copied to `dnf/backports/nixos/` |
 | `pin` | Package taken from another nixpkgs |
-| `inline` | Workaround inside a module |
+| `inline` | Workaround in a module |
 | `insecure` | `permittedInsecurePackages` entry |
 
-:::caution[Registration required]
-A unit test rejects an overlay, a backport or a `nixpkgs-*` input that is not
-registered, as well as an entry whose file or input has disappeared.
+:::caution[Mandatory registration]
+A unit test rejects an overlay, a backport or a `nixpkgs-*` input that is not registered, as well as an entry whose file or input has disappeared. It also rejects an overlay missing from the `dnf/lib/overlays/default.nix` list and a backport that `dnf/lib/flake/mk-configuration.nix` does not import: they would be registered but have no effect.
 :::
 
 {/* t:p ee513526ee5fd421756e8c2f07b65a54e6f053418e67359ddbe9ae658aa4594c */}
@@ -77,17 +76,14 @@ gimp · overlay · since 2026-06-17  [drop?]
 
 `[drop?]` flags a lead, not a verdict: `dropWhen` decides.
 
-{/* t:p cc962640633de4a9225dcc4af15724751d121918d8383cc654771b58b2f9d62d */}
-## Removing a fix
+{/* t:p 5beca9ecff1f6dbf9a611d9b4d1ab881ca3d48fee3a9fe1d2c1d457efabf9fe4 */}
+## Remove a workaround
 
 <Steps>
 
-1. **Check** the `dropWhen` condition, rebuilding a relevant host if
-   needed.
+1. **Check** the `dropWhen` condition, rebuilding an affected host if needed.
 
-2. **Delete** the workaround: files from `files`, wiring in
-   `dnf/lib/mk-configuration.nix` (overlay, backport), `inputs` from
-   `dnf/flake.nix`.
+2. **Delete** the workaround: files in `files`, wiring (overlay in `dnf/lib/overlays/default.nix`, backport in `dnf/lib/flake/mk-configuration.nix`), `inputs` of `dnf/flake.nix`.
 
 3. **Unregister**: remove the entry from the registry.
 

@@ -1,0 +1,97 @@
+---
+title: darkone.service.loki
+sidebar:
+  label: "loki"
+---
+
+{/* t:translated-from en */}
+{/* t:h a248291b9d7c1abdd56600c2566e49333d43bac77e12f40777ae5ebc2cc500f5 */}
+
+{/* t:p 4689e171f79f161f59f7e40399e2351daa0f7f2f739d38d5cef36433e0164a11 */}
+Loki + Alloy, statistiques HTTP avec Grafana.
+
+:::note
+Collecte centralisée des journaux d'accès Caddy, exploités par Grafana via une source de données Loki provisionnée et un tableau de bord dédié.
+
+Double schéma aligné sur monitoring.nix&nbsp;:
+
+- `enable`   : déploie le serveur Loki et la source de données Grafana sur le même hôte que le service `monitoring` (Grafana).
+- `isClient` : déploie Alloy sur chaque hôte qui exécute Caddy. Les journaux de Caddy sont attendus au format JSON dans `/var/log/caddy/access-*.log` (voir `dnf/modules/system/services.nix`).
+
+Par défaut, `enable` suit `darkone.service.monitoring.enable` et `isClient` suit `services.caddy.enable` : la configuration est entièrement automatique dès que monitoring et Caddy sont actifs.
+:::
+
+:::caution[Pas d'authentification, tailnet seul]
+Loki accepte lectures et écritures de quiconque l'atteint. Le port 3100 n'est donc ouvert que sur `tailscale0` ; `auth_enabled` est l'interrupteur multi-locataires de Loki, pas une connexion, et reste à `false`.
+:::
+
+:::tip[Débogage &amp; nettoyage manuel]
+Symptômes les plus fréquents après (dés)activation de Loki ou changement de format des journaux Caddy&nbsp;:
+
+**1. « NO DATA » sur le tableau de bord Caddy malgré les requêtes entrantes.**
+   Vérifiez toute la chaîne d'ingestion, de bout en bout&nbsp;:
+   ```sh
+   # On the Caddy host: is Alloy running? reading files?
+   sudo systemctl status alloy --no-pager
+   sudo journalctl -u alloy -n 100 --no-pager | grep -iE 'error|permission'
+   ls -la /var/log/caddy/access-*.log   # must be caddy:caddy
+
+   # On the monitoring host itself, or from the tailnet: is Loki receiving?
+   # (replace <IP> with the monitoring host's internal IP, Loki does NOT
+   # bind on 127.0.0.1 — see http_listen_address = bindAddr. From a plain
+   # LAN client the connection is refused, by design.)
+   curl -s http://<IP>:3100/loki/api/v1/labels | jq
+   curl -sG http://<IP>:3100/loki/api/v1/query \
+        --data-urlencode 'query={job="caddy"}' | jq '.data.result | length'
+   ```
+
+   Une réponse vide sur `/loki/api/v1/*` alors que `/ready` répond 200 signifie que le frontend annonce une mauvaise adresse (voir `common.instance_addr`) ; `journalctl -u loki | grep frontend=` l'indique. Redémarrez Loki après correction.
+
+**2. `alloy.service: mkdir data-alloy/remotecfg: permission denied`.**
+   Propriétaire orphelin de `/var/lib/alloy`, hérité d'un ancien DynamicUser.
+   Le service `ExecStartPre` le corrige normalement, mais s'il reste bloqué (unité en `start-limit-hit`, par exemple) :
+   ```sh
+   sudo systemctl stop alloy
+   sudo chown -R caddy:caddy /var/lib/alloy
+   sudo systemctl reset-failed alloy
+   sudo systemctl start alloy
+   ```
+
+**3. Grafana refuse de démarrer&nbsp;: `Datasource provisioning error: data
+   source not found`.** Conflit d'UID dans la base SQLite après un changement de provisionnement
+   (typiquement le passage d'un UID généré automatiquement à `uid = "loki"`).
+   L'option `deleteDatasources` gère ce cas en théorie ; sinon, purge manuelle :
+   ```sh
+   sudo systemctl stop grafana
+   sudo sqlite3 /var/lib/grafana/grafana.db \
+        "DELETE FROM data_source WHERE name='Loki';"
+   sudo systemctl reset-failed grafana
+   sudo systemctl start grafana
+   ```
+
+**4. Fichiers de journaux Caddy obsolètes** (ancien nommage avec `:` ou ancien schéma, par exemple
+   `access-http:__nextcloud.log`). Sans danger, mais ils polluent la sortie du suivi Alloy.
+   Nettoyez après une migration&nbsp;:
+   ```sh
+   sudo rm /var/log/caddy/access-{http,https}:__*.log
+   sudo rm /var/log/caddy/access-:*.log     # variants `:80`, `:443`
+   sudo systemctl reload caddy              # optional
+   ```
+:::
+
+{/* t:p 5ce866d007e0881797ce51cb9ee9bafef53b580e0a14ddf47abc5ef1e23b507c */}
+## Options
+
+* **enable** `bool` Déploie le serveur Loki et la source de données Grafana (sur le même hôte que Grafana).
+* **isClient** `bool` Déploie Alloy pour collecter les journaux d'accès Caddy locaux.
+* **retentionTime** `str` Durée de conservation des journaux dans Loki (30 jours par défaut).
+
+```nix
+darkone.service.loki = {
+  enable = config.darkone.service.monitoring.enable;
+  isClient = config.services.caddy.enable && hasMonitoringHost;
+  retentionTime = "720h";
+};
+```
+
+Source&nbsp;: [`modules/service/loki.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/service/loki.nix)

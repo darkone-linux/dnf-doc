@@ -4,6 +4,10 @@ sidebar:
   label: "hardware"
 ---
 
+{/* t:main */}
+{/* t:h 7cd6d67d18d6c779e92eb057f5533988dfd03b9bc82dee13e4073f3ef8a49734 */}
+
+{/* t:p 8163dc0aea4c6d94b0bf0952585c069776061354b4789bcc47cd3d49f7e03675 */}
 Hardware configuration improvements.
 
 Every firmware is loaded (`hardware.enableAllFirmware`), except on a virtual
@@ -11,6 +15,7 @@ machine: `just detect-hw` probes it (`systemd-detect-virt --vm`) and sets
 `darkone.system.hardware.virtual` in `hardware/detected-hardware.nix`. A
 guest also lets Zed run on its emulated GPU (`ZED_ALLOW_EMULATED_GPU`).
 
+{/* t:p 350a8bfe11b9f68f8333463a4b6d32ab7c8b432b1a82ea1836c9c6a9e354bd19 */}
 ## Options
 
 * **enable** `bool` Enable hardware optimisations

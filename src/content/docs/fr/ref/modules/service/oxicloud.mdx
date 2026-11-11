@@ -1,0 +1,56 @@
+---
+title: darkone.service.oxicloud
+sidebar:
+  label: "oxicloud"
+---
+
+{/* t:translated-from en */}
+{/* t:h 9b2a717bcf2f15c2b58c0cf47923487f7d28f95e03326603c597498db20306bb */}
+
+{/* t:p 12999eae5a79856773e1d35795d2c5eff06ec188813397462c0b47170b11d72a */}
+OxiCloud — Cloud souverain rapide (stockage de fichiers, WebDAV, CalDAV et CardDAV).
+
+:::note[Service en cours de validation]
+Wrapper DNF autour du module nixpkgs (depuis la [PR #516113](https://github.com/NixOS/nixpkgs/pull/516113)).
+Le paquet `oxicloud` est déjà fourni par nixpkgs ; seul le module est copié
+depuis la PR (cf. `backports/nixos/oxicloud.nix`).
+:::
+
+:::tip[SSO]
+Quand un service `idm` (Kanidm) existe sur le réseau (zone ou global), OIDC est
+configuré automatiquement : un client OAuth2 est enregistré et OxiCloud est orienté
+vers les points d'accès Kanidm. Sans `idm`, le comportement d'origine est conservé
+(connexion par mot de passe local uniquement).
+:::
+
+:::caution[Comptes avec SSO]
+- L'auto-inscription est fermée : les comptes sont créés à la première connexion SSO.
+- Les membres du groupe Kanidm `admins` deviennent administrateurs OxiCloud uniquement
+  à cette première connexion ; les changements de rôle ultérieurs se font dans l'interface
+  d'administration d'OxiCloud.
+:::
+
+:::tip[Stockage et clients]
+Le stockage de fichiers, WebDAV (`/webdav/`), CalDAV (`/caldav`) et CardDAV (`/carddav`)
+sont servis sur le même port HTTP, derrière le reverse proxy Caddy. La couche de
+compatibilité Nextcloud est activée : les clients Nextcloud de bureau et mobiles, ainsi que
+le fournisseur Nextcloud de GNOME Comptes en ligne, se connectent à l'URL du service.
+La base PostgreSQL est créée localement.
+:::
+
+:::tip[Courriel]
+Quand `network.smtp` est défini, OxiCloud envoie les notifications de partage et les
+invitations par courriel (liens magiques) via ce relais. Sans lui, les fonctions
+de courriel sont désactivées.
+:::
+
+{/* t:p e7774fe330eed9c5162da006dbea44c919f2d9e7c68792b2c14841ff66751cc3 */}
+## Options
+
+* **enable** `bool` Activer le service OxiCloud local
+
+```nix
+darkone.service.oxicloud.enable = false;
+```
+
+Source : [`modules/service/oxicloud.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/service/oxicloud.nix)

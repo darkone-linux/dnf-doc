@@ -1,0 +1,63 @@
+---
+title: darkone.security.network
+sidebar:
+  label: "network"
+---
+
+{/* t:translated-from en */}
+{/* t:h 6a5dc014f06b5b3bec1cae859d1d4bcc3a4d82e43edbeaaee95e8921d5d6bbbf */}
+
+{/* t:p 7108d97d952a15c0b1e311f2774e85281c7856e9a46e9ab1c78b8f126c44f36f */}
+Services réseau : isolation et supervision (R78–R80). (wip)
+
+Couvre l'isolation des services réseau (R78 : catégorie serveur), le durcissement et la supervision des services exposés (R79 : fail2ban, en-têtes HTTP, TLS selon l'ANSSI) et la réduction de la surface réseau (R80).
+
+:::caution[Activation]
+L'option `enable` suit `darkone.system.security.enable` par défaut.
+Les règles (Rxx/Cxx) sont activées selon le niveau, la catégorie et les exclusions définies dans `darkone.system.security` (via `isActive`).
+:::
+
+:::caution[R79 : CSP stricte]
+`Content-Security-Policy: default-src 'self'` casse les outils sans nonces (tableaux de bord avec CDN, widgets tiers). Le preload HSTS est irréversible : ne l'activer que sur un domaine entièrement maîtrisé.
+:::
+
+:::caution[R79 : en-têtes nginx à activer par vhost]
+`add_header` remplace l'ensemble hérité au lieu de s'y ajouter : un bloc global est donc écarté dès qu'un premier vhost ou emplacement déclare ses propres en-têtes, et gixy fait échouer le build à cause de ce masquage. L'ensemble est donc livré dans `/etc/nginx/dnf-security-headers.conf`, à `include` depuis le `extraConfig` propre au vhost. Seules les directives TLS restent globales.
+:::
+
+:::caution[R79 : chaque jail a besoin d'un filtre]
+fail2ban tourne ici sur le backend systemd : un jail doit avoir à la fois une définition `filter.d` et un `journalmatch`, sinon il fait échouer tout le démon au démarrage, au risque de perdre le jail sshd qui fonctionne. `exposedServices` est donc vérifié par rapport à `filters` ; il faut encore écrire ceux de caddy, matrix et idm.
+:::
+
+:::caution[R80 : filtrage des écoutes]
+Certains services (KDE Connect, mDNS) écoutent par défaut sur toutes les interfaces. Déclarez-les dans `network.publicListeners` ou reconfigurez-les.
+:::
+
+{/* t:p 723aa6570246c5dc75ad64a52102cd6b0d3a90d50fe0f4ab7e5657db81bf74a9 */}
+## Options
+
+* **enable** `bool` Active le durcissement réseau ANSSI (R78–R80).
+* **exposedServices** `listOf str` Services publics à protéger avec fail2ban (R79). Chaque entrée DOIT correspondre à
+  un filtre, fourni par fail2ban ou déclaré dans `filters`. Sinon,
+  l'assertion refuse le build.
+* **filters** `attrs` Filtres utilisables dans `exposedServices`, en plus de ceux fournis par fail2ban.
+  Caddy, Synapse et Kanidm nécessitent les leurs, écrits à partir de la sortie réelle du journal : déclarez-les ici une fois les motifs confirmés.
+  * **journalmatch** `str` Filtre du journal pour le jail (fail2ban fonctionne avec le backend systemd).
+  * **failregex** `str` Motif d'échec, écrit dans `filter.d/<name>.conf`. Vide si fail2ban fournit déjà le filtre et que seule la correspondance manque.
+* **publicListeners** `listOf str` Services autorisés à écouter sur 0.0.0.0 / :: (R80).
+* **httpsHeaders** `bool` Ajoute les en-têtes de sécurité HTTP ANSSI dans Nginx/Caddy (R79).
+* **tlsCiphers** `listOf str` Suite de chiffrement TLS ANSSI pour Nginx (R79).
+
+```nix
+darkone.security.network = {
+  enable = false;
+  exposedServices = [ ];
+  filters.journalmatch = "_SYSTEMD_UNIT=forgejo.service";
+  filters.failregex = "";
+  publicListeners = [ ];
+  httpsHeaders = true;
+  tlsCiphers = [ ];
+};
+```
+
+Source&nbsp;: [`modules/security/network.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/security/network.nix)

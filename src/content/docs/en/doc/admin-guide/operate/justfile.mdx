@@ -132,11 +132,10 @@ Run `just check` to catch regressions early.
 just check
 ```
 
-{/* t:p 351e6e59d430c07f8a62025b152f8029d7e56f8e992394e9f651b92082716a43 */}
+{/* t:p 27f4a5a204ea73676199c4d42b070dab711ccc19ab03839ef0fc87ef7e12d6bd */}
 ### 💠 `check-code`
 
-Static analysis with `statix` and dead code detection with `deadnix`, on
-all `*.nix` files.
+Static analysis with `statix` and dead code detection with `deadnix`, on all `*.nix` files. `shellcheck` checks the `*.sh` scripts tracked by git, including those of `dnf/` that are co-developed.
 
 ```sh
 just check-code
@@ -228,6 +227,33 @@ Manages test fixtures: generation, drift check, regeneration of disposable keys 
 just fixtures check
 ```
 
+{/* t:p 9c85c3176418810daf040b75fc712b774a02e4a58afa7d3448f86ad2eb7abc81 */}
+### 🔆 `test-installer [scénario] [iso]`
+
+Tests the installation ISO in a QEMU VM&nbsp;: the `darkone new` assistant is driven end to end. Plan for 30 minutes and 25 GB of disk per scenario.
+See [Installer test](/en/doc/dev-guide/releasing/#installer-test).
+
+| Scenario | Installation |
+|---|---|
+| `scripted` | Answer file, unencrypted disk |
+| `interactive` | Console questions, encrypted disk |
+| `all` (default) | Both |
+
+```sh
+just test-installer
+just test-installer interactive /chemin/de/l.iso
+```
+
+{/* t:p d3b8061eda0c9fd00c607f8bb7f790e84f01d06e7c5d08d33fdcaba4ae57cf60 */}
+### 🔆 `try [disque] [générateur]`
+
+Opens the installation ISO of this tree in a QEMU window. The project written by the assistant follows the local tree, unpublished code included. `reset` starts over with a new disk.
+
+```sh
+just try                                   # disque gardé
+just try reset chemin/de/dnf-generator     # disque neuf, générateur local
+```
+
 {/* t:p 04842afa271f51652d177f9d20a49f49f8763df08af84e80a5c846fe5ead27ed */}
 ### 🔆 `pkg-update <package> [version]`
 
@@ -243,6 +269,15 @@ nixpkgs](/en/doc/dev-guide/packages/#publishing-to-nixpkgs).
 ```sh
 just pkg-update rename-simple
 just pkg-update fleet-update 0.2.0    # explicit version (release train)
+```
+
+{/* t:p 66da6583003e0f94606181f40534ddbb00ffa2fd1674938578163fe328a237f3 */}
+### 🔆 `workarounds`
+
+Lists temporary workarounds with their upstream status and flags those to remove. See [Temporary workarounds](/en/doc/dev-guide/workarounds/).
+
+```sh
+just workarounds
 ```
 
 {/* t:p 9b5df38cc5488263f1dbc6f4a460e1c99b2e258429949798872002e4d4fdbd5d */}
@@ -563,6 +598,16 @@ host or a zone. See
 
 ```sh
 just configure-admin-host
+```
+
+{/* t:p f18263456bc31e485dd655e6705c3fcce0592dab64d719d60af2486723343260 */}
+### ✳️ `tailnet-enroll <hôte> [ip]`
+
+Enrolls a host in the tailnet with a single-use key, carrying the declared tags. Safe to rerun&nbsp;: an already enrolled host is left as is.
+See [Enroll a machine](/en/doc/admin-guide/operate/vpn/#enroll-a-machine).
+
+```sh
+just tailnet-enroll gw
 ```
 
 {/* t:p 2aa934df4aa5afcbf4b93f71bfcd97f8d6bf3b510e9d001f6ffd6192a7d9d60d */}
@@ -1095,6 +1140,15 @@ Runs the generator unit tests.
 just gen-test
 ```
 
+{/* t:p 9d39d1949aa513948870cad3a14f63a431afa1c83f68acd9554ad040f3268d39 */}
+### 🔗 `gen-schema`
+
+Regenerates `dnf/config/config.schema.json` with the local generator. The release pipeline then rewrites it with the pinned generator.
+
+```sh
+just gen-schema
+```
+
 {/* t:p 9a6969984aaf1a7ed01649b0872d3c366ce7503ab0ac814dc48f26b266c7c28d */}
 ### 🔗 `cat [host]` ⭐
 
@@ -1103,6 +1157,17 @@ Chains `clean` → `amend` → `apply-local test` (or `apply-verbose <host>`).
 ```sh
 just cat                   # tests locally
 just cat myserver          # applies on myserver
+```
+
+{/* t:p 967c52f9202e13a79988883af81114c83fe8a74c12ada12a1addc1754dd18d49 */}
+### 🔗 `drv-diff [hôtes] [base]`
+
+Compares each host's derivation between a revision of `dnf/` (`base`, `HEAD` by default) and its working tree. Exits with an error if any differs.
+See [Neutral refactor](/en/doc/how-to/dev/neutral-refactor/).
+
+```sh
+just drv-diff                   # tout le parc
+just drv-diff gw-main,nas       # deux hôtes
 ```
 
 {/* t:p 51737696af1a90997dcc39b9fa1d0907bd1a12d8ebd738b211e1f04a1ddfe02e */}

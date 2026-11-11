@@ -1,0 +1,48 @@
+---
+title: darkone.service.geneweb
+sidebar:
+  label: "geneweb"
+---
+
+{/* t:translated-from en */}
+{/* t:h 4ca2d758b8a42f9c79c06e2e82ec9657fa109ba283e0af31a0746770ac97cf8e */}
+
+{/* t:p 4dedee63cab6dc7d9348ef9268a87115485bb82144fac295911e99eed8d42f4e */}
+GeneWeb — Service de généalogie puissant.
+
+:::note[Service en cours de validation]
+Wrapper DNF autour du module nixpkgs (issu de [PR #522751](https://github.com/NixOS/nixpkgs/pull/522751)).
+:::
+
+:::tip[Déclaration d'une base]
+Pour déclarer un fichier `base.gw` (le répertoire par défaut est `/var/lib/geneweb`),
+ajoutez ceci à la configuration de votre serveur :
+```nix
+services.geneweb.databases.base = {};
+```
+:::
+
+:::caution[Secrets SOPS]
+L'option `enablePasswords` lit les mots de passe ami et wizard depuis les secrets
+sops `geneweb-friend` et `geneweb-wizard`. Si elle est activée, ajoutez les entrées dans
+`usr/secrets/` avant de reconstruire, sinon l'activation de sops-nix échouera.
+
+**Remarque importante :** les mots de passe sops doivent être transmis en clair au
+démon Geneweb. Pour plus de sécurité, il est préférable de définir ces mots de passe dans
+le fichier de configuration de la base (votre-base.gwf) plutôt que d'utiliser `enablePasswords`.
+:::
+
+{/* t:p cc95e145882b7fad4078a5830bf13ef457ec18dfebf90605808bc341200e3baf */}
+## Options
+
+* **enable** `bool` Activer le service local de généalogie GeneWeb
+* **enablePasswords** `bool` Activer les mots de passe sops (déconseillé)
+
+```nix
+darkone.service.geneweb = {
+  enable = false;
+  enablePasswords = false;
+};
+```
+
+Source : [`modules/service/geneweb.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/service/geneweb.nix)

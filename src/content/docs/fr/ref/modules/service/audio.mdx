@@ -1,0 +1,23 @@
+---
+title: darkone.service.audio
+sidebar:
+  label: "audio"
+---
+
+{/* t:translated-from en */}
+{/* t:h 73fece6d96a1a36b00d1411843cafebb607ec646fb8981f1981f194dd8c3bf7f */}
+
+{/* t:p fda2749f69363f2eaf8992ea1977f260d75394870981cff716e286c18fa0b8ed */}
+Services audio : alsa, pulse (pas encore jack).
+Ajoute automatiquement les utilisateurs au groupe `audio` lorsqu'il est activé.
+
+{/* t:p 7d00659028df5db5c9aa201898a52d60c85cb2609b332b76b094bdad1d52eec9 */}
+## Options
+
+* **enable** `bool` Active le système audio
+
+```nix
+darkone.service.audio.enable = false;
+```
+
+Source : [`modules/service/audio.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/service/audio.nix)

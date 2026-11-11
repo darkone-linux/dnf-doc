@@ -1,0 +1,30 @@
+---
+title: darkone.service.minio
+sidebar:
+  label: "minio"
+---
+
+{/* t:translated-from en */}
+{/* t:h 092db4c0aec91634586decefea79a0ec31572005e84d1751229c1ad6e2f53a29 */}
+
+{/* t:p ee238f6cea49062e3e5bf463c580c40d7078055cb771d09407651e14f483f295 */}
+Un service MinIO S3 local, entièrement configuré. (wip)
+
+Fournit un backend de stockage d'objets interne, compatible S3, accessible uniquement sur 127.0.0.1:9000. La console web tourne sur 127.0.0.1:9001 pour l'administration et le débogage.
+
+:::note
+Les buckets ne sont PAS créés automatiquement par ce module.
+Chaque service consommateur crée ses propres buckets via un hook systemd postStart, avec l'outil `mc` (MinIO Client).
+Les identifiants sont gérés avec sops.
+:::
+
+{/* t:p f98a66f2b7de7936dbec49b7c1d6c56c6dd5a33cf1ffe693a0d19fc684a1c472 */}
+## Options
+
+* **enable** `bool` Active le service MinIO S3 local
+
+```nix
+darkone.service.minio.enable = false;
+```
+
+Source : [`modules/service/minio.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/service/minio.nix)

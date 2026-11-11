@@ -1,0 +1,41 @@
+---
+title: darkone.security.users
+sidebar:
+  label: "users"
+---
+
+{/* t:translated-from en */}
+{/* t:h 65792d7d6d059040ed70088df7aedaa94125c1f34aa2bc53f392dd4964d13bdd */}
+
+{/* t:p c927ae4d182d37dfc6b595e5daaceb354264147a94fff119c454fc75ea15ade5 */}
+Comptes utilisateurs et authentification (R30–R36). (wip)
+
+Couvre les comptes inutilisés (R30), la politique de mot de passe (R31), le verrouillage après inactivité (R32), la responsabilité des administrateurs (R33), les comptes de service (R34), les comptes de service uniques (R35) et umask (R36).
+
+:::caution[Activation]
+L'option `enable` suit `darkone.system.security.enable` par défaut.
+Les règles (Rxx/Cxx) s'activent selon le niveau, la catégorie et les exclusions définis dans `darkone.system.security` (via `isActive`).
+:::
+
+:::caution[R30 : mutableUsers=false]
+NixOS n'autorise plus les `passwd`/`useradd` ad hoc. Toute modification de compte demande un déploiement NixOS complet (`colmena apply`).
+:::
+
+:::caution[R36 : umask 0077]
+Casse la collaboration de groupe (`/srv/share`). Documenter que `chmod g+rwx <file>` est nécessaire pour le partage de groupe.
+:::
+
+{/* t:p a1fbdb4e24a94826457c8e717ab913ea4997f559ca23ea045df25876056868dc */}
+## Options
+
+* **enable** `bool` Active la gestion des comptes ANSSI (R30–R36).
+* **idleTimeout** `ints.unsigned` Secondes avant la fermeture d'un shell de connexion inactif (R32, `TMOUT`). `0` supprime totalement le délai du TTY ; le verrouillage d'inactivité GNOME n'est pas affecté. Les postes qui gardent des terminaux longue durée (ferme de compilation, outils d'agents) mettent `0`.
+
+```nix
+darkone.security.users = {
+  enable = false;
+  idleTimeout = 600;
+};
+```
+
+Source : [`modules/security/users.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/security/users.nix)

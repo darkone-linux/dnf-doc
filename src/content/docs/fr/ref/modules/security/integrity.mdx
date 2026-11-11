@@ -1,0 +1,47 @@
+---
+title: darkone.security.integrity
+sidebar:
+  label: "integrity"
+---
+
+{/* t:translated-from en */}
+{/* t:h 58fa08ca7b77917c0d250cbf1df56339b20550b7a7e312566c8fa7e26de3269e */}
+
+{/* t:p c96184ac694e0c612a4cb3ee14fcc9c70edb02edb1047d3cca542ee3eb2735a9 */}
+Intégrité du système de fichiers : HIDS (R76–R77). (en cours)
+
+Couvre le scellement et la vérification d'intégrité via AIDE (R76), ainsi que la protection de la base scellée par une signature GPG et une copie distante (R77).
+
+:::caution[Activation]
+L'option `enable` suit `darkone.system.security.enable` par défaut.
+Les règles (Rxx/Cxx) sont activées selon le niveau, la catégorie et les exclusions définies dans `darkone.system.security` (via `isActive`).
+:::
+
+:::caution[R76 : AIDE]
+Une analyse complète peut prendre 15–60 min selon la taille du système de fichiers et le CPU.
+Planifier hors des heures de pointe. Faux positifs fréquents sur /etc/resolv.conf,
+/var/lib, /var/cache : les ajouter aux exclusions.
+:::
+
+:::caution[R77 : Base signée]
+La base AIDE doit être re-signée à chaque mise à jour majeure de NixOS (le store change). Prévoir une procédure de mise à jour de référence (baseline).
+:::
+
+{/* t:p 1f3e5d6e75c28c7d43cbdb8eb93e1b4d4af06e393e13f186c8c771de7b278738 */}
+## Options
+
+* **enable** `bool` Activer l'intégrité HIDS ANSSI (AIDE, R76–R77).
+* **aideRemoteCopy** `nullOr submodule` Copie distante de la base AIDE signée GPG (R77). null = désactivé.
+  * **host** `str` Hôte distant pour la copie de la base AIDE.
+  * **sshKeyFile** `path` Chemin de la clé SSH privée pour la copie distante.
+
+```nix
+darkone.security.integrity = {
+  enable = false;
+  aideRemoteCopy = null;
+  aideRemoteCopy.host = null;
+  aideRemoteCopy.sshKeyFile = null;
+};
+```
+
+Source : [`modules/security/integrity.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/security/integrity.nix)

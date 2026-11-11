@@ -28,20 +28,20 @@ A **multi-user, multi-host, multi-service NixOS configuration**:
 This project evolves based on my needs. If you'd like to be informed about upcoming stable releases, please let me know on [GitHub](https://github.com/darkone-linux/darkone-nixos-framework) or by subscribing to my [YouTube channel](https://www.youtube.com/@DarkoneLinux) (FR). Thank you!
 :::
 
-{/* t:p a768280d885205fabc0fd104b07e904a63f6da487662a66f99763e9b2cfb2779 */}
-## Main Features
+{/* t:p b9ce9b6436b7963e30b625a904ed309486e8efa71bee051411a0ced6dbcdc417 */}
+## Main features
 
 | | Feature | Description |
 |---|---------------|-------------|
 | ⚙️ | Fully automated | With [nixos-anywhere](https://github.com/nix-community/nixos-anywhere), [disko](https://github.com/nix-community/disko) and [colmena](https://github.com/zhaofengli/colmena) |
 | 👤 | User profiles | [Profiles](https://github.com/darkone-linux/darkone-nixos-framework/tree/main/dnf/home/profiles) and [modules](/en/ref/modules/home/) [Home Manager](https://github.com/nix-community/home-manager) (admin, gamer…) |
-| 🖥️ | Host profiles | [Host profiles](/en/ref/modules/mixin/#-darkonehostdesktop) (servers, network nodes, workstations…) |
+| 🖥️ | Host profiles | [Host profiles](/en/ref/modules/mixin/host-desktop/) (servers, network nodes, workstations…) |
 | 🌐 | Tailnet VPN | [Mesh VPN](https://fr.wikipedia.org/wiki/R%C3%A9seau_maill%C3%A9) with [headscale](https://headscale.net/) + [tailscale](https://tailscale.com/) + [subnets](#the-dnf-network) |
-| 🛡️ | Ad Blocker | Secure and ad-free internet with [AdguardHome](https://adguard.com/fr/adguard-home/overview.html) |
-| 🧩 | Unique identities | SSO with [Kanidm](https://kanidm.com/) and [Vaultwarden](https://github.com/dani-garcia/vaultwarden) |
-| 🤗 | Smart services | [Immich](https://immich.app/), [Nextcloud](https://nextcloud.com/), [Forgejo](https://forgejo.org/), [Matrix](https://matrix.com/), [Jellyfin](https://jellyfin.org/), [etc.](/en/ref/modules/service/#-darkoneserviceadguardhome) |
+| 🛡️ | No ads | Secure, ad-free internet with [AdguardHome](https://adguard.com/fr/adguard-home/overview.html) |
+| 🧩 | Single identities | SSO with [Kanidm](https://kanidm.com/) and [Vaultwarden](https://github.com/dani-garcia/vaultwarden) |
+| 🤗 | Smart services | [Immich](https://immich.app/), [Nextcloud](https://nextcloud.com/), [Forgejo](https://forgejo.org/), [Matrix](https://matrix.com/), [Jellyfin](https://jellyfin.org/), [etc.](/en/ref/modules/service/adguardhome/) |
 | 💻 | Clean GNOME | NixOS hosts with [GNOME](https://www.gnome.org/) and pre-configured apps |
-| 💾 | 3-2-1 Backups | Robust, streamlined, distributed [Restic](https://restic.net/) backups |
+| 💾 | 3-2-1 backups | Robust, simplified, distributed [Restic](https://restic.net/) backups |
 | 🏠 | Home page | Automated home page for each zone |
 
 {/* t:p 7995df4fdd25d19668e06df4daec2526afaa58c8a725c60557167b29cf170045 */}
@@ -80,7 +80,7 @@ At the root:
 - `src` → Generator source files
 - `doc` → Project documentation
 
-{/* t:p 478b2dc26ad03ec8a41f8d1fb288b9d8e582228d1f0f7f075051ca77061df633 */}
+{/* t:p b32280ef7ffa3c973d62ea6092f7fa1c4758c94a2ca7b6eaa976cd49235b8105 */}
 ### Structure
 
 <FileTree collapsed={true}>
@@ -88,29 +88,32 @@ At the root:
 - Justfile Project management with [just](https://github.com/casey/just)
 - dnf/ Framework (modules & common files)
   - modules/ [Framework modules](/en/ref/modules/)
-    - standard Standard modules
-      - system/ System & Hardware
-      - console/ CLI Applications
-      - graphic/ X Applications
-      - service/ Network services
-      - admin/ Administration
-      - user/ User configurations (non-HM)
-    - mixin Macro-modules "Mixins"
+    - system/ System & Hardware
+    - security/ Hardening (ANSSI)
+    - console/ CLI applications
+    - graphic/ X applications
+    - service/ Network services
+    - admin/ Administration
+    - user/ User configurations (excluding HM)
+    - mixin/ "Mixins" macro-modules
       - host/ Host profiles (desktop, server...)
-      - profile/ User profile add-ons
+      - profile/ Add-ons to user profiles
   - home Home Manager (HM) configuration
     - modules/ Nix modules (features, programs)
     - profiles/ Profiles: admin, student, advanced...
-    - nixos/ Additional NixOS configurations (non-HM)
+    - nixos/ Additional NixOS configurations (excluding HM)
+  - lib/ Shared helpers (`dnfLib`)
+  - config/ Registries: services, ports, alerts
+  - pkgs/ Packages missing from nixpkgs
 - **etc/** Declarative network configuration
   - config.yaml [My main config](/en/doc/dev-guide/generator/)
-- **usr/** My personal network configuration
+- **usr/** Specific configuration of my network
   - modules/ My NixOS modules, same as `dnf/modules`
   - home/ My HM modules, same as `dnf/home`
   - secrets/ My passwords
-    - secrets.yaml SOPS passwords and keys
+    - secrets.yaml Passwords and SOPS keys
   - machines/ Host-specific configs (hardware, etc.)
-  - users/ User-specific HM configs
+  - users/ Per-user HM configs
 - var/ Generated files
   - log/ Log files
   - generated/ [Generated files](/en/doc/dev-guide/generator/)

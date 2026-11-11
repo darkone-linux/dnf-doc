@@ -1,0 +1,54 @@
+---
+title: darkone.graphic.gnome
+sidebar:
+  label: "gnome"
+---
+
+{/* t:translated-from en */}
+{/* t:h 0cf3d0e8a0e484d260043d05032a43dd2fba3a63aa75ae4c93343dfd669a379f */}
+
+{/* t:p ef768079e79ae9530ac97db9a7539a1b201cff95bb239267419e9c525cee3085 */}
+Environnement gnome préconfiguré avec ses dépendances.
+
+:::note[Trousseau de session après `just passwd`]
+PAM déverrouille le trousseau de session avec le mot de passe de session, que le changement fait par l'administrateur ne peut pas rechiffrer (l'ancien mot de passe&nbsp;est inconnu). La prochaine connexion par mot de passe déplace le trousseau vers `~/.local/share/keyrings.sealed/` : GNOME le recrée, vide, sur le nouveau mot de passe. Aucune invite.
+:::
+
+:::caution[Secrets du trousseau mis de côté à chaque changement de mot de passe administrateur]
+Les applications redemandent leurs identifiants&nbsp;; Element Desktop perd sa session (réparation&nbsp;: `operate/users.mdx`). Désactivation, pour un trousseau ayant son propre mot de passe&nbsp;: `darkone.home.gnome.keepKeyring`.
+:::
+
+:::note[Trousseau de session sans mot de passe]
+Les utilisateurs ayant `darkone.home.gnome.passwordlessKeyring` ignorent `pam_gnome_keyring` à l'authentification&nbsp;: un mot de passe chiffrerait leur trousseau non chiffré à sa prochaine écriture.
+:::
+
+{/* t:p 2fe96ad3e48edb1e85391c999e79acbc4ddbc7908ffab0becbbb30578383866f */}
+## Options
+
+* **enable** `bool` Gestionnaire de fenêtres GNOME préconfiguré
+* **enableDashToDock** `bool` Extension Dash to dock
+* **enableLightDM** `bool` Activer LightDM au lieu de GDM
+* **enableGdmSelector** `bool` Liste des utilisateurs GDM au lieu d'un identifiant saisi
+* **enableCaffeine** `bool` Désactiver la mise en veille automatique
+* **enableGsConnect** `bool` Communication avec les appareils
+* **enableOnlineServices** `bool` Comptes en ligne, CalDAV, CardDAV...
+* **xkbVariant** `nullOr str` Variante du clavier&nbsp;; null suit la locale (`config/locales.json`), comme la disposition.
+* **screenBlankDelay** `ints.unsigned` Délai d'extinction de l'écran en secondes (0 = jamais). Les portables le remplacent par 900 (15 min).
+* **cursorSize** `ints.positive` Taille par défaut du pointeur en pixels, modifiable par l'utilisateur (*Paramètres &gt; Accessibilité*).
+
+```nix
+darkone.graphic.gnome = {
+  enable = false;
+  enableDashToDock = false;
+  enableLightDM = false;
+  enableGdmSelector = false;
+  enableCaffeine = false;
+  enableGsConnect = false;
+  enableOnlineServices = false;
+  xkbVariant = null;
+  screenBlankDelay = 1800;
+  cursorSize = 24;
+};
+```
+
+Source&nbsp;: [`modules/graphic/gnome.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/graphic/gnome.nix)

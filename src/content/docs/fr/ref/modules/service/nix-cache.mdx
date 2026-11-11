@@ -1,0 +1,41 @@
+---
+title: darkone.service.nix-cache
+sidebar:
+  label: "nix-cache"
+---
+
+{/* t:translated-from en */}
+{/* t:h 07098f4665fabe253b34d90ee623e971d5343c56530d04df762fde7722aaac5d */}
+
+{/* t:p 7cdde402e9396b0d7fdbd4fcc8c81f1144c847e078cc919ee8d98c1a840c2901 */}
+Proxy de cache binaire Nix par zone (`proxy_cache` de nginx).
+
+Met en cache le cache Nix public (`cache.nixos.org`) sur la passerelle de la zone : un déploiement sur toute la flotte ne télécharge chaque closure depuis le WAN qu'une fois, puis la sert sur le LAN à tous les autres hôtes. Les chemins construits localement sont servis directement par `harmonia` (voir `harmonia.nix`) ; ce proxy ne se place jamais devant harmonia.
+
+:::note[Pourquoi nginx et pas un proxy réécrivant]
+Un point de terminaison de cache ne dessert qu'**un seul** amont. Un `narinfo` et son `nar` sont deux requêtes distinctes, et l'URL du `nar` ne dépend pas de l'amont : un proxy multi-amont doit donc réécrire les URL des `narinfo` dans son propre espace de noms et les suivre dans une base de données (c'est l'approche de l'ancien proxy `ncps`, source de ses erreurs HTTP 500 « invalid nar hash » récurrentes). Avec un seul amont, il n'y a pas d'ambiguïté : nginx met en cache `narinfo` et `nar` tels quels, les signatures passent intactes et les clients les vérifient. Pas de réécriture, pas de base de données, et ce bug ne peut pas survenir par construction.
+:::
+
+:::tip[Topologie]
+- server : la machine passerelle qui déclare `nix-cache` dans `config.yaml` (une par zone). Fait tourner nginx sur l'IP interne, port `network.ports.nixCache`.
+- clients : tous les hôtes de la zone locale. Leurs substituters deviennent les instances harmonia de la zone (en direct, LAN/tailnet) plus ce proxy.
+- clients itinérants (`roaming = true`, défini par la fonctionnalité d'hôte `roaming`) : hôtes nomades déplacés entre zones. Leurs substituters sont les noms neutres par rapport à la zone (`harmonia.dnf.internal`, `nix-cache.dnf.internal`) que le DNS de chaque zone résout vers ses propres services de cache (voir `service/dnsmasq.nix`), si bien que le cache suit l'ordinateur portable. `fleet-update` construit un tel hôte sur lui-même.
+- hôtes de la zone `global` (`www`, un VPS de datacenter) : pas de LAN, pas de passerelle, donc pas de proxy. Ils utilisent le harmonia `global` via le tailnet et la clé de flotte, sans laquelle ils ne peuvent rien télécharger de ce que la flotte a construit.
+:::
+
+{/* t:p 49b5e8d303b8b3fa1f35592a34456955b05769917e23868e684572718c4bf240 */}
+## Options
+
+* **enable** `bool` le proxy de cache binaire Nix par zone (nginx devant cache.nixos.org)
+* **maxSize** `str` Taille maximale du cache sur disque ; nginx supprime les entrées les moins récemment utilisées au-delà.
+* **roaming** `bool` Hôte nomade (ordinateur portable déplacé entre zones) : remplace les substituters fixés à la zone par les noms neutres que le DNS de chaque zone résout vers ses propres services de cache. Hors de toute zone DNF, ces noms répondent NXDOMAIN immédiatement et Nix se replie sur cache.nixos.org. Déclaré par la fonctionnalité `roaming` dans `config.yaml` ; à définir à la main pour un déplacement temporaire.
+
+```nix
+darkone.service.nix-cache = {
+  enable = false;
+  maxSize = "100g";
+  roaming = (host.features or { }) ? "roaming";
+};
+```
+
+Source : [`modules/service/nix-cache.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/service/nix-cache.nix)

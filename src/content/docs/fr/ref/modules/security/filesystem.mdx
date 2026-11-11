@@ -1,0 +1,58 @@
+---
+title: darkone.security.filesystem
+sidebar:
+  label: "filesystem"
+---
+
+{/* t:translated-from en */}
+{/* t:h 7eb848498123b94dca9e82e41942aec5c1dc7911d0228a06db2e1aa072cb0da8 */}
+
+{/* t:p 5db822aad27765c310e68fe982617001463c923b069512b9baac268021cdd540 */}
+Partitionnement, arborescence et permissions des fichiers (R28–R29, R50–R57). (wip)
+
+Couvre les options de montage sécurisées (R28), la restriction de /boot (R29), les permissions des fichiers sensibles (R50), les mots de passe gardés hors du store (R51), les sockets (R52), les fichiers orphelins (R53), le sticky bit (R54), les répertoires temporaires par utilisateur (R55) et setuid (R56, R57).
+
+:::caution[Activation]
+L'option `enable` suit `darkone.system.security.enable` par défaut.
+Les règles (Rxx/Cxx) sont activées selon le niveau, la catégorie et les exclusions
+définis dans `darkone.system.security` (via `isActive`).
+:::
+
+:::caution[R28 : noexec /tmp]
+`noexec` sur /tmp bloque l'exécution *et* `dlopen`&nbsp;: il casse les installeurs et compilateurs qui exécutent ce qu'ils décompressent (pip, cargo, gcc), ainsi que tout runtime qui extrait des bibliothèques natives à cet endroit (Bun, Electron, outils d'agents). Les builds Nix sont couverts&nbsp;: le TMPDIR du démon passe dans /var/tmp. Désactivable par hôte avec `darkone.security.filesystem.tmpNoexec = false`.
+:::
+
+:::caution[R28 : passage au /tmp durci au démarrage, pas au switch]
+Un hôte déjà sur `boot.tmp.useTmpfs` possède un `tmp.mount` statique, que
+cette règle remplace par une entrée fstab&nbsp;: le switch l'*arrête* donc, et
+`PrivateTmp=yes` implique `RequiresMountsFor=/tmp`, si bien que chaque unité de ce type tombe avec lui, `dbus-broker` compris. `switch-to-configuration` pilote
+systemd via D-Bus&nbsp;: il perd son propre transport en cours de route et échoue, à chaque fois. Utiliser `apply <host> boot` puis redémarrer&nbsp;; ce palier nécessite de toute façon un redémarrage pour `boot.kernelParams`. Les hôtes qui n'ont jamais utilisé `useTmpfs` ne gagnent qu'un montage, sans danger.
+:::
+
+:::caution[R29 : /boot noauto]
+`noauto` sur /boot impose un remontage manuel à chaque mise à jour NixOS.
+Un wrapper de `nixos-rebuild` doit assurer le montage et démontage automatiques.
+:::
+
+{/* t:p 110a5f14689bbe119a4d7e8904633b2229d8e64b63da422ddaca96bfff2384d3 */}
+## Options
+
+* **enable** `bool` Active le durcissement du système de fichiers ANSSI (R28–R29, R50–R57).
+* **allowedSetuid** `listOf str` Liste blanche des binaires setuid/setgid tolérés (R56, R57).
+* **tmpfs** `bool` Indique si R28 gère `/tmp` comme tmpfs durci, dimensionné sur
+  `boot.tmp.tmpfsSize`. Mettre `false` pour laisser `/tmp` sur le système de fichiers où il se trouve déjà&nbsp;: un hôte qui garde plusieurs Go de fichiers temporaires persistants perdrait sinon à la fois les données et la RAM.
+* **tmpNoexec** `bool` Indique si le `/tmp` de R28 porte `noexec`. `noexec` bloque l'exécution directe *et* `dlopen`, il casse donc tout runtime qui décompresse des bibliothèques natives à cet endroit (Bun, Electron, outils d'agents) et tout ce qui compile puis exécute dans `TMPDIR`. N'a de sens que si `tmpfs` vaut `true`.
+* **extraMountHardening** `listOf str` Points de montage à durcir avec `nosuid,nodev,noexec` (R28). Chaque chemin listé DOIT être une partition séparée déclarée ailleurs (hardware-
+  configuration / disko)&nbsp;; les options sont fusionnées dans son entrée `fileSystems` existante. Une liste explicite (plutôt qu'un drapeau global) évite de deviner la disposition et ne crée jamais de montages fantômes. Ne pas lister `/home` si des utilisateurs y lancent des scripts&nbsp;: `noexec` les casserait.
+
+```nix
+darkone.security.filesystem = {
+  enable = false;
+  allowedSetuid = [ ];
+  tmpfs = true;
+  tmpNoexec = true;
+  extraMountHardening = [ ];
+};
+```
+
+Source : [`modules/security/filesystem.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/security/filesystem.nix)

@@ -1,0 +1,38 @@
+---
+title: darkone.security.journaling
+sidebar:
+  label: "journaling"
+---
+
+{/* t:translated-from en */}
+{/* t:h 492e3a6edc7f38b3e73433d0e53d127a25ed43ed139d43d82a5877014bb96b4d */}
+
+{/* t:p 03d3e85faaf25398717e1255b761207b9c249d5ab0a8e9b2e4ba407a94f952e8 */}
+Journalisation et auditd (R71–R73). (en cours)
+
+Couvre la journalisation persistante avec transfert TLS (R71), les journaux dédiés par service (R72) et auditd avec les règles de l'ANSSI (R73).
+
+:::caution[Activation]
+L'option `enable` suit `darkone.system.security.enable` par défaut.
+Les règles (Rxx/Cxx) sont activées selon le niveau, la catégorie et les exclusions définies dans `darkone.system.security` (via `isActive`).
+:::
+
+:::caution[R71 : Seal=yes]
+`Seal=yes` nécessite `journalctl --setup-keys` (clé d'audit hors bande).
+Sans cette clé, l'intégrité du journal ne peut pas être vérifiée.
+:::
+
+:::caution[R73 : auditd immuable]
+La configuration `audit.rules = [ "-e 2" ]` rend auditd immuable : toute modification de règle nécessite un redémarrage. Tester en préproduction avant le déploiement.
+:::
+
+{/* t:p 8b135bd9e61e5de7d02b49123fbdf6d80e036698441482144532038873dfaa95 */}
+## Options
+
+* **enable** `bool` Active la journalisation ANSSI et auditd (R71–R73).
+
+```nix
+darkone.security.journaling.enable = false;
+```
+
+Source : [`modules/security/journaling.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/security/journaling.nix)

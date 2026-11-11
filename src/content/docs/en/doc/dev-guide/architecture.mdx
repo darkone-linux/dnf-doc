@@ -32,22 +32,22 @@ The ready-to-use modules are documented in the
 [module reference](/en/ref/modules/), sorted by category (system, service,
 security, console, graphic, admin, user, mixin, home).
 
-{/* t:p fe3953c97b85bafb668392df027bf8185b14ad2479e774852b57a1059e2a0160 */}
-## Abstraction layers
+{/* t:p f89e8c37ec2a009701c40fa79c0c20297905ae81da1883fe84f23ca04027e0a7 */}
+## The abstraction layers
 
-Each level builds on the previous one: the base system serves the modules, which compose the profiles, which define the hosts and users.
+Each level builds on the previous one: the base system serves the modules, which compose the profiles, which define the hosts and the users.
 
-- **[Complete file structure](/en/doc/#structure)** : detailed tree.
-- **[Layers diagram](/en/doc/#abstraction-layers)** : from the system to the profiles.
+- **[Complete file structure](/en/doc/#structure)**: detailed tree.
+- **[Layer diagram](/en/doc/#abstraction-layers)**: from the system to the profiles.
 
 | Layer | Where | Role |
 |---|---|---|
-| **Modules** | `dnf/modules/standard/` | Unit building blocks (a service, a system setting). |
-| **Mixins** | `dnf/modules/mixin/` | Macro-modules: host profiles, profile complements. |
+| **Modules** | `dnf/modules/<catégorie>/` | Building blocks (one service, one system setting). |
+| **Mixins** | `dnf/modules/mixin/` | Macro-modules: host profiles, profile add-ons. |
 | **Home** | `dnf/home/` | [Home Manager](https://github.com/nix-community/home-manager) modules and profiles (users). |
-| **Library** | `dnf/lib/` | Shared helpers (`dnfLib`): network, OIDC, firewall, security... |
-| **Packages** | `dnf/pkgs/` | Programs [absent from nixpkgs](/en/doc/dev-guide/packages/), exposed as `pkgs.<name>`. |
-| **Generation** | `src/generator/` | Transform `etc/config.yaml` → `var/generated/`. |
+| **Library** | `dnf/lib/` | Shared helpers (`dnfLib`): network, OIDC, firewall, security… |
+| **Packages** | `dnf/pkgs/` | Programs [missing from nixpkgs](/en/doc/dev-guide/packages/), exposed as `pkgs.<nom>`. |
+| **Generation** | `src/generator/` | Transforms `etc/config.yaml` → `var/generated/`. |
 
 {/* t:p 2afbebe6aedb4e4c5b04e5100d2e2a8b7b3753414a47bae256d11f60205cdfdf */}
 ## Framework vs local project
@@ -87,13 +87,13 @@ The exact list of arguments for a module is visible at the top of its file (the
 `{ lib, config, dnfLib, host, ... }` block). When in doubt, check the source.
 :::
 
-{/* t:p b3fb71681be75c1a0868f3f43eb52b487dc4be9333ac85f7c21e42744204fa70 */}
+{/* t:p a88b2419e10e04289757e7bc03dc926bb69a4137aa4e5857068236b758d6d72c */}
 ## Generated overlays
 
-Some values don't belong in `etc/config.yaml` (manual): too technical, or **provisioned by a tool**. The pattern: a script writes a `var/generated/<x>.nix` file that the assembler `dnf/lib/mk-configuration.nix` **merges** into an injected argument.
+Some values have no place in `etc/config.yaml` (manual): too technical, or **provisioned by a tool**. The principle: a script writes a file `var/generated/<x>.nix` that the assembler `dnf/lib/flake/mk-configuration.nix` **merges** into an injected argument.
 
-Example: `just configure-alert-bot` writes `var/generated/matrix.nix` (alert bot identity + room IDs), merged into `network.matrix.*` via `recursiveUpdate` (the generated file wins). Modules read `network.matrix` without knowing where it comes from.
+Example: `just configure-alert-bot` writes `var/generated/matrix.nix` (alert bot identity + room IDs), merged into `network.matrix.*` by `recursiveUpdate` (the generated file takes precedence). The modules read `network.matrix` without knowing where it comes from.
 
-:::tip[When to use]
-For **derived or provisioned** data, never edited by hand, outside of `config.yaml`. The overlay is **optional**: if absent, the argument keeps its base value.
+:::tip[When to use it]
+For **derived or provisioned** data, never edited by hand, outside the `config.yaml`. The overlay is **optional**: if absent, the argument keeps its base value.
 :::

@@ -1,0 +1,67 @@
+---
+title: darkone.system.microvm
+sidebar:
+  label: "microvm"
+---
+
+{/* t:translated-from en */}
+{/* t:h b1416fe4e970c688a3ef8de0d1d18972469abe79999fd86939b9a7af4607a0e7 */}
+
+{/* t:p a508c26d67a6fa23774c7fc9af66daa50fdb54b485e92348008966bdd5b6867a */}
+Invité microVM (microvm.nix, cloud-hypervisor) sur un hyperviseur DNF.
+
+Un invité est un hôte DNF ordinaire de l'inventaire, marqué par la fonctionnalité `microvm-guest:<hypervisor>` dans `etc/config.yaml`. Il garde son IP de zone, ses services et sa supervision ; l'hyperviseur le fait tourner et le déploie.
+
+```yaml
+- hostname: "space1"
+  zone: "cp:1.40"              # IP fixe : tap et MAC en sont dérivés
+  profile: "ai-space"
+  features: ["microvm-guest:ms-a2", "monitoring-node"] # supervisé comme tout hôte
+```
+
+- Côté invité (`microvm/guest.nix`) : partages virtiofs sous
+  `<stateDir>/<guest>/{persist,var-lib,home}`, store de l'hôte en lecture seule, clé de l'hôte sur `/persist`, lien statique `/32` routé par l'hyperviseur.
+- Côté hyperviseur (`microvm/host.nix`) : un tap routé par invité (sans pont), tout l'hôte sous networkd avec la passerelle de zone comme résolveur statique, proxy ARP sur le LAN, isolation nftables (table `dnf-microvm`), `<stateDir>` fermé aux utilisateurs de l'hyperviseur (0770) et monté `nosuid,nodev` (fichiers setuid et nœuds de périphérique d'un invité inertes).
+- Reconnaissance vocale (`microvm/whisper.nix`) : un serveur whisper.cpp sur l'hyperviseur pour les invités ayant `darkone.system.microvm.guest.whisper` (notes vocales d'OpenClaw), démarré et ouvert pour eux seuls ; `whisper.model` et `whisper.threads` le règlent.
+
+:::note[Déploiement]
+Les invités ne sont pas des nœuds colmena : déployer l'hyperviseur construit et redémarre les invités dont le système a changé.
+:::
+
+:::caution[Optimisation du store]
+Désactivée sur un hyperviseur : son store est la couche inférieure de l'overlay du store des invités, qui répond ESTALE dès que `nix-store --optimise` relie un fichier qu'un invité en cours de marche a lu. Ne jamais la lancer à la main non plus.
+:::
+
+:::caution[Isolation]
+Un invité atteint Internet et le DNS de la passerelle de zone, rien d'autre sur le LAN ; de l'hyperviseur, seuls les services qu'il demande (whisper). Seule la passerelle de zone (reverse proxy, supervision) atteint un invité.
+:::
+
+{/* t:p 8dc02a683bba2f7e892b6a9f4086ab3c936d5ee91ef0d4c84715fe718a1e5194 */}
+## Options
+
+* **hypervisor** `nullOr str` Hyperviseur qui fait tourner cet hôte comme invité microVM, null pour un hôte physique.
+* **stateDir** `str` Répertoire de l'hyperviseur contenant un sous-répertoire de partages par invité.
+* **guest.vcpu** `ints.positive` Processeurs virtuels de l'invité.
+* **guest.mem** `ints.positive` Mémoire vive de l'invité, en MiB.
+* **guest.whisper** `bool` Utiliser le serveur whisper.cpp de l'hyperviseur (reconnaissance vocale) : démarré et ouvert pour cet invité.
+* **guestInputRules** `lines` Règles nftables de la chaîne d'entrée `dnf-microvm` de l'hyperviseur, avant le rejet du trafic des invités.
+* **whisper.model** `path` Modèle ggml de whisper.cpp du serveur de l'hyperviseur, chargé une fois pour tous les invités.
+* **whisper.threads** `ints.positive` Threads du serveur whisper.cpp de l'hyperviseur, une transcription à la fois.
+
+```nix
+darkone.system.microvm = {
+  hypervisor = dnfLib.getMicrovmHypervisor hosts host;
+  stateDir = "/var/lib/microvms";
+  guest.vcpu = 2;
+  guest.mem = 4096;
+  guest.whisper = false;
+  guestInputRules = "";
+  whisper.model = pkgs.fetchurl {
+        url = "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3-turbo.bin";
+        sha256 = "1fc70f774d38eb169993ac391eea357ef47c88757ef72ee5943879b7e8e2bc69";
+      };
+  whisper.threads = 8;
+};
+```
+
+Source : [`modules/system/microvm.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/system/microvm.nix)

@@ -1,0 +1,46 @@
+---
+title: darkone.security.sudo
+sidebar:
+  label: "sudo"
+---
+
+{/* t:translated-from en */}
+{/* t:h 0bf90e761fab789a0c84f447513bf989309a36062a357993b20845da125a01f1 */}
+
+{/* t:p 30194aa44162257721f893b0154be85a59c60d7ae2f6226c25b216168c403763 */}
+Durcissement sudo (R38–R44). (wip)
+
+Couvre le groupe sudo dédié (R38), les directives sudo durcies (R39), la restriction des cibles non root (R40), la limitation de NOEXEC (R41), l'interdiction des négations (R42), la spécification explicite des arguments (R43) et l'usage de sudoedit (R44).
+
+:::caution[Activation]
+L'option `enable` suit `darkone.system.security.enable` par défaut.
+Les règles (Rxx/Cxx) sont activées selon le niveau, la catégorie et les exclusions
+définis dans `darkone.system.security` (via `isActive`).
+:::
+
+:::caution[R39 — `noexec` et `requiretty` abandonnés]
+Les deux sont incompatibles avec un déploiement piloté par un agent : colmena élève
+ses droits avec `sudo -H --` via SSH (sans PTY, `requiretty` refuse), et
+`switch-to-configuration` lance des processus enfants (`noexec` le bloque).
+La traçabilité repose donc plutôt sur `use_pty` + `log_input`/`log_output`.
+:::
+
+:::caution[R39 — rootpw]
+`rootpw` impose un mot de passe root partagé entre administrateurs.
+Préférez `targetpw` ou `runaspw` selon la politique de l'équipe.
+:::
+
+{/* t:p 009b9a9e713c65707837042fcb4fe0bcf1c62b4a82543a8a189f29b0e516358c */}
+## Options
+
+* **enable** `bool` Active le durcissement sudo ANSSI (R38–R44).
+* **allowedRootRules** `listOf str` Règles sudo autorisées à cibler root (R40). Les autres doivent cibler un compte de service.
+
+```nix
+darkone.security.sudo = {
+  enable = false;
+  allowedRootRules = [ ];
+};
+```
+
+Source : [`modules/security/sudo.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/security/sudo.nix)

@@ -1,0 +1,40 @@
+---
+title: darkone.service.stk
+sidebar:
+  label: "stk"
+---
+
+{/* t:translated-from en */}
+{/* t:h 6f05cffb9ffd9971ff5647f3e5c0f7343d2f3a8000292ba32afb5fc01b477f0b */}
+
+{/* t:p 1b31188c2f1a3bacc1cefb35d6b9a19cbaff2506da71549deab45f4f957c246c */}
+Circuits partagés de SuperTuxKart, servis par NFS.
+
+:::note
+Déclarez `services: stk:` sur un hôte de la zone (`config.yaml`) : il exporte `srv-dirs.stkTracks` en lecture seule. Tout hôte souhaitant les circuits définit `darkone.graphic.supertuxkart.enableNfsClient`, ce qui active `enableClient` ci-dessous ; les clients joignent le serveur par son propre nom d'hôte, toujours résoluble.
+:::
+
+:::tip[Le serveur n'a pas besoin de montage]
+`enableClient` sur l'hôte serveur ne fait rien : les circuits sont déjà locaux, et `home/modules/games.nix` relie directement le répertoire des addons à ceux-ci.
+:::
+
+:::caution[Exporté à tout le préfixe de la zone]
+Données de jeu en lecture seule, `all_squash` : la même portée que les règles de pare-feu du jeu, et une liste d'IP par client de moins à tenir à jour avec `config.yaml`.
+:::
+
+{/* t:p 3a30aedea2b3243ef82f95ddca316974fbfc5ebb41e481c592aa73dc31115f4f */}
+## Options
+
+* **enable** `bool` Exporte les circuits partagés de SuperTuxKart (éviter d'activer manuellement)
+* **enableClient** `bool` Monte les circuits partagés de SuperTuxKart de la zone
+* **serverName** `nullOr str` Nom d'hôte servant les circuits, par défaut l'hôte du service `stk` de la zone
+
+```nix
+darkone.service.stk = {
+  enable = stk.isServer;
+  enableClient = false;
+  serverName = stk.server;
+};
+```
+
+Source : [`modules/service/stk.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/service/stk.nix)

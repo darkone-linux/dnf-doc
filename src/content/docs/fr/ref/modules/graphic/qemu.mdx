@@ -1,0 +1,49 @@
+---
+title: darkone.graphic.qemu
+sidebar:
+  label: "qemu"
+---
+
+{/* t:translated-from en */}
+{/* t:h 44dc509c75002bbf9dbab1cac8eaceddf9de08a472e1ce33ca454fd9c22459c0 */}
+
+{/* t:p 3fe20d6e7d99e1d5ad14bde699c2fafccf115986f3404310774a0dc060c9238f */}
+VM de test QEMU ponterées sur le LAN DNF
+
+Utilisé par `dnf/scripts/vm-start.sh`.
+Intègre la carte réseau filaire dans un pont NetworkManager et permet aux utilisateurs non privilégiés de connecter des VM à ce pont via le `qemu-bridge-helper` setuid. Une VM obtient alors son adresse depuis la passerelle de zone, comme une machine physique, ainsi `just full-install <host> nixos <ip>` peut l'atteindre.
+
+:::caution[Adresse MAC du pont]
+`bridge.macAddress` doit être l'adresse MAC de la carte elle-même : le pont reprend l'IP de l'hôte, et la réservation DHCP de la zone (`mac` dans `etc/config.yaml`) s'appuie dessus.
+:::
+
+:::note[Activation]
+Le déploiement charge seulement les profils. Redémarrer, ou lancer `nmcli connection up br0`, pour déplacer l'IP de l'hôte sur le pont.
+:::
+
+```nix
+darkone.graphic.qemu = {
+  enable = true;
+  bridge.interface = "enp2s0";
+  bridge.macAddress = "aa:bb:cc:dd:ee:ff";
+};
+```
+
+{/* t:p 50b8e9a0c29946efb938cc61a9ee78afcc009a94c8d60419e35bcfc3eeaac8a7 */}
+## Options
+
+* **enable** `bool` VM de test QEMU ponterées sur le LAN DNF
+* **bridge.name** `str` Interface du pont à laquelle les VM se connectent.
+* **bridge.interface** `str` Carte réseau filaire intégrée au pont.
+* **bridge.macAddress** `str` Adresse MAC du pont : celle de la carte elle-même, pour garder la réservation DHCP de la zone.
+
+```nix
+darkone.graphic.qemu = {
+  enable = false;
+  bridge.name = "br0";
+  bridge.interface = "enp2s0";
+  bridge.macAddress = "aa:bb:cc:dd:ee:ff";
+};
+```
+
+Source : [`modules/graphic/qemu.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/graphic/qemu.nix)

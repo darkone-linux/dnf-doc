@@ -1,0 +1,32 @@
+---
+title: darkone.admin.welcome
+sidebar:
+  label: "welcome"
+---
+
+{/* t:translated-from en */}
+{/* t:h c0f626f7f4862a9c0f189b49a81bfa267e04260242c35ff324262b43d72c79f4 */}
+
+{/* t:p a8f2e73f857acdb70a76fa6f72c7668cc6df05537ddf07d151273d2886272e7f */}
+Page d'accueil de premier démarrage de l'hôte administrateur installé par `darkone new`.
+
+À la première session GNOME de chaque membre du groupe `wheel`, le navigateur ouvre une page locale&nbsp;: l'étape 1 sur 4 est faite (l'hôte administrateur), suivie de la passerelle, puis des services et du serveur de coordination, avec des liens vers la documentation. Affichée une seule fois par utilisateur (`~/.local/state/dnf/welcome-shown`). Le lanceur « Onboarding » de nix-admin la rouvre (`darkone.admin.welcome.page`).
+
+:::note[Défini par l'installateur]
+`darkone new` écrit `darkone.admin.welcome.enable = true;` dans le `configuration.nix` de l'hôte administrateur. Supprimez cette ligne pour ne plus afficher la page aux utilisateurs qui ne l'ont pas encore vue.
+:::
+
+{/* t:p 25705ffcf7c290b6a7e5d8f930fa90440aaad3729db6341375a54e24482f4420 */}
+## Options
+
+* **enable** `bool` la page d'accueil de premier démarrage de l'hôte administrateur
+* **page** `path` La page d'accueil, un fichier HTML du store
+
+```nix
+darkone.admin.welcome = {
+  enable = false;
+  page = page;
+};
+```
+
+Source : [`modules/admin/welcome.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/admin/welcome.nix)

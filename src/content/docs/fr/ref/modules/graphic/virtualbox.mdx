@@ -1,0 +1,26 @@
+---
+title: darkone.graphic.virtualbox
+sidebar:
+  label: "virtualbox"
+---
+
+{/* t:translated-from en */}
+{/* t:h 0df57db752752c78c3c5532a42dfc2f0c41c863a0b19471702a553c672fa790e */}
+
+{/* t:p 92b519e3c5d54243c61e85cafc8124531f5adc6ef3bbd585bea28468d471d434 */}
+Installation de l'hôte Virtualbox.
+
+{/* t:p 85242e643e86702be40dec21ad47de8ca6e8d724cec01f761de5c52c7036a774 */}
+## Options
+
+* **enable** `bool` Installation Virtualbox préconfigurée
+* **enableExtensionPack** `bool` Active le pack d'extensions (provoque des recompilations)
+
+```nix
+darkone.graphic.virtualbox = {
+  enable = false;
+  enableExtensionPack = false;
+};
+```
+
+Source : [`modules/graphic/virtualbox.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/graphic/virtualbox.nix)

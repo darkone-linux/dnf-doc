@@ -1,0 +1,32 @@
+---
+title: darkone.service.matrix-admin
+sidebar:
+  label: "matrix-admin"
+---
+
+{/* t:translated-from en */}
+{/* t:h 14e966419f8040cbb537de4b414e4a6d310d93709b6ecd5d886cb485fbecdcf6 */}
+
+{/* t:p a2a4065c026aa0267add7e5d939671ef711b1e3d7f15f3a33a0d186c73640299 */}
+Interface d'administration Matrix (Ketesa, anciennement synapse-admin) pour le serveur local.
+
+SPA statique, sans backend : le navigateur parle directement à l'API d'administration de synapse et à celle de MAS, donc tout le service est un `file_server` de Caddy sur un chemin du store.
+
+Le nom de service DNF n'est volontairement pas le nom du paquet. L'interface peut être remplacée (Element Admin, un fork ultérieur) sans toucher à l'URL, à l'enregistrement DNS ni à `etc/config.yaml`.
+
+Accessible seulement depuis le LAN et le tailnet (`proxy.isInternal`) : le bundle ne contient aucun secret, mais une page de connexion d'administration n'a aucune raison d'être exposée à Internet.
+
+:::caution[Se connecter avec un administrateur déclaré]
+Seul un compte listé dans `network.matrix.admins` peut se connecter : la politique MAS lui accorde les scopes `urn:mas:admin` et `urn:synapse:admin:*` dont cette interface a besoin sur les deux API. Tout autre compte se connecte sans erreur, puis chaque panneau échoue.
+:::
+
+{/* t:p f3db948374ab62e57dbd6d9e97e25e95e67b75eecd2db51875e10ce6e792769c */}
+## Options
+
+* **enable** `bool` Activer l'interface locale d'administration Matrix
+
+```nix
+darkone.service.matrix-admin.enable = false;
+```
+
+Source : [`modules/service/matrix-admin.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/service/matrix-admin.nix)

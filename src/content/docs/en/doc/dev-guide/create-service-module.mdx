@@ -11,17 +11,11 @@ import { Steps, Aside } from '@astrojs/starlight/components';
 {/* t:translated-from fr */}
 {/* t:h 0969d11dc450cffcc65ad681249ef027be7f9cccb52293f0b3abbe118357456c */}
 
-{/* t:p add66eb5a85b0e26f13ac2a04806e7548ad8854de6cf611c3f7bfb37bbd84723 */}
-A DNF **"service" module** wires a self-hosted piece of software (web UI, API,
-storage…) into the framework: reverse proxy, homepage, persistence, firewall,
-SSO and per-host activation. This page describes how to create and maintain such
-a module, from header to commit, using the `oxicloud` module as a running
-example.
+{/* t:p d5e8e3db6b50ebb39c9581e589f500582f7d9d352e945f043f1b16da7f86999d */}
+A **"service" module** DNF wires a self-hosted software (web UI, API, storage…) into the framework: reverse proxy, home page, persistence, firewall, SSO and per-host activation. This page describes creating and maintaining such a module, from header to commit, using the `oxicloud` module as a running example.
 
 <Aside type="note" title="Prerequisites">
-First read the service module standard (`dnf/modules/service/AGENTS.md`) and the
-[code headers](/en/doc/how-to/dev/code-headers/). Option details are generated in
-the [reference](/en/ref/modules/service/).
+Read [Modules](/en/doc/dev-guide/modules/) and [code headers](/en/doc/how-to/dev/code-headers/) first. The detailed options are generated in the [reference](/en/ref/modules/service/).
 </Aside>
 
 {/* t:p 76486290b1c9c3abae090963f47c1e53893ce7e224088dc8301735d395d8e227 */}
@@ -177,42 +171,50 @@ Protocols served on the same HTTP port (WebDAV, CalDAV, CardDAV for
 OxiCloud) naturally go through the single Caddy vhost: nothing special to
 configure.
 
-{/* t:p 2186d270149eb19c38f2ac759ee2e9644da881b654242eb4c01f9397f34be196 */}
-### Per-host activation
+{/* t:p f3cfa4331d8f5c3ab7ade4b8df3a96fa764d22ab5cf9493a9e3e26a1890e7b61 */}
+### Host activation
 
-A service activates on a host when it appears under `services:` in
-`etc/config.yaml`, or via a trigger in `dnf/config/modules.nix`:
+A service is enabled on a host when it appears under `services:` in `etc/config.yaml`, or through a trigger in `dnf/config/modules.nix`:
 
 ```nix
 oxicloud = {
-  # reverseProxy = true by default (web service with UI/API).
+  # reverseProxy = true par défaut (service web avec UI/API).
   activation.profiles.minimal.triggers.keys.oxicloud = [ "enable" ];
 };
 ```
+
+The named profile is a host profile (`darkone.host.<profil>`). Two triggers exist&nbsp;:
+
+- `triggers.keys.<clé>` : service options set when `<clé>` is listed under the host's `services:`;
+- `triggers.always` : options set on every host of the profile.
+
+A single module applies them, `modules/system/services/activation.nix`, for each profile active on the host: a `laptop` also receives those of `desktop` and `minimal`. No host profile to modify. A direct definition in `usr/` (`darkone.service.<nom>.enable = false`) keeps priority.
 
 Available flags:
 
 | Flag | Default | Role |
 |---|---|---|
 | `reverseProxy` | `true` | Exposes the service via Caddy |
-| `uniquePerZone` | `false` | Single instance per zone |
-| `externalAccess` | `false` | External access |
-| `require` | `[ ]` | Dependencies to activate on the same host (error otherwise) |
+| `uniquePerZone` | `false` | Only one instance per zone |
+| `externalAccess` | `false` | Access from outside |
+| `require` | `[ ]` | Dependencies to enable on the same host (error otherwise) |
 
-On the `config.yaml` side, the following
-example installs a full OxiCloud on `https://cloud.mondomaine.tld`:
+:::caution[The registry, not the module]
+These flags are declared **only** in the registry. The homonymous options of `darkone.system.services.service.<nom>`, never read, are removed&nbsp;: remove them from any module that set them.
+:::
+
+On the `config.yaml` side, the following example installs a complete OxiCloud on `https://cloud.mondomaine.tld`:
 
 ```yaml
 hosts:
-  - hostname: "my-server"
+  - hostname: "mon-serveur"
     services:
       oxicloud:
         domain: "cloud"
         global: true
 ```
 
-The framework resolves `domain`/`global` into `params` (`fqdn`, `href`, `ip`…) via
-`dnfLib.extractServiceParams host network "oxicloud" defaultParams`.
+The framework resolves `domain`/`global` into `params` (`fqdn`, `href`, `ip`…) via `dnfLib.extractServiceParams host network "oxicloud" defaultParams`.
 
 {/* t:p ae9debfa23c989de21ed264ff9032d332e282b341c74b9b7e3ca24a9def26c41 */}
 ## Network, database and secrets
@@ -411,10 +413,10 @@ overview:
 [Authentication and identities](/en/doc/admin-guide/understand/auth-idm/).
 </Aside>
 
-{/* t:p 5c4832071b38de9322a455f57259a5d6877972318e4cd14f72efcb9ebb0890b4 */}
-## Backport an upstream module
+{/* t:p e0055f338c4af2a22010ca9dfc6d7e9be51d8c10cf3863946c0a0a30f18a8d9d */}
+## Sourcing an upstream module
 
-When only the NixOS **module** is missing (package already in nixpkgs), copy the module from the PR into `dnf/backports/nixos/<name>.nix`. An input pointing to the fork would fetch a whole nixpkgs tree on every evaluation, on every host.
+When only the **module** NixOS is missing (package already in nixpkgs), copy the PR's module into `dnf/backports/nixos/<nom>.nix`. An input pointing to the fork would fetch a whole nixpkgs tree at every evaluation, on every host.
 
 <Steps>
 
@@ -425,9 +427,7 @@ When only the NixOS **module** is missing (package already in nixpkgs), copy the
    # (flashonfire/nixpkgs@739df6f3, unchanged but for `nixfmt -s`).
    ```
 
-2. Add it to the `modules` list of `mkNode` (`dnf/lib/mk-configuration.nix`)
-   → imported on every host, with no effect as long as
-   `services.<name>.enable = false`&nbsp;:
+2. Add it to the `modules` list of `mkNode` (`dnf/lib/flake/mk-configuration.nix`) → imported on every host, with no effect as long as `services.<nom>.enable = false`&nbsp;:
 
    ```nix
    ../backports/nixos/oxicloud.nix
@@ -436,17 +436,11 @@ When only the NixOS **module** is missing (package already in nixpkgs), copy the
 </Steps>
 
 <Aside type="caution" title="Package overlay: only if needed">
-Distinguish two cases. **OxiCloud**: the package is already in nixpkgs → no
-overlay, `pkgs.oxicloud` comes from the main tree. **GeneWeb**: the package
-was missing (OCaml deps) → an overlay (`lib/overlays/geneweb.nix`) injects
-`pkgs.geneweb` from the `nixpkgs-geneweb` input, fetched only where the
-package is built.
+Distinguish two cases. **OxiCloud**: the package is already in nixpkgs → no overlay, `pkgs.oxicloud` comes from the main tree. **GeneWeb**: the package was missing (OCaml deps) → an overlay (`lib/overlays/geneweb.nix`) injects `pkgs.geneweb` from the `nixpkgs-geneweb` input, fetched only where the package gets built.
 </Aside>
 
 <Aside type="tip" title="Cleanup after merge">
-**Cleanup** once the PR is merged into `nixos-unstable`: remove the copy and
-its line in `mkNode` (and the overlay and input, if any). The wrapper
-`modules/service/<name>.nix` stays unchanged. Details: `dnf/backports/README.md`.
+**Cleanup** once the PR is merged into `nixos-unstable`: remove the copy and its line in `mkNode` (and the overlay and input, if any). The wrapper `modules/service/<nom>.nix` stays unchanged. Details&nbsp;: `dnf/backports/README.md`.
 </Aside>
 
 {/* t:p 115d003f8e8d1ff8f87008a952d2555f275b6594cf03de93b3d1fd2537983caf */}

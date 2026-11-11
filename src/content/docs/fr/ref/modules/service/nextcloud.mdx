@@ -1,0 +1,56 @@
+---
+title: darkone.service.nextcloud
+sidebar:
+  label: "nextcloud"
+---
+
+{/* t:translated-from en */}
+{/* t:h 3a4308bff21efa5c097df54050f0370596f2212d4dc1c8781e16c9c6af7869a7 */}
+
+{/* t:p 7cb48cbfe63444d9607a503751f4cb3db857d3d89b865ef480668b58bd8d8fd0 */}
+Service Nextcloud entièrement configuré.
+
+:::caution[Secrets sops requis]
+Lorsqu'il est activé, ce module lit :
+
+- `nextcloud-admin-password`&nbsp;: mot de passe initial du compte administrateur ;
+- `nextcloud-whiteboard-secret`&nbsp;: JWT partagé avec le backend du tableau blanc
+  (lu uniquement si `whiteboard` est dans `plugins`) ;
+- `oidc-secret-<client>`&nbsp;: secret client OAuth2 Kanidm, déclaré par le module idm
+  et rechiffré ici pour l'unité de provisionnement `occ` ;
+- `smtp/password`&nbsp;: mot de passe du relais SMTP (uniquement avec `network.smtp`). Externe&nbsp;:
+  saisi à la main, jamais généré.
+
+`just configure-admin-host` génère les autres, de manière idempotente, et n'écrase jamais un secret existant. L'exécuter avant de reconstruire&nbsp;: l'activation de sops-nix échoue si une entrée manque.
+:::
+
+:::note[Lancer occ]
+`services.nextcloud.secrets` fait charger à `occ` les identifiants systemd. Lancer `sudo nextcloud-occ` (PHP s'exécute toujours sous `nextcloud`), et non `sudo -u nextcloud`.
+:::
+
+{/* t:p 5be894635499589d3022d13f94473ff22e42b037c9d5aadd5609eead699917b7 */}
+## Options
+
+* **enable** `bool` Active le service Nextcloud local
+* **adminUser** `str` Nom d'utilisateur administrateur de Nextcloud
+* **enableSsoRedirect** `bool` Envoie directement les utilisateurs vers Kanidm au lieu d'afficher le formulaire de connexion Nextcloud (`user_oidc` `allow_multiple_user_backends`). Évite un clic à chaque connexion, y compris pour le Login Flow v2 du client de bureau.
+
+  :::caution[Formulaire de connexion local]
+  Masque le formulaire de mot de passe, y compris pour le compte administrateur. Y accéder avec `/login?direct=1`.
+  :::
+
+  Sans effet si Kanidm est absent du réseau.
+* **plugins** `listOf (enum (appstoreApps ++ shippedToggleableApps))` Applications Nextcloud à activer. Seules `calendar`, `contacts` et `tasks` sont actives par défaut&nbsp;; Talk (`spreed`), le tableau de bord, le flux d'activité, les photos et toutes les autres applications restent désactivées tant qu'elles ne sont pas listées ici.
+
+  `user_oidc` (SSO Kanidm) et `notify_push` (push client) sont toujours actifs, quelle que soit cette liste.
+
+```nix
+darkone.service.nextcloud = {
+  enable = false;
+  adminUser = "admin";
+  enableSsoRedirect = true;
+  plugins = [ ];
+};
+```
+
+Source&nbsp;: [`modules/service/nextcloud.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/service/nextcloud.nix)

@@ -1,0 +1,126 @@
+---
+title: darkone.system.services
+sidebar:
+  label: "services"
+---
+
+{/* t:translated-from en */}
+{/* t:h 7b96895f224628bfc1c1696de056f5bec7a1f5b58d678e532a17d9168abfd0a7 */}
+
+{/* t:p 1aa4c3d435f60a395f8e7618c7502735a27eb3cb6b6bd6ab82a8e28788d79ecc */}
+Registre de services DNF : chaque module de service s'y enregistre, et le registre est résolu à partir de la topologie réseau.
+
+:::caution[Module interne spécial]
+Le registre résolu (`darkone.system.services.resolved`) alimente les sections de la page d'accueil et les sous-modules ci-dessous. Les entrées `persist.*` sont les dossiers et fichiers à sauvegarder.
+:::
+
+Sous-modules (`services/`) :
+- `activation.nix` : services activés par profil d'hôte (`config/modules.nix`) ;
+- `caddy.nix` : hôtes virtuels du reverse proxy, TLS, pare-feu HTTP(S) ;
+- `oauth2-proxy.nix` : SSO Kanidm des services protégés.
+
+{/* t:p be27faabc3d42dc5aaa359be3208a44cb4f6c791605ee937adfa5c41bc1ae865 */}
+## Activation (`activation.nix`)
+
+Chaque profil d'hôte activé sur un hôte, directement ou par l'intermédiaire d'un autre (`laptop` → `desktop` → `minimal`), active les services que ses déclencheurs nomment : `triggers.always`, ou `triggers.keys.<key>` lorsque `<key>` figure sous `services:` de l'hôte dans `etc/config.yaml`.
+
+{/* t:p 4609e4f919aa4df0edf1d7f071016869657c4b7d5abf9104f4dd5ff11fc7b46b */}
+## Reverse proxy (`caddy.nix`)
+
+Un hôte virtuel Caddy par service résolu, ainsi que le pare-feu HTTP(S) des passerelles de zone et du HCS.
+
+:::note[Exposition]
+- services de zone : sur la passerelle de zone, sous le domaine de zone ;
+- services globaux : sur le HCS, sous le domaine réseau ;
+- `external-hosts` : services de zone que le HCS expose, relayés vers leur passerelle.
+:::
+
+{/* t:p cd99246a4e8a5dc82bbb848e469cd4bc6186e103110576a96ed8a750d5d18be5 */}
+## SSO (`oauth2-proxy.nix`)
+
+oauth2-proxy devant les services protégés d'une zone, adossé au client OAuth2 Kanidm `internal-service`.
+
+:::note[Flux]
+Caddy `forward_auth` vérifie chaque requête auprès de `/oauth2/auth`. Le flux de connexion est ancré sur le FQDN de la page d'accueil de la zone, qui héberge les points d'accès publics `/oauth2/*` d'oauth2-proxy ; un cookie limité au domaine de zone conserve la session entre ses services.
+:::
+
+:::note[Identité tailnet]
+`proxy.tailnetIdentity`, pour les clients qui ne peuvent pas suivre le flux de connexion (applications natives) : un appareil tailnet personnel est identifié par tailscaled (`tailscale.nginx-auth`) et passe pour son propriétaire, s'il est membre de l'espace. Machines taguées, adresses inconnues, clients hors tailnet : le SSO, inchangé.
+:::
+
+{/* t:p 1d438f58e36cd0f2cc1f9008b29dc65960b98d7a39860b98177d7952d736f89c */}
+## Options
+
+* **enable** `bool` Active le gestionnaire de services DNF pour enregistrer et exposer les services
+* **service** `attrs` Configuration globale des services &lt;name&gt;
+  * **enable** `bool` Active le proxy du service
+  * **defaultParams** `submodule` Ces options sont calculées par `dnfLib.extractServiceParams`
+    * **domain** `str` Nom de domaine du service
+    * **title** `str` Nom affiché sur la page d'accueil
+    * **description** `str` Description du service pour la page d'accueil
+    * **icon** `str` [Nom de l'icône pour la page d'accueil](https://selfh.st/icons/)
+    * **global** `bool` Service global, accessible depuis Internet
+    * **noRobots** `bool` Empêche les robots de scanner le service si global vaut vrai
+    * **fqdn** `str` FQDN calculé du service, avant le reverse proxy
+    * **href** `str` URL calculée du service, avant le reverse proxy
+    * **ip** `str` IP calculée pour joindre le service
+  * **displayOnHomepage** `bool` Affiche un lien sur la page d'accueil
+  * **persist.dirs** `listOf str` Dossiers persistants du service
+  * **persist.files** `listOf str` Fichiers persistants du service
+  * **persist.dbDirs** `listOf str` Dossiers persistants du service avec base(s) de données
+  * **persist.dbFiles** `listOf str` Fichier(s) de base de données du service
+  * **persist.varDirs** `listOf str` Fichiers secondaires variables (journaux, cache, etc.)
+  * **persist.mediaDirs** `listOf str` Dossiers médias du service (images, vidéos, gros fichiers)
+  * **proxy.enable** `bool` Crée ou non la configuration de l'hôte virtuel (faux pour les services qui gèrent la leur)
+  * **proxy.isProtected** `bool` Service protégé par OAuth2
+  * **proxy.allowedGroups** `listOf str` Groupes Kanidm autorisés sur ce service protégé (vide = tout utilisateur authentifié)
+  * **proxy.spaceMembersOnly** `bool` Restreint aux membres de l'espace IA de l'hôte (groupe Kanidm `space-<host>`) ; implique isProtected
+  * **proxy.tailnetIdentity** `bool` Identifie l'appareil tailnet personnel d'un membre sans SSO, pour les clients qui ne peuvent pas suivre le flux de connexion ; requiert spaceMembersOnly
+  * **proxy.isInternal** `bool` Lie le service à l'interface interne uniquement (non accessible depuis Internet)
+  * **proxy.hasReverseProxy** `bool` Il s'agit d'un reverse proxy (ou d'une autre configuration d'hôte virtuel via extraConfig)
+  * **proxy.defaultService** `bool` Est le service par défaut
+  * **proxy.servicePort** `nullOr port` Port interne du service
+  * **proxy.preExtraConfig** `lines` Configuration Caddy supplémentaire de l'hôte virtuel (préfixe)
+  * **proxy.extraConfig** `lines` Configuration Caddy supplémentaire de l'hôte virtuel
+  * **proxy.extraGlobalConfig** `lines` Configuration Caddy supplémentaire
+  * **proxy.scheme** `str` Schéma du service interne (http / https)
+* **resolved** `raw` Registre des services résolu.
+
+```nix
+darkone.system.services = {
+  enable = false;
+  service.enable = false;
+  service.defaultParams.domain = "";
+  service.defaultParams.title = "";
+  service.defaultParams.description = "";
+  service.defaultParams.icon = "";
+  service.defaultParams.global = false;
+  service.defaultParams.noRobots = true;
+  service.defaultParams.fqdn = "";
+  service.defaultParams.href = "";
+  service.defaultParams.ip = "";
+  service.displayOnHomepage = true;
+  service.persist.dirs = [ ];
+  service.persist.files = [ ];
+  service.persist.dbDirs = [ ];
+  service.persist.dbFiles = [ ];
+  service.persist.varDirs = [ ];
+  service.persist.mediaDirs = [ ];
+  service.proxy.enable = true;
+  service.proxy.isProtected = false;
+  service.proxy.allowedGroups = [ ];
+  service.proxy.spaceMembersOnly = false;
+  service.proxy.tailnetIdentity = false;
+  service.proxy.isInternal = false;
+  service.proxy.hasReverseProxy = true;
+  service.proxy.defaultService = false;
+  service.proxy.servicePort = null;
+  service.proxy.preExtraConfig = "";
+  service.proxy.extraConfig = "";
+  service.proxy.extraGlobalConfig = "";
+  service.proxy.scheme = "https";
+  resolved = { inherit services hasProtectedServices authHost; };
+};
+```
+
+Source : [`modules/system/services.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/system/services.nix)

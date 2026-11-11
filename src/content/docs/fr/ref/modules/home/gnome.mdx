@@ -1,0 +1,70 @@
+---
+title: darkone.home.gnome
+sidebar:
+  label: "gnome"
+---
+
+{/* t:translated-from en */}
+{/* t:h 63379d3cb8dbdfad166f084386765a4b293a24b95348e998a3ccb5fc86bb82ed */}
+
+{/* t:p 9fde5ef900fc94b51940ad90b255168f048edd83b9766ae22c72853ace0cbc9c */}
+Réglages Gnome pour home-manager.
+
+Masque les lanceurs : le `xterm` nu, les réglages Qt5/Qt6 et le manuel NixOS pour
+tous les profils, `scrcpy` et `scrcpy-console` quand ils sont installés, Extensions
+pour les profils non techniciens, et (`hideTechnicalIcons`) Réglages, Imprimantes et
+File Roller pour les profils débutant / enfant. `hiddenApps` (par défaut : vim, btop,
+htop) en masque davantage, les entrées restant lançables par identifiant
+(`gnome/hidden-apps.nix`, partagé avec le module UMI).
+`keepKeyring` exclut l'utilisateur de la réinitialisation du trousseau de connexion
+qui suit un changement du mot de passe administrateur (lu par le module NixOS gnome).
+`passwordlessKeyring` (par défaut : utilisateurs non avancés sur un hôte LUKS) donne au
+trousseau de connexion un mot de passe vide : une connexion par clé (`pam_u2f`) l'ouvre
+sans invite.
+
+:::caution[Trousseau sans mot de passe : secrets en clair]
+Protégés au repos par LUKS seul, et copiés tels quels dans les sauvegardes restic.
+:::
+
+:::caution[Trousseau scellé mis de côté à l'activation]
+Déplacé vers `~/.local/share/keyrings.sealed/`, jamais sous une session en cours.
+Les applications redemandent leurs identifiants ; Element Desktop perd sa session
+(clé `safeStorage` disparue), réparation dans le guide administrateur (`operate/users.mdx`).
+:::
+
+:::caution[Signets NFS]
+Ne pas déclarer `gtk.gtk3.bookmarks` depuis ce module : tant que les partages NFS du
+home sont actifs, `home/profiles/minimal/nfs.nix` possède ce fichier et l'écrase.
+:::
+
+{/* t:p d5d7033ec2b9fdc54cf62a94af61aa2a7d961a42b1a88dff36f551c55b41319e */}
+## Options
+
+* **enable** `bool` Activer les réglages gnome pour home manager
+* **hideTechnicalIcons** `bool` Masquer certaines icônes pour débutants / enfants / bébés
+* **keepKeyring** `bool` Conserver le trousseau de connexion quand l'administrateur change le mot de passe de session (trousseau avec son propre mot de passe)
+* **passwordlessKeyring** `bool` Trousseau de connexion sans mot de passe, ouvert sans invite (connexion par clé ou par mot de passe). Secrets en clair, protégés au repos par LUKS seul.
+* **hiddenApps** `listOf str` Entrées de bureau masquées de la grille d'applications, lançables encore par identifiant
+
+```nix
+darkone.home.gnome = {
+  enable = false;
+  hideTechnicalIcons = false;
+  keepKeyring = false;
+  passwordlessKeyring = !config.darkone.home.advanced.enable
+        && !cfg.keepKeyring
+        && (osConfig.boot.initrd.luks.devices or { }) != { };
+  hiddenApps = [ ];
+};
+```
+
+{/* t:p e55cd894d65c26a0af6a436b1fa49412c61b7300a09896a6680fc730eed495b2 */}
+### `gnome/hidden-apps.nix`
+
+* **hiddenEntries** `listOf str` Identifiants de fichiers de bureau masqués de la grille d'applications : `gnome.hiddenApps`, `umi.hiddenApps` d'un hôte UMI
+
+```nix
+darkone.home.gnome.hiddenEntries = [ ];
+```
+
+Source : [`home/modules/gnome.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/home/modules/gnome.nix)

@@ -1,0 +1,58 @@
+---
+title: darkone.home.advanced
+sidebar:
+  label: "advanced"
+---
+
+{/* t:translated-from en */}
+{/* t:h dc9f339c0d31dbb024228bd0a46019c5967106f654f35008433da067df8c759d */}
+
+{/* t:p c1137f11232ff68c02a6accaf23ecff926ae18d2243365c820f077ec16be60ef */}
+Profil domestique pour utilisateurs avancés (informaticiens, développeurs, administrateurs).
+
+:::note[Clés SSH depuis Vaultwarden]
+`enableVaultwardenSsh` transforme `rbw` en agent SSH : les clés privées restent dans
+le coffre de l'utilisateur (chiffré de bout en bout), jamais en clair sur le disque ni dans sops.
+L'utilisateur lance `rbw unlock` une fois par session.
+:::
+
+:::note[Dossier réseau local]
+Un nix-admin sur l'hôte d'administration obtient un dossier « Réseau local » dans la grille
+d'applications (`advanced/network-folder.nix`) : DNF Doc, Onboarding (la page d'accueil) et
+Sources réseau (un terminal dans `/etc/nixos`). Ajouté une fois par utilisateur, à la connexion.
+:::
+
+{/* t:p 23cb35cb177d150c7050dbb4d3d05e2e2b2bec3c9e07cf9af83146a733bbaeff */}
+## Options
+
+* **enable** `bool` Active les fonctionnalités pour utilisateurs avancés
+* **enableTools** `bool` Divers outils pour utilisateurs avancés
+* **enablePhoneTools** `bool` Outils pour smartphone (scrcpy)
+* **enableAdmin** `bool` Active les fonctionnalités d'administration (réseau, outils système)
+* **enableNixAdmin** `bool` Active les fonctionnalités d'administration Nix
+* **enableDnfDeveloper** `bool` Active tous les outils pour le codéveloppeur DNF
+* **enableDeveloper** `bool` Active les outils pour développeurs
+* **enableVscode** `bool` VS Code. Sur demande : ~0.3 GiB à télécharger, Zed est l'éditeur par défaut
+* **enableSlidev** `bool` Présentations Slidev (`slidev-cli`, plus son extension VS Code si
+  `enableVscode`). Sur demande : ~0.4 GiB à télécharger
+* **enableEssentials** `bool` Outils fréquemment utilisés
+* **enableVaultwardenSsh** `bool` Agent SSH adossé au coffre Vaultwarden de l'utilisateur (rbw). Ne pas activer sur
+  un hôte joint avec `ssh -A` : l'agent local masquerait celui transmis
+
+```nix
+darkone.home.advanced = {
+  enable = false;
+  enableTools = false;
+  enablePhoneTools = false;
+  enableAdmin = false;
+  enableNixAdmin = false;
+  enableDnfDeveloper = false;
+  enableDeveloper = true;
+  enableVscode = false;
+  enableSlidev = false;
+  enableEssentials = true;
+  enableVaultwardenSsh = false;
+};
+```
+
+Source : [`home/modules/advanced.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/home/modules/advanced.nix)

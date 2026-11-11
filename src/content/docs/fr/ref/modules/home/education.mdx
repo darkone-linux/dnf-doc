@@ -1,0 +1,46 @@
+---
+title: darkone.home.education
+sidebar:
+  label: "education"
+---
+
+{/* t:translated-from en */}
+{/* t:h a2e5a3c08adbca11baca023f02b74280f09d4a4592f9ffaf7a944af839ed1099 */}
+
+{/* t:p 273404cb12059e19cbb94500af02ddb29666e974185b5205afd7d432814e54a5 */}
+Plusieurs packages éducatifs graphiques.
+
+{/* t:p 637620c0b411f8c063da8bf3865ea80e09618f2b0bdc7d9ab516c130c8dc7a28 */}
+## Options
+
+* **enable** `bool` Collection de logiciels éducatifs
+* **enableBaby** `bool` Logiciels éducatifs pour les bébés (&lt;=6 ans)
+* **enableChild** `bool` Logiciels éducatifs pour les enfants (6-12 ans)
+* **enableStudent** `bool` Logiciels éducatifs pour les adolescents et adultes (&gt;=12 ans)
+* **enableMath** `bool` Outils et applications de mathématiques
+* **enableMusic** `bool` Outils et applications de musique
+* **enableScience** `bool` Outils et applications scientifiques
+* **enableDraw** `bool` Outils et applications de dessin
+* **enableLang** `bool` Outils et applications de langues
+* **enableMisc** `bool` Outils et applications divers (général, entraînement...)
+* **enableComputer** `bool` Outils et applications d'informatique (klavaro, etc.)
+* **excludePackages** `listOf package` Logiciels des thèmes activés à ne pas installer, par nom.
+
+```nix
+darkone.home.education = {
+  enable = false;
+  enableBaby = false;
+  enableChild = false;
+  enableStudent = false;
+  enableMath = true;
+  enableMusic = true;
+  enableScience = true;
+  enableDraw = true;
+  enableLang = true;
+  enableMisc = true;
+  enableComputer = true;
+  excludePackages = [ ];
+};
+```
+
+Source : [`home/modules/education.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/home/modules/education.nix)

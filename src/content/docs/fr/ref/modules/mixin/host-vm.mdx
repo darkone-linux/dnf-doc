@@ -1,0 +1,28 @@
+---
+title: darkone.host.vm
+sidebar:
+  label: "host.vm"
+---
+
+{/* t:translated-from en */}
+{/* t:h ca093ef482378df5f579f0363cefafc52fc13e4162144a6c5da44b4abd4d3946 */}
+
+{/* t:p 2a53a88e50014a9f1fd73e7d5b7f97df492cf7edfe123ee9f7e1339f2c965961 */}
+Outils invités des machines virtuelles.
+
+{/* t:p b73c7d7da4ef3fe315704469872811a5c7f9a7562c66dfc6965931479b50ce2e */}
+## Options
+
+* **enableVirtualbox** `bool` Client Virtualbox
+* **enableQemu** `bool` Client Qemu/KVM
+* **enableXen** `bool` Client Xen
+
+```nix
+darkone.host.vm = {
+  enableVirtualbox = false;
+  enableQemu = false;
+  enableXen = false;
+};
+```
+
+Source : [`modules/mixin/host/vm.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/mixin/host/vm.nix)

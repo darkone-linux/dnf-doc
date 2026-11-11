@@ -1,0 +1,29 @@
+---
+title: darkone.security.mta
+sidebar:
+  label: "mta"
+---
+
+{/* t:translated-from en */}
+{/* t:h 60d08a1505732cc1db0174adcca08f740db22fa0afae2e2a02b8732a4481d942 */}
+
+{/* t:p f266074b7c88c73355a9c8985417e045a820a066778a1598a625dd1a7d8938eb */}
+Gestion locale du courrier (R74–R75). (wip)
+
+Couvre le MTA local durci en loopback uniquement (R74) et les alias de courrier redirigés vers l'adresse de l'administrateur (R75). Ces règles ne s'appliquent que si un service MTA est actif (Postfix ou OpenSMTPD).
+
+:::caution[Activation]
+L'option `enable` suit `darkone.system.security.enable` par défaut.
+Les règles (Rxx/Cxx) sont activées selon le niveau, la catégorie et les exclusions définies dans `darkone.system.security` (via `isActive`).
+:::
+
+{/* t:p 10a569acff2a3252f6218f92e6c0784adf2815630d4019ccadf58be5e1e2343a */}
+## Options
+
+* **enable** `bool` Active le durcissement MTA ANSSI (R74–R75).
+
+```nix
+darkone.security.mta.enable = false;
+```
+
+Source : [`modules/security/mta.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/security/mta.nix)

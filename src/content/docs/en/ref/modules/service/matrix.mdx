@@ -4,6 +4,10 @@ sidebar:
   label: "matrix"
 ---
 
+{/* t:main */}
+{/* t:h 9834754ef1b44eb418b3f53bf1301b400f356cef319df2f5faeeed46b93115d8 */}
+
+{/* t:p 56450137c5d24b65acfd5f6c832ee5f8d7c83b2b10cefd90f63bfdf35a9cb300 */}
 DNF matrix (synapse) homeserver.
 
 Sub-modules (`matrix/`):
@@ -11,6 +15,7 @@ Sub-modules (`matrix/`):
 - `bridges.nix`: mautrix bridges, usable by every local account;
 - `rtc.nix`: MatrixRTC backend (LiveKit) for Element Call.
 
+{/* t:p 08174b2bd8525cd6e2c2677bd8962ab41f533e376b7985675a01020af14c0700 */}
 ## Federation
 
 Federation is configurable via `darkone.service.matrix.federation`:
@@ -41,6 +46,7 @@ existing account to whoever registers a matching name upstream. Merge
 procedure in the admin guide (`operate/matrix.mdx`).
 :::
 
+{/* t:p e9b8e18f592e9417011d82c9f29722cd8319b169b6111257119bd8fb049c6aff */}
 ## Administrators
 
 `network.matrix.admins` (local parts) is the single declarative source for
@@ -57,6 +63,7 @@ flag `dnf-mas manage promote-admin` sets. Audit leftovers with
 `list-admin-users`, drop them with `demote-admin`.
 :::
 
+{/* t:p 6cec0992bc58d3d87f8a65e49a256b24dfa121f018c601c06f7adc5f1aa42f5e */}
 ## Authentication (`mas.nix`)
 
 All authentication goes through Matrix Authentication Service, always:
@@ -95,6 +102,7 @@ then, with both services stopped: `sudo dnf-mas syn2mas check`,
 Migrer un serveur déjà en production*.
 :::
 
+{/* t:p 142e9885ef43b4d4dc3fc7b12812dcab15cc74553b09d136dd920eeda9403389 */}
 ## Bridges (`bridges.nix`)
 
 mautrix bridges: WhatsApp, Signal, Telegram, Messenger, Discord. Each user
@@ -114,6 +122,7 @@ auto-generated: the registration file is a pure function of the secrets, so
 resetting a bridge's state dir never invalidates the registration synapse
 loaded ("as_token was not accepted", registration wipe + synapse restart).
 
+{/* t:p 37fd98fa116f4588d9f43dae36960ac840818ba147d5be2fe72fce2a899a5892 */}
 ## Calls (`rtc.nix`)
 
 Two stacks coexist, because no single one covers every client:
@@ -160,6 +169,7 @@ AEC advertises itself but does nothing echoes for everyone *else*, never
 for its own user.
 :::
 
+{/* t:p edbde4186c0f3441141ad3a95df7d7c05236d0840b79a083d0304be109f65dd9 */}
 ## Options
 
 * **enable** `bool` Enable matrix (synapse) service

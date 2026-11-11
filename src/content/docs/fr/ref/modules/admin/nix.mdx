@@ -1,0 +1,57 @@
+---
+title: darkone.admin.nix
+sidebar:
+  label: "nix"
+---
+
+{/* t:translated-from en */}
+{/* t:h e19834402e222904a1e2acc5f1732641b906eb0a7a8c3a9ec4347b29584ce810 */}
+
+{/* t:p be6c5dec23447880ce2728ab8c8cc6ae0825b92672c876a30a1be084f014bd61 */}
+Configuration NixOS de l'ordinateur administrateur du réseau local.
+
+:::tip[Ferme de compilation (builders distants)]
+Un hôte administrateur compile localement la fermeture de chaque nœud et la pousse (`buildOnTarget` vide, voir `just/project.just`) : c'est donc lui qui compile réellement. Tout hôte de la flotte marqué `build-farm` dans `config.yaml` devient l'un de ses `nix.buildMachines`, joint en SSH avec l'utilisateur de déploiement `nix`.
+
+La délégation est volontairement restreinte. `mandatoryFeatures` (par défaut `big-parallel`) signifie que la ferme n'est proposée **que** pour les dérivations déclarant `requiredSystemFeatures = [ "big-parallel" ]` : kernel, chromium, firefox, llvm, rustc… c'est-à-dire les longues compilations pour lesquelles un hôte puissant est utile. Tout le reste reste local, ce qui compte quand la ferme se trouve derrière une liaison montante lente : seule la sortie demandée revient.
+
+Ne retirez jamais `big-parallel` de `nix.settings.system-features` de cet hôte pour forcer la délégation : le conserver fait qu'une ferme injoignable fait refuser le hook de compilation, et la dérivation est simplement compilée localement au lieu d'échouer.
+
+:::caution[Clé de déploiement requise]
+`sshKey` pointe vers la clé de déploiement partagée que `just configure-admin-host` génère dans le répertoire personnel de l'utilisateur `nix`. Les hôtes administrateurs la possèdent par construction ; un hôte qui active ce module sans la clé journalise des échecs SSH à chaque compilation déléguée.
+:::
+
+:::note[Pourquoi pas un cache binaire]
+Un `harmonia` sur la ferme partagerait ses résultats de compilation, mais harmonia sert le *contenu entier* de `/nix/store` et ne peut pas exprimer « seulement ce que j'ai compilé » : il capte un trafic que le cache public devrait servir. La délégation relève de l'ordonnancement des compilations, et non de la substitution ; d'où `buildMachines` ici et une priorité de substituteur de dernier recours dans `service/nix-cache.nix`.
+:::
+
+{/* t:p dc71ace0046f704afa39c28c35f321647f9495d54c58a20f6351c7be95db36b3 */}
+## Options
+
+* **enable** `bool` Active les outils de construction de la configuration NIX
+* **enableNh** `bool` Active l'outil de gestion nix helper (nh)
+* **remoteBuilders.enable** `bool` Déporte les compilations vers les hôtes de la flotte marqués `build-farm` dans
+  `config.yaml`. Sans effet tant qu'aucun hôte ne porte ce marqueur.
+* **remoteBuilders.maxJobs** `int` Nombre de créneaux de compilation parallèles à utiliser sur chaque ferme.
+* **remoteBuilders.speedFactor** `int` Facteur de vitesse relatif d'une ferme, par rapport à cet hôte.
+* **remoteBuilders.mandatoryFeatures** `listOf str` Fonctionnalités qu'une dérivation DOIT exiger pour qu'une ferme lui soit proposée. C'est ce qui
+  évite que les petites dérivations transitent par une liaison distante (potentiellement lente).
+  Une liste vide envoie toute dérivation éligible à la ferme.
+* **remoteBuilders.supportedFeatures** `listOf str` Fonctionnalités système qu'une ferme peut fournir.
+* **remoteBuilders.systems** `listOf str` Plateformes pour lesquelles une ferme compile. Explicite plutôt que déduit : `hosts.nix`
+  ne porte une architecture que lorsqu'elle diffère de la valeur par défaut.
+
+```nix
+darkone.admin.nix = {
+  enable = false;
+  enableNh = false;
+  remoteBuilders.enable = true;
+  remoteBuilders.maxJobs = 8;
+  remoteBuilders.speedFactor = 2;
+  remoteBuilders.mandatoryFeatures = [ ];
+  remoteBuilders.supportedFeatures = [ ];
+  remoteBuilders.systems = [ ];
+};
+```
+
+Source&nbsp;: [`modules/admin/nix.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/admin/nix.nix)

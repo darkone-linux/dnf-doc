@@ -1,0 +1,157 @@
+---
+title: darkone.home.office
+sidebar:
+  label: "office"
+---
+
+{/* t:translated-from en */}
+{/* t:h 599d8540d5545f9945ea4f02919da62d6b88dfaf63f71fd8a232324c1349fe27 */}
+
+{/* t:p 5b496e6d33f84f93d0959a0c10eb8f5cd8c5ce54c02b75ea0d56a1606a9080e7 */}
+Poste bureautique&nbsp;: navigateurs, suite bureautique, communication, outils cloud et PDF.
+
+Les paquets sont conditionnés par des options d'audience (`enableEssentials`, `enableOffice`, `enableTools`, `enableCommunication`...). Sous-modules (`office/`)&nbsp;:
+
+- `browsers.nix` : Firefox ESR (LibreWolf, Chromium), avec politiques partagées (page d'accueil et langue de la zone, protection contre le pistage, Bitwarden épinglé quand le réseau utilise Vaultwarden).
+- `cartable-fantastique.nix` : barre d'outils Cartable Fantastique dans LibreOffice (`cartableFantastique`, valeur par défaut du profil `child`).
+- `matrix.nix` : Element Desktop dès que le réseau utilise Matrix, préconfiguré (SSO Kanidm)&nbsp;; Fractal avec `enableCommunication`.
+- `nextcloud.nix` : client de bureau lié à l'instance du réseau, et `nextcloud-webdav-login` pour les Comptes en ligne GNOME.
+- `pandoc.nix` : `md2pdf` et les valeurs par défaut de pandoc (`enablePandoc`).
+
+{/* t:p 0efd557ca0faf19370247a9f396f51127a9f59ec858a3e6627404fc82c64f383 */}
+## Options
+
+* **enable** `bool` Paquets utiles par défaut
+* **enableMore** `bool` Paquets alternatifs supplémentaires
+* **enableUnsafeFeatures** `bool` Fonctionnalités pour utilisateurs avancés (non enfants)
+* **enableUBlock** `bool` Active l'extension uBlock
+* **enableTools** `bool` Petits outils (GNOME) (iotas, dialect, etc.)
+* **enableProductivity** `bool` Applications de productivité (obsidian, gestion du temps, projets, etc.)
+* **enableCommunication** `bool` Outils de communication
+* **enableOffice** `bool` Paquets bureautiques (libreoffice, hunspell, polices...)
+* **enableFirefox** `bool` Active Firefox
+* **enableLibreWolf** `bool` Active LibreWolf (alternative à Firefox)
+* **enableChromium** `bool` Active Chromium
+* **enableBrave** `bool` Active le navigateur Brave
+* **enableEmail** `bool` Paquets de gestion de messagerie (thunderbird)
+* **enableSecurity** `bool` Outils de sécurité (keepass)
+* **enableCalendarContacts** `bool` Agenda, contacts, tâches et applications associées
+* **enablePandoc** `bool` Chaîne Markdown vers PDF&nbsp;: pandoc, typst, polices Gentium et DejaVu,
+  et la commande `md2pdf` (corps en Gentium, A4, langue de la zone).
+
+  ```sh
+  md2pdf notes.md              # A4, 10pt -> notes.pdf
+  md2pdf --big notes.md        # A4, 12pt
+  md2pdf --tablet notes.md     # A6, 9pt (11pt with --big), zoomed on a tablet
+  md2pdf -e context notes.md   # ConTeXt engine (enablePandocContext)
+  ```
+
+  Le moteur est typst. Il rend le TeX brut courant dans les notes (`\pagebreak`,
+  `\placecontent`, `\centerline`...) et signale tout le reste. Les colonnes de tableau
+  s'adaptent à leur contenu, sauf si les tirets du séparateur ont des longueurs différentes
+  (`|--|--------|`)&nbsp;: les largeurs suivent alors ces tirets. Un simple
+  `pandoc notes.md -o notes.pdf` utilise le même moteur, la même langue et les mêmes polices.
+  Sous GNOME, les trois mises en page sont aussi proposées par clic droit dans Nautilus
+  (menu *Scripts*).
+* **enablePandocContext** `bool` ConTeXt comme moteur PDF alternatif, `md2pdf -e context` (~900 MiB, nécessite enablePandoc)
+* **pandocAuthor** `nullOr str` Auteur inscrit dans les PDF par `md2pdf`. `null` prend le nom complet du compte.
+* **enableEssentials** `bool` Outils essentiels
+* **hunspellLang** `str` [Dictionnaire Hunspell](https://mynixos.com/nixpkgs/packages/hunspellDicts)
+* **cartableFantastique** `nullOr ( enum [ "primaire" "college" "adaptateur" ] )` Édition de la barre d'outils [Cartable Fantastique](https://www.cartablefantastique.fr/outils-pour-compenser/le-plug-in-libre-office/)
+  installée dans LibreOffice, pour les élèves dyspraxiques ou présentant d'autres troubles DYS. `null` n'installe rien.
+
+  - `primaire` : barres Lire, Écrire, Mathématiques et Tableau.
+  - `college` : ajoute langues, chimie, électricité, éditeur d'équations.
+  - `adaptateur` : ajoute des outils pour l'adulte qui adapte les supports scolaires.
+
+  Installé par compte, dans son profil LibreOffice, à l'activation de Home Manager. Nécessite `enableOffice`. La synthèse vocale passe par `spd-say` (speech-dispatcher, activé par défaut sur les bureaux NixOS).
+
+  :::caution[Pas de suppression automatique]
+  Repassé à `null`, l'extension reste&nbsp;: à supprimer dans *Outils → Gestionnaire des extensions*.
+  :::
+* **enableElementAutoStart** `bool` Démarre Element Desktop (masqué) à la connexion lorsque le réseau utilise Matrix
+* **enableFractalAutoStart** `bool` Démarre Fractal à la connexion, avec `enableCommunication` (sur demande&nbsp;: pas de mode arrière-plan, sa fenêtre s'ouvre)
+* **nextcloud.enable** `bool` Installe le client de bureau Nextcloud, préconfiguré sur l'instance du réseau
+* **nextcloud.server** `nullOr str` Instance Nextcloud à laquelle le client se lie. `null` prend celle déclarée sur le réseau (celle de cette zone en premier). La renseigner pour viser une instance locale ou externe.
+* **nextcloud.enableAutoStart** `bool` Démarre le client Nextcloud en arrière-plan à la connexion
+* **nextcloud.enableWebdav** `bool` Installe `nextcloud-webdav-login`, un assistant ponctuel qui s'authentifie via le navigateur (SSO Kanidm) et enregistre le résultat comme Compte en ligne GNOME&nbsp;: fichiers en WebDAV dans le gestionnaire de fichiers, ainsi qu'agenda et contacts dans Evolution. Nécessaire, car Nextcloud refuse de créer un mot de passe d'application depuis son interface web pour un utilisateur OIDC.
+
+  L'assistant affiche aussi le mot de passe d'application&nbsp;: tout autre client WebDAV peut ainsi cibler le même compte.
+
+  :::note[Seulement GNOME]
+  Le compte est écrit là où les Comptes en ligne GNOME le lisent, ce que `darkone.graphic.gnome` active de lui-même dès que le réseau fournit un cloud. Sur un autre bureau, le mot de passe affiché reste utilisable.
+  :::
+
+  Ignoré lorsque `darkone.home.office.nextcloud.enable` est désactivé.
+* **nextcloud.syncDir** `nullOr str` Dossier local prérempli dans l'assistant de configuration, relatif à `$HOME`.
+
+  :::caution[Pas de synchronisation par défaut]
+  Laissé à `null` volontairement. L'assistant s'arrête alors sur sa page de dossiers, et l'utilisateur décide de ce qu'il synchronise, le cas échéant. La renseigner saute cette page.
+  :::
+* **shared** `raw` Valeurs bureautiques partagées avec les sous-modules `office/`.
+
+```nix
+darkone.home.office = {
+  enable = false;
+  enableMore = false;
+  enableUnsafeFeatures = false;
+  enableUBlock = false;
+  enableTools = false;
+  enableProductivity = false;
+  enableCommunication = false;
+  enableOffice = false;
+  enableFirefox = false;
+  enableLibreWolf = false;
+  enableChromium = false;
+  enableBrave = false;
+  enableEmail = false;
+  enableSecurity = false;
+  enableCalendarContacts = false;
+  enablePandoc = false;
+  enablePandocContext = false;
+  pandocAuthor = "Jane Doe";
+  enableEssentials = true;
+  hunspellLang = "en-us";
+  cartableFantastique = "primaire";
+  enableElementAutoStart = true;
+  enableFractalAutoStart = false;
+  nextcloud.enable = detectedNextcloud != null;
+  nextcloud.server = "https://cloud.example.com";
+  nextcloud.enableAutoStart = true;
+  nextcloud.enableWebdav = true;
+  nextcloud.syncDir = "Nextcloud";
+  shared = {
+        inherit
+          lang
+          country
+          hasHomepage
+          homeUrl
+          hasMatrix
+          hasVaultwarden
+          nextcloudUrl
+          hasNextcloud
+          hasNextcloudWebdav
+          ;
+      };
+};
+```
+
+{/* t:p c3f06a904b2cc8c1812670975822a02f60d9ad77290cb59c300d87e2812fa93c */}
+### `office/nextcloud.nix`
+
+* **webdavLogin** `package` Assistant `nextcloud-webdav-login`, installé par la liste des paquets bureautiques.
+
+```nix
+darkone.home.office.nextcloud.webdavLogin = nextcloudWebdavLogin;
+```
+
+{/* t:p 12ef945a0976aa1e44c64bc3ff744b1d2c0d87d2d7ee8d228097c306f8c52ada */}
+### `office/pandoc.nix`
+
+* **md2pdf** `package` Commande `md2pdf`, installée par la liste des paquets bureautiques.
+
+```nix
+darkone.home.office.md2pdf = md2pdf;
+```
+
+Source&nbsp;: [`home/modules/office.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/home/modules/office.nix)

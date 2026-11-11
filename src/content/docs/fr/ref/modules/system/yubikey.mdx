@@ -1,0 +1,58 @@
+---
+title: darkone.system.yubikey
+sidebar:
+  label: "yubikey"
+---
+
+{/* t:translated-from en */}
+{/* t:h 4eadece33877cea23d1f20cea8bce4ebf3d153babdfdebcce477e1290e72d259 */}
+
+{/* t:p 7ed1dba5ed14db68a2b83ad7a472743fcc58541e933b18fa4b175a2b2ac2750e */}
+Authentification forte YubiKey : PAM U2F à l'échelle de la flotte et FIDO2 LUKS déclaratif.
+
+Une seule inscription physique par (utilisateur, clé) sur l'hôte administrateur, via `just yubikey <user> [key] [action]`, alimente :
+
+- un **registre public** `usr/secrets/yubikeys.json` dans l'espace de travail consommateur : credential pamu2fcfg, identifiant de credential FIDO2 hmac-secret et sel (inutiles sans la clé physique, donc versionnables) ;
+- un secret sops `yubikey/<user>/<key>/luks-secret` (la phrase de passe LUKS dérivée du FIDO2), plus le `luks-passphrase` partagé (la phrase saisie à l'installation disko, nécessaire pour autoriser les nouveaux keyslots).
+
+Le module propage ensuite tout de façon déclarative (`just apply`), sans jamais brancher la clé sur les hôtes cibles :
+
+- **connexion / sudo / greeter** : pam_u2f comme *alternative* au mot de passe (`sufficient`). Toucher la clé connecte, le mot de passe sops reste le repli automatique. Un seul credential est valable à l'échelle de la flotte grâce à l'origine fixe (`pam://<network.domain>`).
+- **hôtes chiffrés** : un service oneshot inscrit chaque clé déclarée dans chaque en-tête LUKS2 déclaré par disko (keyslot + jeton `systemd-fido2`, au format exact écrit par `systemd-cryptenroll`) et retire les clés révoquées. La clé physique n'est nécessaire qu'au démarrage, pour déverrouiller le disque.
+
+:::caution[Hôtes isolés : sels propres]
+Un hôte isolé (`darkone.system.sops.isolated`) ne voit jamais le sel de la flotte ni sa valeur. `just yubikey` dérive une valeur par (clé, hôte chiffré isolé) à partir du sel propre à cet hôte (`hostSalts` dans le registre, valeur dans le fichier sops de l'hôte, un toucher chacun), autorisée sur place par la phrase de passe de l'hôte. Une clé non capturée pour un hôte n'y est pas inscrite.
+:::
+
+:::note[Zéro configuration]
+Activé par défaut, mais totalement inactif tant que le fichier de registre n'existe pas. La prise en charge LUKS s'appuie sur les volumes LUKS présents dans la configuration disko de l'hôte (`usr/machines/<host>/install/disko.nix`, importée à l'exécution).
+:::
+
+:::caution[Aucun verrouillage par conception]
+Le keyslot de la phrase d'installation et les mots de passe de session sops ne sont jamais modifiés : perdre une clé retombe au pire sur la phrase de passe ou le mot de passe. Cela vaut aussi au démarrage : la tentative FIDO2 s'exécute dans une unité propre, autorisée à échouer. Une clé inutilisable, non touchée ou absente aboutit donc toujours à l'invite de phrase de passe. Voir le commentaire du bloc initrd ci-dessous.
+:::
+
+:::caution[Le toucher au démarrage est incontournable]
+Les YubiKey imposent la présence de l'utilisateur pour l'extension `hmac-secret` : une assertion demandant `up=false` est refusée avec `FIDO_ERR_UP_REQUIRED`, avant même que le credential soit identifié. Le toucher relève d'une règle matérielle, pas d'un réglage du jeton, et aucun indicateur d'en-tête ne peut la lever. Le déverrouillage sans surveillance (passerelles, hôtes sans écran) passe par TPM2 (`systemd-cryptenroll --tpm2-device=auto`), qui coexiste avec ces keyslots FIDO2 dans le même en-tête LUKS.
+:::
+
+:::caution[Le trousseau GNOME reste verrouillé à la connexion par clé]
+`sufficient` termine la pile d'authentification avant `pam_gnome_keyring` : un trousseau de connexion scellé demande sa phrase de passe au début de session. Remède : `darkone.home.gnome.passwordlessKeyring`, activé par défaut pour les utilisateurs non avancés d'un hôte LUKS.
+:::
+
+{/* t:p 2255a194b13cc3dc758f2a82b31cf2f64fa6d5de65e907235201002a59f0b371 */}
+## Options
+
+* **enable** `bool` Authentification YubiKey (par défaut : activée si usr/secrets/yubikeys.json existe)
+* **origin** `str` Origine/appid pam_u2f fixe : une seule inscription est valable à l'échelle de la flotte
+* **luks.enable** `bool` Déverrouillage FIDO2 des volumes LUKS de l'hôte (inactif sans LUKS disko ni clés inscrites)
+
+```nix
+darkone.system.yubikey = {
+  enable = hasRegistry;
+  origin = "pam://${network.domain}";
+  luks.enable = true;
+};
+```
+
+Source : [`modules/system/yubikey.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/system/yubikey.nix)

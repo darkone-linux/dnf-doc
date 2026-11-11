@@ -1,0 +1,27 @@
+---
+title: darkone.profile.advanced
+sidebar:
+  label: "profile.advanced"
+---
+
+{/* t:translated-from en */}
+{/* t:h 729267f865e69e30ae8e2b6b76e31c5d44fadacc346dcdc623bb8fe354ab35f0 */}
+
+{/* t:p b078ea35e6d91f3ddebd651348d41e70dc32205263a5107a1b5e58936a2e7d30 */}
+Profil pour utilisateurs avancés (informaticiens, développeurs, administrateurs).
+
+:::note[Profil hôte ou profil Home&nbsp;?]
+Ce module active des fonctionnalités pour tous les utilisateurs du système.
+Utilisez les profils HomeManager pour fournir des logiciels adaptés à chaque utilisateur (admin, avancé, étudiant, enfant, adolescent, etc.).
+:::
+
+{/* t:p 7bed66fd52799fb5fe77bc4f5dd84d54739269eb5b2d5caf4bb61f431fc3e923 */}
+## Options
+
+* **enable** `bool` Utilisateur avancé (admin système, développeur)
+
+```nix
+darkone.profile.advanced.enable = false;
+```
+
+Source : [`modules/mixin/profile/advanced.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/mixin/profile/advanced.nix)

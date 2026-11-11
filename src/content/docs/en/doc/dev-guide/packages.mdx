@@ -35,61 +35,60 @@ even on a host that does not install the tool. A package from `dnf/pkgs/` is
 downloaded only at the **build** of its derivation.
 :::
 
-{/* t:p 6010c88dafb8d6d178610dfcbb8fee91fa447accf72c39687a69fa720ec5aae3 */}
-## Directory structure
+{/* t:p 2e127a1d1e8c8b6cfb56bad69eb7f5fe6a15e6b28e74e9082e022f875ee08ddc */}
+## Layout
 
 ```
 dnf/pkgs/
-├── default.nix          <-- package set, discovered from subdirectories
-├── overlay.nix          <-- the same set as an overlay -> pkgs.<name>
-└── <name>/package.nix   <-- the derivation
+├── default.nix          <-- jeu de paquets, découvert depuis les dossiers
+├── overlay.nix          <-- le même jeu en overlay -> pkgs.<nom>
+└── <nom>/package.nix    <-- la dérivation
 ```
 
-One folder = one package. `default.nix` scans subdirectories, so there is
-**no registry** to maintain. The overlay, on the other hand, is applied once
-and for all by `dnf/lib/mk-configuration.nix`, on every host.
+Un dossier = un paquet. `default.nix` scanne les dossiers, il n'y a donc **aucun
+registre** à tenir à jour. L'overlay, lui, est appliqué une fois pour toutes par
+`dnf/lib/flake/mk-configuration.nix`, sur tous les hôtes.
 
-:::tip[nixpkgs shape from the start]
-`<name>/package.nix` follows the
-[by-name](https://github.com/NixOS/nixpkgs/tree/master/pkgs/by-name) layout
-of nixpkgs: a later publication simply amounts to moving the folder.
+:::tip[Forme nixpkgs dès le départ]
+`<nom>/package.nix` reprend la forme
+[by-name](https://github.com/NixOS/nixpkgs/tree/master/pkgs/by-name) de nixpkgs :
+une publication ultérieure se réduit à déplacer le dossier.
 :::
 
-{/* t:p 7f570f1543d5edc9da5d014e7bbab22596f42aa28c7b09fb981d39236df502d9 */}
+{/* t:p 4e82dce34e35d1d314d2b8c6ac33c4891b4e6b86128c764f8f440025637c1bb7 */}
 ## Adding a package
 
 <Steps>
 
-1. Create `dnf/pkgs/<name>/package.nix` using the classic `callPackage` form,
-   with a complete `meta` block (`description`, `homepage`, `license`,
-   `mainProgram`, `platforms`). Pin the stable version, not a branch.
+1. Create `dnf/pkgs/<nom>/package.nix`, as a classic `callPackage` expression, with
+   a complete `meta` (`description`, `homepage`, `license`, `mainProgram`,
+   `platforms`). Pin the stable version, not a branch.
 
 2. `git add` the folder: flakes ignore untracked files.
 
-3. Build once to freeze the hashes, which Nix displays in its error
-   message&nbsp;:
+3. Build once to fix the hashes, which Nix displays in its error message&nbsp;:
 
    ```sh
-   nix build .#<name>
+   nix build .#<nom>
    ```
 
 4. `just clean` then commit.
 
 </Steps>
 
-Nothing else to wire up. The package is now usable in any NixOS module or
-[Home Manager](/en/doc/dev-guide/modules/) module, just like a nixpkgs
-package&nbsp;:
+Nothing else to wire up. The package can then be used in any NixOS module or
+[Home Manager](/en/doc/dev-guide/modules/), like a nixpkgs package&nbsp;:
 
 ```nix
 # dnf/home/modules/advanced.nix
 (lib.mkIf cfg.enableEssentials rename-simple)
 ```
 
-:::caution[ISO images and SD cards]
-Installation media receive their `pkgs` fully built (`nixpkgs.pkgs`), without
-this overlay: `pkgs.<name>` is not available there. Making it visible requires
-applying the overlay to that instance, in `dnf/lib/mk-configuration.nix`.
+:::caution[ISO and SD images]
+Installation media receive their `pkgs` already built
+(`nixpkgs.pkgs`), without this overlay: `pkgs.<nom>` is not available there. Making
+it visible requires applying the overlay to that instance, in
+`dnf/lib/flake/mk-configuration.nix`.
 :::
 
 {/* t:p e531d98c40944b8ba4ca35fc5df650917db3afb276f4763d3c10616d700baf37 */}

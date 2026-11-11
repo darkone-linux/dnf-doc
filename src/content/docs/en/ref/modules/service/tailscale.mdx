@@ -4,6 +4,10 @@ sidebar:
   label: "tailscale"
 ---
 
+{/* t:main */}
+{/* t:h 611fedf6b7a63a6b8da8279045dd84035d1f0930dcae7ac10e184a31636edea8 */}
+
+{/* t:p 9588d9845c729d348ab75d6bb7f964f063167187b59f079b4a69198ca932f8ab */}
 Tailscale client of the DNF tailnet (headscale on the HCS).
 
 Joins the HCS, zone gateways (`isGateway`: zone subnet advertised, routes
@@ -20,12 +24,14 @@ Sub-modules (`tailscale/`):
 - `selfheal.nix`: watchdog restarting a disconnected tailscaled;
 - `autopause.nix`: roaming clients pause tailscale on a zone LAN.
 
+{/* t:p 6130406dceb1a49eac42e0e6c59f2dd2767551210083743a3c710d2e99567391 */}
 ## Certificate sync (`cert-sync.nix`)
 
 Public certificates are issued on the HCS only; each zone gateway pulls the
 whole Caddy storage over the tailnet (rsync as `nix`, elevated to `caddy` on
 the HCS side), then publishes it to its own Caddy.
 
+{/* t:p cb6475bdf4f872cb544f9ac1ed1328bb0f19a16b27700f759392acfe71dac60c */}
 ## Self-heal (`selfheal.nix`)
 
 Every minute, checks that the backend runs and the control plane sees the
@@ -33,6 +39,7 @@ node online; restarts tailscaled after a sustained loss. Exports
 `dnf_tailscale_*` metrics for the `TailscaleFlapping`/`TailscaleUnhealthy`
 alerts.
 
+{/* t:p 1e5aeff77136765c156cc628356599a82ef3bbe1c14ef905a1f00bc2d131ba5a */}
 ## Auto-pause (`autopause.nix`)
 
 Roaming clients only. On a DNF zone LAN, `--accept-dns` would hijack
@@ -40,6 +47,7 @@ resolv.conf (local dnsmasq/AdGuard) and `--accept-routes` collide with the
 connected zone subnet: a NetworkManager dispatcher pauses tailscale there
 and resumes it elsewhere.
 
+{/* t:p c9976d373fff10c3809f862052aa2ce81d1704658c28e181797777c8570da118 */}
 ## Options
 
 * **enable** `bool` Enable tailscale client to connect HCS

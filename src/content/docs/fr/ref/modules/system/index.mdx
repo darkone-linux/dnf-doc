@@ -1,0 +1,30 @@
+---
+title: Modules système
+sidebar:
+  order: 4
+  label: Vue d'ensemble
+lang: fr
+---
+
+{/* t:translated-from en */}
+{/* t:h 3b3595f9ff5ead78a0d8088c8c98bfd1ee3633a01495b3576d642908aa883887 */}
+
+{/* t:p d4e2950d4743f2e27c69a772fbcbbb9004308203d7b051f5b4116d04fbd50b45 */}
+**Un module système** gère les configurations courantes, importantes et générales.
+
+| Module | Rôle |
+|---|---|
+| [`core`](/fr/ref/modules/system/core/) | Le module DNF de base. |
+| [`dnf-release`](/fr/ref/modules/system/dnf-release/) | Inscrit la version du framework sur l'hôte : `/etc/dnf-release` et l'étiquette de démarrage. |
+| [`documentation`](/fr/ref/modules/system/documentation/) | Documentation (man) pour développeurs et administrateurs. |
+| [`hardware`](/fr/ref/modules/system/hardware/) | Améliorations de la configuration matérielle. |
+| [`i18n`](/fr/ref/modules/system/i18n/) | Configuration de la localisation et de la langue. |
+| [`luks`](/fr/ref/modules/system/luks/) | Politique de phrase de passe LUKS &amp; déverrouillage à distance : phrases de passe partagées et par hôte, SSH initrd. |
+| [`microvm`](/fr/ref/modules/system/microvm/) | Invités MicroVM (microvm.nix, cloud-hypervisor) sur un hôte hyperviseur DNF. |
+| [`network`](/fr/ref/modules/system/network/) | Configuration réseau de l'ensemble des hôtes DNF. |
+| [`security`](/fr/ref/modules/system/security/) | Durcissement système ANSSI BP-028 v2.0 (GNU/Linux). (en cours) |
+| [`services`](/fr/ref/modules/system/services/) | Registre des services DNF : chaque module de service s'y inscrit, et le registre est résolu selon la topologie réseau. |
+| [`sops`](/fr/ref/modules/system/sops/) | Gestion des mots de passe et des secrets DNF avec sops. |
+| [`srv-dirs`](/fr/ref/modules/system/srv-dirs/) | Service de gestion des répertoires partagés. |
+| [`testing`](/fr/ref/modules/system/testing/) | Mode de test autonome pour le NixOS Test Driver. |
+| [`yubikey`](/fr/ref/modules/system/yubikey/) | Authentification forte YubiKey : PAM U2F à l'échelle de la flotte et LUKS FIDO2 déclaratif. |

@@ -1,0 +1,63 @@
+---
+title: darkone.home.ai
+sidebar:
+  label: "ai"
+---
+
+{/* t:translated-from en */}
+{/* t:h 81f365e4136719d86222b5a3a9eeefda33c0cec23c42047793bb646eee95872e */}
+
+{/* t:p a7a3f153a60aed1a7753cb953a0a0b6bac60221fd880ec27f8798c43f9f2625a */}
+Outils de codage IA et utilitaires associés.
+
+:::note[Indicateurs]
+- `darkone.home.ai.enable` : paquets utilitaires (aichat, llm, fabric-ai, gh,
+  lazygit, direnv, Rust et outils de qualité de code) et les indicateurs d'agents ci-dessous.
+- `darkone.home.ai.enable{Claude,OpenCode,Codex,Antigravity,Aider,Goose}` :
+  un agent de codage IA chacun.
+- `darkone.home.ai.preferLocal` : OpenCode utilise par défaut le modèle ollama local
+  sur un hôte `darkone.service.ai`.
+:::
+
+:::tip[Branchements par hôte]
+Sur un hôte ollama local (`darkone.service.ai`) : `gollama` et la CLI `ollama`,
+et Aider se rabat sur le modèle local quand Claude est désactivé.
+
+GitHub CLI (`gh`) et Copilot CLI (`copilot`) sont installés. Claude Code
+applique une matrice de permissions autoriser/demander/refuser et un hook de gouvernance RTK sur
+les appels Bash.
+:::
+
+:::caution[settings.json inscriptible]
+Claude Code et Antigravity CLI réécrivent leur propre `settings.json` : un
+lien symbolique vers un magasin en lecture seule les bloque, et fait échouer le
+basculement suivant sur le `.bkp`. Le socle Nix est plutôt fusionné avec jq dans un
+fichier INSCRIPTIBLE à chaque basculement ; les clés d'exécution (plugins, espaces de travail de confiance) sont conservées.
+:::
+
+{/* t:p 0d88e8146c81e500af3ede6bb8c44226d0ca6fdabb2b3be9c3ad25e56929c5de */}
+## Options
+
+* **enable** `bool` Activer les outils IA et les utilitaires associés
+* **enableClaude** `bool` CLI Claude Code
+* **enableOpenCode** `bool` Agent IA de terminal OpenCode
+* **enableCodex** `bool` CLI OpenAI Codex
+* **enableAntigravity** `bool` CLI Google Antigravity
+* **enableAider** `bool` Aider, programmation en binôme avec l'IA
+* **enableGoose** `bool` Agent de codage IA Goose (Block Inc.)
+* **preferLocal** `bool` Préférer les modèles locaux aux modèles cloud
+
+```nix
+darkone.home.ai = {
+  enable = false;
+  enableClaude = false;
+  enableOpenCode = false;
+  enableCodex = false;
+  enableAntigravity = false;
+  enableAider = false;
+  enableGoose = false;
+  preferLocal = false;
+};
+```
+
+Source : [`home/modules/ai.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/home/modules/ai.nix)

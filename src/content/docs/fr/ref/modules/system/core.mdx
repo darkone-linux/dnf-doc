@@ -1,0 +1,73 @@
+---
+title: darkone.system.core
+sidebar:
+  label: "core"
+---
+
+{/* t:translated-from en */}
+{/* t:h 021f7757871dcff7ae1c3aba94c8e8bcd406033053514ffc6558574299fef53e */}
+
+{/* t:p d2c704d2a01fced753507a7d32c8ffd4dd7d5b58e31225da330bd68871c7b6b3 */}
+Le module cœur de DNF.
+
+:::danger[Module obligatoire]
+Ce module est activé par défaut (requis par la configuration DNF).
+Il est indispensable au bon fonctionnement de chaque ordinateur NixOS du réseau local.
+:::
+
+Il met en place :
+- systemd-boot et le noyau LTS (dernier noyau mainline via `enableLatestKernel`) ;
+- la police JetBrains Mono Nerd Font, avec `kmscon` pour le TTY ;
+- optimisation du store chaque nuit, GC hebdomadaire avec rétention de 30 j (conservation des N dernières générations via `gcKeepGenerations` sur les hôtes à disque contraint) ;
+- SSH par clé uniquement (nom d'hôte, pare-feu et exposition SSH : `network.nix`) ;
+- le terminfo `xterm-ghostty` de Ghostty, pour que chaque hôte accepte le terminal ;
+- la politique de mise en veille (`disableSuspend` pour les serveurs) ;
+- des règles polkit permettant au groupe `wheel` d'arrêter et de redémarrer la machine ;
+- un groupe et un utilisateur `common-files` partagés pour les dossiers multimédias communs aux services.
+
+:::note[Point d'entrée du mixin]
+Active le mixin de profil de l'hôte (`darkone.host.${host.profile}.enable`) et transmet `enableSops` au module sops.
+:::
+
+:::danger[SSH par clé uniquement]
+Les mots de passe et l'authentification keyboard-interactive sont désactivés sur toute la flotte, et seul `/etc/ssh/authorized_keys.d/%u` est lu : un compte sans clé déclarée n'a aucun accès SSH, et `ssh-copy-id` n'a plus aucun canal d'amorçage.
+:::
+
+{/* t:p 15f902ec42e352f11fc7ef81382136e20b151c6d63ce55a0be7430e781cdf56c */}
+## Options
+
+* **enable** `bool` Système cœur du framework Darkone (activé par défaut)
+* **enableSystemdBoot** `bool` Activer le chargeur de démarrage par défaut
+* **enableLatestKernel** `bool` Utiliser le dernier noyau mainline (linuxPackages_latest) au lieu du noyau LTS
+* **enableFstrim** `bool` Optimisation SSD avec fstrim
+* **enableFirewall** `bool` Activer le pare-feu (par défaut true)
+* **enableSops** `bool` Activer le module DNF sops (par défaut true)
+* **enableFlatpak** `bool` Activer la configuration DNF de flatpak (uniquement pour les environnements graphiques)
+* **enableKmscon** `bool` Activer la police nerd pour le TTY
+* **gcKeepGenerations** `int` Si &gt; 0, réduit le profil système aux N dernières générations avant
+  chaque ramassage des déchets, et collecte chaque jour sans rétention basée sur l'âge. Pour les hôtes
+  à partition racine réduite (passerelles).
+* **enableBoost** `bool` Activer l'overclocking, corectl
+* **enableAutoSuspend** `bool` Activer la mise en veille automatique (pour les portables, ignoré si disableSuspend est true)
+* **disableSuspend** `bool` Désactivation complète de la mise en veille (pour les serveurs)
+* **enableCommonFilesUser** `bool` Activer l'utilisateur common-files utilisé par plusieurs services
+
+```nix
+darkone.system.core = {
+  enable = true;
+  enableSystemdBoot = true;
+  enableLatestKernel = false;
+  enableFstrim = true;
+  enableFirewall = true;
+  enableSops = true;
+  enableFlatpak = true;
+  enableKmscon = true;
+  gcKeepGenerations = 5;
+  enableBoost = false;
+  enableAutoSuspend = false;
+  disableSuspend = false;
+  enableCommonFilesUser = false;
+};
+```
+
+Source&nbsp;: [`modules/system/core.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/system/core.nix)

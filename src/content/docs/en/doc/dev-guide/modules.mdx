@@ -16,42 +16,42 @@ The framework's features are provided as high-level **NixOS modules**, grouped b
 category under `dnf/modules/` and documented in the
 [module reference](/en/ref/modules/).
 
-{/* t:p 09d5493fbcb2c54f2ad475c4d0e0d4f830ef87bccacb1e10edd9ac41630497bc */}
+{/* t:p 3bf80247fe9f1844ccc35d0dadbe9a13f383bf4093b643b67a071c590dbb6c9e */}
 ## Categories
 
-- **standard** : system, console, graphic, service, admin, user.
+- **standard** : `system`, `security`, `console`, `graphic`, `service`, `admin`, `user`.
 - **mixin** : macro-modules composing host profiles and user profile add-ons.
 - **home** : [Home Manager](https://github.com/nix-community/home-manager) modules and profiles.
 
-{/* t:p ff784a3ca7ab70b99b97e118a5b73bd396fcece43e76ac03a4e7acf72c4e2cf9 */}
+{/* t:p 10a2f5c71d2c646b2d53ca8137f3e4f6072a9a49d2df2de909140905cf84f2ed */}
 ## Create a module
 
 <Steps>
 
-1. Choose the category (`dnf/modules/standard/<category>/` or `mixin`).
+1. Choose the category (`dnf/modules/<category>/` or `dnf/modules/mixin/`).
 2. Write the file header according to the rules (see [code headers](/en/doc/how-to/dev/code-headers/)).
-3. Declare the `options` then the module `config`.
+3. Declare the `options`, then the module's `config`.
 4. Regenerate (`just generate`) and test before committing.
 
 </Steps>
 
 For a self-hosted service (web UI, API, storage…), follow the dedicated guide
-[Create a service module](/en/doc/dev-guide/create-service-module/) : reverse
+[Create a service module](/en/doc/dev-guide/create-service-module/): reverse
 proxy, persistence, firewall, Kanidm SSO and per-host activation.
 
 :::note[Code reference]
-The detail of options exposed by each module is automatically generated
-in the [reference](/en/ref/modules/) → do not edit it manually.
+The details of the options exposed by each module are generated automatically
+in the [reference](/en/ref/modules/) → do not edit them by hand.
 :::
 
-{/* t:p c124e11f3c67b7a874bd8014cf2b604bbbe8435780a93f841d8e43ea86f7e531 */}
+{/* t:p a07796b94ddf42216bde79bad54c009d3b31cbf36ba29ecedfe07a7b8febcaa0 */}
 ## Anatomy of a module
 
-A DNF module follows the classic NixOS pattern: a header, an `options` block and
-a `config` block activated by `enable`.
+A DNF module follows the classic NixOS pattern: a header, an `options` block and a
+`config` block enabled by `enable`.
 
 ```nix
-# dnf/modules/standard/service/hello.nix
+# dnf/modules/service/hello.nix
 { lib, config, ... }:
 let
   cfg = config.darkone.service.hello;
@@ -67,7 +67,7 @@ in
   };
 
   config = lib.mkIf cfg.enable {
-    # ... actual configuration, only activated if enable = true
+    # ... configuration réelle, activée seulement si enable = true
   };
 }
 ```
@@ -109,12 +109,11 @@ under `lib.mkIf cfg.enable` : an inactive module has **no** effect.
 Check `dnf/lib/default.nix`: the function may already exist. Reuse rather than duplicate.
 :::
 
-{/* t:p a907db1ae5ae01cd173c0a512e3e8d5dbb864a39b7e6ff38af65486e1410ede9 */}
+{/* t:p 3c2e1d3c2bd5902f9474979cf69c0c5585767580d0bae5387c85062ca96eab5f */}
 ## The service registry
 
-A service declares its **topology** in `dnf/config/modules.nix` (not in
-its `.nix`) : reverse proxy, uniqueness per zone, external access, automatic
-activation by host profile.
+A service declares its **topology** in `dnf/config/modules.nix` (not in its `.nix`):
+reverse proxy, uniqueness per zone, external access, automatic activation per host profile.
 
 ```nix
 # dnf/config/modules.nix
@@ -128,9 +127,14 @@ adguardhome = {
 |---|---|---|
 | `reverseProxy` | `true` | The service is exposed via Caddy. |
 | `uniquePerZone` | `false` | Only one instance allowed per zone. |
-| `externalAccess` | `false` | Reachable outside the zone (via the HCS). |
-| `require` | `[ ]` | Services to enable on the **same host** (otherwise build error). |
-| `activation.profiles.<profile>` | | Enabled by default on hosts of a profile. |
+| `externalAccess` | `false` | Reachable from outside the zone (via the HCS). |
+| `require` | `[ ]` | Services to enable on the **same host** (otherwise a generation error). |
+| `activation.profiles.<profile>` | | Enabled automatically on hosts of a profile. |
+
+:::caution[Literal values only]
+The generator reads this file as text, without evaluating it: no `let`, function, `//`,
+`inherit` or interpolation. It refuses what it cannot read, rather than applying a default.
+:::
 
 {/* t:p 3fbdddc2eb619ea2e43aeb47e3703af2d9828e5e6373c6bfef5abde13fed73b1 */}
 ## The generated `default.nix`

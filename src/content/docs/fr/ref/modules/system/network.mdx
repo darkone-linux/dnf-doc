@@ -1,0 +1,66 @@
+---
+title: darkone.system.network
+sidebar:
+  label: "network"
+---
+
+{/* t:translated-from en */}
+{/* t:h 653951408b1fd46163ff0b71a9b497545486b1202a001f6189b56acf4e99a6a3 */}
+
+{/* t:p a2e0c3b75aecefa8aba7dbca34f4bf515a6b42fbb29a407b1ef11096bc24b764 */}
+Configuration réseau de l'ensemble des hôtes DNF.
+
+Met en place, sur chaque hôte :
+- le nom d'hôte ;
+- le pare-feu nftables (`darkone.system.core.enableFirewall`) ;
+- SSH ouvert selon le rôle (ci-dessous).
+
+:::caution[SSH est ouvert par interface]
+Le port 22 n'est global que sur les hôtes sans lien WAN. Une passerelle l'obtient sur le pont LAN et sur le tailnet ; un hôte en zone globale, sur le tailnet seulement. Un SSH public y est décidé dans le profil de l'hôte.
+:::
+
+{/* t:p 33c33ae81f708c5f0ef8749beeccd2750c87aaf02131ceec8748174668fcc415 */}
+## Commutateur logiciel (`darkone.system.network.switch`)
+
+Met en pont les interfaces libres avec l'uplink : un hôte branché sur un downlink se trouve dans la zone comme derrière un switch matériel non géré (DHCP et DNS de la passerelle de zone, rien à configurer de son côté).
+
+```nix
+darkone.system.network.switch = {
+  enable = true;
+  uplink = "enp1s0f1";
+  downlinks = [
+    "enp1s0f0" # 10 GbE
+    "enp2s0"
+  ];
+};
+```
+
+- le pont `br0` porte l'adresse de l'hôte (DHCP) avec le MAC de l'uplink ;
+- L2 pur : pas de STP, pas de `br_netfilter`, donc les trames pontées ignorent nftables ;
+- même pont dans l'initrd : les downlinks gardent le réseau pendant que l'hôte attend le déverrouillage LUKS, et l'adresse ne change jamais d'interface au switch-root ;
+- systemd-networkd est imposé ; une passerelle de zone ou un hôte NetworkManager est refusé.
+
+:::caution[Un seul MAC dans `config.yaml`]
+Le `mac` de l'hôte ne doit contenir qu'une adresse : celle de l'uplink. Le pont la prend, donc la réservation DHCP de la zone suit le pont. Vérifié à l'évaluation.
+:::
+
+:::caution[Déployer avec `boot`]
+`just apply <host> boot`, puis redémarrer : un `switch` fait passer l'uplink dans le pont en pleine activation et coupe la session SSH.
+:::
+
+{/* t:p a158c6315844a261577366d391e7d41797daae54f8d8b3efa789ad7ebfbf6e23 */}
+## Options
+
+* **enable** `bool` le commutateur logiciel : les interfaces libres sont pontées avec l'uplink dans la zone de l'hôte
+* **uplink** `str` Interface reliée à la zone. Son MAC doit être le seul `mac` de l'hôte dans `config.yaml`.
+* **downlinks** `listOf str` Interfaces pontées avec l'uplink.
+
+```nix
+darkone.system.network.switch = {
+  enable = false;
+  uplink = "enp1s0f1";
+  downlinks = [ ];
+};
+```
+
+Source&nbsp;: [`modules/system/network.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/system/network.nix)

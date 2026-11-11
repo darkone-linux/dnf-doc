@@ -1,0 +1,33 @@
+---
+title: darkone.home.ai-space
+sidebar:
+  label: "ai-space"
+---
+
+{/* t:translated-from en */}
+{/* t:h e4738a85505f2a434ba55a1c753f7c56ee928029b67244394e9963125f415ac5 */}
+
+{/* t:p c6df3bd65d9d9872a0ce28ccf0a5ca4635fb254180875c06c9f82bce21a1865d */}
+Outils d'agent d'un espace IA dans le home d'un membre : Claude Code, Codex, OpenCode, MCP, skills.
+
+Tout provient de l'espace (`darkone.host.ai-space` de l'hôte), donc OpenClaw et chaque membre partagent les mêmes serveurs MCP et skills. Activé par défaut dans le home `space-member` ; désactivé sur tout autre hôte.
+
+- MCP : HM `programs.mcp`, intégré à Claude Code, Codex et OpenCode ;
+- skills : `~/.claude/skills`, `~/.codex/skills`, `~/.config/opencode/skills` ;
+- connexions : une fois par membre, `claude` (`/login`), `codex login --device-auth`, `opencode auth login` ;
+- `~/projects` : les projets partagés de l'espace (`projectsDir`).
+
+:::note[Par membre, par espace]
+`usr/users/<login>/spaces/<host>.nix` ajoute ou remplace, par exemple un serveur MCP personnel : `programs.mcp.servers.<name> = { ... };`.
+:::
+
+{/* t:p a1c5a788255c1b2038c430a498a8ad27a884f38ed73707e5d522ecef986b3c4d */}
+## Options
+
+* **enable** `bool` Outils d'agent de l'espace IA (Claude Code, Codex, OpenCode, MCP, skills)
+
+```nix
+darkone.home.aiSpace.enable = false;
+```
+
+Source : [`home/modules/ai-space.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/home/modules/ai-space.nix)

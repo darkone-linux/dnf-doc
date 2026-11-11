@@ -142,7 +142,7 @@ Exécutez `just check` pour attraper les régressions tôt.
 just check
 ```
 
-{/* t:p 351e6e59d430c07f8a62025b152f8029d7e56f8e992394e9f651b92082716a43 */}
+{/* t:p 27f4a5a204ea73676199c4d42b070dab711ccc19ab03839ef0fc87ef7e12d6bd */}
 ### 💠 `check-code`
 
 Analyse statique avec `statix` et détection du code mort avec `deadnix`, sur
@@ -240,6 +240,7 @@ régénération des clés et secrets jetables.
 just fixtures check
 ```
 
+{/* t:p 9c85c3176418810daf040b75fc712b774a02e4a58afa7d3448f86ad2eb7abc81 */}
 ### 🔆 `test-installer [scénario] [iso]`
 
 Teste l'ISO d'installation dans une VM QEMU&nbsp;: l'assistant `darkone new` y
@@ -257,6 +258,7 @@ just test-installer
 just test-installer interactive /chemin/de/l.iso
 ```
 
+{/* t:p d3b8061eda0c9fd00c607f8bb7f790e84f01d06e7c5d08d33fdcaba4ae57cf60 */}
 ### 🔆 `try [disque] [générateur]`
 
 Ouvre l'ISO d'installation de cet arbre dans une fenêtre QEMU. Le projet écrit
@@ -286,6 +288,7 @@ just pkg-update rename-simple
 just pkg-update fleet-update 0.2.0    # version explicite (train de release)
 ```
 
+{/* t:p 66da6583003e0f94606181f40534ddbb00ffa2fd1674938578163fe328a237f3 */}
 ### 🔆 `workarounds`
 
 Liste les corrections temporaires avec leur état amont et signale celles à
@@ -657,6 +660,7 @@ ajouté un hôte ou une zone. Voir
 just configure-admin-host
 ```
 
+{/* t:p f18263456bc31e485dd655e6705c3fcce0592dab64d719d60af2486723343260 */}
 ### ✳️ `tailnet-enroll <hôte> [ip]`
 
 Enrôle un hôte dans le tailnet avec une clé à usage unique, portant les tags
@@ -1213,6 +1217,7 @@ Lance les tests unitaires du générateur.
 just gen-test
 ```
 
+{/* t:p 9d39d1949aa513948870cad3a14f63a431afa1c83f68acd9554ad040f3268d39 */}
 ### 🔗 `gen-schema`
 
 Régénère `dnf/config/config.schema.json` avec le générateur local. Le train de
@@ -1232,6 +1237,7 @@ just cat                   # teste en local
 just cat myserver          # applique sur myserver
 ```
 
+{/* t:p 967c52f9202e13a79988883af81114c83fe8a74c12ada12a1addc1754dd18d49 */}
 ### 🔗 `drv-diff [hôtes] [base]`
 
 Compare la dérivation de chaque hôte entre une révision de `dnf/` (`base`,

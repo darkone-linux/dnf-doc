@@ -1,0 +1,56 @@
+---
+title: darkone.system.srv-dirs
+sidebar:
+  label: "srv-dirs"
+---
+
+{/* t:translated-from en */}
+{/* t:h 2fdb379108baa0dc36c93821fb1746a2016604af882819fb8576ae82e3fab46a */}
+
+{/* t:p 4f8c5d590e3da830d64f361902b565281f3ec36c1bb003edcf4a4d0477d26d4f */}
+Service de gestion des répertoires partagés.
+
+:::caution[Activation automatique]
+Ce service est activé automatiquement par les services qui utilisent NFS ou un stockage de médias partagé.
+:::
+
+{/* t:p 35117e1ebf72ee278b414d77eebeff60447fc1f3f2c58aaf687a03e65e5d4d55 */}
+## Options
+
+* **enable** `bool` Active les répertoires srv, crée le répertoire racine (par défaut /srv)
+* **enableNfs** `bool` Active les chemins du service nfs (nfs/common, nfs/homes)
+* **enableMedias** `bool` Active les chemins des services médias (medias/[videos|music|incomming/...])
+* **enableStk** `bool` Active le chemin des circuits SuperTuxKart partagés (nfs/stk-tracks)
+* **root** `str` Répertoire racine des données persistantes (/srv)
+* **nfs** `str` Répertoire racine NFS (/srv/nfs)
+* **homes** `str` Répertoire des homes partagés (/srv/nfs/homes)
+* **common** `str` Répertoire commun partagé (/srv/nfs/common lié à ~/Public)
+* **stkTracks** `str` Répertoire partagé des circuits SuperTuxKart (/srv/nfs/stk-tracks)
+* **medias** `str` Répertoire racine des médias (/srv/medias)
+* **music** `str` Répertoire partagé des fichiers musicaux (/srv/medias/music)
+* **videos** `str` Répertoire partagé des fichiers vidéo (/srv/medias/videos)
+* **incoming** `str` Répertoire partagé de réception (/srv/medias/incoming, accès en écriture)
+* **incomingMusic** `str` Répertoire partagé de réception (/srv/medias/incoming/music, accès en écriture)
+* **incomingVideos** `str` Répertoire partagé de réception (/srv/medias/incoming/videos, accès en écriture)
+
+```nix
+darkone.system.srv-dirs = {
+  enable = cfg.enableNfs || cfg.enableMedias || cfg.enableStk;
+  enableNfs = false;
+  enableMedias = false;
+  enableStk = false;
+  root = "/srv";
+  nfs = null;
+  homes = null;
+  common = null;
+  stkTracks = null;
+  medias = null;
+  music = null;
+  videos = null;
+  incoming = null;
+  incomingMusic = null;
+  incomingVideos = null;
+};
+```
+
+Source : [`modules/system/srv-dirs.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/system/srv-dirs.nix)

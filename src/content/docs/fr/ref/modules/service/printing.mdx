@@ -1,0 +1,32 @@
+---
+title: darkone.service.printing
+sidebar:
+  label: "printing"
+---
+
+{/* t:translated-from en */}
+{/* t:h 89adcf3a9d035b5a6b5d359d0365408c50ab723acb822198cce253d4c16cfb43 */}
+
+{/* t:p 62a6f9ec6c787aae71cb6b817cf331bfe857c1a3c398acfd5ff005c3da311c2f */}
+Imprimantes et scanners.
+
+{/* t:p 0a93bd6146ed2f34089ae403b25959397bf20cffbf984f20ee6fd2543c1d68f9 */}
+## Options
+
+* **enable** `bool` Paquets utiles par défaut
+* **loadAll** `bool` Pilotes complets pour imprimantes et scanners
+* **enableScanners** `bool` Activer les scanners
+* **enableHpPrinters** `bool` Imprimantes HP uniquement
+* **enableManualInstall** `bool` Installation manuelle des pilotes
+
+```nix
+darkone.service.printing = {
+  enable = false;
+  loadAll = false;
+  enableScanners = false;
+  enableHpPrinters = false;
+  enableManualInstall = false;
+};
+```
+
+Source: [`modules/service/printing.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/service/printing.nix)

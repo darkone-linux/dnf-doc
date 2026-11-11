@@ -1,0 +1,41 @@
+---
+title: darkone.system.sops
+sidebar:
+  label: "sops"
+---
+
+{/* t:translated-from en */}
+{/* t:h 3743ac6959c56a9e9861d0e063ce0379a4117571854e5bebc8807a269a03c79a */}
+
+{/* t:p dba39f3ea6d5390ba617cd5f3a6026f8755d8714522cf75be27d02187b2f20fd */}
+Gestion des secrets, mots de passe et sops pour DNF.
+
+:::danger[Module critique]
+Ce module est activé par défaut dans le module core.
+Il est recommandé de le garder activé et de le configurer (commandes `just passwd*`).
+:::
+
+Connecte sops-nix à `usr/secrets/secrets.yaml` et le déverrouille avec la clé SSH de l'hôte (`ssh_host_ed25519_key`) et la clé age d'infrastructure dédiée (`/etc/sops/age/infra.key`). Déclare un secret `user/<login>/password-hash` par utilisateur de l'hôte, avec `neededForUsers = true` pour que le hash soit disponible avant la création des comptes.
+
+Les secrets réguliers sont installés par `sops-install-secrets.service` (`sops.useSystemdActivation`), avant `sysinit.target` ; un secret modifié redémarre ses `restartUnits` dans le même switch. Les hashes de mot de passe restent dans le script d'activation, avant les comptes utilisateurs.
+
+Rien d'autre n'est matérialisé ici : un secret appartient aux hôtes qui le consomment, déclaré par le module qui le lit.
+
+:::caution[Hôtes isolés]
+`isolated = true` (valeur par défaut du profil `ai-space`) pointe l'hôte vers son propre `usr/secrets/hosts/<hostname>.yaml`, sans la clé d'infrastructure : un hôte qui exécute des agents non fiables ne détient jamais les secrets de la flotte, et une clé laissée par une installation antérieure est supprimée. Pas de hash de mot de passe non plus, ses comptes n'utilisent que des clés SSH. Déclarer une valeur de la flotte là (`luks-passphrase`, un hash de mot de passe, un secret FIDO2 avec le sel de la flotte) fait échouer l'évaluation.
+:::
+
+{/* t:p 9fbce8fe3157d109b1cb0e8237f65d92140bcbd79e82918bd0ab6e9387964112 */}
+## Options
+
+* **enable** `bool` Active la configuration automatisée de sops pour DNF
+* **isolated** `bool` fichier de secrets propre, pas de clé d'infrastructure, pas de hash de mot de passe
+
+```nix
+darkone.system.sops = {
+  enable = false;
+  isolated = false;
+};
+```
+
+Source&nbsp;: [`modules/system/sops.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/system/sops.nix)

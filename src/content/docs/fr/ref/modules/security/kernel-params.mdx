@@ -1,0 +1,74 @@
+---
+title: darkone.security.kernel-params
+sidebar:
+  label: "kernel-params"
+---
+
+{/* t:translated-from en */}
+{/* t:h 43411d9d5d05fc7218e0c94fc49effccbb1566a51911f67c9eaf39a02a6ad6c5 */}
+
+{/* t:p e772736bc7fb48495ada8aaa95585f9b0c77f2ac09ec15765fcdf9b4a3530fef */}
+Configuration noyau dynamique : paramètres de démarrage et sysctls (R8–R14). (wip)
+
+Règles applicables sans recompiler le noyau. Couvre les options mémoire (R8),
+les sysctls système (R9), la désactivation du chargement de modules (R10), Yama/ptrace (R11),
+les sysctls réseau IPv4 (R12), la désactivation d'IPv6 (R13)
+et les sysctls de systèmes de fichiers (R14).
+
+:::caution[Activation]
+L'option `enable` suit `darkone.system.security.enable` par défaut.
+Les règles (Rxx/Cxx) sont activées selon le niveau, la catégorie et les exclusions
+définies dans `darkone.system.security` (via `isActive`).
+:::
+
+:::caution[R8 : SMT désactivé]
+`l1tf=full,force`, `mds=full,nosmt` et `mitigations=auto,nosmt` désactivent l'hyperthreading, soit environ 30 % du débit multi-thread : un prix qu'une ferme de compilation ne peut pas toujours payer. `disableSmt = false` conserve le reste de R8.
+:::
+
+:::caution[R8 : les extras d'allocateur remplacent l'effacement demandé par l'ANSSI]
+`page_poison=on` prend le pas sur `init_on_alloc`/`init_on_free` (le noyau le signale au démarrage). R8 embarque donc un outil de débogage là où l'ANSSI demande un effacement mémoire, et `slub_debug=FZP` s'ajoute à chaque cache de slab. `memoryDebug = false` retire les trois et restitue `init_on_*` ; mesuré à 7 % d'une compilation (95 s à 88 s, ms-a2, SMT activé), donc la raison est la conformité plutôt que la vitesse.
+:::
+
+:::caution[R9 : restreindre les espaces de noms utilisateur est optionnel]
+`kernel.unprivileged_userns_clone` est une clé de Debian / linux-hardened, absente du noyau principal : l'écrire fait échouer `systemd-sysctl`. L'équivalent du noyau principal (`user.max_user_namespaces = 0`) casse Flatpak, bubblewrap et Podman rootless, d'où `restrictUserns`, désactivé par défaut.
+:::
+
+:::caution[R12 : filtrage du chemin inverse]
+Le mode strict (`rp_filter = 1`) rejette tout chemin de retour asymétrique. Un routeur de sous-réseau tailscale qui annonce des routes avec `--snat-subnet-routes=false` est exactement ce cas, donc ces routeurs passent en mode lâche (2). C'est aussi le cas d'une passerelle avec des liens de secours : les réponses aux sondes arrivent sur un lien qui n'est pas la route préférée.
+:::
+
+:::caution[R10 : modules désactivés]
+Tout nouveau périphérique nécessitant un module non préchargé demande un redémarrage.
+Incompatible avec `nixos-rebuild switch` côté pilote.
+:::
+
+{/* t:p 88734605f9a52c1ac223d82685554187e687eb508a0c31c75bdf7cd4ae8864f0 */}
+## Options
+
+* **enable** `bool` Active les paramètres noyau dynamiques ANSSI (R8–R14).
+* **restrictUserns** `bool` R9 : interdit les espaces de noms utilisateur sans privilèges (`user.max_user_namespaces`).
+  Casse Flatpak, bubblewrap et Podman rootless, donc reste optionnel et
+  se réserve aux serveurs qui n'en utilisent aucun.
+* **disableSmt** `bool` R8 : désactive l'hyperthreading. Trois paramètres le portent ; `false` ramène
+  chacun à sa forme qui préserve le SMT et laisse les quatorze autres
+  intacts. Notez que `l1tf=full` supprime le SMT même sans `force` (il ne
+  laisse que le réglage sysfs) : le repli est donc `flush`.
+* **memoryDebug** `bool` R8 : les extras d'allocateur, `slub_debug=FZP`, `page_poison=on` et
+  `slab_nomerge=yes`. Aucun des trois ne figure dans la liste R8 de l'ANSSI, et
+  `page_poison` supplante `init_on_alloc`/`init_on_free`, qui eux y figurent :
+  le noyau le signale au démarrage et privilégie l'outil de débogage.
+  La désactiver restaure l'effacement prescrit et rend 7 % d'une
+  compilation (95 s à 88 s, ms-a2, SMT activé).
+* **disableIpv6** `bool` R13 : désactive totalement IPv6. Désactivé par défaut : l'ANSSI privilégie elle-même le durcissement d'IPv6 à sa suppression, et un hôte public en a généralement besoin.
+
+```nix
+darkone.security.kernel-params = {
+  enable = false;
+  restrictUserns = false;
+  disableSmt = true;
+  memoryDebug = true;
+  disableIpv6 = false;
+};
+```
+
+Source : [`modules/security/kernel-params.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/security/kernel-params.nix)

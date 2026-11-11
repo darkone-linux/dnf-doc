@@ -1,0 +1,28 @@
+---
+title: darkone.home.audio
+sidebar:
+  label: "audio"
+---
+
+{/* t:translated-from en */}
+{/* t:h 4a5704b7f805544a51bdf675e8bc0800b5ff8b2e61fc09a96ae40f26408163e0 */}
+
+{/* t:p 3b9d3a8b44f086bfde575a0480fbdfab0ebf4fa408495a24efc6b1f359d69117 */}
+Outils audio et effets.
+
+Installe l'encodeur MP3 (`lame`) et, avec GNOME, un lecteur audio (`vlc`), puis ajoute les éditeurs et effets (`audacity`, `easyeffects`) lorsque `enableTools` est activé. La réduction de bruit en temps réel (`noisetorch`) est volontairement désactivée, car elle nécessite PulseAudio.
+
+{/* t:p 7a45f7f80a29c9bebc5702eb52e48555e90654484e48ca73b0a12e9630d1e316 */}
+## Options
+
+* **enable** `bool` Outils audio
+* **enableTools** `bool` Outils audio / éditeurs (audacity, easyeffects)
+
+```nix
+darkone.home.audio = {
+  enable = false;
+  enableTools = false;
+};
+```
+
+Source : [`home/modules/audio.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/home/modules/audio.nix)

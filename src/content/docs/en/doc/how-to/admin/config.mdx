@@ -80,6 +80,33 @@ deploy locally. With multiple zones, however, a VPN makes it easier to
 administer remote nodes through secure direct access.
 :::
 
+{/* t:p 85eccaf3b41cd36a835f2b7eb7f782597dd005e3783e91be883dabaf74975a2e */}
+### Mail, Matrix and fleet-update
+
+Three optional blocks complete the section.
+
+```yaml
+# etc/config.yaml
+network:
+  smtp:                             # relais du courrier sortant
+    server: "smtp.example.org"
+    port: 465
+    protocol: "submissions"         # http, https, submission ou submissions
+    tls: true
+    username: "relay@example.org"
+    sender: "noreply@domain.tld"
+  matrix:
+    admins: ["alice"]               # administrateurs Matrix
+  fleetUpdate:
+    deploymentOrder: "hcs:gateway:server:[others]:laptop"
+```
+
+| Block | Keys | Role |
+|---|---|---|
+| `smtp` | `server`, `port`, `protocol`, `tls`, `username`, `sender` | Relay for `postfix` hosts; password in the `smtp/password` secret. |
+| `matrix` | `admins` | [Matrix administrators](/en/doc/admin-guide/operate/matrix/#enable-matrix). |
+| `fleetUpdate` | `deploymentOrder`, `criticalProfiles`, `pingInterval`, `timeouts`, `aiModel` | Settings for [fleet-update](/en/doc/admin-guide/operate/deploy/#updating-the-fleet-with-fleet-update). |
+
 {/* t:p 7d128f788a02a87c7251d108d7a89f3a99b700cf0f2aab21d842c6660d9265f0 */}
 ## Section "zones"
 
@@ -129,7 +156,7 @@ The project reserves the octets as follows (prefix `10.0`)&nbsp;:
 | `wan.interface` | Network interface to the Internet (required). |
 | `lan.interfaces` | List of internal interfaces (required), joined into the `lan0` bridge. |
 | `lan.dhcp-range` | DHCP range (optional; default `<préfixe>.3.200,<préfixe>.3.249,24h`). |
-| `vpn.ipv4` | Gateway tailnet IP, collected after `just tailnet-enroll` ([details](/en/doc/admin-guide/operate/vpn/#enregistrer-une-passerelle)). |
+| `vpn.ipv4` | Gateway tailnet IP, collected after `just tailnet-enroll` ([details](/en/doc/admin-guide/operate/vpn/#register-a-gateway)). |
 
 :::note[Automatic detection]
 The host whose IP ends with `.1.1` is **automatically** the gateway of its zone. See [Gateway](/en/doc/admin-guide/install/gateway/).
@@ -159,11 +186,10 @@ zones:
         mac: "aa:bb:cc:dd:ee:02"
 ```
 
-{/* t:p 2a35499826eb1e7477ade6bb40eb759637a4ed1823775bd399524efeb60261df */}
+{/* t:p 01284ab567c70e69b711d09dd7dc9fdcc9cf1eb7b83da2a68feb8dbcfa1d20e1 */}
 ## Section "users"
 
-Shared accounts across all zones. Each account receives a profile
-[Home Manager](/en/doc/admin-guide/understand/user-profiles/) and groups.
+Accounts shared by all zones. Each account gets a [Home Manager](/en/doc/admin-guide/understand/user-profiles/) profile and groups.
 
 ```yaml
 # etc/config.yaml
@@ -183,20 +209,21 @@ users:
 
 | Key | Type | Role |
 |---|---|---|
-| *(key)* | | Account identifier (login) (`[a-z]…`). |
+| *(key)* | | Account login (`[a-z]…`). |
 | `uid` | integer | Stable numeric identifier (**required**). |
-| `name` | text | Display name (**required**). |
-| `email` | text | Email address (also used for SSO identity), defaults to `<login>@<domain.tld>`. |
+| `name` | text | Displayed name (**required**). |
+| `email` | text | Address (also used for SSO identity), default `<login>@<domain.tld>`. |
 | `profile` | text | User profile (default `minimal`). |
-| `groups` | list | Installs the user on hosts with the same group. |
+| `groups` | list | Installs the user on hosts sharing the same group. |
+| `disabled` | boolean | Locks the account without removing it (default `false`). |
 
 :::note[User `nix`]
-The maintenance account `nix` (profile `nix-admin`) is automatically added to
+The maintenance account `nix` (profile `nix-admin`) is added automatically to
 every host. Do not declare it.
 :::
 
 :::tip[Groups = access]
-A host authorizes a user if it is listed in `users`, **or** if one of its
+A host allows a user if it lists them in `users`, **or** if one of its
 `groups` matches. See [Users](/en/doc/admin-guide/operate/users/).
 :::
 

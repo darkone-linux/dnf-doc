@@ -1,0 +1,59 @@
+---
+title: Proving a refactor is neutral
+sidebar:
+  label: Neutral refactor
+  order: 4
+lang: en
+---
+
+{/* t:translated-from fr */}
+{/* t:h 1a4c8422940106d5798c7e6ed1486a9ad78ce9f31ca97f9e0657f15dbbb8a22b */}
+
+{/* t:p 9c926b7fe50b18d26f889a83a664bc95d44337b0437b26902b58ea48a2fc7cbf */}
+A framework refactor changes **no** deployed system: the derivation (`drvPath`) of each host stays identical. `just drv-diff` checks this, from the root of a co-development project.
+
+```sh
+just drv-diff                   # tout le parc
+just drv-diff gw-main,nas       # deux hôtes, pendant le travail
+just drv-diff "" HEAD~3         # contre une révision antérieure de dnf/
+```
+
+The command evaluates each host twice: against the last commit of `dnf/`, then against the working tree. It lists the hosts whose derivation differs and exits with an error if there are any.
+
+:::tip[During the refactor]
+Target two or three hosts with different profiles (gateway, server, workstation), then run the whole fleet before committing.
+:::
+
+{/* t:p 1dae43d1df0e50a1cdfed0e04583249d92ff4e083f2db034b5ee377a90237726 */}
+## Files taken into account
+
+The working tree is read as `just commit` would commit it: tracked files and new files, except those git ignores. The consuming project is the same on both sides; only `dnf/` varies.
+
+{/* t:p b599328025e2e45048cc93c3eac1ae45768c0abf295316daaca29c35c9cdf71c */}
+## Pending input updates
+
+A `flake.lock` of `dnf/` that is modified but not yet committed (`nix flake update`) changes all hosts and would mask the effect of the code. The command reports it, then reads the working tree using the lock of the base revision.
+
+```sh
+LOCK=tree just drv-diff         # compter aussi la mise à jour des inputs
+```
+
+{/* t:p 4991afb059a540450ddf0e47470112cb257ef8e9f7fc919e20d85bc47b3002a4 */}
+## A derivation differs
+
+The output gives the two `drvPath` of each affected host. Comparing them shows what changed:
+
+```sh
+nix run nixpkgs#nix-diff -- <avant.drv> <après.drv>
+```
+
+A wanted difference is no longer a refactor: the commit then carries the type `feat` or `fix`.
+
+{/* t:p 9ef67c1dda2c0fecef7cfd9ad30c5a11636205892d208ea0c665f3fb5515659e */}
+## Resources
+
+Two evaluations run one after the other, each on two processes. `WORKERS` changes their number, and `WORKER_MEM` (MB) caps the memory of each.
+
+```sh
+WORKERS=1 just drv-diff
+```

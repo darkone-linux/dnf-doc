@@ -1,0 +1,27 @@
+---
+title: darkone.service.adguardhome
+sidebar:
+  label: "adguardhome"
+---
+
+{/* t:translated-from en */}
+{/* t:h 2382f6e63540a3fc81717b08e6357d62e2e5426dde736384d87b319b019a7b90 */}
+
+{/* t:p 72ecd1ba9560b047401a360f1f549e654d837eca918387b520e08d38e9a20dad */}
+Configuration complète d'AdGuard Home pour passerelle locale / routeur.
+
+:::note
+Cette configuration lit le fichier `config.yaml` (`network`).
+Elle utilise le [module DNF dnsmasq](/fr/ref/modules/service/dnsmasq/) comme DNS amont et DHCP.
+:::
+
+{/* t:p 3f16f28845c2a8d4893027c2c3381bc94f3c881be72f94cd3067115cfb240562 */}
+## Options
+
+* **enable** `bool` Active le service AdGuard Home local
+
+```nix
+darkone.service.adguardhome.enable = false;
+```
+
+Source : [`modules/service/adguardhome.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/service/adguardhome.nix)

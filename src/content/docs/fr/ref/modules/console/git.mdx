@@ -1,0 +1,30 @@
+---
+title: darkone.console.git
+sidebar:
+  label: "git"
+---
+
+{/* t:translated-from en */}
+{/* t:h 407048277fa2f0784b432c2eebf338ab5e7f7a555b4c6ca2fb1cf987e3036027 */}
+
+{/* t:p b4ae6cdf48ad97db76eb6c0fd0ec3c27a2d628e56d228f13e3d2c6e83d9633ef */}
+Un environnement git préconfiguré.
+
+:::tip[Raccourcis git]
+- `git hdf` (diff de l'historique) : sélectionner un commit pour afficher le diff.
+- `git tree` : arbre de l'historique.
+- `git tre` : historique avec les fichiers.
+- `git treee` : historique avec les messages de commit.
+- `git hist` : alternative à l'arbre.
+:::
+
+{/* t:p f641d124fd114039c2ea17cf744ad925813cbcc40ada3bc063c145d89ee87750 */}
+## Options
+
+* **enable** `bool` Environnement git préconfiguré
+
+```nix
+darkone.console.git.enable = false;
+```
+
+Source : [`modules/console/git.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/console/git.nix)

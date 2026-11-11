@@ -1,0 +1,45 @@
+---
+title: darkone.security.services
+sidebar:
+  label: "services"
+---
+
+{/* t:translated-from en */}
+{/* t:h 30325482e7758cbc7b3e0ef3e0d490272a4e6d65de3ddffe67bceea433f79b0e */}
+
+{/* t:p e0478d9c854e19fbb6bdbbfab242d1381126e084a20351e0601078a5bec547bb */}
+Durcissement des services systemd (R62–R66). (wip)
+
+Couvre la désactivation des services inutiles (R62), la réduction des fonctions via les options de sécurité systemd (R63), la restriction des privilèges (R64), l'isolation (R65) et le durcissement des composants de conteneurisation (R66).
+
+:::caution[Activation]
+L'option `enable` suit `darkone.system.security.enable` par défaut.
+Les règles (Rxx/Cxx) sont activées selon le niveau, la catégorie et les exclusions définies dans `darkone.system.security` (via `isActive`).
+:::
+
+:::caution[R63 : MemoryDenyWriteExecute]
+Casse les runtimes JIT (Java, V8, .NET, LuaJIT, Wasm). Utiliser le tag `needs-jit` dans `excludes` ou exclure le service individuellement.
+:::
+
+:::caution[R66 : Docker userns-remap]
+Casse les montages de liaison de l'hôte vers les conteneurs (décalage d'UID). Migration des volumes existants requise avant activation.
+:::
+
+{/* t:p 647e63782f3117554b3ee485ea651421b4c6360a424cf2e97505bdedcbe01ce0 */}
+## Options
+
+* **enable** `bool` Active le durcissement ANSSI des services systemd (R62–R66).
+* **rootServicesAllowed** `listOf str` services systemd autorisés à s'exécuter en root sans CapabilityBoundingSet (R64).
+* **hardenedUnits** `listOf str` unités systemd auxquelles la base de durcissement ANSSI est appliquée
+  (R52 RuntimeDirectoryMode, R55 PrivateTmp, R63 sandbox complet via
+  `dnfLib.mkHardenedServiceConfig`). Vide par défaut : un sandboxing généralisé peut casser les services qui ont besoin d'écriture ou de syscalls supplémentaires, donc les unités sont à activer explicitement. Lister les unités du framework connues pour tolérer ce confinement ; les surcharges `serviceConfig` par unité restent prioritaires.
+
+```nix
+darkone.security.services = {
+  enable = false;
+  rootServicesAllowed = [ ];
+  hardenedUnits = [ ];
+};
+```
+
+Source : [`modules/security/services.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/security/services.nix)

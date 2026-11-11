@@ -4,6 +4,10 @@ sidebar:
   label: "idm"
 ---
 
+{/* t:main */}
+{/* t:h 05360cec1529c0ffa9cb001e95e969ea05c4f0461bcea3ef5de26d4ce1386945 */}
+
+{/* t:p 89e789b89fb1c841e5843d6893a035c72f9e575c5cd887cd950018d30ea69058 */}
 Kanidm (identity manager) DNF Service.
 
 :::note[Secrets are generated, not typed]
@@ -23,6 +27,7 @@ Sub-modules (`idm/`):
 - `replication.nix`: multi-zone read-only replication, HCS to zone gateways;
 - `provision.nix`: OAuth2 clients (template registry), groups and persons.
 
+{/* t:p b87028ad2c6d691c34855253592b04c13cbfca475461fc34aac71d0fab56b929 */}
 ## Replication (`replication.nix`)
 
 Automatic, derived from where `idm` is declared:
@@ -34,6 +39,7 @@ Two-step bootstrap: `just apply` generates every replication certificate
 (gateways stay WriteReplicaNoUI), then `just idm-sync-certs` + `just apply`
 adds the partners and flips the gateways to ReadOnlyReplica.
 
+{/* t:p 83a7e76eee86d977f88682a812c3bc9bfb09d7c38dd916e976ca956dd9d2cc56 */}
 ## Provisioning (`provision.nix`)
 
 Every OIDC-capable service module contributes a client template to
@@ -41,6 +47,7 @@ Every OIDC-capable service module contributes a client template to
 instance), merged by `clientId` across zones. Never on a replication
 consumer: it mirrors the HCS.
 
+{/* t:p 344a3a2f09f9c8dc77cde390368ab567a1472fcf3913238345b23bf4d3f35443 */}
 ## Options
 
 * **enable** `bool` Enable local SSO with Kanidm
@@ -49,6 +56,7 @@ consumer: it mirrors the HCS.
 darkone.service.idm.enable = false;
 ```
 
+{/* t:p 15d6281a7eef82f33e6c5523548d61d1c2a73335b7474df80d0e65cdcfb4d2c0 */}
 ### `idm/provision.nix`
 
 * **oauth2** `attrs` OAuth2/OIDC client templates contributed by service modules.
@@ -80,6 +88,7 @@ darkone.service.idm = {
 };
 ```
 
+{/* t:p 495357e55a7e1d771081a404062f4c0402f981ec805275bec7023064df97f9d7 */}
 ### `idm/replication.nix`
 
 * **replication** `raw` Replication facts of this node.

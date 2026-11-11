@@ -1,0 +1,32 @@
+---
+title: darkone.system.hardware
+sidebar:
+  label: "hardware"
+---
+
+{/* t:translated-from en */}
+{/* t:h 7cd6d67d18d6c779e92eb057f5533988dfd03b9bc82dee13e4073f3ef8a49734 */}
+
+{/* t:p 8163dc0aea4c6d94b0bf0952585c069776061354b4789bcc47cd3d49f7e03675 */}
+Améliorations de la configuration matérielle.
+
+Tous les micrologiciels sont chargés (`hardware.enableAllFirmware`), sauf sur une machine virtuelle&nbsp;: `just detect-hw` la détecte (`systemd-detect-virt --vm`) et définit `darkone.system.hardware.virtual` dans `hardware/detected-hardware.nix`. Un invité permet aussi à Zed de tourner sur son GPU émulé (`ZED_ALLOW_EMULATED_GPU`).
+
+{/* t:p 350a8bfe11b9f68f8333463a4b6d32ab7c8b432b1a82ea1836c9c6a9e354bd19 */}
+## Options
+
+* **enable** `bool` Active les optimisations matérielles
+* **enableIntel** `bool` Active les mises à jour du microcode Intel
+* **enableAmd** `bool` Active les mises à jour du microcode AMD
+* **virtual** `bool` Machine virtuelle, aucun micrologiciel chargé. Défini par `just detect-hw`
+
+```nix
+darkone.system.hardware = {
+  enable = false;
+  enableIntel = false;
+  enableAmd = false;
+  virtual = false;
+};
+```
+
+Source&nbsp;: [`modules/system/hardware.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/system/hardware.nix)

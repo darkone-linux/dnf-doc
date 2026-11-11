@@ -1,0 +1,46 @@
+---
+title: darkone.security.pam
+sidebar:
+  label: "pam"
+---
+
+{/* t:translated-from en */}
+{/* t:h 4dfab7e2d1758cb786844c7959bca2fa76e50a20e94446311f34206f48cadd77 */}
+
+{/* t:p 0f02c9a07409ef4c63532a74d096ef73aa1f8dae5a7318791191b461360beebc */}
+PAM : authentification et stockage des mots de passe (R67–R68). (wip)
+
+Couvre l'authentification PAM distante sécurisée (R67&nbsp;: SSSD, Kerberos, pam_faillock) et le stockage chiffré des mots de passe (R68&nbsp;: yescrypt).
+
+:::caution[Activation]
+L'option `enable` suit `darkone.system.security.enable` par défaut.
+Les règles (Rxx/Cxx) sont activées selon le niveau, la catégorie et les exclusions
+définis dans `darkone.system.security` (via `isActive`).
+:::
+
+:::note[Compléments]
+pam_faillock (anti brute-force) est configuré ici pour R67&nbsp;; complement.nix
+(C10) ne définit que les limites de session. La politique de complexité (R31) se trouve dans users.nix.
+:::
+
+:::danger[R67, pam_faillock verrouille réellement les comptes]
+Trois mots de passe erronés verrouillent le compte pendant 15 minutes par défaut, sur
+`login`, `su`, `sudo` et, via le substack `login`, l'écran de connexion GNOME (greeter). Gardez une session root ouverte lors du premier déploiement, et retenez la commande de déverrouillage&nbsp;: `faillock --user <login> --reset`. SSH est volontairement épargné afin qu'une session de secours par clé reste toujours ouverte.
+:::
+
+{/* t:p 24704ece8b0142d87af8c415d8982cf9ea3a62727ccfb02b00a01c704e2a9868 */}
+## Options
+
+* **enable** `bool` Activer le module PAM ANSSI, authentification et mots de passe (R67–R68).
+* **faillock.deny** `ints.positive` Tentatives échouées avant que pam_faillock ne verrouille le compte (R67).
+* **faillock.unlockTime** `ints.positive` Secondes pendant lesquelles un compte reste verrouillé (R67). Déverrouiller plus tôt avec `faillock --reset`.
+
+```nix
+darkone.security.pam = {
+  enable = false;
+  faillock.deny = 3;
+  faillock.unlockTime = 900;
+};
+```
+
+Source&nbsp;: [`modules/security/pam.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/security/pam.nix)

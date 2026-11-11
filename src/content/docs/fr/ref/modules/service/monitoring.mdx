@@ -1,0 +1,41 @@
+---
+title: darkone.service.monitoring
+sidebar:
+  label: "monitoring"
+---
+
+{/* t:translated-from en */}
+{/* t:h 01364a834a3d8f6b8ef17543a1702ad966d12b8880c7f3c932f61e6a5b9f3e08 */}
+
+{/* t:p b0202b055116bd5fa1204cbb0a5aaceb17780617aa453f5775fa9ff678079406 */}
+Supervision : tableaux de bord Grafana et exporteur par nœud.
+
+:::tip
+Grafana affiche les métriques collectées par le service `prometheus` (requis sur le même hôte, imposé par le générateur). Pour chaque zone :
+
+- Tous les nœuds avec le tag « monitoring-node » exécutent l'exporteur de nœud.
+- Le nœud avec le service « monitoring » exécute Grafana (et requiert `prometheus`).
+- Un seul hôte de supervision par zone est accepté.
+- Un tag « monitoring-node:[zone] » rattache un nœud au Prometheus de cette zone.
+:::
+
+Surveillance en lecture seule (`monitoring/fs-readonly.nix`) : chaque nœud exporte `dnf_filesystem_forced_readonly`, ses montages `rw` que le noyau a passés en lecture seule, derrière `FilesystemReadOnly`. Les montages `ro` voulus et les bind mounts n'apparaissent jamais ; le fichier vit sur tmpfs, il survit donc au disque défaillant.
+
+{/* t:p 3998a64018b782999d518e36ea203dc121438e9f9516000c5a633499e99a5094 */}
+## Options
+
+* **enable** `bool` Activer la supervision avec prometheus, grafana et l'exporteur de nœud
+* **isNode** `bool` Est un nœud de supervision
+* **kioskTarget** `str` Cible (relative, sans `/`) de la redirection automatique vers Grafana
+  depuis la racine du domaine de supervision. Remplacée par le module Loki
+  lorsqu'il est actif, pour pointer vers un tableau de bord d'accueil multi-sources.
+
+```nix
+darkone.service.monitoring = {
+  enable = false;
+  isNode = lib.hasAttrByPath [ "features" "monitoring-node" ] host;
+  kioskTarget = "d/dnf-monitoring-home/home?kiosk";
+};
+```
+
+Source : [`modules/service/monitoring.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/service/monitoring.nix)

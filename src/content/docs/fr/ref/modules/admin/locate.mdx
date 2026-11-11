@@ -1,0 +1,40 @@
+---
+title: darkone.admin.locate
+sidebar:
+  label: "locate"
+---
+
+{/* t:translated-from en */}
+{/* t:h 5b02846a4c5dbf209f5bf86dc1ddda41051e50b4e55bf527fb938643744ecc80 */}
+
+{/* t:p 7437940885c4eb755462d9ff473fc72044ea2d480ddcc9488d8657b8be391415 */}
+Localisateur d'hôtes de la flotte (`dnf-locate`) : ssh trouve un hôte où qu'il soit branché.
+
+Un nom de flotte se résout vers l'adresse personnelle de l'hôte. Une fois l'hôte itinérant (autre zone, ou à l'extérieur sur le tailnet), chaque `ssh nix@<host>` (colmena, `fleet-update`, `just enter`) viserait cette adresse morte. Activé sur un hôte administrateur, un `ProxyCommand` fait passer ces connexions par `dnf-locate`.
+
+Chemins testés, tous dérivés de la topologie :
+
+- `<host>` : adresse personnelle, essayée seule en premier ; le cas courant ne coûte qu'une recherche ;
+- `<host>.<zone domain>` : réservation que chaque zone détient pour les hôtes en visite ;
+- `<host>.tailnet.internal` : adresse du tailnet (les passerelles de zone la résolvent).
+
+Le premier chemin à répondre sur le port l'emporte.
+
+:::caution[Plages de la flotte uniquement]
+Un chemin alternatif ne compte que si son adresse se trouve dans sa propre plage (sous-réseau de zone, tailnet). Un enregistrement joker du domaine public résout n'importe quel nom, et le compte `nix` n'épingle aucune clé d'hôte : le déploiement atterrirait chez un inconnu.
+:::
+
+:::tip[Où est mon hôte ?]
+`dnf-locate --print <host>` affiche le chemin qui répond, ou échoue.
+:::
+
+{/* t:p 825a331365ddc291c219df1199e89ab9d7e26b96019aa745d7686d05451107a0 */}
+## Options
+
+* **enable** `bool` Achemine les connexions ssh vers les hôtes de la flotte via `dnf-locate` (adresse personnelle, réservations de zone, tailnet).
+
+```nix
+darkone.admin.locate.enable = config.darkone.admin.nix.enable;
+```
+
+Source : [`modules/admin/locate.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/admin/locate.nix)

@@ -4,6 +4,10 @@ sidebar:
   label: "yubikey"
 ---
 
+{/* t:main */}
+{/* t:h 4eadece33877cea23d1f20cea8bce4ebf3d153babdfdebcce477e1290e72d259 */}
+
+{/* t:p 7ed1dba5ed14db68a2b83ad7a472743fcc58541e933b18fa4b175a2b2ac2750e */}
 YubiKey strong authentication: fleet-wide PAM U2F + declarative FIDO2 LUKS.
 
 One physical enrollment per (user, key) on the admin host — `just yubikey
@@ -65,6 +69,7 @@ keyring prompts at session start. Remedy: `darkone.home.gnome.passwordlessKeyrin
 on by default for non-advanced users of a LUKS host.
 :::
 
+{/* t:p 2255a194b13cc3dc758f2a82b31cf2f64fa6d5de65e907235201002a59f0b371 */}
 ## Options
 
 * **enable** `bool` YubiKey authentication (default: enabled when usr/secrets/yubikeys.json exists)

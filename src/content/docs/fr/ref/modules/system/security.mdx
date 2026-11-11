@@ -1,0 +1,115 @@
+---
+title: darkone.system.security
+sidebar:
+  label: "security"
+---
+
+{/* t:translated-from en */}
+{/* t:h 19234b0c4d0e7de55e1d47de9e9f5affb4f4944c47bef8a3a5f2717efaa5b6a2 */}
+
+{/* t:p 36fe60236f7284bb1b9365f8d597f706f5ad4d1308547d5c7c7639532bf9ff79 */}
+Durcissement système ANSSI BP-028 v2.0 (GNU/Linux). (en cours)
+
+Module recommandé, activé dans certains profils d'hôte ou manuellement selon les besoins. Applique progressivement les recommandations de l'ANSSI selon le niveau choisi et la catégorie de machine. Chaque profil d'hôte définit son niveau et sa catégorie&nbsp;:
+
+:::danger[Module en cours de développement]
+- Affiner et tester les options, fonctionnalités, etc.
+- Créer le « checkScript », un outil d'introspection de la configuration de sécurité.
+- Configuration locale simple pour les réglages propres au matériel et aux besoins.
+:::
+
+```nix
+darkone.system.security = {
+  level    = "intermediary"; # minimal | intermediary | reinforced | high
+  category = "server";       # base | client | server
+};
+```
+
+Les règles incompatibles avec l'environnement sont exclues par tag&nbsp;:
+
+```nix
+darkone.system.security.excludes = [ "needs-jit" "needs-hibernation" ];
+```
+
+Une règle précise peut être contournée avec une justification obligatoire&nbsp;:
+
+```nix
+darkone.system.security.exceptions = {
+  R9.rationale = "Docker rootless required during development.";
+};
+```
+
+:::note[Niveau de durcissement ANSSI]
+- `minimal`      : socle commun, tout système (par défaut).
+- `intermediary` : recommandé pour presque tous les systèmes.
+- `reinforced`   : systèmes sensibles ou multi-locataires.
+- `high`         : compétences dédiées et budget ; implique la recompilation du noyau
+                   (tag `kernel-recompile`) si non exclue.
+:::
+
+:::note[Catégorie de machine]
+- `base`   : règles universelles, toujours appliquées (par défaut).
+- `client` : poste de travail (interface graphique, USB, session, verrouillage).
+- `server` : serveur (réseau durci, journalisation centralisée, services exposés).
+
+Indépendant de `host.profile` : à définir explicitement dans chaque profil d'hôte.
+:::
+
+:::note[Tags d'exclusion]
+- `kernel-recompile`             : ignore R15–R27, C1 (pas de noyau personnalisé).
+- `disable-kernel-module-loading`: ignore R10 (peut casser des périphériques).
+- `no-ipv6`                      : ignore R22 (options noyau IPv6). L'abandon d'IPv6
+                                   lui-même (R13) est l'option
+                                   `darkone.security.kernel-params.disableIpv6`.
+- `no-mac`                       : ignore R37, R45 (pas de MAC active).
+- `no-sealing`                   : ignore R76, R77 (pas de HIDS/AIDE).
+- `no-auditd`                    : ignore R73 (auditd non configurable).
+- `embedded`                     : assouplit les contraintes sur /var, /home, etc.
+- `needs-jit`                    : autorise un W^X assoupli (Java, .NET, V8, Wasm).
+- `needs-kexec`                  : conserve kexec pour kdump.
+- `needs-binfmt`                 : conserve binfmt_misc (Java, qemu-static).
+- `needs-hibernation`            : conserve la mise en veille prolongée (portables).
+- `needs-usb-hotplug`            : désactive USBGuard / deny_new_usb.
+:::
+
+:::note[Exceptions par règle]
+Une règle faisant l'objet d'une exception est exclue de l'activation, même si le niveau la couvrirait.
+Justification obligatoire dans `rationale`. Les exceptions de l'hôte s'ajoutent aux exceptions
+structurelles SELinux (R46–R49), sans jamais les remplacer.
+:::
+
+:::caution[Effets de bord]
+Certaines règles peuvent casser des usages courants : `noexec /tmp` (R28), SMT désactivé (R8, à conserver
+avec `darkone.security.kernel-params.disableSmt = false`), modules non signés (R18), conteneurs sans
+privilèges root (R9), JIT (R63). Consultez les commentaires `sideEffects` de chaque fichier thématique
+avant d'élever le niveau sur un système de production.
+:::
+
+{/* t:p 1eabf8cfb65ad35001fc382d223464c5780c26361cf7d3c301276b58c112d6e6 */}
+## Options
+
+* **enable** `bool` Active le module de durcissement ANSSI BP-028 v2.0.
+* **level** `enum [ "minimal" "intermediary" "reinforced" "high" ]` Niveau de durcissement ANSSI visé.
+* **category** `enum [ "base" "client" "server" ]` Catégorie de machine qui sélectionne les sous-ensembles de règles.
+* **excludes** `listOf str` Tags qui désactivent des groupes entiers de règles.
+* **exceptions** `attrs` Exceptions par règle avec justification obligatoire. Fusionnées avec les exceptions structurelles SELinux (R46–R49).
+* **adminMailbox** `str` Adresse e-mail de l'administrateur (sudo R39, alias MTA R75).
+* **useHardenedKernel** `bool` Utilise linuxPackages_hardened (R60, C1) au lieu du noyau par défaut.
+* **allowedActiveUsers** `listOf str` Comptes humains autorisés à s'authentifier (R30). Par défaut, tous les utilisateurs
+  déclarés dans config.yaml (host.users) plus le compte de déploiement du framework `nix`. Les comptes désactivés
+  (sans identifiant de mot de passe) et les comptes de service (non utilisateurs normaux) n'ont pas besoin d'être listés.
+
+```nix
+darkone.system.security = {
+  enable = false;
+  level = "minimal";
+  category = "base";
+  excludes = [ ];
+  exceptions = { };
+  adminMailbox = "admin@exemple.fr";
+  useHardenedKernel = false;
+  allowedActiveUsers = [ ];
+};
+```
+
+Source&nbsp;: [`modules/system/security.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/system/security.nix)

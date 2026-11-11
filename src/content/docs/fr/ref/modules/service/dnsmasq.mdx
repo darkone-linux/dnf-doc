@@ -1,0 +1,33 @@
+---
+title: darkone.service.dnsmasq
+sidebar:
+  label: "dnsmasq"
+---
+
+{/* t:translated-from en */}
+{/* t:h dd10364bc387fb4049b250e71d51f457d7f10fe547954a4886e205be8312a5a1 */}
+
+{/* t:p a7977819d8ee9bdc126bd760926eb6f9411722e1c7cca98b307a46ff19079c8f */}
+dnsmasq préconfiguré pour la passerelle locale ou le routeur.
+
+:::note
+Cette configuration lit la section `network` du fichier `config.yaml`.
+C'est la fonctionnalité essentielle de la passerelle locale.
+:::
+
+:::tip[Hôtes de passage depuis une autre zone]
+Chaque zone réserve `<ipPrefix>.6.0/24` pour les hôtes dont le domicile est ailleurs.
+Le générateur écrit, dans `zone.extraDnsmasqSettings`, un `dhcp-host` par adresse MAC connue de la flotte qui n'est pas native ici, plus un `host-record` liant `<host>.<this-zone-domain>` à cette adresse. Ainsi, une machine branchée dans la mauvaise zone (installation d'une passerelle, ordinateur portable itinérant) obtient quand même un bail prévisible et un nom. Son nom court continue de résoudre vers son adresse d'origine.
+`zone.roaming` expose la même table à l'outillage d'installation.
+:::
+
+{/* t:p fa0b8fbeb5ebe0b800260b61ecf7091b9d705bcd446aff556d3eac6372c4fd4f */}
+## Options
+
+* **enable** `bool` Active le service dnsmasq local
+
+```nix
+darkone.service.dnsmasq.enable = false;
+```
+
+Source : [`modules/service/dnsmasq.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/service/dnsmasq.nix)

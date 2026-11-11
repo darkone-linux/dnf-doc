@@ -1,0 +1,26 @@
+---
+title: darkone.service.forgejo
+sidebar:
+  label: "forgejo"
+---
+
+{/* t:translated-from en */}
+{/* t:h 3cff5a32537b8411aa929a13067a1cea9524109cde87e626baab7fa228e1e5fe */}
+
+{/* t:p 4c12bc675357385748b78f27b1f0cf21ea0833693b767396ed3c99ff81d1a5fe */}
+Une forge git Forgejo entièrement configurée.
+
+:::note[Accès SSH]
+Les push et pull en SSH passent par `AuthorizedKeysCommand`, et non par le fichier `authorized_keys` que Forgejo écrit dans son répertoire personnel&nbsp;: `core.nix` définit `authorizedKeysInHomedir = false`, donc sshd ne lit jamais ce fichier.
+:::
+
+{/* t:p 4fdbe7619701091932cf7c03d03138ab59c6f4aece06915e35e036ecedb56f6c */}
+## Options
+
+* **enable** `bool` Active le service Forgejo local
+
+```nix
+darkone.service.forgejo.enable = false;
+```
+
+Source : [`modules/service/forgejo.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/service/forgejo.nix)

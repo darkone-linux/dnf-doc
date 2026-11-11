@@ -1,0 +1,41 @@
+---
+title: darkone.host.hcs
+sidebar:
+  label: "host.hcs"
+---
+
+{/* t:translated-from en */}
+{/* t:h cd147fba5fc3846dd1c8e7b8586535216ad526ebd43a9d019299fc04966116e6 */}
+
+{/* t:p 02faa1aa79115773f276c37827ad91e2643cbde721472787a9d66eabbd6086c8 */}
+The main headscale coordination server.
+
+:::tip[Un serveur headscale prêt à l'emploi !]
+Le réseau est configuré dans le fichier `etc/config.yaml`.
+Les services activés (authentification, etc.)
+sont configurés automatiquement avec une plomberie réseau cohérente sur votre
+réseau global.
+
+Alias zsh « h » pour « headscale ».
+:::
+
+:::caution[SSH public]
+Le port 22 est ouvert sur toutes les interfaces, Internet compris — seul hôte de la
+flotte dans ce cas : il héberge le plan de contrôle du tailnet, donc l'accès
+ne doit pas dépendre du tailnet.
+:::
+
+{/* t:p e4320adc8d70f7e437d126a521798ea43a376f5b9b20f57005390c9d8829d894 */}
+## Options
+
+* **enable** `bool` Activer le serveur de coordination headscale
+* **enableClient** `bool` Activer le client tailscale sur le nœud HCS (recommandé pour héberger des services)
+
+```nix
+darkone.host.hcs = {
+  enable = false;
+  enableClient = true;
+};
+```
+
+Source : [`modules/mixin/host/hcs.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/mixin/host/hcs.nix)

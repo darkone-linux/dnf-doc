@@ -1,0 +1,40 @@
+---
+title: darkone.service.homepage
+sidebar:
+  label: "homepage"
+---
+
+{/* t:translated-from en */}
+{/* t:h c53e14e691f90dff791360aa10e9fc8f83e206278151aa2cc9f723676749cbf8 */}
+
+{/* t:p 9829a8148ff3525f4c8c006af44d1a8a0d8884f41efc8ee5588fd9a26b25a2c0 */}
+Tableau de bord d'accueil configurable dynamiquement pour votre réseau local.
+
+:::note
+Pour chaque service DNF activé, une entrée est automatiquement ajoutée à la configuration de la page d'accueil.
+:::
+
+{/* t:p 8fbfdd8988c5b38577b4a0be964acf1436a7f4974b6b6534933bbb24f9df1feb */}
+## Options
+
+* **enable** `bool` Activer le tableau de bord homepage + httpd + host
+* **protect** `bool` Restreindre homepage aux utilisateurs Kanidm authentifiés (forward auth oauth2-proxy)
+* **localServices** `listOf attrs` Services à ajouter dans la section Applications locales
+* **globalServices** `listOf attrs` Services communs à tout le réseau &amp; accessibles publiquement
+* **remoteServices** `listOf attrs` Services à ajouter dans la section Applications distantes
+* **bookmarks** `listOf attrs` Remplace les signets (liens) par défaut
+* **widgets** `listOf attrs` Remplace les widgets par défaut
+
+```nix
+darkone.service.homepage = {
+  enable = false;
+  protect = true;
+  localServices = [ ];
+  globalServices = [ ];
+  remoteServices = [ ];
+  bookmarks = [ ];
+  widgets = [ ];
+};
+```
+
+Source : [`modules/service/homepage.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/service/homepage.nix)

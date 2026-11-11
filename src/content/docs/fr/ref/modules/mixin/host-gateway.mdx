@@ -1,0 +1,102 @@
+---
+title: darkone.host.gateway
+sidebar:
+  label: "host.gateway"
+---
+
+{/* t:translated-from en */}
+{/* t:h 57650a141a8d13c3ce94a11b0b397a48eae32b30699c65130ce851a49f48dc92 */}
+
+{/* t:p ea3311dc4a78f8188480a49d422a1306b2916466cfc0d8ed6a343671c869e323 */}
+La passerelle principale (routeur) d'une zone de réseau local.
+
+:::tip[Une passerelle prête à l'emploi !]
+La passerelle se configure dans le fichier `etc/config.yaml`.
+Les services activés en plus (homepage, adguardhome, forgejo, nix-cache...)
+sont configurés automatiquement, avec un réseau cohérent sur la passerelle et
+toutes les machines du réseau local.
+:::
+
+:::caution[SSH public jusqu'à la prise en charge par le tailnet]
+`wanSsh.enable` ouvre sshd sur l'interface WAN (clé uniquement, fail2ban), pour
+installer une passerelle distante jointe via une redirection de port de la box.
+Par défaut : activé tant que headscale est actif et que la zone ne déclare pas
+`gateway.vpn.ipv4` ; la déclaration puis l'application ferment le port.
+L'initrd (déverrouillage LUKS, 2222) n'a pas de pare-feu : cette option ne s'y
+applique pas.
+:::
+
+:::caution[Trafic routé filtré]
+`filterForward = true` : seuls les échanges LAN &lt;-&gt; WAN et LAN &lt;-&gt; tailnet
+passent. Tout le reste est rejeté, à ajouter dans
+`networking.firewall.extraForwardRules`.
+:::
+
+Sous-module (`gateway/`) : `backup-links.nix`, liens de secours.
+
+{/* t:p 8dc5e1d15465a2b98b32ad3c2d2071ad166c7474eeda87656162136d717bc1da */}
+## Liens de secours (`backup-links.nix`)
+
+:::tip[Liens de secours : Internet en mode dégradé]
+`backupLinks` ajoute des liaisons (port ethernet libre, client wifi comme un
+partage de connexion téléphone) vers lesquelles la zone bascule quand le WAN
+perd son lien, son bail DHCP ou Internet :
+
+```nix
+darkone.host.gateway.backupLinks.phone = {
+  type = "wifi";          # SSID + passphrase: sops `backup-link/phone/{ssid,psk}`
+  interface = "wlp4s0";
+  priority = 10;          # lower = preferred among backups
+};
+```
+
+Les métriques de route orientent la route par défaut : `dnf-uplink-monitor`
+envoie un ping par chaque liaison, pénalise celle qui n'a pas Internet et
+garde en probation une liaison revenue d'une panne jusqu'à ce qu'elle réponde.
+Une liaison wifi de secours garde sa radio éteinte tant qu'aucune liaison
+préférée n'atteint Internet ; une liaison ethernet reste active, en attente.
+Détails : `lib/uplinks.nix`.
+:::
+
+{/* t:p d2ce717be6beea9c3089c5faa799db686c84873126f476ea42657b587d6fbe45 */}
+## Options
+
+* **enable** `bool` Active les fonctions de passerelle pour l'hôte courant (dhcp, dns, proxy, etc.)
+* **wanSsh.enable** `bool` SSH public sur l'interface WAN, pour joindre une passerelle distante pas encore sur le tailnet
+
+```nix
+darkone.host.gateway = {
+  enable = false;
+  wanSsh.enable = dnfLib.gatewayAwaitsTailnet network zone;
+};
+```
+
+{/* t:p 8ae091682909fbd4e45232a107652981060571a160868cf3fc2094b7567dc1aa */}
+### `gateway/backup-links.nix`
+
+* **backupLinks** `attrs` Liaisons de secours, utilisées quand le WAN n'a plus de lien, de bail ou d'Internet. Nom : `[a-z][a-z0-9-]*`.
+  * **type** `enum [ "ethernet" "wifi" ]` `ethernet` : client DHCP sur un port libre, toujours actif. `wifi` :
+    client WPA2/WPA3, radio éteinte (rfkill) tant qu'aucune liaison préférée
+    n'atteint Internet ; le SSID et la phrase de passe sont lus dans sops
+    (`backup-link/<name>/ssid`, `backup-link/<name>/psk`).
+  * **interface** `str` Interface portant la liaison : ni le WAN, ni un port LAN, ni une radio hostapd.
+  * **priority** `ints.between 1 99` Plus la valeur est basse, plus la liaison de secours est préférée (métrique de route
+    200 + 10 × priority, le WAN restant à 100).
+* **linkCheck.targets** `nonEmptyListOf str` Adresses IP pingées via chaque liaison ; une réponse suffit. Adresses IP uniquement : la sonde ne doit pas dépendre du DNS.
+* **linkCheck.interval** `ints.positive` Secondes entre deux cycles de sonde.
+* **linkCheck.failAfter** `ints.positive` Cycles échoués avant qu'une liaison soit pénalisée.
+* **linkCheck.recoverAfter** `ints.positive` Cycles réussis avant qu'une liaison pénalisée soit rétablie (hystérésis).
+
+```nix
+darkone.host.gateway = {
+  backupLinks.type = null;
+  backupLinks.interface = "wlp4s0";
+  backupLinks.priority = 10;
+  linkCheck.targets = internetProbeTargets;
+  linkCheck.interval = 10;
+  linkCheck.failAfter = 3;
+  linkCheck.recoverAfter = 6;
+};
+```
+
+Source : [`modules/mixin/host/gateway.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/mixin/host/gateway.nix)

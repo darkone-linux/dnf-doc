@@ -1,0 +1,42 @@
+---
+title: darkone.home.games
+sidebar:
+  label: "games"
+---
+
+{/* t:translated-from en */}
+{/* t:h 36b02a6b2422847af6fccd411d52b79d7d420b5dcf64b09fd104c2de3bb7f19a */}
+
+{/* t:p 4167aa5b3b021a5ed19b29f390c904d758ab4dab769663154e68d34973c5a9c8 */}
+Plusieurs paquets de jeux graphiques.
+
+{/* t:p 9f27f833121ac76bcd369d524507b4d2379914dcad33451321d255300f86a7dd */}
+## Options
+
+* **enable** `bool` Activer les jeux
+* **enableBaby** `bool` Jeux pour bébés (&lt;=6 ans)
+* **enableChild** `bool` Jeux pour enfants (6-12 ans)
+* **enableTeenager** `bool` Jeux pour adolescents et adultes (&gt;=12 ans)
+* **enable3D** `bool` Jeux 3D supplémentaires
+* **enableCli** `bool` Jeux en ligne de commande
+* **enableStk** `bool` SuperTuxKart (uniquement)
+* **enableMore** `bool` Jeux secondaires supplémentaires dans chaque catégorie
+* **excludePackages** `listOf package` Jeux des catégories activées à ne pas installer, par nom.
+* **enableGnome** `bool` Activer les jeux GNOME populaires
+
+```nix
+darkone.home.games = {
+  enable = false;
+  enableBaby = false;
+  enableChild = false;
+  enableTeenager = false;
+  enable3D = false;
+  enableCli = false;
+  enableStk = false;
+  enableMore = false;
+  excludePackages = [ ];
+  enableGnome = true;
+};
+```
+
+Source: [`home/modules/games.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/home/modules/games.nix)

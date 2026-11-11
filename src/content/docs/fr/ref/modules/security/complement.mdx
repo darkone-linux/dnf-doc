@@ -1,0 +1,77 @@
+---
+title: darkone.security.complement
+sidebar:
+  label: "complement"
+---
+
+{/* t:translated-from en */}
+{/* t:h 6eb50052a351cb09d702ffe68a11f765450c0ed8bc1b11740dba77616c065b07 */}
+
+{/* t:p 122c18c49c6cac4d38ed1abf4f9cb101e556fc6dd2f74be15136c4f68f95172d */}
+Mesures complémentaires transversales : annexe A (C1–C12). (en cours)
+
+Ces mesures n'ont pas de numéro ANSSI, mais elles sont essentielles à l'esprit du guide.
+Couvre les correctifs linux-hardened (C1), le LSM Lockdown (C2), USBGuard (C3), nftables en refus par défaut (C4), SSH durci (C5), LUKS2 (C6), NTP/NTS (C7), DNS sécurisé (C8), core dumps désactivés (C9), anti-brute force PAM (C10), bannières légales (C11) et restriction de cron/at (C12).
+
+:::caution[Activation]
+L'option `enable` suit `darkone.system.security.enable` par défaut.
+Les règles (Rxx/Cxx) sont activées selon le niveau, la catégorie et les exclusions définies dans `darkone.system.security` (via `isActive`).
+:::
+
+:::note[Niveau du LSM Lockdown (C2)]
+- `none` : pas de Lockdown.
+- `integrity` : interdit les modifications du noyau depuis l'espace utilisateur.
+- `confidentiality` : idem, plus interdit la lecture des secrets du noyau.
+:::
+
+:::caution[C2 : LSM Lockdown]
+`lockdown=confidentiality` interdit kexec, les écritures sur `/dev/mem`, MSR et la mise en veille prolongée.
+Casse `dmidecode` sur certaines zones, `flashrom` et `i2c-tools`.
+:::
+
+:::caution[C4 : Filtrage des sorties]
+La politique de refus par défaut des sorties casse les outils qui joignent des CDN (curl, téléchargements du noyau).
+Requis&nbsp;: un proxy HTTP(S) de sortie contrôlé.
+:::
+
+:::caution[C5 : SSH durci]
+Les tunnels, le transfert d'agent et X11 sont désactivés. `ssh -J` aussi&nbsp;: ProxyJump ouvre un canal `direct-tcpip`, exactement ce que refuse `AllowTcpForwarding`.
+L'accès d'administration se fait en direct sur le tailnet, jamais par rebond.
+Ce module remplace `core.nix` pour SSH.
+:::
+
+{/* t:p c8313a82379cdff50fecaacc57c125a0b4f080e4b047ba99167594c88b778f41 */}
+## Options
+
+* **enable** `bool` Active les mesures ANSSI complémentaires (C1–C12).
+* **lockdownLevel** `enum [ "none" "integrity" "confidentiality" ]` Niveau du LSM Lockdown (C2)
+* **lsmStack** `listOf str` Ordre de la pile LSM (C2, R11, R20). Modifie boot.kernelParams lsm=...
+* **ntpServers** `listOf str` Serveurs NTP/NTS (C7).
+* **useNts** `bool` Active NTS (Network Time Security) pour l'authentification NTP (C7).
+* **sshBanner** `str` Bannière SSH affichée avant l'authentification (C11).
+* **cronAllowedUsers** `listOf str` Utilisateurs autorisés à planifier des tâches cron (C12).
+* **atAllowedUsers** `listOf str` Utilisateurs autorisés à planifier des tâches at (C12). Reprend cronAllowedUsers par défaut.
+* **egressAllowlist** `listOf str` Adresses IPv4/IPv6 ou CIDR autorisées en sortie sous la politique de refus par défaut renforcée de C4. Une liste vide conserve la politique, mais seuls le loopback et le trafic établi/lié passent (proxy requis).
+
+```nix
+darkone.security.complement = {
+  enable = false;
+  lockdownLevel = "integrity";
+  lsmStack = [ ];
+  ntpServers = [ ];
+  useNts = true;
+  sshBanner = ''
+        ╔═════════════════════════════════════════════════════════╗
+        ║                    DNF NETWORK NODE                     ║
+        ║             Restricted and monitored access.            ║
+        ║ Unauthorized access may result in criminal prosecution  ║
+        ║ under Articles 323-1 to 323-8 of the French Penal Code. ║
+        ╚═════════════════════════════════════════════════════════╝
+      '';
+  cronAllowedUsers = [ ];
+  atAllowedUsers = [ ];
+  egressAllowlist = [ ];
+};
+```
+
+Source : [`modules/security/complement.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/security/complement.nix)

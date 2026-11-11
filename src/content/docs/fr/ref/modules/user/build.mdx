@@ -1,0 +1,38 @@
+---
+title: darkone.user.build
+sidebar:
+  label: "build"
+---
+
+{/* t:translated-from en */}
+{/* t:h 211fa2058fca5a3e5f735d08752a28f2f6c8890d87cd485d4992188f3859eec8 */}
+
+{/* t:p 7c8d14408abfe9beea99209ce46536ecea347fdaa6175bba3767a3257df8355f */}
+Construit les utilisateurs NixOS (pas home-manager).
+
+:::danger[Module requis]
+Ce module est activé par défaut (requis par la configuration DNF).
+:::
+
+:::note[Refus SSH par groupe logique]
+`sshDeniedGroups` (par défaut `guests`) se transforme en `DenyUsers` sur chaque hôte&nbsp;: un membre garde sa session locale et perd l'accès SSH.
+:::
+
+:::note[Registre authorized_keys]
+`usr/users/<login>/authorized_keys` (espace de travail consommateur, versionné, format OpenSSH) alimente `openssh.authorizedKeys` sur chaque hôte de l'utilisateur. Fichier absent = aucune clé&nbsp;; compte désactivé = fichier ignoré. Les clés privées ne sont jamais dans l'espace de travail&nbsp;: elles restent dans le coffre Vaultwarden de chaque utilisateur (cf. `rbw`).
+:::
+
+{/* t:p d3628822f50cb3e3e24068a23db195c448fb5139047a709e9cec1441131cf8f8 */}
+## Options
+
+* **enable** `bool` Construction des utilisateurs communs (activé par défaut)
+* **sshDeniedGroups** `listOf str` Groupes logiques (`config.yaml`) dont les membres ne doivent jamais ouvrir de session SSH. Transformés, par hôte, en `services.openssh.settings.DenyUsers`.
+
+```nix
+darkone.user.build = {
+  enable = true;
+  sshDeniedGroups = [ ];
+};
+```
+
+Source : [`modules/user/build.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/user/build.nix)

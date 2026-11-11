@@ -4,6 +4,10 @@ sidebar:
   label: "luks"
 ---
 
+{/* t:main */}
+{/* t:h f21b75d9a4db660aea8920ebe301b1486e92f04151805033a75ab634106a2ad2 */}
+
+{/* t:p 7b3d87c46a1eea2aa293464fd1f27c58d0b52abcf33c936efdb69b45acaabf0f */}
 LUKS passphrase policy &amp; remote unlock: shared + per-host passphrases, initrd SSH.
 
 Completes `modules/system/yubikey.nix` (FIDO2 keyslots) with the passphrase
@@ -84,6 +88,7 @@ passphrases: the module warns when the projected total nears the limit.
 
 Sub-module (`luks/`): `wan-report.nix`, WAN address report to the HCS.
 
+{/* t:p e2a47f56f1d721b86794a9350d0b88e9effb648ed2af837b293fa74ab7eec09e */}
 ## WAN report (`wan-report.nix`)
 
 A zone gateway that reboots may come back on a new public address, waiting
@@ -103,6 +108,7 @@ A key the HCS does not know yet is refused, and fail2ban bans the zone
 address after 3 refusals. The initrd retries a refused key every 15 min only.
 :::
 
+{/* t:p 87520768c17c45c2a1da76bee34fa87b456bbdc01e291a38ae5cb0922f31a671 */}
 ## Options
 
 * **enable** `bool` Fleet LUKS passphrase policy (inert until `just luks <host>` provisions the host)
@@ -126,6 +132,7 @@ darkone.system.luks = {
 };
 ```
 
+{/* t:p 3f0fb70cb190d7543d3af6a246322e0fdca814d60e665f412287e1b6cfe75f8c */}
 ### `luks/wan-report.nix`
 
 * **enable** `bool` Zone gateways report their WAN address to the HCS, from the initrd and the booted system (`just unlock` reads it)
