@@ -37,6 +37,14 @@ export default {
     'changelog/index.mdx',
   ],
 
+  // Logical paths whose frontmatter holds identifiers only (option path, module
+  // name): copied as is, never sent to an agent that might translate a label
+  // such as `games` or `office`. Module pages of the generated reference, not
+  // the category indexes (`<category>/index.mdx`), whose title is prose.
+  verbatimHeaders: [
+    /^ref\/modules\/[^/]+\/(?!index\.mdx$)[^/]+\.mdx$/,
+  ],
+
   // Logical paths (language-stripped) excluded from tagging/translation.
   // Example: skip the auto-generated module reference.
   exclude: [

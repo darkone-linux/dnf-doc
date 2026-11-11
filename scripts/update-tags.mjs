@@ -7,13 +7,16 @@
 // - MAIN files get t:main + t:h + a t:p hash before every paragraph.
 // - Newly-tracked translated files only get the t:translated-from tag (NO hashes;
 //   that is translate.mjs's job). Existing hashes are preserved.
+// - A translated file whose source page is gone is removed (lib/reconcile.mjs,
+//   isOrphan): a deleted or regenerated-elsewhere page takes its translations.
 // - Idempotent: a file is only rewritten when its serialization changes.
 
-import { readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync, unlinkSync } from 'node:fs';
 import config from './translate.config.mjs';
 import { resolveDocsDir } from './lib/paths.mjs';
 import { listLangs, buildFileMap } from './lib/fsmap.mjs';
 import { parseDoc, serializeDoc, computeMainHashes } from './lib/mdx-doc.mjs';
+import { isOrphan } from './lib/reconcile.mjs';
 
 const DRY = process.argv.slice(2).some((a) => ['--check', '-n', '--dry-run'].includes(a));
 const docsDir = resolveDocsDir(config.docsDir);
@@ -53,13 +56,21 @@ function writeIfChanged(path, text, doc) {
 function main() {
   const langs = listLangs(docsDir);
   const fileMap = buildFileMap(docsDir, langs, config.exclude);
-  let written = 0, mains = 0, translated = 0;
+  let written = 0, mains = 0, translated = 0, removed = 0;
 
   for (const [logical, byLang] of fileMap) {
     const present = Object.entries(byLang).map(([lang, path]) => {
       const text = readFileSync(path, 'utf8');
       return { lang, path, text, doc: parseDoc(text) };
     });
+    if (isOrphan(present)) {
+      for (const e of present) {
+        if (!DRY) unlinkSync(e.path);
+        removed++;
+        console.log(`  orphan    ${e.lang}/${logical} (${e.doc.translatedFrom} source removed)`);
+      }
+      continue;
+    }
     const mainLang = decideMain(present, langs, config.mainLang, logical);
 
     for (const e of present) {
@@ -97,7 +108,7 @@ function main() {
 
   console.log(
     `\n[update-tags]${DRY ? ' (dry-run)' : ''} langs=${langs.join(',')} ` +
-    `mains=${mains} translated=${translated} written=${written}`,
+    `mains=${mains} translated=${translated} written=${written} removed=${removed}`,
   );
 }
 

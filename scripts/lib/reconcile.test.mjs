@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { reconcile } from './reconcile.mjs';
+import { reconcile, isOrphan } from './reconcile.mjs';
 
 const main = {
   headerHash: 'H1',
@@ -67,4 +67,26 @@ test('header change is detected', () => {
   const r = reconcile(main, trans, { adoptExisting: true });
   assert.equal(r.headerNeeds, true);
   assert.deepEqual(r.paragraphs.map((p) => p.needs), [false, false]);
+});
+
+test('verbatim header: never sent to an agent, flagged for a plain copy', () => {
+  const r = reconcile(main, null, { verbatimHeader: true });
+  assert.equal(r.headerNeeds, false);
+  assert.equal(r.headerVerbatim, true);
+  assert.deepEqual(r.paragraphs.map((p) => p.needs), [true, true]);
+  assert.equal(reconcile(main, null, {}).headerVerbatim, false);
+});
+
+test('orphan: every file translates a language that has no file left', () => {
+  const tr = (lang, from) => ({ lang, doc: { role: 'translated', translatedFrom: from } });
+  const mainFile = (lang) => ({ lang, doc: { role: 'main', translatedFrom: null } });
+  assert.equal(isOrphan([tr('fr', 'en')]), true);
+  assert.equal(isOrphan([tr('fr', 'en'), tr('es', 'en')]), true);
+  // Its source is still there, or it is (or may be) a source itself.
+  assert.equal(isOrphan([mainFile('en'), tr('fr', 'en')]), false);
+  assert.equal(isOrphan([mainFile('fr')]), false);
+  assert.equal(isOrphan([{ lang: 'fr', doc: { role: null, translatedFrom: null } }]), false);
+  // Untagged source next to its translation (a codegen'd main lost its tags).
+  assert.equal(isOrphan([{ lang: 'en', doc: { role: null } }, tr('fr', 'en')]), false);
+  assert.equal(isOrphan([]), false);
 });

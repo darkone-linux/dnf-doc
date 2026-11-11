@@ -143,10 +143,13 @@ function planJobs() {
         const allowOverwrite = FORCE || (config.regenerate || []).includes(logical);
         // A regenerated path is rebuilt from its main: its untracked content
         // (eg. the old main after a source-language flip) is never adopted.
-        const rec = reconcile(doc, tDoc, { ...config, adoptExisting: config.adoptExisting && !allowOverwrite });
+        const verbatimHeader = (config.verbatimHeaders || []).some((re) => re.test(logical));
+        const rec = reconcile(doc, tDoc, {
+          adoptExisting: config.adoptExisting && !allowOverwrite, verbatimHeader,
+        });
         // --force re-translates everything (header + every paragraph), not just
         // the conflict-guard override — useful to refresh anchors/wording.
-        if (FORCE) { rec.headerNeeds = true; for (const p of rec.paragraphs) p.needs = true; }
+        if (FORCE) { rec.headerNeeds = !rec.headerVerbatim; for (const p of rec.paragraphs) p.needs = true; }
         const paraJobs = rec.paragraphs.filter((p) => p.needs);
         jobs.push({
           logical, mainLang, tgt, tPath, mainDoc: doc, tDoc, rec, paraJobs,
@@ -209,7 +212,10 @@ function writeTranslated(job, got) {
   let frontmatter;
   let headerHash = mainDoc.headerHash;
 
-  if (job.headerNeeds) {
+  if (rec.headerVerbatim) {
+    // Identifiers only (config.verbatimHeaders): the source frontmatter, as is.
+    frontmatter = swapLang(mainDoc.frontmatter, tgt);
+  } else if (job.headerNeeds) {
     if (got && got.header) frontmatter = swapLang(rewriteLinks(got.header, mainLang, tgt), tgt);
     else { frontmatter = swapLang(mainDoc.frontmatter, tgt); headerHash = null; } // retry next run
   } else {

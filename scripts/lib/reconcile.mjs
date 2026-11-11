@@ -7,16 +7,36 @@ import { paragraphHashes } from './mdx-doc.mjs';
 
 // mainDoc: { headerHash, paragraphs:[{hash, content}] }  (content = source text)
 // transDoc: parsed translated doc or null (when the file does not exist yet)
-// opts: { adoptExisting }
+// opts: { adoptExisting, verbatimHeader }
 // Returns: {
 //   paragraphs: [{ hash, content, src, needs }],  // ordered like main
 //   headerNeeds: bool,
+//   headerVerbatim: bool, // frontmatter of identifiers only: copied, never
+//                         // sent to an agent (so headerNeeds stays false)
 //   adopt: bool,        // existing manual translation adopted as-is
 //   newFile: bool,
 //   conflict: bool,     // existing UNTRACKED translation whose structure diverges
 //                       // from the main (overwriting would destroy manual work)
 // }
 export function reconcile(mainDoc, transDoc, opts = {}) {
+  const rec = reconcileContent(mainDoc, transDoc, opts);
+  const headerVerbatim = Boolean(opts.verbatimHeader);
+  return { ...rec, headerNeeds: rec.headerNeeds && !headerVerbatim, headerVerbatim };
+}
+
+// A logical path whose every file is a translation of a language that has no
+// file left: the source page was removed (or regenerated elsewhere, like a
+// module reference page), so its translations go with it. Without this, the
+// leftover would be promoted to main and translated back, resurrecting the page.
+// present: [{ lang, doc }] for one logical path.
+export function isOrphan(present) {
+  const langs = new Set(present.map((e) => e.lang));
+  return present.length > 0 && present.every(
+    (e) => e.doc.role === 'translated' && e.doc.translatedFrom && !langs.has(e.doc.translatedFrom),
+  );
+}
+
+function reconcileContent(mainDoc, transDoc, opts) {
   const mainParas = mainDoc.paragraphs;
   const newFile = !transDoc;
 
