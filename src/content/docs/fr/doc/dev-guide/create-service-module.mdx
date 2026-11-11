@@ -191,6 +191,18 @@ oxicloud = {
 };
 ```
 
+Le profil nommé est un profil d'hôte (`darkone.host.<profil>`). Deux
+déclencheurs existent&nbsp;:
+
+- `triggers.keys.<clé>` : options du service posées quand `<clé>` figure sous
+  `services:` de l'hôte ;
+- `triggers.always` : options posées sur tout hôte du profil.
+
+Un seul module les applique, `modules/system/services/activation.nix`, pour
+chaque profil actif sur l'hôte : un `laptop` reçoit aussi ceux de `desktop` et
+de `minimal`. Aucun profil d'hôte à modifier. Une définition directe dans
+`usr/` (`darkone.service.<nom>.enable = false`) garde la priorité.
+
 Drapeaux disponibles :
 
 | Drapeau | Défaut | Rôle |
