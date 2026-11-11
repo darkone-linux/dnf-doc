@@ -1,0 +1,33 @@
+---
+title: darkone.admin.welcome
+sidebar:
+  label: "welcome"
+---
+
+First-boot welcome page of the admin host installed by `darkone new`.
+
+At the first GNOME session of each `wheel` member, the browser opens a local
+page: step 1 of 4 done (the admin host), the gateway next, then services and
+the coordination server, with links to the documentation. Shown once per
+user (`~/.local/state/dnf/welcome-shown`). The "Onboarding" launcher of the
+nix-admin reopens it (`darkone.admin.welcome.page`).
+
+:::note[Set by the installer]
+`darkone new` writes `darkone.admin.welcome.enable = true;` in the
+`configuration.nix` of the admin host. Remove the line to stop the page for
+the users who have not seen it yet.
+:::
+
+## Options
+
+* **enable** `bool` the first-boot welcome page of the admin host
+* **page** `path` The welcome page, an HTML file of the store
+
+```nix
+darkone.admin.welcome = {
+  enable = false;
+  page = page;
+};
+```
+
+Source: [`modules/admin/welcome.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/admin/welcome.nix)

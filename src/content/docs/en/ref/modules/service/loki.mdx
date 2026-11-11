@@ -1,0 +1,103 @@
+---
+title: darkone.service.loki
+sidebar:
+  label: "loki"
+---
+
+Loki + Alloy, http stats with grafana.
+
+:::note
+Centralized collection of Caddy access logs, consumed by Grafana via
+a provisioned Loki datasource and a dedicated dashboard.
+
+Dual pattern aligned with monitoring.nix:
+- `enable`   : deploys the Loki server + Grafana datasource on the
+  same host that runs the `monitoring` service (Grafana).
+- `isClient` : deploys Alloy on each host running Caddy. Caddy
+  logs are expected in JSON at `/var/log/caddy/access-*.log`
+  (see `dnf/modules/system/services.nix`).
+
+By default, `enable` follows `darkone.service.monitoring.enable` and
+`isClient` follows `services.caddy.enable`: setup is fully automatic
+once monitoring and Caddy are active.
+:::
+
+:::caution[No authentication, tailnet only]
+Loki accepts reads and writes from anyone who reaches it. Port 3100 is
+therefore opened on `tailscale0` alone; `auth_enabled` is Loki's
+multi-tenancy switch, not a login, and stays `false`.
+:::
+
+:::tip[Debugging &amp; manual cleanup]
+Most common symptoms after a Loki (de)activation or Caddy log format change:
+
+**1. "NO DATA" on the Caddy dashboard despite incoming requests.**
+   Check the ingestion chain end-to-end:
+   ```sh
+   # On the Caddy host: is Alloy running? reading files?
+   sudo systemctl status alloy --no-pager
+   sudo journalctl -u alloy -n 100 --no-pager | grep -iE 'error|permission'
+   ls -la /var/log/caddy/access-*.log   # must be caddy:caddy
+
+   # On the monitoring host itself, or from the tailnet: is Loki receiving?
+   # (replace <IP> with the monitoring host's internal IP, Loki does NOT
+   # bind on 127.0.0.1 — see http_listen_address = bindAddr. From a plain
+   # LAN client the connection is refused, by design.)
+   curl -s http://<IP>:3100/loki/api/v1/labels | jq
+   curl -sG http://<IP>:3100/loki/api/v1/query \
+        --data-urlencode 'query={job="caddy"}' | jq '.data.result | length'
+   ```
+
+   An empty reply on `/loki/api/v1/*` while `/ready` answers 200 is the
+   frontend advertising the wrong address (see `common.instance_addr`);
+   `journalctl -u loki | grep frontend=` names it. Restart Loki after a fix.
+
+**2. `alloy.service: mkdir data-alloy/remotecfg: permission denied`.**
+   Orphaned ownership of `/var/lib/alloy` inherited from a former DynamicUser.
+   The service `ExecStartPre` normally fixes it, but if stuck (e.g. unit in
+   `start-limit-hit`):
+   ```sh
+   sudo systemctl stop alloy
+   sudo chown -R caddy:caddy /var/lib/alloy
+   sudo systemctl reset-failed alloy
+   sudo systemctl start alloy
+   ```
+
+**3. Grafana refuses to start: `Datasource provisioning error: data
+   source not found`.** UID conflict in SQLite DB after provision change
+   (typically switching from auto-generated UID to `uid = "loki"`).
+   The `deleteDatasources` option handles this in theory; otherwise manual
+   purge:
+   ```sh
+   sudo systemctl stop grafana
+   sudo sqlite3 /var/lib/grafana/grafana.db \
+        "DELETE FROM data_source WHERE name='Loki';"
+   sudo systemctl reset-failed grafana
+   sudo systemctl start grafana
+   ```
+
+**4. Stale Caddy log files** (old naming with `:` or schema, e.g.
+   `access-http:__nextcloud.log`). Harmless but pollute Alloy tail output.
+   Clean up after a migration:
+   ```sh
+   sudo rm /var/log/caddy/access-{http,https}:__*.log
+   sudo rm /var/log/caddy/access-:*.log     # variants `:80`, `:443`
+   sudo systemctl reload caddy              # optional
+   ```
+:::
+
+## Options
+
+* **enable** `bool` Deploys the Loki server + Grafana datasource (colocated with Grafana).
+* **isClient** `bool` Deploys Alloy to collect local Caddy access logs.
+* **retentionTime** `str` Log retention duration in Loki (30 days by default).
+
+```nix
+darkone.service.loki = {
+  enable = config.darkone.service.monitoring.enable;
+  isClient = config.services.caddy.enable && hasMonitoringHost;
+  retentionTime = "720h";
+};
+```
+
+Source: [`modules/service/loki.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/service/loki.nix)

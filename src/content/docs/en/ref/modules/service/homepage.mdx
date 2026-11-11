@@ -1,0 +1,35 @@
+---
+title: darkone.service.homepage
+sidebar:
+  label: "homepage"
+---
+
+Dynamically configured homepage dashboard for your local network.
+
+:::note
+For each DNF service enabled, an entry is automatically added to the homepage configuration.
+:::
+
+## Options
+
+* **enable** `bool` Enable homepage dashboard + httpd + host
+* **protect** `bool` Restrict homepage to authenticated Kanidm users (oauth2-proxy forward auth)
+* **localServices** `listOf attrs` Services to add in Local Applications section
+* **globalServices** `listOf attrs` Full network common &amp; public-accessible services
+* **remoteServices** `listOf attrs` Services to add in Remote Applications section
+* **bookmarks** `listOf attrs` Replace default bookmarks (links)
+* **widgets** `listOf attrs` Replace default widgets
+
+```nix
+darkone.service.homepage = {
+  enable = false;
+  protect = true;
+  localServices = [ ];
+  globalServices = [ ];
+  remoteServices = [ ];
+  bookmarks = [ ];
+  widgets = [ ];
+};
+```
+
+Source: [`modules/service/homepage.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/service/homepage.nix)

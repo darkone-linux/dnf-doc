@@ -1,0 +1,33 @@
+---
+title: darkone.service.matrix-admin
+sidebar:
+  label: "matrix-admin"
+---
+
+Matrix administration UI (Ketesa, formerly synapse-admin) for the local server.
+
+Static SPA, no backend: the browser talks straight to synapse's admin API and
+to MAS's, so the whole service is a Caddy `file_server` over a store path.
+
+The DNF service name is deliberately not the package name. The UI is
+swappable (Element Admin, a later fork) without touching the URL, the DNS
+record or `etc/config.yaml`.
+
+Reachable from the LAN and the tailnet only (`proxy.isInternal`): the bundle
+holds no secret, but an admin login page has no reason to face the Internet.
+
+:::caution[Log in with a declared administrator]
+Only an account listed in `network.matrix.admins` may log in: the MAS policy
+grants it the `urn:mas:admin` and `urn:synapse:admin:*` scopes this UI needs
+on both APIs. Anyone else logs in fine, then every panel fails.
+:::
+
+## Options
+
+* **enable** `bool` Enable the local matrix administration UI
+
+```nix
+darkone.service.matrix-admin.enable = false;
+```
+
+Source: [`modules/service/matrix-admin.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/service/matrix-admin.nix)

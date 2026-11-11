@@ -1,0 +1,82 @@
+---
+title: darkone.system.yubikey
+sidebar:
+  label: "yubikey"
+---
+
+YubiKey strong authentication: fleet-wide PAM U2F + declarative FIDO2 LUKS.
+
+One physical enrollment per (user, key) on the admin host — `just yubikey
+<user> [key] [action]` — feeds:
+
+- a **public** registry `usr/secrets/yubikeys.json` in the consumer
+  workspace: pamu2fcfg credential, FIDO2 hmac-secret credential id and salt
+  (all useless without the physical key, hence committable);
+- one sops secret `yubikey/<user>/<key>/luks-secret` (the FIDO2-derived
+  LUKS passphrase) plus the shared `luks-passphrase` (the passphrase typed
+  at disko install time, needed to authorize new keyslots).
+
+The module then propagates everything declaratively (`just apply`), without
+ever plugging the key on the target hosts:
+
+- **login / sudo / greeter**: pam_u2f as a password *alternative*
+  (`sufficient`): touching the key logs in, the sops password remains the
+  automatic fallback. One credential is valid fleet-wide thanks to the
+  fixed origin (`pam://<network.domain>`).
+- **encrypted hosts**: a oneshot service self-enrolls each declared key in
+  every disko-declared LUKS2 header (keyslot + `systemd-fido2` token, the
+  exact format `systemd-cryptenroll` writes) and prunes revoked ones. The
+  physical key is only ever needed at boot to unlock the disk.
+
+:::caution[Isolated hosts: salts of their own]
+An isolated host (`darkone.system.sops.isolated`) never sees the fleet salt
+nor its value: `just yubikey` derives one value per (key, isolated encrypted
+host) at a salt of that host (`hostSalts` in the registry, value in the
+host's own sops file, one touch each), authorized there by the host's own
+passphrase. A key not captured for a host is not enrolled on it.
+:::
+
+:::note[Zero configuration]
+Enabled by default, but fully inert until the registry file exists.
+LUKS support keys on the LUKS volumes found in the host disko config
+(`usr/machines/<host>/install/disko.nix`, imported at runtime).
+:::
+
+:::caution[No lockout by design]
+The install passphrase keyslot and the sops session passwords are never
+touched: losing a key at worst falls back to passphrase/password. This holds
+at boot too: the FIDO2 attempt runs in a unit of its own that is allowed to
+fail, so an unusable, untouched or absent key always ends on the passphrase
+prompt — see the comment on the initrd block below.
+:::
+
+:::caution[The boot touch cannot be waived]
+YubiKeys enforce user presence for the `hmac-secret` extension: an assertion
+requesting `up=false` is refused with `FIDO_ERR_UP_REQUIRED` before the
+credential is even matched. The touch is a hardware rule, not a token
+setting, and no header flag can lift it. Unattended unlock (gateways,
+headless hosts) is a TPM2 job (`systemd-cryptenroll --tpm2-device=auto`),
+which coexists with these FIDO2 keyslots in the same LUKS header.
+:::
+
+:::caution[GNOME keyring stays locked on a key login]
+`sufficient` ends the auth stack before `pam_gnome_keyring`: a sealed login
+keyring prompts at session start. Remedy: `darkone.home.gnome.passwordlessKeyring`,
+on by default for non-advanced users of a LUKS host.
+:::
+
+## Options
+
+* **enable** `bool` YubiKey authentication (default: enabled when usr/secrets/yubikeys.json exists)
+* **origin** `str` Fixed pam_u2f origin/appid: one enrollment is valid fleet-wide
+* **luks.enable** `bool` FIDO2 unlock of the host LUKS volumes (inert without disko LUKS + enrolled keys)
+
+```nix
+darkone.system.yubikey = {
+  enable = hasRegistry;
+  origin = "pam://${network.domain}";
+  luks.enable = true;
+};
+```
+
+Source: [`modules/system/yubikey.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/system/yubikey.nix)

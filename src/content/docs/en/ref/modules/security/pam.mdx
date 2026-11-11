@@ -1,0 +1,45 @@
+---
+title: darkone.security.pam
+sidebar:
+  label: "pam"
+---
+
+PAM — Authentication and password storage (R67–R68). (wip)
+
+Covers secure remote PAM authentication (R67: SSSD, Kerberos, pam_faillock)
+and encrypted password storage (R68: yescrypt).
+
+:::caution[Activation]
+The `enable` option follows `darkone.system.security.enable` by default.
+Rules (Rxx/Cxx) are activated based on level, category, and excludes
+defined in `darkone.system.security` (via `isActive`).
+:::
+
+:::note[Complements]
+pam_faillock (anti brute-force) is configured here for R67; complement.nix
+(C10) only sets session limits. The complexity policy (R31) is in users.nix.
+:::
+
+:::danger[R67 — pam_faillock locks accounts for real]
+Three failed passwords lock the account for 15 minutes by default, on
+`login`, `su`, `sudo` and — through the `login` substack — the GNOME
+greeter. Keep a root session open when first deploying it, and know the way
+back: `faillock --user <login> --reset`. SSH is deliberately spared so that
+a key-based rescue session always stays open.
+:::
+
+## Options
+
+* **enable** `bool` Enable ANSSI PAM module — authentication and passwords (R67–R68).
+* **faillock.deny** `ints.positive` Failed attempts before pam_faillock locks the account (R67).
+* **faillock.unlockTime** `ints.positive` Seconds an account stays locked (R67). Unlock early with `faillock --reset`.
+
+```nix
+darkone.security.pam = {
+  enable = false;
+  faillock.deny = 3;
+  faillock.unlockTime = 900;
+};
+```
+
+Source: [`modules/security/pam.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/security/pam.nix)

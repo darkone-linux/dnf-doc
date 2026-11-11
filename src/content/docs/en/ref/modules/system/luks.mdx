@@ -1,0 +1,137 @@
+---
+title: darkone.system.luks
+sidebar:
+  label: "luks"
+---
+
+LUKS passphrase policy &amp; remote unlock: shared + per-host passphrases, initrd SSH.
+
+Completes `modules/system/yubikey.nix` (FIDO2 keyslots) with the passphrase
+side of the fleet LUKS policy. Every encrypted volume carries exactly two
+managed passphrases, plus one keyslot per enrolled YubiKey:
+
+| Keyslot | Secret | Audience |
+|---|---|---|
+| shared | sops `luks-passphrase` | the fleet admin. Also **authorizes** keyslot operations (`luksAddKey` / `luksKillSlot`) for the units below, and is the key disko formats the disk with. |
+| per-host | sops `luks/<host>/passphrase` | the user of that one machine, without handing over the fleet. |
+| FIDO2 | registry `usr/secrets/yubikeys.json` | one slot per key, on every encrypted host. |
+
+Two managed passphrases and not one, because they serve different people —
+and because a rotation of either stays authorized by the other, so the sync
+unit is never left without an authorizer (it adds the new slot before killing
+the old one).
+
+There is no separate "install passphrase": `just install` formats the volume
+through `nixos-anywhere --disk-encryption-keys` with the shared passphrase, so
+the format keyslot *is* the shared keyslot. On the first host (`darkone new`,
+`just install-here`), the passphrase typed in the assistant becomes it.
+
+`just luks <host>` provisions a host (idempotent, also called by
+`just configure`); its `pre` phase runs offline and is called by `just install`
+before the build. It records the host in the **public** manifest
+`usr/secrets/luks.json` (committed), stores the per-host passphrase and the
+initrd SSH host key in sops, and ensures the shared `luks-passphrase` exists.
+`just luks <host> show` prints the keyslot table and audits remote unlock.
+The module then keeps everything converged at each apply:
+
+- **keyslots**: a oneshot service syncs the shared and per-host passphrases
+  into every disko-declared LUKS2 header. A changed sops value rotates the
+  corresponding keyslot (old slot killed, new one added). Keyslot operations
+  are authorized by whichever managed passphrase still unlocks the volume, so
+  one of them must remain valid. Slots outside its ledger (FIDO2, manual
+  enrollments) are never touched.
+- **remote unlock**: initrd sshd on a dedicated port (2222), own persistent
+  host key (`/var/lib/luks-initrd/`), root login with the `nix` deploy key
+  (`usr/secrets/nix.pub`). `just unlock <host>` answers the passphrase prompt
+  without a human (through the `dnf-unlock` helper shipped in the initrd),
+  then interactively from a terminal when no stored passphrase works. It
+  falls back to the WAN IP recorded in the manifest when the VPN route died. Regular
+  hosts DHCP on wired interfaces (a laptop on Wi-Fi has no initrd network and
+  falls back to console unlock), the lease released at switch-root under
+  NetworkManager, which leases again; zone gateways replicate their production
+  layout instead — static LAN IP on the lan0 bridge, DHCP on the WAN side —
+  since they are themselves the DHCP server their initrd would otherwise wait
+  on.
+
+:::caution[Isolated hosts]
+An isolated host (`darkone.system.sops.isolated`) never holds a fleet secret:
+no shared keyslot, disko formats with its own passphrase, and
+`luks/<host>/*` lives in its own `usr/secrets/hosts/<host>.yaml`. No sync
+unit either, a lone passphrase cannot authorize its own rotation:
+`just luks <host> passwd` rotates it from the admin host. Remote unlock stays.
+:::
+
+:::note[Zero configuration]
+Enabled by default but fully inert until the host appears in
+`usr/secrets/luks.json` AND declares a LUKS volume in its disko config.
+Existing encrypted hosts are unaffected until `just luks <host>` is run.
+:::
+
+:::caution[The initrd key must predate the bootloader]
+Initrd secrets are appended when the bootloader is installed, *before*
+activation. A fresh install is covered: `just install` stages the key under
+`/mnt` (`nixos-anywhere --extra-files`) so the very first boot already listens
+on 2222. On an already-running host, `just luks <host>` puts it in place over
+SSH — never add a host to `luks.json` by hand, and never apply before the key
+exists on the target.
+:::
+
+:::danger[Keyslot budget]
+LUKS2 headers hold at most 32 keyslots. Every enrolled YubiKey consumes one
+slot on every encrypted host (fleet-wide policy), plus the shared and per-host
+passphrases: the module warns when the projected total nears the limit.
+:::
+
+Sub-module (`luks/`): `wan-report.nix`, WAN address report to the HCS.
+
+## WAN report (`wan-report.nix`)
+
+A zone gateway that reboots may come back on a new public address, waiting
+in initrd with its VPN down. It reports that address to the HCS over SSH:
+
+- **initrd**: `dnf-wan-report` loops until the volume opens (every 15 min);
+- **booted system**: `dnf-wan-report.timer`, at boot then hourly;
+- **HCS**: account `dnf-wan-report`, one `restrict,command=` key per gateway
+  (its initrd host key, published in `luks.json` by `just luks <host>`).
+  The address sshd sees lands in `/var/lib/dnf-wan-report/<host>`.
+
+`just unlock` tries that address first, the `wan` of `luks.json` second.
+Inert on both sides until `luks.json` carries the gateway's `initrd-key-pub`.
+
+:::caution[Deploy the HCS first]
+A key the HCS does not know yet is refused, and fail2ban bans the zone
+address after 3 refusals. The initrd retries a refused key every 15 min only.
+:::
+
+## Options
+
+* **enable** `bool` Fleet LUKS passphrase policy (inert until `just luks <host>` provisions the host)
+* **sshPort** `port` Initrd sshd port; distinct from 22 so the initrd host key never clashes with the system one
+* **volumes** `listOf str` LUKS volumes declared by the host disko layout.
+* **shared** `raw` LUKS values shared with the `luks/` sub-modules.
+
+```nix
+darkone.system.luks = {
+  enable = true;
+  sshPort = 2222;
+  volumes = [ ];
+  shared = {
+        inherit
+          manifest
+          luksActive
+          hasNixPub
+          isGateway
+          ;
+      };
+};
+```
+
+### `luks/wan-report.nix`
+
+* **enable** `bool` Zone gateways report their WAN address to the HCS, from the initrd and the booted system (`just unlock` reads it)
+
+```nix
+darkone.system.luks.wanReport.enable = true;
+```
+
+Source: [`modules/system/luks.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/system/luks.nix)

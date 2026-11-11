@@ -1,0 +1,79 @@
+---
+title: darkone.security.complement
+sidebar:
+  label: "complement"
+---
+
+Cross-cutting complementary measures — Annex A (C1–C12). (wip)
+
+These measures have no ANSSI number but are essential to the guide's spirit.
+Covers linux-hardened patches (C1), Lockdown LSM (C2), USBGuard (C3),
+nftables deny-by-default (C4), hardened SSH (C5), LUKS2 (C6), NTP/NTS (C7),
+secure DNS (C8), disabled core dumps (C9), PAM anti brute-force (C10),
+legal banners (C11), and cron/at restriction (C12).
+
+:::caution[Activation]
+The `enable` option follows `darkone.system.security.enable` by default.
+Rules (Rxx/Cxx) are activated based on level, category, and excludes
+defined in `darkone.system.security` (via `isActive`).
+:::
+
+:::note[Lockdown LSM level (C2)]
+- `none`: no Lockdown.
+- `integrity`: forbids kernel modifications via userspace.
+- `confidentiality`: same + forbids reading kernel secrets.
+:::
+
+:::caution[C2 — Lockdown LSM]
+`lockdown=confidentiality` forbids kexec, /dev/mem writes, MSR, hibernation.
+Breaks `dmidecode` on some zones, `flashrom`, `i2c-tools`.
+:::
+
+:::caution[C4 — Egress filtering]
+The egress deny-by-default policy breaks tools that reach CDNs (curl,
+kernel downloads). Required: a controlled outbound HTTP(S) proxy.
+:::
+
+:::caution[C5 — Hardened SSH]
+Tunnels, agent forwarding and X11 are off. `ssh -J` goes too: ProxyJump
+opens a `direct-tcpip` channel, which is exactly what `AllowTcpForwarding`
+refuses — admin access is direct over the tailnet, never bounced. This
+module overrides `core.nix` for SSH.
+:::
+
+## Options
+
+* **enable** `bool` Enable complementary ANSSI measures (C1–C12).
+* **lockdownLevel** `enum [ "none" "integrity" "confidentiality" ]` Lockdown LSM level (C2)
+* **lsmStack** `listOf str` LSM stack order (C2, R11, R20). Modifies boot.kernelParams lsm=...
+* **ntpServers** `listOf str` NTP/NTS servers (C7).
+* **useNts** `bool` Enable NTS (Network Time Security) for NTP authentication (C7).
+* **sshBanner** `str` SSH banner displayed before authentication (C11).
+* **cronAllowedUsers** `listOf str` Users allowed to schedule cron jobs (C12).
+* **atAllowedUsers** `listOf str` Users allowed to schedule at jobs (C12). Mirrors cronAllowedUsers by default.
+* **egressAllowlist** `listOf str` IPv4/IPv6 addresses or CIDRs allowed outbound under the C4 reinforced
+  egress deny-by-default policy. Empty list keeps the policy but only
+  loopback and established/related traffic pass (proxy required).
+
+```nix
+darkone.security.complement = {
+  enable = false;
+  lockdownLevel = "integrity";
+  lsmStack = [ ];
+  ntpServers = [ ];
+  useNts = true;
+  sshBanner = ''
+        ╔═════════════════════════════════════════════════════════╗
+        ║                    DNF NETWORK NODE                     ║
+        ║             Restricted and monitored access.            ║
+        ║ Unauthorized access may result in criminal prosecution  ║
+        ║ under Articles 323-1 to 323-8 of the French Penal Code. ║
+        ╚═════════════════════════════════════════════════════════╝
+      '';
+  cronAllowedUsers = [ ];
+  atAllowedUsers = [ ];
+  egressAllowlist = [ ];
+};
+```
+
+Source: [`modules/security/complement.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/security/complement.nix)

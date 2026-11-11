@@ -1,0 +1,37 @@
+---
+title: darkone.console.zsh
+sidebar:
+  label: "zsh"
+---
+
+A full zsh installation with aliases, bindkeys and optimized prompt.
+
+:::tip[Some shortcuts]
+General:
+- `l`, `la`, `ll`: ls with options
+- `vz`: vim + fzf
+- `treef`: tree with files (eza)
+- `treed`: tree only dirs (eza)
+- `locate`: localsearch search (if localsearch is installed instead of locate)
+
+For nix/dnf admin profile:
+- `nx`: cd /etc/nixos
+- `nf`: nixfmt
+- `nc`: deadnix
+- `dnf`: cd ~/dnf
+- `mrproper`: nix-collect-garbage(s) + switch-to-conf boot
+:::
+
+## Options
+
+* **enable** `bool` ZSH environment
+* **enableForRoot** `bool` Root home manager ZSH configuration
+
+```nix
+darkone.console.zsh = {
+  enable = false;
+  enableForRoot = false;
+};
+```
+
+Source: [`modules/console/zsh.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/console/zsh.nix)

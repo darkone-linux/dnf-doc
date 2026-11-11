@@ -1,0 +1,58 @@
+---
+title: darkone.home.ai
+sidebar:
+  label: "ai"
+---
+
+AI coding tools and supporting utilities.
+
+:::note[Flags]
+- `darkone.home.ai.enable`: utility packages (aichat, llm, fabric-ai, gh,
+  lazygit, direnv, Rust and code-quality tools) and the agent flags below.
+- `darkone.home.ai.enable{Claude,OpenCode,Codex,Antigravity,Aider,Goose}`:
+  one AI coding agent each.
+- `darkone.home.ai.preferLocal`: OpenCode defaults to the local ollama model
+  on a `darkone.service.ai` host.
+:::
+
+:::tip[Per-host wiring]
+On a local ollama host (`darkone.service.ai`): `gollama` and the `ollama`
+CLI, and Aider falls back on the local model when Claude is off.
+
+GitHub CLI (`gh`) and Copilot CLI (`copilot`) are installed. Claude Code
+enforces an allow/ask/deny permission matrix and an RTK governance hook on
+Bash calls.
+:::
+
+:::caution[Writable settings.json]
+Claude Code and Antigravity CLI rewrite their own `settings.json`: a
+read-only store symlink breaks them, and fails the next switch on the
+`.bkp`. The Nix socle is jq-merged into a WRITABLE file on every switch
+instead; runtime keys (plugins, trusted workspaces) are preserved.
+:::
+
+## Options
+
+* **enable** `bool` Enable AI tools and supporting utilities
+* **enableClaude** `bool` Claude Code CLI
+* **enableOpenCode** `bool` OpenCode terminal AI agent
+* **enableCodex** `bool` OpenAI Codex CLI
+* **enableAntigravity** `bool` Google Antigravity CLI
+* **enableAider** `bool` Aider AI pair programming
+* **enableGoose** `bool` Goose AI coding agent (Block Inc.)
+* **preferLocal** `bool` Prefer local models than cloud ones
+
+```nix
+darkone.home.ai = {
+  enable = false;
+  enableClaude = false;
+  enableOpenCode = false;
+  enableCodex = false;
+  enableAntigravity = false;
+  enableAider = false;
+  enableGoose = false;
+  preferLocal = false;
+};
+```
+
+Source: [`home/modules/ai.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/home/modules/ai.nix)

@@ -1,0 +1,23 @@
+---
+title: darkone.host.vm
+sidebar:
+  label: "host.vm"
+---
+
+Virtual machines guest tools.
+
+## Options
+
+* **enableVirtualbox** `bool` Virtualbox client
+* **enableQemu** `bool` Qemu/KVM client
+* **enableXen** `bool` Xen client
+
+```nix
+darkone.host.vm = {
+  enableVirtualbox = false;
+  enableQemu = false;
+  enableXen = false;
+};
+```
+
+Source: [`modules/mixin/host/vm.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/mixin/host/vm.nix)

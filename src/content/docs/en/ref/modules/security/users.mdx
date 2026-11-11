@@ -1,0 +1,44 @@
+---
+title: darkone.security.users
+sidebar:
+  label: "users"
+---
+
+User accounts and authentication (R30–R36). (wip)
+
+Covers unused accounts (R30), password policy (R31),
+inactivity locking (R32), admin accountability (R33),
+service accounts (R34), unique service accounts (R35),
+and umask (R36).
+
+:::caution[Activation]
+The `enable` option follows `darkone.system.security.enable` by default.
+Rules (Rxx/Cxx) activate according to level, category, and
+excludes defined in `darkone.system.security` (via `isActive`).
+:::
+
+:::caution[R30 — mutableUsers=false]
+NixOS no longer allows ad-hoc `passwd`/`useradd`. Any account change
+requires a full NixOS deployment (`colmena apply`).
+:::
+
+:::caution[R36 — umask 0077]
+Breaks group collaboration (`/srv/share`). Document that
+`chmod g+rwx <file>` is required for group sharing.
+:::
+
+## Options
+
+* **enable** `bool` Enable ANSSI account management (R30–R36).
+* **idleTimeout** `ints.unsigned` Seconds before an idle login shell exits (R32, `TMOUT`). `0` drops the
+  TTY timeout entirely; the GNOME idle lock is unaffected. Workstations
+  holding long-lived terminals (build farm, agent tooling) set `0`.
+
+```nix
+darkone.security.users = {
+  enable = false;
+  idleTimeout = 600;
+};
+```
+
+Source: [`modules/security/users.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/security/users.nix)

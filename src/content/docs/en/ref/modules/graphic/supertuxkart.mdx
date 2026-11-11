@@ -1,0 +1,53 @@
+---
+title: darkone.graphic.supertuxkart
+sidebar:
+  label: "supertuxkart"
+---
+
+SuperTuxKart with configurations to play in local network.
+
+:::tip
+To use in conjonction with homemanager games module!
+:::
+
+:::note[Shared tracks]
+The tracks share itself lives in `service/stk.nix`. `enableNfsClient` and
+`nfsServer` are the only knobs a host needs: they wire
+`darkone.service.stk.{enableClient,serverName}` so a machine configuration
+never has to name two modules for one game.
+:::
+
+:::tip[Playing across zones]
+Game and discovery ports accept every zone prefix and the tailnet. Broadcast
+discovery stays inside the zone: from another zone, join with "Enter server
+address" (server IP, port 2759).
+:::
+
+:::tip[Direct cable, no network]
+`enableDirectLink`: two hosts linked by a bare Ethernet cable (no DHCP, no
+Internet). On both, pick the `STK direct cable` profile in the GNOME wired
+menu (link-local addresses), then Online → Local Networking.
+:::
+
+:::caution[Fleet-scoped firewall]
+Sources are matched on fleet prefixes, never on an interface: a STK host that
+also holds a WAN address does not publish the game there.
+:::
+
+## Options
+
+* **enable** `bool` SuperTuxKart + firewall config
+* **enableNfsClient** `bool` Mount the shared tracks of the zone's `stk` server
+* **nfsServer** `nullOr str` Hostname serving the tracks, default is the zone's `stk` service host
+* **enableDirectLink** `bool` Play over a direct Ethernet cable, no DHCP (`${directLinkProfile}` NetworkManager profile)
+
+```nix
+darkone.graphic.supertuxkart = {
+  enable = false;
+  enableNfsClient = false;
+  nfsServer = null;
+  enableDirectLink = false;
+};
+```
+
+Source: [`modules/graphic/supertuxkart.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/graphic/supertuxkart.nix)

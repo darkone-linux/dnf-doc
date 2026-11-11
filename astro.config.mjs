@@ -190,8 +190,67 @@ export default defineConfig({
           translations: { fr: "Références" },
           items: [
             {
+              // One group per category of the generated reference: a category
+              // added to the generator (`dnf-generator doc`) gets its group
+              // here, `scripts/doc-coverage.test.mjs` fails otherwise.
               label: "Modules",
-              items: [{ autogenerate: { directory: "ref/modules" } }],
+              items: [
+                {
+                  slug: "ref/modules",
+                  label: "Overview",
+                  translations: { fr: "Aperçu" },
+                },
+                {
+                  label: "Mixins",
+                  collapsed: true,
+                  items: [{ autogenerate: { directory: "ref/modules/mixin" } }],
+                },
+                {
+                  label: "Services",
+                  collapsed: true,
+                  items: [{ autogenerate: { directory: "ref/modules/service" } }],
+                },
+                {
+                  label: "System",
+                  translations: { fr: "Système" },
+                  collapsed: true,
+                  items: [{ autogenerate: { directory: "ref/modules/system" } }],
+                },
+                {
+                  label: "Security",
+                  translations: { fr: "Sécurité" },
+                  collapsed: true,
+                  items: [{ autogenerate: { directory: "ref/modules/security" } }],
+                },
+                {
+                  label: "CLI Apps",
+                  translations: { fr: "Apps CLI" },
+                  collapsed: true,
+                  items: [{ autogenerate: { directory: "ref/modules/console" } }],
+                },
+                {
+                  label: "GUI Apps",
+                  translations: { fr: "Apps graphiques" },
+                  collapsed: true,
+                  items: [{ autogenerate: { directory: "ref/modules/graphic" } }],
+                },
+                {
+                  label: "Administration",
+                  collapsed: true,
+                  items: [{ autogenerate: { directory: "ref/modules/admin" } }],
+                },
+                {
+                  label: "Users",
+                  translations: { fr: "Utilisateurs" },
+                  collapsed: true,
+                  items: [{ autogenerate: { directory: "ref/modules/user" } }],
+                },
+                {
+                  label: "Home Manager",
+                  collapsed: true,
+                  items: [{ autogenerate: { directory: "ref/modules/home" } }],
+                },
+              ],
             },
           ],
         },

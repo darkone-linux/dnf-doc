@@ -1,0 +1,33 @@
+---
+title: darkone.system.testing
+sidebar:
+  label: "testing"
+---
+
+Standalone test mode for the NixOS Test Driver.
+
+When enabled, neutralizes the irreducibly external/runtime bits so a node
+can be exercised in a VM: headscale/tailscale become no-ops and a fixed
+TLS cert can stub ACME. It also lets workDir-only config (nix.pub,
+harmonia.pub) be skipped by core/nix-cache. sops stays REAL (high fidelity).
+
+:::caution[Tests only]
+Enabled only via `tests/lib/test-tuning.nix`. This module never references
+any path under `tests/` — the cert path is passed as an option value.
+:::
+
+## Options
+
+* **standalone** `bool` Standalone test mode — skip workDir-only config (nix.pub, harmonia.pub) and neutralize external services
+* **tlsCert** `nullOr path` Self-signed cert (PEM) provided by the test harness to stub ACME. Never a tests/ path baked into the framework.
+* **tlsKey** `nullOr path` Private key (PEM) paired with tlsCert.
+
+```nix
+darkone.test = {
+  standalone = false;
+  tlsCert = null;
+  tlsKey = null;
+};
+```
+
+Source: [`modules/system/testing.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/system/testing.nix)

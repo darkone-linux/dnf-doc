@@ -1,0 +1,72 @@
+---
+title: darkone.system.core
+sidebar:
+  label: "core"
+---
+
+The core DNF module.
+
+:::danger[Required module]
+This module is enabled by default (required by DNF configuration).
+It is required for the proper functioning of every NixOS computer on the local network.
+:::
+
+Sets up:
+- systemd-boot and the LTS kernel (latest mainline via `enableLatestKernel`);
+- JetBrains Mono Nerd Font, with `kmscon` for the TTY;
+- nightly store optimisation, weekly GC with 30 d retention (keep-last-N via
+  `gcKeepGenerations` on disk-constrained hosts);
+- key-only SSH (hostname, firewall and SSH exposure: `network.nix`);
+- Ghostty's `xterm-ghostty` terminfo, so every host accepts the terminal;
+- the suspend policy (`disableSuspend` for servers);
+- polkit rules letting `wheel` halt/reboot;
+- a shared `common-files` group/user for cross-service media folders.
+
+:::note[Mixin entry point]
+Activates the host's profile mixin (`darkone.host.${host.profile}.enable`)
+and propagates `enableSops` to the sops module.
+:::
+
+:::danger[SSH is key-only]
+Passwords and keyboard-interactive are off fleet-wide, and only
+`/etc/ssh/authorized_keys.d/%u` is read: an account without a declared key
+has no SSH access at all, and `ssh-copy-id` has no bootstrap channel left.
+:::
+
+## Options
+
+* **enable** `bool` Darkone framework core system (activated by default)
+* **enableSystemdBoot** `bool` Enable the default boot loader
+* **enableLatestKernel** `bool` Use the latest mainline kernel (linuxPackages_latest) instead of the LTS one
+* **enableFstrim** `bool` SSD optimisation with fstrim
+* **enableFirewall** `bool` Enable firewall (default true)
+* **enableSops** `bool` Enable sops dnf module (default true)
+* **enableFlatpak** `bool` Enable flatpak DNF configuration (only for graphic environments)
+* **enableKmscon** `bool` Enable nerd font for TTY
+* **gcKeepGenerations** `int` When &gt; 0, trim the system profile to the last N generations before
+  each garbage collection, and collect daily without age-based
+  retention. For hosts with a tight root partition (gateways).
+* **enableBoost** `bool` Enable overclocking, corectl
+* **enableAutoSuspend** `bool` Enable automatic suspend (for laptops, ignored if disableSuspend is true)
+* **disableSuspend** `bool` Full suspend disable (for servers)
+* **enableCommonFilesUser** `bool` Enable the common-files user used by several services
+
+```nix
+darkone.system.core = {
+  enable = true;
+  enableSystemdBoot = true;
+  enableLatestKernel = false;
+  enableFstrim = true;
+  enableFirewall = true;
+  enableSops = true;
+  enableFlatpak = true;
+  enableKmscon = true;
+  gcKeepGenerations = 5;
+  enableBoost = false;
+  enableAutoSuspend = false;
+  disableSuspend = false;
+  enableCommonFilesUser = false;
+};
+```
+
+Source: [`modules/system/core.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/system/core.nix)

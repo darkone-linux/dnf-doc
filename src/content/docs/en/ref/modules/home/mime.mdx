@@ -1,0 +1,24 @@
+---
+title: darkone.home.mime
+sidebar:
+  label: "mime"
+---
+
+Default applications (`xdg.mimeApps`) for documents, images, audio, video.
+
+Each MIME type lists desktop entries by preference, the first installed one
+wins: Papers (PDF), Geeqie (images), Celluloid (video), Audacious (audio),
+GNOME Text Editor (plain text), Zed (Markdown).
+
+TODO: per-profile choices (beginner: GNOME apps, advanced: Zed, vim,
+VS Code), shell scripts in Zed, AsciiDoc in GNOME Text Editor.
+
+## Options
+
+* **enable** `bool` Enable DNF default applications update
+
+```nix
+darkone.home.mime.enable = false;
+```
+
+Source: [`home/modules/mime.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/home/modules/mime.nix)

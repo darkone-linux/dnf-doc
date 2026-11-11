@@ -1,0 +1,32 @@
+---
+title: darkone.home.ai-space
+sidebar:
+  label: "ai-space"
+---
+
+Agent tools of an AI space in a member's home: Claude Code, Codex, OpenCode, MCP, skills.
+
+Everything comes from the space (`darkone.host.ai-space` of the host), so
+OpenClaw and every member share the same MCP servers and skills. On by
+default in the `space-member` home; off on any other host.
+
+- MCP: HM `programs.mcp`, integrated into Claude Code, Codex and OpenCode;
+- skills: `~/.claude/skills`, `~/.codex/skills`, `~/.config/opencode/skills`;
+- logins: once per member, `claude` (`/login`), `codex login --device-auth`,
+  `opencode auth login`;
+- `~/projects`: the space's shared projects (`projectsDir`).
+
+:::note[Per member, per space]
+`usr/users/<login>/spaces/<host>.nix` adds or overrides, e.g. a personal MCP
+server: `programs.mcp.servers.<name> = { ... };`.
+:::
+
+## Options
+
+* **enable** `bool` Agent tools of the AI space (Claude Code, Codex, OpenCode, MCP, skills)
+
+```nix
+darkone.home.aiSpace.enable = false;
+```
+
+Source: [`home/modules/ai-space.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/home/modules/ai-space.nix)

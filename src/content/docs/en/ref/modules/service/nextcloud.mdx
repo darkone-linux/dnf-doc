@@ -1,0 +1,60 @@
+---
+title: darkone.service.nextcloud
+sidebar:
+  label: "nextcloud"
+---
+
+Nextcloud full-configured service.
+
+:::caution[Required sops secrets]
+When enabled, this module reads:
+
+- `nextcloud-admin-password`: initial password of the admin account;
+- `nextcloud-whiteboard-secret`: JWT shared with the whiteboard backend
+  (only read when `whiteboard` is in `plugins`);
+- `oidc-secret-<client>`: Kanidm OAuth2 client secret, declared by the idm
+  module and re-encrypted here for the `occ` provisioning unit;
+- `smtp/password`: SMTP relay password (only with `network.smtp`). External:
+  entered by hand, never generated.
+
+`just configure-admin-host` generates the others, idempotently, and never
+overwrites an existing one. Run it before rebuilding: sops-nix activation
+fails on a missing entry.
+:::
+
+:::note[Running occ]
+`services.nextcloud.secrets` makes `occ` load systemd credentials: run
+`sudo nextcloud-occ` (PHP still runs as `nextcloud`), not `sudo -u nextcloud`.
+:::
+
+## Options
+
+* **enable** `bool` Enable local nextcloud service
+* **adminUser** `str` Admin username for Nextcloud
+* **enableSsoRedirect** `bool` Send users straight to Kanidm instead of showing the Nextcloud login
+  form (`user_oidc` `allow_multiple_user_backends`). Saves one click on
+  every login, including the desktop client's Login Flow v2.
+
+  :::caution[Local login form]
+  This hides the password form, admin account included. Reach it with
+  `/login?direct=1`.
+  :::
+
+  No effect when Kanidm is absent from the network.
+* **plugins** `listOf (enum (appstoreApps ++ shippedToggleableApps))` Nextcloud apps to enable. Only `calendar`, `contacts` and `tasks` are
+  on by default; Talk (`spreed`), the dashboard, activity feed, photos,
+  and every other app stay disabled until listed here.
+
+  `user_oidc` (Kanidm SSO) and `notify_push` (client push) are always
+  on, regardless of this list.
+
+```nix
+darkone.service.nextcloud = {
+  enable = false;
+  adminUser = "admin";
+  enableSsoRedirect = true;
+  plugins = [ ];
+};
+```
+
+Source: [`modules/service/nextcloud.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/service/nextcloud.nix)

@@ -1,0 +1,43 @@
+---
+title: darkone.home.video
+sidebar:
+  label: "video"
+---
+
+Video tools and applications.
+
+Always installs the default player (`celluloid`, GTK4/libadwaita front-end
+over mpv) and gates the rest by audience: `enableTools` (ffmpeg, mlt, vlc,
+video-trimmer, parabolic), `enableEditing` (kdenlive, shotcut),
+`enableCreator` (OBS Studio with `obs-backgroundremoval`, `obs-vkcapture`,
+etc.), `enableUnfree` (davinci-resolve) and `enableAlternative` (mpv).
+
+:::caution[Not GNOME Showtime]
+Showtime 50 deadlocks on some files — `get_state(CLOCK_TIME_NONE)` on the
+main thread, [GNOME/showtime#299](https://gitlab.gnome.org/GNOME/showtime/-/work_items/299).
+The stuck process keeps the `org.gnome.Showtime` D-Bus name, so every later
+launch is activated onto it and silently does nothing: no window, no log.
+Unfixed upstream as of 50.0.
+:::
+
+## Options
+
+* **enable** `bool` Video creation and tools home module
+* **enableTools** `bool` Video tools for professionals
+* **enableEditing** `bool` Video editing tools (kdenlive...)
+* **enableCreator** `bool` Video creator tools (obs...)
+* **enableUnfree** `bool` Unfree video apps (davinci...)
+* **enableAlternative** `bool` Alternative video apps (mpv...)
+
+```nix
+darkone.home.video = {
+  enable = false;
+  enableTools = false;
+  enableEditing = false;
+  enableCreator = false;
+  enableUnfree = false;
+  enableAlternative = false;
+};
+```
+
+Source: [`home/modules/video.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/home/modules/video.nix)

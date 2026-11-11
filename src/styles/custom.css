@@ -24,3 +24,9 @@
     max-width: 100%;
     height: auto;
 }
+/* ── Module reference: category tables ────────────────────────────────────────
+   First column = a module name, a linked code span: kept on one line
+   (`home-assistant` would break at its hyphen). */
+.sl-markdown-content td:first-child > a > code {
+    white-space: nowrap;
+}

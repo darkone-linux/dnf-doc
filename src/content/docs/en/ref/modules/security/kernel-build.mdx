@@ -1,0 +1,38 @@
+---
+title: darkone.security.kernel-build
+sidebar:
+  label: "kernel-build"
+---
+
+Static kernel configuration — requires recompilation (R15–R27). (wip)
+
+These rules require a custom kernel via `boot.kernelPackages`.
+NixOS allows this through `structuredExtraConfig`. All these rules carry
+the `kernel-recompile` tag: they are skipped if that tag is in `excludes`.
+
+:::caution[Activation]
+The `enable` option follows `darkone.system.security.enable` by default.
+Rules (Rxx/Cxx) are activated based on level, category, and excludes
+defined in `darkone.system.security` (via `isActive`).
+:::
+
+:::danger[No NixOS binary cache]
+Enabling these rules implies a local kernel recompilation
+(~30–60 min per update depending on CPU). No public binary cache covers
+a custom kernel. Reserve for fleets with proper MCO tooling.
+:::
+
+:::caution[Out-of-tree modules]
+R18 (signed modules) makes signing any external module mandatory
+(NVIDIA, ZFS, VirtualBox, v4l2loopback…) via the Nix pipeline.
+:::
+
+## Options
+
+* **enable** `bool` Enable the ANSSI kernel recompilation module (R15–R27).
+
+```nix
+darkone.security.kernel-build.enable = false;
+```
+
+Source: [`modules/security/kernel-build.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/security/kernel-build.nix)

@@ -1,0 +1,93 @@
+---
+title: darkone.host.gateway
+sidebar:
+  label: "host.gateway"
+---
+
+The main gateway / router of a local network zone.
+
+:::tip[A ready-to-use gateway!]
+The gateway is configured in `etc/config.yaml` file.
+Additional enabled services (homepage, adguardhome, forgejo, nix-cache...)
+are automatically configured with consistent network plumbing on the
+gateway and all machines on the local network.
+:::
+
+:::caution[Public SSH until the tailnet takes over]
+`wanSsh.enable` opens sshd on the WAN interface (key-only, fail2ban), to
+install a remote gateway reached through a box port forward. Default: on
+while headscale is active and the zone declares no `gateway.vpn.ipv4`;
+declaring it then applying closes the port. The initrd (LUKS unlock, 2222)
+has no firewall: this option does not apply there.
+:::
+
+:::caution[Routed traffic is filtered]
+`filterForward = true`: only LAN &lt;-&gt; WAN and LAN &lt;-&gt; tailnet cross. Anything
+else is dropped — add it to `networking.firewall.extraForwardRules`.
+:::
+
+Sub-module (`gateway/`): `backup-links.nix`, backup uplinks.
+
+## Backup uplinks (`backup-links.nix`)
+
+:::tip[Backup links: Internet in degraded mode]
+`backupLinks` adds uplinks (spare ethernet port, wifi client such as a phone
+hotspot) the zone falls back to when the WAN loses its link, its lease or
+the Internet:
+
+```nix
+darkone.host.gateway.backupLinks.phone = {
+  type = "wifi";          # SSID + passphrase: sops `backup-link/phone/{ssid,psk}`
+  interface = "wlp4s0";
+  priority = 10;          # lower = preferred among backups
+};
+```
+
+Route metrics steer the default route; `dnf-uplink-monitor` pings through
+each link, penalises one without Internet and keeps one back from an outage
+on probation until it answers. A wifi backup keeps its radio
+off until no preferred link reaches the Internet; an ethernet one stays up,
+idle. Details: `lib/uplinks.nix`.
+:::
+
+## Options
+
+* **enable** `bool` Enable gateway features for the current host (dhcp, dns, proxy, etc.)
+* **wanSsh.enable** `bool` Public SSH on the WAN interface, to reach a remote gateway not yet on the tailnet
+
+```nix
+darkone.host.gateway = {
+  enable = false;
+  wanSsh.enable = dnfLib.gatewayAwaitsTailnet network zone;
+};
+```
+
+### `gateway/backup-links.nix`
+
+* **backupLinks** `attrs` Fallback uplinks, used when the WAN has no link, no lease or no
+  Internet. Name: `[a-z][a-z0-9-]*`.
+  * **type** `enum [ "ethernet" "wifi" ]` `ethernet`: DHCP client on a spare port, always up. `wifi`:
+    WPA2/WPA3 client, radio off (rfkill) until no preferred link
+    reaches the Internet; SSID and passphrase are read from sops
+    (`backup-link/<name>/ssid`, `backup-link/<name>/psk`).
+  * **interface** `str` Interface carrying the link: neither the WAN, a LAN port nor a hostapd radio.
+  * **priority** `ints.between 1 99` Lower is preferred among backup links (route metric
+    200 + 10 × priority, the WAN staying at 100).
+* **linkCheck.targets** `nonEmptyListOf str` IP addresses pinged through each uplink; one answer is enough. IP literals only: the probe must not depend on DNS.
+* **linkCheck.interval** `ints.positive` Seconds between two probe rounds.
+* **linkCheck.failAfter** `ints.positive` Failed rounds before an uplink is penalised.
+* **linkCheck.recoverAfter** `ints.positive` Good rounds before a penalised uplink is restored (hysteresis).
+
+```nix
+darkone.host.gateway = {
+  backupLinks.type = null;
+  backupLinks.interface = "wlp4s0";
+  backupLinks.priority = 10;
+  linkCheck.targets = internetProbeTargets;
+  linkCheck.interval = 10;
+  linkCheck.failAfter = 3;
+  linkCheck.recoverAfter = 6;
+};
+```
+
+Source: [`modules/mixin/host/gateway.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/mixin/host/gateway.nix)

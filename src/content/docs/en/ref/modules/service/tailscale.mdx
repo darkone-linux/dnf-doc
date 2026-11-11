@@ -1,0 +1,73 @@
+---
+title: darkone.service.tailscale
+sidebar:
+  label: "tailscale"
+---
+
+Tailscale client of the DNF tailnet (headscale on the HCS).
+
+Joins the HCS, zone gateways (`isGateway`: zone subnet advertised, routes
+accepted, own resolver kept) and roaming hosts.
+
+:::note[Enrollment]
+No shared key. `just tailnet-enroll <host>`, also run by `just configure`,
+mints a single-use key tagged for the host on the HCS and hands it to
+`dnf-tailnet-join`. Idempotent: an enrolled node is left untouched.
+:::
+
+Sub-modules (`tailscale/`):
+- `cert-sync.nix`: zone gateways pull the HCS Caddy certificates;
+- `selfheal.nix`: watchdog restarting a disconnected tailscaled;
+- `autopause.nix`: roaming clients pause tailscale on a zone LAN.
+
+## Certificate sync (`cert-sync.nix`)
+
+Public certificates are issued on the HCS only; each zone gateway pulls the
+whole Caddy storage over the tailnet (rsync as `nix`, elevated to `caddy` on
+the HCS side), then publishes it to its own Caddy.
+
+## Self-heal (`selfheal.nix`)
+
+Every minute, checks that the backend runs and the control plane sees the
+node online; restarts tailscaled after a sustained loss. Exports
+`dnf_tailscale_*` metrics for the `TailscaleFlapping`/`TailscaleUnhealthy`
+alerts.
+
+## Auto-pause (`autopause.nix`)
+
+Roaming clients only. On a DNF zone LAN, `--accept-dns` would hijack
+resolv.conf (local dnsmasq/AdGuard) and `--accept-routes` collide with the
+connected zone subnet: a NetworkManager dispatcher pauses tailscale there
+and resumes it elsewhere.
+
+## Options
+
+* **enable** `bool` Enable tailscale client to connect HCS
+* **isGateway** `bool` This tailscale node is a subnet gateway
+* **isExitNode** `bool` Configure this client as exit node
+* **selfHeal.enable** `bool` Watchdog: detect headscale disconnection and restart tailscaled.
+* **autoPauseOnLan.enable** `bool` Roaming client: pause tailscale (down) while plugged into a known DNF
+  zone LAN, resume it elsewhere. Non-gateway NetworkManager clients only.
+* **shared** `raw` Tailscale values shared with the `tailscale/` sub-modules.
+
+```nix
+darkone.service.tailscale = {
+  enable = false;
+  isGateway = false;
+  isExitNode = false;
+  selfHeal.enable = true;
+  autoPauseOnLan.enable = false;
+  shared = {
+        inherit
+          tsBin
+          isHcsSubnetGateway
+          selfHealEnable
+          selfHealStateDir
+          autoPauseEnable
+          autoPauseStateFile
+          ;
+      };
+};
+```
+
+Source: [`modules/service/tailscale.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/service/tailscale.nix)

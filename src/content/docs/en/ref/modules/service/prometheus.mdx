@@ -1,0 +1,92 @@
+---
+title: darkone.service.prometheus
+sidebar:
+  label: "prometheus"
+---
+
+Prometheus monitoring server with declarative Alertmanager escalation.
+
+:::tip[Prometheus &amp; Grafana]
+Standalone metrics + alerting service, independent from Grafana:
+
+- Scrapes every zone node carrying the `monitoring-node:<zone>` feature.
+- Alertmanager routes by severity: warning -&gt; Matrix #warnings,
+  critical -&gt; Matrix #incidents + mail (local Postfix relay).
+- blackbox_exporter probes gateway / tailnet / DNS reachability, plus the
+  other zones' gateways: a zone's Prometheus lives on its own gateway, so
+  only the peers can report that a whole site went dark.
+- Node classes (critical/non-critical/disabled) come from the `alert-*`
+  features or the host profile (see `dnf/lib/alerts.nix`).
+
+`monitoring` (Grafana) requires a `prometheus` on the same host
+(enforced by the generator `require`). The web UI is exposed at
+`https://prometheus.<zone>.<domain>` behind oauth2-proxy (group `admins`),
+which also fixes the alert links pointing back to Prometheus.
+:::
+
+## Options
+
+* **enable** `bool` Enable the Prometheus metrics + alerting server
+* **retentionTime** `str` Prometheus metrics retention duration
+* **alerting.enable** `bool` Enable Alertmanager (defaults on once the Matrix alert rooms are provisioned)
+* **alerting.matrix.enable** `bool` Deliver alerts to Matrix rooms via the matrix-alertmanager bot
+* **alerting.matrix.userId** `str` Matrix user ID of the alert bot (defaults from network.matrix.bot)
+* **alerting.matrix.warningsRoom** `str` Matrix room ID for warnings (defaults from network.matrix.warningsRoom)
+* **alerting.matrix.incidentsRoom** `str` Matrix room ID for incidents (defaults from network.matrix.incidentsRoom)
+* **alerting.email.enable** `bool` Also send critical alerts by mail (through the local Postfix relay)
+* **alerting.email.to** `str` Recipient of critical alert mails
+* **alerting.network.enable** `bool` Probe network reachability (gateway/tailnet/DNS) with blackbox_exporter
+* **alerting.network.internetProbeTargets** `listOf str` External IPs the zone gateway pings to detect a WAN outage. When all
+  fail, `ZoneInternetDown` fires and inhibits the (false) down-alerts of
+  hosts reachable only across the WAN (e.g. the HCS). Empty disables it.
+* **alerting.network.httpProbeUrls** `listOf str` HTTP(S) URLs probed for liveness (`ServiceEndpointDown`) and TLS
+  certificate expiry (`CertificateExpiringSoon`/`Critical`). Empty by
+  default: list the public web endpoints worth watching. Redirects to an
+  SSO login (3xx) count as up; cert expiry is read from the TLS
+  handshake regardless of HTTP status.
+* **alerting.silenceOnRebuild** `bool` Ship the dnf-maintenance flag (textfile collector) so rebuilds inhibit a node's alerts
+* **alerting.thresholds** `attrs` Override resource alert thresholds (see dnf/lib/alerts.nix defaults)
+* **alerting.silences** `listOf submodule` Known, accepted alerts that must never notify. Each entry becomes an
+  Alertmanager route to the `null` receiver: the alert still fires and
+  stays visible in the Prometheus/Alertmanager/Grafana UIs, it just
+  stops reaching Matrix and mail.
+
+  Declared on the host running Prometheus, since that is where the
+  zone's rules and routes are generated. A fleet-wide consumer module
+  (`usr/modules/alerts.nix`) is the practical place: it is imported
+  everywhere and only takes effect where Prometheus runs.
+
+  :::caution[Last resort]
+  Fix or reconfigure the underlying condition first. A silence hides a
+  real signal, so `reason` is mandatory and the list stays auditable.
+  :::
+  * **alert** `str` Alert name to mute (`alertname` label). Always constrained, so sibling severities stay armed.
+  * **host** `nullOr str` Restrict the silence to one host. Null mutes the alert fleet-wide.
+  * **matchers** `attrs` Extra exact label matchers, ANDed with the others (e.g. the mount or device the alert is about).
+  * **reason** `str` Why this alert is accepted, and what would make the silence removable.
+
+```nix
+darkone.service.prometheus = {
+  enable = false;
+  retentionTime = "30d";
+  alerting.enable = roomsReady;
+  alerting.matrix.enable = true;
+  alerting.matrix.userId = "@alertbot:domain.tld";
+  alerting.matrix.warningsRoom = "!warnings:domain.tld";
+  alerting.matrix.incidentsRoom = "!incidents:domain.tld";
+  alerting.email.enable = true;
+  alerting.email.to = "admin@${network.domain}";
+  alerting.network.enable = true;
+  alerting.network.internetProbeTargets = [ ];
+  alerting.network.httpProbeUrls = [ ];
+  alerting.silenceOnRebuild = true;
+  alerting.thresholds = { };
+  alerting.silences = [ ];
+  alerting.silences.alert = "DiskSpaceLow";
+  alerting.silences.host = "srv-main";
+  alerting.silences.matchers = { };
+  alerting.silences.reason = null;
+};
+```
+
+Source: [`modules/service/prometheus.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/service/prometheus.nix)

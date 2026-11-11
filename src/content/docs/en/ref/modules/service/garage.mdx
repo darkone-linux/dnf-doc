@@ -1,0 +1,50 @@
+---
+title: darkone.service.garage
+sidebar:
+  label: "garage"
+---
+
+A full-configured local Garage S3 service.
+
+Provides an internal S3-compatible object storage backend accessible
+only on 127.0.0.1:3900.
+
+:::note[Manual buckets creation]
+Buckets are NOT created automatically by this module.
+Each consumer service provisions its own bucket and access key via a
+dedicated systemd oneshot unit ordered After= `garage-init.service`.
+Per-consumer credentials are stored in sops as `garage-<consumer>-key-id`
+and `garage-<consumer>-key-secret`, imported into Garage on first boot.
+:::
+
+:::tip[Multi-node cluster migration]
+Single-node, replication_factor = 1. To grow into a multi-node cluster,
+bump `replication_factor`, expose `rpc_public_addr` on the mesh, and
+extend `garage-init` to drive a multi-node layout.
+:::
+
+:::caution[Cluster layout initialization]
+If it fails, wait until the garage service is fully operational, then
+restart it.
+:::
+
+## Options
+
+* **enable** `bool` Enable local Garage S3 service
+* **srvPort** `port` S3 API port exposed on the internal IP
+* **s3Region** `str` S3 region name (must match consumer config)
+* **capacity** `str` Node storage capacity hint passed to `garage layout assign`.
+  Used only at first boot for layout initialization; does not act
+  as a hard quota on the underlying filesystem.
+  Supported suffixes: B, KB, MB, GB, TB, PB.
+
+```nix
+darkone.service.garage = {
+  enable = false;
+  srvPort = srvPort;
+  s3Region = s3Region;
+  capacity = "500GB";
+};
+```
+
+Source: [`modules/service/garage.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/service/garage.nix)

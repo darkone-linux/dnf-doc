@@ -1,0 +1,132 @@
+---
+title: darkone.system.services
+sidebar:
+  label: "services"
+---
+
+DNF service registry: every service module registers here, and the registry
+is resolved against the network topology.
+
+:::caution[Special internal module]
+The resolved registry (`darkone.system.services.resolved`) feeds the
+homepage sections and the sub-modules below. `persist.*` entries are the
+folders and files to back up.
+:::
+
+Sub-modules (`services/`):
+- `activation.nix`: services enabled per host profile (`config/modules.nix`);
+- `caddy.nix`: reverse proxy vhosts, TLS, HTTP(S) firewall;
+- `oauth2-proxy.nix`: Kanidm SSO of the protected services.
+
+## Activation (`activation.nix`)
+
+Each host profile enabled on a host, directly or through another one
+(`laptop` → `desktop` → `minimal`), turns on the services its triggers name:
+`triggers.always`, or `triggers.keys.<key>` when `<key>` is under the host's
+`services:` in `etc/config.yaml`.
+
+## Reverse proxy (`caddy.nix`)
+
+One Caddy vhost per resolved service, plus the HTTP(S) firewall of zone
+gateways and of the HCS.
+
+:::note[Exposure]
+- zone services: on the zone gateway, under the zone domain;
+- global services: on the HCS, under the network domain;
+- `external-hosts`: zone services the HCS fronts, proxied to their gateway.
+:::
+
+## SSO (`oauth2-proxy.nix`)
+
+oauth2-proxy in front of the protected services of a zone, backed by the
+Kanidm `internal-service` OAuth2 client.
+
+:::note[Flow]
+Caddy `forward_auth` checks every request against `/oauth2/auth`. The login
+flow is anchored on the zone homepage FQDN, which hosts oauth2-proxy's
+public `/oauth2/*` endpoints; a cookie scoped to the zone domain keeps the
+session across its services.
+:::
+
+:::note[Tailnet identity]
+`proxy.tailnetIdentity`, for clients unable to follow the login flow (native
+apps): a personal tailnet device is identified by tailscaled
+(`tailscale.nginx-auth`) and passes as its owner, if member of the space.
+Tagged machines, unknown addresses, off-tailnet clients: the SSO, unchanged.
+:::
+
+## Options
+
+* **enable** `bool` Enable DNF services manager to register and expose services
+* **service** `attrs` Global services configuration &lt;name&gt;
+  * **enable** `bool` Enable service proxy
+  * **defaultParams** `submodule` These options are computed by `dnfLib.extractServiceParams`
+    * **domain** `str` Domain name for the service
+    * **title** `str` Display name in homepage
+    * **description** `str` Service description for homepage
+    * **icon** `str` [Icon name for homepage](https://selfh.st/icons/)
+    * **global** `bool` Global service is accessible on Internet
+    * **noRobots** `bool` Prevent robots from scanning if global is true
+    * **fqdn** `str` Calculated FQDN or the service before the reverse proxy
+    * **href** `str` Calculated URL of the service before the reverse proxy
+    * **ip** `str` Calculated IP to contact the service
+  * **displayOnHomepage** `bool` Display a link on homepage
+  * **persist.dirs** `listOf str` Service persistant dirs
+  * **persist.files** `listOf str` Service persistant files
+  * **persist.dbDirs** `listOf str` Service persistant dirs with database(s)
+  * **persist.dbFiles** `listOf str` Service database file(s)
+  * **persist.varDirs** `listOf str` Variable secondary files (log, cache, etc.)
+  * **persist.mediaDirs** `listOf str` Service media dirs (pictures, videos, big files)
+  * **proxy.enable** `bool` Whether to create virtualHost configuration (false for services that manage their own)
+  * **proxy.isProtected** `bool` Oauth2 protected service
+  * **proxy.allowedGroups** `listOf str` Kanidm groups allowed on this protected service (empty = any authenticated user)
+  * **proxy.spaceMembersOnly** `bool` Restrict to the members of the instance host's AI space (Kanidm group `space-<host>`); implies isProtected
+  * **proxy.tailnetIdentity** `bool` Identify a member's personal tailnet device without the SSO, for clients unable to follow the login flow; requires spaceMembersOnly
+  * **proxy.isInternal** `bool` Bind service on internal interface only (not internet accessible)
+  * **proxy.hasReverseProxy** `bool` This is a reverse proxy (or another virtualhost configuration via extraConfig)
+  * **proxy.defaultService** `bool` Is the default service
+  * **proxy.servicePort** `nullOr port` Service internal port
+  * **proxy.preExtraConfig** `lines` Extra caddy virtualHost configuration (prefix)
+  * **proxy.extraConfig** `lines` Extra caddy virtualHost configuration
+  * **proxy.extraGlobalConfig** `lines` Extra caddy configuration
+  * **proxy.scheme** `str` Internal service scheme (http / https)
+* **resolved** `raw` Resolved service registry.
+
+```nix
+darkone.system.services = {
+  enable = false;
+  service.enable = false;
+  service.defaultParams.domain = "";
+  service.defaultParams.title = "";
+  service.defaultParams.description = "";
+  service.defaultParams.icon = "";
+  service.defaultParams.global = false;
+  service.defaultParams.noRobots = true;
+  service.defaultParams.fqdn = "";
+  service.defaultParams.href = "";
+  service.defaultParams.ip = "";
+  service.displayOnHomepage = true;
+  service.persist.dirs = [ ];
+  service.persist.files = [ ];
+  service.persist.dbDirs = [ ];
+  service.persist.dbFiles = [ ];
+  service.persist.varDirs = [ ];
+  service.persist.mediaDirs = [ ];
+  service.proxy.enable = true;
+  service.proxy.isProtected = false;
+  service.proxy.allowedGroups = [ ];
+  service.proxy.spaceMembersOnly = false;
+  service.proxy.tailnetIdentity = false;
+  service.proxy.isInternal = false;
+  service.proxy.hasReverseProxy = true;
+  service.proxy.defaultService = false;
+  service.proxy.servicePort = null;
+  service.proxy.preExtraConfig = "";
+  service.proxy.extraConfig = "";
+  service.proxy.extraGlobalConfig = "";
+  service.proxy.scheme = "https";
+  resolved = { inherit services hasProtectedServices authHost; };
+};
+```
+
+Source: [`modules/system/services.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/system/services.nix)

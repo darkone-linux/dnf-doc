@@ -1,0 +1,55 @@
+---
+title: darkone.graphic.gnome
+sidebar:
+  label: "gnome"
+---
+
+Pre-configured gnome environment with dependences.
+
+:::note[Login keyring after `just passwd`]
+PAM unlocks the login keyring with the session password, which a change
+made by the admin cannot re-encrypt (the old password is unknown). The next
+password login moves the keyring to `~/.local/share/keyrings.sealed/`: GNOME
+recreates it, empty, on the new password. No prompt.
+:::
+
+:::caution[Keyring secrets set aside on each admin password change]
+Apps ask once again for their credentials; Element Desktop loses its session
+(repair: `operate/users.mdx`). Opt-out, for a keyring with a password of its
+own: `darkone.home.gnome.keepKeyring`.
+:::
+
+:::note[Passwordless login keyring]
+Users with `darkone.home.gnome.passwordlessKeyring` skip `pam_gnome_keyring`
+at auth: a password would re-encrypt their plain keyring at its next write.
+:::
+
+## Options
+
+* **enable** `bool` Pre-configured gnome WM
+* **enableDashToDock** `bool` Dash to dock plugin
+* **enableLightDM** `bool` Enable LightDM instead of GDM
+* **enableGdmSelector** `bool` GDM user list instead of a typed login
+* **enableCaffeine** `bool` Disable auto-suspend
+* **enableGsConnect** `bool` Communication with devices
+* **enableOnlineServices** `bool` Online Accounts, CalDAV, CardDAV...
+* **xkbVariant** `nullOr str` Keyboard variant; null follows the locale (`config/locales.json`), as the layout does.
+* **screenBlankDelay** `ints.unsigned` Screen-blank delay in seconds (0 = never). Laptops override it to 900 (15 min).
+* **cursorSize** `ints.positive` Default pointer size in pixels, user-overridable (Settings &gt; Accessibility).
+
+```nix
+darkone.graphic.gnome = {
+  enable = false;
+  enableDashToDock = false;
+  enableLightDM = false;
+  enableGdmSelector = false;
+  enableCaffeine = false;
+  enableGsConnect = false;
+  enableOnlineServices = false;
+  xkbVariant = null;
+  screenBlankDelay = 1800;
+  cursorSize = 24;
+};
+```
+
+Source: [`modules/graphic/gnome.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/graphic/gnome.nix)

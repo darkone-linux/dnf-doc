@@ -1,0 +1,25 @@
+---
+title: darkone.service.docs
+sidebar:
+  label: "docs"
+---
+
+A full-configured LaSuite Docs module.
+
+## Options
+
+* **enable** `bool` Enable local docs service
+* **s3Host** `str` S3 backend hostname
+* **s3Port** `port` S3 backend port
+* **s3Bucket** `str` S3 bucket name for document storage
+
+```nix
+darkone.service.docs = {
+  enable = false;
+  s3Host = "127.0.0.1";
+  s3Port = dnfConfig.network.ports.garage;
+  s3Bucket = "docs";
+};
+```
+
+Source: [`modules/service/docs.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/service/docs.nix)

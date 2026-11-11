@@ -1,0 +1,44 @@
+---
+title: darkone.system.i18n
+sidebar:
+  label: "i18n"
+---
+
+Location and lang configuration.
+
+:::note
+Defaults follow the zone of the host (`etc/config.yaml`). The locale must have
+the canonical `xx_YY.UTF-8` shape (e.g. `fr_FR.UTF-8`): the console keymap,
+XKB layout and Nextcloud phone region derive from it.
+:::
+
+:::tip[Keyboard of a locale]
+`dnf/config/locales.json` gives the keyboard of each locale the installer
+offers (`en_GB.UTF-8`: `uk` on the console, `gb` in XKB). Any other locale
+takes its country code (`ru_RU.UTF-8`: `ru`).
+:::
+
+## Options
+
+* **enable** `bool` Enable i18n with network zone configuration by default
+* **locale** `strMatching dnfLib.localeRegex` Network locale, must match the `xx_YY.UTF-8` shape.
+* **timeZone** `str` Network time zone
+* **keyboard** `raw` Keyboard of the locale: `console` keymap, `xkb` layout and `xkbVariant`.
+
+```nix
+darkone.system.i18n = {
+  enable = false;
+  locale = "fr_FR.UTF-8";
+  timeZone = "Europe/Paris";
+  keyboard = if cfg.enable then
+          dnfLib.keyboardFromLocale cfg.locale
+        else
+          {
+            console = config.console.keyMap;
+            xkb = config.console.keyMap;
+            xkbVariant = "";
+          };
+};
+```
+
+Source: [`modules/system/i18n.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/system/i18n.nix)

@@ -1,0 +1,44 @@
+---
+title: darkone.security.sudo
+sidebar:
+  label: "sudo"
+---
+
+sudo hardening (R38–R44). (wip)
+
+Covers the dedicated sudo group (R38), hardened sudo directives (R39),
+restriction of non-root targets (R40), NOEXEC limitation (R41),
+forbidding negations (R42), explicit argument specification (R43),
+and use of sudoedit (R44).
+
+:::caution[Activation]
+The `enable` option follows `darkone.system.security.enable` by default.
+Rules (Rxx/Cxx) are activated based on level, category, and excludes
+defined in `darkone.system.security` (via `isActive`).
+:::
+
+:::caution[R39 — `noexec` and `requiretty` dropped]
+Both are incompatible with an agent-driven deployment: colmena escalates
+with `sudo -H --` over SSH (no PTY, so `requiretty` refuses), and
+`switch-to-configuration` spawns children (so `noexec` blocks it).
+Accountability rests on `use_pty` + `log_input`/`log_output` instead.
+:::
+
+:::caution[R39 — rootpw]
+`rootpw` forces a root password shared between admins.
+Prefer `targetpw` or `runaspw` based on team policy.
+:::
+
+## Options
+
+* **enable** `bool` Enable ANSSI sudo hardening (R38–R44).
+* **allowedRootRules** `listOf str` sudo rules allowed to target root (R40). Others must target a service account.
+
+```nix
+darkone.security.sudo = {
+  enable = false;
+  allowedRootRules = [ ];
+};
+```
+
+Source: [`modules/security/sudo.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/security/sudo.nix)

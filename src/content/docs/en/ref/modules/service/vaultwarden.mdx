@@ -1,0 +1,27 @@
+---
+title: darkone.service.vaultwarden
+sidebar:
+  label: "vaultwarden"
+---
+
+A full-configured vaultwarden server.
+
+:::note[Admin panel]
+`/admin` answers the LAN and the tailnet only: zones and tailnet resolve the
+service to the HCS tailnet IP. Bitwarden clients (web, extension, mobile)
+stay public.
+:::
+
+## Options
+
+* **enable** `bool` Enable local Vaultwarden service
+* **enableSmtp** `bool` Enable SMTP to send emails (recommended, needs `network.smtp`)
+
+```nix
+darkone.service.vaultwarden = {
+  enable = false;
+  enableSmtp = true;
+};
+```
+
+Source: [`modules/service/vaultwarden.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/service/vaultwarden.nix)

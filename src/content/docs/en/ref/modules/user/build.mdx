@@ -1,0 +1,38 @@
+---
+title: darkone.user.build
+sidebar:
+  label: "build"
+---
+
+Build users NixOS (not home-manager) configuration.
+
+:::danger[Required module]
+This module is enabled by default (required by DNF configuration).
+:::
+
+:::note[SSH denial by logical group]
+`sshDeniedGroups` (default `guests`) expands to `DenyUsers` on each host: a
+member keeps its local session and loses SSH.
+:::
+
+:::note[authorized_keys registry]
+`usr/users/<login>/authorized_keys` (consumer workspace, committed, OpenSSH
+format) feeds `openssh.authorizedKeys` on every host of the user. Missing
+file = no key; disabled account = file ignored. Private keys never live in
+the workspace: they stay in each user's Vaultwarden vault (cf. `rbw`).
+:::
+
+## Options
+
+* **enable** `bool` Users common builder (enabled by default)
+* **sshDeniedGroups** `listOf str` Logical groups (`config.yaml`) whose members must never open an SSH
+  session. Expanded per host into `services.openssh.settings.DenyUsers`.
+
+```nix
+darkone.user.build = {
+  enable = true;
+  sshDeniedGroups = [ ];
+};
+```
+
+Source: [`modules/user/build.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/user/build.nix)

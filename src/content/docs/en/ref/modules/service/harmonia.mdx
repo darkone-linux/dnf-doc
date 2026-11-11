@@ -1,0 +1,65 @@
+---
+title: darkone.service.harmonia
+sidebar:
+  label: "harmonia"
+---
+
+Harmonia: local Nix binary cache server (serves this host's /nix/store).
+
+Exposes locally built / realised store paths over plain HTTP (port 5000),
+signed with the deployment-wide binary-cache key. Enable per host from
+`etc/config.yaml` (services.harmonia), like any other DNF service.
+
+:::note[How harmonia works with the nix-cache proxy]
+Harmonia is a *source* of packages, served **directly** to clients over the
+LAN (in-zone) or the tailnet (when flagged `global`). The per-zone `nix-cache`
+proxy is a separate concern: it caches the *public* binary cache
+(`cache.nixos.org`), never harmonia.
+
+Each local-zone host's substituters become, in priority order:
+
+- the harmonia instances of *its own zone* (highest priority, LAN), then
+- any harmonia flagged `global` (typically on the HCS, over the tailnet), then
+- the zone's `nix-cache` proxy (public cache).
+
+That order is pinned client-side with `?priority=` on each substituter URL
+(see `nix-cache.nix`), because the `priority` set below is identical on every
+instance and Nix sorts substituters by advertised priority, not by list order.
+
+A host running harmonia does **not** get its own instance as a substituter: it
+would only ever serve paths its local store already has.
+
+A global-zone host (`www`) has no LAN and no proxy: its only fleet substituter
+is the `global` harmonia, over the tailnet.
+
+Other zones' non-global harmonia are never used. Harmonia's signature is
+passed through unchanged, so every host trusts the deployment-wide harmonia
+public key (`usr/secrets/harmonia.pub`). Transport is plain HTTP on the
+trusted LAN / VPN: integrity comes from the NAR signature, not from TLS.
+:::
+
+:::tip[Signing key provisioning]
+`just configure-admin-host` auto-generates the deployment-wide key pair when
+`usr/secrets/harmonia.pub` is missing: the public key is committed and the
+private key is injected into the sops secret `harmonia-secret-key`.
+:::
+
+:::note[Benign startup warning about sign-key permissions]
+`WARN harmonia_cache::tls: /run/credentials/harmonia.service/sign-key-0 has
+insecure permissions 0o440; recommend 0600` is a false positive: systemd
+exposes `LoadCredential` files as root-owned mode 0440 with an ACL that
+grants access to the service user only (systemd/systemd#29435); harmonia
+naively checks the chmod bits. Watch upstream though: harmonia already
+hard-rejects group-readable *TLS* keys at startup — if that policy ever
+extends to sign keys, this unit will break on upgrade.
+:::
+
+## Options
+
+* **enable** `bool` Enable a local Harmonia Nix binary cache server
+
+```nix
+darkone.service.harmonia.enable = false;
+```
+
+Source: [`modules/service/harmonia.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/service/harmonia.nix)

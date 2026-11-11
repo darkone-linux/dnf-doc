@@ -1,0 +1,40 @@
+---
+title: darkone.service.nfs
+sidebar:
+  label: "nfs"
+---
+
+NFS server + client for home shares.
+
+:::note
+This module is enabled if a nfs server is declared in the local network. It creates:
+
+- A share (srv-dirs.homes) on the server.
+- Mount dirs (/mnt/nfs/homes/[user]) on clients.
+
+The nfs home manager script links xdg directories to mount dirs.
+In config.yaml file (hosts):
+
+- Only one host have a service `service.nfs`.
+- Clients need `features = [ "nfs-client" ]`.
+:::
+
+:::caution[Exports are per client IP]
+Only the declared `nfs-client` hosts of the zone appear in `/etc/exports`; a
+machine absent from `config.yaml` gets no mount. Root is squashed on every
+share: a client root is `nobody` on the server.
+:::
+
+## Options
+
+* **enable** `bool` Enable NFS DNF server (avoid enable manually)
+* **serverDomain** `str` NFS Server FQDN
+
+```nix
+darkone.service.nfs = {
+  enable = hasServer && (isServer || isClient);
+  serverDomain = "nfs";
+};
+```
+
+Source: [`modules/service/nfs.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/service/nfs.nix)

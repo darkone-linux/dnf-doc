@@ -1,0 +1,50 @@
+---
+title: darkone.service.oxicloud
+sidebar:
+  label: "oxicloud"
+---
+
+OxiCloud — Fast Sovereign Cloud (file storage, WebDAV, CalDAV &amp; CardDAV).
+
+:::note[Service currently being validated]
+DNF wrapper around the nixpkgs module (from [PR #516113](https://github.com/NixOS/nixpkgs/pull/516113)).
+The `oxicloud` package already ships in nixpkgs; only the module is copied
+from the PR (cf. `backports/nixos/oxicloud.nix`).
+:::
+
+:::tip[SSO]
+When an `idm` (Kanidm) service exists on the network (zone or global), OIDC is
+wired automatically: an OAuth2 client is registered and OxiCloud is pointed at
+the Kanidm endpoints. Without `idm`, the upstream behaviour is left untouched
+(local password login only).
+:::
+
+:::caution[Accounts with SSO]
+- Self-registration is closed: accounts are created at the first SSO login.
+- Members of the Kanidm `admins` group become OxiCloud administrators at that
+  first login only; later role changes are made in the OxiCloud admin UI.
+:::
+
+:::tip[Storage and clients]
+File storage, WebDAV (`/webdav/`), CalDAV (`/caldav`) and CardDAV (`/carddav`)
+are served on the same HTTP port, behind the Caddy reverse proxy. The
+Nextcloud compatibility layer is on: Nextcloud desktop and mobile clients, and
+the GNOME Online Accounts Nextcloud provider, connect to the service URL. The
+PostgreSQL database is created locally.
+:::
+
+:::tip[Mail]
+When `network.smtp` is set, OxiCloud sends share notifications and email
+invitations (magic links) through that relay. Without it, email features are
+disabled.
+:::
+
+## Options
+
+* **enable** `bool` Enable local OxiCloud service
+
+```nix
+darkone.service.oxicloud.enable = false;
+```
+
+Source: [`modules/service/oxicloud.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/service/oxicloud.nix)

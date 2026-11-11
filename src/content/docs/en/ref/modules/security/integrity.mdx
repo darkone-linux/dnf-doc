@@ -1,0 +1,45 @@
+---
+title: darkone.security.integrity
+sidebar:
+  label: "integrity"
+---
+
+Filesystem integrity — HIDS (R76–R77). (wip)
+
+Covers sealing and integrity verification via AIDE (R76) and protection
+of the sealed database with GPG signature plus remote copy (R77).
+
+:::caution[Activation]
+The `enable` option follows `darkone.system.security.enable` by default.
+Rules (Rxx/Cxx) are activated based on level, category, and excludes
+defined in `darkone.system.security` (via `isActive`).
+:::
+
+:::caution[R76 — AIDE]
+A full scan can take 15–60 min depending on FS size and CPU.
+Schedule during off-peak hours. Frequent false positives on /etc/resolv.conf,
+/var/lib, /var/cache — add them to exclusions.
+:::
+
+:::caution[R77 — Signed database]
+The AIDE database must be re-signed at every major NixOS update
+(the store changes). Plan a baseline update procedure.
+:::
+
+## Options
+
+* **enable** `bool` Enable ANSSI HIDS integrity — AIDE (R76–R77).
+* **aideRemoteCopy** `nullOr submodule` Remote copy of the GPG-signed AIDE database (R77). null = disabled.
+  * **host** `str` Remote host for the AIDE database copy.
+  * **sshKeyFile** `path` Path to the private SSH key for the remote copy.
+
+```nix
+darkone.security.integrity = {
+  enable = false;
+  aideRemoteCopy = null;
+  aideRemoteCopy.host = null;
+  aideRemoteCopy.sshKeyFile = null;
+};
+```
+
+Source: [`modules/security/integrity.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/security/integrity.nix)

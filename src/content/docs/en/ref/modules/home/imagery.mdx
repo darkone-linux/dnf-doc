@@ -1,0 +1,35 @@
+---
+title: darkone.home.imagery
+sidebar:
+  label: "imagery"
+---
+
+Image processing software.
+
+Always installs the editor (`gimp`); the viewer (`geeqie`) is one of the
+office essentials. Then layers tooling by audience: `enableBeginner` adds
+`pinta`, `enablePro` adds `inkscape`/`krita`/`yed`, `enable3D` (with
+`enablePro`) adds `blender`, `enableCAD` adds `freecad`, and `enableCli`
+adds `imagemagick`/`jhead`.
+
+## Options
+
+* **enable** `bool` Imagery creation
+* **enablePro** `bool` Additional image processing software for professionals
+* **enableBeginner** `bool` Additional image processing software for beginners
+* **enable3D** `bool` 3D softwares
+* **enableCAD** `bool` CAD softwares
+* **enableCli** `bool` CLI tools (imagemagick, jhead...)
+
+```nix
+darkone.home.imagery = {
+  enable = false;
+  enablePro = false;
+  enableBeginner = false;
+  enable3D = false;
+  enableCAD = false;
+  enableCli = false;
+};
+```
+
+Source: [`home/modules/imagery.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/home/modules/imagery.nix)

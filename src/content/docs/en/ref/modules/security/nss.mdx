@@ -1,0 +1,29 @@
+---
+title: darkone.security.nss
+sidebar:
+  label: "nss"
+---
+
+NSS — Remote user databases (R69–R70). (wip)
+
+Rules applicable only if an external NSS is active (SSSD, nslcd).
+Not currently relevant for DNF; see what can be done with Kanidm + PAM.
+
+Covers hardening of remote databases (R69: TLS mandatory) and
+separation of system and directory accounts (R70).
+
+:::caution[Activation]
+The `enable` option follows `darkone.system.security.enable` by default.
+Rules (Rxx/Cxx) are activated based on level, category, and excludes
+defined in `darkone.system.security` (via `isActive`).
+:::
+
+## Options
+
+* **enable** `bool` Enable ANSSI NSS hardening (R69–R70).
+
+```nix
+darkone.security.nss.enable = false;
+```
+
+Source: [`modules/security/nss.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/security/nss.nix)

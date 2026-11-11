@@ -1,0 +1,36 @@
+---
+title: darkone.security.journaling
+sidebar:
+  label: "journaling"
+---
+
+Logging and auditd (R71–R73). (wip)
+
+Covers persistent logging with TLS forwarding (R71),
+per-service dedicated journals (R72), and auditd with ANSSI rules (R73).
+
+:::caution[Activation]
+The `enable` option follows `darkone.system.security.enable` by default.
+Rules (Rxx/Cxx) are activated based on level, category, and excludes
+defined in `darkone.system.security` (via `isActive`).
+:::
+
+:::caution[R71 — Seal=yes]
+`Seal=yes` requires `journalctl --setup-keys` (out-of-band audit key).
+Without this key, journal integrity cannot be verified.
+:::
+
+:::caution[R73 — immutable auditd]
+The configuration `audit.rules = [ "-e 2" ]` makes auditd immutable: any
+rule change requires a reboot. Test in staging before deployment.
+:::
+
+## Options
+
+* **enable** `bool` Enable ANSSI logging and auditd (R71–R73).
+
+```nix
+darkone.security.journaling.enable = false;
+```
+
+Source: [`modules/security/journaling.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/security/journaling.nix)

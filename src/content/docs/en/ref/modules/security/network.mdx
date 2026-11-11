@@ -1,0 +1,73 @@
+---
+title: darkone.security.network
+sidebar:
+  label: "network"
+---
+
+Network services — isolation and supervision (R78–R80). (wip)
+
+Covers isolation of network services (R78: server category),
+hardening and monitoring of exposed services (R79: fail2ban,
+HTTP headers, ANSSI TLS) and reduction of the network surface (R80).
+
+:::caution[Activation]
+The `enable` option follows `darkone.system.security.enable` by default.
+Rules (Rxx/Cxx) are activated based on level, category, and excludes
+defined in `darkone.system.security` (via `isActive`).
+:::
+
+:::caution[R79 — Strict CSP]
+`Content-Security-Policy: default-src 'self'` breaks tools without nonces
+(dashboards with CDN, third-party widgets). HSTS preload is irreversible —
+only set on a fully controlled domain.
+:::
+
+:::caution[R79 — nginx headers are opt-in per vhost]
+`add_header` replaces the parent set instead of adding to it, so a global
+block is dropped by the first vhost or location declaring a header of its
+own — and gixy fails the build over the shadowing. The set therefore ships
+as `/etc/nginx/dnf-security-headers.conf`, to `include` from the vhost's own
+`extraConfig`. Only the TLS directives stay global.
+:::
+
+:::caution[R79 — Every jail needs a filter]
+fail2ban runs on the systemd backend here: a jail needs both a `filter.d`
+definition and a `journalmatch`, or it aborts the whole daemon at startup —
+losing the working `sshd` jail. `exposedServices` is therefore asserted
+against `filters`; caddy, matrix and idm still need theirs written.
+:::
+
+:::caution[R80 — Listener filtering]
+Some services (KDE Connect, mDNS) listen by default on all interfaces.
+Declare them in `network.publicListeners` or reconfigure them.
+:::
+
+## Options
+
+* **enable** `bool` Enable ANSSI network hardening (R78–R80).
+* **exposedServices** `listOf str` Public services to jail with fail2ban (R79). Each entry MUST resolve to
+  a filter — one shipped by fail2ban, or one declared in `filters` — or
+  the assertion refuses the build.
+* **filters** `attrs` Filters usable in `exposedServices`, on top of those fail2ban ships.
+  Caddy, Synapse and Kanidm need theirs written against real journal
+  output — declare them here once the patterns are confirmed.
+  * **journalmatch** `str` Journal match for the jail (fail2ban runs on the systemd backend).
+  * **failregex** `str` Failure pattern, written to `filter.d/<name>.conf`. Empty when
+    fail2ban already ships the filter and only the match is missing.
+* **publicListeners** `listOf str` Services allowed to listen on 0.0.0.0 / :: (R80).
+* **httpsHeaders** `bool` Adds ANSSI HTTP security headers in Nginx/Caddy (R79).
+* **tlsCiphers** `listOf str` ANSSI TLS cipher suite for Nginx (R79).
+
+```nix
+darkone.security.network = {
+  enable = false;
+  exposedServices = [ ];
+  filters.journalmatch = "_SYSTEMD_UNIT=forgejo.service";
+  filters.failregex = "";
+  publicListeners = [ ];
+  httpsHeaders = true;
+  tlsCiphers = [ ];
+};
+```
+
+Source: [`modules/security/network.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/security/network.nix)

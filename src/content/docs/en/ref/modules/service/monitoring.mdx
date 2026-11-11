@@ -1,0 +1,40 @@
+---
+title: darkone.service.monitoring
+sidebar:
+  label: "monitoring"
+---
+
+Supervision module: Grafana dashboards + per-node exporter.
+
+:::tip
+Grafana visualises the metrics collected by the `prometheus` service (which it
+requires on the same host, enforced by the generator). For each zone:
+
+- All nodes with tag "monitoring-node" run the node exporter.
+- The node with service "monitoring" runs Grafana (and requires `prometheus`).
+- Only one monitoring host per zone is accepted.
+- A tag "monitoring-node:[zone]" attaches a node to that zone's Prometheus.
+:::
+
+Read-only watch (`monitoring/fs-readonly.nix`): every node exports
+`dnf_filesystem_forced_readonly`, its `rw` mounts whose filesystem the kernel
+turned read-only, behind `FilesystemReadOnly`. Intended `ro` mounts and binds
+never appear; the file lives on tmpfs, so it outlives the failing disk.
+
+## Options
+
+* **enable** `bool` Enable monitoring with prometheus, grafana and node exporter
+* **isNode** `bool` Is a monitoring node
+* **kioskTarget** `str` Target (relative, no `/`) for the automatic redirect to Grafana
+  from the monitoring domain root. Overridden by the Loki module
+  when active to point to a multi-source home dashboard.
+
+```nix
+darkone.service.monitoring = {
+  enable = false;
+  isNode = lib.hasAttrByPath [ "features" "monitoring-node" ] host;
+  kioskTarget = "d/dnf-monitoring-home/home?kiosk";
+};
+```
+
+Source: [`modules/service/monitoring.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/service/monitoring.nix)

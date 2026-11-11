@@ -1,0 +1,49 @@
+---
+title: darkone.security.packages
+sidebar:
+  label: "packages"
+---
+
+Package management and updates (R58–R61). (wip)
+
+Covers installing only what is strictly necessary (R58), trusted repositories (R59),
+hardened repositories (R60: linux_hardened), and regular updates (R61).
+
+:::caution[Activation]
+The `enable` option follows `darkone.system.security.enable` by default.
+Rules (Rxx/Cxx) are activated based on level, category, and excludes
+defined in `darkone.system.security` (via `isActive`).
+:::
+
+:::caution[R59 — allow-import-from-derivation=false]
+Breaks some complex flakes (Haskell, heavy Python with Nix generators).
+Document exceptions in nix.settings.
+:::
+
+:::caution[R60 — linux_hardened]
+The linux_hardened kernel may lag a minor version behind nixpkgs-unstable.
+Third-party modules (NVIDIA, ZFS) are not guaranteed compatible.
+:::
+
+## Options
+
+* **enable** `bool` Enable ANSSI package management (R58–R61).
+* **trustedSubstituters** `listOf str` Allowlist of authorized Nix binary caches (R59).
+* **trustedPublicKeys** `listOf str` Public keys for authorized binary caches (R59).
+* **allowedUris** `listOf str` Prefix allowlist of URIs fetchable during evaluation (R59).
+  Restricts builtins.fetch* / flake inputs to internal mirrors.
+  Empty list disables the restriction.
+* **maxSystemPackages** `nullOr int` Soft threshold on the number of system packages (R58).
+  Emits an evaluation warning when exceeded; null disables the check.
+
+```nix
+darkone.security.packages = {
+  enable = false;
+  trustedSubstituters = [ ];
+  trustedPublicKeys = [ ];
+  allowedUris = [ ];
+  maxSystemPackages = 200;
+};
+```
+
+Source: [`modules/security/packages.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/security/packages.nix)

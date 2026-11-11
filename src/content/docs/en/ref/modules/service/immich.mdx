@@ -1,0 +1,23 @@
+---
+title: darkone.service.immich
+sidebar:
+  label: "immich"
+---
+
+Immich (photo management) full-configured service.
+
+## Options
+
+* **enable** `bool` Enable local immich service
+* **enableMachineLearning** `bool` Enable machine learning features (face recognition, object detection)
+* **enableRedis** `bool` Enable Redis for caching (recommended for performance)
+
+```nix
+darkone.service.immich = {
+  enable = false;
+  enableMachineLearning = false;
+  enableRedis = false;
+};
+```
+
+Source: [`modules/service/immich.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/service/immich.nix)

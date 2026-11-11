@@ -1,0 +1,41 @@
+---
+title: darkone.home.education
+sidebar:
+  label: "education"
+---
+
+Several graphical education packages.
+
+## Options
+
+* **enable** `bool` Education software collection
+* **enableBaby** `bool` Education software for babies (&lt;=6 yo)
+* **enableChild** `bool` Education software for children (6-12 yo)
+* **enableStudent** `bool` Education software for teenagers and adults (&gt;=12 yo)
+* **enableMath** `bool` Math tools and apps
+* **enableMusic** `bool` Music tools and apps
+* **enableScience** `bool` Scientific tools and apps
+* **enableDraw** `bool` Draw tools and apps
+* **enableLang** `bool` Lang tools and apps
+* **enableMisc** `bool` Misc tools and apps (general, training...)
+* **enableComputer** `bool` Computing tools and apps (klavaro, etc.)
+* **excludePackages** `listOf package` Software of the enabled themes not to install, matched by name.
+
+```nix
+darkone.home.education = {
+  enable = false;
+  enableBaby = false;
+  enableChild = false;
+  enableStudent = false;
+  enableMath = true;
+  enableMusic = true;
+  enableScience = true;
+  enableDraw = true;
+  enableLang = true;
+  enableMisc = true;
+  enableComputer = true;
+  excludePackages = [ ];
+};
+```
+
+Source: [`home/modules/education.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/home/modules/education.nix)

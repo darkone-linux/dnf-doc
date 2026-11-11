@@ -1,0 +1,58 @@
+---
+title: darkone.service.nix-cache
+sidebar:
+  label: "nix-cache"
+---
+
+Per-zone Nix binary-cache proxy (nginx `proxy_cache`).
+
+Caches the public Nix cache (`cache.nixos.org`) on the zone gateway so a
+fleet-wide deploy pulls each closure from the WAN once, then serves it over
+the LAN to every other host. Locally built paths are served straight from
+`harmonia` (see `harmonia.nix`); this proxy never fronts harmonia.
+
+:::note[Why nginx and not a rewriting proxy]
+One cache endpoint fronts exactly **one** upstream. A `narinfo` and its `nar`
+are two separate requests and the `nar` URL is upstream-agnostic, so a
+multi-upstream proxy must rewrite `narinfo` URLs into its own namespace and
+track them in a database (the approach the former `ncps` proxy took — and the
+source of its recurring HTTP 500 "invalid nar hash"). With a single upstream
+there is no ambiguity:
+nginx caches `narinfo` + `nar` verbatim, signatures pass through untouched and
+clients verify them. No rewrite, no database, no such bug by construction.
+:::
+
+:::tip[Topology]
+- server: the gateway host that lists `nix-cache` in `config.yaml` (one per
+  zone). Runs nginx on the internal IP, port `network.ports.nixCache`.
+- clients: every local-zone host. Their substituters become the zone's
+  harmonia instances (direct, LAN/tailnet) plus this proxy.
+- roaming clients (`roaming = true`, set by the `roaming` host feature):
+  nomadic hosts moved between zones. Their substituters are the zone-neutral
+  names (`harmonia.dnf.internal`, `nix-cache.dnf.internal`) that each zone's
+  DNS resolves to its own cache services (see `service/dnsmasq.nix`), so the
+  cache follows the laptop. `fleet-update` builds such a host on itself.
+- global-zone hosts (`www`, a datacenter VPS): no LAN, no gateway, so no
+  proxy. They take the `global` harmonia over the tailnet and the fleet key,
+  without which they can pull nothing the fleet built.
+:::
+
+## Options
+
+* **enable** `bool` the per-zone Nix binary-cache proxy (nginx in front of cache.nixos.org)
+* **maxSize** `str` Maximum on-disk cache size; nginx evicts least-recently-used entries beyond it.
+* **roaming** `bool` Nomadic host (laptop moved between zones): replace the zone-pinned
+  substituters with the zone-neutral names every zone's DNS resolves to
+  its own cache services. Outside any DNF zone the names NXDOMAIN
+  instantly and Nix falls back to cache.nixos.org. Declared by the
+  `roaming` feature in `config.yaml`; set it by hand for a temporary move.
+
+```nix
+darkone.service.nix-cache = {
+  enable = false;
+  maxSize = "100g";
+  roaming = (host.features or { }) ? "roaming";
+};
+```
+
+Source: [`modules/service/nix-cache.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/service/nix-cache.nix)

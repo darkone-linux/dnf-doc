@@ -1,0 +1,21 @@
+---
+title: darkone.user.root
+sidebar:
+  label: "root"
+---
+
+Root user specific settings.
+
+:::danger[Required module]
+This module is enabled by default (required by DNF configuration).
+:::
+
+## Options
+
+* **enable** `bool` Root user specific configuration
+
+```nix
+darkone.user.root.enable = true;
+```
+
+Source: [`modules/user/root.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/user/root.nix)

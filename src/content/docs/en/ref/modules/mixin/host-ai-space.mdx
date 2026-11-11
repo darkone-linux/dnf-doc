@@ -1,0 +1,72 @@
+---
+title: darkone.host.ai-space
+sidebar:
+  label: "host.ai-space"
+---
+
+AI space: headless host running the agents of one space (owner + members).
+
+Server base with secrets isolated from the fleet: agents read untrusted
+input (mail, web, chat), so the host only decrypts its own
+`usr/secrets/hosts/<hostname>.yaml`. Usually a microVM guest
+(`features: ["microvm-guest:<hypervisor>"]`), bare metal works too.
+
+Agent tooling, declared once per space (`usr/machines/<host>/configuration.nix`)
+and shared by the OpenClaw assistant and every member's Claude Code / Codex /
+OpenCode (`darkone.home.aiSpace`, on by default in the `space-member` home):
+
+- `mcp`: MCP servers, local (`command`) or remote (`url`);
+- `skills`: `SKILL.md` content, a file or a skill directory, by name;
+- `enableClaude`, `enableCodex`, `enableOpenCode`: CLIs for members and for
+  OpenClaw delegation;
+- `packages`: tools on the agents' PATH and in members' homes;
+- `projectsDir`: shared projects, writable by every member and the agent
+  (group `projects`, setgid, default ACL), `~/projects` in members' homes.
+
+```nix
+darkone.host.ai-space = {
+  mcp.fetch = { command = "uvx"; args = [ "mcp-server-fetch" ]; };
+  mcp.github = {
+    command = "github-mcp-server";
+    args = [ "stdio" ];
+    secretEnv = [ "GITHUB_PERSONAL_ACCESS_TOKEN" ]; # sops: mcp/github/<VAR>
+  };
+  skills.commit-style = ./skills/commit-style;
+  packages = [ pkgs.uv pkgs.pandoc pkgs.github-mcp-server ];
+};
+```
+
+:::caution[Secrets: `secretEnv` only]
+`env` and `headers` end up in the world-readable Nix store. `secretEnv`
+reads the space's sops file, for local servers: a remote server takes no
+secret.
+:::
+
+## Options
+
+* **enable** `bool` AI space host (isolated agents workspace)
+* **mcp** `attrs` MCP servers of the space: OpenClaw and members' Claude Code / Codex / OpenCode.
+* **skills** `attrs` Skills of the space, by name: inline `SKILL.md`, a `SKILL.md` file or
+  a skill directory. Given to OpenClaw and members' Claude Code / Codex /
+  OpenCode.
+* **enableClaude** `bool` Claude Code for members and for OpenClaw (coding-agent delegation).
+* **enableCodex** `bool` Codex CLI for members and for OpenClaw (coding-agent delegation).
+* **enableOpenCode** `bool` OpenCode for members and for OpenClaw (coding-agent delegation).
+* **packages** `listOf package` Tools of the space: OpenClaw PATH and members' homes.
+* **projectsDir** `str` Shared projects of the space: every member and the OpenClaw agent
+  (its working dir) read and write them, `~/projects` in members' homes.
+
+```nix
+darkone.host.ai-space = {
+  enable = false;
+  mcp = { };
+  skills = { };
+  enableClaude = true;
+  enableCodex = true;
+  enableOpenCode = true;
+  packages = [ ];
+  projectsDir = "/var/lib/projects";
+};
+```
+
+Source: [`modules/mixin/host/ai-space.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/mixin/host/ai-space.nix)

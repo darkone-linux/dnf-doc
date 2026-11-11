@@ -1,0 +1,63 @@
+---
+title: darkone.home.gnome
+sidebar:
+  label: "gnome"
+---
+
+Gnome tweaks for home-manager.
+
+Hides launchers: the bare `xterm`, Qt5/Qt6 settings and NixOS manual for
+every profile, `scrcpy` and `scrcpy-console` when installed, Extensions for
+non-technical profiles, and (`hideTechnicalIcons`) Settings, Printers and
+File Roller for beginner / child profiles. `hiddenApps` (default: vim, btop,
+htop) hides more, entries still launchable by id (`gnome/hidden-apps.nix`,
+shared with the UMI module).
+`keepKeyring` opts the user out of the login keyring reset that follows an
+admin password change (read by the NixOS gnome module).
+`passwordlessKeyring` (default: non-advanced users on a LUKS host) gives the
+login keyring no password: a key login (`pam_u2f`) opens it without a prompt.
+
+:::caution[Passwordless keyring: secrets in clear text]
+Protected at rest by LUKS only, and copied as is into restic backups.
+:::
+
+:::caution[Sealed keyring set aside at activation]
+Moved to `~/.local/share/keyrings.sealed/`, never under a running session.
+Apps ask for their credentials once again; Element Desktop loses its session
+(`safeStorage` key gone), repair in the admin guide (`operate/users.mdx`).
+:::
+
+:::caution[NFS bookmarks]
+Do not declare `gtk.gtk3.bookmarks` from this module — while NFS home shares
+are on, `home/profiles/minimal/nfs.nix` owns this file and overwrites it.
+:::
+
+## Options
+
+* **enable** `bool` Enable gnome settings for home manager
+* **hideTechnicalIcons** `bool` Hide some icons for beginners / children / babies
+* **keepKeyring** `bool` Keep the login keyring when the admin changes the session password (keyring with a password of its own)
+* **passwordlessKeyring** `bool` Login keyring with no password, opened without a prompt (key or password login). Secrets in clear text, protected at rest by LUKS only.
+* **hiddenApps** `listOf str` Desktop entries hidden from the app grid, still launchable by id
+
+```nix
+darkone.home.gnome = {
+  enable = false;
+  hideTechnicalIcons = false;
+  keepKeyring = false;
+  passwordlessKeyring = !config.darkone.home.advanced.enable
+        && !cfg.keepKeyring
+        && (osConfig.boot.initrd.luks.devices or { }) != { };
+  hiddenApps = [ ];
+};
+```
+
+### `gnome/hidden-apps.nix`
+
+* **hiddenEntries** `listOf str` Desktop file ids hidden from the app grid: `gnome.hiddenApps`, `umi.hiddenApps` of a UMI host
+
+```nix
+darkone.home.gnome.hiddenEntries = [ ];
+```
+
+Source: [`home/modules/gnome.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/home/modules/gnome.nix)

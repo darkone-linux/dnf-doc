@@ -1,0 +1,177 @@
+---
+title: darkone.home.umi
+sidebar:
+  label: "umi"
+---
+
+Unified Multimodal Input (UMI)
+
+Touchscreen + voice + gaze (Talon autostart + Onboard).
+
+:::note[Session depends on the host]
+- **`darkone.host.umi` host**: Cinnamon X11 session (udev, uinput, Talon
+  provided by the host). Talon and a docked Onboard keyboard (word
+  prediction, sticky modifiers) start with the session, the keyboard hidden
+  until asked for. Panel, icons and text enlarged for gaze targets
+  (`panelHeight`, `textScaling`). DNF panel (`enablePanel`): launchers | open
+  windows, then hover click types, pause zone, gaze switch (applet
+  `umi-mouse`), accessibility menu, Onboard toggle. Menu favorites
+  (`menuFavorites`) open with the eye tracker calibration. Application
+  windows open maximized, panel in reach (`enableMaximize`).
+- **Any other host**: GNOME Wayland with its native accessibility: on-screen
+  keyboard, big pointer and text. Talon and Onboard, X11-only, stay off.
+
+Dwell click: opt-in (`enableDwell`) under GNOME. In Cinnamon, a Talon user
+script makes it follow the eye tracker, with gaze control (`enableTrackerAuto`).
+Talon 0.4 and 1.0 alike; 1.0's "Always On" is switched off, the tracker goes
+dark with gaze control.
+
+Speech recognition: asleep at each Talon start unless `enableSpeech`.
+:::
+
+:::note[Application grid (UMI host)]
+`enableRofiMenu`: the first panel launcher opens a full-screen rofi grid,
+pages of `rofiGridResolution` tiles turned by edge-high buttons, one click
+launches, settings panels left out. `hiddenApps` hides entries from the grid
+and the Cinnamon menu alike. rofi grabs the pointer: panel out of reach.
+:::
+
+:::note[SuperTuxKart with the mouse alone (UMI host)]
+`enableStkWithMouse`: the game's launcher runs `dnf-stk-mouse`, which turns
+every physical mouse into STK's default keys while the game window has the
+focus. Stick forward/back: accelerate/brake, sideways: steer; left click:
+drift, double click: fire, right click: nitro. Pointer untouched (menus).
+:::
+
+:::note[Gaze places, head refines (Talon 1.0)]
+Defaults measured on a Tobii 5: Talon's gaze filter (`gazeFilterSpeed`), a
+faster cursor filter (`cursorFilterSpeed`), head control on with a sensitive
+head (`headSpeed` 5, `head_bezier.vmax` scaled). Eye Tracking menu modes are
+declared (`enableGazeControl`, `enableHeadControl`, `enableHeadJump`,
+`enableMouseJump`, `enableGazeFocus`) and set again at each Talon start.
+:::
+
+:::tip[Live tuning]
+From Talon's REPL, lost on restart: `actions.user.umi_head_speed(5)`,
+`actions.user.umi_filter_speed(1, 4)`, `print(actions.user.umi_tuning())`.
+:::
+
+:::tip[Community scripts]
+Set `communityScripts` to a fetched github:talonhub/community tree to get
+full voice and gaze mouse control (zoom mouse, pop click) declaratively.
+:::
+
+:::note[Dual schemas]
+Settings go to both families: org/cinnamon/* for the UMI host session,
+org/gnome/* for GNOME sessions elsewhere. In Cinnamon, csd mirrors the
+a11y mouse keys between both families, both ways.
+Exception: keys locked by the DNF gnome module are never written here,
+a write to a locked key aborts the whole home-manager `dconf load`.
+Screen locking stays enabled GNOME-side (locked by the DNF gnome module);
+`idle-delay = 0` avoids triggering it, and the Cinnamon session has its
+own lock fully disabled.
+:::
+
+:::caution[Login keyring of the autologin user: no password, on every host]
+An autologin session types no password: a keyring sealed with one pops a gcr
+prompt the UMI user cannot answer. `darkone.home.gnome.passwordlessKeyring`
+is forced on for this user, encrypted host or not (secrets of a sealed
+keyring set aside once). The UMI host also strips `pam_gdm` from gdm-autologin.
+:::
+
+## Options
+
+* **enable** `bool` UMI multimodal input configuration (Talon + Onboard)
+* **enableTalonAutostart** `bool` Start Talon on session login, once the panel tray is up (talon must be in PATH).
+* **communityScripts** `nullOr package` talonhub/community tree deployed to ~/.talon/user/community.
+* **enableSpeech** `bool` Talon speech recognition at start. Off by default: put to sleep at
+  each Talon start, stray words must not trigger commands
+* **enableDwell** `bool` dwell click: clicking by resting the pointer. Off by default — it is
+  only usable with an eye tracker, and with a mouse it fires on whatever
+  the pointer was left over (the a11y menu toggling zoom or the on-screen
+  keyboard, typically)
+* **dwellTime** `float` Dwell click delay in seconds.
+* **enableTrackerAuto** `bool` Eye tracker plugged in: Talon gaze mouse control and hover click on;
+  unplugged: hover click off (Cinnamon session). Takes over
+  `enableDwell` in Cinnamon.
+* **gazeFilterSpeed** `nullOr numbers.positive` Talon Control Mouse per-eye gaze filter coefficient, with
+  `enableTrackerAuto`: higher reacts faster and smooths less. Default:
+  Talon's own, the head refines the last millimetres; `null` keeps
+  Talon's whatever its version.
+* **cursorFilterSpeed** `nullOr numbers.positive` Talon Control Mouse cursor filter coefficient, with
+  `enableTrackerAuto`: higher reacts faster, overshoots more. `null`
+  keeps Talon's own (2.0).
+* **headSpeed** `nullOr numbers.positive` Talon Head Control sensitivity, with `enableTrackerAuto` and
+  `enableHeadControl`: above 1 a slight head movement moves the cursor,
+  below 1 ample, poorly controlled movements are dampened. `null`
+  keeps Talon's own (1).
+* **enableGazeControl** `bool` Talon Gaze Control, with `enableTrackerAuto`: the cursor follows the gaze.
+* **enableHeadControl** `bool` Talon Head Control, with `enableTrackerAuto`: head movements refine
+  the cursor placed by the gaze (`headSpeed`). Off for an unsteady
+  head, which drags the cursor away from the gaze.
+* **enableHeadJump** `bool` Talon Head Jump, with `enableTrackerAuto`: a head movement brings the
+  cursor to the gaze
+* **enableMouseJump** `bool` Talon Mouse Jump, with `enableTrackerAuto`: moving a real mouse towards
+  the gaze brings the cursor there. Off by default, it yanks a helper's
+  pointer
+* **enableGazeFocus** `bool` Talon Gaze Focus (experimental), with `enableTrackerAuto`: the window
+  looked at gets the focus
+* **panelHeight** `ints.between 40 96` Cinnamon panel height in pixels, its icons follow (gaze targets).
+* **textScaling** `float` Text scaling factor of the Cinnamon session (buttons grow with their labels).
+* **enablePanel** `bool` Cinnamon panel managed by DNF: launchers and open windows set apart,
+  hover click controls (click types, pause zone), accessibility menu,
+  keyboard toggle; no Bluetooth icon nor corner bar. Rewritten at
+  every activation.
+* **enableMaximize** `bool` Application windows open maximized (Cinnamon extension), the panel
+  stays in reach. Dialogs, Onboard and fixed-size windows keep their
+  size.
+* **panelLaunchers** `listOf str` Panel launchers (desktop file ids), with `enablePanel`.
+* **menuFavorites** `listOf str` Cinnamon menu favorites (desktop file ids), rewritten at every
+  activation. `dnf-umi-calibrate.desktop`, with `enableTrackerAuto`,
+  starts the eye tracker calibration.
+* **enableRofiMenu** `bool` Full-screen application grid (rofi), UMI host only: pages of big
+  tiles turned by edge buttons, one click launches, settings panels
+  left out. Opened by the first panel launcher (with `enablePanel`).
+* **rofiGridResolution** `submodule` Application grid page, in tiles, with `enableRofiMenu`. The default
+  6 × 4 fits 96 px icons on a 1600×900 screen; fewer tiles grow wider.
+  * **columns** `ints.between 1 12` Tiles per row.
+  * **rows** `ints.between 1 8` Tile rows per page.
+* **hiddenApps** `listOf str` Applications hidden from the grid and the Cinnamon menu (desktop file
+  ids), UMI host only. Launches by id and file associations still work.
+* **enableStkWithMouse** `bool` SuperTuxKart driven by the mouse alone, UMI host only: the stick (or
+  mouse moves) accelerates, brakes and steers, left click drifts, double
+  click fires, right click uses nitro. Installs the game, its launcher
+  runs the converter
+
+```nix
+darkone.home.umi = {
+  enable = false;
+  enableTalonAutostart = true;
+  communityScripts = null;
+  enableSpeech = false;
+  enableDwell = false;
+  dwellTime = 1.6;
+  enableTrackerAuto = true;
+  gazeFilterSpeed = 1.0;
+  cursorFilterSpeed = 4.0;
+  headSpeed = 0.3;
+  enableGazeControl = true;
+  enableHeadControl = true;
+  enableHeadJump = false;
+  enableMouseJump = false;
+  enableGazeFocus = false;
+  panelHeight = 64;
+  textScaling = 1.5;
+  enablePanel = true;
+  enableMaximize = true;
+  panelLaunchers = [ ];
+  menuFavorites = [ ];
+  enableRofiMenu = true;
+  rofiGridResolution.columns = 6;
+  rofiGridResolution.rows = 4;
+  hiddenApps = [ ];
+  enableStkWithMouse = false;
+};
+```
+
+Source: [`home/modules/umi.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/home/modules/umi.nix)

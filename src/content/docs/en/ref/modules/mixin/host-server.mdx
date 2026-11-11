@@ -1,0 +1,26 @@
+---
+title: darkone.host.server
+sidebar:
+  label: "host.server"
+---
+
+Improved configuration for servers (minimal, no sleep, watchdog...).
+
+:::caution[Emergency mode is disabled]
+We prefer the system to attempt to continue booting so
+that we can hopefully still access it remotely. (cf. srvos)
+:::
+
+## Options
+
+* **enable** `bool` Server host minimal configuration
+* **enableWatchdog** `bool` Enable systemd watchdog
+
+```nix
+darkone.host.server = {
+  enable = false;
+  enableWatchdog = true;
+};
+```
+
+Source: [`modules/mixin/host/server.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/mixin/host/server.nix)

@@ -1,0 +1,27 @@
+---
+title: darkone.service.printing
+sidebar:
+  label: "printing"
+---
+
+Printers and scanners.
+
+## Options
+
+* **enable** `bool` Default useful packages
+* **loadAll** `bool` Full printers and scanners
+* **enableScanners** `bool` Enable scanners
+* **enableHpPrinters** `bool` HP printers only
+* **enableManualInstall** `bool` Manual drivers installation
+
+```nix
+darkone.service.printing = {
+  enable = false;
+  loadAll = false;
+  enableScanners = false;
+  enableHpPrinters = false;
+  enableManualInstall = false;
+};
+```
+
+Source: [`modules/service/printing.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/service/printing.nix)

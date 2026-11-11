@@ -1,0 +1,114 @@
+---
+title: darkone.system.security
+sidebar:
+  label: "security"
+---
+
+ANSSI BP-028 v2.0 (GNU/Linux) system hardening. (wip)
+
+Recommended module, enabled in certain host profiles or manually
+depending on needs. Progressively applies
+ANSSI recommendations according to the chosen level and machine category.
+Each host profile defines its level and category:
+
+:::danger[Module under development]
+- Refine and test options, features, etc.
+- Create the "checkScript", a security config introspection tool.
+- Simple local config for hardware-specific and needs-specific settings.
+:::
+
+```nix
+darkone.system.security = {
+  level    = "intermediary"; # minimal | intermediary | reinforced | high
+  category = "server";       # base | client | server
+};
+```
+
+Rules incompatible with the environment are excluded by tag:
+
+```nix
+darkone.system.security.excludes = [ "needs-jit" "needs-hibernation" ];
+```
+
+A specific rule can be bypassed with a mandatory rationale:
+
+```nix
+darkone.system.security.exceptions = {
+  R9.rationale = "Docker rootless required during development.";
+};
+```
+
+:::note[ANSSI hardening level]
+- `minimal`      : common base, any system (default).
+- `intermediary` : recommended for almost all systems.
+- `reinforced`   : sensitive or multi-tenant systems.
+- `high`         : dedicated skills and budget; implies kernel
+                   recompilation (tag `kernel-recompile`) if not excluded.
+:::
+
+:::note[Machine category]
+- `base`   : universal rules, always applied (default).
+- `client` : workstation (GUI, USB, session, locking).
+- `server` : server (hardened network, centralized logging, exposed services).
+
+Independent of `host.profile` — to be explicitly defined in each host profile.
+:::
+
+:::note[Exclusion tags]
+- `kernel-recompile`             : ignores R15–R27, C1 (no custom kernel).
+- `disable-kernel-module-loading`: ignores R10 (may break devices).
+- `no-ipv6`                      : ignores R22 (IPv6 kernel options). Dropping
+                                   IPv6 itself (R13) is the opt-in option
+                                   `darkone.security.kernel-params.disableIpv6`.
+- `no-mac`                       : ignores R37, R45 (no active MAC).
+- `no-sealing`                   : ignores R76, R77 (no HIDS/AIDE).
+- `no-auditd`                    : ignores R73 (auditd not configurable).
+- `embedded`                     : relaxes /var, /home constraints, etc.
+- `needs-jit`                    : allows relaxed W^X (Java, .NET, V8, Wasm).
+- `needs-kexec`                  : keeps kexec for kdump.
+- `needs-binfmt`                 : keeps binfmt_misc (Java, qemu-static).
+- `needs-hibernation`            : keeps hibernation (laptops).
+- `needs-usb-hotplug`            : disables USBGuard / deny_new_usb.
+:::
+
+:::note[Per-rule exceptions]
+A rule with an exception is excluded from activation even if the level would cover it.
+Mandatory rationale in `rationale`. Host exceptions add to the structural
+SELinux ones (R46–R49), never replace them.
+:::
+
+:::caution[Side effects]
+Some rules may break common usage: `noexec /tmp` (R28), SMT disabled (R8 —
+keep it with `darkone.security.kernel-params.disableSmt = false`), unsigned
+modules (R18), rootless containers (R9), JIT (R63). Check `sideEffects`
+comments in each themed file before raising the level on a production system.
+:::
+
+## Options
+
+* **enable** `bool` Enable the ANSSI BP-028 v2.0 hardening module.
+* **level** `enum [ "minimal" "intermediary" "reinforced" "high" ]` Targeted ANSSI hardening level.
+* **category** `enum [ "base" "client" "server" ]` Machine category that selects rule subsets.
+* **excludes** `listOf str` Tags that disable entire rule groups.
+* **exceptions** `attrs` Per-rule exceptions with mandatory rationale. Merged with the structural SELinux exceptions (R46–R49).
+* **adminMailbox** `str` Administrator email address (sudo R39, MTA aliases R75).
+* **useHardenedKernel** `bool` Use linuxPackages_hardened (R60, C1) instead of the default kernel.
+* **allowedActiveUsers** `listOf str` Human accounts allowed to authenticate (R30). Defaults to every user
+  declared in config.yaml (host.users) plus the framework deploy
+  account `nix`. Disabled accounts (no password credential) and service
+  accounts (not normal users) need not be listed.
+
+```nix
+darkone.system.security = {
+  enable = false;
+  level = "minimal";
+  category = "base";
+  excludes = [ ];
+  exceptions = { };
+  adminMailbox = "admin@exemple.fr";
+  useHardenedKernel = false;
+  allowedActiveUsers = [ ];
+};
+```
+
+Source: [`modules/system/security.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/system/security.nix)

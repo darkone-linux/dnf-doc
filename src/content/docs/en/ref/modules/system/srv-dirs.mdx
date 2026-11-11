@@ -1,0 +1,51 @@
+---
+title: darkone.system.srv-dirs
+sidebar:
+  label: "srv-dirs"
+---
+
+Shared directories management service.
+
+:::caution[Auto-activation]
+This service is automatically enabled by services that use NFS or shared media storage.
+:::
+
+## Options
+
+* **enable** `bool` Enable srv dirs, create the root dir (default /srv)
+* **enableNfs** `bool` Enable nfs service paths (nfs/common, nfs/homes)
+* **enableMedias** `bool` Enable media services paths (medias/[videos|music|incomming/...])
+* **enableStk** `bool` Enable SuperTuxKart tracks share path (nfs/stk-tracks)
+* **root** `str` Root dir for persistant data (/srv)
+* **nfs** `str` NFS root directory (/srv/nfs)
+* **homes** `str` Directory for shared homes (/srv/nfs/homes)
+* **common** `str` Shared common directory (/srv/nfs/common linked to ~/Public)
+* **stkTracks** `str` SuperTuxKart shared tracks directory (/srv/nfs/stk-tracks)
+* **medias** `str` Medias root dir (/srv/medias)
+* **music** `str` Shared music files directory (/srv/medias/music)
+* **videos** `str` Shared video files directory (/srv/medias/videos)
+* **incoming** `str` Shared incoming directory (/srv/medias/incoming write access)
+* **incomingMusic** `str` Shared incoming directory (/srv/medias/incoming/music write access)
+* **incomingVideos** `str` Shared incoming directory (/srv/medias/incoming/videos write access)
+
+```nix
+darkone.system.srv-dirs = {
+  enable = cfg.enableNfs || cfg.enableMedias || cfg.enableStk;
+  enableNfs = false;
+  enableMedias = false;
+  enableStk = false;
+  root = "/srv";
+  nfs = null;
+  homes = null;
+  common = null;
+  stkTracks = null;
+  medias = null;
+  music = null;
+  videos = null;
+  incoming = null;
+  incomingMusic = null;
+  incomingVideos = null;
+};
+```
+
+Source: [`modules/system/srv-dirs.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/system/srv-dirs.nix)

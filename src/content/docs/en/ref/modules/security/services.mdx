@@ -1,0 +1,48 @@
+---
+title: darkone.security.services
+sidebar:
+  label: "services"
+---
+
+Hardening of systemd services (R62–R66). (wip)
+
+Covers disabling unnecessary services (R62), reducing functionality via
+systemd security options (R63), privilege restriction (R64),
+isolation (R65), and hardening of containerization components (R66).
+
+:::caution[Activation]
+The `enable` option follows `darkone.system.security.enable` by default.
+Rules (Rxx/Cxx) are activated based on level, category, and excludes
+defined in `darkone.system.security` (via `isActive`).
+:::
+
+:::caution[R63 — MemoryDenyWriteExecute]
+Breaks JIT runtimes (Java, V8, .NET, LuaJIT, Wasm). Use the
+`needs-jit` tag in `excludes` or exclude the service individually.
+:::
+
+:::caution[R66 — Docker userns-remap]
+Breaks host-to-container bind-mounts (UID shift). Migration of existing
+volumes required before enabling.
+:::
+
+## Options
+
+* **enable** `bool` Enable ANSSI hardening of systemd services (R62–R66).
+* **rootServicesAllowed** `listOf str` systemd services allowed to run as root without CapabilityBoundingSet (R64).
+* **hardenedUnits** `listOf str` systemd units to which the ANSSI hardening baseline is applied
+  (R52 RuntimeDirectoryMode, R55 PrivateTmp, R63 full sandbox via
+  `dnfLib.mkHardenedServiceConfig`). Empty by default: blanket
+  sandboxing can break services that need write access or extra
+  syscalls, so units are opt-in. List framework-owned units known to
+  tolerate confinement; per-unit `serviceConfig` overrides still win.
+
+```nix
+darkone.security.services = {
+  enable = false;
+  rootServicesAllowed = [ ];
+  hardenedUnits = [ ];
+};
+```
+
+Source: [`modules/security/services.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/security/services.nix)

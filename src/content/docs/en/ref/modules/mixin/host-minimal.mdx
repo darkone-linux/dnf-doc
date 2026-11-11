@@ -1,0 +1,28 @@
+---
+title: darkone.host.minimal
+sidebar:
+  label: "host.minimal"
+---
+
+Every host configuration is based on this minimal config.
+
+:::caution[Services declaration]
+A number of services (immich, nextcloud, forgejo, etc.) can be declared in
+`etc/config.yaml` of each host, regardless of its type (server, laptop,
+desktop, etc.). **It is advisable to declare them in the yaml file so that
+the service is visible across the entire network!**
+:::
+
+## Options
+
+* **enable** `bool` Minimal host configuration
+* **secure** `bool` Prefer more secure options (disable mutable users...)
+
+```nix
+darkone.host.minimal = {
+  enable = false;
+  secure = false;
+};
+```
+
+Source: [`modules/mixin/host/minimal.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/mixin/host/minimal.nix)

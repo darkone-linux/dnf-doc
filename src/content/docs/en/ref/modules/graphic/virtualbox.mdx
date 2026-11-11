@@ -1,0 +1,21 @@
+---
+title: darkone.graphic.virtualbox
+sidebar:
+  label: "virtualbox"
+---
+
+Virtualbox host installation.
+
+## Options
+
+* **enable** `bool` Pre-configured virtualbox installation
+* **enableExtensionPack** `bool` Enable extension pack (causes recompilations)
+
+```nix
+darkone.graphic.virtualbox = {
+  enable = false;
+  enableExtensionPack = false;
+};
+```
+
+Source: [`modules/graphic/virtualbox.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/graphic/virtualbox.nix)

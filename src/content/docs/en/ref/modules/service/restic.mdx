@@ -1,0 +1,141 @@
+---
+title: darkone.service.restic
+sidebar:
+  label: "restic"
+---
+
+Restic backup module: REST server + per-host backup targets.
+
+:::tip[Two roles, one module]
+- Server: a host with `restic` in its config.yaml services runs the REST
+  server (`enableServer`) and stores every host's repository.
+- Client: any host with `enable = true` declares backup `targets`
+  (local path or `rest:http://restic.<zone>:<port>`).
+:::
+
+:::note[Two passwords, do not confuse]
+- Repository passphrase: `restic-password-<zone>`, encrypts the repo content.
+- REST credential: per-host `restic/<hostname>/rest-password`, authenticates
+  the host against the REST server.
+
+Both are created by `just configure-admin-host` (idempotent), which reads
+the fleet's declared hosts and zones.
+:::
+
+Example (machine config):
+
+```nix
+darkone.service.restic = {
+  enable = true;
+  targets = [
+    { name = "main"; root = "rest:http://restic.my-zone.my-domain.tld:8888";
+      zone = "ag"; categories = [ "system" "nfs" ]; }
+  ];
+};
+```
+
+Repository layout per target: one repo per category, named after it.
+
+```
+<root>/<hostname>/system  <- "system" category (/ minus excludes)
+<root>/<hostname>/nfs     <- "nfs" category    (/srv/nfs/<...>)
+<root>/<hostname>/medias  <- "medias" category (/srv/medias/<...>)
+```
+
+:::caution[Repo path is exactly two levels deep]
+rest-server serves repositories at most two components below its `--path`:
+`<hostname>/medias` answers, `<hostname>/srv/medias` returns 404 and restic
+reports a misleading `repository does not exist`. The subpath is therefore
+the bare category name, never the source directory. Identical layout for
+local and REST targets lets a repo move between the two without a rename.
+:::
+
+:::note[An unreachable REST server skips the run]
+Every `rest:` target carries an `ExecCondition` reachability probe. A backup
+whose server is down is *skipped*, never failed: no nightly
+SystemdUnitFailed, no quarter-hour of restic retries, and no `initialize`
+creating an empty repo against a dead endpoint. The missing backup still
+surfaces, through ResticBackupStale / ResticBackupCritical, which watch the
+last successful run.
+:::
+
+:::note[Cloud sync folders are never backed up]
+A Nextcloud/ownCloud sync folder replicates a server-side original that is
+backed up on its own, and restic never dedups across repositories. Caught by
+path (`/home/*/Nextcloud`, numbered variants included) and by journal marker.
+:::
+
+:::danger[Migrating repos created before this layout]
+Repos written when the subpath mirrored the source directory sit under
+`<hostname>/srv/{nfs,medias}`. Rename them on the server before the next run:
+`initialize = true` would otherwise create an empty repo at the new path and
+silently start a full re-seed.
+
+```sh
+mv <data-dir>/<hostname>/srv/medias <data-dir>/<hostname>/medias
+rmdir <data-dir>/<hostname>/srv
+```
+:::
+
+Sub-modules (`restic/`):
+- `server.nix`: the REST server, one account per fleet host;
+- `metrics.nix`: backup freshness metrics for the restic alerts.
+
+## REST server (`server.nix`)
+
+One account per fleet host (`restic/<hostname>/rest-password`), checked
+against an htpasswd assembled at boot; `privateRepos` confines each host to
+its own `<hostname>/` prefix.
+
+:::caution[`listenAll` widens the bind, not the firewall]
+The server binds `params.ip`, i.e. the LAN address on a gateway. Clients
+reaching it from another zone over the tailnet need `listenAll = true`
+(bind `0.0.0.0`). The firewall stays the boundary: `lan0` gets the port from
+`getInternalInterfaceFwPath`, `tailscale0` is already a trusted interface on
+a gateway, and the WAN never opens it.
+:::
+
+## Metrics (`metrics.nix`)
+
+Monitored nodes only (`monitoring-node` feature): each job stamps its last
+success in the textfile collector, and `restic-declared` lists the declared
+jobs so a job that never succeeds still ages into a `dnf-restic-<zone>`
+alert.
+
+## Options
+
+* **enable** `bool` Enable restic backup client
+* **enableDryRun** `bool` Dry Run mode
+* **enableWaitRemoteFs** `bool` Run backups only after remote-fs.target
+* **enableServer** `bool` Enable restic REST server
+* **listenAll** `bool` Bind the REST server on 0.0.0.0 (off-site clients)
+* **serverDataDir** `str` Local storage root of the REST server (all hosts' repos)
+* **targets** `listOf submodule` Backup destinations for this host (local path or REST URL)
+  * **name** `str` Target id, used in backup/unit names (&lt;category&gt;-&lt;name&gt;)
+  * **root** `str` Repository root: local path or REST URL
+  * **zone** `str` Zone selecting the repo passphrase (restic-password-&lt;zone&gt;)
+  * **categories** `listOf ( enum [ "system" "nfs" "medias" ] )` What to back up to this target
+* **nfsPaths** `listOf str` NFS dirs (/srv/nfs/&lt;xxx&gt;) included in the 'nfs' category
+* **mediasPaths** `listOf str` Medias dirs (/srv/medias/&lt;xxx&gt;) included in the 'medias' category
+* **shared** `raw` Restic values shared with the `restic/` sub-modules.
+
+```nix
+darkone.service.restic = {
+  enable = false;
+  enableDryRun = false;
+  enableWaitRemoteFs = false;
+  enableServer = false;
+  listenAll = false;
+  serverDataDir = "/mnt/backup/restic";
+  targets = [ ];
+  targets.name = "main";
+  targets.root = "rest:http://restic.${zone.domain}:${toString srvPort}";
+  targets.zone = zone.name;
+  targets.categories = [ ];
+  nfsPaths = [ ];
+  mediasPaths = [ ];
+  shared = { inherit params; };
+};
+```
+
+Source: [`modules/service/restic.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/service/restic.nix)

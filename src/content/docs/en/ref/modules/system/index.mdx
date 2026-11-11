@@ -1,0 +1,25 @@
+---
+title: System modules
+sidebar:
+  order: 4
+  label: Overview
+---
+
+**A system module** manages common, important, and general configurations.
+
+| Module | Role |
+|---|---|
+| [`core`](/en/ref/modules/system/core/) | The core DNF module. |
+| [`dnf-release`](/en/ref/modules/system/dnf-release/) | Stamps the framework release on the host: `/etc/dnf-release` and the boot label. |
+| [`documentation`](/en/ref/modules/system/documentation/) | Documentation (man) for developers and admins. |
+| [`hardware`](/en/ref/modules/system/hardware/) | Hardware configuration improvements. |
+| [`i18n`](/en/ref/modules/system/i18n/) | Location and lang configuration. |
+| [`luks`](/en/ref/modules/system/luks/) | LUKS passphrase policy &amp; remote unlock: shared + per-host passphrases, initrd SSH. |
+| [`microvm`](/en/ref/modules/system/microvm/) | MicroVM guests (microvm.nix, cloud-hypervisor) on a DNF hypervisor host. |
+| [`network`](/en/ref/modules/system/network/) | Fleet-wide network configuration of DNF hosts. |
+| [`security`](/en/ref/modules/system/security/) | ANSSI BP-028 v2.0 (GNU/Linux) system hardening. (wip) |
+| [`services`](/en/ref/modules/system/services/) | DNF service registry: every service module registers here, and the registry is resolved against the network topology. |
+| [`sops`](/en/ref/modules/system/sops/) | DNF sops, passwords and secrets management. |
+| [`srv-dirs`](/en/ref/modules/system/srv-dirs/) | Shared directories management service. |
+| [`testing`](/en/ref/modules/system/testing/) | Standalone test mode for the NixOS Test Driver. |
+| [`yubikey`](/en/ref/modules/system/yubikey/) | YubiKey strong authentication: fleet-wide PAM U2F + declarative FIDO2 LUKS. |

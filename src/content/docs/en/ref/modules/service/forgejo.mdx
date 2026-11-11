@@ -1,0 +1,23 @@
+---
+title: darkone.service.forgejo
+sidebar:
+  label: "forgejo"
+---
+
+A full-configured forgejo git forge.
+
+:::note[SSH access]
+Push/pull over SSH goes through `AuthorizedKeysCommand`, not through the
+`authorized_keys` file Forgejo writes in its home: `core.nix` sets
+`authorizedKeysInHomedir = false`, so sshd never reads that file.
+:::
+
+## Options
+
+* **enable** `bool` Enable local forgejo service
+
+```nix
+darkone.service.forgejo.enable = false;
+```
+
+Source: [`modules/service/forgejo.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/service/forgejo.nix)

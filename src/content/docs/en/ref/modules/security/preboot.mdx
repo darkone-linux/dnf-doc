@@ -1,0 +1,38 @@
+---
+title: darkone.security.preboot
+sidebar:
+  label: "preboot"
+---
+
+Hardware configuration and secure boot (R1–R7). (wip)
+
+Covers UEFI Secure Boot (R3), lanzaboote, bootloader password (R5),
+signed UKIs (R6), and IOMMU (R7). R1 and R2 (hardware/firmware) are
+out of NixOS scope and only produce a note in the report.
+
+:::caution[Activation]
+The `enable` option follows `darkone.system.security.enable` by default.
+Rules (Rxx/Cxx) are activated based on level, category, and excludes
+defined in `darkone.system.security` (via `isActive`).
+:::
+
+:::caution[R3/R4 — Secure Boot]
+The lanzaboote integration requires an initial physical key enrollment
+(`sbctl enroll-keys`). R4 (replacing Microsoft keys) carries a bricking
+risk if the machine does not allow restoration.
+:::
+
+:::caution[R7 — IOMMU]
+May cause crashes with some GPUs/Thunderbolt; I/O overhead ~5–15%
+on very high-throughput NVMe arrays.
+:::
+
+## Options
+
+* **enable** `bool` Enable ANSSI secure boot — Secure Boot, IOMMU (R1–R7).
+
+```nix
+darkone.security.preboot.enable = false;
+```
+
+Source: [`modules/security/preboot.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/security/preboot.nix)
