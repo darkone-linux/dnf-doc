@@ -43,6 +43,18 @@ modules](/fr/ref/modules/)** générée par `just codegen`.
 { config, lib, ... }:
 ```
 
+Chaque module y a sa page, dont l'en-tête est le corps&nbsp;:
+
+| Dans l'en-tête | Dans la référence |
+|---|---|
+| 1re ligne | Résumé, sur la page de catégorie |
+| Titres `####` | Sections de la page |
+| Lien vers un module | `/ref/modules/<catégorie>/<module>/` |
+
+Un sous-module (`<nom>/<sujet>.nix`) n'a pas de page&nbsp;: l'en-tête du module
+parent le documente, ses options rejoignent la page du parent. `just codegen`
+refuse un lien vers une page de référence absente.
+
 {/* t:p 51e1ece4a649b1e2325b5132e0fbab7da2bd42341d22045cdf43a21567da37a1 */}
 ## Fichier généré
 
