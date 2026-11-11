@@ -29,7 +29,10 @@ contournement posé en attendant le correctif amont est inscrit au registre
 
 :::caution[Inscription obligatoire]
 Un test unitaire refuse un overlay, un backport ou un input `nixpkgs-*` non
-inscrit, ainsi qu'une entrée dont un fichier ou un input a disparu.
+inscrit, ainsi qu'une entrée dont un fichier ou un input a disparu. Il refuse
+aussi un overlay absent de la liste `dnf/lib/overlays/default.nix` et un
+backport que `dnf/lib/flake/mk-configuration.nix` n'importe pas : ils seraient
+inscrits, mais sans effet.
 :::
 
 {/* t:p ee513526ee5fd421756e8c2f07b65a54e6f053418e67359ddbe9ae658aa4594c */}
@@ -85,9 +88,9 @@ gimp · overlay · since 2026-06-17  [drop?]
 1. **Vérifier** la condition `dropWhen`, en reconstruisant un hôte concerné au
    besoin.
 
-2. **Supprimer** le contournement : fichiers de `files`, câblage dans
-   `dnf/lib/flake/mk-configuration.nix` (overlay, backport), `inputs` de
-   `dnf/flake.nix`.
+2. **Supprimer** le contournement : fichiers de `files`, câblage (overlay dans
+   `dnf/lib/overlays/default.nix`, backport dans
+   `dnf/lib/flake/mk-configuration.nix`), `inputs` de `dnf/flake.nix`.
 
 3. **Désinscrire** : retirer l'entrée du registre.
 
