@@ -31,6 +31,16 @@ L'arbre de travail est lu comme `just commit` le commiterait : fichiers suivis
 et nouveaux fichiers, sauf ceux que git ignore. Le projet consommateur est le
 même des deux côtés, seul `dnf/` varie.
 
+## Mise à jour des inputs en attente
+
+Un `flake.lock` de `dnf/` modifié mais pas encore commité (`nix flake update`)
+change tous les hôtes et masquerait l'effet du code. La commande le signale et
+lit alors l'arbre de travail avec le verrou de la révision de base.
+
+```sh
+LOCK=tree just drv-diff         # compter aussi la mise à jour des inputs
+```
+
 ## Une dérivation diffère
 
 La sortie donne les deux `drvPath` de chaque hôte touché. Les comparer montre
