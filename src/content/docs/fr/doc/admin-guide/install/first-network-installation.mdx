@@ -38,12 +38,13 @@ sous son compte de déploiement `nix`.
 | Machine | x86_64, UEFI conseillé |
 | Secure Boot | désactivé |
 | Disque | 20 Go minimum |
-| Mémoire | 4 Go (seuil : 3500 MiB) |
+| Mémoire | 6 Go (seuil : 5500 MiB) |
 | Clés USB | deux : installeur et sauvegarde |
 | Réseau | Internet, ≈ 5 Go téléchargés |
 
 Le chiffrement du disque exige l'UEFI. Le contrôle de mémoire lit `MemTotal`&nbsp;:
-une machine de 4 Go passe.
+une machine de 6 Go passe, une de 4 Go est refusée. L'installeur et l'installation
+vivent en mémoire&nbsp;: avec 4 Go, la machine sature et l'installation n'aboutit pas.
 
 {/* t:p f611ba2fe7026a147cae531dbb46060bf8d994e4ecb249056d7f365025d06d6a */}
 ## Préparer la clé
