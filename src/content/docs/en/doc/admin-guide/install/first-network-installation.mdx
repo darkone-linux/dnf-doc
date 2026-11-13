@@ -29,7 +29,7 @@ itself a DNF host&nbsp;: the administration recipes run under its deployment
 account `nix`.
 :::
 
-{/* t:p c25ca48b3a51682ad11bd09385c8af06471c022541a3aaa6fc3b797b79db374d */}
+{/* t:p 8313338be02d2cdb5e57ecf99028ab01c9abe66f9a4bd94ec0ee7e9b9644e856 */}
 ## Prerequisites
 
 | Item | Required |
@@ -37,12 +37,13 @@ account `nix`.
 | Machine | x86_64, UEFI recommended |
 | Secure Boot | disabled |
 | Disk | 20 GB minimum |
-| Memory | 4 GB (threshold: 3500 MiB) |
-| USB keys | two: installer and backup |
+| Memory | 6 GB (threshold: 5500 MiB) |
+| USB drives | two: installer and backup |
 | Network | Internet, ≈ 5 GB downloaded |
 
 Disk encryption requires UEFI. The memory check reads `MemTotal`&nbsp;:
-a 4 GB machine passes.
+a 6 GB machine passes, a 4 GB one is rejected. The installer and the installation
+live in memory&nbsp;: with 4 GB, the machine saturates and the installation does not complete.
 
 {/* t:p f611ba2fe7026a147cae531dbb46060bf8d994e4ecb249056d7f365025d06d6a */}
 ## Prepare the key
