@@ -40,6 +40,40 @@ applies to this MAC.
 The deployment loads the bridge without activating it. Reboot the workstation
 (or run `nmcli connection up br0`) to move its IP address onto the bridge.
 
+{/* t:p faa3fd899ee6dbf786f45235731a74c84666858f4e89bada4fefb59b77b7071a */}
+## Start a VM
+
+<Steps>
+
+1. **Generate the image**
+
+   ```sh
+   just build-iso
+   ```
+
+2. **Start the VM**, from the project root
+
+   ```sh
+   # dnf/scripts/vm-start.sh <host>
+   dnf/scripts/vm-start.sh poste
+   ```
+
+   On first launch, the script creates the `var/vm/poste.qcow2` disk
+   (40&nbsp;GB), ignored by git. An empty disk boots from the image.
+
+3. **Install**
+
+   The VM screen displays its IP address and MAC. Then run the
+   [usual installation](/en/doc/admin-guide/install/add-host/)&nbsp;:
+
+   ```sh
+   just full-install poste nixos 10.0.0.50
+   ```
+
+   On reboot, the VM boots from its disk.
+
+</Steps>
+
 {/* t:p 928e2cbf450f9c46652c945f6f1fa2757fa6f11d3e28770f99422e3b5f608811 */}
 ## Settings
 
