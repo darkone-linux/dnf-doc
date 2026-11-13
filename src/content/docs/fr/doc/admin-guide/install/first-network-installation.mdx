@@ -19,8 +19,9 @@ un poste suffit pour démarrer.
 ## Le parcours
 
 1. **Un poste** : la machine de l'administrateur (cette page).
-2. **Une passerelle** : créer une [zone](/fr/doc/admin-guide/install/gateway/) et y brancher d'autres postes.
-3. **La coordination** : relier les zones par [VPN](/fr/doc/admin-guide/install/hcs/) (tailnet).
+2. **Une passerelle** : créer une [zone](/fr/doc/admin-guide/install/gateway/) et y brancher d'autres machines.
+3. **Serveurs et services** : fichiers, photos, messagerie… voir le [catalogue des services](/fr/doc/admin-guide/operate/services/).
+4. **Internet** : relier les zones par [VPN](/fr/doc/admin-guide/install/hcs/) (tailnet).
 
 :::note[Une seule configuration]
 Tous les nœuds sont décrits dans **une** configuration NixOS, sur la machine de
@@ -29,77 +30,121 @@ machine est elle-même un hôte DNF&nbsp;: les recettes d'administration tournen
 sous son compte de déploiement `nix`.
 :::
 
+## Prérequis
+
+| Élément | Requis |
+|---|---|
+| Machine | x86_64, UEFI conseillé |
+| Secure Boot | désactivé |
+| Disque | 20 Go minimum |
+| Mémoire | 4 Go (seuil : 3500 MiB) |
+| Clés USB | deux : installeur et sauvegarde |
+| Réseau | Internet, ≈ 5 Go téléchargés |
+
+Le chiffrement du disque exige l'UEFI. Le contrôle de mémoire lit `MemTotal`&nbsp;:
+une machine de 4 Go passe.
+
+## Préparer la clé
+
+<Steps>
+
+1. **Télécharger**
+
+   L'ISO et son empreinte, jointes à chaque
+   [release du framework](https://github.com/darkone-linux/darkone-nixos-framework/releases)&nbsp;:
+   `dnf-installer-vX.Y.Z-x86_64-linux.iso` et son `.sha256`.
+
+2. **Vérifier l'empreinte**
+
+   Dans le dossier des deux fichiers&nbsp;:
+
+   ```sh
+   sha256sum -c dnf-installer-vX.Y.Z-x86_64-linux.iso.sha256
+   ```
+
+   Attendu&nbsp;: `dnf-installer-vX.Y.Z-x86_64-linux.iso: OK`.
+
+3. **Graver la clé**
+
+   Repérer la clé avec `lsblk`, puis écrire l'image dessus&nbsp;:
+
+   ```sh
+   sudo dd if=dnf-installer-vX.Y.Z-x86_64-linux.iso of=/dev/sdX bs=4M status=progress conv=fsync
+   ```
+
+   :::caution[Le périphérique est effacé]
+   Un mauvais `/dev/sdX` efface un autre disque&nbsp;: vérifier taille et
+   modèle dans `lsblk`.
+   :::
+
+</Steps>
+
 {/* t:p e54ce81a50893f28eddfb0bf38fa3f810cc8a084a1a8afdfb9bd5a6d12b64f35 */}
 ## Installation assistée
 
 Le premier poste s'installe seul, depuis l'ISO générique, sans autre
-machine&nbsp;: c'est la voie la plus simple.
-
-:::tip[Essayer d'abord dans une VM]
-Sur un Linux doté de Nix et de KVM, une seule commande démarre l'ISO dans une
-fenêtre QEMU, disque virtuel compris&nbsp;:
-
-```sh
-nix run github:darkone-linux/darkone-nixos-framework#try
-```
-
-Le disque est gardé d'une fois sur l'autre (`~/.local/share/dnf-try`)&nbsp;;
-`nix run …#try -- --reset` repart de zéro.
-:::
+machine&nbsp;: c'est la voie la plus simple. L'assistant `darkone new` s'affiche
+en anglais.
 
 <Steps>
 
-1. **Obtenir l'image**
+1. **Démarrer la machine** sur la clé, de préférence en filaire.
 
-   L'ISO générique jointe à chaque
-   [release du framework](https://github.com/darkone-linux/darkone-nixos-framework/releases)
-   (`dnf-installer-vX.Y.Z-x86_64-linux.iso`), gravée sur une clé USB.
+   Sans câble, la console attend le réseau, et `Entrée` ouvre `nmtui` pour
+   choisir un Wi-Fi. Le réseau en place, un menu propose trois choix (taper
+   le chiffre, puis `Entrée`)&nbsp;:
 
-2. **Démarrer la machine** sur la clé, Secure Boot désactivé. En filaire de
-   préférence&nbsp;: sans câble, la console attend le réseau, et `Entrée` ouvre
-   `nmtui` pour choisir un Wi-Fi.
+   | Choix | Effet |
+   |---|---|
+   | *1) New network* | lance `darkone new` (cette page) |
+   | *2) Add this machine to an existing network* | voir [Ajouter une machine](/fr/doc/admin-guide/install/add-host/) |
+   | *3) Shell* | invite de commande |
 
-3. **Répondre à l'assistant**
+2. **Répondre à l'assistant**
 
-   Il se lance tout seul sur la console, une fois le réseau en place.
-   `Ctrl-C` donne l'invite de commande, d'où il se relance&nbsp;:
+   Choisir *1*. Avant la première question, l'assistant vérifie la mémoire,
+   le réseau et l'horloge&nbsp;; en cas d'échec, *Check again*, *Connect to
+   Wi-Fi* ou *Abort*. Depuis l'invite de commande (`Ctrl-C` ou choix *3*), il
+   se relance&nbsp;:
 
    ```sh
    darkone new
    ```
 
    Il demande la langue et le clavier, l'identité et le mot de passe de
-   l'administrateur, le domaine du réseau, le nom de la machine, le disque s'il
-   y en a plusieurs (pas en dessous de 20&nbsp;Go&nbsp;: la clé de sauvegarde
-   n'est jamais proposée), le chiffrement du disque, un cache de paquets
-   facultatif, puis la passphrase du disque. Le reste se détecte&nbsp;:
-   portable ou poste fixe, UEFI ou BIOS, fuseau horaire du pays. Disque en
-   clair&nbsp;: une passphrase pour la sauvegarde des clés.
+   l'administrateur, le domaine du réseau (`home.arpa` à défaut de domaine à
+   soi), le nom de la machine, le disque s'il y en a plusieurs (pas en dessous
+   de 20&nbsp;Go&nbsp;: la clé de sauvegarde n'est jamais proposée), le
+   chiffrement du disque, puis la passphrase du disque. Le reste se
+   détecte&nbsp;: portable ou poste fixe, UEFI ou BIOS, fuseau horaire du
+   pays. Disque en clair&nbsp;: une passphrase pour la sauvegarde des clés.
 
-   Le cache (URL, clé publique facultative) sert à l'installation seulement,
-   à côté de cache.nixos.org&nbsp;: une machine du réseau local qui sert son
-   store évite de télécharger les quelque 5&nbsp;Go du système. La clé est
-   inutile pour les paquets déjà signés par cache.nixos.org.
+   La passphrase du disque devient celle du parc (`luks-passphrase`)&nbsp;:
+   tout hôte chiffré installé ensuite est formaté avec elle. Voir
+   [Chiffrement des disques (LUKS)](/fr/doc/admin-guide/operate/luks/).
 
-4. **Confirmer**
+3. **Confirmer**
 
-   Le récapitulatif signale les choix définitifs (domaine, login). Le disque
-   est ensuite effacé et le système installé, projet compris dans
+   Le récapitulatif signale les choix définitifs (domaine, login, zone). Le
+   disque est ensuite effacé et le système installé, projet compris dans
    `/etc/nixos`.
 
-5. **Sauvegarder les clés**, sur une seconde clé USB
+4. **Sauvegarder les clés**, sur une seconde clé USB
 
    Brancher une clé USB (FAT, exFAT, ext4…), la choisir&nbsp;: rien n'y est
    effacé. L'assistant y écrit `dnf-backup-<domaine>.tar.age`, puis demande de
    la débrancher et de la rebrancher pour la relire. Sans clé possible (une
-   VM, `#try`)&nbsp;: **Skip for now**, à vos risques, puis
+   VM)&nbsp;: *Skip for now*, à vos risques, puis
    `just backup-admin <périphérique>` depuis le système installé.
 
-6. **Redémarrer**, clés USB retirées. Disque chiffré&nbsp;: la passphrase est
-   demandée à chaque démarrage, avec le clavier choisi. La première session
-   ouvre une page d'accueil dans le navigateur&nbsp;: étape 1 sur 4 franchie,
-   la passerelle ensuite. Elle reste à portée dans le dossier **Réseau local**
-   des applications (*Premiers pas*), avec la documentation (*Doc DNF*) et un
+5. **Redémarrer**, clés USB retirées.
+
+   L'assistant demande *Remove the installation USB key. Reboot now?* (non par
+   défaut). Disque chiffré&nbsp;: la passphrase est demandée à chaque
+   démarrage, avec le clavier choisi. La première session ouvre une page
+   d'accueil dans le navigateur&nbsp;: étape 1 sur 4 franchie, la passerelle
+   ensuite. Elle reste à portée dans le dossier **Réseau local** des
+   applications (*Premiers pas*), avec la documentation (*Doc DNF*) et un
    terminal dans le projet `/etc/nixos` (*Sources du réseau*), dont le
    `README.md` résume le quotidien.
 
@@ -112,14 +157,44 @@ sauvegarde, disque en clair), les contient tous&nbsp;: la ranger loin de la
 machine.
 :::
 
-:::caution[La passphrase du disque est celle du parc]
-Elle devient la passphrase partagée (`luks-passphrase`)&nbsp;: tout hôte
-chiffré installé ensuite est formaté avec elle. Le chiffrement exige l'UEFI.
-Voir [Chiffrement des disques (LUKS)](/fr/doc/admin-guide/operate/luks/).
-:::
+## FAQ
+
+### Que faire si l'installation échoue ?
+
+- `nixos-install` est relancé seul, 3 essais (*attempt N/3*)&nbsp;; le store déjà copié est gardé.
+- Au-delà, *Retry? [y/N]* à un terminal, sinon l'échec est rendu.
+- `Ctrl-C` arrête sans nouvel essai, et rend la main.
+- Relancer `darkone new` dans la même session de l'ISO&nbsp;: *Previous install*.
+- *Resume* : mêmes réponses, projet et disque gardés, rien d'effacé.
+- *Start from scratch* : projet supprimé, disque effacé après le récapitulatif.
+- *Abort* : rien ne change.
+
+Les réponses vivent en RAM (`$XDG_RUNTIME_DIR/dnf-answers.yaml`), les
+passphrases jamais&nbsp;: *Resume* les redemande. Reprise impossible,
+l'assistant dit pourquoi (*It cannot be resumed*) et ne propose que le reste.
+ISO redémarrée, le projet est perdu&nbsp;: repartir de zéro.
+
+### Pas de câble, Wi-Fi ?
+
+Au démarrage, `Entrée` ouvre `nmtui`&nbsp;; depuis l'invite de commande,
+`nmtui` fait de même. Un contrôle qui échoue propose aussi *Connect to Wi-Fi*.
+Un portail captif bloque l'installation&nbsp;: s'y identifier d'abord.
+
+### Installer dans une VM ?
+
+Sur un Linux doté de Nix et de KVM, une seule commande démarre l'ISO dans une
+fenêtre QEMU, disque virtuel compris&nbsp;:
+
+```sh
+nix run github:darkone-linux/darkone-nixos-framework#try
+```
+
+Le disque est gardé d'une fois sur l'autre (`~/.local/share/dnf-try`)&nbsp;;
+`nix run …#try -- --reset` repart de zéro. Une VM n'a pas de clé USB pour la
+sauvegarde&nbsp;: *Skip for now*, puis `just backup-admin` une fois installée.
 
 {/* t:p 4075ec4a5e69198cdbc6a258b08b6ab9c5f30374fd310f41f5517aeee6cda573 */}
-### Installation scriptée
+### Installer par script ?
 
 Un fichier de réponses tient lieu de questions&nbsp;; une réponse absente est
 demandée, ou refusée avec `--non-interactive`.
@@ -141,9 +216,6 @@ locale:
   language: "fr_FR.UTF-8"
 backup:
   device: "/dev/disk/by-label/SECOURS"   # clé USB de la sauvegarde
-cache:                                   # facultatif, ou --cache <url>
-  url: "http://cache.lan:5000"
-  publicKey: "cache.lan-1:..."           # inutile si signé par cache.nixos.org
 ```
 
 ```sh
@@ -157,10 +229,16 @@ demandée. Elle chiffre aussi la sauvegarde&nbsp;; disque en clair, c'est
 `--backup-passphrase-file`. En scripté, la clé USB est relue sans être
 débranchée.
 
-{/* t:p 1cc36b34e466ea1dc845615ddba891d7d51c7d3c16d2155e789849352c00b8df */}
-### Sauvegarde des clés
+- `--resume` : reprend l'installation interrompue de la session (avec `--non-interactive`).
+- `--dry-run` : affiche le plan sans rien toucher, sur n'importe quelle machine.
+- Console série : pas de menu, lancer `darkone new` à la main.
+- Cache de paquets, en plus de cache.nixos.org : `--cache <url>`, `DNF_CACHE` ou `cache.url`.
 
-`dnf-backup-<domaine>.tar.age`, chiffré par age, contient&nbsp;:
+{/* t:p 1cc36b34e466ea1dc845615ddba891d7d51c7d3c16d2155e789849352c00b8df */}
+### Que contient la sauvegarde ?
+
+`dnf-backup-<domaine>.tar.age`, chiffré par age, sur le système de fichiers de
+la clé, avec son `dnf-backup-<domaine>.README.txt` en clair&nbsp;:
 
 - `nix/`&nbsp;: la clé de déploiement (SSH) et la clé age d'admin qui en
   dérive&nbsp;;
@@ -177,254 +255,19 @@ git clone dnf-backup/project.bundle mon-reseau
 Sur un nouveau poste d'administration, les clés reprennent leur place, au
 compte `nix`, en mode 600&nbsp;: `/home/nix/.ssh/id_ed25519`,
 `/home/nix/.config/sops/age/keys.txt` et `/etc/sops/age/infra.key`. Le projet
-évolue&nbsp;: `just backup-admin <périphérique>` refait la sauvegarde
+évolue&nbsp;: `just backup-admin <périphérique>` refait la sauvegarde, en
+gardant l'ancienne renommée à sa date
 ([recettes](/fr/doc/admin-guide/operate/justfile/)).
 
-`--dry-run` affiche le plan sans rien toucher, sur n'importe quelle machine.
+### Pourquoi un rappel de sauvegarde ?
 
-{/* t:p 14ebf2ba66d96136943b858b6d2d5117b609e7f64595110268fbdc48c5fdc2eb */}
-## Créer le projet
+Tant que `/var/lib/dnf/backup-admin` manque, la page d'accueil de la première
+session affiche un bandeau&nbsp;: les clés ne sont pas sauvegardées. Ce
+témoin (date et commit) est écrit par `just backup-admin` une fois la clé
+complète&nbsp;; sauvegarde sautée ou échouée, il reste absent.
 
-Voie manuelle, depuis une machine d'administration qui est déjà un hôte DNF.
-Le projet part du modèle fourni par le framework : une structure prête et un
-`etc/config.yaml` commenté à remplir.
+### Quelle zone, quel préfixe ?
 
-<Steps>
-
-1. **Créer le dépôt**
-
-   ```sh
-   nix flake new -t github:darkone-linux/darkone-nixos-framework mon-reseau
-   cd mon-reseau && git init && git add -A
-   ```
-
-   Le projet épingle la dernière release du framework. Autre voie&nbsp;: le
-   template GitHub [dnf-boilerplate](https://github.com/darkone-linux/dnf-boilerplate)
-   (bouton « Use this template »), copie publiée du même modèle.
-
-2. **Amorcer le framework**
-
-   ```sh
-   nix run github:darkone-linux/darkone-nixos-framework#init
-   nix develop github:darkone-linux/darkone-nixos-framework
-   ```
-
-   :::note[Que fait `#init` ?]
-   Il crée le lien `dnf/` vers l'arbre du framework dans le store nix : c'est
-   lui qui donne ses recettes à `just` et ses profils au générateur. Ensuite,
-   `just --list` affiche toutes les commandes disponibles.
-
-   Une fois le projet doté de son propre `flake.lock`, on rafraîchit ce lien
-   avec `nix run .#init` : cette forme suit la révision épinglée par le
-   projet, l'outillage ne diverge donc jamais du système construit.
-   :::
-
-3. **Initialiser les secrets**
-
-   ```sh
-   just configure-admin-host
-   ```
-
-   :::tip[Idempotent]
-   Crée les clés age, le fichier `.sops.yaml`, le mot de passe de référence et
-   les [secrets internes](/fr/doc/admin-guide/operate/secrets/#secrets-internes-et-secrets-externes)
-   des services déclarés. Ne recrée jamais ce qui existe déjà : relancez-la
-   après chaque nouveau service, hôte ou zone.
-   :::
-
-</Steps>
-
-{/* t:p bc452891b960f9941c6824f7a15db91066ca093dfd434dc19572a0b5ad907fcf */}
-## Décrire la configuration
-
-Tout se déclare dans `etc/config.yaml` (réseau, zones, utilisateurs, hôtes).
-Pour un premier poste, une zone, un utilisateur et un hôte suffisent : tout
-hôte appartient à une zone (ou porte une adresse publique `ipv4`).
-
-Un éditeur doté de yaml-language-server (Zed, VS Code avec l'extension YAML…)
-complète et valide chaque clé, grâce à cette première ligne du fichier (déjà
-présente dans un projet créé par le modèle)&nbsp;:
-
-```yaml
-# yaml-language-server: $schema=../dnf/config/config.schema.json
-```
-
-```yaml
-# etc/config.yaml
-zones:
-  main:
-    description: "Réseau principal"
-    ipPrefix: "10.0"          # cette zone utilise 10.0.0.0/16
-
-users:
-  alice:
-    uid: 1000
-    name: "Alice"
-    profile: "nix-admin"
-    groups: ["global"]
-
-hosts:
-  - hostname: "poste"
-    name: "Poste de l'administrateur"
-    zone: "main:1.10"         # IP fixe 10.0.1.10 ("main" seul = DHCP)
-    profile: "desktop"
-    users: ["alice"]
-    disko:
-      profile: "btrfs-1-disk"
-      devices:
-        main: "/dev/nvme0n1"
-```
-
-Puis régénérer, vérifier et commiter :
-
-```sh
-just generate      # produit var/generated/*.nix depuis etc/config.yaml
-just check-flake   # nix flake check
-git add . && git commit -m "Premier hôte"
-```
-
-:::caution[Fichiers générés]
-`var/generated/` est produit par l'outil : on ne l'édite jamais à la main.
-On édite `etc/config.yaml`, puis on régénère. `just generate` sème aussi les
-fichiers que le framework attend : `usr/users/<login>/` pour chaque compte et
-`usr/machines/<hôte>/` (`configuration.nix`, `install/disko.nix`) pour chaque
-hôte doté d'un bloc `disko`.
-:::
-
-:::danger[Commiter avant de construire]
-Les flakes nix ne voient que les fichiers suivis par git. Un
-`var/generated/hosts.nix` ou un `usr/machines/<hôte>/` non commité fait
-échouer toutes les constructions.
-:::
-
-{/* t:p 96360f6abe9d02ae6b647865b4838644700804b01e917ec95dbd488fae02fbd5 */}
-## Installer un poste
-
-L'installation grave une image, démarre la machine dessus, puis applique le
-système complet.
-
-<Steps>
-
-1. **Obtenir l'image**
-
-   ```sh
-   just build-iso
-   ```
-
-   Cette image porte votre clé de déploiement. Autre voie, sans construction&nbsp;:
-   l'ISO générique jointe à chaque
-   [release du framework](https://github.com/darkone-linux/darkone-nixos-framework/releases)
-   (`dnf-installer-vX.Y.Z-x86_64-linux.iso`)&nbsp;; la clé s'autorise alors au
-   démarrage.
-
-2. **Démarrer la machine**
-
-   Graver l'image sur une clé USB, brancher l'ordinateur au réseau **en
-   filaire**, puis démarrer sur la clé. Avant l'invite de commande, l'écran
-   affiche un message de bienvenue DNF, puis l'adresse IP et l'adresse MAC de
-   l'interface reliée à Internet (servies par la passerelle locale ou votre
-   routeur)&nbsp;: les noter.
-
-   ```text
-   - IP: 10.0.0.50
-   - MAC: aa:bb:cc:dd:ee:ff
-   ```
-
-   La commande `dnf-netinfo` les réaffiche.
-
-   Avec l'ISO générique, l'écran le rappelle&nbsp;: définir un mot de passe
-   (`passwd`), puis autoriser la clé depuis le poste d'admin.
-
-   ```sh
-   sudo -i -u nix ssh-copy-id nixos@10.0.0.50
-   ```
-
-3. **Fixer les adresses** (dès qu'une zone existe)
-
-   L'installation se termine par un redémarrage, et la suite doit retrouver la
-   machine. Deux cas&nbsp;:
-
-   - **adresse MAC déjà déclarée** : rien à faire, la passerelle sert la même
-     adresse fixe à la clé USB et au système installé ;
-   - **adresse MAC inconnue** : la relever, puis la déclarer.
-
-   ```sh
-   # just host-info <hôte> <ip-actuelle>
-   just host-info poste 10.0.0.50
-   ```
-
-   Reporter la valeur dans `etc/config.yaml`, avec une **adresse fixe**, puis
-   redéployer la passerelle de chaque zone concernée&nbsp;:
-
-   ```yaml
-   # etc/config.yaml
-   - hostname: "poste"
-     zone: "maison:2.1"
-     mac: "aa:bb:cc:dd:ee:ff"
-   ```
-
-   :::caution[Hors de la plage DHCP dynamique]
-   L'adresse fixe doit être **en dehors** de la plage `dhcp-range` de la zone
-   (par défaut `<préfixe>.3.200` à `<préfixe>.3.249`). Dans la plage, la
-   réservation n'est honorée que tant que l'adresse n'a pas déjà été prêtée à
-   quelqu'un d'autre&nbsp;: la machine change alors d'adresse à son premier
-   démarrage, en silence. Le générateur refuse ce cas de figure.
-   :::
-
-   ```sh
-   # Redéployer la passerelle locale
-   just clean
-   git add . && git commit -m "host(poste): installation"
-   just apply gw
-   ```
-
-4. **Installer le système**
-
-   :::caution[Avant de lancer l'installation]
-   Veiller à ce que la machine redémarre par défaut sur le disque qui supportera
-   le système et non sur la clé usb d'installation.
-   :::
-
-   ```sh
-   # just full-install <hôte> <utilisateur> <ip>
-   just full-install poste nixos 10.0.0.50
-   ```
-
-   :::tip[En quelques minutes]
-   `full-install` installe le système, les programmes, les configurations et les
-   utilisateurs. Quand il redémarrera automatiquement, sondera **toutes** les
-   adresses connues de la machine (celle de l'installation, celle de sa zone,
-   celle de passage, son nom) et poursuit sur celle qui répond. Sur un hôte
-   chiffré, il répond aussi tout seul au prompt LUKS. En cas d'échec, les étapes
-   détaillées sont dans le `Justfile`.
-   :::
-
-   :::note[Installer par-dessus un système existant]
-   Une machine qui tourne déjà peut détenir un bail dynamique plus ancien que sa
-   réservation. `nixos-anywhere` fige son adresse cible pour tout le run&nbsp;:
-   dès que son installeur refait un DHCP, la machine bascule sur son adresse
-   réservée et le run parle dans le vide.
-
-   La recette refuse maintenant de démarrer sur une adresse que l'hôte ne garde
-   pas. Le plus simple est de redémarrer la machine avant d'installer, pour
-   qu'elle prenne son adresse réservée.
-
-   Si le cas se produit quand même, **rien n'est perdu**&nbsp;: l'installeur est
-   déjà chargé en mémoire sur la machine, à la bonne adresse cette fois. Il
-   suffit de relancer dessus, la phase de chargement est sautée
-   automatiquement&nbsp;:
-
-   ```sh
-   just full-install poste root 10.0.2.1
-   ```
-   :::
-
-5. Le système est installé et à jour.
-
-</Steps>
-
-:::note[On peut s'arrêter là]
-Un poste autonome est déjà pleinement utilisable. La
-[passerelle](/fr/doc/admin-guide/install/gateway/) n'est nécessaire que pour
-créer une zone (réseau local partagé).
-:::
+Le réseau naît avec une zone `main`, de préfixe `10.0` (`10.0.0.0/16`) s'il est
+libre, sinon le premier libre (`10.x`, `172.16` à `172.31`, `192.168`). Le
+récapitulatif l'indique, et le choix est définitif.

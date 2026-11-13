@@ -1,0 +1,123 @@
+---
+title: Créer un projet à la main
+sidebar:
+  label: Projet à la main
+  order: 13
+lang: fr
+---
+
+import { Steps } from '@astrojs/starlight/components';
+
+Voie manuelle, sans l'ISO ni `darkone new` (qui écrit tout ceci à votre
+place, cf. [Installation initiale](/fr/doc/admin-guide/install/first-network-installation/)).
+Elle part d'une machine d'administration qui est déjà un hôte DNF. Le projet
+vient du modèle fourni par le framework&nbsp;: une structure prête et un
+`etc/config.yaml` commenté à remplir.
+
+## Créer le projet
+
+<Steps>
+
+1. **Créer le dépôt**
+
+   ```sh
+   nix flake new -t github:darkone-linux/darkone-nixos-framework mon-reseau
+   cd mon-reseau && git init && git add -A
+   ```
+
+   Le projet épingle la dernière release du framework. Autre voie&nbsp;: le
+   template GitHub [dnf-boilerplate](https://github.com/darkone-linux/dnf-boilerplate)
+   (bouton « Use this template »), copie publiée du même modèle.
+
+2. **Amorcer le framework**
+
+   ```sh
+   nix run github:darkone-linux/darkone-nixos-framework#init
+   nix develop github:darkone-linux/darkone-nixos-framework
+   ```
+
+   :::note[Que fait `#init` ?]
+   Il crée le lien `dnf/` vers l'arbre du framework dans le store nix : c'est
+   lui qui donne ses recettes à `just` et ses profils au générateur. Ensuite,
+   `just --list` affiche toutes les commandes disponibles.
+
+   Une fois le projet doté de son propre `flake.lock`, on rafraîchit ce lien
+   avec `nix run .#init` : cette forme suit la révision épinglée par le
+   projet, l'outillage ne diverge donc jamais du système construit.
+   :::
+
+3. **Initialiser les secrets**
+
+   ```sh
+   just configure-admin-host
+   ```
+
+   Idempotente&nbsp;: crée les clés age, le fichier `.sops.yaml`, le mot de
+   passe de référence et les
+   [secrets internes](/fr/doc/admin-guide/operate/secrets/#secrets-internes-et-secrets-externes)
+   des services déclarés, sans jamais recréer l'existant. À relancer après
+   chaque nouveau service, hôte ou zone.
+
+</Steps>
+
+## Décrire la configuration
+
+Tout se déclare dans `etc/config.yaml` (réseau, zones, utilisateurs, hôtes).
+Pour un premier poste, une zone, un utilisateur et un hôte suffisent : tout
+hôte appartient à une zone (ou porte une adresse publique `ipv4`).
+
+Un éditeur doté de yaml-language-server (Zed, VS Code avec l'extension YAML…)
+complète et valide chaque clé, grâce à cette première ligne du fichier (déjà
+présente dans un projet créé par le modèle)&nbsp;:
+
+```yaml
+# yaml-language-server: $schema=../dnf/config/config.schema.json
+```
+
+```yaml
+# etc/config.yaml
+zones:
+  main:
+    description: "Réseau principal"
+    ipPrefix: "10.0"          # cette zone utilise 10.0.0.0/16
+
+users:
+  alice:
+    uid: 1000
+    name: "Alice"
+    profile: "nix-admin"
+    groups: ["global"]
+
+hosts:
+  - hostname: "poste"
+    name: "Poste de l'administrateur"
+    zone: "main:1.10"         # IP fixe 10.0.1.10 ("main" seul = DHCP)
+    profile: "desktop"
+    users: ["alice"]
+    disko:
+      profile: "btrfs-1-disk"
+      devices:
+        main: "/dev/nvme0n1"
+```
+
+Puis régénérer, vérifier et commiter&nbsp;:
+
+```sh
+just generate      # produit var/generated/*.nix depuis etc/config.yaml
+just check-flake   # nix flake check
+git add . && git commit -m "Premier hôte"
+```
+
+`var/generated/` est produit par l'outil&nbsp;: on édite `etc/config.yaml`,
+jamais ce dossier. `just generate` sème aussi `usr/users/<login>/` pour chaque
+compte et `usr/machines/<hôte>/` (`configuration.nix`, `install/disko.nix`)
+pour chaque hôte doté d'un bloc `disko`.
+
+:::danger[Commiter avant de construire]
+Les flakes nix ne voient que les fichiers suivis par git. Un
+`var/generated/hosts.nix` ou un `usr/machines/<hôte>/` non commité fait
+échouer toutes les constructions.
+:::
+
+Reste à installer l'hôte&nbsp;: voir
+[Ajouter une machine](/fr/doc/admin-guide/install/add-host/).

@@ -1,0 +1,139 @@
+---
+title: Ajouter une machine
+sidebar:
+  label: Ajouter une machine
+  order: 6
+lang: fr
+---
+
+import { Steps } from '@astrojs/starlight/components';
+
+Une machine de plus dans le réseau, installée **depuis le poste
+d'administration**. L'installation grave une image, démarre la machine
+dessus, puis applique le système complet. Le poste d'administration lui-même
+s'installe autrement&nbsp;: voir
+[Installation initiale](/fr/doc/admin-guide/install/first-network-installation/).
+
+La machine est d'abord décrite dans `etc/config.yaml`, comme
+[tout hôte](/fr/doc/how-to/admin/manual-project/#décrire-la-configuration).
+
+## Installer la machine
+
+<Steps>
+
+1. **Obtenir l'image**
+
+   ```sh
+   just build-iso
+   ```
+
+   Cette image porte votre clé de déploiement. Autre voie, sans construction&nbsp;:
+   l'ISO générique, [gravée sur une clé USB](/fr/doc/admin-guide/install/first-network-installation/#préparer-la-clé)&nbsp;;
+   la clé s'autorise alors au démarrage (étape suivante).
+
+2. **Démarrer la machine**
+
+   Brancher l'ordinateur au réseau **en filaire**, puis démarrer sur la clé.
+   L'écran affiche un message de bienvenue DNF, puis l'adresse IP et l'adresse
+   MAC de l'interface reliée à Internet (servies par la passerelle locale ou
+   votre routeur)&nbsp;: les noter.
+
+   ```text
+   - IP: 10.0.0.50
+   - MAC: aa:bb:cc:dd:ee:ff
+   ```
+
+   La commande `dnf-netinfo` les réaffiche.
+
+   Avec l'ISO générique, choisir dans le menu de la console
+   *2) Add this machine to an existing network*. L'écran liste les cartes
+   réseau et les disques, puis rappelle la marche à suivre&nbsp;: définir un
+   mot de passe sur la machine (`passwd`), puis, depuis le poste
+   d'administration, autoriser la clé&nbsp;:
+
+   ```sh
+   sudo -i -u nix ssh-copy-id nixos@10.0.0.50
+   ```
+
+3. **Fixer les adresses** (dès qu'une zone existe)
+
+   L'installation se termine par un redémarrage, et la suite doit retrouver la
+   machine. Deux cas&nbsp;:
+
+   - **adresse MAC déjà déclarée** : rien à faire, la passerelle sert la même
+     adresse fixe à la clé USB et au système installé ;
+   - **adresse MAC inconnue** : la relever, puis la déclarer.
+
+   ```sh
+   # just host-info <hôte> <ip-actuelle>
+   just host-info poste 10.0.0.50
+   ```
+
+   Reporter la valeur dans `etc/config.yaml`, avec une **adresse fixe**, puis
+   redéployer la passerelle de chaque zone concernée&nbsp;:
+
+   ```yaml
+   # etc/config.yaml
+   - hostname: "poste"
+     zone: "maison:2.1"
+     mac: "aa:bb:cc:dd:ee:ff"
+   ```
+
+   :::caution[Hors de la plage DHCP dynamique]
+   L'adresse fixe doit être **en dehors** de la plage `dhcp-range` de la zone
+   (par défaut `<préfixe>.3.200` à `<préfixe>.3.249`). Dans la plage, la
+   réservation n'est honorée que tant que l'adresse n'a pas déjà été prêtée à
+   quelqu'un d'autre&nbsp;: la machine change alors d'adresse à son premier
+   démarrage, en silence. Le générateur refuse ce cas de figure.
+   :::
+
+   ```sh
+   # Redéployer la passerelle locale
+   just clean
+   git add . && git commit -m "host(poste): installation"
+   just apply gw
+   ```
+
+4. **Installer le système**
+
+   Veiller à ce que la machine redémarre par défaut sur le disque qui
+   supportera le système, et non sur la clé USB d'installation.
+
+   ```sh
+   # just full-install <hôte> <utilisateur> <ip>
+   just full-install poste nixos 10.0.0.50
+   ```
+
+   `full-install` installe le système, les programmes, les configurations et
+   les utilisateurs. Au redémarrage automatique, il sonde **toutes** les
+   adresses connues de la machine (celle de l'installation, celle de sa zone,
+   celle de passage, son nom) et poursuit sur celle qui répond. Sur un hôte
+   chiffré, il répond aussi tout seul au prompt LUKS. En cas d'échec, les
+   étapes détaillées sont dans le `Justfile`.
+
+</Steps>
+
+Le système est installé et à jour. Un poste autonome est déjà pleinement
+utilisable&nbsp;; la [passerelle](/fr/doc/admin-guide/install/gateway/) n'est
+nécessaire que pour créer une zone (réseau local partagé).
+
+## FAQ
+
+### Installer par-dessus un système existant
+
+Une machine qui tourne déjà peut détenir un bail dynamique plus ancien que sa
+réservation. `nixos-anywhere` fige son adresse cible pour tout le run&nbsp;:
+dès que son installeur refait un DHCP, la machine bascule sur son adresse
+réservée et le run parle dans le vide.
+
+La recette refuse de démarrer sur une adresse que l'hôte ne garde pas. Le plus
+simple est de redémarrer la machine avant d'installer, pour qu'elle prenne son
+adresse réservée.
+
+Si le cas se produit quand même, **rien n'est perdu**&nbsp;: l'installeur est
+déjà chargé en mémoire sur la machine, à la bonne adresse cette fois. Relancer
+dessus&nbsp;; la phase de chargement est sautée automatiquement&nbsp;:
+
+```sh
+just full-install poste root 10.0.2.1
+```
