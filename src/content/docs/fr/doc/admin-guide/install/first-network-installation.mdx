@@ -15,7 +15,7 @@ import { Steps } from '@astrojs/starlight/components';
 On met en place un réseau DNF **par étapes**, et on peut s'arrêter à chacune :
 un poste suffit pour démarrer.
 
-{/* t:p 9069333d30874b4ad79d8f3d515baa990d526250ef0e55648bb95dab62bdc68d */}
+{/* t:p 111b4977ba6921c33b1667a6d080e739005addc68ca5b84b74997ce64a582c2c */}
 ## Le parcours
 
 1. **Un poste** : la machine de l'administrateur (cette page).
@@ -30,6 +30,7 @@ machine est elle-même un hôte DNF&nbsp;: les recettes d'administration tournen
 sous son compte de déploiement `nix`.
 :::
 
+{/* t:p c25ca48b3a51682ad11bd09385c8af06471c022541a3aaa6fc3b797b79db374d */}
 ## Prérequis
 
 | Élément | Requis |
@@ -44,6 +45,7 @@ sous son compte de déploiement `nix`.
 Le chiffrement du disque exige l'UEFI. Le contrôle de mémoire lit `MemTotal`&nbsp;:
 une machine de 4 Go passe.
 
+{/* t:p f611ba2fe7026a147cae531dbb46060bf8d994e4ecb249056d7f365025d06d6a */}
 ## Préparer la clé
 
 <Steps>
@@ -79,7 +81,7 @@ une machine de 4 Go passe.
 
 </Steps>
 
-{/* t:p e54ce81a50893f28eddfb0bf38fa3f810cc8a084a1a8afdfb9bd5a6d12b64f35 */}
+{/* t:p 25cd83e807dbb69a4fc56af4a765945e541f211b7bf313fe660c6b5431029860 */}
 ## Installation assistée
 
 Le premier poste s'installe seul, depuis l'ISO générique, sans autre
@@ -157,8 +159,10 @@ sauvegarde, disque en clair), les contient tous&nbsp;: la ranger loin de la
 machine.
 :::
 
+{/* t:p 938609b64e2e1217c0db6ceeca57cfadea52087e1a0a2c4319be9b6fdb6ff3b2 */}
 ## FAQ
 
+{/* t:p 58a038f48a307758f152a5edc840429a0ca0dec59efa622cf346f10ecdc98c52 */}
 ### Que faire si l'installation échoue ?
 
 - `nixos-install` est relancé seul, 3 essais (*attempt N/3*)&nbsp;; le store déjà copié est gardé.
@@ -174,12 +178,14 @@ passphrases jamais&nbsp;: *Resume* les redemande. Reprise impossible,
 l'assistant dit pourquoi (*It cannot be resumed*) et ne propose que le reste.
 ISO redémarrée, le projet est perdu&nbsp;: repartir de zéro.
 
+{/* t:p 5499f2987704f4743a5d935cfcec39c2ab175338c6e717e5ab9f778d6d7e4209 */}
 ### Pas de câble, Wi-Fi ?
 
 Au démarrage, `Entrée` ouvre `nmtui`&nbsp;; depuis l'invite de commande,
 `nmtui` fait de même. Un contrôle qui échoue propose aussi *Connect to Wi-Fi*.
 Un portail captif bloque l'installation&nbsp;: s'y identifier d'abord.
 
+{/* t:p 2aa93b0baea0d3579b93fe7b8511eba94f1a4dfdd6dd879d12936d4b93aa6bb6 */}
 ### Installer dans une VM ?
 
 Sur un Linux doté de Nix et de KVM, une seule commande démarre l'ISO dans une
@@ -193,7 +199,7 @@ Le disque est gardé d'une fois sur l'autre (`~/.local/share/dnf-try`)&nbsp;;
 `nix run …#try -- --reset` repart de zéro. Une VM n'a pas de clé USB pour la
 sauvegarde&nbsp;: *Skip for now*, puis `just backup-admin` une fois installée.
 
-{/* t:p 4075ec4a5e69198cdbc6a258b08b6ab9c5f30374fd310f41f5517aeee6cda573 */}
+{/* t:p ed839c7e7054a2befaa80b572492eb35bab5d0ffc5d1cd7983974f1f434be1fb */}
 ### Installer par script ?
 
 Un fichier de réponses tient lieu de questions&nbsp;; une réponse absente est
@@ -234,7 +240,7 @@ débranchée.
 - Console série : pas de menu, lancer `darkone new` à la main.
 - Cache de paquets, en plus de cache.nixos.org : `--cache <url>`, `DNF_CACHE` ou `cache.url`.
 
-{/* t:p 1cc36b34e466ea1dc845615ddba891d7d51c7d3c16d2155e789849352c00b8df */}
+{/* t:p cca75ebe74a47ac3fe2d3e269e6c0efe6c402b6c4aeb6fcccfcb4fe192b4ba4d */}
 ### Que contient la sauvegarde ?
 
 `dnf-backup-<domaine>.tar.age`, chiffré par age, sur le système de fichiers de
@@ -259,6 +265,7 @@ compte `nix`, en mode 600&nbsp;: `/home/nix/.ssh/id_ed25519`,
 gardant l'ancienne renommée à sa date
 ([recettes](/fr/doc/admin-guide/operate/justfile/)).
 
+{/* t:p 8e21ef1678e1863bc98831caca1288e05f4f83fd65c7ece303d6164b13ea38b3 */}
 ### Pourquoi un rappel de sauvegarde ?
 
 Tant que `/var/lib/dnf/backup-admin` manque, la page d'accueil de la première
@@ -266,6 +273,7 @@ session affiche un bandeau&nbsp;: les clés ne sont pas sauvegardées. Ce
 témoin (date et commit) est écrit par `just backup-admin` une fois la clé
 complète&nbsp;; sauvegarde sautée ou échouée, il reste absent.
 
+{/* t:p b7d497ce728de5eaa711387c18f46cf26b6f3606433f48f007321eb8dab6d070 */}
 ### Quelle zone, quel préfixe ?
 
 Le réseau naît avec une zone `main`, de préfixe `10.0` (`10.0.0.0/16`) s'il est

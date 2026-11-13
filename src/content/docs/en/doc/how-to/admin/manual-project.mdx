@@ -1,0 +1,129 @@
+---
+title: Creating a project by hand
+sidebar:
+  label: Project by hand
+  order: 13
+lang: en
+---
+
+import { Steps } from '@astrojs/starlight/components';
+
+{/* t:translated-from fr */}
+{/* t:h a93a09e0da60e1111b9d435e6e51ecfa2ab4cb9eb2b31362f6d9e75b6088feb3 */}
+
+{/* t:p f867b613f635a65406ebe5fe51817cdf7a0e6b02dda4eae1b7691785243d7798 */}
+Manual route, without the ISO or `darkone new` (which writes all of this for
+you, see [Initial installation](/en/doc/admin-guide/install/first-network-installation/)).
+It starts from an administration machine that is already a DNF host. The project
+comes from the template provided by the framework&nbsp;: a ready-made structure and a
+commented `etc/config.yaml` to fill in.
+
+{/* t:p b56a610796ab6973579c1ae54f5aa4d4dc7f53a5d32173a1d10960de8ed34d25 */}
+## Create the project
+
+<Steps>
+
+1. **Create the repository**
+
+   ```sh
+   nix flake new -t github:darkone-linux/darkone-nixos-framework mon-reseau
+   cd mon-reseau && git init && git add -A
+   ```
+
+   The project pins the latest framework release. Alternative&nbsp;: the
+   GitHub template [dnf-boilerplate](https://github.com/darkone-linux/dnf-boilerplate)
+   ("Use this template" button), a published copy of the same template.
+
+2. **Bootstrap the framework**
+
+   ```sh
+   nix run github:darkone-linux/darkone-nixos-framework#init
+   nix develop github:darkone-linux/darkone-nixos-framework
+   ```
+
+   :::note[What does `#init` do?]
+   It creates the `dnf/` link to the framework tree in the nix store&nbsp;: it is
+   what gives `just` its recipes and the generator its profiles. Then,
+   `just --list` shows all available commands.
+
+   Once the project has its own `flake.lock`, that link is refreshed
+   with `nix run .#init`&nbsp;: this form follows the revision pinned by the
+   project, so the tooling never diverges from the built system.
+   :::
+
+3. **Initialize the secrets**
+
+   ```sh
+   just configure-admin-host
+   ```
+
+   Idempotent&nbsp;: creates the age keys, the `.sops.yaml` file, the reference
+   password and the
+   [internal secrets](/en/doc/admin-guide/operate/secrets/#internal-secrets-and-external-secrets)
+   of the declared services, without ever recreating what already exists. Run it again after
+   each new service, host or zone.
+
+</Steps>
+
+{/* t:p e35a4c71b26297e30636ad3cf29ae22649d7c015103ed131639a0b502ebf5429 */}
+## Describe the configuration
+
+Everything is declared in `etc/config.yaml` (network, zones, users, hosts).
+For a first machine, one zone, one user and one host are enough&nbsp;: every
+host belongs to a zone (or carries a public `ipv4` address).
+
+An editor with yaml-language-server (Zed, VS Code with the YAML extension…)
+completes and validates each key, thanks to this first line of the file (already
+present in a project created from the template)&nbsp;:
+
+```yaml
+# yaml-language-server: $schema=../dnf/config/config.schema.json
+```
+
+```yaml
+# etc/config.yaml
+zones:
+  main:
+    description: "Réseau principal"
+    ipPrefix: "10.0"          # cette zone utilise 10.0.0.0/16
+
+users:
+  alice:
+    uid: 1000
+    name: "Alice"
+    profile: "nix-admin"
+    groups: ["global"]
+
+hosts:
+  - hostname: "poste"
+    name: "Poste de l'administrateur"
+    zone: "main:1.10"         # IP fixe 10.0.1.10 ("main" seul = DHCP)
+    profile: "desktop"
+    users: ["alice"]
+    disko:
+      profile: "btrfs-1-disk"
+      devices:
+        main: "/dev/nvme0n1"
+```
+
+Then regenerate, check and commit&nbsp;:
+
+```sh
+just generate      # produit var/generated/*.nix depuis etc/config.yaml
+just check-flake   # nix flake check
+git add . && git commit -m "Premier hôte"
+```
+
+`var/generated/` is produced by the tool&nbsp;: you edit `etc/config.yaml`,
+never this folder. `just generate` also seeds `usr/users/<login>/` for each
+account and `usr/machines/<host>/` (`configuration.nix`, `install/disko.nix`)
+for each host with a `disko` block.
+
+:::danger[Commit before building]
+Nix flakes only see files tracked by git. An uncommitted
+`var/generated/hosts.nix` or `usr/machines/<host>/` makes
+every build fail.
+:::
+
+All that remains is to install the host&nbsp;: see
+[Add a machine](/en/doc/admin-guide/install/add-host/).

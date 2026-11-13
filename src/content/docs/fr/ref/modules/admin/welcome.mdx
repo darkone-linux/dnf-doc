@@ -7,25 +7,27 @@ sidebar:
 {/* t:translated-from en */}
 {/* t:h c0f626f7f4862a9c0f189b49a81bfa267e04260242c35ff324262b43d72c79f4 */}
 
-{/* t:p a8f2e73f857acdb70a76fa6f72c7668cc6df05537ddf07d151273d2886272e7f */}
-Page d'accueil de premier démarrage de l'hôte administrateur installé par `darkone new`.
+{/* t:p a98bf977bd8dddb1319173646384ac7718ce43b2a3095d71249e0ab6b8164546 */}
+Page d'accueil de premier démarrage de l'hôte admin installée par `darkone new`.
 
-À la première session GNOME de chaque membre du groupe `wheel`, le navigateur ouvre une page locale&nbsp;: l'étape 1 sur 4 est faite (l'hôte administrateur), suivie de la passerelle, puis des services et du serveur de coordination, avec des liens vers la documentation. Affichée une seule fois par utilisateur (`~/.local/state/dnf/welcome-shown`). Le lanceur « Onboarding » de nix-admin la rouvre (`darkone.admin.welcome.page`).
+À la première session GNOME de chaque membre du groupe `wheel`, le navigateur ouvre une page locale : étape 1 sur 4 terminée (l'hôte admin), la passerelle ensuite, puis les services et le serveur de coordination, avec des liens vers la documentation. Affichée une fois par utilisateur (`~/.local/state/dnf/welcome-shown`). Le lanceur « Onboarding » du nix-admin la rouvre (`darkone.admin.welcome.command`).
+
+Tant que le témoin `/var/lib/dnf/backup-admin` de `just backup-admin` est absent, la page s'ouvre avec une bannière : les clés admin ne sont pas sauvegardées.
 
 :::note[Défini par l'installateur]
-`darkone new` écrit `darkone.admin.welcome.enable = true;` dans le `configuration.nix` de l'hôte administrateur. Supprimez cette ligne pour ne plus afficher la page aux utilisateurs qui ne l'ont pas encore vue.
+`darkone new` écrit `darkone.admin.welcome.enable = true;` dans le `configuration.nix` de l'hôte admin. Retirer la ligne pour arrêter la page pour les utilisateurs qui ne l'ont pas encore vue.
 :::
 
-{/* t:p 25705ffcf7c290b6a7e5d8f930fa90440aaad3729db6341375a54e24482f4420 */}
+{/* t:p 122399b9fccc755d8287020d953fd6ed1ef3e243274ea0af140b2990e73326f3 */}
 ## Options
 
-* **enable** `bool` la page d'accueil de premier démarrage de l'hôte administrateur
-* **page** `path` La page d'accueil, un fichier HTML du store
+* **enable** `bool` la page d'accueil de premier démarrage de l'hôte admin
+* **command** `path` Le script qui ouvre la page d'accueil, `--again` pour la rouvrir
 
 ```nix
 darkone.admin.welcome = {
   enable = false;
-  page = page;
+  command = open;
 };
 ```
 

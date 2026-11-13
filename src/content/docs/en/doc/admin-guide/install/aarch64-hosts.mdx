@@ -106,15 +106,15 @@ Simple, but emulated building is slow.
 - **Remote aarch64 builder**: delegate building to an ARM machine
   (fastest for a large fleet).
 
-{/* t:p a2b0308f94f873ebf8090bfe8a73b1be7bbc978eb7c58316f2d2d79fb36b5ff1 */}
-## Install a Raspberry Pi
+{/* t:p f826b1c620df40e0269792b7eaece70dca1db815a901cd1bb2bf74c707a7875c */}
+## Installing a Raspberry Pi
 
 A bootable SD image boots the Pi, which is then integrated into the fleet like
-any other node (see [initial installation](/en/doc/admin-guide/install/first-network-installation/)).
+any other node (see [Adding a machine](/en/doc/admin-guide/install/add-host/)).
 
 <Steps>
 
-1. **Build the SD image** (choose the attribute matching your model):
+1. **Build the SD image** (choose the attribute according to the model):
 
    ```sh
    nix build .#nixosConfigurations.sd-image-raspberry-pi-5.config.system.build.sdImage
@@ -127,23 +127,23 @@ any other node (see [initial installation](/en/doc/admin-guide/install/first-net
    ```
 
    :::caution[Check the device]
-   Replace `/dev/sdX` with the **correct** SD card (`lsblk`): `dd` overwrites the
+   Replace `/dev/sdX` with the **right** SD card (`lsblk`): `dd` overwrites the
    target without confirmation.
    :::
 
-3. **First boot** — connected to the network (Ethernet, or Wi-Fi for boards
-   without a wired port like the Zero 2 W), the Pi gets an address via DHCP (name
-   `dnf-install`), with SSH enabled and the `nix` user authorized by the
+3. **First boot**: connected to the network (Ethernet, or Wi-Fi for boards
+   without a wired port such as the Zero 2 W), the Pi gets an address via DHCP
+   (hostname `dnf-install`), with SSH active and the `nix` user authorized by the
    administration key (`usr/secrets/nix.pub`).
 
-4. **Declare then deploy** — add the host to `etc/config.yaml` with its
-   `arch`, run `just generate`, then deploy the actual configuration
+4. **Declare then deploy**: add the host in `etc/config.yaml` with its
+   `arch`, run `just generate`, then deploy the real configuration
    ([deployment](/en/doc/admin-guide/operate/deploy/)).
 
 </Steps>
 
 :::note[Image per model]
-The SD image is board-specific. One attribute per model:
+The SD image is specific to the board. One attribute per model:
 `sd-image-raspberry-pi-02` (Zero 2 W), `sd-image-raspberry-pi-3`,
 `sd-image-raspberry-pi-4`, `sd-image-raspberry-pi-5`.
 :::

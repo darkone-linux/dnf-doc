@@ -1,0 +1,145 @@
+---
+title: Add a machine
+sidebar:
+  label: Add a machine
+  order: 6
+lang: en
+---
+
+import { Steps } from '@astrojs/starlight/components';
+
+{/* t:translated-from fr */}
+{/* t:h 1346c362422ddecdcd9d5b573d011693319d680d14dd5912f14ed8b12cddd0f5 */}
+
+{/* t:p d7e9b2625ee386be2c24991d7a74df6c9333f6e3ece3cec5c6b5a93d5398af15 */}
+One more machine on the network, installed **from the administration
+workstation**. The installation writes an image, boots the machine on it, then
+applies the full system. The administration workstation itself installs
+differently&nbsp;: see
+[Initial installation](/en/doc/admin-guide/install/first-network-installation/).
+
+The machine is first described in `etc/config.yaml`, like
+[any host](/en/doc/how-to/admin/manual-project/#describe-the-configuration).
+
+{/* t:p 4e22330dd80edd26427e6b7311ac7c5b8acfefdd4eaab438e0efb75918374d72 */}
+## Install the machine
+
+<Steps>
+
+1. **Get the image**
+
+   ```sh
+   just build-iso
+   ```
+
+   This image carries your deployment key. Another way, without building&nbsp;:
+   the generic ISO, [written to a USB key](/en/doc/admin-guide/install/first-network-installation/#prepare-the-key)&nbsp;;
+   the key then authorizes itself at boot (next step).
+
+2. **Boot the machine**
+
+   Connect the computer to the network **by cable**, then boot from the key.
+   The screen shows a DNF welcome message, then the IP address and the MAC
+   address of the interface connected to the Internet (served by the local
+   gateway or your router)&nbsp;: note them down.
+
+   ```text
+   - IP: 10.0.0.50
+   - MAC: aa:bb:cc:dd:ee:ff
+   ```
+
+   The `dnf-netinfo` command displays them again.
+
+   With the generic ISO, choose *2) Add this machine to an existing network* in
+   the console menu. The screen lists the network cards and the disks, then
+   recalls the procedure&nbsp;: set a password on the machine (`passwd`), then,
+   from the administration workstation, authorize the key&nbsp;:
+
+   ```sh
+   sudo -i -u nix ssh-copy-id nixos@10.0.0.50
+   ```
+
+3. **Set the addresses** (as soon as a zone exists)
+
+   The installation ends with a reboot, and what follows must find the machine
+   again. Two cases&nbsp;:
+
+   - **MAC address already declared**: nothing to do, the gateway serves the
+     same fixed address to the USB key and to the installed system;
+   - **unknown MAC address**: read it, then declare it.
+
+   ```sh
+   # just host-info <hôte> <ip-actuelle>
+   just host-info poste 10.0.0.50
+   ```
+
+   Copy the value into `etc/config.yaml`, with a **fixed address**, then
+   redeploy the gateway of each affected zone&nbsp;:
+
+   ```yaml
+   # etc/config.yaml
+   - hostname: "poste"
+     zone: "maison:2.1"
+     mac: "aa:bb:cc:dd:ee:ff"
+   ```
+
+   :::caution[Outside the dynamic DHCP range]
+   The fixed address must be **outside** the zone's `dhcp-range` (by default
+   `<préfixe>.3.200` to `<préfixe>.3.249`). Inside the range, the reservation is
+   honored only as long as the address has not already been lent to someone
+   else&nbsp;: the machine then changes address at its first boot, silently. The
+   generator refuses this case.
+   :::
+
+   ```sh
+   # Redéployer la passerelle locale
+   just clean
+   git add . && git commit -m "host(poste): installation"
+   just apply gw
+   ```
+
+4. **Install the system**
+
+   Make sure the machine boots by default on the disk that will hold the
+   system, and not on the installation USB key.
+
+   ```sh
+   # just full-install <hôte> <utilisateur> <ip>
+   just full-install poste nixos 10.0.0.50
+   ```
+
+   `full-install` installs the system, the programs, the configurations and
+   the users. On the automatic reboot, it probes **all** the machine's known
+   addresses (the installation one, the one from its zone, the transitional
+   one, its name) and continues on the one that answers. On an encrypted host,
+   it also answers the LUKS prompt by itself. On failure, the detailed steps
+   are in the `Justfile`.
+
+</Steps>
+
+The system is installed and up to date. A standalone workstation is already
+fully usable&nbsp;; the [gateway](/en/doc/admin-guide/install/gateway/) is only
+needed to create a zone (shared local network).
+
+{/* t:p 938609b64e2e1217c0db6ceeca57cfadea52087e1a0a2c4319be9b6fdb6ff3b2 */}
+## FAQ
+
+{/* t:p 3e6cecc04eca3d8e468f5d11298cd2f582488e659fdb013af664ce7a52d1eca3 */}
+### Install over an existing system
+
+A machine that is already running may hold a dynamic lease older than its
+reservation. `nixos-anywhere` pins its target address for the whole run&nbsp;:
+as soon as its installer does a DHCP request again, the machine switches to its
+reserved address and the run talks into the void.
+
+The recipe refuses to start on an address that the host will not keep. The
+simplest is to reboot the machine before installing, so that it takes its
+reserved address.
+
+If the case happens anyway, **nothing is lost**&nbsp;: the installer is already
+loaded in memory on the machine, at the right address this time. Run it again
+on it&nbsp;; the loading phase is skipped automatically&nbsp;:
+
+```sh
+just full-install poste root 10.0.2.1
+```
