@@ -5,6 +5,58 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.6.2] - 2026-11-13
+
+### ⚠ Breaking
+
+- **services**: Drop unread topology options of services.service.<name>
+
+### Added
+
+- **idm**: Move kanidm to 1.12, 1.11 reaches EOL on 2026-12-01
+- **idm**: Enable kanidm online backup, 7 nightly dumps kept
+- **supertuxkart**: EnableDirectLink, play over a direct Ethernet cable
+- **luks**: Gateways report their WAN address to the HCS
+- **network**: Software switch option, fleet networking moved to network.nix
+- **just**: Drv-diff proves a framework refactor leaves hosts unchanged
+- **ref**: One page per module, a sidebar group per category
+- **just**: Release runs unattended with YES=1
+
+### Fixed
+
+- **ghostty**: TERMINAL and Nautilus script follow programs.ghostty.enable
+- **workarounds**: Suspend anki, veloren and aider-chat (cargo system libs)
+- **luks**: Release the initrd DHCP lease under NetworkManager (no DNS)
+- **engine**: Fall back on a missed fetch, never fail other hosts with it
+
+### Removed
+
+- **translate**: Drop translations of a removed page, copy id-only headers
+
+### Changed
+
+- **lib**: Flake plumbing to lib/flake/, images and system list shared
+
+### Documentation
+
+- **translate**: Changelog v0.6.1, sso, user profiles
+- **translate**: Deploy, luks, sso, workarounds, games, module ref
+- **translate**: Software switch, system module ref
+- **registry**: Config/modules.nix holds literal values only
+- **dev**: Drop pointers to unpublished agent files and stale paths
+- **drv-diff**: Pending input bump read with the base lock, LOCK=tree
+- **activation**: Triggers and the single module applying them
+- **workarounds**: Overlay wiring lives in lib/overlays/default.nix
+- **dev**: How a module header becomes its reference page
+- **translate**: Module reference pages (fr), doc pages (en), tags
+- **install**: Installer test, resume scenario
+- **install**: First host page, add-host and manual project sheets
+- **translate**: Onboarding
+- **install**: 6 GB of RAM required, 4 GB thrashes during the install
+- **fix**: Modules icons
+- **translate**: Gateway connections, test vm
+- **ref**: Regenerate for dnf v0.6.2
+
 ## [0.6.1] - 2026-11-03
 
 ### Added
@@ -628,7 +680,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Initial Astro/Starlight documentation site for Darkone NixOS Framework.
 - Upgrade to Astro 6.
 
-[Unreleased]: https://github.com/darkone-linux/dnf-doc/compare/v0.6.1...HEAD
+[Unreleased]: https://github.com/darkone-linux/dnf-doc/compare/v0.6.2...HEAD
+[0.6.2]: https://github.com/darkone-linux/dnf-doc/compare/v0.6.1...v0.6.2
 [0.6.1]: https://github.com/darkone-linux/dnf-doc/compare/v0.6.0...v0.6.1
 [0.6.0]: https://github.com/darkone-linux/dnf-doc/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/darkone-linux/dnf-doc/compare/v0.4.0...v0.5.0
