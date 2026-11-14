@@ -1,0 +1,80 @@
+---
+title: "Version 0.6.2"
+description: "Drop unread service topology options"
+sidebar:
+  label: "0.6.2"
+lang: en
+prev:
+  link: /en/changelog/v0-6-1/
+  label: "Version 0.6.1"
+---
+
+{/* t:main */}
+{/* t:h 07c00afe532f05a1421f890c3ee9c699a7653af746589dde6c123c7056e77568 */}
+
+{/* t:p 497531fc39230ff043de3846162d998f980d8d2c5bdbfe980efb5142b63bfe85 */}
+Released on **2026-11-13**: Drop unread service topology options.
+
+[Changes on GitHub](https://github.com/darkone-linux/darkone-nixos-framework/compare/v0.6.1...v0.6.2) · [All versions](/en/changelog/)
+
+:::caution[Breaking changes]
+- **services**: Drop unread topology options of services.service.\<name>
+:::
+
+{/* t:p 0b8d15086ada019dd4449f6c02573705aa5901f62e8b49640ad60ca0d669ab4d */}
+## Added
+
+- **home-games**: EnableGnome & conditions cleans
+- **idm**: Move kanidm to 1.12, 1.11 reaches EOL on 2026-12-01
+- **idm**: Enable kanidm online backup, 7 nightly dumps kept
+- **supertuxkart**: EnableDirectLink, play over a direct Ethernet cable
+- **luks**: Gateways report their WAN address to the HCS
+- **network**: Software switch option, fleet networking moved to network.nix
+- **just**: Drv-diff proves a framework refactor leaves hosts unchanged
+- **install**: Retry nixos-install on failed download
+- **install**: Install-here resumes on the kept disk with DNF_RESUME=1
+- **iso**: Tty1 menu, new network or join an existing one
+- **install**: Backup witness, welcome page warns when keys are not saved
+- **just**: Release runs unattended with YES=1
+
+{/* t:p a152baff6d0d40f5811944f299dc86b166e6ede0aefa27267bfbfcfd97b75d72 */}
+## Fixed
+
+- **ghostty**: TERMINAL and Nautilus script follow programs.ghostty.enable
+- **ghostty**: Nautilus script launches the configured package
+- **lk-jwt-service**: Build aws-lc-sys from source, unset AWS_LC_SYS_USE_SYSTEM
+- **overlays**: Provide system libs to presenterm, aichat and codex sys crates
+- **workarounds**: Suspend anki, veloren and aider-chat (cargo system libs)
+- **thonny**: Raise uv_build bound to the locked 0.13 (nixpkgs#585369)
+- **luks**: Release the initrd DHCP lease under NetworkManager (no DNS)
+- **overlays**: Give oxicloud the rust sys libs under cargoUseSystemLibs
+- **drv-diff**: Compare on the base lock while an input bump is pending
+- **just**: Gen-schema is described by its own line in just --list
+- **install**: Ctrl-C stops the nixos-install retry loop
+- **just**: Realise flake source for nix-update on Nix 2.35
+- **just**: Put the nix shim ahead of nix-update's wrapped nix
+
+{/* t:p c0f0df8dbb51eb0e72cd99588412bb440465043b4ceb162ec97a8bfebf5b7404 */}
+## Changed
+
+- **overlays**: One ordered list in lib/overlays/default.nix
+- **activation**: One module applies registry triggers for every profile
+- **lib**: Flake plumbing to lib/flake/, images and system list shared
+- **flake**: One nixpkgsFor for every framework output
+
+{/* t:p 7d27fc1d3d745b8434e5a212e6b2fef0a3ddae0998ec38baff905c3d8b47be0d */}
+## Documentation
+
+- **registry**: Config/modules.nix holds literal values only
+- **dev**: Drop pointers to unpublished agent files and stale paths
+- **comments**: Drop pointers to private specs from published code
+- **activation**: Helper header no longer tied to the host mixins
+- **backports**: Dropping the geneweb overlay also drops its list entry
+- **links**: Module reference links target the module pages
+- **install**: Template READMEs point to the new doc sheets
+
+{/* t:p 0ec976c0c02991a2039a0ce43512c18185876a669dbf6f7c1cfcc3ea97f8e2de */}
+## Dependencies
+
+- dnf-generator v0.4.0
+- fleet-update v0.8.4

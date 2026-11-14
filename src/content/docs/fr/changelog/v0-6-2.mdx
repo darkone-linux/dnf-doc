@@ -1,0 +1,80 @@
+---
+title: "Version 0.6.2"
+description: "Supprime les options de topologie de service non lues"
+sidebar:
+  label: "0.6.2"
+lang: fr
+prev:
+  link: /fr/changelog/v0-6-1/
+  label: "Version 0.6.1"
+---
+
+{/* t:translated-from en */}
+{/* t:h 07c00afe532f05a1421f890c3ee9c699a7653af746589dde6c123c7056e77568 */}
+
+{/* t:p 497531fc39230ff043de3846162d998f980d8d2c5bdbfe980efb5142b63bfe85 */}
+Publié le **2026-11-13** : supprime les options de topologie de service non lues.
+
+[Modifications sur GitHub](https://github.com/darkone-linux/darkone-nixos-framework/compare/v0.6.1...v0.6.2) · [Toutes les versions](/fr/changelog/)
+
+:::caution[Changements incompatibles]
+- **services** : supprime les options de topologie non lues de services.service.\<name>
+:::
+
+{/* t:p 0b8d15086ada019dd4449f6c02573705aa5901f62e8b49640ad60ca0d669ab4d */}
+## Ajouts
+
+- **home-games** : EnableGnome et nettoyage des conditions
+- **idm** : passe kanidm en 1.12, 1.11 arrive en fin de vie le 2026-12-01
+- **idm** : active la sauvegarde en ligne de kanidm, 7 dumps nocturnes conservés
+- **supertuxkart** : EnableDirectLink, jouer via un câble Ethernet direct
+- **luks** : les passerelles signalent leur adresse WAN au HCS
+- **network** : option de switch logiciel, le réseau du parc passe dans network.nix
+- **just** : drv-diff prouve qu'un refactor du framework laisse les hôtes inchangés
+- **install** : réessaie nixos-install en cas d'échec de téléchargement
+- **install** : install-here reprend sur le disque conservé avec DNF_RESUME=1
+- **iso** : menu sur tty1, nouveau réseau ou rejoindre un réseau existant
+- **install** : témoin de sauvegarde, la page d'accueil avertit quand les clés ne sont pas sauvegardées
+- **just** : la release s'exécute sans intervention avec YES=1
+
+{/* t:p a152baff6d0d40f5811944f299dc86b166e6ede0aefa27267bfbfcfd97b75d72 */}
+## Corrections
+
+- **ghostty** : TERMINAL et le script Nautilus suivent programs.ghostty.enable
+- **ghostty** : le script Nautilus lance le paquet configuré
+- **lk-jwt-service** : compile aws-lc-sys depuis les sources, désactive AWS_LC_SYS_USE_SYSTEM
+- **overlays** : fournit les libs système aux crates sys de presenterm, aichat et codex
+- **workarounds** : suspend anki, veloren et aider-chat (libs système cargo)
+- **thonny** : relève la borne de uv_build vers le 0.13 verrouillé (nixpkgs#585369)
+- **luks** : libère le bail DHCP de l'initrd sous NetworkManager (pas de DNS)
+- **overlays** : donne à oxicloud les libs système rust sous cargoUseSystemLibs
+- **drv-diff** : compare sur le lock de base pendant qu'une mise à jour d'entrée est en attente
+- **just** : gen-schema a sa propre ligne dans just --list
+- **install** : Ctrl-C arrête la boucle de réessai de nixos-install
+- **just** : réalise la source du flake pour nix-update sous Nix 2.35
+- **just** : place le shim nix avant le nix encapsulé de nix-update
+
+{/* t:p c0f0df8dbb51eb0e72cd99588412bb440465043b4ceb162ec97a8bfebf5b7404 */}
+## Modifications
+
+- **overlays** : une seule liste ordonnée dans lib/overlays/default.nix
+- **activation** : un seul module applique les déclencheurs du registre pour chaque profil
+- **lib** : la plomberie du flake passe dans lib/flake/, images et liste de systèmes partagées
+- **flake** : un seul nixpkgsFor pour chaque sortie du framework
+
+{/* t:p 7d27fc1d3d745b8434e5a212e6b2fef0a3ddae0998ec38baff905c3d8b47be0d */}
+## Documentation
+
+- **registry** : Config/modules.nix ne contient que des valeurs littérales
+- **dev** : supprime les renvois vers des fichiers d'agent non publiés et des chemins obsolètes
+- **comments** : supprime les renvois vers des specs privées dans le code publié
+- **activation** : l'en-tête du helper n'est plus lié aux mixins d'hôte
+- **backports** : retirer l'overlay geneweb retire aussi son entrée de liste
+- **links** : les liens de la référence des modules pointent vers les pages de module
+- **install** : les README de template pointent vers les nouvelles feuilles de doc
+
+{/* t:p 0ec976c0c02991a2039a0ce43512c18185876a669dbf6f7c1cfcc3ea97f8e2de */}
+## Dépendances
+
+- dnf-generator v0.4.0
+- fleet-update v0.8.4

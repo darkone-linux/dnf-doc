@@ -8,11 +8,16 @@ lang: fr
 
 import { Steps } from '@astrojs/starlight/components';
 
+{/* t:main */}
+{/* t:h 7c2b69fb3eb7373d3eaf8a57f9340d5c8f20e6633a047a2b923cc48bf59f1015 */}
+
+{/* t:p e08eb3ab72b2d91f57c97ccf59031c1b1de5b569ed14f11739c06c394ceebe9f */}
 Le test de l'installeur joue `darkone new` de bout en bout dans une VM
 [QEMU](https://www.qemu.org/)/KVM, sur le vrai réseau&nbsp;: ce que télécharge
 un nouvel arrivant, le test le télécharge. Le même outil tourne en local et en
 [intégration continue](/fr/doc/dev-guide/releasing/#test-de-linstalleur).
 
+{/* t:p 819880a7cef404946309cdbef3e2ee6f54f8aa69187a03fe390da616a63fe9a4 */}
 ## Où se trouve quoi
 
 | Fichier (`dnf/`) | Rôle |
@@ -26,6 +31,7 @@ un nouvel arrivant, le test le télécharge. Le même outil tourne en local et e
 émulé, puis pilote l'assistant par la console série. Le câble (`set_link`) et
 la clé USB (`device_del`, `device_add`) passent par [QMP](https://www.qemu.org/docs/master/interop/qmp-spec.html).
 
+{/* t:p 5261ec36fd089afc5bba0a28ff0bd25bb63dfb3b24154d34b181c4198f8864d0 */}
 ## Les scénarios
 
 | Scénario | Ce qui est joué |
@@ -55,6 +61,7 @@ Après une installation, le système redémarre et se contrôle par SSH&nbsp;:
 - seconde sauvegarde par `just backup-admin`, la première gardée sous sa date ;
 - sauvegarde ouverte depuis l'hôte.
 
+{/* t:p 4df85f6bc7359c7b67294cd93388b077c7d92bd9bd6f0be2d65e9da7b90fb09c */}
 ## Lancer en local
 
 <Steps>
@@ -83,6 +90,7 @@ Après une installation, le système redémarre et se contrôle par SSH&nbsp;:
 
 </Steps>
 
+{/* t:p 9137f90e769f5b183a08a11d736b2a69b815ea104c38ac8f322929701626d299 */}
 ### Sur un générateur local
 
 Un générateur non publié s'essaie sur une ISO construite à partir de sa copie
@@ -98,6 +106,7 @@ just test-installer scripted "$out"/iso/*.iso
 Seuls les fichiers suivis par git entrent dans l'ISO&nbsp;: `git add` d'abord
 tout nouveau fichier.
 
+{/* t:p d95b27ae3324e396cd34cb1a9a0dd15d07f034b9b38ffe6ccd4cf2658e3ea074 */}
 ### Options du programme de test
 
 La recette n'expose que le scénario et l'ISO. Le programme accepte aussi&nbsp;:
@@ -114,6 +123,7 @@ nix run .#installer-test -- --iso "$iso" --scenario scripted \
 | `--memory` | RAM des VM en MiB (défaut 8192) |
 | `--keep` | Garde les disques après un succès |
 
+{/* t:p 6a68210a400229aaaa4f47283cc00b7341106c8a66dff1a5d2538b24bf7217b8 */}
 ## Mesurer le seuil de mémoire
 
 Le contrôle préalable refuse une machine dont le `MemTotal` est sous
@@ -165,6 +175,7 @@ Mesure de référence, poste d'administration par défaut (14&nbsp;Go copiés)&n
 D'où le seuil de 5500&nbsp;MiB&nbsp;: une machine de 6&nbsp;Go passe, une de
 4&nbsp;Go est refusée.
 
+{/* t:p 9be59eb323c87b14d6e976c7088f00482bb262a26b9178c104e5885d7ae9b096 */}
 ## Essayer à la main
 
 Pour essayer l'arbre courant dans une fenêtre QEMU&nbsp;:
@@ -183,13 +194,16 @@ Le store de la machine sert de cache de paquets (nix-serve-ng sur
 `127.0.0.1:5000`, lancé par `just try` si le port est libre). L'ISO fixe
 `DNF_URL` et `DNF_CACHE`&nbsp;: une relance de `darkone new` dans la VM les garde.
 
+{/* t:p 938609b64e2e1217c0db6ceeca57cfadea52087e1a0a2c4319be9b6fdb6ff3b2 */}
 ## FAQ
 
+{/* t:p f62a662a5daf6598cda478defb60f82cab08252a402352e18013897d399a84a3 */}
 ### Que faire de « workdir too deep » ?
 
 Le chemin des sockets de QEMU dépasse 107 octets, la limite d'un socket
 Unix&nbsp;: choisir un `--workdir` plus court, `/tmp/dnf-test` par exemple.
 
+{/* t:p 048af78a513c14466ebad2f4e6cbcc355fa9ead334556dcdf2f541c7952f8421 */}
 ### Où lire ce qui s'est passé ?
 
 `<workdir>/<scénario>/serial.log`&nbsp;: toute la console série, assistant et

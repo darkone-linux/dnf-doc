@@ -227,19 +227,20 @@ Manages test fixtures: generation, drift check, regeneration of disposable keys 
 just fixtures check
 ```
 
-{/* t:p e0e34b8b30101712bcb3b71328364724a0cc0c922eeb5bbde0476ef761bb9b63 */}
+{/* t:p aaffa0dc1eb709db58958be1e0ae6dc48cef2a6599f8fc1d6212e8761389de4b */}
 ### 🔆 `test-installer [scenario] [iso]`
 
 Tests the installation ISO in a QEMU VM: the `darkone new` wizard is driven
-end to end. Allow 30 minutes and 25 GB of disk per scenario.
-See [Testing the installer](/en/doc/dev-guide/releasing/#installer-test).
+through from start to finish. Allow 30 minutes and 25 GB of disk per scenario,
+one minute for `preflight`. See [Testing the installer](/en/doc/dev-guide/installer-test/).
 
 | Scenario | Installation |
 |---|---|
+| `preflight` | None, prior checks only |
 | `scripted` | Answer file, unencrypted disk |
 | `interactive` | Console prompts, encrypted disk |
-| `resume` | Connection cut, Ctrl-C, then resume |
-| `all` (default) | All three |
+| `resume` | Link cut, Ctrl-C, then resume |
+| `all` (default) | All four |
 
 ```sh
 just test-installer

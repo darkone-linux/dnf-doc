@@ -225,48 +225,33 @@ On a `v*` tag, `release.yml` refuses to publish if&nbsp;:
 
 The three checks in `ci.yml` (unit tests, evaluation, and lint) are rerun via `workflow_call`, and the corresponding changelog section becomes the GitHub release notes.
 
-{/* t:p 136b769722d8af16d40d6e01440a2faf9e3c0888cfa73c32fafdb67138f7b3c8 */}
+{/* t:p e70528cbe7f33da9d34571fc258c6d0896c1451a74d54e6f12961face7964e97 */}
 ### Installer test
 
-The `installer-test.yml` *workflow* runs `darkone new` end to end in a QEMU VM (runner's KVM, real network)&nbsp;: the generic ISO boots, the wizard is driven by its serial console (pexpect), then the installed system reboots and is checked over SSH. Three scenarios, in parallel, about 25&nbsp;minutes each&nbsp;:
-
-- **scripted**&nbsp;: answer file, `--non-interactive`, plain disk, backup passphrase in a file&nbsp;;
-- **interactive**&nbsp;: each question answered at the console, encrypted disk, backup USB key unplugged then replugged (QMP), first boot unlocked by the initrd sshd&nbsp;;
-- **resume** (`resume`)&nbsp;: the interactive one, link cut during `nixos-install`, then Ctrl-C and *Resume*&nbsp;: only the disk passphrase is asked again, the disk is not wiped.
-
-Checks&nbsp;: choice 1 of the tty1 menu, zone prefix `10.1` (QEMU occupies `10.0`), system `running` with no failed unit, `/etc/nixos` clean, home page installed, backup marker, second backup via `just backup-admin` from the installed system (the first kept under its date), backup opened from the host. The serial log is attached to the *run*.
+The `installer-test.yml` *workflow* runs `darkone new` end to end in a
+QEMU VM (the runner's KVM, real network)&nbsp;: the `scripted`,
+`interactive` and `resume` scenarios of the [installer test](/en/doc/dev-guide/installer-test/),
+in parallel, about 25&nbsp;minutes each. The serial log is attached to the *run*.
 
 Three triggers&nbsp;:
 
-- **tag**&nbsp;: called by `release.yml`, a failure keeps the ISO out of the *release*&nbsp;;
-- **every Monday**, on `main`&nbsp;: a breakage from nixpkgs unstable is seen before the next tag&nbsp;;
-- **manually**&nbsp;: `gh workflow run installer-test.yml --ref <branche>`, before a release or after a change to the ISO.
+- **tag**&nbsp;: called by `release.yml`, a failure holds the ISO back from the
+  *release*&nbsp;;
+- **every Monday**, on `main`&nbsp;: a break coming from nixpkgs unstable shows up
+  before the next tag&nbsp;;
+- **manually**&nbsp;: `gh workflow run installer-test.yml --ref <branche>`, before
+  a release or after a change to the ISO.
 
-Same test locally, on the current tree's ISO or another&nbsp;:
+The same test runs locally, `just try` opens the ISO in a
+window&nbsp;: see [Testing the installer](/en/doc/dev-guide/installer-test/#run-locally).
 
-```sh
-just test-installer                 # les trois scénarios
-just test-installer interactive /chemin/de/l.iso
-```
-
-Disks and logs&nbsp;: `~/.cache/dnf-installer-test/<scénario>/`, about 25&nbsp;GB per scenario. The code&nbsp;: `dnf/tests/installer/`.
-
-To try the current tree manually, in a QEMU window&nbsp;:
-
-```sh
-just try                                   # disque gardé
-just try reset chemin/de/dnf-generator     # disque neuf, générateur local
-```
-
-Unlike `nix run …#try`, the project written by the wizard is pinned to the ISO's framework (`path:`) and not to the template release&nbsp;: the installed system carries the unpublished code. Disk&nbsp;: `~/.local/share/dnf-try-local`.
-
-The machine's store serves as a package cache (nix-serve-ng on `127.0.0.1:5000`, started by `just try` if the port is free). The ISO sets `DNF_URL` and `DNF_CACHE`&nbsp;: a rerun of `darkone new` in the VM keeps them.
-
-<Aside type="caution" title="Tag pushed, release missing">
+<Aside type="caution" title="Tag pushed, no release">
 Never move or recreate the tag&nbsp;: FlakeHub has already published it.
 
-- Transient failure (runner cut, network)&nbsp;: `gh run rerun <id> --failed` replays the failed *jobs* with the tag's *workflows*.
-- Defect in the tagged tree&nbsp;: the number is lost. Fix on `main`, then `just release patch`.
+- Transient failure (runner cut off, network)&nbsp;: `gh run rerun <id> --failed`
+  replays the failed *jobs* with the tag's *workflows*.
+- Defect in the tagged tree&nbsp;: the number is lost. Fix on `main`,
+  then `just release patch`.
 </Aside>
 
 {/* t:p 76bf7c0ae965537388dc68bc0a93388c26f12d5dae428fd2ad7c9594d61c1900 */}

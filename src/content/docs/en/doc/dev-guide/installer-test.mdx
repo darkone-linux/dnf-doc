@@ -1,0 +1,212 @@
+---
+title: Testing the installer
+sidebar:
+  label: Installer test
+  order: 11
+lang: en
+---
+
+import { Steps } from '@astrojs/starlight/components';
+
+{/* t:translated-from fr */}
+{/* t:h 7c2b69fb3eb7373d3eaf8a57f9340d5c8f20e6633a047a2b923cc48bf59f1015 */}
+
+{/* t:p e08eb3ab72b2d91f57c97ccf59031c1b1de5b569ed14f11739c06c394ceebe9f */}
+The installer test runs `darkone new` end to end in a
+[QEMU](https://www.qemu.org/)/KVM VM, on the real network&nbsp;: what a newcomer
+downloads, the test downloads. The same tool runs locally and in
+[continuous integration](/en/doc/dev-guide/releasing/#installer-test).
+
+{/* t:p 819880a7cef404946309cdbef3e2ee6f54f8aa69187a03fe390da616a63fe9a4 */}
+## What is where
+
+| File (`dnf/`) | Role |
+|---|---|
+| `tests/installer/run.py` | Scenarios, driven by pexpect |
+| `tests/installer/dnf-vm.sh` | QEMU machine&nbsp;: UEFI, disk, USB key |
+| `tests/installer/default.nix` | `installer-test`, `try`, `try-local` commands |
+| `.github/workflows/installer-test.yml` | CI, three scenarios in parallel |
+
+`run.py` boots the generic ISO, selects *1* from the tty1 menu via the emulated
+keyboard, then drives the wizard through the serial console. The cable
+(`set_link`) and the USB key (`device_del`, `device_add`) go through
+[QMP](https://www.qemu.org/docs/master/interop/qmp-spec.html).
+
+{/* t:p 5261ec36fd089afc5bba0a28ff0bd25bb63dfb3b24154d34b181c4198f8864d0 */}
+## The scenarios
+
+| Scenario | What is exercised |
+|---|---|
+| `preflight` | Cable unplugged, pre-checks |
+| `scripted` | Answer file, plain disk |
+| `interactive` | Console questions, encrypted disk |
+| `resume` | Link cut, Ctrl-C, then *Resume* |
+
+- `preflight`&nbsp;: no installation, about one minute.
+- The other three&nbsp;: about 30&nbsp;minutes and 25&nbsp;GB of disk each.
+- `all` (default)&nbsp;: the four, in that order.
+
+`preflight` requires the network error before the first question, then, with the
+cable plugged back in, that *Check again* leads to the questions. `scripted`
+starts without network&nbsp;: the cable is plugged in when tty1 waits for it.
+
+`interactive` unplugs then replugs the backup key, and unlocks the first boot
+through the initrd sshd. `resume` checks that only the disk passphrase is asked
+again, and that the disk is not wiped.
+
+After an installation, the system reboots and is checked over SSH&nbsp;:
+
+- zone prefix `10.1` (the QEMU network uses `10.0`) ;
+- system `running`, no failed unit, clean `/etc/nixos` ;
+- home page installed, backup marker present ;
+- second backup with `just backup-admin`, the first kept under its date ;
+- backup opened from the host.
+
+{/* t:p 4df85f6bc7359c7b67294cd93388b077c7d92bd9bd6f0be2d65e9da7b90fb09c */}
+## Run locally
+
+<Steps>
+
+1. **Prerequisites**
+
+   `/dev/kvm` accessible (otherwise emulation, much slower), 25&nbsp;GB free
+   per scenario, Internet access.
+
+2. **Run**
+
+   ```sh
+   just test-installer                             # the four scenarios
+   just test-installer preflight                   # a single one
+   just test-installer scripted /path/to/t.iso   # another ISO
+   ```
+
+   Without an ISO, the recipe builds the one for the current tree, on the
+   generator pinned by `dnf/flake.lock`.
+
+3. **Read the result**
+
+   One `TEST` line per step, then `Scenario <name>: OK` or `FAILED`. Disks
+   and logs&nbsp;: `~/.cache/dnf-installer-test/<scenario>/`, the disk
+   deleted after a success.
+
+</Steps>
+
+{/* t:p 9137f90e769f5b183a08a11d736b2a69b815ea104c38ac8f322929701626d299 */}
+### On a local generator
+
+An unpublished generator is tried on an ISO built from its local copy, from
+`dnf/`&nbsp;:
+
+```sh
+out=$(nix build --no-link --print-out-paths --no-write-lock-file \
+  --override-input dnf-generator "git+file://$(realpath path/to/dnf-generator)" \
+  .#nixosConfigurations.iso-x86_64-linux.config.system.build.isoImage)
+just test-installer scripted "$out"/iso/*.iso
+```
+
+Only files tracked by git go into the ISO&nbsp;: `git add` any new file first.
+
+{/* t:p d95b27ae3324e396cd34cb1a9a0dd15d07f034b9b38ffe6ccd4cf2658e3ea074 */}
+### Test program options
+
+The recipe only exposes the scenario and the ISO. The program also accepts&nbsp;:
+
+```sh
+nix run .#installer-test -- --iso "$iso" --scenario scripted \
+  --memory 4096 --workdir /tmp/dnf-test --keep
+```
+
+| Option | Effect |
+|---|---|
+| `--scenario` | A scenario, or `all` (default) |
+| `--workdir` | Disks and logs, short path |
+| `--memory` | VM RAM in MiB (default 8192) |
+| `--keep` | Keeps the disks after a success |
+
+{/* t:p 6a68210a400229aaaa4f47283cc00b7341106c8a66dff1a5d2538b24bf7217b8 */}
+## Measure the memory threshold
+
+The pre-check refuses a machine whose `MemTotal` is below
+`MIN_RAM_MIB` (`src/installer/checks.rs` in the generator). This threshold is
+measured with `scripted`, one RAM size at a time.
+
+<Steps>
+
+1. **Lower the threshold**
+
+   On a copy of the generator, lower `MIN_RAM_MIB` below the smallest
+   size to measure and commit, then build the ISO on it
+   ([local generator](#on-a-local-generator)).
+
+2. **One size per run**
+
+   ```sh
+   nix run .#installer-test -- --iso "$iso" --scenario scripted --memory 4096
+   ```
+
+3. **Read the verdict**
+
+   Compare the duration to that of 8192&nbsp;MiB. A saturated VM does not
+   complete, the test gives up after 90&nbsp;minutes.
+
+4. **Report**
+
+   `MIN_RAM_MIB` just below the `MemTotal` of the smallest size that passes,
+   then the
+   [prerequisites](/en/doc/admin-guide/install/first-network-installation/#prerequisites)
+   of the installation.
+
+</Steps>
+
+Without swap, a saturated VM rereads its ISO in a loop&nbsp;: the QEMU read
+counter then climbs by several GB per second.
+
+```sh
+grep rchar /proc/$(pgrep -f qemu-system)/io
+```
+
+Reference measurement, default administration workstation (14&nbsp;GB copied)&nbsp;:
+
+| VM RAM | `scripted` |
+|---|---|
+| 4096 MiB | Unfinished after 90 min |
+| 6144 MiB | 12 min |
+| 8192 MiB | 12 min |
+
+Hence the 5500&nbsp;MiB threshold&nbsp;: a 6&nbsp;GB machine passes, a
+4&nbsp;GB one is refused.
+
+{/* t:p 9be59eb323c87b14d6e976c7088f00482bb262a26b9178c104e5885d7ae9b096 */}
+## Try by hand
+
+To try the current tree in a QEMU window&nbsp;:
+
+```sh
+just try                                   # disk kept
+just try reset path/to/dnf-generator     # fresh disk, local generator
+```
+
+Unlike `nix run …#try`, the project written by the wizard is pinned to the
+ISO's framework (`path:`) and not to the template's release&nbsp;: the installed
+system carries the unpublished code. Disk&nbsp;:
+`~/.local/share/dnf-try-local`.
+
+The machine's store serves as a package cache (nix-serve-ng on
+`127.0.0.1:5000`, started by `just try` if the port is free). The ISO sets
+`DNF_URL` and `DNF_CACHE`&nbsp;: a rerun of `darkone new` in the VM keeps them.
+
+{/* t:p 938609b64e2e1217c0db6ceeca57cfadea52087e1a0a2c4319be9b6fdb6ff3b2 */}
+## FAQ
+
+{/* t:p f62a662a5daf6598cda478defb60f82cab08252a402352e18013897d399a84a3 */}
+### What to do about "workdir too deep"?
+
+The QEMU socket path exceeds 107 bytes, the limit of a Unix
+socket&nbsp;: choose a shorter `--workdir`, `/tmp/dnf-test` for example.
+
+{/* t:p 048af78a513c14466ebad2f4e6cbcc355fa9ead334556dcdf2f541c7952f8421 */}
+### Where to read what happened?
+
+`<workdir>/<scenario>/serial.log`&nbsp;: the whole serial console, wizard and
+`nixos-install` included. Its path follows the `FAILED` line; `--keep`
+also keeps the disk.
