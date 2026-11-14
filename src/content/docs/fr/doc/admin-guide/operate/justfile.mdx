@@ -244,15 +244,16 @@ just fixtures check
 ### 🔆 `test-installer [scénario] [iso]`
 
 Teste l'ISO d'installation dans une VM QEMU&nbsp;: l'assistant `darkone new` y
-est piloté de bout en bout. Compter 30 minutes et 25 Go de disque par scénario.
-Voir [Test de l'installeur](/fr/doc/dev-guide/releasing/#test-de-linstalleur).
+est piloté de bout en bout. Compter 30 minutes et 25 Go de disque par scénario,
+une minute pour `preflight`. Voir [Tester l'installeur](/fr/doc/dev-guide/installer-test/).
 
 | Scénario | Installation |
 |---|---|
+| `preflight` | Aucune, contrôles préalables seuls |
 | `scripted` | Fichier de réponses, disque en clair |
 | `interactive` | Questions à la console, disque chiffré |
 | `resume` | Lien coupé, Ctrl-C, puis reprise |
-| `all` (défaut) | Les trois |
+| `all` (défaut) | Les quatre |
 
 ```sh
 just test-installer
