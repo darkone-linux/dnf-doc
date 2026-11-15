@@ -42,10 +42,17 @@ hosts:
       vaultwarden:               # coffre-fort
 ```
 
-L'installation suit la même procédure qu'une
-[passerelle](/fr/doc/admin-guide/install/gateway/#installer-la-passerelle)
-(`just install` / `configure` / `apply`). `just configure` enrôle aussi le HCS sur
-son propre [tailnet](/fr/doc/admin-guide/operate/vpn/#enrôler-une-machine)&nbsp;:
+L'installation se fait en une commande&nbsp;:
+
+```sh
+just full-install hcs <utilisateur> <ip>
+```
+
+Elle enchaîne `just install`, `just configure` et `just apply`, que l'on peut
+aussi lancer un à un (comme pour une
+[passerelle](/fr/doc/admin-guide/install/gateway/#installer-la-passerelle)).
+`just configure` enrôle aussi le HCS sur son propre
+[tailnet](/fr/doc/admin-guide/operate/vpn/#enrôler-une-machine)&nbsp;:
 reporter ensuite son adresse tailnet dans la déclaration ci-dessus.
 
 {/* t:p ba8dffdcffe41df2842792581fe17f6c11c7a22177403eac4c9ee620f404192c */}

@@ -440,6 +440,11 @@ prouve du même coup que le déverrouillage à distance fonctionne, pendant que
 vous êtes encore devant et non à la première coupure de courant. `unlock` est
 donc rappelé juste après.
 
+Pour la passerelle de sa zone, installée depuis un poste branché sur la box, la
+recette s'arrête après l'installation et demande de brancher le poste sur un
+port LAN de la passerelle&nbsp;: elle reprend seule (30 minutes d'attente au
+plus). Voir [Passerelle](/fr/doc/admin-guide/install/gateway/#installer-la-passerelle).
+
 ```sh
 just full-install myserver
 just full-install myserver nixos 10.0.3.42   # adresse forcée

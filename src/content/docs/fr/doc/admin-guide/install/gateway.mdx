@@ -14,7 +14,10 @@ import { Steps } from '@astrojs/starlight/components';
 {/* t:p a0ba50a23fe3d1c32b02f0c39dfd4010586d39a539789eeccdc2460dbf699d78 */}
 Une [zone](/fr/doc/admin-guide/understand/concepts/) est un sous-réseau, qui
 comporte une **passerelle**, derrière laquelle on branche autant de machines
-qu'on veut.
+qu'on veut. La première passerelle s'installe **depuis le poste
+d'administration, posé à côté d'elle**, sans serveur de coordination.
+
+Six étapes&nbsp;: brancher, démarrer, déclarer, installer, recâbler, finir.
 
 {/* t:p 3172c667429340c38c55d1ae902aa5cd32c430372492e5375aa3f260b53a4a07 */}
 ## Le matériel
@@ -31,103 +34,240 @@ Par exemple, boîtier [Protectli](https://eu.protectli.com/) ou équivalent&nbsp
 - Carte wifi en option
 :::
 
+## Câblage
+
+Le WAN de la passerelle va sur la box&nbsp;; tout le réseau local passe
+derrière elle.
+
+```d2
+style.fill: transparent
+direction: right
+
+internet: Internet { shape: cloud }
+box: Box
+wifi: "Wi-Fi de la box\n(hors zone)" { shape: oval }
+
+zone: "Zone" {
+  gw: Passerelle
+  switch: Commutateur
+  pcs: "Postes\n(dont le poste d'administration)"
+  ap: "Point d'accès\nWi-Fi"
+  gw -> switch: LAN
+  switch -> pcs
+  switch -> ap
+}
+
+internet -> box
+box -> zone.gw: WAN
+box -> wifi { style.stroke-dash: 3 }
+```
+
+- Le Wi-Fi de la box reste **hors de la zone** : ses appareils ne reçoivent pas
+  d'adresse de la passerelle.
+- Un point d'accès Wi-Fi se branche **derrière** la passerelle, sans DHCP.
+- Le commutateur est facultatif&nbsp;: un poste peut se brancher sur un port LAN.
+
+## Préparer la passerelle
+
+<Steps>
+
+1. **Brancher**
+
+   Le WAN de la passerelle sur la box. Le poste d'administration **reste sur
+   la box** (câble ou Wi-Fi).
+
+2. **Démarrer**
+
+   Sur l'ISO, [gravée sur une clé USB](/fr/doc/admin-guide/install/first-network-installation/#préparer-la-clé).
+   L'écran donne ce qu'il faut déclarer&nbsp;:
+
+   ```text
+   - IP: 192.168.1.50
+   - MAC: aa:bb:cc:dd:ee:01
+
+   Network cards (wan.interface, lan.interfaces):
+     NAME    MAC                LINK  IPV4             NOTE
+     enp1s0  aa:bb:cc:dd:ee:01  up    192.168.1.50/24  default route (WAN)
+     enp2s0  aa:bb:cc:dd:ee:02  down  -
+
+   Disks (disko.devices), installation medium left out:
+     /dev/disk/by-id/nvme-Example_SSD_256GB_S4EXAMPLE0001
+         239G  Example SSD 256GB  [nvme0n1]
+   ```
+
+   | Ligne | Sert à |
+   |---|---|
+   | `- IP:` | `just full-install` |
+   | *Network cards* | `wan.interface`, `lan.interfaces` |
+   | *Disks* | `disko.devices` (chemin à copier) |
+
+   La carte marquée *default route (WAN)* porte la route vers la box&nbsp;:
+   c'est le WAN, les autres câblées sont le LAN. `dnf-netinfo` réaffiche
+   l'écran. Avec l'ISO générique, l'entrée du menu *2) Add this machine to an
+   existing network* affiche les mêmes tableaux.
+
+   Autoriser ensuite la clé&nbsp;: définir un mot de passe sur la passerelle
+   (`passwd`), puis, depuis le poste d'administration&nbsp;:
+
+   ```sh
+   sudo -i -u nix ssh-copy-id nixos@192.168.1.50
+   ```
+
+   L'image `just build-iso` porte déjà la clé&nbsp;: rien à autoriser.
+
+</Steps>
+
 {/* t:p ab900321052e1846b5335348ec04ddc592a4297650c4cadc3506474e358e1591 */}
 ## Déclarer la zone
 
-La zone et sa passerelle se décrivent dans `etc/config.yaml` :
+Tout se déclare **avant** l'installation&nbsp;: la passerelle naît avec la
+réservation du poste d'administration, qui reçoit son adresse fixe dès le
+recâblage.
 
-```yaml
-# etc/config.yaml
-zones:
-  maison:
-    description: "Réseau de la maison"
-    ipPrefix: "10.0"             # zone en 10.0.0.0/16
-    gateway:
-      wan:
-        interface: "enp1s0"      # vers la box
-      lan:
-        interfaces: ["enp2s0"]   # vers le réseau local
+<Steps>
 
-hosts:
-  - hostname: "gw"
-    name: "Passerelle"
-    zone: "maison:1.1"           # IP fixe 10.0.1.1
-    profile: "gateway"
-    services:
-      adguardhome:               # DNS + anti-pub
-      homepage:                  # portail des services
-    disko:
-      profile: "server-1-disk"
-      devices:
-        main: "/dev/sda"
-```
+3. **Déclarer**
 
-:::tip[Services automatiques]
+   Dans `etc/config.yaml`&nbsp;: le bloc `gateway` de la zone, l'hôte `gw`, et
+   une adresse fixe pour le poste d'administration.
+
+   ```yaml
+   # etc/config.yaml
+   zones:
+     main:
+       description: "Main network"
+       ipPrefix: "10.0"             # zone en 10.0.0.0/16
+       gateway:
+         wan:
+           interface: "enp1s0"      # carte vers la box
+         lan:
+           interfaces: ["enp2s0"]   # cartes vers le réseau local
+
+   hosts:
+     - hostname: "gw"
+       name: "Passerelle"
+       zone: "main:1.1"             # IP fixe 10.0.1.1
+       profile: "gateway"
+       disko:
+         profile: "server-1-disk"
+         devices:
+           main: "/dev/disk/by-id/nvme-Example_SSD_256GB_S4EXAMPLE0001"
+
+     - hostname: "admin"            # le poste d'administration
+       zone: "main:2.1"             # était "main" : IP fixe 10.0.2.1
+       mac: "aa:bb:cc:dd:ee:ff"     # inchangée
+       # … le reste est inchangé
+   ```
+
+   Pas de `mac` pour la passerelle&nbsp;: son adresse LAN est fixe (`1.1`) et
+   son adresse WAN vient de la box.
+
+   ```sh
+   just clean
+   git add . && git commit -m "host(gw): passerelle"
+   ```
+
+</Steps>
+
+:::tip[Services et liaisons de secours]
 Le profil `gateway` câble le routeur, le pare-feu, le DNS/DHCP (`dnsmasq`) et le
-client VPN. Les services déclarés (homepage, adguardhome…) sont configurés tout
-seuls. Voir [Réseau](/fr/doc/admin-guide/understand/network/).
-:::
-
-:::tip[Internet même quand la box tombe]
-Un port libre ou une carte wifi peut servir de liaison de secours (partage de
-connexion d'un téléphone, 4G). Voir
-[Liaisons de secours](/fr/doc/how-to/admin/gateway-backup-links/).
+client VPN (voir [Réseau](/fr/doc/admin-guide/understand/network/)). Les
+services (adguardhome, homepage…) se déclarent sous `services:`. Un port libre
+ou une carte wifi peut servir de
+[liaison de secours](/fr/doc/how-to/admin/gateway-backup-links/).
 :::
 
 {/* t:p 98554b1607570cb4d01b143341ac9f955b808ca04936dca4702a25e136955595 */}
 ## Installer la passerelle
 
-L'installation se fait souvent **à distance** : une personne sur place prépare la
-machine, l'administrateur installe par SSH.
-
 <Steps>
 
-1. **Préparer la passerelle** (sur place)
-
-   1. Brancher la passerelle à la box.
-   2. Démarrer sur la clé USB (image `just build-iso`).
-   3. Noter l'adresse IP de la passerelle.
-   4. Rediriger le port 22 de la box vers la passerelle.
-
-   :::note[Pourquoi rediriger le port 22 ?]
-   Il permet l'accès SSH le temps de l'installation. La clé USB n'accepte que les
-   clés d'authentification (pas de mot de passe).
-
-   La passerelle installée garde ce SSH ouvert sur son WAN jusqu'à la
-   déclaration de son adresse VPN (`vpn.ipv4`), puis ne répond plus depuis
-   Internet&nbsp;: l'accès passe par le VPN (`just enter gw`). **Retirez alors la
-   redirection.** Voir [Accès SSH selon le
-   rôle](/fr/doc/admin-guide/understand/network/#accès-ssh-selon-le-rôle).
-   :::
-
-2. **Installer** (administrateur)
-
-   Une seule commande enchaîne le formatage disque, la configuration matérielle,
-   le déploiement et le nettoyage&nbsp;:
+4. **Installer**
 
    ```sh
-   just full-install gw nixos <ip>
+   just full-install gw nixos 192.168.1.50
    ```
 
-   - `gw` : nom d'hôte déclaré dans `etc/config.yaml`.
-   - `nixos` : utilisateur de la clé USB live (image DNF).
-   - `<ip>` : adresse notée à l'étape précédente, ou l'IP publique de la box
-     (redirection du port 22) pour une installation à distance.
+   - `gw` : nom d'hôte déclaré.
+   - `nixos` : utilisateur de l'ISO.
+   - `192.168.1.50` : la ligne `- IP:` de l'écran.
 
-   :::tip[Se passer de l'adresse]
-   Si la clé `mac` de la passerelle figure dans `etc/config.yaml`, son adresse
-   est réservée d'avance et ne change pas entre la clé USB et le système
-   installé. `just full-install gw` suffit alors, sans rien relever ni saisir.
-   :::
+   Avant la question de formatage, la recette annonce le recâblage&nbsp;:
+   *get the cable ready now*. Le disque est ensuite formaté, le système
+   installé, puis la passerelle redémarre.
+
+   Si le réseau de la box chevauche celui de la zone (la box dans
+   `10.0.0.0/16`), la recette refuse **avant tout formatage**&nbsp;: WAN et LAN
+   seraient sur le même réseau.
+
+   ```text
+   Cannot install gw on 10.0.0.50: the box network (10.0.0.0/24 on enp1s0) overlaps
+   zone 'main' (10.0.0.0/16), so its WAN and LAN would share one network.
+   ```
+
+   Le préfixe de la zone est définitif&nbsp;: changer le réseau de la box
+   (sous-réseau ou plage DHCP), redémarrer l'ISO, recommencer.
+
+5. **Recâbler**
+
+   À l'invite *Now unplug this machine from the box and plug it into a LAN
+   port of gw*, débrancher le poste d'administration de la box et le brancher
+   sur un port LAN de la passerelle (ou du commutateur). Rien à presser&nbsp;:
+   la recette attend jusqu'à 30 minutes que `10.0.1.1` réponde, puis enchaîne
+   `configure`, `apply` et un dernier redémarrage.
+
+   Sans réponse après 30 minutes&nbsp;:
+
+   ```sh
+   just configure gw 10.0.1.1
+   just apply gw
+   ```
+
+   Cette pause n'a lieu que si la passerelle garde son SSH fermé côté box
+   (coordination inactive, ou `gateway.vpn.ipv4` déjà déclaré)&nbsp;: voir
+   [Accès SSH selon le
+   rôle](/fr/doc/admin-guide/understand/network/#accès-ssh-selon-le-rôle).
+
+6. **Finir**
+
+   ```sh
+   just apply-local
+   ```
+
+   Le poste d'administration prend son adresse fixe (`10.0.2.1`).
 
 </Steps>
+
+:::caution[À valider]
+L'ensemble de la pause de recâblage n'a pas encore été essayé de bout en bout.
+Points à confirmer sur une vraie installation&nbsp;:
+
+- le poste prend un bail de la passerelle dès le recâblage, et `gw` se résout ;
+- poste sur le Wi-Fi de la box **et** câblé au LAN : `10.0.1.1` répond sans rien
+  débrancher.
+:::
+
+## Chiffrement du disque
+
+Pour une première passerelle, **préférer un disque en clair** (`server-1-disk`)&nbsp;:
+elle redémarre seule après une coupure de courant, sans quoi le réseau reste
+coupé tant que personne ne tape la passphrase. Le chiffrement et le
+déverrouillage à distance sont décrits dans
+[Chiffrement des disques (LUKS)](/fr/doc/admin-guide/operate/luks/).
+
+:::caution[À valider : passerelle chiffrée]
+Le déverrouillage se ferait côté box avant le recâblage, puis côté LAN au
+dernier redémarrage. En câble direct, le poste peut perdre son adresse pendant
+l'initrd (pas de DHCP)&nbsp;: sinon, passphrase à la console.
+:::
 
 {/* t:p c67eb0fc005e21027bd8197f3d013133aba05b23f43ffac3ea439b11d277bf91 */}
 ## Installer depuis une autre zone
 
 Une passerelle se prépare souvent ailleurs que chez son destinataire. Branchez
 son interface **WAN** au réseau local de la zone d'accueil&nbsp;: elle y reçoit
-l'adresse de passage que cette zone lui réserve sur sa MAC.
+l'adresse de passage que cette zone lui réserve sur sa MAC. Ici, la clé `mac`
+de la passerelle (ligne `- MAC:` de l'écran de l'ISO) reste utile.
 
 Trois conditions&nbsp;:
 
@@ -144,6 +284,25 @@ de leur zone](/fr/doc/admin-guide/understand/network/#machines-hors-de-leur-zone
 Sur place, elle reprend l'adresse fixe de sa zone (`.1.1`). La redirection SSH
 posée pour l'installation ne sert plus&nbsp;: `just roaming-clear gw`.
 :::
+
+## Installer à distance
+
+Une personne sur place branche la passerelle à la box et la démarre sur l'image
+`just build-iso` (elle porte la clé de déploiement)&nbsp;; l'administrateur
+installe par SSH. Cette voie suppose la **coordination (HCS) active** et
+`gateway.vpn.ipv4` non déclaré&nbsp;: sinon le SSH reste fermé côté box une fois
+la passerelle installée.
+
+<Steps>
+
+1. **Rediriger** le port 22 de la box vers la passerelle.
+2. **Installer** avec l'adresse IP publique de la box&nbsp;:
+   `just full-install gw nixos <ip-publique>`.
+3. **Retirer la redirection** après avoir déclaré `gateway.vpn.ipv4` et
+   appliqué&nbsp;: la passerelle ne répond plus depuis Internet, l'accès passe
+   par le VPN (`just enter gw`).
+
+</Steps>
 
 {/* t:p de4a2eb7e6d7f7db2df8b62ac6e221d24562de6d4348d9e3fcbad5b025e2cbff */}
 ## Enregistrer la passerelle sur le VPN

@@ -163,7 +163,7 @@ cela publierait le SSH sur Internet.
 | Hôte | SSH joignable depuis |
 |---|---|
 | Passerelle de zone | son réseau local et le VPN |
-| Passerelle pas encore enrôlée | aussi Internet (WAN) |
+| Passerelle pas encore enrôlée | aussi Internet (WAN), si la coordination (HCS) est active |
 | Hôte de la zone globale (HCS) | Internet — décision assumée, il porte le VPN |
 | Machine de zone (poste, serveur) | sa seule interface, donc le réseau local |
 
@@ -175,8 +175,11 @@ just enter gw
 ```
 
 Avant l'enrôlement, le WAN est le seul accès&nbsp;: l'option
-`darkone.host.gateway.wanSsh.enable` y ouvre le port 22 tant que la zone ne
-déclare pas `gateway.vpn.ipv4`. Déclarer l'adresse puis appliquer le referme.
+`darkone.host.gateway.wanSsh.enable` y ouvre le port 22 tant que la coordination
+(HCS) est active et que la zone ne déclare pas `gateway.vpn.ipv4`. Déclarer
+l'adresse puis appliquer le referme. **Sans coordination, le WAN reste
+fermé**&nbsp;: la première passerelle s'installe depuis son réseau local, voir
+[Passerelle](/fr/doc/admin-guide/install/gateway/#installer-la-passerelle).
 
 <Aside type="caution" title="Une passerelle n'ouvre aucun port sans interface">
 Le profil `gateway` refuse de construire si un port est ouvert sans nom
@@ -381,7 +384,7 @@ premier démarrage réel.
 <Aside type="note" title="Machines sans adresse MAC déclarée">
 La réservation exige une clé `mac` dans `etc/config.yaml`. Sans elle, hors de
 chez elle, la machine n'est joignable que par le tailnet. `just install` la réclame avant
-tout formatage&nbsp;; `just host-info <hôte> <ip>` la relève sur une machine
+tout formatage (sauf pour la passerelle de sa propre zone)&nbsp;; `just host-info <hôte> <ip>` la relève sur une machine
 démarrée.
 </Aside>
 
