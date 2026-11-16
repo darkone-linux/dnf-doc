@@ -241,7 +241,7 @@ just fixtures check
 ```
 
 {/* t:p aaffa0dc1eb709db58958be1e0ae6dc48cef2a6599f8fc1d6212e8761389de4b */}
-### 🔆 `test-installer [scénario] [iso]`
+### 🔆 `test-installer [scénario] [iso] [générateur]`
 
 Teste l'ISO d'installation dans une VM QEMU&nbsp;: l'assistant `darkone new` y
 est piloté de bout en bout. Compter 30 minutes et 25 Go de disque par scénario,
@@ -254,10 +254,15 @@ une minute pour `preflight`. Voir [Tester l'installeur](/fr/doc/dev-guide/instal
 | `interactive` | Questions à la console, disque chiffré |
 | `resume` | Lien coupé, Ctrl-C, puis reprise |
 | `all` (défaut) | Les quatre |
+| `gateway` | Hors `all`&nbsp;: poste d'administration, puis `darkone add gateway` sur une seconde machine |
+
+`générateur`&nbsp;: une copie locale de `dnf-generator`, sur laquelle l'ISO est
+construite&nbsp;; `gateway` en exige une qui a `darkone add gateway`.
 
 ```sh
 just test-installer
 just test-installer interactive /chemin/de/l.iso
+just test-installer gateway '' chemin/de/dnf-generator
 ```
 
 {/* t:p d3b8061eda0c9fd00c607f8bb7f790e84f01d06e7c5d08d33fdcaba4ae57cf60 */}

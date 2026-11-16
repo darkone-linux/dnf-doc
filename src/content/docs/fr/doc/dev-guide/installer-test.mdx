@@ -77,7 +77,14 @@ Après une installation, le système redémarre et se contrôle par SSH&nbsp;:
    just test-installer                             # les quatre scénarios
    just test-installer preflight                   # un seul
    just test-installer scripted /chemin/de/l.iso   # une autre ISO
+   just test-installer gateway '' chemin/de/dnf-generator
    ```
+
+   `gateway`, hors des quatre&nbsp;: le poste d'administration installé, puis
+   `darkone add gateway` sur une machine à deux cartes derrière une box
+   simulée (réseau utilisateur de QEMU, commutateur du banc), recâblage
+   compris. Deux installations&nbsp;; il exige un générateur qui a
+   `darkone add gateway`.
 
    Sans ISO, la recette construit celle de l'arbre courant, sur le générateur
    épinglé par `dnf/flake.lock`.
@@ -104,7 +111,8 @@ just test-installer scripted "$out"/iso/*.iso
 ```
 
 Seuls les fichiers suivis par git entrent dans l'ISO&nbsp;: `git add` d'abord
-tout nouveau fichier.
+tout nouveau fichier. Raccourci&nbsp;: `just test-installer <scénario> ''
+chemin/de/dnf-generator` construit la même ISO.
 
 {/* t:p d95b27ae3324e396cd34cb1a9a0dd15d07f034b9b38ffe6ccd4cf2658e3ea074 */}
 ### Options du programme de test
