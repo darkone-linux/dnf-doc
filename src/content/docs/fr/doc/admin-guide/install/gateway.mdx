@@ -129,8 +129,8 @@ Avec une version plus ancienne, la commande n'existe pas&nbsp;:
 Le message final, *Step 2 of 4 done*, annonce l'étape 3.
 
 :::caution[À valider]
-L'enchaînement complet n'a pas encore été essayé de bout en bout sur du
-matériel&nbsp;: chaque brique est testée, pas le parcours entier.
+L'enchaînement complet est testé de bout en bout en machines virtuelles (box
+simulée, passerelle à deux cartes), pas encore sur du matériel.
 :::
 
 ### Le code d'appairage
@@ -393,12 +393,10 @@ ou une carte wifi peut servir de
 </Steps>
 
 :::caution[À valider]
-L'ensemble de la pause de recâblage n'a pas encore été essayé de bout en bout.
-Points à confirmer sur une vraie installation&nbsp;:
-
-- le poste prend un bail de la passerelle dès le recâblage, et `gw` se résout ;
-- poste sur le Wi-Fi de la box **et** câblé au LAN : `10.0.1.1` répond sans rien
-  débrancher.
+Essayée en machines virtuelles, poste câblé&nbsp;: le poste prend un bail de la
+passerelle dès le recâblage, et `gw` se résout. Reste à confirmer sur une vraie
+installation&nbsp;: poste sur le Wi-Fi de la box **et** câblé au LAN,
+`10.0.1.1` répond sans rien débrancher.
 :::
 
 ## Chiffrement du disque
