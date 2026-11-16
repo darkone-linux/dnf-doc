@@ -34,7 +34,7 @@ La machine est d'abord décrite dans `etc/config.yaml`, comme
 
    Cette image porte votre clé de déploiement. Autre voie, sans construction&nbsp;:
    l'ISO générique, [gravée sur une clé USB](/fr/doc/admin-guide/install/first-network-installation/#préparer-la-clé)&nbsp;;
-   la clé s'autorise alors au démarrage (étape suivante).
+   la clé s'autorise alors par un code d'appairage (étape suivante).
 
 2. **Démarrer la machine**
 
@@ -52,14 +52,20 @@ La machine est d'abord décrite dans `etc/config.yaml`, comme
    disques.
 
    Avec l'ISO générique, choisir dans le menu de la console
-   *2) Add this machine to an existing network*. L'écran liste les cartes
-   réseau et les disques, puis rappelle la marche à suivre&nbsp;: définir un
-   mot de passe sur la machine (`passwd`), puis, depuis le poste
-   d'administration, autoriser la clé&nbsp;:
+   *2) Add this machine to an existing network* (ou lancer `dnf-pair`).
+   L'écran liste les cartes réseau et les disques, puis affiche un **code
+   d'appairage**&nbsp;:
 
-   ```sh
-   sudo -i -u nix ssh-copy-id nixos@10.0.0.50
+   ```text
+   Pairing code: 123456-7890  (10 min, a new one after)
    ```
+
+   Rien d'autre à faire sur la machine&nbsp;: la première recette lancée vers
+   elle depuis le poste d'administration (`host-info` ou `full-install`)
+   demande ce code, puis autorise la clé de déploiement. Une machine déjà
+   appairée ne le redemande pas. Faute de frappe&nbsp;: 10 secondes d'attente
+   avant le nouvel essai&nbsp;; après six codes, `dnf-pair` en tire un autre.
+   Détails dans [Passerelle](/fr/doc/admin-guide/install/gateway/#le-code-dappairage).
 
 3. **Fixer les adresses** (dès qu'une zone existe)
 

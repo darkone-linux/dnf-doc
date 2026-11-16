@@ -17,7 +17,10 @@ comporte une **passerelle**, derrière laquelle on branche autant de machines
 qu'on veut. La première passerelle s'installe **depuis le poste
 d'administration, posé à côté d'elle**, sans serveur de coordination.
 
-Six étapes&nbsp;: brancher, démarrer, déclarer, installer, recâbler, finir.
+`darkone add gateway` fait tout depuis le poste d'administration&nbsp;:
+appairage de la machine, déclaration dans `etc/config.yaml`, installation,
+recâblage, contrôles. La [variante manuelle](#variante-manuelle) reste
+possible.
 
 {/* t:p 3172c667429340c38c55d1ae902aa5cd32c430372492e5375aa3f260b53a4a07 */}
 ## Le matériel
@@ -67,7 +70,163 @@ box -> wifi { style.stroke-dash: 3 }
 - Un point d'accès Wi-Fi se branche **derrière** la passerelle, sans DHCP.
 - Le commutateur est facultatif&nbsp;: un poste peut se brancher sur un port LAN.
 
-## Préparer la passerelle
+## Installer avec l'assistant
+
+`darkone add gateway` se lance sur le poste d'administration, dans le projet
+(`/etc/nixos`). Il ne demande que l'adresse de la machine et son code.
+
+:::caution[Version du générateur]
+`darkone add` arrive avec une release du générateur postérieure à la v0.4.0.
+Avec une version plus ancienne, la commande n'existe pas&nbsp;:
+[variante manuelle](#variante-manuelle).
+:::
+
+<Steps>
+
+1. **Brancher**
+
+   Le WAN de la passerelle sur la box. Le poste d'administration **reste sur
+   la box** (câble ou Wi-Fi).
+
+2. **Démarrer**
+
+   Sur l'ISO générique, [gravée sur une clé USB](/fr/doc/admin-guide/install/first-network-installation/#préparer-la-clé),
+   entrée *2) Add this machine to an existing network* du menu (ou
+   `dnf-pair`). L'écran donne l'adresse et le code d'appairage&nbsp;:
+
+   ```text
+   - IP: 192.168.1.50
+
+   Pairing code: 123456-7890  (10 min, a new one after)
+   ```
+
+3. **Lancer**
+
+   ```sh
+   cd /etc/nixos
+   darkone add gateway
+   ```
+
+   L'assistant demande l'adresse, puis le code. Il sonde la machine et propose
+   le nom (`gw`), le WAN (la carte qui porte la route vers la box), le LAN (les
+   autres cartes filaires) et le disque (une question s'il y en a plusieurs).
+
+4. **Confirmer**
+
+   Le récapitulatif nomme le disque effacé et les choix définitifs. Vient
+   ensuite le diff de `etc/config.yaml`, avec une seconde confirmation&nbsp;:
+   rien n'est écrit avant.
+
+5. **Recâbler**
+
+   À l'invite *Now unplug this machine from the box and plug it into a LAN
+   port of gw*, brancher le poste d'administration sur un port LAN de la
+   passerelle. L'assistant reprend seul, applique ce poste (`just apply-local`)
+   et contrôle le réseau.
+
+</Steps>
+
+Le message final, *Step 2 of 4 done*, annonce l'étape 3.
+
+:::caution[À valider]
+L'enchaînement complet n'a pas encore été essayé de bout en bout sur du
+matériel&nbsp;: chaque brique est testée, pas le parcours entier.
+:::
+
+### Le code d'appairage
+
+Le code `PPPPPP-FFFF` prouve que l'adresse tapée est la bonne machine avant
+l'envoi de la moindre clé.
+
+| Partie | Rôle |
+|---|---|
+| `PPPPPP` | mot de passe `nixos`, à usage unique, valable 10 min |
+| `FFFF` | empreinte de la clé d'hôte, vérifiée par le poste |
+
+Le poste calcule `FFFF` depuis la clé qu'il lit sur le réseau&nbsp;: si elle
+diffère, rien n'est envoyé. Sinon il pousse sa clé de déploiement
+(`usr/secrets/nix.pub`) et verrouille le mot de passe&nbsp;; l'écran affiche
+*Paired*. La clé d'hôte vérifiée est ensuite tenue jusqu'à la fin de
+l'installation. Une machine déjà appairée ne redemande pas de code.
+
+### Plan à blanc, réponses
+
+`--dry-run` appaire et sonde la machine, puis affiche le plan, le diff de
+`etc/config.yaml` et les commandes d'une vraie exécution. Rien n'est écrit dans
+le projet&nbsp;; la machine, elle, reste appairée.
+
+Un fichier de réponses remplace les questions. Le code d'appairage n'y entre
+jamais&nbsp;: il se tape sur le terminal.
+
+```yaml
+# reponses.yaml
+version: 1
+address: "192.168.1.50"           # adresse affichée par la machine
+host:
+  hostname: "gw"                  # facultatif
+nics:
+  wan: "enp1s0"                   # facultatif : la carte qui porte la route
+  lan: ["enp2s0"]                 # toujours à donner
+disk:
+  device: "/dev/disk/by-id/nvme-Example_SSD_256GB_S4EXAMPLE0001"  # facultatif : un seul disque ≥ 20 Go
+confirm: true                     # exigé avec --non-interactive
+```
+
+```sh
+darkone add gateway --answers reponses.yaml --dry-run
+darkone add gateway --answers reponses.yaml --non-interactive
+```
+
+- `confirm: true` saute les deux confirmations (le diff reste affiché)&nbsp;;
+  sans lui, `--non-interactive` refuse de commencer.
+- Une clé inconnue est refusée&nbsp;; toutes les erreurs sont listées d'un coup.
+
+### Refus
+
+L'assistant refuse **avant d'écrire** quand&nbsp;:
+
+| Cas | À faire |
+|---|---|
+| Dépôt non propre | commiter ou remiser |
+| Passerelle déjà là, ou plusieurs zones | déclarer à la main |
+| Réseau de la box dans la zone | changer le réseau de la box |
+| Moins de deux cartes filaires | prendre une machine à deux cartes |
+| Machine en BIOS | passer le firmware en UEFI |
+
+Le préfixe de la zone est définitif&nbsp;: si la box le recouvre, c'est elle qui
+bouge. La disposition `server-1-disk` exige l'UEFI. Les disques de moins de
+20&nbsp;Go (clé USB) ne sont pas proposés.
+
+### Écrit dans le projet
+
+Après confirmation, l'assistant écrit dans `etc/config.yaml` le bloc `gateway`
+de la zone et l'hôte `gw` (`<zone>:1.1`). Le poste d'administration reçoit son
+adresse fixe (`<zone>:2.1`) et sa `mac` si elles manquent. Puis `just clean`
+et le commit `chore(gateway): add gw`.
+
+### Reprise après échec
+
+Le message d'échec liste les commandes restantes, dans l'ordre.
+
+| Échec | État | Reprise |
+|---|---|---|
+| Avant l'écriture | rien de changé | relancer |
+| `just clean`, commit | fichier écrit, rien de commité | suite à la main, ou `git stash --include-untracked` puis relancer |
+| `just full-install` | déclaration commitée | `just full-install gw nixos <ip>`, puis `just apply-local` |
+| `just apply-local` | passerelle installée | `just apply-local` |
+| Contrôles | passerelle installée | le remède suit chaque contrôle |
+
+Une fois la déclaration commitée, `darkone add gateway` refuse de rejouer (la
+zone a sa passerelle)&nbsp;: la reprise est à la main, et repose la question de
+formatage. Les contrôles vérifient la route par défaut (la passerelle), la
+résolution de `gw` et l'accès à Internet.
+
+## Variante manuelle
+
+Sans l'assistant, la même installation se fait recette par recette&nbsp;: la
+déclaration dans `etc/config.yaml` précède `just full-install`.
+
+### Préparer la passerelle
 
 <Steps>
 
@@ -106,19 +265,14 @@ box -> wifi { style.stroke-dash: 3 }
    l'écran. Avec l'ISO générique, l'entrée du menu *2) Add this machine to an
    existing network* affiche les mêmes tableaux.
 
-   Autoriser ensuite la clé&nbsp;: définir un mot de passe sur la passerelle
-   (`passwd`), puis, depuis le poste d'administration&nbsp;:
-
-   ```sh
-   sudo -i -u nix ssh-copy-id nixos@192.168.1.50
-   ```
-
-   L'image `just build-iso` porte déjà la clé&nbsp;: rien à autoriser.
+   L'écran affiche aussi le code d'appairage (`Pairing code: PPPPPP-FFFF`)&nbsp;:
+   `just full-install` le demande à l'étape 4, rien à autoriser avant. L'image
+   `just build-iso` porte déjà la clé&nbsp;: pas de code.
 
 </Steps>
 
 {/* t:p ab900321052e1846b5335348ec04ddc592a4297650c4cadc3506474e358e1591 */}
-## Déclarer la zone
+### Déclarer la zone
 
 Tout se déclare **avant** l'installation&nbsp;: la passerelle naît avec la
 réservation du poste d'administration, qui reçoit son adresse fixe dès le
@@ -178,7 +332,7 @@ ou une carte wifi peut servir de
 :::
 
 {/* t:p 98554b1607570cb4d01b143341ac9f955b808ca04936dca4702a25e136955595 */}
-## Installer la passerelle
+### Installer la passerelle
 
 <Steps>
 
@@ -332,3 +486,18 @@ Changer l'ordinateur d'une passerelle en service relève d'une procédure
 distincte&nbsp;: la machine est neuve, mais son état ne l'est pas. Voir [Migrer
 le matériel d'une
 passerelle](/fr/doc/admin-guide/install/gateway-hardware-migration/).
+
+## FAQ
+
+### Une faute de frappe sur le code ?
+
+Un code faux coûte **10 secondes d'attente** (délai PAM), et l'assistant
+accepte trois essais. Un code faux et un code expiré donnent le même refus&nbsp;:
+relire l'écran. Après six codes de 10 minutes, l'appairage se ferme&nbsp;; la
+commande `dnf-pair` de la machine en tire un nouveau.
+
+### « not the machine whose screen shows this code » ?
+
+L'empreinte `FFFF` du code ne correspond pas à la machine qui répond à cette
+adresse&nbsp;: autre appareil du réseau, adresse mal relevée. Rien n'a été
+envoyé&nbsp;; vérifier l'adresse sur l'écran.

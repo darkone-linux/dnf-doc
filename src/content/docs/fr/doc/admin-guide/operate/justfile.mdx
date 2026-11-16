@@ -401,6 +401,22 @@ just install myserver nixos 10.0.0.5     # IP personnalisée
 just install myserver nix auto test      # VM test uniquement
 ```
 
+Avec l'utilisateur `nixos` (ISO), la recette appaire elle-même la machine&nbsp;:
+elle lit sa clé d'hôte, demande le code d'appairage s'il en faut un, puis passe
+toute l'installation dans un tunnel tenu à cette clé (copie, formatage,
+secrets)&nbsp;: une autre machine à la même adresse fait échouer la recette. Voir
+[Passerelle](/fr/doc/admin-guide/install/gateway/#le-code-dappairage).
+
+Deux variables d'environnement servent à `darkone add gateway`&nbsp;:
+
+| Variable | Effet |
+|---|---|
+| `DNF_INSTALL_CONFIRMED=1` | saute la question de formatage des disques |
+| `DNF_PAIR_HOSTKEY=<clé>` | refuse une autre clé d'hôte, avant tout secret et tout formatage |
+
+`DNF_PAIR_HOSTKEY` exige l'utilisateur `nixos` (pas d'appairage sinon). La
+question *Continue anyway?* du contrôle préalable reste posée.
+
 `nixos-anywhere` et `disko` sont ceux que verrouille le framework, testés avec
 lui&nbsp;: `nix run .#nixos-anywhere` et `nix run .#disko` depuis le projet.
 
@@ -587,10 +603,20 @@ just push-key myserver
 {/* t:p 8a8a21c89dcfaeeae99ea8d55fc6d33d08aa710633cea16ca6ac8ca918eb8865 */}
 ### ✳️ `host-info <hôte> [ip]`
 
-Affiche l'adresse MAC de la première interface active d'une machine, pour la
-déclarer dans `etc/config.yaml` avant de l'installer. Utile quand l'hôte n'a
-pas encore de réservation DHCP et n'est donc joignable que par l'adresse
-dynamique relevée sur son écran.
+Inventorie une machine pour la déclarer dans `etc/config.yaml` avant de
+l'installer&nbsp;:
+
+- le système (UEFI ou BIOS, virtualisation, mémoire) ;
+- les cartes réseau (nom, MAC, lien, adresses, carte WAN) ;
+- les disques, avec le chemin `by-id` à copier dans `disko.devices` ;
+- l'adresse MAC de la carte qui **porte la route par défaut**, celle à
+  déclarer (sinon la première carte filaire avec lien, avec un avertissement).
+
+Utile quand l'hôte n'a pas encore de réservation DHCP et n'est donc joignable
+que par l'adresse dynamique relevée sur son écran. La recette essaie le compte
+`nix`, puis `nixos` (installeur) en appairant la machine&nbsp;: sur l'ISO
+générique, elle demande le code d'appairage affiché à l'écran. Voir
+[Passerelle](/fr/doc/admin-guide/install/gateway/#le-code-dappairage).
 
 ```sh
 just host-info myserver 10.0.0.50

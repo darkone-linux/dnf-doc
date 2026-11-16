@@ -19,7 +19,7 @@ un poste suffit pour démarrer.
 ## Le parcours
 
 1. **Un poste** : la machine de l'administrateur (cette page).
-2. **Une passerelle** : créer une [zone](/fr/doc/admin-guide/install/gateway/) et y brancher d'autres machines.
+2. **Une passerelle** : créer une [zone](/fr/doc/admin-guide/install/gateway/) et y brancher d'autres machines (`darkone add gateway`).
 3. **Serveurs et services** : fichiers, photos, messagerie… voir le [catalogue des services](/fr/doc/admin-guide/operate/services/).
 4. **Internet** : relier les zones par [VPN](/fr/doc/admin-guide/install/hcs/) (tailnet).
 
@@ -100,7 +100,7 @@ en anglais.
    | Choix | Effet |
    |---|---|
    | *1) New network* | lance `darkone new` (cette page) |
-   | *2) Add this machine to an existing network* | voir [Ajouter une machine](/fr/doc/admin-guide/install/add-host/) |
+   | *2) Add this machine to an existing network* | affiche un code d'appairage, voir [Passerelle](/fr/doc/admin-guide/install/gateway/) et [Ajouter une machine](/fr/doc/admin-guide/install/add-host/) |
    | *3) Shell* | invite de commande |
 
 2. **Répondre à l'assistant**
@@ -146,7 +146,8 @@ en anglais.
    défaut). Disque chiffré&nbsp;: la passphrase est demandée à chaque
    démarrage, avec le clavier choisi. La première session ouvre une page
    d'accueil dans le navigateur&nbsp;: étape 1 sur 4 franchie, la passerelle
-   ensuite. Elle reste à portée dans le dossier **Réseau local** des
+   ensuite (rouverte plus tard, elle marque l'étape 2 faite dès que la passerelle
+   est installée). Elle reste à portée dans le dossier **Réseau local** des
    applications (*Premiers pas*), avec la documentation (*Doc DNF*) et un
    terminal dans le projet `/etc/nixos` (*Sources du réseau*), dont le
    `README.md` résume le quotidien.
