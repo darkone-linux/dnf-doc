@@ -16,10 +16,10 @@ The coordination server (HCS) connects zones via a
 [mesh VPN](/en/doc/admin-guide/understand/network/) and hosts shared services.
 It is a small **public** server (a VPS is sufficient).
 
-{/* t:p f7bf40af86c8e342f8fef83298a7e53d71227b618605769ab698d613130695a9 */}
+{/* t:p 3c4430bb412fda0b835c38f7bd9edc81e891dc79e30f0fadaca9bdce2c29c7fa */}
 ## Declaring the HCS
 
-Coordination is enabled and the host is declared with `profile: hcs`:
+Coordination is enabled and the `profile: hcs` host is declared:
 
 ```yaml
 # etc/config.yaml
@@ -42,10 +42,17 @@ hosts:
       vaultwarden:               # coffre-fort
 ```
 
-Installation follows the same procedure as a
-[gateway](/en/doc/admin-guide/install/gateway/#install-the-gateway)
-(`just install` / `configure` / `apply`). `just configure` also enrolls the HCS on
-its own [tailnet](/en/doc/admin-guide/operate/vpn/#enroll-a-machine)&nbsp;:
+Installation takes a single command&nbsp;:
+
+```sh
+just full-install hcs <utilisateur> <ip>
+```
+
+It chains `just install`, `just configure` and `just apply`, which can also be
+run one at a time (as for a
+[gateway](/en/doc/admin-guide/install/gateway/#install-the-gateway)).
+`just configure` also enrolls the HCS on its own
+[tailnet](/en/doc/admin-guide/operate/vpn/#enroll-a-machine)&nbsp;:
 then report its tailnet address in the declaration above.
 
 {/* t:p ba8dffdcffe41df2842792581fe17f6c11c7a22177403eac4c9ee620f404192c */}

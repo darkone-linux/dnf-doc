@@ -62,7 +62,7 @@ After an installation, the system reboots and is checked over SSH&nbsp;:
 - second backup with `just backup-admin`, the first kept under its date ;
 - backup opened from the host.
 
-{/* t:p 4df85f6bc7359c7b67294cd93388b077c7d92bd9bd6f0be2d65e9da7b90fb09c */}
+{/* t:p ab2db7e530222393b39266c2e34a3107cb84dd03774d2e983a8c5a22642c5c0d */}
 ## Run locally
 
 <Steps>
@@ -75,36 +75,45 @@ After an installation, the system reboots and is checked over SSH&nbsp;:
 2. **Run**
 
    ```sh
-   just test-installer                             # the four scenarios
+   just test-installer                             # all four scenarios
    just test-installer preflight                   # a single one
-   just test-installer scripted /path/to/t.iso   # another ISO
+   just test-installer scripted /chemin/de/l.iso   # another ISO
+   just test-installer gateway '' chemin/de/dnf-generator
    ```
 
-   Without an ISO, the recipe builds the one for the current tree, on the
+   `gateway`, outside the four: the administration workstation installed, then
+   `darkone add gateway` on a machine with two network cards behind a simulated
+   box (QEMU user network, test bench switch), recabling included. Two
+   installations; it requires a generator that has
+   `darkone add gateway`.
+
+   Without an ISO, the recipe builds one from the current tree, on the
    generator pinned by `dnf/flake.lock`.
 
 3. **Read the result**
 
-   One `TEST` line per step, then `Scenario <name>: OK` or `FAILED`. Disks
-   and logs&nbsp;: `~/.cache/dnf-installer-test/<scenario>/`, the disk
-   deleted after a success.
+   One `TEST` line per step, then `Scenario <nom>: OK` or `FAILED`. Disks
+   and logs: `~/.cache/dnf-installer-test/<scénario>/`, the disk erased after
+   a success.
 
 </Steps>
 
-{/* t:p 9137f90e769f5b183a08a11d736b2a69b815ea104c38ac8f322929701626d299 */}
+{/* t:p 8912e66ff33903cee5057d4f0c2b137d3b849dd60b7b864cabd879d2b8a97ea8 */}
 ### On a local generator
 
-An unpublished generator is tried on an ISO built from its local copy, from
-`dnf/`&nbsp;:
+An unpublished generator can be tested on an ISO built from its local copy,
+from `dnf/`:
 
 ```sh
 out=$(nix build --no-link --print-out-paths --no-write-lock-file \
-  --override-input dnf-generator "git+file://$(realpath path/to/dnf-generator)" \
+  --override-input dnf-generator "git+file://$(realpath chemin/de/dnf-generator)" \
   .#nixosConfigurations.iso-x86_64-linux.config.system.build.isoImage)
 just test-installer scripted "$out"/iso/*.iso
 ```
 
-Only files tracked by git go into the ISO&nbsp;: `git add` any new file first.
+Only files tracked by git are included in the ISO: `git add` any new file
+first. Shortcut: `just test-installer <scénario> '' chemin/de/dnf-generator`
+builds the same ISO.
 
 {/* t:p d95b27ae3324e396cd34cb1a9a0dd15d07f034b9b38ffe6ccd4cf2658e3ea074 */}
 ### Test program options

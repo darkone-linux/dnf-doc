@@ -11,8 +11,10 @@ import { Steps } from '@astrojs/starlight/components';
 {/* t:translated-from fr */}
 {/* t:h a1aebc28e21b4daf8782b17e2f24776aa4ac070cc759308d19fd9bdd60a943eb */}
 
-{/* t:p a0ba50a23fe3d1c32b02f0c39dfd4010586d39a539789eeccdc2460dbf699d78 */}
-A [zone](/en/doc/admin-guide/understand/concepts/) is a subnet, which has a **gateway**, behind which you can connect as many machines as you want.
+{/* t:p 6f3e48b1d634b4a571e3482d9687817622f7014659a1a411760b286d9dcf1576 */}
+A [zone](/en/doc/admin-guide/understand/concepts/) is a subnet, with a **gateway**, behind which you connect as many machines as you like. The first gateway is installed **from the administration workstation, set up next to it**, without a coordination server.
+
+`darkone add gateway` does everything from the administration workstation&nbsp;: pairing the machine, declaring it in `etc/config.yaml`, installation, recabling, checks. The [manual variant](#manual-variant) remains possible.
 
 {/* t:p 3172c667429340c38c55d1ae902aa5cd32c430372492e5375aa3f260b53a4a07 */}
 ## Hardware
@@ -27,112 +29,421 @@ For example, a [Protectli](https://eu.protectli.com/) box or equivalent:
 - Optional wifi card
 :::
 
-{/* t:p ab900321052e1846b5335348ec04ddc592a4297650c4cadc3506474e358e1591 */}
-## Declare the zone
+{/* t:p 7dfee03619cb332bd5e4184a05991238da16b35219cdeafa9e87423d5f99d01c */}
+## Wiring
 
-The zone and its gateway are described in `etc/config.yaml`:
+The gateway's WAN connects to the box&nbsp;; the entire local network is behind it.
 
-```yaml
-# etc/config.yaml
-zones:
-  maison:
-    description: "Réseau de la maison"
-    ipPrefix: "10.0"             # zone en 10.0.0.0/16
-    gateway:
-      wan:
-        interface: "enp1s0"      # vers la box
-      lan:
-        interfaces: ["enp2s0"]   # vers le réseau local
+```d2
+style.fill: transparent
+direction: right
 
-hosts:
-  - hostname: "gw"
-    name: "Passerelle"
-    zone: "maison:1.1"           # IP fixe 10.0.1.1
-    profile: "gateway"
-    services:
-      adguardhome:               # DNS + anti-pub
-      homepage:                  # portail des services
-    disko:
-      profile: "server-1-disk"
-      devices:
-        main: "/dev/sda"
+internet: Internet { shape: cloud }
+box: Box
+wifi: "Box Wi-Fi\n(outside the zone)" { shape: oval }
+
+zone: "Zone" {
+  gw: Gateway
+  switch: Switch
+  pcs: "Workstations\n(including the administration workstation)"
+  ap: "Wi-Fi\naccess point"
+  gw -> switch: LAN
+  switch -> pcs
+  switch -> ap
+}
+
+internet -> box
+box -> zone.gw: WAN
+box -> wifi { style.stroke-dash: 3 }
 ```
 
-:::tip[Automatic services]
-The `gateway` profile wires up the router, the firewall, DNS/DHCP (`dnsmasq`) and
-the VPN client. The declared services (homepage, adguardhome…) are configured
-on their own. See [Network](/en/doc/admin-guide/understand/network/).
+- The box Wi-Fi remains **outside the zone**: its devices do not receive an address from the gateway.
+- A Wi-Fi access point connects **behind** the gateway, without DHCP.
+- The switch is optional&nbsp;: a workstation can be plugged into a LAN port.
+
+{/* t:p 4120171d27c0e17f4e654eb1b9d98b2be37c972fd54f621cf5e097ebc28b8eab */}
+## Install with the wizard
+
+`darkone add gateway` runs on the administration workstation, in the project
+(`/etc/nixos`). It only asks for the machine's address and its code.
+
+:::caution[Generator version]
+`darkone add` comes with a generator release later than v0.4.0.
+With an older version, the command does not exist&nbsp;:
+[manual variant](#manual-variant).
 :::
-
-:::tip[Internet even when the box goes down]
-A free port or a wifi card can serve as a backup link (phone tethering, 4G). See
-[Backup links](/en/doc/how-to/admin/gateway-backup-links/).
-:::
-
-{/* t:p 98554b1607570cb4d01b143341ac9f955b808ca04936dca4702a25e136955595 */}
-## Install the gateway
-
-Installation is often done **remotely**: someone on site prepares the machine,
-the administrator installs over SSH.
 
 <Steps>
 
-1. **Prepare the gateway** (on site)
+1. **Connect**
 
-   1. Plug the gateway into the box.
-   2. Boot from the USB key (`just build-iso` image).
-   3. Note the gateway's IP address.
-   4. Forward port 22 on the box to the gateway.
+   The gateway's WAN to the box. The administration workstation **stays on
+   the box** (cable or Wi-Fi).
 
-   :::note[Why forward port 22?]
-   It allows SSH access for the duration of the installation. The USB key only
-   accepts authentication keys (no password).
+2. **Boot**
 
-   Once installed, the gateway keeps this SSH open on its WAN until its VPN
-   address is declared (`vpn.ipv4`), then no longer responds from the Internet:
-   access goes through the VPN (`just enter gw`). **Then remove the
-   forwarding.** See [SSH access by
-   role](/en/doc/admin-guide/understand/network/#ssh-access-by-role).
-   :::
+   On the generic ISO, [written to a USB key](/en/doc/admin-guide/install/first-network-installation/#prepare-the-key),
+   entry *2) Add this machine to an existing network* from the menu (or
+   `dnf-pair`). The screen gives the address and the pairing code&nbsp;:
 
-2. **Install** (administrator)
+   ```text
+   - IP: 192.168.1.50
 
-   A single command chains disk formatting, hardware configuration, deployment
-   and cleanup&nbsp;:
-
-   ```sh
-   just full-install gw nixos <ip>
+   Pairing code: 123456-7890  (10 min, a new one after)
    ```
 
-   - `gw`: host name declared in `etc/config.yaml`.
-   - `nixos`: user of the live USB key (DNF image).
-   - `<ip>`: address noted in the previous step, or the box's public IP
-     (port 22 forwarding) for a remote installation.
+3. **Run**
 
-   :::tip[Doing without the address]
-   If the gateway's `mac` key is in `etc/config.yaml`, its address is reserved in
-   advance and does not change between the USB key and the installed system.
-   `just full-install gw` is then enough, without noting or entering anything.
-   :::
+   ```sh
+   cd /etc/nixos
+   darkone add gateway
+   ```
+
+   The wizard asks for the address, then the code. It probes the machine and
+   suggests the name (`gw`), the WAN (the card carrying the route to the box),
+   the LAN (the other wired cards) and the disk (a question if there are
+   several).
+
+4. **Confirm**
+
+   The summary names the disk to be erased and the final choices. Then comes
+   the diff of `etc/config.yaml`, with a second confirmation&nbsp;: nothing is
+   written before that.
+
+5. **Recable**
+
+   At the prompt *Now unplug this machine from the box and plug it into a LAN
+   port of gw*, connect the administration workstation to a LAN port of the
+   gateway. The wizard resumes on its own, applies this workstation
+   (`just apply-local`) and checks the network.
 
 </Steps>
 
-{/* t:p c67eb0fc005e21027bd8197f3d013133aba05b23f43ffac3ea439b11d277bf91 */}
-## Install from another zone
+The final message, *Step 2 of 4 done*, announces step 3.
 
-A gateway is often prepared somewhere other than its destination. Plug its **WAN** interface into the local network of the hosting zone&nbsp;: it receives the roaming address that this zone reserves for it based on its MAC.
+:::caution[To be validated]
+The full sequence is tested end to end in virtual machines (simulated box,
+two-card gateway), not yet on hardware.
+:::
+
+{/* t:p 31df320710c6173d63eb9464f3883c4a6e5211924c21fa6de73a3d811a89c5a9 */}
+### The pairing code
+
+The code `PPPPPP-FFFF` proves that the typed address is the right machine before
+any key is sent.
+
+| Part | Role |
+|---|---|
+| `PPPPPP` | `nixos` password, single-use, valid for 10 min |
+| `FFFF` | host key fingerprint, verified by the workstation |
+
+The workstation computes `FFFF` from the key it reads on the network&nbsp;: if it
+differs, nothing is sent. Otherwise it pushes its deployment key
+(`usr/secrets/nix.pub`) and locks the password&nbsp;; the screen displays
+*Paired*. The verified host key is then kept until the end of the
+installation. An already-paired machine does not ask for a code again.
+
+{/* t:p a5f5a429cb746a9cc4e8343b8e42b3b64aadaf91d353fc0e45f6696c7fbb6d40 */}
+### Dry run, answers
+
+`--dry-run` pairs and probes the machine, then displays the plan, the diff of
+`etc/config.yaml` and the commands of a real run. Nothing is written to the
+project&nbsp;; the machine itself stays paired.
+
+An answers file replaces the questions. The pairing code never goes in
+it&nbsp;: it is typed on the terminal.
+
+```yaml
+# reponses.yaml
+version: 1
+address: "192.168.1.50"           # address displayed by the machine
+host:
+  hostname: "gw"                  # optional
+nics:
+  wan: "enp1s0"                   # optional : the card carrying the route
+  lan: ["enp2s0"]                 # always to be given
+disk:
+  device: "/dev/disk/by-id/nvme-Example_SSD_256GB_S4EXAMPLE0001"  # optional : a single disk ≥ 20 GB
+confirm: true                     # required with --non-interactive
+```
+
+```sh
+darkone add gateway --answers reponses.yaml --dry-run
+darkone add gateway --answers reponses.yaml --non-interactive
+```
+
+- `confirm: true` skips both confirmations (the diff is still displayed)&nbsp;;
+  without it, `--non-interactive` refuses to start.
+- An unknown key is rejected&nbsp;; all errors are listed at once.
+
+{/* t:p ece2bc2dadc4e71f28e7eeceddaa3b3e47fd156808b4829aea995c3b1afa2d6d */}
+### Refusal
+
+The wizard refuses **before writing** when&nbsp;:
+
+| Case | What to do |
+|---|---|
+| Repository not clean | commit or stash |
+| Gateway already there, or several zones | declare by hand |
+| Box network in the zone | change the box network |
+| Fewer than two wired cards | use a machine with two cards |
+| Machine in BIOS | switch the firmware to UEFI |
+
+The zone prefix is final&nbsp;: if the box overlaps it, the box is the one that
+moves. The `server-1-disk` layout requires UEFI. Disks smaller than
+20&nbsp;GB (USB key) are not offered.
+
+{/* t:p 3cdedc6fb6d05653bcf737605305f5648ec671f3c5d746391103306e97d2698e */}
+### Written to the project
+
+After confirmation, the wizard writes to `etc/config.yaml` the zone's `gateway`
+block and the `gw` host (`<zone>:1.1`). The administration workstation receives
+its fixed address (`<zone>:2.1`) and its `mac` if they are missing. Then `just clean`
+and the commit `chore(gateway): add gw`.
+
+{/* t:p 849d375fd6e6006856b776f20fa40686f724b25c4202cb954e38c8f79eff915a */}
+### Recovery after failure
+
+The failure message lists the remaining commands, in order.
+
+| Failure | State | Recovery |
+|---|---|---|
+| Before writing | nothing changed | rerun |
+| `just clean`, commit | file written, nothing committed | continue by hand, or `git stash --include-untracked` then rerun |
+| `just full-install` | declaration committed | `just full-install gw nixos <ip>`, then `just apply-local` |
+| `just apply-local` | gateway installed | `just apply-local` |
+| Checks | gateway installed | the remedy follows each check |
+
+Once the declaration is committed, `darkone add gateway` refuses to replay (the
+zone has its gateway)&nbsp;: recovery is done by hand, and asks the formatting
+question again. The checks verify the default route (the gateway), the
+resolution of `gw` and access to the Internet.
+
+{/* t:p a6d0b297690599e8ad3ec953e46c9515025f56699e13be6353a2cb15e1577865 */}
+## Manual variant
+
+Without the wizard, the same installation is done recipe by recipe&nbsp;: the
+declaration in `etc/config.yaml` comes before `just full-install`.
+
+{/* t:p 14fa747117af00a1c74ab80445eede842e64145ee07aa2dea015abb26a83f4e8 */}
+### Prepare the gateway
+
+<Steps>
+
+1. **Connect**
+
+   The gateway's WAN to the box. The administration workstation **stays on
+   the box** (cable or Wi-Fi).
+
+2. **Boot**
+
+   On the ISO, [written to a USB key](/en/doc/admin-guide/install/first-network-installation/#prepare-the-key).
+   The screen gives what needs to be declared&nbsp;:
+
+   ```text
+   - IP: 192.168.1.50
+   - MAC: aa:bb:cc:dd:ee:01
+
+   Network cards (wan.interface, lan.interfaces):
+     NAME    MAC                LINK  IPV4             NOTE
+     enp1s0  aa:bb:cc:dd:ee:01  up    192.168.1.50/24  default route (WAN)
+     enp2s0  aa:bb:cc:dd:ee:02  down  -
+
+   Disks (disko.devices), installation medium left out:
+     /dev/disk/by-id/nvme-Example_SSD_256GB_S4EXAMPLE0001
+         239G  Example SSD 256GB  [nvme0n1]
+   ```
+
+   | Line | Used for |
+   |---|---|
+   | `- IP:` | `just full-install` |
+   | *Network cards* | `wan.interface`, `lan.interfaces` |
+   | *Disks* | `disko.devices` (path to copy) |
+
+   The card marked *default route (WAN)* carries the route to the box&nbsp;:
+   that is the WAN, the other wired ones are the LAN. `dnf-netinfo` redisplays
+   the screen. With the generic ISO, the menu entry *2) Add this machine to an
+   existing network* displays the same tables.
+
+   The screen also displays the pairing code (`Pairing code: PPPPPP-FFFF`)&nbsp;:
+   `just full-install` asks for it at step 4, nothing to authorize before. The
+   `just build-iso` image already carries the key&nbsp;: no code.
+
+</Steps>
+
+{/* t:p d7963da0161044fbfb14af4e827d0a6b17a3c01de0a1ea81a535631e509290bb */}
+### Declare the zone
+
+Everything is declared **before** installation&nbsp;: the gateway is born with the
+administration workstation's reservation, which receives its fixed address as
+soon as it is recabled.
+
+<Steps>
+
+3. **Declare**
+
+   In `etc/config.yaml`&nbsp;: the zone's `gateway` block, the `gw` host, and
+   a fixed address for the administration workstation.
+
+   ```yaml
+   # etc/config.yaml
+   zones:
+     main:
+       description: "Main network"
+       ipPrefix: "10.0"             # zone in 10.0.0.0/16
+       gateway:
+         wan:
+           interface: "enp1s0"      # card to the box
+         lan:
+           interfaces: ["enp2s0"]   # cards to the local network
+
+   hosts:
+     - hostname: "gw"
+       name: "Passerelle"
+       zone: "main:1.1"             # fixed IP 10.0.1.1
+       profile: "gateway"
+       disko:
+         profile: "server-1-disk"
+         devices:
+           main: "/dev/disk/by-id/nvme-Example_SSD_256GB_S4EXAMPLE0001"
+
+     - hostname: "admin"            # the administration workstation
+       zone: "main:2.1"             # was "main" : fixed IP 10.0.2.1
+       mac: "aa:bb:cc:dd:ee:ff"     # unchanged
+       # … the rest is unchanged
+   ```
+
+   No `mac` for the gateway&nbsp;: its LAN address is fixed (`1.1`) and
+   its WAN address comes from the box.
+
+   ```sh
+   just clean
+   git add . && git commit -m "host(gw): passerelle"
+   ```
+
+</Steps>
+
+:::tip[Services and backup links]
+The `gateway` profile wires the router, the firewall, the DNS/DHCP (`dnsmasq`) and the
+VPN client (see [Network](/en/doc/admin-guide/understand/network/)). The
+services (adguardhome, homepage…) are declared under `services:`. A free port
+or a wifi card can serve as a
+[backup link](/en/doc/how-to/admin/gateway-backup-links/).
+:::
+
+{/* t:p 2f875b2195f319319f2818aaaa29dbca9853ab03adedd59a3e315f6bc696d44d */}
+### Install the gateway
+
+<Steps>
+
+4. **Install**
+
+   ```sh
+   just full-install gw nixos 192.168.1.50
+   ```
+
+   - `gw` : declared hostname.
+   - `nixos` : the ISO's user.
+   - `192.168.1.50` : the `- IP:` line of the screen.
+
+   Before the formatting question, the recipe announces the recabling&nbsp;:
+   *get the cable ready now*. The disk is then formatted, the system
+   installed, then the gateway reboots.
+
+   If the box network overlaps the zone's (the box in
+   `10.0.0.0/16`), the recipe refuses **before any formatting**&nbsp;: WAN and LAN
+   would be on the same network.
+
+   ```text
+   Cannot install gw on 10.0.0.50: the box network (10.0.0.0/24 on enp1s0) overlaps
+   zone 'main' (10.0.0.0/16), so its WAN and LAN would share one network.
+   ```
+
+   The zone prefix is final&nbsp;: change the box network
+   (subnet or DHCP range), reboot the ISO, start over.
+
+5. **Recable**
+
+   At the prompt *Now unplug this machine from the box and plug it into a LAN
+   port of gw*, unplug the administration workstation from the box and plug it
+   into a LAN port of the gateway (or of the switch). Nothing to press&nbsp;:
+   the recipe waits up to 30 minutes for `10.0.1.1` to respond, then runs
+   `configure`, `apply` and a final reboot.
+
+   No response after 30 minutes&nbsp;:
+
+   ```sh
+   just configure gw 10.0.1.1
+   just apply gw
+   ```
+
+   This pause only happens if the gateway keeps its SSH closed on the box side
+   (coordination inactive, or `gateway.vpn.ipv4` already declared)&nbsp;: see
+   [SSH access according to
+   role](/en/doc/admin-guide/understand/network/#ssh-access-by-role).
+
+6. **Finish**
+
+   ```sh
+   just apply-local
+   ```
+
+   The administration workstation takes its fixed address (`10.0.2.1`).
+
+</Steps>
+
+:::caution[To be validated]
+Tried in virtual machines, wired workstation&nbsp;: the workstation takes a lease from the
+gateway as soon as it is recabled, and `gw` resolves. Still to be confirmed on a real
+installation&nbsp;: workstation on the box's Wi-Fi **and** wired to the LAN,
+`10.0.1.1` responds without unplugging anything.
+:::
+
+{/* t:p 656f94fda3771da883ff8f6ebec45f4e05c709057c1c0625bf9e22ee3d6eb6ec */}
+## Disk encryption
+
+For a first gateway, **prefer a plain disk** (`server-1-disk`)&nbsp;:
+it reboots on its own after a power outage, otherwise the network stays
+down until someone types the passphrase. Encryption and
+remote unlocking are described in
+[Disk encryption (LUKS)](/en/doc/admin-guide/operate/luks/).
+
+:::caution[To be validated : encrypted gateway]
+Unlocking would happen on the box side before recabling, then on the LAN side at the
+final reboot. On a direct cable, the workstation may lose its address during
+the initrd (no DHCP)&nbsp;: otherwise, passphrase at the console.
+:::
+
+{/* t:p afd7839c27c12ecb917d32732b0d89adc475a85454e49fdb406f1c416941019e */}
+## Installing from another zone
+
+A gateway is often prepared elsewhere than at its destination. Connect its **WAN** interface to the local network of the host zone&nbsp;: it receives there the gateway address that this zone reserves for it based on its MAC. Here, the gateway's `mac` key (the `- MAC:` line on the ISO screen) remains useful.
 
 Three conditions&nbsp;:
 
 - the gateway's `mac` key is declared in `etc/config.yaml`&nbsp;;
-- the gateway of the hosting zone has been redeployed since that declaration;
-- the administration machine too, so that SSH reads the forwarding set up during the installation.
+- the host zone's gateway has been redeployed from this declaration;
+- the administration machine too, so that SSH reads the redirection set up during installation.
 
-Then, `just full-install gw` does without an address&nbsp;: the tooling computes the target and tracks it from start to finish. The principle is described in [Machines outside their zone](/en/doc/admin-guide/understand/network/#machines-outside-their-zone).
+Then, `just full-install gw` needs no address&nbsp;: the tooling computes the target and follows it from start to finish. The principle is described in [Machines outside their zone](/en/doc/admin-guide/understand/network/#machines-outside-their-zone).
 
 :::note[Once the gateway is delivered]
-On site, it takes back the fixed address of its zone (`.1.1`). The SSH forwarding set up for the installation is no longer needed&nbsp;: `just roaming-clear gw`.
+On site, it takes back its zone's fixed address (`.1.1`). The SSH redirection set up for installation is no longer used&nbsp;: `just roaming-clear gw`.
 :::
+
+{/* t:p 690b660b43cb287f2c483194ff9ffbd315a17b41f67a78ea280615761811b937 */}
+## Installing remotely
+
+Someone on site connects the gateway to the box and starts it on the `just build-iso` image (it carries the deployment key)&nbsp;; the administrator installs over SSH. This path requires **active coordination (HCS)** and `gateway.vpn.ipv4` not declared&nbsp;: otherwise SSH stays closed on the box side once the gateway is installed.
+
+<Steps>
+
+1. **Redirect** port 22 of the box to the gateway.
+2. **Install** with the box's public IP address&nbsp;:
+   `just full-install gw nixos <ip-publique>`.
+3. **Remove the redirection** after declaring `gateway.vpn.ipv4` and applying&nbsp;: the gateway no longer responds from the Internet, access goes through the VPN (`just enter gw`).
+
+</Steps>
 
 {/* t:p de4a2eb7e6d7f7db2df8b62ac6e221d24562de6d4348d9e3fcbad5b025e2cbff */}
 ## Enroll the gateway on the VPN
@@ -161,3 +472,16 @@ gateway](/en/doc/admin-guide/operate/vpn/#register-a-gateway).
 Replacing the computer of a gateway in service is a distinct procedure&nbsp;: the machine is new, but its state is not. See [Migrating a
 gateway's
 hardware](/en/doc/admin-guide/install/gateway-hardware-migration/).
+
+{/* t:p 938609b64e2e1217c0db6ceeca57cfadea52087e1a0a2c4319be9b6fdb6ff3b2 */}
+## FAQ
+
+{/* t:p abd7af44c978d0874f5bfe6e873b8cf5ff085d9f4ae98dc69689b976a74a4353 */}
+### A typo in the code?
+
+A wrong code costs **10 seconds of waiting** (PAM delay), and the wizard allows three attempts. A wrong code and an expired code give the same refusal&nbsp;: reread the screen. After six 10-minute codes, pairing closes&nbsp;; the machine's `dnf-pair` command generates a new one.
+
+{/* t:p 61537a829d447c108c01b225cf0e8d312d0766241552929c4cde99d543c26ab6 */}
+### "not the machine whose screen shows this code"?
+
+The `FFFF` fingerprint of the code does not match the machine responding at this address&nbsp;: another device on the network, incorrectly recorded address. Nothing was sent&nbsp;; check the address on the screen.

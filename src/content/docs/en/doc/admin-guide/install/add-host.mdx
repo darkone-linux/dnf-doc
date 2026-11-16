@@ -21,7 +21,7 @@ differently&nbsp;: see
 The machine is first described in `etc/config.yaml`, like
 [any host](/en/doc/how-to/admin/manual-project/#describe-the-configuration).
 
-{/* t:p 4e22330dd80edd26427e6b7311ac7c5b8acfefdd4eaab438e0efb75918374d72 */}
+{/* t:p 560f31bf576b90aa0420634fca799f0c4ec301f51e6d6cc74005aeac893e7bf0 */}
 ## Install the machine
 
 <Steps>
@@ -32,49 +32,57 @@ The machine is first described in `etc/config.yaml`, like
    just build-iso
    ```
 
-   This image carries your deployment key. Another way, without building&nbsp;:
-   the generic ISO, [written to a USB key](/en/doc/admin-guide/install/first-network-installation/#prepare-the-key)&nbsp;;
-   the key then authorizes itself at boot (next step).
+   This image carries your deployment key. Another option, without building&nbsp;:
+   the generic ISO, [written to a USB drive](/en/doc/admin-guide/install/first-network-installation/#prepare-the-key)&nbsp;;
+   the key is then authorized with a pairing code (next step).
 
-2. **Boot the machine**
+2. **Start the machine**
 
-   Connect the computer to the network **by cable**, then boot from the key.
-   The screen shows a DNF welcome message, then the IP address and the MAC
-   address of the interface connected to the Internet (served by the local
-   gateway or your router)&nbsp;: note them down.
+   Connect the computer to the network **using a wired connection**, then boot from the USB drive.
+   The screen displays a DNF welcome message, followed by the IP address and the
+   MAC address of the interface connected to the Internet (provided by the local gateway or
+   your router)&nbsp;: write them down.
 
    ```text
    - IP: 10.0.0.50
    - MAC: aa:bb:cc:dd:ee:ff
    ```
 
-   The `dnf-netinfo` command displays them again.
+   The `dnf-netinfo` command displays them again, along with the network cards and
+   disks.
 
-   With the generic ISO, choose *2) Add this machine to an existing network* in
-   the console menu. The screen lists the network cards and the disks, then
-   recalls the procedure&nbsp;: set a password on the machine (`passwd`), then,
-   from the administration workstation, authorize the key&nbsp;:
+   With the generic ISO, choose in the console menu
+   *2) Add this machine to an existing network* (or run `dnf-pair`).
+   The screen lists the network cards and disks, then displays a **pairing
+   code**&nbsp;:
 
-   ```sh
-   sudo -i -u nix ssh-copy-id nixos@10.0.0.50
+   ```text
+   Pairing code: 123456-7890  (10 min, a new one after)
    ```
+
+   Nothing else to do on the machine&nbsp;: the first recipe run against
+   it from the administration workstation (`host-info` or `full-install`)
+   asks for this code, then authorizes the deployment key. A machine that is already
+   paired will not be asked again. In case of a typo&nbsp;: a 10-second wait
+   before the next attempt&nbsp;; after six codes, `dnf-pair` generates another one.
+   Details in [Gateway](/en/doc/admin-guide/install/gateway/#the-pairing-code).
 
 3. **Set the addresses** (as soon as a zone exists)
 
-   The installation ends with a reboot, and what follows must find the machine
-   again. Two cases&nbsp;:
+   The installation ends with a reboot, and the following steps must be able to find the
+   machine again. Two cases&nbsp;:
 
-   - **MAC address already declared**: nothing to do, the gateway serves the
-     same fixed address to the USB key and to the installed system;
-   - **unknown MAC address**: read it, then declare it.
+   - **MAC address already declared**: nothing to do, the gateway assigns the same
+     fixed address to the USB drive and to the installed system;
+   - **unknown MAC address**: note it down, then declare it.
 
    ```sh
    # just host-info <hôte> <ip-actuelle>
    just host-info poste 10.0.0.50
    ```
 
-   Copy the value into `etc/config.yaml`, with a **fixed address**, then
-   redeploy the gateway of each affected zone&nbsp;:
+   Enter the value in `etc/config.yaml`, with a **fixed address**, then
+   redeploy the gateway for each affected zone&nbsp;:
 
    ```yaml
    # etc/config.yaml
@@ -84,11 +92,11 @@ The machine is first described in `etc/config.yaml`, like
    ```
 
    :::caution[Outside the dynamic DHCP range]
-   The fixed address must be **outside** the zone's `dhcp-range` (by default
-   `<préfixe>.3.200` to `<préfixe>.3.249`). Inside the range, the reservation is
-   honored only as long as the address has not already been lent to someone
-   else&nbsp;: the machine then changes address at its first boot, silently. The
-   generator refuses this case.
+   The fixed address must be **outside** the `dhcp-range` of the zone
+   (by default `<prefix>.3.200` to `<prefix>.3.249`). Within the range, the
+   reservation is honored only as long as the address has not already been leased to
+   someone else&nbsp;: the machine then changes its address on its first
+   boot, silently. The generator rejects this case.
    :::
 
    ```sh
@@ -100,26 +108,26 @@ The machine is first described in `etc/config.yaml`, like
 
 4. **Install the system**
 
-   Make sure the machine boots by default on the disk that will hold the
-   system, and not on the installation USB key.
+   Make sure the machine boots by default from the disk that
+   will host the system, and not from the installation USB drive.
 
    ```sh
    # just full-install <hôte> <utilisateur> <ip>
    just full-install poste nixos 10.0.0.50
    ```
 
-   `full-install` installs the system, the programs, the configurations and
-   the users. On the automatic reboot, it probes **all** the machine's known
-   addresses (the installation one, the one from its zone, the transitional
-   one, its name) and continues on the one that answers. On an encrypted host,
-   it also answers the LUKS prompt by itself. On failure, the detailed steps
-   are in the `Justfile`.
+   `full-install` installs the system, programs, configurations, and
+   users. On the automatic reboot, it probes **all** known
+   addresses of the machine (the installation address, its zone address,
+   the transit address, its name) and continues on the one that responds. On an
+   encrypted host, it also answers the LUKS prompt automatically. If it fails, the
+   detailed steps are in the `Justfile`.
 
 </Steps>
 
-The system is installed and up to date. A standalone workstation is already
-fully usable&nbsp;; the [gateway](/en/doc/admin-guide/install/gateway/) is only
-needed to create a zone (shared local network).
+The system is installed and up to date. A standalone workstation is already fully
+usable&nbsp;; the [gateway](/en/doc/admin-guide/install/gateway/) is only
+necessary to create a zone (shared local network).
 
 {/* t:p 938609b64e2e1217c0db6ceeca57cfadea52087e1a0a2c4319be9b6fdb6ff3b2 */}
 ## FAQ

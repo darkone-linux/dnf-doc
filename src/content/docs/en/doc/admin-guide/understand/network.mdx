@@ -153,37 +153,28 @@ networking.firewall.extraForwardRules = ''
 '';
 ```
 
-{/* t:p 32655a4a054fd2f954c2d0b26d2b2e76ecc558789c7c1f11773839c60c3ab356 */}
+{/* t:p b7f9ab13029b171eaf4435140f63a10c2b7c493b2350da980fa4a63c2cb9a270 */}
 ## SSH access by role
 
-Port 22 is never opened "everywhere". A rule without an interface name
-applies to **all** interfaces, WAN included&nbsp;: on a gateway, that would
-publish SSH on the Internet.
+Port 22 is never open "everywhere". A rule without an interface name applies to **all** interfaces, including the WAN: on a gateway, this would expose SSH to the Internet.
 
 | Host | SSH reachable from |
 |---|---|
 | Zone gateway | its local network and the VPN |
-| Gateway not yet enrolled | also the Internet (WAN) |
-| Host of the global zone (HCS) | Internet — deliberate decision, it carries the VPN |
+| Gateway not yet enrolled | also the Internet (WAN), if coordination (HCS) is active |
+| Host in the global zone (HCS) | Internet — a deliberate decision, as it carries the VPN |
 | Zone machine (workstation, server) | its only interface, therefore the local network |
 
-Practical consequence&nbsp;: **an enrolled gateway does not answer SSH from
-the Internet.** Remote access goes through the VPN&nbsp;:
+Practical consequence: **an enrolled gateway does not respond to SSH from the Internet.** Remote access goes through the VPN:
 
 ```sh
 just enter gw
 ```
 
-Before enrolment, the WAN is the only access&nbsp;: the option
-`darkone.host.gateway.wanSsh.enable` opens port 22 there as long as the zone
-does not declare `gateway.vpn.ipv4`. Declaring the address and then applying
-closes it.
+Before enrollment, the WAN is the only access: the `darkone.host.gateway.wanSsh.enable` option opens port 22 on it as long as coordination (HCS) is active and the zone does not declare `gateway.vpn.ipv4`. Declaring the address and then applying closes it again. **Without coordination, the WAN remains closed**: the first gateway is installed from its local network, see [Gateway](/en/doc/admin-guide/install/gateway/#install-the-gateway).
 
 <Aside type="caution" title="A gateway opens no port without an interface">
-The `gateway` profile refuses to build if a port is opened without an
-interface name. A gateway service is declared on `lan0` (the zone) or
-`tailscale0` (the VPN)&nbsp;; a genuinely public port is set on the WAN
-interface, explicitly.
+The `gateway` profile refuses to build if a port is opened without an interface name. A gateway service is declared on `lan0` (the zone) or `tailscale0` (the VPN); a truly public port is set on the WAN interface, explicitly.
 </Aside>
 
 {/* t:p 0553f159b0df79292efa23dabe693056719a56376fc0105e3575015f615d48a3 */}
@@ -365,31 +356,19 @@ its part, keeps its meaning.
 | `portable` | its original address, everywhere on the network |
 | `portable.atelier.domain.tld` | its address in the `atelier` zone |
 
-{/* t:p aeee169e3a2c230374fecf9a91548ab550db500540ba9d5127f47161210d1875 */}
-### A lease that no longer moves
+{/* t:p d690963e8468e3bce3600231be52b19b32f22f7cd23398ef9de7ca5bba5fc975 */}
+### A lease that no longer changes
 
-`dnsmasq` indexes leases solely on the **MAC address**, not on the DHCP client
-identifier.
+`dnsmasq` indexes leases on the **MAC address** alone, not on the DHCP client identifier.
 
-The reason&nbsp;: a given device does not advertise the same identifier depending
-on the system running on it. An installation image and the installed system
-look like two different machines, and receive two addresses. Relying on the
-MAC, the address no longer changes between installation and the first real
-boot.
+The reason: the same device does not announce the same identifier depending on the system running on it. An installation image and the installed system appear as two different machines and receive two addresses. By relying on the MAC address, the address no longer changes between the installation and the first real boot.
 
 <Aside type="note" title="Machines without a declared MAC address">
-A reservation requires a `mac` key in `etc/config.yaml`. Without it, away from
-home, the machine is only reachable over the tailnet. `just install` requires it
-before any formatting&nbsp;; `just host-info <host> <ip>` collects it from a
-booted machine.
+The reservation requires a `mac` key in `etc/config.yaml`. Without it, when away from home, the machine is only reachable through the tailnet. `just install` requires it before any formatting (except for the gateway of its own zone); `just host-info <hôte> <ip>` retrieves it from a running machine.
 </Aside>
 
-<Aside type="caution" title="The fixed address stays outside the dynamic range">
-A `dhcp-host` reservation placed **inside** the `dhcp-range` range is only
-honored as long as the address has not already been leased to someone else.
-Otherwise the machine gets a different one, silently, at the worst moment: the
-first boot after an installation. The generator now rejects a fixed address
-that falls within its zone's dynamic range.
+<Aside type="caution" title="The fixed address must remain outside the dynamic range">
+A `dhcp-host` reservation placed **inside** the `dhcp-range` is honored only as long as the address has not already been leased to someone else. Otherwise, the machine receives a different one, silently, at the worst possible time: the first boot after an installation. The generator now rejects a fixed address that falls within the dynamic range of its zone.
 </Aside>
 
 {/* t:p f4e685c0b76d9d967020dfe697effcf500fad1689bf2ae6baf6a69b1ef4bb099 */}

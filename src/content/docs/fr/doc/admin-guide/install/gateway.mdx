@@ -11,7 +11,7 @@ import { Steps } from '@astrojs/starlight/components';
 {/* t:main */}
 {/* t:h a1aebc28e21b4daf8782b17e2f24776aa4ac070cc759308d19fd9bdd60a943eb */}
 
-{/* t:p a0ba50a23fe3d1c32b02f0c39dfd4010586d39a539789eeccdc2460dbf699d78 */}
+{/* t:p 6f3e48b1d634b4a571e3482d9687817622f7014659a1a411760b286d9dcf1576 */}
 Une [zone](/fr/doc/admin-guide/understand/concepts/) est un sous-réseau, qui
 comporte une **passerelle**, derrière laquelle on branche autant de machines
 qu'on veut. La première passerelle s'installe **depuis le poste
@@ -37,6 +37,7 @@ Par exemple, boîtier [Protectli](https://eu.protectli.com/) ou équivalent&nbsp
 - Carte wifi en option
 :::
 
+{/* t:p 7dfee03619cb332bd5e4184a05991238da16b35219cdeafa9e87423d5f99d01c */}
 ## Câblage
 
 Le WAN de la passerelle va sur la box&nbsp;; tout le réseau local passe
@@ -70,6 +71,7 @@ box -> wifi { style.stroke-dash: 3 }
 - Un point d'accès Wi-Fi se branche **derrière** la passerelle, sans DHCP.
 - Le commutateur est facultatif&nbsp;: un poste peut se brancher sur un port LAN.
 
+{/* t:p 4120171d27c0e17f4e654eb1b9d98b2be37c972fd54f621cf5e097ebc28b8eab */}
 ## Installer avec l'assistant
 
 `darkone add gateway` se lance sur le poste d'administration, dans le projet
@@ -133,6 +135,7 @@ L'enchaînement complet est testé de bout en bout en machines virtuelles (box
 simulée, passerelle à deux cartes), pas encore sur du matériel.
 :::
 
+{/* t:p 31df320710c6173d63eb9464f3883c4a6e5211924c21fa6de73a3d811a89c5a9 */}
 ### Le code d'appairage
 
 Le code `PPPPPP-FFFF` prouve que l'adresse tapée est la bonne machine avant
@@ -149,6 +152,7 @@ diffère, rien n'est envoyé. Sinon il pousse sa clé de déploiement
 *Paired*. La clé d'hôte vérifiée est ensuite tenue jusqu'à la fin de
 l'installation. Une machine déjà appairée ne redemande pas de code.
 
+{/* t:p a5f5a429cb746a9cc4e8343b8e42b3b64aadaf91d353fc0e45f6696c7fbb6d40 */}
 ### Plan à blanc, réponses
 
 `--dry-run` appaire et sonde la machine, puis affiche le plan, le diff de
@@ -181,6 +185,7 @@ darkone add gateway --answers reponses.yaml --non-interactive
   sans lui, `--non-interactive` refuse de commencer.
 - Une clé inconnue est refusée&nbsp;; toutes les erreurs sont listées d'un coup.
 
+{/* t:p ece2bc2dadc4e71f28e7eeceddaa3b3e47fd156808b4829aea995c3b1afa2d6d */}
 ### Refus
 
 L'assistant refuse **avant d'écrire** quand&nbsp;:
@@ -197,6 +202,7 @@ Le préfixe de la zone est définitif&nbsp;: si la box le recouvre, c'est elle q
 bouge. La disposition `server-1-disk` exige l'UEFI. Les disques de moins de
 20&nbsp;Go (clé USB) ne sont pas proposés.
 
+{/* t:p 3cdedc6fb6d05653bcf737605305f5648ec671f3c5d746391103306e97d2698e */}
 ### Écrit dans le projet
 
 Après confirmation, l'assistant écrit dans `etc/config.yaml` le bloc `gateway`
@@ -204,6 +210,7 @@ de la zone et l'hôte `gw` (`<zone>:1.1`). Le poste d'administration reçoit son
 adresse fixe (`<zone>:2.1`) et sa `mac` si elles manquent. Puis `just clean`
 et le commit `chore(gateway): add gw`.
 
+{/* t:p 849d375fd6e6006856b776f20fa40686f724b25c4202cb954e38c8f79eff915a */}
 ### Reprise après échec
 
 Le message d'échec liste les commandes restantes, dans l'ordre.
@@ -221,11 +228,13 @@ zone a sa passerelle)&nbsp;: la reprise est à la main, et repose la question de
 formatage. Les contrôles vérifient la route par défaut (la passerelle), la
 résolution de `gw` et l'accès à Internet.
 
+{/* t:p a6d0b297690599e8ad3ec953e46c9515025f56699e13be6353a2cb15e1577865 */}
 ## Variante manuelle
 
 Sans l'assistant, la même installation se fait recette par recette&nbsp;: la
 déclaration dans `etc/config.yaml` précède `just full-install`.
 
+{/* t:p 14fa747117af00a1c74ab80445eede842e64145ee07aa2dea015abb26a83f4e8 */}
 ### Préparer la passerelle
 
 <Steps>
@@ -271,7 +280,7 @@ déclaration dans `etc/config.yaml` précède `just full-install`.
 
 </Steps>
 
-{/* t:p ab900321052e1846b5335348ec04ddc592a4297650c4cadc3506474e358e1591 */}
+{/* t:p d7963da0161044fbfb14af4e827d0a6b17a3c01de0a1ea81a535631e509290bb */}
 ### Déclarer la zone
 
 Tout se déclare **avant** l'installation&nbsp;: la passerelle naît avec la
@@ -331,7 +340,7 @@ ou une carte wifi peut servir de
 [liaison de secours](/fr/doc/how-to/admin/gateway-backup-links/).
 :::
 
-{/* t:p 98554b1607570cb4d01b143341ac9f955b808ca04936dca4702a25e136955595 */}
+{/* t:p 2f875b2195f319319f2818aaaa29dbca9853ab03adedd59a3e315f6bc696d44d */}
 ### Installer la passerelle
 
 <Steps>
@@ -399,6 +408,7 @@ installation&nbsp;: poste sur le Wi-Fi de la box **et** câblé au LAN,
 `10.0.1.1` répond sans rien débrancher.
 :::
 
+{/* t:p 656f94fda3771da883ff8f6ebec45f4e05c709057c1c0625bf9e22ee3d6eb6ec */}
 ## Chiffrement du disque
 
 Pour une première passerelle, **préférer un disque en clair** (`server-1-disk`)&nbsp;:
@@ -413,7 +423,7 @@ dernier redémarrage. En câble direct, le poste peut perdre son adresse pendant
 l'initrd (pas de DHCP)&nbsp;: sinon, passphrase à la console.
 :::
 
-{/* t:p c67eb0fc005e21027bd8197f3d013133aba05b23f43ffac3ea439b11d277bf91 */}
+{/* t:p afd7839c27c12ecb917d32732b0d89adc475a85454e49fdb406f1c416941019e */}
 ## Installer depuis une autre zone
 
 Une passerelle se prépare souvent ailleurs que chez son destinataire. Branchez
@@ -437,6 +447,7 @@ Sur place, elle reprend l'adresse fixe de sa zone (`.1.1`). La redirection SSH
 posée pour l'installation ne sert plus&nbsp;: `just roaming-clear gw`.
 :::
 
+{/* t:p 690b660b43cb287f2c483194ff9ffbd315a17b41f67a78ea280615761811b937 */}
 ## Installer à distance
 
 Une personne sur place branche la passerelle à la box et la démarre sur l'image
@@ -485,8 +496,10 @@ distincte&nbsp;: la machine est neuve, mais son état ne l'est pas. Voir [Migrer
 le matériel d'une
 passerelle](/fr/doc/admin-guide/install/gateway-hardware-migration/).
 
+{/* t:p 938609b64e2e1217c0db6ceeca57cfadea52087e1a0a2c4319be9b6fdb6ff3b2 */}
 ## FAQ
 
+{/* t:p abd7af44c978d0874f5bfe6e873b8cf5ff085d9f4ae98dc69689b976a74a4353 */}
 ### Une faute de frappe sur le code ?
 
 Un code faux coûte **10 secondes d'attente** (délai PAM), et l'assistant
@@ -494,6 +507,7 @@ accepte trois essais. Un code faux et un code expiré donnent le même refus&nbs
 relire l'écran. Après six codes de 10 minutes, l'appairage se ferme&nbsp;; la
 commande `dnf-pair` de la machine en tire un nouveau.
 
+{/* t:p 61537a829d447c108c01b225cf0e8d312d0766241552929c4cde99d543c26ab6 */}
 ### « not the machine whose screen shows this code » ?
 
 L'empreinte `FFFF` du code ne correspond pas à la machine qui répond à cette

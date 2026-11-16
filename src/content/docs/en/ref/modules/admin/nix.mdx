@@ -7,7 +7,7 @@ sidebar:
 {/* t:main */}
 {/* t:h 8ad4df5d387d6232a4b200d5c84f7a6f4f30f3415eccd52fe2ada4c08ab6d9aa */}
 
-{/* t:p be6c5dec23447880ce2728ab8c8cc6ae0825b92672c876a30a1be084f014bd61 */}
+{/* t:p bb190f1f3e609435bfefa73e6b2e9993d47383eaf156923257b5a1510af0148b */}
 NixOS configuration for the local LAN administrator computer.
 
 :::tip[Build farm (remote builders)]
@@ -31,6 +31,13 @@ decline and the derivation is simply built locally instead of failing.
 `sshKey` points at the shared deploy key `just configure-admin-host` generates
 under the `nix` user's home. Admin hosts hold it by construction; a host that
 enables this module without the key logs SSH failures on every delegated build.
+:::
+
+:::tip[`darkone` and `dnf-generator` commands]
+The generator package (`pkgs.dnf-generator`, flake input `dnf-generator`) is
+installed with the admin tooling: `darkone add ...` drives the project from
+the admin host. x86_64 only: on another architecture the package is absent
+and the host evaluates without it.
 :::
 
 :::note[Why not a binary cache]

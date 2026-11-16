@@ -227,24 +227,29 @@ Manages test fixtures: generation, drift check, regeneration of disposable keys 
 just fixtures check
 ```
 
-{/* t:p aaffa0dc1eb709db58958be1e0ae6dc48cef2a6599f8fc1d6212e8761389de4b */}
-### 🔆 `test-installer [scenario] [iso]`
+{/* t:p c8adb3eeb52419cefe16ce035e275715bea014c20aef0bdf205c73a8fbf43d1c */}
+### 🔆 `test-installer [scénario] [iso] [générateur]`
 
-Tests the installation ISO in a QEMU VM: the `darkone new` wizard is driven
-through from start to finish. Allow 30 minutes and 25 GB of disk per scenario,
-one minute for `preflight`. See [Testing the installer](/en/doc/dev-guide/installer-test/).
+Tests the installation ISO in a QEMU VM&nbsp;: the `darkone new` wizard is driven
+end to end there. Allow 30 minutes and 25 GB of disk per scenario, one minute for
+`preflight`. See [Testing the installer](/en/doc/dev-guide/installer-test/).
 
 | Scenario | Installation |
 |---|---|
-| `preflight` | None, prior checks only |
+| `preflight` | None, pre-checks only |
 | `scripted` | Answer file, unencrypted disk |
 | `interactive` | Console prompts, encrypted disk |
-| `resume` | Link cut, Ctrl-C, then resume |
+| `resume` | Link dropped, Ctrl-C, then resume |
 | `all` (default) | All four |
+| `gateway` | Outside `all`&nbsp;: admin workstation, then `darkone add gateway` on a second machine |
+
+`générateur`&nbsp;: a local copy of `dnf-generator`, on which the ISO is built&nbsp;;
+`gateway` requires one that has `darkone add gateway`.
 
 ```sh
 just test-installer
 just test-installer interactive /chemin/de/l.iso
+just test-installer gateway '' chemin/de/dnf-generator
 ```
 
 {/* t:p d3b8061eda0c9fd00c607f8bb7f790e84f01d06e7c5d08d33fdcaba4ae57cf60 */}
@@ -318,102 +323,132 @@ just bump          # level inferred from commits
 
 Installing a new host follows a precise sequence.
 
-{/* t:p 99494618a85a7baac3d7ca239823eec41245397c646495136d2d2ad892837a32 */}
-### ✳️ `install <host> [user] [ip]`
+{/* t:p 3273d1052df83499f2d83f572871b2074ebdbc6b44b428898d4b79b0c3514334 */}
+### ✳️ `install <hôte> [user] [ip]`
 
 Formats the disks via **disko** and installs NixOS via **nixos-anywhere**.
 
 :::danger[Destructive]
-All data on the target host is erased. A confirmation is
-requested before running.
+All data on the target host is erased. A confirmation is requested before
+running.
 :::
 
 :::note[Required configuration]
 The host must have a complete `disko` block in `etc/config.yaml` (profile and
-`devices`, hence `usr/machines/<host>/install/disko.nix`), a `mac` key and a
-fixed address (`zone: "<zone>:<x.y>"`). The last two points are checked before any
-formatting: without them, the machine changes address on the reboot that follows
-the installation. See [Adding a
+`devices`, hence `usr/machines/<hôte>/install/disko.nix`), a `mac` key and a
+fixed address (`zone: "<zone>:<x.y>"`). The last two are checked before any
+formatting&nbsp;: without them, the machine changes address on the reboot that
+follows the installation. See [Adding a
 machine](/en/doc/admin-guide/install/add-host/).
 :::
 
-The `ip` argument defaults to `auto`: the address is computed as for
-`full-install`, there is no need to look it up.
+The `ip` argument defaults to `auto`&nbsp;: the address is computed as for
+`full-install`, no need to look it up.
 
 :::caution[The address must be the one the machine keeps]
-`nixos-anywhere` locks its target address for the whole run and cannot
-follow a renumbering. But the installer redoes a DHCP: if the
-machine had been running until then on an older dynamic lease than its reservation
-(the typical case of an installation **over another system**), it
-switches to its reserved address mid-installation and the run talks into the
-void.
+`nixos-anywhere` locks its target address for the whole duration of the run and
+cannot follow a renumbering. But the installer redoes a DHCP&nbsp;: if the
+machine was until then running on a dynamic lease older than its reservation
+(the typical case of an installation **over another system**), it switches to
+its reserved address in the middle of the installation and the run talks into
+the void.
 
 The recipe therefore refuses to start on an address the host does not keep, and
-displays those it accepts. Before installing over an existing OS,
-reboot the machine so it picks up its reserved address.
+displays those it accepts. Before installing over an existing OS, reboot the
+machine so it takes its reserved address.
 :::
 
-Before formatting, the recipe reports what would make the rest fail, then
-asks for confirmation:
+Before formatting, the recipe reports what would make the rest fail, then asks
+for confirmation&nbsp;:
 
-| Alert | Action |
+| Alert | What to do |
 |---|---|
-| Host name unknown to the workstation | `just apply <local gateway>` |
+| Host name unknown to the workstation | `just apply <passerelle locale>` |
 | HCS not up to date for the host | `just apply hcs` |
-| Encrypted host outside any zone | Also redirect port 2222 |
+| Encrypted host outside any zone | Also forward port 2222 |
 
-Before the very first question, it also lists the uncommitted
-changes outside the host: they will go into its commits.
+Before the very first question, it also lists the uncommitted changes outside
+the host&nbsp;: they will go into its commits.
 
-The recipe also drops on the target, **before** the system installation, the age
-key `/etc/sops/age/infra.key` (except on an
-[isolated host](/en/doc/admin-guide/operate/secrets/#isolated-hosts)) and, on an encrypted host,
-the SSH host key of its initrd: sops works from the very first
-activation and the very first boot already listens on port 2222. The volume
-is formatted with the fleet's shared passphrase, so there is nothing to enter.
+The recipe also drops onto the target, **before** the system installation, the
+age key `/etc/sops/age/infra.key` (except on an
+[isolated host](/en/doc/admin-guide/operate/secrets/#isolated-hosts)) and, on an
+encrypted host, the SSH host key of its initrd&nbsp;: sops works from the first
+activation and the very first boot already listens on port 2222. The volume is
+formatted with the fleet's shared passphrase, so there is nothing to type.
 
-On an isolated host, it first seals its `usr/secrets/hosts/<host>.yaml` file
-for the installer's host key, which the installed system takes over: the
-build finds it, without going through `just space-init`.
+On an isolated host, it first seals its `usr/secrets/hosts/<hôte>.yaml` file for
+the installer's host key, which the installed system takes over&nbsp;: the build
+finds it, without going through `just space-init`.
 
 ```sh
 just install myserver
-just install myserver nixos 10.0.0.5     # custom IP
-just install myserver nix auto test      # test VM only
+just install myserver nixos 10.0.0.5     # IP personnalisée
+just install myserver nix auto test      # VM test uniquement
 ```
 
-`nixos-anywhere` and `disko` are the ones pinned by the framework, tested with
-it: `nix run .#nixos-anywhere` and `nix run .#disko` from the project.
+With the `nixos` user (ISO), the recipe pairs the machine itself&nbsp;: it reads
+its host key, asks for the pairing code if one is needed, then runs the whole
+installation in a tunnel held to that key (copy, formatting, secrets)&nbsp;:
+another machine at the same address makes the recipe fail. See
+[Gateway](/en/doc/admin-guide/install/gateway/#the-pairing-code).
 
-:::note[Installation seals the host]
-Just before formatting, `install` writes `usr/machines/<host>/install/state.nix`
-(`stateVersion` of the current nixpkgs release): the disk layout and
+Two environment variables are used by `darkone add gateway`&nbsp;:
+
+| Variable | Effect |
+|---|---|
+| `DNF_INSTALL_CONFIRMED=1` | skips the disk formatting question |
+| `DNF_PAIR_HOSTKEY=<clé>` | rejects any other host key, before any secret and any formatting |
+
+`DNF_PAIR_HOSTKEY` requires the `nixos` user (no pairing otherwise). The
+pre-check's *Continue anyway?* question is still asked.
+
+`nixos-anywhere` and `disko` are the ones pinned by the framework, tested with
+it&nbsp;: `nix run .#nixos-anywhere` and `nix run .#disko` from the project.
+
+:::note[The installation seals the host]
+Just before formatting, `install` writes `usr/machines/<hôte>/install/state.nix`
+(`stateVersion` of the current nixpkgs release)&nbsp;: the disk layout and the
 `stateVersion` are now frozen, even in case of reinstallation. The hardware
-report (`hardware/`) is committed as soon as `nixos-anywhere` finishes. See [Machine
-folder](/en/doc/how-to/admin/machines-layout/).
+report (`hardware/`) is committed as soon as `nixos-anywhere` ends. See [Machine
+directory](/en/doc/how-to/admin/machines-layout/).
 :::
 
 :::caution[LUKS and `do=test`]
-`nixos-anywhere` refuses `--vm-test` together with the options that drop
-files and the formatting key: test mode therefore cannot
-format an encrypted volume. The recipe reports this.
+`nixos-anywhere` rejects `--vm-test` together with the options that drop files
+and the formatting key&nbsp;: test mode therefore cannot format an encrypted
+volume. The recipe reports this.
 :::
 
-{/* t:p 332f678ae6aba4cf91ff9de59d833c42c4410666cb70c507792612466a979694 */}
-### ✳️ `full-install <host> [user] [ip]` ⭐
+{/* t:p 227a9eacb75bce4bb125efb901ae5441a36a10bb18c3bf1ba4678b6a4689dcf0 */}
+### ✳️ `full-install <hôte> [user] [ip]` ⭐
 
-Full chain: `install` + wait for reboot + `unlock` + `configure` + `apply` + `gc` + reboot.
+Full chain&nbsp;: `install` + wait for reboot + `unlock` + `configure` +
+`apply` + `gc` + reboot.
 
-The starting address is calculated automatically: host name in its own zone, reserved pass-through address if plugged in elsewhere. See [Machines outside
-their zone](/en/doc/admin-guide/understand/network/#machines-outside-their-zone).
+The starting address is computed on its own&nbsp;: the host name in its own
+zone, the reserved transit address if it is plugged in elsewhere. See [Machines
+outside their zone](/en/doc/admin-guide/understand/network/#machines-outside-their-zone).
 
-After reboot, the machine may not have returned to the same place: the recipe probes **all** its known addresses, on ports 22 and 2222, and continues on whichever responds. An encrypted host is unlocked along the way by `just unlock`.
+After the reboot, the machine has not necessarily come back to the same
+place&nbsp;: the recipe probes **all** its known addresses, on ports 22 and
+2222, and continues on the one that answers. An encrypted host is unlocked along
+the way by `just unlock`.
 
-The final reboot is not cosmetic: `apply` activates user space but not the kernel or initrd, and this reboot is the only automatic proof that the machine restarts **on its own**. On an encrypted host, it also proves that remote unlock works, while you are still in front of it rather than at the first power outage. `unlock` is therefore called again right after.
+The final reboot is not decorative&nbsp;: `apply` activates the user space but
+not the kernel or the initrd, and this reboot is the only automatic proof that
+the machine comes back **on its own**. On an encrypted host, it proves at the
+same time that remote unlocking works, while you are still in front of it and
+not at the first power outage. `unlock` is therefore called again right after.
+
+For its zone's gateway, installed from a workstation plugged into the box, the
+recipe stops after installation and asks you to plug the workstation into a LAN
+port on the gateway&nbsp;: it resumes on its own (waiting up to 30 minutes). See
+[Gateway](/en/doc/admin-guide/install/gateway/#install-the-gateway).
 
 ```sh
 just full-install myserver
-just full-install myserver nixos 10.0.3.42   # forced address
+just full-install myserver nixos 10.0.3.42   # adresse forcée
 ```
 
 {/* t:p 6aadc92efaf428e74d94138d2bc11288a0c13f2abe5d06c27d739da8f10734f4 */}
@@ -524,13 +559,23 @@ read it (isolated host).
 just push-key myserver
 ```
 
-{/* t:p 8a8a21c89dcfaeeae99ea8d55fc6d33d08aa710633cea16ca6ac8ca918eb8865 */}
+{/* t:p 23e8771fac5393a365a9b12562e5335e9a6c978c1a230c1478419da8621408f7 */}
 ### ✳️ `host-info <hôte> [ip]`
 
-Displays the MAC address of a machine's first active interface, to declare it
-in `etc/config.yaml` before installing it. Useful when the host does not yet
-have a DHCP reservation and can only be reached via the dynamic address shown
-on its screen.
+Inventories a machine to declare it in `etc/config.yaml` before installing
+it&nbsp;:
+
+- the system (UEFI or BIOS, virtualization, memory) ;
+- the network cards (name, MAC, link, addresses, WAN card) ;
+- the disks, with the `by-id` path to copy into `disko.devices` ;
+- the MAC address of the card that **carries the default route**, the one to
+  declare (otherwise the first wired card with a link, with a warning).
+
+Useful when the host does not yet have a DHCP reservation and is therefore
+reachable only through the dynamic address shown on its screen. The recipe
+tries the `nix` account, then `nixos` (installer) by pairing the machine&nbsp;:
+on the generic ISO, it asks for the pairing code displayed on screen. See
+[Gateway](/en/doc/admin-guide/install/gateway/#the-pairing-code).
 
 ```sh
 just host-info myserver 10.0.0.50

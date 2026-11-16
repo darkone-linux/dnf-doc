@@ -14,19 +14,19 @@ import { Steps } from '@astrojs/starlight/components';
 {/* t:p 854614f5bd70050fb11d763f899cbe620d3f8e0711d328b29cd8da8110a14663 */}
 A DNF network is set up **step by step**, and you can stop at any stage: a single workstation is enough to get started.
 
-{/* t:p 111b4977ba6921c33b1667a6d080e739005addc68ca5b84b74997ce64a582c2c */}
-## The path
+{/* t:p f1231a094b7bc032acc5e6eee1f2d33ca9591d8daefed8ebada1839a6dfbd448 */}
+## The journey
 
 1. **A workstation** : the administrator's machine (this page).
-2. **A gateway** : create a [zone](/en/doc/admin-guide/install/gateway/) and connect other machines there.
-3. **Servers and services** : files, photos, messaging… see the [service catalogue](/en/doc/admin-guide/operate/services/).
-4. **Internet** : link zones through [VPN](/en/doc/admin-guide/install/hcs/) (tailnet).
+2. **A gateway** : create a [zone](/en/doc/admin-guide/install/gateway/) and connect other machines to it (`darkone add gateway`).
+3. **Servers and services** : files, photos, messaging… see the [service catalog](/en/doc/admin-guide/operate/services/).
+4. **Internet** : link the zones together with a [VPN](/en/doc/admin-guide/install/hcs/) (tailnet).
 
 :::note[A single configuration]
 All nodes are described in **one** NixOS configuration, on the administrator's
-machine. From there, we deploy and evolve the whole network. This machine is
-itself a DNF host&nbsp;: the administration recipes run under its deployment
-account `nix`.
+machine. From there, the whole network is deployed and evolved. This machine
+is itself a DNF host&nbsp;: the administration recipes run under its `nix`
+deployment account.
 :::
 
 {/* t:p 8313338be02d2cdb5e57ecf99028ab01c9abe66f9a4bd94ec0ee7e9b9644e856 */}
@@ -81,33 +81,33 @@ live in memory&nbsp;: with 4 GB, the machine saturates and the installation does
 
 </Steps>
 
-{/* t:p 25cd83e807dbb69a4fc56af4a765945e541f211b7bf313fe660c6b5431029860 */}
-## Assisted installation
+{/* t:p c61460c2df4a16c979f260c4cb618337b1a99271a48a790666a2cecf9ac0247d */}
+## Guided installation
 
-The first workstation installs itself, from the generic ISO, without another
-machine&nbsp;: it is the simplest path. The `darkone new` wizard is displayed
+The first workstation installs on its own, from the generic ISO, with no other
+machine&nbsp;: it is the simplest path. The `darkone new` assistant is displayed
 in English.
 
 <Steps>
 
-1. **Boot the machine** on the key, preferably wired.
+1. **Boot the machine** from the key, preferably with a wired connection.
 
-   Without a cable, the console waits for the network, and `Enter` opens `nmtui` to
-   choose a Wi-Fi. Once the network is up, a menu offers three choices (type
+   Without a cable, the console waits for the network, and `Enter` opens `nmtui`
+   to choose a Wi-Fi. Once the network is up, a menu offers three choices (type
    the number, then `Enter`)&nbsp;:
 
    | Choice | Effect |
    |---|---|
-   | *1) New network* | starts `darkone new` (this page) |
-   | *2) Add this machine to an existing network* | see [Add a machine](/en/doc/admin-guide/install/add-host/) |
+   | *1) New network* | runs `darkone new` (this page) |
+   | *2) Add this machine to an existing network* | displays a pairing code, see [Gateway](/en/doc/admin-guide/install/gateway/) and [Add a machine](/en/doc/admin-guide/install/add-host/) |
    | *3) Shell* | command prompt |
 
-2. **Answer the wizard**
+2. **Answer the assistant**
 
-   Choose *1*. Before the first question, the wizard checks the memory,
+   Choose *1*. Before the first question, the assistant checks the memory,
    the network and the clock&nbsp;; on failure, *Check again*, *Connect to
    Wi-Fi* or *Abort*. From the command prompt (`Ctrl-C` or choice *3*), it
-   restarts&nbsp;:
+   starts again&nbsp;:
 
    ```sh
    darkone new
@@ -115,11 +115,11 @@ in English.
 
    It asks for the language and keyboard, the administrator's identity and
    password, the network domain (`home.arpa` if you have no domain of your
-   own), the machine name, the disk if there are several (nothing below
-   20&nbsp;GB&nbsp;: the backup key is never offered), disk
-   encryption, then the disk passphrase. The rest is
-   detected&nbsp;: laptop or desktop, UEFI or BIOS, country time zone.
-   Unencrypted disk&nbsp;: a passphrase for the key backup.
+   own), the machine name, the disk if there are several (no smaller than
+   20&nbsp;GB&nbsp;: the backup key is never offered), disk encryption, then
+   the disk passphrase. The rest is detected&nbsp;: laptop or desktop, UEFI or
+   BIOS, country time zone. Unencrypted disk&nbsp;: one passphrase for backing
+   up the keys.
 
    The disk passphrase becomes the fleet passphrase (`luks-passphrase`)&nbsp;:
    any encrypted host installed afterwards is formatted with it. See
@@ -127,36 +127,34 @@ in English.
 
 3. **Confirm**
 
-   The summary points out the final choices (domain, login, zone). The
-   disk is then erased and the system installed, project included in
-   `/etc/nixos`.
+   The summary points out the final choices (domain, login, zone). The disk is
+   then wiped and the system installed, the project included in `/etc/nixos`.
 
-4. **Back up the keys**, on a second USB key
+4. **Back up the keys**, to a second USB key
 
-   Plug in a USB key (FAT, exFAT, ext4…), choose it&nbsp;: nothing is
-   erased on it. The wizard writes `dnf-backup-<domain>.tar.age` there, then asks you to
-   unplug and replug it to read it back. No key possible (a
-   VM)&nbsp;: *Skip for now*, at your own risk, then
-   `just backup-admin <device>` from the installed system.
+   Plug in a USB key (FAT, exFAT, ext4…), select it&nbsp;: nothing on it is
+   erased. The assistant writes `dnf-backup-<domain>.tar.age` to it, then asks
+   you to unplug and plug it back in to read it again. With no key available (a
+   VM)&nbsp;: *Skip for now*, at your own risk, then `just backup-admin
+   <device>` from the installed system.
 
 5. **Reboot**, with the USB keys removed.
 
-   The wizard asks *Remove the installation USB key. Reboot now?* (no by
-   default). Encrypted disk&nbsp;: the passphrase is requested at every
-   boot, with the chosen keyboard. The first session opens a home
-   page in the browser&nbsp;: step 1 of 4 completed, the gateway
-   next. It stays within reach in the **Local network** folder of the
-   applications (*First steps*), along with the documentation (*DNF Doc*) and a
-   terminal in the `/etc/nixos` project (*Network sources*), whose
-   `README.md` summarizes everyday use.
+   The assistant asks *Remove the installation USB key. Reboot now?* (no by
+   default). Encrypted disk&nbsp;: the passphrase is requested at every boot,
+   with the chosen keyboard. The first session opens a welcome page in the
+   browser&nbsp;: step 1 of 4 completed, the gateway next (reopened later, it
+   marks step 2 done as soon as the gateway is installed). It stays within
+   reach in the **Local network** folder of the applications (*First steps*),
+   along with the documentation (*DNF Doc*) and a terminal in the `/etc/nixos`
+   project (*Network sources*), whose `README.md` summarizes everyday use.
 
 </Steps>
 
-:::danger[Without a backup, a lost disk takes all secrets with it]
-The `nix` deployment key, the infra age key and the project exist only on
-this workstation. The backup, encrypted by the disk passphrase (or the
-backup passphrase, for an unencrypted disk), contains them all&nbsp;: store it far from
-the machine.
+:::danger[Without a backup, a lost disk takes all the secrets with it]
+The `nix` deployment key, the infra age key and the project exist only on this
+workstation. The backup, encrypted with the disk passphrase (or the backup one,
+for an unencrypted disk), contains them all&nbsp;: keep it far from the machine.
 :::
 
 {/* t:p 938609b64e2e1217c0db6ceeca57cfadea52087e1a0a2c4319be9b6fdb6ff3b2 */}

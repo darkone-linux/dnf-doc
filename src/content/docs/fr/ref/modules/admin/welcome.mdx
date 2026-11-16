@@ -7,15 +7,18 @@ sidebar:
 {/* t:translated-from en */}
 {/* t:h 04f10d559e71e351c571626279ddd1186392d9f59d8bcfdd3386b9380b829d7e */}
 
-{/* t:p a98bf977bd8dddb1319173646384ac7718ce43b2a3095d71249e0ab6b8164546 */}
-Page d'accueil de premier démarrage de l'hôte admin installée par `darkone new`.
+{/* t:p f1180a3ddd81077c45da245bb02d89b2f14e651d0c78d4c86d34c6ebeb98238c */}
+Page d’accueil du premier démarrage de l’hôte d’administration installé par `darkone new`.
 
-À la première session GNOME de chaque membre du groupe `wheel`, le navigateur ouvre une page locale : étape 1 sur 4 terminée (l'hôte admin), la passerelle ensuite, puis les services et le serveur de coordination, avec des liens vers la documentation. Affichée une fois par utilisateur (`~/.local/state/dnf/welcome-shown`). Le lanceur « Onboarding » du nix-admin la rouvre (`darkone.admin.welcome.command`).
+À la première session GNOME de chaque membre de `wheel`, le navigateur ouvre une page locale&nbsp;: étape 1 sur 4 terminée (l’hôte d’administration), la passerelle ensuite, puis les services et le serveur de coordination, avec des liens vers la documentation. Affichée une seule fois par utilisateur (`~/.local/state/dnf/welcome-shown`). Le lanceur «&nbsp;Onboarding&nbsp;» du nix-admin permet de la rouvrir (`darkone.admin.welcome.command`).
 
-Tant que le témoin `/var/lib/dnf/backup-admin` de `just backup-admin` est absent, la page s'ouvre avec une bannière : les clés admin ne sont pas sauvegardées.
+L’étape 2 est marquée comme terminée dès que la zone de cet hôte dispose d’une passerelle (`network`, lu au moment de la construction&nbsp;: `darkone add gateway` se termine par `just apply-local`).
 
-:::note[Défini par l'installateur]
-`darkone new` écrit `darkone.admin.welcome.enable = true;` dans le `configuration.nix` de l'hôte admin. Retirer la ligne pour arrêter la page pour les utilisateurs qui ne l'ont pas encore vue.
+Tant que le témoin `/var/lib/dnf/backup-admin` de `just backup-admin` est absent, la page s’ouvre avec une bannière&nbsp;: les clés d’administration ne sont pas sauvegardées.
+
+:::note[Défini par l’installateur]
+`darkone new` écrit `darkone.admin.welcome.enable = true;` dans le
+`configuration.nix` de l’hôte d’administration. Supprimez la ligne pour ne plus afficher la page aux utilisateurs qui ne l’ont pas encore vue.
 :::
 
 {/* t:p 122399b9fccc755d8287020d953fd6ed1ef3e243274ea0af140b2990e73326f3 */}

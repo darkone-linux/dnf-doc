@@ -7,7 +7,7 @@ sidebar:
 {/* t:main */}
 {/* t:h 04f10d559e71e351c571626279ddd1186392d9f59d8bcfdd3386b9380b829d7e */}
 
-{/* t:p a98bf977bd8dddb1319173646384ac7718ce43b2a3095d71249e0ab6b8164546 */}
+{/* t:p f1180a3ddd81077c45da245bb02d89b2f14e651d0c78d4c86d34c6ebeb98238c */}
 First-boot welcome page of the admin host installed by `darkone new`.
 
 At the first GNOME session of each `wheel` member, the browser opens a local
@@ -15,6 +15,9 @@ page: step 1 of 4 done (the admin host), the gateway next, then services and
 the coordination server, with links to the documentation. Shown once per
 user (`~/.local/state/dnf/welcome-shown`). The "Onboarding" launcher of the
 nix-admin reopens it (`darkone.admin.welcome.command`).
+
+Step 2 is marked done once the zone of this host has a gateway (`network`,
+read at build time: `darkone add gateway` ends with `just apply-local`).
 
 While the witness `/var/lib/dnf/backup-admin` of `just backup-admin` is
 missing, the page opens with a banner: the admin keys are not backed up.

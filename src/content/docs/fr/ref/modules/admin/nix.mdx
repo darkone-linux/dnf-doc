@@ -7,22 +7,26 @@ sidebar:
 {/* t:translated-from en */}
 {/* t:h 8ad4df5d387d6232a4b200d5c84f7a6f4f30f3415eccd52fe2ada4c08ab6d9aa */}
 
-{/* t:p be6c5dec23447880ce2728ab8c8cc6ae0825b92672c876a30a1be084f014bd61 */}
-Configuration NixOS de l'ordinateur administrateur du réseau local.
+{/* t:p bb190f1f3e609435bfefa73e6b2e9993d47383eaf156923257b5a1510af0148b */}
+Configuration NixOS pour l’ordinateur administrateur du réseau local.
 
-:::tip[Ferme de compilation (builders distants)]
-Un hôte administrateur compile localement la fermeture de chaque nœud et la pousse (`buildOnTarget` vide, voir `just/project.just`) : c'est donc lui qui compile réellement. Tout hôte de la flotte marqué `build-farm` dans `config.yaml` devient l'un de ses `nix.buildMachines`, joint en SSH avec l'utilisateur de déploiement `nix`.
+:::tip[Ferme de compilation (constructeurs distants)]
+Un hôte d’administration compile localement la fermeture de chaque nœud et la pousse (`buildOnTarget` vide, voir `just/project.just`) ; c’est donc la machine qui effectue réellement la compilation. Tout hôte de la flotte marqué `build-farm` dans `config.yaml` devient l’une de ses `nix.buildMachines`, accessible par SSH en tant qu’utilisateur de déploiement `nix`.
 
-La délégation est volontairement restreinte. `mandatoryFeatures` (par défaut `big-parallel`) signifie que la ferme n'est proposée **que** pour les dérivations déclarant `requiredSystemFeatures = [ "big-parallel" ]` : kernel, chromium, firefox, llvm, rustc… c'est-à-dire les longues compilations pour lesquelles un hôte puissant est utile. Tout le reste reste local, ce qui compte quand la ferme se trouve derrière une liaison montante lente : seule la sortie demandée revient.
+La délégation est délibérément restreinte. `mandatoryFeatures` (`big-parallel` par défaut) signifie que la ferme ne reçoit **que** les dérivations déclarant `requiredSystemFeatures = [ "big-parallel" ]` — kernel, chromium, firefox, llvm, rustc… c.-à-d. les longues compilations pour lesquelles on souhaite un hôte puissant. Tout le reste reste local, ce qui compte lorsque la ferme se trouve derrière une liaison montante lente : seule la sortie demandée transite en retour.
 
-Ne retirez jamais `big-parallel` de `nix.settings.system-features` de cet hôte pour forcer la délégation : le conserver fait qu'une ferme injoignable fait refuser le hook de compilation, et la dérivation est simplement compilée localement au lieu d'échouer.
+Ne retirez jamais `big-parallel` des `nix.settings.system-features` de cet hôte pour forcer la délégation : le conserver signifie qu’une ferme injoignable fait refuser le hook de compilation et que la dérivation est simplement compilée localement au lieu d’échouer.
 
 :::caution[Clé de déploiement requise]
-`sshKey` pointe vers la clé de déploiement partagée que `just configure-admin-host` génère dans le répertoire personnel de l'utilisateur `nix`. Les hôtes administrateurs la possèdent par construction ; un hôte qui active ce module sans la clé journalise des échecs SSH à chaque compilation déléguée.
+`sshKey` pointe vers la clé de déploiement partagée que `just configure-admin-host` génère dans le répertoire personnel de l’utilisateur `nix`. Les hôtes d’administration la possèdent par construction ; un hôte qui active ce module sans la clé enregistre des échecs SSH à chaque compilation déléguée.
+:::
+
+:::tip[Commandes `darkone` et `dnf-generator`]
+Le paquet du générateur (`pkgs.dnf-generator`, entrée de flake `dnf-generator`) est installé avec l’outillage d’administration : `darkone add ...` pilote le projet depuis l’hôte d’administration. x86_64 uniquement : sur une autre architecture, le paquet est absent et l’hôte s’évalue sans lui.
 :::
 
 :::note[Pourquoi pas un cache binaire]
-Un `harmonia` sur la ferme partagerait ses résultats de compilation, mais harmonia sert le *contenu entier* de `/nix/store` et ne peut pas exprimer « seulement ce que j'ai compilé » : il capte un trafic que le cache public devrait servir. La délégation relève de l'ordonnancement des compilations, et non de la substitution ; d'où `buildMachines` ici et une priorité de substituteur de dernier recours dans `service/nix-cache.nix`.
+Un `harmonia` sur la ferme partagerait ses résultats de compilation, mais harmonia sert l’intégralité du `/nix/store` et ne peut pas exprimer « uniquement ce que j’ai compilé » : il capte du trafic auquel le cache public devrait répondre. Le délestage est une question d’ordonnancement des compilations, pas de substitution — d’où `buildMachines` ici et une priorité de substitueur de dernier recours dans `service/nix-cache.nix`.
 :::
 
 {/* t:p dc71ace0046f704afa39c28c35f321647f9495d54c58a20f6351c7be95db36b3 */}
