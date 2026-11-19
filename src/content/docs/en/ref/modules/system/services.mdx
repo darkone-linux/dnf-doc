@@ -42,7 +42,7 @@ gateways and of the HCS.
 - `external-hosts`: zone services the HCS fronts, proxied to their gateway.
 :::
 
-{/* t:p cd99246a4e8a5dc82bbb848e469cd4bc6186e103110576a96ed8a750d5d18be5 */}
+{/* t:p f3cfe94c426ef2d1641685f93b730585f6efb14bb62f2f96e60df82e5c33f892 */}
 ## SSO (`oauth2-proxy.nix`)
 
 oauth2-proxy in front of the protected services of a zone, backed by the
@@ -53,6 +53,12 @@ Caddy `forward_auth` checks every request against `/oauth2/auth`. The login
 flow is anchored on the zone homepage FQDN, which hosts oauth2-proxy's
 public `/oauth2/*` endpoints; a cookie scoped to the zone domain keeps the
 session across its services.
+:::
+
+:::note[Sessions]
+Stored in a local Redis (`redis-oauth2-proxy`, unix socket): the cookie only
+holds a ticket. Refreshed every 15 min against Kanidm, so a group change
+applies without a new login.
 :::
 
 :::note[Tailnet identity]

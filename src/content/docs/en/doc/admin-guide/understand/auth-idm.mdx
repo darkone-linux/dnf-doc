@@ -129,18 +129,21 @@ name. DNF appends this suffix automatically: declaring `users` on the service
 side is enough, the framework compares against `users@domain.tld`.
 </Aside>
 
-{/* t:p 4b4acd94457202df906ecab7b3f503808b1fa0d84c2b42020a645145981d2410 */}
+{/* t:p ddef98b8bb5fe44e031d584a727e0e3421b669a0b75a8b0232f8820a51b8a1b8 */}
 ### Session and SSO
 
 After login, oauth2-proxy sets a **session cookie** valid across the entire
-zone domain (`.maison.domain.tld`). All protected services in the zone therefore
-share the same session: you log in **once**. The flow endpoints (`/oauth2/*`)
-are hosted on the FQDN of the zone's **home page**, which serves as a common
-anchor.
+zone domain (`.maison.domain.tld`). All protected services in the zone
+therefore share the same session: you log in **once**. The flow endpoints
+(`/oauth2/*`) are hosted on the FQDN of the zone's **homepage**, which serves as
+a common anchor.
 
-The cookie lasts 7 days, but the groups it carries are re-read from Kanidm
-every 15 minutes&nbsp;: a group addition or removal takes effect within that
-delay, without re-login. To force a new session:
+The cookie carries only a ticket&nbsp;: the session is kept on the
+gateway (local Redis, `redis-oauth2-proxy`) and survives its restart.
+
+Sessions last 7 days, but their groups are re-read from Kanidm every 15
+minutes&nbsp;: a group addition or removal takes effect within that period,
+without signing in again. To force a new session&nbsp;:
 `https://homepage.<zone>/oauth2/sign_out`.
 
 {/* t:p ac6fc1631b029f0ede249fc7790cd49f5e3f6fe56d008b048fcffe2fe585ade8 */}
