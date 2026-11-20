@@ -1,0 +1,58 @@
+---
+title: Gateway OpenClaw arrêté après une mise à jour
+sidebar:
+  label: Migration OpenClaw
+  order: 14
+lang: fr
+---
+
+import { Steps } from '@astrojs/starlight/components';
+
+Une nouvelle version d'OpenClaw peut exiger une migration de ses bases avant
+de servir un [espace IA](/fr/doc/admin-guide/operate/ai-spaces/). Le gateway
+refuse alors de démarrer&nbsp;: l'unité `openclaw-gateway` reste en échec, sans
+boucle de redémarrage, et l'alerte `ServiceDown` se déclenche.
+
+## Reconnaître le cas
+
+Sur l'hôte de l'espace&nbsp;:
+
+```bash
+systemctl status openclaw-gateway   # status=78/CONFIG
+journalctl -u openclaw-gateway -n 30
+```
+
+Le journal indique la commande à lancer, en général `openclaw doctor --fix`.
+
+## Migrer
+
+<Steps>
+
+1. **Arrêter le gateway**
+
+   ```bash
+   sudo systemctl stop openclaw-gateway
+   ```
+
+2. **Réparer**
+
+   ```bash
+   openclaw doctor --fix --non-interactive
+   ```
+
+   `doctor` sauvegarde chaque base (`*.pre-startup-migration-*.bak`) avant de
+   la migrer.
+
+3. **Relancer**
+
+   ```bash
+   sudo systemctl reset-failed openclaw-gateway
+   sudo systemctl start openclaw-gateway
+   ```
+
+</Steps>
+
+:::note[Démarrage lent]
+Le gateway répond une à deux minutes après son lancement sur une microVM à
+2&nbsp;vCPU.
+:::
