@@ -210,3 +210,17 @@ home-manager.sharedModules = [ { programs.ghostty.enable = false; } ];
 ```
 
 Console le remplace, Ctrl+Alt+T compris.
+
+### Copier-coller dans Ghostty
+
+Ghostty, tmux, zellij et vim n'utilisent qu'un presse-papier, celui de GNOME
+(Ctrl+C / Ctrl+V) :
+
+- sélectionner à la souris copie ;
+- clic molette, clic droit, Ctrl+V et Maj+Inser collent ;
+- application qui capte la souris (htop, mc) : maintenir Maj ;
+- tmux distant, via ssh : coller avec Ctrl+V.
+
+Avec du texte dans le presse-papier, Ctrl+V n'atteint plus l'application :
+bloc visuel de vim avec Ctrl+Q, page suivante de nano avec la touche Page
+suivante. Une image lui parvient toujours (capture collée dans Claude Code).
