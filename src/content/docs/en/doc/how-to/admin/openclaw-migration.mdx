@@ -1,0 +1,59 @@
+---
+title: OpenClaw gateway stopped after an update
+sidebar:
+  label: OpenClaw migration
+  order: 14
+lang: en
+---
+
+import { Steps } from '@astrojs/starlight/components';
+
+{/* t:translated-from fr */}
+{/* t:h d9dc20e1f29f4e8918e0099c131904828f554c0c292208b1c68e5aadfef58e36 */}
+
+{/* t:p 3d16a70fb4856ea5855e0c8207098b9f9340b4dce1f67666cd0a1e4f347d4db3 */}
+A new version of OpenClaw may require migrating its databases before it can serve an [AI space](/en/doc/admin-guide/operate/ai-spaces/). The gateway then refuses to start&nbsp;: the `openclaw-gateway` unit stays in a failed state, with no restart loop, and the `ServiceDown` alert is triggered.
+
+{/* t:p 23e4a49bb5e458409ec3e03cda8452ee1e1b3900b52597d4d36c600dde09bb5f */}
+## Recognize the case
+
+On the space host&nbsp;:
+
+```bash
+systemctl status openclaw-gateway   # status=78/CONFIG
+journalctl -u openclaw-gateway -n 30
+```
+
+The journal indicates the command to run, usually `openclaw doctor --fix`.
+
+{/* t:p c24dd7d29782326b6c968bb31814c45c25063a59ed709f0d6a281d7a3f4ced41 */}
+## Migrate
+
+<Steps>
+
+1. **Stop the gateway**
+
+   ```bash
+   sudo systemctl stop openclaw-gateway
+   ```
+
+2. **Repair**
+
+   ```bash
+   openclaw doctor --fix --non-interactive
+   ```
+
+   `doctor` backs up each database (`*.pre-startup-migration-*.bak`) before migrating it.
+
+3. **Restart**
+
+   ```bash
+   sudo systemctl reset-failed openclaw-gateway
+   sudo systemctl start openclaw-gateway
+   ```
+
+</Steps>
+
+:::note[Slow startup]
+The gateway responds one to two minutes after starting on a microVM with 2&nbsp;vCPU.
+:::

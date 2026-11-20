@@ -7,19 +7,23 @@ sidebar:
 {/* t:translated-from en */}
 {/* t:h e07284381d4ed1b7c243cb0e55886f8e2537f38f0445801315c7c454c610d74e */}
 
-{/* t:p c1137f11232ff68c02a6accaf23ecff926ae18d2243365c820f077ec16be60ef */}
-Profil domestique pour utilisateurs avancés (informaticiens, développeurs, administrateurs).
+{/* t:p 4ad9f5aa18c4a77990ab166d5f2366f989c546c6d1daf577f41f1dfc3cf20fc0 */}
+Profil domestique pour les utilisateurs avancés (informaticiens, développeurs, administrateurs).
 
 :::note[Clés SSH depuis Vaultwarden]
-`enableVaultwardenSsh` transforme `rbw` en agent SSH : les clés privées restent dans
-le coffre de l'utilisateur (chiffré de bout en bout), jamais en clair sur le disque ni dans sops.
+`enableVaultwardenSsh` transforme `rbw` en agent SSH&nbsp;: les clés privées restent dans le coffre de l'utilisateur (chiffré de bout en bout), jamais en clair sur le disque ni dans sops.
 L'utilisateur lance `rbw unlock` une fois par session.
 :::
 
 :::note[Dossier réseau local]
-Un nix-admin sur l'hôte d'administration obtient un dossier « Réseau local » dans la grille
-d'applications (`advanced/network-folder.nix`) : DNF Doc, Onboarding (la page d'accueil) et
-Sources réseau (un terminal dans `/etc/nixos`). Ajouté une fois par utilisateur, à la connexion.
+Un nix-admin sur l'hôte administrateur obtient un dossier « Réseau local » dans la grille d'applications (`advanced/network-folder.nix`)&nbsp;: DNF Doc, Onboarding (la page d'accueil) et Network Sources (un terminal dans `/etc/nixos`).
+Ajouté une fois par utilisateur, à la connexion.
+:::
+
+:::note[Un seul presse-papiers dans le terminal]
+Ghostty, tmux, zellij et vim partagent CLIPBOARD (Ctrl+C / Ctrl+V de GNOME)&nbsp;: la sélection copie&nbsp;; le clic milieu, le clic droit et Ctrl+V collent.
+PRIMARY n'est jamais collé.
+Maj + souris contourne une application qui capture la souris.
 :::
 
 {/* t:p 23cb35cb177d150c7050dbb4d3d05e2e2b2bec3c9e07cf9af83146a733bbaeff */}

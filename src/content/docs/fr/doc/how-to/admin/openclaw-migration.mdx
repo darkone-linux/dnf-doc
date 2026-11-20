@@ -8,11 +8,16 @@ lang: fr
 
 import { Steps } from '@astrojs/starlight/components';
 
+{/* t:main */}
+{/* t:h d9dc20e1f29f4e8918e0099c131904828f554c0c292208b1c68e5aadfef58e36 */}
+
+{/* t:p 3d16a70fb4856ea5855e0c8207098b9f9340b4dce1f67666cd0a1e4f347d4db3 */}
 Une nouvelle version d'OpenClaw peut exiger une migration de ses bases avant
 de servir un [espace IA](/fr/doc/admin-guide/operate/ai-spaces/). Le gateway
 refuse alors de démarrer&nbsp;: l'unité `openclaw-gateway` reste en échec, sans
 boucle de redémarrage, et l'alerte `ServiceDown` se déclenche.
 
+{/* t:p 23e4a49bb5e458409ec3e03cda8452ee1e1b3900b52597d4d36c600dde09bb5f */}
 ## Reconnaître le cas
 
 Sur l'hôte de l'espace&nbsp;:
@@ -24,6 +29,7 @@ journalctl -u openclaw-gateway -n 30
 
 Le journal indique la commande à lancer, en général `openclaw doctor --fix`.
 
+{/* t:p c24dd7d29782326b6c968bb31814c45c25063a59ed709f0d6a281d7a3f4ced41 */}
 ## Migrer
 
 <Steps>

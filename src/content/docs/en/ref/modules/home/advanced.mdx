@@ -7,7 +7,7 @@ sidebar:
 {/* t:main */}
 {/* t:h e07284381d4ed1b7c243cb0e55886f8e2537f38f0445801315c7c454c610d74e */}
 
-{/* t:p c1137f11232ff68c02a6accaf23ecff926ae18d2243365c820f077ec16be60ef */}
+{/* t:p 4ad9f5aa18c4a77990ab166d5f2366f989c546c6d1daf577f41f1dfc3cf20fc0 */}
 Home profile for advanced users (computer scientists, developers, admins).
 
 :::note[SSH keys from Vaultwarden]
@@ -20,6 +20,12 @@ The user runs `rbw unlock` once per session.
 A nix-admin on the admin host gets a "Local network" folder in the app grid
 (`advanced/network-folder.nix`): DNF Doc, Onboarding (the welcome page) and
 Network Sources (a terminal in `/etc/nixos`). Added once per user, at login.
+:::
+
+:::note[One clipboard in the terminal]
+Ghostty, tmux, zellij and vim share CLIPBOARD (GNOME's Ctrl+C / Ctrl+V):
+selecting copies; middle-click, right-click and Ctrl+V paste. PRIMARY is
+never pasted. Shift + mouse bypasses an app that grabs the mouse.
 :::
 
 {/* t:p 23cb35cb177d150c7050dbb4d3d05e2e2b2bec3c9e07cf9af83146a733bbaeff */}

@@ -7,7 +7,7 @@ sidebar:
 {/* t:main */}
 {/* t:h d5f1892d9791094f80026e02763249fc5086ebffe5aa0f76cc55d460b275f252 */}
 
-{/* t:p 12999eae5a79856773e1d35795d2c5eff06ec188813397462c0b47170b11d72a */}
+{/* t:p 40dfe4464bba644f15bf2e35f81acf0a4f689045a0e9c027f6811b2ea4bc43df */}
 OxiCloud — Fast Sovereign Cloud (file storage, WebDAV, CalDAV &amp; CardDAV).
 
 :::note[Service currently being validated]
@@ -39,8 +39,10 @@ PostgreSQL database is created locally.
 
 :::tip[Mail]
 When `network.smtp` is set, OxiCloud sends share notifications and email
-invitations (magic links) through that relay. Without it, email features are
-disabled.
+invitations (magic links) through that relay, and mails scheduled-job
+findings (data loss) to `darkone.system.security.adminMailbox`. Without it,
+email features are disabled and the admin UI warns that no notification
+destination is configured.
 :::
 
 {/* t:p e7774fe330eed9c5162da006dbea44c919f2d9e7c68792b2c14841ff66751cc3 */}

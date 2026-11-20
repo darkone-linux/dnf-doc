@@ -206,3 +206,18 @@ home-manager.sharedModules = [ { programs.ghostty.enable = false; } ];
 ```
 
 Console replaces it, including Ctrl+Alt+T.
+
+{/* t:p f4bf0c1c4f8d61db48b6b6f53d7c7fb5eaecfb2156c77a812f7555a4ff584a19 */}
+### Copy and paste in Ghostty
+
+Ghostty, tmux, zellij and vim use only one clipboard, GNOME's
+(Ctrl+C / Ctrl+V):
+
+- selecting with the mouse copies;
+- middle click, right click, Ctrl+V and Shift+Insert paste;
+- application that captures the mouse (htop, mc): hold Shift;
+- remote tmux, over ssh: paste with Ctrl+V.
+
+With text in the clipboard, Ctrl+V no longer reaches the application:
+vim visual block with Ctrl+Q, nano next page with the Page Down key.
+An image still reaches it (screenshot pasted into Claude Code).
