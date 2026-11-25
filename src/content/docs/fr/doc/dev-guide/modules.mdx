@@ -101,6 +101,7 @@ dans chaque module. Les plus utiles :
 | `extractServiceParams` / `buildServiceParams` | Lire les paramètres d'un service (domaine, titre, icône…). |
 | `serviceHref` | Résoudre l'URL publique d'un service déclaré ailleurs sur le réseau. |
 | `mkOidcContext` / `mkKanidmEndpoints` | Brancher un service au SSO Kanidm (OIDC). |
+| `mkOidcIssuerGate` | Attendre l'émetteur OIDC avant de démarrer un service (`ExecStartPre`). |
 | `mkInternalFirewall` | Ouvrir des ports sur l'interface interne uniquement. |
 | `findHost` / `findService` / `isGateway` / `isHcs` | Interroger la topologie réseau. |
 | `mkHomepageSection` | Déclarer l'entrée du portail. |

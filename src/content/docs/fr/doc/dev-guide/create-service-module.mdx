@@ -404,6 +404,13 @@ Seul le câblage côté service (`settings.oidc`, secret, env) est gardé par
 Kanidm. Modèles à étudier : `outline.nix`, `immich.nix`, `forgejo.nix`.
 </Aside>
 
+<Aside type="caution" title="Découverte lue au démarrage">
+Un service qui lit la découverte OIDC une seule fois, au démarrage, échoue si
+Kanidm est injoignable à ce moment-là. `dnfLib.mkOidcIssuerGate` fournit un
+`ExecStartPre` qui attend l'émetteur (~100 s) ; prévoir `Restart=` et un
+`TimeoutStartSec` d'au moins 150 s. Exemples : `outline.nix`, `headscale.nix`.
+</Aside>
+
 {/* t:p 13528a5bc93f642470ecf441becf931b7b98a6647ee133ce6f87b9a89f44358c */}
 ## Protéger un service sans OIDC
 
