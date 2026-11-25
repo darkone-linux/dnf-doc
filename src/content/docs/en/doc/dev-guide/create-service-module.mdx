@@ -296,20 +296,16 @@ must be written as a full store path: `${pkgs.<pkg>}/bin/<cmd>` (systemd's PATH
 is empty). Shell *builtins* (`echo`, `[`, `for`…) are exempt.
 </Aside>
 
-{/* t:p 9afb04e9132fbf776a5f1e722d5be56218220680ceb86fd64913d903f985826c */}
-## OIDC Authentication with Kanidm
+{/* t:p 343896d4c1ef75b1dc62da3add636e0cbb9e0974f105a8ad1eda88bd9915a130 */}
+## OIDC authentication with Kanidm
 
-SSO wiring is **automatic and conditional** on the presence of an `idm`
-(Kanidm) service on the network (zone or global). Three ingredients:
+SSO wiring is **automatic and conditional** on the presence of an `idm` service (Kanidm) on the network (zone or global). Three ingredients:
 
 <Steps>
 
-1. **OAuth2 Template** (unconditional block): `darkone.service.idm.oauth2.<name>`.
-   Kanidm provisions it as an OAuth2 client when `idm` is enabled.
-2. **OIDC Context**: `dnfLib.mkOidcContext` → `clientId`, `secret`, `idmUrl`.
-   `idmUrl == null` when no `idm` exists: all wiring is then cut off.
-3. **Endpoints**: `dnfLib.mkKanidmEndpoints idmUrl clientId` → `issuerUrl`,
-   `authUrl`, `tokenUrl`, `userinfoUrl`…
+1. **OAuth2 template** (unconditional block): `darkone.service.idm.oauth2.<nom>`. Kanidm provisions it as an OAuth2 client when `idm` is enabled.
+2. **OIDC context**: `dnfLib.mkOidcContext` → `clientId`, `secret`, `idmUrl`. `idmUrl == null` when no `idm` exists: all wiring is then cut.
+3. **Endpoints**: `dnfLib.mkKanidmEndpoints idmUrl clientId` → `issuerUrl`, `authUrl`, `tokenUrl`, `userinfoUrl`…
 
 </Steps>
 
@@ -323,8 +319,7 @@ oidc = dnfLib.mkKanidmEndpoints idmUrl clientId;
 hasIdm = idmUrl != null;
 ```
 
-The template declares **redirect paths** (prefixed by the service's public URL
-framework) and a landing page:
+The template declares redirect **paths** (prefixed by the framework with the service's public URL) and a landing page:
 
 ```nix
 darkone.service.idm.oauth2.oxicloud = {
@@ -335,16 +330,13 @@ darkone.service.idm.oauth2.oxicloud = {
 };
 ```
 
-The OAuth2 secret is generated on the Kanidm side (`oidc-secret-<clientId>`). To
-provide it to the service without storing it in the Nix store, **re-encrypt** it
-for the service user (sops `key` field) then inject it via an environment file
-(`sops.templates`, `KEY=value` format):
+The OAuth2 secret is generated on the Kanidm side (`oidc-secret-<clientId>`). To provide it to the service without storing it in the Nix store, **re-encrypt** it for the service user (sops field `key`), then inject it via an environment file (`sops.templates`, format `CLE=valeur`):
 
 ```nix
 sops.secrets."${secret}-service" = lib.mkIf hasIdm {
   mode = "0400";
   owner = "oxicloud";
-  key = secret;                          # master secret alias
+  key = secret;                          # alias du secret maître
 };
 
 sops.templates."oxicloud-oidc-env" = lib.mkIf hasIdm {
@@ -367,10 +359,11 @@ services.oxicloud = {
 ```
 
 <Aside type="tip" title="Conditionality">
-The OAuth2 template remains declared unconditionally (harmless without `idm`).
-Only the service-side wiring (`settings.oidc`, secret, env) is guarded by
-`lib.mkIf hasIdm`, leaving upstream behavior intact in the absence of Kanidm.
-Reference patterns: `outline.nix`, `immich.nix`, `forgejo.nix`.
+The OAuth2 template stays declared unconditionally (harmless without `idm`). Only the service-side wiring (`settings.oidc`, secret, env) is guarded by `lib.mkIf hasIdm`, to leave upstream behavior intact when Kanidm is absent. Templates to study: `outline.nix`, `immich.nix`, `forgejo.nix`.
+</Aside>
+
+<Aside type="caution" title="Discovery read at startup">
+A service that reads OIDC discovery only once, at startup, fails if Kanidm is unreachable at that moment. `dnfLib.mkOidcIssuerGate` provides an `ExecStartPre` that waits for the issuer (~100 s); provide `Restart=` and a `TimeoutStartSec` of at least 150 s. Examples: `outline.nix`, `headscale.nix`.
 </Aside>
 
 {/* t:p 13528a5bc93f642470ecf441becf931b7b98a6647ee133ce6f87b9a89f44358c */}
