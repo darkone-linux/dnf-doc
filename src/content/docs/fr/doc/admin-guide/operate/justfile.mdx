@@ -149,6 +149,10 @@ Analyse statique avec `statix` et détection du code mort avec `deadnix`, sur
 tous les fichiers `*.nix`. `shellcheck` vérifie les scripts `*.sh` suivis par
 git, ceux de `dnf/` compris en co-développement.
 
+Les règles `statix` du framework sont dans `dnf/statix.toml` : `repeated_keys`
+désactivée, `backports/` ignoré. La CI prend ses outils de lint dans le
+`flake.lock`, donc dans les mêmes versions qu'en local.
+
 ```sh
 just check-code
 ```
