@@ -131,87 +131,90 @@ repository. The entry then covers the whole history. A template, with no
 version file, requires an explicit `X.Y.Z` (the train passes the framework's).
 </Aside>
 
-{/* t:p 518c664f57850e726c3052070d7b7ffea7e9ac0121de07ce834ea33dac2cd0fe */}
+{/* t:p 2a62f3e54600af10641067c07932e00d36f36f1d1388cdea19869fc7f59578bf */}
 ## The release train
 
 `just release` runs at the root of the co-development workspace, which must
-contain the six repositories. Each repository goes in the order of its
-dependencies, and only if it has moved since its last tag.
+contain the six repositories. Each repository is released in dependency order,
+and only if it has changed since its last tag.
 
 <Steps>
 
-1. **Pre-flight checks**&nbsp;: required tools present (`git-cliff`, `jq`,
-   `nix-update`), repositories clean, on `main`, up to date with `origin`.
-   Nothing long-running starts before this.
+1. **Pre-flight checks**&nbsp;: tools present (`git-cliff`, `jq`,
+   `nix-update`), clean repositories, on `main`, up to date with `origin`. Nothing
+   long runs beforehand.
 
 2. **Plan**&nbsp;: current and next version of each repository, preview of
-   the changelog entries, then **a single** confirmation. Refusing writes
-   nothing. `YES=1 just release` skips it (non-interactive run). After that,
-   everything is automatic.
+   changelog entries, then **a single** confirmation. Declining writes nothing.
+   `YES=1 just release` skips it (headless execution). After that, everything is
+   automatic.
 
 3. **Global gate**&nbsp;: `just check` (code and unit tests).
 
-4. **Generator**, if it has moved&nbsp;: `just gen-test`, release and push. It
-   owns the `etc/config.yaml` schema, so it goes before whatever depends on
-   it. Its tag is then pinned in `dnf/flake.nix` (commit `chore(deps)`), so
-   that the contract between framework and generator reads in a diff. The
-   pinned generator finally regenerates `dnf/config/config.schema.json`, the
-   schema that projects read through their `dnf/` link (commit
+4. **Generator**, if it has changed&nbsp;: `ci` and `audit` gates with
+   the tooling from its `nix develop`, release and push. It owns the
+   `etc/config.yaml` schema, so it goes before anything that depends on it.
+   Its tag is then pinned in `dnf/flake.nix` (commit `chore(deps)`),
+   so the contract between the framework and the generator can be read in a diff.
+   The pinned generator finally regenerates `dnf/config/config.schema.json`,
+   the schema that projects read through their `dnf/` link (commit
    `chore(schema)` if it changes).
 
-5. **fleet-update**, if it has moved&nbsp;: `ci` and `audit` gates with the
-   tooling of its `nix develop`, release and push. Its tag is then pinned in
-   `dnf/pkgs/fleet-update` by `just pkg-update`, and the package is built
-   (commit `chore(deps)`).
+5. **fleet-update**, if it has changed&nbsp;: `ci` and `audit` gates with
+   the tooling from its `nix develop`, release and push. Its tag is then
+   pinned in `dnf/pkgs/fleet-update` by `just pkg-update`, and the package
+   is built (commit `chore(deps)`).
 
-6. **Framework**&nbsp;: `just simulate all` runs **after** the pinning, so on
-   the dependencies actually shipped. These scenarios do not run in continuous
-   integration&nbsp;: a red scenario stops the train here. Then `VERSION`, the
-   project template pin (`templates/project/flake.nix`), `CHANGELOG.md`,
-   commit, tag and push.
+6. **Framework**&nbsp;: `just simulate all` runs **after** the pinning,
+   so against the dependencies actually shipped. These scenarios do not run
+   in continuous integration&nbsp;: a failing scenario stops the train
+   here. Then `VERSION`, the project template pin
+   (`templates/project/flake.nix`), `CHANGELOG.md`, commit, tag and push.
 
 7. **Documentation**&nbsp;: `just codegen` regenerates the reference, then
    translation and normalization. If there is anything to publish, the site is
-   built (before the tag, so that a broken link blocks), the version aligns on
-   the framework's `MAJOR.MINOR` line, then the site is deployed.
+   built (before the tag, so a broken link blocks it), the version is aligned
+   with the framework's `MAJEUR.MINEUR` line, then the site is deployed.
 
 8. **Boilerplate and example**&nbsp;: the boilerplate is first copied from
    `templates/project/` at the framework tag (`CHANGELOG.md` and `flake.lock`
-   kept), with a "published copy" banner under the title of its READMEs. It is
-   therefore never edited by hand. Then, for both, the framework tag is written
-   into their `flake.nix`, the `flake.lock` is **committed** (it is what makes a
-   clone reproducible), then changelog and a tag identical to the framework's.
-   Each host of the example is evaluated up to `system.build.toplevel`
-   against the new framework, with hardware and secrets replaced by stubs
+   kept), with a "published copy" banner below the title of its READMEs.
+   It is therefore never edited by hand. Then, for both, the framework tag is
+   written into their `flake.nix`, the `flake.lock` is **committed** (that is
+   what makes a clone reproducible), followed by a changelog and a tag
+   identical to the framework's.
+   Every host in the example is evaluated up to `system.build.toplevel` against
+   the new framework, with hardware and secrets replaced by stubs
    (`dnf/just/scripts/eval-template-hosts.nix`)&nbsp;: a template has neither.
    The boilerplate, shipped without `var/generated/`, has nothing to evaluate
    before `just generate`.
 
-9. **Root**&nbsp;: `just update-dnf`, commit of the single `flake.lock`, then
-   push of the current branch (without tag), last of all&nbsp;: its lock points
-   to the releases published just before. The root is never tagged.
+9. **Root**&nbsp;: `just update-dnf`, commit of `flake.lock` only, then
+   a push of the current branch (without a tag), last of all&nbsp;: its lock
+   points to the releases just published. The root is never tagged.
 
 </Steps>
 
-Only the framework follows the `level` passed to the recipe. Generator and
-`fleet-update` stay on `auto`, the documentation follows the framework line,
-the templates their number.
+Only the framework follows the `niveau` passed to the recipe. The generator and
+`fleet-update` stay on `auto`, the documentation follows the framework's line,
+and the templates follow its version number.
 
-Each repository is pushed with **its** tag alone (`git push --atomic origin
-main refs/tags/vX.Y.Z`), never with `--tags`&nbsp;: local work tags stay local.
+Each repository is pushed with **its own** tag only (`git push --atomic origin main
+refs/tags/vX.Y.Z`), never with `--tags`&nbsp;: working local tags stay
+local.
 
-<Aside type="tip" title="Restarting the train">
+<Aside type="tip" title="Rerunning the train">
 The train is idempotent. With nothing new, it stops at the plan&nbsp;:
-"Nothing to release". After a failure, it resumes where it stopped&nbsp;: the
-already-tagged repositories are skipped, the committed pins remain in place.
-Only a failed site deployment is restarted by hand&nbsp;:
+"Nothing to release". After a failure, it resumes where it stopped&nbsp;:
+already-tagged repositories are skipped, and committed pins remain in place.
+Only a failed site deployment must be rerun manually&nbsp;:
 `just --justfile doc/Justfile --working-directory doc deploy "Release vX.Y.Z"`.
 </Aside>
 
 <Aside type="caution" title="A template never precedes the framework">
-A template carries the framework number. If it has moved without the framework
-moving, the train reports it and leaves it&nbsp;: it will go with the next
-framework release.
+A template carries the framework's version number. If it changed without the
+framework changing, the train flags it and leaves it be&nbsp;: it will go out
+with the next framework release.
 </Aside>
 
 {/* t:p 7640fffe4bd8ed144db0b0533dd7b901247f61496c7f0ddabfa09d8e068a2fa6 */}

@@ -7,8 +7,15 @@ sidebar:
 {/* t:translated-from en */}
 {/* t:h 67f5b885da3b569bbe191f07cb55c0323a321fa271d2db223263c2c9c9435a45 */}
 
-{/* t:p 1df060d10a933f63d271c75596afb378ad521d20162b41e24e01f20b47dbc208 */}
-Un wiki à contour complet, prêt à l'emploi.
+{/* t:p 24c5ba285fcd4883ab7f2fa2c8fa24a85d6553779fcb74b4571895afd3a8757a */}
+Un wiki Outline entièrement configuré.
+
+Connexion via Kanidm (OIDC), PKCE imposé.
+
+:::caution[IdM requis au démarrage]
+Outline lit le document de découverte de Kanidm une seule fois, au démarrage, et
+quitte s'il ne peut pas&nbsp;: l'unité attend jusqu'à ~100s l'IdM, puis systemd réessaie.
+:::
 
 {/* t:p 386aaa713a1e930a4f7c8250812ef71672aefefb9c03c7ae7847a0e1947e3a76 */}
 ## Options
