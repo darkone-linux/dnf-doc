@@ -5,6 +5,34 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.6.3] - 2026-11-25
+
+### Fixed
+
+- **openclaw**: Stop the gateway restart loop on a config error
+- **release**: Train gates dnf-generator on its own ci and audit recipes
+
+### Documentation
+
+- **dev**: Installer test page, local runs and RAM threshold measure
+- **translate**: Installer test, changelog 0.6.2, config links
+- **gateway**: First gateway installed from the admin host, recabling pause
+- **gateway**: Darkone add gateway, pairing code, extended host-info
+- **gateway**: Assistant tested end to end in virtual machines
+- **gateway**: Test-installer gateway scenario and generator parameter
+- **translate**: Gateway install, hosts, network, justfile, refs
+- **sso**: Oauth2-proxy sessions stored server-side
+- **translate**: Auth idm session, oauth2-proxy sessions
+- **terminal**: Copy-paste in Ghostty
+- **translate**: User profiles, openclaw migration, advanced and oxicloud refs
+- **just**: Document dnf/statix.toml and CI lint tools pinned to lock
+- **just**: Statix.toml shipped by the project template
+- **translate**: Justfile
+- **sso**: Outline reads OIDC discovery at startup
+- **translate**: Sso, outline, releasing, auth-idm
+- **dev-guide**: Document mkOidcIssuerGate
+- **translate**: Create service module, modules
+
 ## [0.6.2] - 2026-11-13
 
 ### ⚠ Breaking
@@ -680,7 +708,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Initial Astro/Starlight documentation site for Darkone NixOS Framework.
 - Upgrade to Astro 6.
 
-[Unreleased]: https://github.com/darkone-linux/dnf-doc/compare/v0.6.2...HEAD
+[Unreleased]: https://github.com/darkone-linux/dnf-doc/compare/v0.6.3...HEAD
+[0.6.3]: https://github.com/darkone-linux/dnf-doc/compare/v0.6.2...v0.6.3
 [0.6.2]: https://github.com/darkone-linux/dnf-doc/compare/v0.6.1...v0.6.2
 [0.6.1]: https://github.com/darkone-linux/dnf-doc/compare/v0.6.0...v0.6.1
 [0.6.0]: https://github.com/darkone-linux/dnf-doc/compare/v0.5.0...v0.6.0
