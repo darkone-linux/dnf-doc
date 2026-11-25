@@ -1,0 +1,141 @@
+---
+title: Configurer et tester le DNS
+sidebar:
+  label: DNS publics
+  order: 15
+lang: fr
+---
+
+import { Steps } from '@astrojs/starlight/components';
+
+Les résolveurs du réseau envoient les noms Internet à des **opérateurs DNS
+publics**. Une seule option les choisit pour tout le parc&nbsp;: le HCS et les
+passerelles en déduisent chacun leur configuration.
+
+## Qui les utilise
+
+| Composant | Usage | Forme |
+|---|---|---|
+| unbound du HCS | relais des noms publics | DoT, vérifié par nom |
+| AdGuard Home (passerelle) | bootstrap de ses upstreams | DNS en clair |
+| AdGuard Home (passerelle) | secours | DoT par adresse IP |
+| dnsmasq (passerelle) | serveurs de secours | DNS en clair |
+
+Hors de ce choix&nbsp;: l'upstream filtrant d'AdGuard Home (AdGuard DNS, une
+politique de filtrage) et les sondes ping d'accès à Internet.
+
+## Choisir les opérateurs
+
+| Nom | Opérateur | Remarque |
+|---|---|---|
+| `cloudflare` | [Cloudflare](https://one.one.one.one/) | par défaut |
+| `adguard` | [AdGuard DNS](https://adguard-dns.io/), non filtré | par défaut |
+| `quad9` | [Quad9](https://quad9.net/) | refuse la France depuis le 24/11/2026 |
+
+<Steps>
+
+1. **Déclarer la sélection**
+
+   Dans un module du projet&nbsp;: tout fichier de `usr/modules/` s'applique à
+   tous les hôtes, le HCS et les passerelles reçoivent donc la même liste.
+
+   ```nix
+   # usr/modules/dns.nix
+   {
+     darkone.system.dns.publicResolvers = [
+       "quad9"
+       "cloudflare"
+     ];
+   }
+   ```
+
+   Deux opérateurs distincts au minimum&nbsp;: un seul qui refuse et tout le DNS
+   tombe, l'évaluation le refuse donc.
+
+2. **Enregistrer le module**
+
+   `git add usr/modules/dns.nix` (le flake ignore les fichiers non suivis),
+   puis `just clean`, qui l'ajoute à `usr/modules/default.nix`.
+
+3. **Déployer le HCS puis les passerelles**
+
+   `just apply <hôte> test` sur chacun, [tester](#tester), puis
+   `just apply <hôte> switch`. Les autres hôtes ne changent pas.
+
+</Steps>
+
+## Tester
+
+<Steps>
+
+1. **L'opérateur répond**
+
+   Depuis le HCS et depuis une passerelle (`just enter <hôte>`), en DoT avec
+   vérification du certificat&nbsp;:
+
+   ```sh
+   dig +tls +tls-ca +tls-hostname=dns.quad9.net @9.9.9.9 example.org
+   ```
+
+   `status: NOERROR` → utilisable. `REFUSED` → l'opérateur refuse ce pays ou
+   cette adresse.
+
+2. **Le HCS résout**
+
+   ```sh
+   dig @127.0.0.1 domain.tld        # NOERROR
+   dig @127.0.0.1 example.org       # NOERROR
+   dig @127.0.0.1 dnssec-failed.org # SERVFAIL : DNSSEC validé
+   ```
+
+3. **La zone résout**
+
+   Depuis un poste de la zone&nbsp;:
+
+   ```sh
+   dig domain.tld
+   dig example.org
+   ```
+
+   `NOERROR`, `Query time` sous la seconde. L'apex `domain.tld`, inconnu des
+   noms locaux, traverse toute la chaîne&nbsp;: passerelle, puis HCS, puis
+   opérateur.
+
+4. **AdGuard Home sans erreur**
+
+   Sur la passerelle, aucune ligne attendue&nbsp;:
+
+   ```sh
+   journalctl -u adguardhome --since -10min | grep '\[error\]'
+   ```
+
+</Steps>
+
+## FAQ
+
+### Element Call échoue avec `OPEN_ID_ERROR` ?
+
+Le service JWT de LiveKit, sur le HCS, ne résout plus `domain.tld`&nbsp;:
+`journalctl -u lk-jwt-service` montre `dns error`. Tester le HCS (étape 2).
+
+### Requêtes lentes ou en échec dans une zone ?
+
+Bootstrap d'AdGuard Home injoignable&nbsp;: chaque nom non caché attend son délai.
+Les journaux montrent `exchanging with <ip>:53 … i/o timeout`. Retirer
+l'opérateur fautif de la sélection.
+
+### Comment rétablir Quad9 ?
+
+Quand l'étape 1 répond `NOERROR` depuis le HCS et une passerelle&nbsp;: ajouter
+`quad9` à la sélection, puis déployer.
+
+### Comment ajouter un opérateur ?
+
+Dans le framework&nbsp;: une entrée du catalogue `publicResolvers`
+(`dnf/lib/dns.nix`), avec ses adresses IPv4 et IPv6 et le nom de son certificat.
+Ce certificat doit couvrir ses adresses IP, sans quoi le secours DoT par IP
+échoue&nbsp;:
+
+```sh
+openssl s_client -connect <ip>:853 </dev/null | openssl x509 -noout -ext subjectAltName
+```
