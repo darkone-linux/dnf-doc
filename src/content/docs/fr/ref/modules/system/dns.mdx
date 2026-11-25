@@ -1,0 +1,48 @@
+---
+title: "⚙ darkone.system.dns"
+sidebar:
+  label: "dns"
+---
+
+{/* t:translated-from en */}
+{/* t:h ad3924e0975c741139073b770e65f3707739342029dcfa02f5759e9a49e66cd8 */}
+
+{/* t:p 48a6fb9de3e42efe1f75bd9fca596afb3058213c8a505bfbaf531a0c1f115bd3 */}
+Résolveurs DNS publics du parc.
+
+Une option choisit les opérateurs publics auxquels chaque résolveur DNF
+envoie les noms Internet. Les adresses proviennent du catalogue
+`dnfLib.publicResolvers` (`lib/dns.nix`)&nbsp;; chaque consommateur en dérive sa
+propre forme&nbsp;:
+
+| Composant | Usage | Forme |
+|---|---|---|
+| unbound du HCS (`headscale`) | relais des noms publics | DoT, vérifié par nom |
+| AdGuard Home (passerelle) | `bootstrap_dns` | DNS en clair, IPv4 et IPv6 |
+| AdGuard Home (passerelle) | `fallback_dns` | DoT par adresse IP |
+| dnsmasq (passerelle) | serveurs de secours | DNS en clair, première IPv4 de chacun |
+
+Hors de cette sélection&nbsp;: l'upstream filtrant d'AdGuard Home (AdGuard DNS,
+une politique de filtrage) et les sondes ICMP (`internetProbeTargets`).
+
+```nix
+# usr/modules/dns.nix: back to Quad9 once it serves the country again
+{ darkone.system.dns.publicResolvers = [ "quad9" "cloudflare" ]; }
+```
+
+:::caution[Deux opérateurs, les mêmes sur le HCS et les passerelles]
+Vérifié à l'évaluation&nbsp;: un opérateur refusant un pays entier (Quad9,
+France, 2026-11-24) ne doit pas interrompre le DNS du parc. Appliquez ce réglage
+à tout le parc (`usr/modules/`), puis déployez le HCS et chaque passerelle.
+:::
+
+{/* t:p 3670b184e9f5f491b9b5246341b8a9b71f68986d670e90a3d2c4cb8c4887b299 */}
+## Options
+
+* **publicResolvers** `listOf (enum (lib.attrNames dnfLib.publicResolvers))` Opérateurs DNS publics (`dnfLib.publicResolvers`) auxquels l'unbound du HCS, AdGuard Home et dnsmasq envoient les noms Internet.
+
+```nix
+darkone.system.dns.publicResolvers = [ ];
+```
+
+Source&nbsp;: [`modules/system/dns.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/system/dns.nix)

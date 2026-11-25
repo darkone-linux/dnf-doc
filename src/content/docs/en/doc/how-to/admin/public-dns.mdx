@@ -1,0 +1,135 @@
+---
+title: Configuring and testing DNS
+sidebar:
+  label: Public DNS
+  order: 15
+lang: en
+---
+
+import { Steps } from '@astrojs/starlight/components';
+
+{/* t:translated-from fr */}
+{/* t:h a6901c0b245580d7c3dd9b2f245ac80c25579a43a5bab1214a0dc3d401d9dcac */}
+
+{/* t:p 5c1ecdeb46636d0312046e96b1e9712aa72e7d1f26eaf991a397f0e91aa2db25 */}
+The network resolvers send Internet names to **public DNS operators**. A single option selects them for the entire fleet&nbsp;: the HCS and gateways each derive their configuration from it.
+
+{/* t:p 51bbd2e024d8cf8a14dd7bc92e33e95f330c4256e7891582810f55842669106b */}
+## Who uses them
+
+| Component | Use | Form |
+|---|---|---|
+| HCS unbound | relay for public names | DoT, verified by name |
+| AdGuard Home (gateway) | bootstrap of its upstreams | plain DNS |
+| AdGuard Home (gateway) | fallback | DoT by IP address |
+| dnsmasq (gateway) | fallback servers | plain DNS |
+
+Outside this selection&nbsp;: AdGuard Home's filtering upstream (AdGuard DNS, a filtering policy) and the Internet access ping probes.
+
+{/* t:p 26f28d5cb679ad487fc4386aaad04762318c393b332e20f2796bf3b594aa3907 */}
+## Choosing operators
+
+| Name | Operator | Note |
+|---|---|---|
+| `cloudflare` | [Cloudflare](https://one.one.one.one/) | by default |
+| `adguard` | [AdGuard DNS](https://adguard-dns.io/), unfiltered | by default |
+| `quad9` | [Quad9](https://quad9.net/) | refuses France since 24/11/2026 |
+
+<Steps>
+
+1. **Declare the selection**
+
+   In a project module&nbsp;: any file in `usr/modules/` applies to all hosts, so the HCS and gateways receive the same list.
+
+   ```nix
+   # usr/modules/dns.nix
+   {
+     darkone.system.dns.publicResolvers = [
+       "quad9"
+       "cloudflare"
+     ];
+   }
+   ```
+
+   At least two distinct operators&nbsp;: if a single one refuses, all DNS goes down, so evaluation rejects it.
+
+2. **Register the module**
+
+   `git add usr/modules/dns.nix` (the flake ignores untracked files), then `just clean`, which adds it to `usr/modules/default.nix`.
+
+3. **Deploy the HCS then the gateways**
+
+   `just apply <hôte> test` on each, [test](#testing), then `just apply <hôte> switch`. Other hosts are unchanged.
+
+</Steps>
+
+{/* t:p 5b07994d713c9b2c621555fbc43a91ba3b6ba916ab4c97b656a429f33c2a6210 */}
+## Testing
+
+<Steps>
+
+1. **The operator responds**
+
+   From the HCS and from a gateway (`just enter <hôte>`), over DoT with certificate verification&nbsp;:
+
+   ```sh
+   dig +tls +tls-ca +tls-hostname=dns.quad9.net @9.9.9.9 example.org
+   ```
+
+   `status: NOERROR` → usable. `REFUSED` → the operator refuses this country or this address.
+
+2. **The HCS resolves**
+
+   ```sh
+   dig @127.0.0.1 domain.tld        # NOERROR
+   dig @127.0.0.1 example.org       # NOERROR
+   dig @127.0.0.1 dnssec-failed.org # SERVFAIL : DNSSEC validé
+   ```
+
+3. **The zone resolves**
+
+   From a workstation in the zone&nbsp;:
+
+   ```sh
+   dig domain.tld
+   dig example.org
+   ```
+
+   `NOERROR`, `Query time` under one second. The apex `domain.tld`, unknown to the local names, traverses the whole chain&nbsp;: gateway, then HCS, then operator.
+
+4. **AdGuard Home without errors**
+
+   On the gateway, no lines expected&nbsp;:
+
+   ```sh
+   journalctl -u adguardhome --since -10min | grep '\[error\]'
+   ```
+
+</Steps>
+
+{/* t:p 938609b64e2e1217c0db6ceeca57cfadea52087e1a0a2c4319be9b6fdb6ff3b2 */}
+## FAQ
+
+{/* t:p 125b32cdbd404c45a0075c544f3e5d57031e338593f9a83efbe1cf8cb531970d */}
+### Element Call fails with `OPEN_ID_ERROR`?
+
+LiveKit's JWT service on the HCS no longer resolves `domain.tld`&nbsp;: `journalctl -u lk-jwt-service` shows `dns error`. Test the HCS (step 2).
+
+{/* t:p c97eb111cf2e424fa7ea4d3417db1398a2439bf056d6d2a755bcba08a01ad71f */}
+### Slow or failing queries in a zone?
+
+AdGuard Home bootstrap unreachable&nbsp;: every uncached name waits for its timeout. The logs show `exchanging with <ip>:53 … i/o timeout`. Remove the faulty operator from the selection.
+
+{/* t:p 6dffdb9170d2d67c8f8d5324ef506db03b69c5d716c0438d3dc755caf1f35486 */}
+### How to restore Quad9?
+
+When step 1 returns `NOERROR` from the HCS and a gateway&nbsp;: add `quad9` to the selection, then deploy.
+
+{/* t:p 8d1d79e697a81321f048985fdf418d1b0b686734ff367e734b8a0cb6d7d2a56e */}
+### How to add an operator?
+
+In the framework&nbsp;: an entry in the `publicResolvers` catalogue (`dnf/lib/dns.nix`), with its IPv4 and IPv6 addresses and the name of its certificate. This certificate must cover its IP addresses, otherwise the DoT fallback by IP fails&nbsp;:
+
+```sh
+openssl s_client -connect <ip>:853 </dev/null | openssl x509 -noout -ext subjectAltName
+```

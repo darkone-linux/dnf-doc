@@ -8,10 +8,15 @@ lang: fr
 
 import { Steps } from '@astrojs/starlight/components';
 
+{/* t:main */}
+{/* t:h a6901c0b245580d7c3dd9b2f245ac80c25579a43a5bab1214a0dc3d401d9dcac */}
+
+{/* t:p 5c1ecdeb46636d0312046e96b1e9712aa72e7d1f26eaf991a397f0e91aa2db25 */}
 Les résolveurs du réseau envoient les noms Internet à des **opérateurs DNS
 publics**. Une seule option les choisit pour tout le parc&nbsp;: le HCS et les
 passerelles en déduisent chacun leur configuration.
 
+{/* t:p 51bbd2e024d8cf8a14dd7bc92e33e95f330c4256e7891582810f55842669106b */}
 ## Qui les utilise
 
 | Composant | Usage | Forme |
@@ -24,6 +29,7 @@ passerelles en déduisent chacun leur configuration.
 Hors de ce choix&nbsp;: l'upstream filtrant d'AdGuard Home (AdGuard DNS, une
 politique de filtrage) et les sondes ping d'accès à Internet.
 
+{/* t:p 26f28d5cb679ad487fc4386aaad04762318c393b332e20f2796bf3b594aa3907 */}
 ## Choisir les opérateurs
 
 | Nom | Opérateur | Remarque |
@@ -64,6 +70,7 @@ politique de filtrage) et les sondes ping d'accès à Internet.
 
 </Steps>
 
+{/* t:p 5b07994d713c9b2c621555fbc43a91ba3b6ba916ab4c97b656a429f33c2a6210 */}
 ## Tester
 
 <Steps>
@@ -111,24 +118,29 @@ politique de filtrage) et les sondes ping d'accès à Internet.
 
 </Steps>
 
+{/* t:p 938609b64e2e1217c0db6ceeca57cfadea52087e1a0a2c4319be9b6fdb6ff3b2 */}
 ## FAQ
 
+{/* t:p 125b32cdbd404c45a0075c544f3e5d57031e338593f9a83efbe1cf8cb531970d */}
 ### Element Call échoue avec `OPEN_ID_ERROR` ?
 
 Le service JWT de LiveKit, sur le HCS, ne résout plus `domain.tld`&nbsp;:
 `journalctl -u lk-jwt-service` montre `dns error`. Tester le HCS (étape 2).
 
+{/* t:p c97eb111cf2e424fa7ea4d3417db1398a2439bf056d6d2a755bcba08a01ad71f */}
 ### Requêtes lentes ou en échec dans une zone ?
 
 Bootstrap d'AdGuard Home injoignable&nbsp;: chaque nom non caché attend son délai.
 Les journaux montrent `exchanging with <ip>:53 … i/o timeout`. Retirer
 l'opérateur fautif de la sélection.
 
+{/* t:p 6dffdb9170d2d67c8f8d5324ef506db03b69c5d716c0438d3dc755caf1f35486 */}
 ### Comment rétablir Quad9 ?
 
 Quand l'étape 1 répond `NOERROR` depuis le HCS et une passerelle&nbsp;: ajouter
 `quad9` à la sélection, puis déployer.
 
+{/* t:p 8d1d79e697a81321f048985fdf418d1b0b686734ff367e734b8a0cb6d7d2a56e */}
 ### Comment ajouter un opérateur ?
 
 Dans le framework&nbsp;: une entrée du catalogue `publicResolvers`

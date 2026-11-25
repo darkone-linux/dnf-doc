@@ -1,0 +1,47 @@
+---
+title: "⚙ darkone.system.dns"
+sidebar:
+  label: "dns"
+---
+
+{/* t:main */}
+{/* t:h ad3924e0975c741139073b770e65f3707739342029dcfa02f5759e9a49e66cd8 */}
+
+{/* t:p 48a6fb9de3e42efe1f75bd9fca596afb3058213c8a505bfbaf531a0c1f115bd3 */}
+Public DNS resolvers of the fleet.
+
+One option picks the public operators every DNF resolver sends Internet
+names to. Addresses come from the `dnfLib.publicResolvers` catalog
+(`lib/dns.nix`); each consumer derives its own form:
+
+| Consumer | Use | Form |
+|---|---|---|
+| unbound of the HCS (`headscale`) | forwarders | DoT, checked by name |
+| AdGuard Home (gateway) | `bootstrap_dns` | plain, IPv4 and IPv6 |
+| AdGuard Home (gateway) | `fallback_dns` | DoT by IP |
+| dnsmasq (gateway) | fallback servers | plain, first IPv4 of each |
+
+Out of this selection: AdGuard Home's filtering upstream (AdGuard DNS, a
+filtering policy) and the ICMP probes (`internetProbeTargets`).
+
+```nix
+# usr/modules/dns.nix: back to Quad9 once it serves the country again
+{ darkone.system.dns.publicResolvers = [ "quad9" "cloudflare" ]; }
+```
+
+:::caution[Two operators, same on the HCS and the gateways]
+Asserted at evaluation: one operator refusing a whole country (Quad9, France,
+2026-11-24) must not cut the fleet's DNS. Set it fleet-wide (`usr/modules/`),
+then deploy the HCS and every gateway.
+:::
+
+{/* t:p 3670b184e9f5f491b9b5246341b8a9b71f68986d670e90a3d2c4cb8c4887b299 */}
+## Options
+
+* **publicResolvers** `listOf (enum (lib.attrNames dnfLib.publicResolvers))` Public DNS operators (`dnfLib.publicResolvers`) the HCS unbound, AdGuard Home and dnsmasq send Internet names to.
+
+```nix
+darkone.system.dns.publicResolvers = [ ];
+```
+
+Source: [`modules/system/dns.nix`](https://github.com/darkone-linux/darkone-nixos-framework/blob/main/modules/system/dns.nix)

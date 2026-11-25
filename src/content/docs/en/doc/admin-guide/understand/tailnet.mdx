@@ -133,23 +133,23 @@ maison.gw -> atelier.gw: tailnet, route 10.1.0.0/16
 What a gateway lets through is detailed in [What crosses a
 gateway](/en/doc/admin-guide/understand/network/#what-goes-through-a-gateway).
 
-{/* t:p a304f602d810ac041ca8946db2ad498564714156ca34634be6dab6082e034c3d */}
+{/* t:p 456f224b62fe3dd5606a2185a0ec187a3aef3169e16461ad9309acbde7b601f8 */}
 ## DNS
 
-Each machine queries a different resolver, but the names of a zone always end up
-at the same owner: the gateway of that zone.
+Each machine queries a different resolver, but names in a zone always end up with
+the same holder&nbsp;: that zone's gateway.
 
 | Machine | Resolver | Zone names | Global services | Internet |
 |---|---|---|---|---|
-| Machine in a zone, gateway | gateway's dnsmasq, behind AdGuard Home if enabled | dnsmasq, or the zone's gateway | dnsmasq, or the HCS's unbound | Public DNS, filtered by AdGuard Home |
-| HCS | unbound, local | the zone's gateway | unbound | Quad9, encrypted |
-| Remote device | MagicDNS (`100.100.100.100`) | via the HCS's unbound | via the HCS's unbound | the visited network's resolver |
+| Zone workstation, gateway | Gateway dnsmasq, behind AdGuard Home if enabled | dnsmasq, or the zone gateway | dnsmasq, or HCS unbound | Public DNS, filtered by AdGuard Home |
+| HCS | unbound, local | Zone gateway | unbound | [Public DNS](/en/doc/how-to/admin/public-dns/), encrypted |
+| Remote device | MagicDNS (`100.100.100.100`) | via HCS unbound | via HCS unbound | visited network resolver |
 
 ```d2
 style.fill: transparent
 direction: down
 
-pc: Machine in a zone { shape: person }
+pc: Zone workstation { shape: person }
 remote: Remote device { shape: person }
 
 gw: Home gateway {
@@ -167,30 +167,29 @@ visited: Resolver\nof the visited network { shape: cloud }
 pc -> gw.agh
 remote -> magic
 gw.agh -> upstream: Internet
-gw.dnsmasq -> peer: workshop.domain.tld
+gw.dnsmasq -> peer: atelier.domain.tld
 gw.dnsmasq -> unbound: domain.tld
 magic -> unbound: domain.tld
 magic -> visited: Internet
-unbound -> peer: workshop.domain.tld
+unbound -> peer: atelier.domain.tld
 ```
 
-- **Gateway**&nbsp;: dnsmasq knows the machines of every zone and the declared
-  services. An unknown name from another zone goes to that zone's gateway (LAN
-  address, through the tailnet)&nbsp;; the rest of `domain.tld` goes to unbound,
-  on the HCS.
-- **Services of a zone**&nbsp;: each declared service `<name>.<zone>.domain.tld`
-  points to the gateway's LAN address of the zone, which serves it behind its proxy.
+- **Gateway**&nbsp;: dnsmasq knows the machines in all zones and the
+  declared services. An unknown name from another zone goes to that zone's
+  gateway (LAN address, through the tailnet)&nbsp;; the rest of `domain.tld` goes
+  to unbound, on the HCS.
+- **Zone services**&nbsp;: each declared service `<nom>.<zone>.domain.tld`
+  points to the zone gateway's LAN address, which serves it behind its proxy.
 - **Global services served by a zone** (`git.domain.tld` on a gateway)&nbsp;:
-  unbound answers with the LAN address to the tagged machines only, that the policy
-  lets into the zones. The other devices receive the HCS's public address, which
-  only relays HTTPS. Machines' tailnet addresses read in Headscale by
+  unbound returns the LAN address only to tagged machines that the policy allows
+  into the zones. Other devices receive the HCS public address, which only relays
+  HTTPS. Tailnet addresses of machines read from Headscale via
   `unbound-tailnet-view`.
-- **HCS**&nbsp;: unbound listens on `127.0.0.1` and on the HCS's tailnet address,
-  for tailnet addresses only. It forwards `<zone>.domain.tld` to the gateway's
-  resolver, at its tailnet address&nbsp;: hence the importance of declaring
-  `vpn.ipv4`.
-- **`headscale.domain.tld`**&nbsp;: never queried from the tunnel it helps to set up,
-  see [Control plane bootstrapping](/en/doc/admin-guide/operate/vpn/#control-plane-bootstrap).
+- **HCS**&nbsp;: unbound listens on `127.0.0.1` and on the HCS tailnet address, for
+  tailnet addresses only. It forwards `<zone>.domain.tld` to the gateway's
+  resolver, at its tailnet address&nbsp;: hence the importance of declaring `vpn.ipv4`.
+- **`headscale.domain.tld`**&nbsp;: never queried through the tunnel it is used to
+  bring up, see [Control plane bootstrapping](/en/doc/admin-guide/operate/vpn/#control-plane-bootstrap).
 
 {/* t:p a6aeea99a3370e2a3d25fa9effbb15e98f0384c764eec332452b418eb1cdef35 */}
 ## MagicDNS

@@ -1,0 +1,71 @@
+---
+title: "Version 0.6.3"
+description: "Installer pairing and gateway setup"
+sidebar:
+  label: "0.6.3"
+lang: en
+prev:
+  link: /en/changelog/v0-6-2/
+  label: "Version 0.6.2"
+---
+
+{/* t:main */}
+{/* t:h 3238aa027721ef8f7643bd2c365a6d587be8a5b4799d208d147df4779922d624 */}
+
+{/* t:p ff9f86127e1c28921f8c7b7fc8ca8ca1552c3c94be533f094d7a136744ecdbcb */}
+Released on **2026-11-25**: Installer pairing and gateway setup.
+
+[Changes on GitHub](https://github.com/darkone-linux/darkone-nixos-framework/compare/v0.6.2...v0.6.3) · [All versions](/en/changelog/)
+
+{/* t:p 2cb2696647e22e8023495a6167bd32594a12ed222ee58a3930efa781cde86339 */}
+## Added
+
+- **install**: Refuse a gateway whose box network overlaps its zone
+- **iso**: List network cards and installable disks on the installer screen
+- **install**: Full-install pauses for recabling behind a fresh gateway
+- **iso**: Pairing code on the generic installer lets the admin key in
+- **install**: Pair the generic installer by its code, pin its host key
+- **install**: Host-info probes cards, disks and the MAC of the routed card
+- **admin**: Darkone and dnf-generator commands on admin hosts
+- **install**: Install takes its confirmation and host key from darkone
+- **admin**: Welcome page marks step 2 done once the zone has a gateway
+- **veloren**: Activation
+- **oxicloud**: Mail job findings to the admin mailbox
+- **template**: Ship statix.toml with repeated_keys disabled
+- **outline**: Enforce PKCE through OIDC discovery
+
+{/* t:p 54eaea0be66c90aa55b87a51ec1426aadaeee6999b669f4168cceb59683c0a6f */}
+## Fixed
+
+- **install**: Gateway of its zone needs no mac, skips resolution warning
+- **install**: Full-install waits for the host back after its last reboot
+- **sso**: Oauth2-proxy keeps sessions in a local Redis, ends login loop
+- **imagery**: Use renamed sweethome3d package
+- **ai**: Open-webui back on unstable, drop stable pin and fpdf2 bypass
+- **fleet-update**: Add shellcheck, yq-go, gawk to the unattended PATH
+- **terminal**: One clipboard, middle-click, right-click and Ctrl+V paste it
+- **openclaw**: Stop the gateway restart loop on a config error
+- **gnome**: Hide xterm through hidden-apps, no duplicate desktop entry
+- **release**: Train gates dnf-generator on its own ci and audit recipes
+
+{/* t:p 76d245effa68fce168030760134f20a7d70a238d3047fe80b69c01aafb9e0ea0 */}
+## Removed
+
+- **workarounds**: Drop overlays and pins fixed upstream, restore anki, aider
+
+{/* t:p 8b29affd87abd96bba5d2d60c56f43b063596335a5327a37f7edfcced2341ecb */}
+## Changed
+
+- **lint**: Fix statix 0.6.0 warnings (inherit, parens, empty patterns)
+- **oidc**: Share the OIDC issuer start-up gate as mkOidcIssuerGate
+
+{/* t:p 645f1fcf7df0e58daa75c4f8183c25f19af09ff6bc3e1696e2c2fe91f0a3a675 */}
+## Documentation
+
+- **gateway**: Project README, step 2 with darkone add gateway
+- **readme**: Services, SSO, getting started, fleet-update
+
+{/* t:p e364c1ba262c6189c3bb9abb3a70d2bd4d70a93935211c146232795cff7447ae */}
+## Dependencies
+
+- dnf-generator v0.4.1

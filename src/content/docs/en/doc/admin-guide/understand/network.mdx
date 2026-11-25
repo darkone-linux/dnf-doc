@@ -233,19 +233,20 @@ Who resolves what:
 - Tailnet names (`<nœud>.tailnet.internal`) are relayed by each gateway to
   MagicDNS: resolved from the LANs too.
 
-{/* t:p 85f3fe6956a70f9611dbcb98bd9f85a9a205238c879b765a9ed130bc2f4ddf0b */}
+{/* t:p 0df2824fd90dc1e8f8a60fc41c28c5c901375db5bbe3a35ae27248bba53055b1 */}
 ### The pivot resolver (HCS)
 
 On the coordination server (HCS), a **pivot resolver** (unbound) centralizes
-the internal VPN resolution. It knows the zone breakdown and simply routes&nbsp;:
+the internal VPN resolution. It knows the zone breakdown and simply
+routes&nbsp;:
 
 - each zone FQDN goes to its zone's gateway, at its tailnet address&nbsp;;
 - global services hosted on the HCS are resolved locally&nbsp;;
-- everything else goes to an encrypted external DNS.
+- the rest goes, encrypted, to the [public DNS](/en/doc/how-to/admin/public-dns/) chosen for the fleet.
 
-Remote devices query it via MagicDNS (split DNS), and gateways query it for names
-in the domain they don't know. Between two zones, a gateway queries the other
-zone's gateway directly. Details in
+Remote devices query it via MagicDNS (split DNS), and gateways query it for
+domain names they don't know. Between two zones, a gateway queries
+the other zone's gateway directly. Details in
 [DNS](/en/doc/admin-guide/understand/tailnet/#dns).
 
 {/* t:p 5b69e05442d90b3cb3f5ec87f37b218a378a439f61d56be91184eed9fc9371e8 */}

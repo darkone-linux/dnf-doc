@@ -34,12 +34,17 @@ Sous-modules (`headscale/`) :
 - `audit.nix` : `headscale-audit`, nœuds en ligne face à la topologie déclarée ;
 - `enroll.nix` : `dnf-tailnet-enroll`, derrière `just tailnet-enroll`.
 
-{/* t:p ce139ccb4faf88c051ebb43ed43b7f1ec3e8c155b883cd8d89f4361abcaedf13 */}
+{/* t:p 4e9595f8c52d898e2dffd951ecc427a3c4f572f453ca1c7f0bf08bf3c79615b2 */}
 ## Pivot DNS (`dns.nix`)
 
-unbound sur le HCS. Les noms internes y parviennent via le split DNS de headscale ; il transmet chaque domaine de zone à la passerelle de zone, le reste à Quad9 en TLS.
+unbound sur le HCS. Les noms internes l'atteignent via le split DNS de headscale ; il
+transmet chaque domaine de zone à la passerelle de la zone, le reste via TLS aux
+résolveurs publics du parc ([`darkone.system.dns`](/fr/ref/modules/system/dns/)).
 
-Vue `tailnet-machines` : les nœuds taggés (hors HCS) reçoivent l'adresse LAN de zone des services globaux servis par une zone (`git.<domain>` sur une passerelle), tous les autres l'adresse publique. `unbound-tailnet-view` liste leurs IP tailnet depuis headscale, déclarées nulle part.
+Vue `tailnet-machines` : les nœuds étiquetés (HCS mis à part) obtiennent l'adresse LAN
+de zone des services globaux servis par une zone (`git.<domain>` sur une passerelle),
+les autres l'adresse publique. `unbound-tailnet-view` liste leurs IP tailnet depuis
+headscale, déclarées nulle part.
 
 {/* t:p d158bd4838d94dd638f8e6323cebe1a89db4ff8180863dcea8feb358bca1712e */}
 ## Audit (`audit.nix`)

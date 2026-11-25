@@ -1,0 +1,71 @@
+---
+title: "Version 0.6.3"
+description: "Appariement de l'installateur et configuration de la passerelle"
+sidebar:
+  label: "0.6.3"
+lang: fr
+prev:
+  link: /fr/changelog/v0-6-2/
+  label: "Version 0.6.2"
+---
+
+{/* t:translated-from en */}
+{/* t:h 3238aa027721ef8f7643bd2c365a6d587be8a5b4799d208d147df4779922d624 */}
+
+{/* t:p ff9f86127e1c28921f8c7b7fc8ca8ca1552c3c94be533f094d7a136744ecdbcb */}
+Publié le **2026-11-25** : appariement de l'installateur et configuration de la passerelle.
+
+[Modifications sur GitHub](https://github.com/darkone-linux/darkone-nixos-framework/compare/v0.6.2...v0.6.3) · [Toutes les versions](/fr/changelog/)
+
+{/* t:p 2cb2696647e22e8023495a6167bd32594a12ed222ee58a3930efa781cde86339 */}
+## Ajouts
+
+- **install** : refuse une passerelle dont le réseau de la machine chevauche sa zone
+- **iso** : affiche les cartes réseau et les disques installables sur l'écran de l'installateur
+- **install** : l'installation complète marque une pause pour recâbler derrière une nouvelle passerelle
+- **iso** : le code d'appariement sur l'installateur générique permet à l'administrateur de le saisir
+- **install** : appaire l'installateur générique avec son code, épingle sa clé d'hôte
+- **install** : host-info sonde les cartes, les disques et le MAC de la carte routée
+- **admin** : commandes darkone et dnf-generator sur les hôtes d'administration
+- **install** : l'installation prend sa confirmation et sa clé d'hôte depuis darkone
+- **admin** : la page d'accueil marque l'étape 2 comme terminée dès que la zone dispose d'une passerelle
+- **veloren** : activation
+- **oxicloud** : envoie les résultats des tâches par courriel à la boîte de l'administrateur
+- **template** : fournit statix.toml avec repeated_keys désactivé
+- **outline** : applique PKCE via la découverte OIDC
+
+{/* t:p 54eaea0be66c90aa55b87a51ec1426aadaeee6999b669f4168cceb59683c0a6f */}
+## Corrections
+
+- **install** : la passerelle de sa zone n'a pas besoin de mac, ignore l'avertissement de résolution
+- **install** : l'installation complète attend le retour de l'hôte après son dernier redémarrage
+- **sso** : Oauth2-proxy conserve les sessions dans un Redis local, met fin à la boucle de connexion
+- **imagery** : utilise le paquet sweethome3d renommé
+- **ai** : Open-webui repasse sur unstable, retire l'épinglage stable et le contournement fpdf2
+- **fleet-update** : ajoute shellcheck, yq-go et gawk au PATH des mises à jour automatiques
+- **terminal** : un seul presse-papiers pour le clic milieu, le clic droit et Ctrl+V
+- **openclaw** : arrête la boucle de redémarrage de la passerelle sur une erreur de configuration
+- **gnome** : masque xterm via hidden-apps, aucune entrée de bureau dupliquée
+- **release** : le train conditionne dnf-generator à ses propres recettes ci et audit
+
+{/* t:p 76d245effa68fce168030760134f20a7d70a238d3047fe80b69c01aafb9e0ea0 */}
+## Suppressions
+
+- **workarounds** : retire les overlays et épinglages corrigés en amont, restaure anki et aider
+
+{/* t:p 8b29affd87abd96bba5d2d60c56f43b063596335a5327a37f7edfcced2341ecb */}
+## Modifications
+
+- **lint** : corrige les avertissements de statix 0.6.0 (inherit, parenthèses, motifs vides)
+- **oidc** : partage la barrière de démarrage de l'émetteur OIDC sous le nom mkOidcIssuerGate
+
+{/* t:p 645f1fcf7df0e58daa75c4f8183c25f19af09ff6bc3e1696e2c2fe91f0a3a675 */}
+## Documentation
+
+- **gateway** : README du projet, étape 2 avec darkone add gateway
+- **readme** : services, SSO, prise en main, fleet-update
+
+{/* t:p e364c1ba262c6189c3bb9abb3a70d2bd4d70a93935211c146232795cff7447ae */}
+## Dépendances
+
+- dnf-generator v0.4.1
